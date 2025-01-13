@@ -7,6 +7,18 @@ info:
 servers:
   - url: http://localhost:8080
 paths:
+  /llms:
+    get:
+      summary: List all language models
+      responses:
+        "200":
+          description: A list of models
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProviderModels"
   /llms/{provider}/v1/models:
     get:
       summary: List models of a specific provider
@@ -86,3 +98,27 @@ components:
           type: string
         created:
           type: integer
+    ProviderModels:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum:
+            - groq
+            - openai
+            - cloudflare
+            - ollama
+            - google
+        models:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              object:
+                type: string
+              owned_by:
+                type: string
+              created:
+                type: integer

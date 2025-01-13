@@ -6,6 +6,7 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 
 | Description            | Curl Command                                                   |
 | ---------------------- | -------------------------------------------------------------- |
+| List all models        | `curl -X GET http://localhost:8080/llms`                       |
 | List Ollama models     | `curl -X GET http://localhost:8080/llms/ollama/v1/models`      |
 | List Groq models       | `curl -X GET http://localhost:8080/llms/groq/openai/v1/models` |
 | List OpenAI models     | `curl -X GET http://localhost:8080/llms/openai/v1/models`      |
