@@ -7,15 +7,21 @@ info:
 servers:
   - url: http://localhost:8080
 paths:
-  /llms/{llm}/v1/models:
+  /llms/{provider}/v1/models:
     get:
-      summary: List models for a specific LLM
+      summary: List models of a specific provider
       parameters:
-        - name: llm
+        - name: provider
           in: path
           required: true
           schema:
             type: string
+            enum:
+              - groq
+              - openai
+              - cloudflare
+              - ollama
+              - google
       responses:
         "200":
           description: A list of models
@@ -25,15 +31,21 @@ paths:
                 type: array
                 items:
                   type: string
-  /llms/{llm}/api/generate:
+  /llms/{provider}/api/generate:
     post:
-      summary: Generate content with a specific LLM
+      summary: Generate content with a specific provider's LLM
       parameters:
-        - name: llm
+        - name: provider
           in: path
           required: true
           schema:
             type: string
+            enum:
+              - groq
+              - openai
+              - cloudflare
+              - ollama
+              - google
       requestBody:
         required: true
         content:
@@ -55,46 +67,22 @@ paths:
                 properties:
                   content:
                     type: string
-  /llms/{llm}/v1/chat/completions:
-    post:
-      summary: Generate chat completion with a specific LLM
-      parameters:
-        - name: llm
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                model:
-                  type: string
-                messages:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      role:
-                        type: string
-                      content:
-                        type: string
-      responses:
-        "200":
-          description: Chat completion
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  content:
-                    type: string
   /health:
     get:
       summary: Health check
       responses:
         "200":
           description: Health check successful
+components:
+  schemas:
+    Model:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        owned_by:
+          type: string
+        created:
+          type: integer
