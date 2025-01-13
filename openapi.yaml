@@ -29,11 +29,11 @@ paths:
           schema:
             type: string
             enum:
+              - ollama
               - groq
               - openai
-              - cloudflare
-              - ollama
               - google
+              - cloudflare
       responses:
         "200":
           description: A list of models
@@ -53,11 +53,11 @@ paths:
           schema:
             type: string
             enum:
+              - ollama
               - groq
               - openai
-              - cloudflare
-              - ollama
               - google
+              - cloudflare
       requestBody:
         required: true
         content:
