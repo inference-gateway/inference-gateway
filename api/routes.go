@@ -64,7 +64,7 @@ func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- Mode
 	defer wg.Done()
 	resp, err := http.Get(url)
 	if err != nil {
-		ch <- ModelResponse{Provider: provider, Models: nil}
+		ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
 		return
 	}
 	defer resp.Body.Close()
