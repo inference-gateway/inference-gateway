@@ -17,7 +17,7 @@ data:
   # SERVER_IDLE_TIMEOUT: 120s
   # SERVER_TLS_CERT_PATH=
   # SERVER_TLS_KEY_PATH=
-  # OLLAMA_API_URL: "http://ollama.ollama:8080"
+  OLLAMA_API_URL: "http://ollama.ollama:8080"
   # GROQ_API_URL: "https://api.groq.com"
   # OPENAI_API_URL: "https://api.openai.com"
   # GOOGLE_AISTUDIO_API_URL: "https://generativelanguage.googleapis.com"
