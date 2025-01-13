@@ -10,9 +10,13 @@ import (
 // Config holds the configuration for the Inference Gateway.
 type Config struct {
 	// General settings
-	ApplicationName string `env:"APPLICATION_NAME, default=inference-gateway"`
-	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false"`
-	Environment     string `env:"ENVIRONMENT, default=production"`
+	ApplicationName  string `env:"APPLICATION_NAME, default=inference-gateway"`
+	EnableTelemetry  bool   `env:"ENABLE_TELEMETRY, default=false"`
+	Environment      string `env:"ENVIRONMENT, default=production"`
+	EnableAuth       bool   `env:"ENABLE_AUTH, default=false"`
+	OIDCIssuerURL    string `env:"OIDC_ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm"`
+	OIDCClientID     string `env:"OIDC_CLIENT_ID, default=inference-gateway-client"`
+	OIDCClientSecret string `env:"OIDC_CLIENT_SECRET"`
 
 	// Server settings
 	ServerHost         string        `env:"SERVER_HOST, default=127.0.0.1"`

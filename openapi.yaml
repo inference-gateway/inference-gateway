@@ -86,6 +86,14 @@ paths:
         "200":
           description: Health check successful
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Authentication is available but disabled by default.
+        To enable authentication, Set ENABLE_AUTH to true.
   schemas:
     Model:
       type: object

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	api "github.com/edenreich/inference-gateway/api"
+	middleware "github.com/edenreich/inference-gateway/api/middleware"
 	config "github.com/edenreich/inference-gateway/config"
 	gateway "github.com/edenreich/inference-gateway/gateway"
 	l "github.com/edenreich/inference-gateway/logger"
@@ -52,17 +53,23 @@ func main() {
 		defer span.End()
 	}
 
-	http.HandleFunc("/llms/ollama/", gateway.Create(cfg.OllamaAPIURL, "", "/llms/ollama/", tp, cfg.EnableTelemetry, logger))
-	http.HandleFunc("/llms/groq/", gateway.Create(cfg.GroqAPIURL, cfg.GroqAPIKey, "/llms/groq/", tp, cfg.EnableTelemetry, logger))
-	http.HandleFunc("/llms/openai/", gateway.Create(cfg.OpenaiAPIURL, cfg.OpenaiAPIKey, "/llms/openai/", tp, cfg.EnableTelemetry, logger))
-	http.HandleFunc("/llms/google/", gateway.Create(cfg.GoogleAIStudioURL, cfg.GoogleAIStudioKey, "/llms/google/", tp, cfg.EnableTelemetry, logger))
-	http.HandleFunc("/llms/cloudflare/", gateway.Create(cfg.CloudflareAPIURL, cfg.CloudflareAPIKey, "/llms/cloudflare/", tp, cfg.EnableTelemetry, logger))
+	oidcAuthenticator, err := middleware.NewOIDCAuthenticator(cfg)
+	if err != nil {
+		logger.Error("OIDC init error", err)
+		return
+	}
+
+	http.Handle("/llms/ollama/", oidcAuthenticator.Middleware(gateway.Create(cfg.OllamaAPIURL, "", "/llms/ollama/", tp, cfg.EnableTelemetry, logger)))
+	http.Handle("/llms/groq/", oidcAuthenticator.Middleware(gateway.Create(cfg.GroqAPIURL, cfg.GroqAPIKey, "/llms/groq/", tp, cfg.EnableTelemetry, logger)))
+	http.Handle("/llms/openai/", oidcAuthenticator.Middleware(gateway.Create(cfg.OpenaiAPIURL, cfg.OpenaiAPIKey, "/llms/openai/", tp, cfg.EnableTelemetry, logger)))
+	http.Handle("/llms/google/", oidcAuthenticator.Middleware(gateway.Create(cfg.GoogleAIStudioURL, cfg.GoogleAIStudioKey, "/llms/google/", tp, cfg.EnableTelemetry, logger)))
+	http.Handle("/llms/cloudflare/", oidcAuthenticator.Middleware(gateway.Create(cfg.CloudflareAPIURL, cfg.CloudflareAPIKey, "/llms/cloudflare/", tp, cfg.EnableTelemetry, logger)))
 
 	api := &api.RouterImpl{
 		Logger: logger,
 	}
-	http.HandleFunc("/llms", api.FetchAllModelsHandler)
-	http.HandleFunc("/health", api.Healthcheck)
+	http.Handle("/llms", oidcAuthenticator.Middleware(http.HandlerFunc(api.FetchAllModelsHandler)))
+	http.Handle("/health", http.HandlerFunc(api.Healthcheck))
 
 	server := &http.Server{
 		Addr:         cfg.ServerHost + ":" + cfg.ServerPort,
