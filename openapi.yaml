@@ -104,11 +104,11 @@ components:
         provider:
           type: string
           enum:
-            - groq
-            - openai
-            - cloudflare
-            - ollama
-            - google
+            - Ollama
+            - Groq
+            - OpenAI
+            - Google
+            - Cloudflare
         models:
           type: array
           items:
