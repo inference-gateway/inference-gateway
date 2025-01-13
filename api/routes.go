@@ -4,13 +4,17 @@ import (
 	"encoding/json"
 	"net/http"
 	"sync"
+
+	l "github.com/edenreich/inference-gateway/logger"
 )
 
 type Router interface {
 	FetchAllModelsHandler(w http.ResponseWriter, r *http.Request)
 }
 
-type RouterImpl struct{}
+type RouterImpl struct {
+	Logger l.Logger
+}
 
 func (router *RouterImpl) Healthcheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -32,7 +36,7 @@ func (router *RouterImpl) FetchAllModelsHandler(w http.ResponseWriter, r *http.R
 		"Groq":       "http://localhost:8080/llms/groq/openai/v1/models",
 		"OpenAI":     "http://localhost:8080/llms/openai/v1/models",
 		"Google":     "http://localhost:8080/llms/google/v1beta/models",
-		"Cloudflare": "http://localhost:8080/llms/cloudflare/ai/models",
+		"Cloudflare": "http://localhost:8080/llms/cloudflare/ai/finetunes/public",
 	}
 
 	ch := make(chan ModelResponse, len(modelProviders))
@@ -70,10 +74,22 @@ func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- Mode
 			Models []interface{} `json:"models"`
 		}
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			ch <- ModelResponse{Provider: provider, Models: nil}
+			ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
 			return
 		}
 		ch <- ModelResponse{Provider: provider, Models: response.Models}
+		return
+	}
+
+	if provider == "Cloudflare" {
+		var response struct {
+			Result []interface{} `json:"result"`
+		}
+		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
+			return
+		}
+		ch <- ModelResponse{Provider: provider, Models: response.Result}
 		return
 	}
 
@@ -82,7 +98,7 @@ func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- Mode
 		Data   []interface{} `json:"data"`
 	}
 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		ch <- ModelResponse{Provider: provider, Models: nil}
+		ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
 		return
 	}
 	ch <- ModelResponse{Provider: provider, Models: response.Data}

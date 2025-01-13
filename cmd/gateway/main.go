@@ -58,7 +58,9 @@ func main() {
 	http.HandleFunc("/llms/google/", gateway.Create(cfg.GoogleAIStudioURL, cfg.GoogleAIStudioKey, "/llms/google/", tp, cfg.EnableTelemetry, logger))
 	http.HandleFunc("/llms/cloudflare/", gateway.Create(cfg.CloudflareAPIURL, cfg.CloudflareAPIKey, "/llms/cloudflare/", tp, cfg.EnableTelemetry, logger))
 
-	api := &api.RouterImpl{}
+	api := &api.RouterImpl{
+		Logger: logger,
+	}
 	http.HandleFunc("/llms", api.FetchAllModelsHandler)
 	http.HandleFunc("/health", api.Healthcheck)
 
