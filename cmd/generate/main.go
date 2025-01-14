@@ -201,7 +201,7 @@ func generateMD(filePath string, comments map[string]string) {
 	t := v.Type()
 
 	var sb strings.Builder
-	sb.WriteString("# Inference Gateway Configuration\n\n")
+	sb.WriteString("# Inference Gateway Configuration\n")
 
 	currentGroup := ""
 	for i := 0; i < t.NumField(); i++ {
