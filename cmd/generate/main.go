@@ -140,6 +140,11 @@ func generateConfigMap(filePath string, comments map[string]string) {
 		for _, part := range envParts {
 			part = strings.Trim(part, " ")
 			if strings.HasPrefix(part, "default=") {
+				if envName == "OLLAMA_API_URL" {
+					defaultValue = "http://ollama.ollama:8080"
+					break
+				}
+
 				defaultValue = strings.TrimPrefix(part, "default=")
 				break
 			}
