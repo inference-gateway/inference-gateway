@@ -55,7 +55,7 @@ func main() {
 
 	oidcAuthenticator, err := middleware.NewOIDCAuthenticator(cfg)
 	if err != nil {
-		logger.Error("OIDC init error", err)
+		logger.Error("Failed to initialize OIDC authenticator: %v", err)
 		return
 	}
 
