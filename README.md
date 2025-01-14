@@ -51,34 +51,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 
 ## Configuration
 
-The following environment variables could be set for the Inference Gateway:
-
-| Variable               | Description                         | Default    |
-| ---------------------- | ----------------------------------- | ---------- |
-| `ENVIRONMENT`          | `production` or `development`.      | production |
-| `ENABLE_TELEMETRY`     | Enable telemetry for the server.    | false      |
-| `SERVER_PORT`          | The port the server will listen on. | 8080       |
-| `SERVER_READ_TIMEOUT`  | The server read timeout.            | 30s        |
-| `SERVER_WRITE_TIMEOUT` | The server write timeout.           | 30s        |
-| `SERVER_IDLE_TIMEOUT`  | The server idle timeout.            | 120s       |
-| `SERVER_TLS_CERT_PATH` | The path to the TLS certificate.    | ""         |
-| `SERVER_TLS_KEY_PATH`  | The path to the TLS key.            | ""         |
-
-The following environment variables could be set for the LLMs APIs:
-
-| Variable                  | Description                                | Default                                                    |
-| ------------------------- | ------------------------------------------ | ---------------------------------------------------------- |
-| `OLLAMA_API_URL`          | The URL for Ollama API.                    | ""                                                         |
-| `GROQ_API_URL`            | The URL for Groq Cloud API.                | https://api.groq.com                                       |
-| `GROQ_API_KEY`            | The Access token for Groq Cloud API.       | ""                                                         |
-| `OPENAI_API_URL`          | The URL for OpenAI API.                    | https://api.openai.com                                     |
-| `OPENAI_API_KEY`          | The Access token for OpenAI API.           | ""                                                         |
-| `GOOGLE_AISTUDIO_API_URL` | The URL for Google AI Studio API.          | https://generativelanguage.googleapis.com                  |
-| `GOOGLE_AISTUDIO_API_KEY` | The Access token for Google AI Studio API. | ""                                                         |
-| `CLOUDFLARE_API_URL`      | The URL for Cloudflare API.                | https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID} |
-| `CLOUDFLARE_API_KEY`      | The Access token for Cloudflare API.       | ""                                                         |
-
-If the API key is not set, the API will not be available.
+The Inference Gateway can be configured using environment variables. The following [environment variables](./Configurations.md) are supported.
 
 ## Examples
 
