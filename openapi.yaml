@@ -27,13 +27,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            enum:
-              - ollama
-              - groq
-              - openai
-              - google
-              - cloudflare
+            $ref: "#/components/schemas/Providers"
       requestBody:
         required: true
         content:
@@ -63,13 +57,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            enum:
-              - ollama
-              - groq
-              - openai
-              - google
-              - cloudflare
+            $ref: "#/components/schemas/Providers"
       responses:
         "200":
           description: A list of models
@@ -87,13 +75,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            enum:
-              - ollama
-              - groq
-              - openai
-              - google
-              - cloudflare
+            $ref: "#/components/schemas/Providers"
       requestBody:
         required: true
         content:
@@ -146,13 +128,7 @@ components:
       type: object
       properties:
         provider:
-          type: string
-          enum:
-            - Ollama
-            - Groq
-            - OpenAI
-            - Google
-            - Cloudflare
+          $ref: "#/components/schemas/Providers"
         models:
           type: array
           items:
@@ -166,3 +142,11 @@ components:
                 type: string
               created:
                 type: integer
+    Providers:
+      type: string
+      enum:
+        - ollama
+        - groq
+        - openai
+        - google
+        - cloudflare

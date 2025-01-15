@@ -33,11 +33,11 @@ type ModelResponse struct {
 func (router *RouterImpl) FetchAllModelsHandler(w http.ResponseWriter, r *http.Request) {
 	var wg sync.WaitGroup
 	modelProviders := map[string]string{
-		"Ollama":     "http://localhost:8080/llms/ollama/v1/models",
-		"Groq":       "http://localhost:8080/llms/groq/openai/v1/models",
-		"OpenAI":     "http://localhost:8080/llms/openai/v1/models",
-		"Google":     "http://localhost:8080/llms/google/v1beta/models",
-		"Cloudflare": "http://localhost:8080/llms/cloudflare/ai/finetunes/public",
+		"ollama":     "http://localhost:8080/llms/ollama/v1/models",
+		"groq":       "http://localhost:8080/llms/groq/openai/v1/models",
+		"openai":     "http://localhost:8080/llms/openai/v1/models",
+		"google":     "http://localhost:8080/llms/google/v1beta/models",
+		"cloudflare": "http://localhost:8080/llms/cloudflare/ai/finetunes/public",
 	}
 
 	ch := make(chan ModelResponse, len(modelProviders))
