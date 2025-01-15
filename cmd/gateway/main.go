@@ -69,6 +69,7 @@ func main() {
 		Logger: logger,
 	}
 	http.Handle("/llms", oidcAuthenticator.Middleware(http.HandlerFunc(api.FetchAllModelsHandler)))
+	http.Handle("/llms/{provider}/generate", oidcAuthenticator.Middleware(http.HandlerFunc(api.GenerateProvidersTokenHandler)))
 	http.Handle("/health", http.HandlerFunc(api.Healthcheck))
 
 	server := &http.Server{

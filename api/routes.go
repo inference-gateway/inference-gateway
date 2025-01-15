@@ -2,7 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	l "github.com/edenreich/inference-gateway/logger"
@@ -16,13 +18,37 @@ type RouterImpl struct {
 	Logger l.Logger
 }
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+type Response struct {
+	Message string `json:"message"`
+}
+
+func (router *RouterImpl) errorResponseJSON(w http.ResponseWriter, err error, status int) {
+	var response ErrorResponse
+	response.Error = err.Error()
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(&response)
+	if err != nil {
+		router.Logger.Error("response failed", err)
+	}
+	http.Error(w, err.Error(), status)
+}
+
+func (router *RouterImpl) responseJSON(w http.ResponseWriter, data interface{}, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	err := json.NewEncoder(w).Encode(data)
+	if err != nil {
+		router.Logger.Error("response failed", err)
+	}
+}
+
 func (router *RouterImpl) Healthcheck(w http.ResponseWriter, r *http.Request) {
 	router.Logger.Debug("Healthcheck")
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	router.responseJSON(w, Response{Message: "OK"}, http.StatusOK)
 }
 
 type ModelResponse struct {
@@ -54,11 +80,7 @@ func (router *RouterImpl) FetchAllModelsHandler(w http.ResponseWriter, r *http.R
 		allModels = append(allModels, model)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(allModels); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	router.responseJSON(w, allModels, http.StatusOK)
 }
 
 func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- ModelResponse) {
@@ -70,7 +92,7 @@ func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- Mode
 	}
 	defer resp.Body.Close()
 
-	if provider == "Google" {
+	if provider == "google" {
 		var response struct {
 			Models []interface{} `json:"models"`
 		}
@@ -82,7 +104,7 @@ func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- Mode
 		return
 	}
 
-	if provider == "Cloudflare" {
+	if provider == "cloudflare" {
 		var response struct {
 			Result []interface{} `json:"result"`
 		}
@@ -103,4 +125,66 @@ func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- Mode
 		return
 	}
 	ch <- ModelResponse{Provider: provider, Models: response.Data}
+}
+
+type GenerateRequest struct {
+	Model  string `json:"model"`
+	Prompt string `json:"prompt"`
+}
+
+type GenerateResponse struct {
+	Provider string `json:"provider"`
+	Response string `json:"response"`
+}
+
+func (router *RouterImpl) GenerateProvidersTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var req GenerateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		router.errorResponseJSON(w, fmt.Errorf("invalid request payload. %w", err), http.StatusBadRequest)
+		return
+	}
+
+	provider := r.PathValue("provider")
+	providers := map[string]string{
+		"ollama":     "http://localhost:8080/llms/ollama/api/generate",
+		"groq":       "http://localhost:8080/llms/groq/openai/v1/chat/completions",
+		"openai":     "http://localhost:8080/llms/openai/v1/completions",
+		"google":     "http://localhost:8080/llms/google/v1beta/models/{model}:generateContent",
+		"cloudflare": "http://localhost:8080/llms/cloudflare/ai/run/@cf/meta/{model}",
+	}
+
+	url, ok := providers[provider]
+	if !ok {
+		router.errorResponseJSON(w, fmt.Errorf("requested unsupported provider"), http.StatusBadRequest)
+		return
+	}
+
+	if provider == "google" || provider == "cloudflare" {
+		url = strings.Replace(url, "{model}", req.Model, 1)
+	}
+
+	response := generateToken(url, provider, req)
+	router.responseJSON(w, response, http.StatusOK)
+}
+
+func generateToken(url string, provider string, req GenerateRequest) GenerateResponse {
+	payload, err := json.Marshal(req)
+	if err != nil {
+		return GenerateResponse{Provider: provider, Response: "Failed to marshal request payload"}
+	}
+
+	resp, err := http.Post(url, "application/json", strings.NewReader(string(payload)))
+	if err != nil {
+		return GenerateResponse{Provider: provider, Response: "Failed to generate token"}
+	}
+	defer resp.Body.Close()
+
+	var response struct {
+		Content string `json:"content"`
+	}
+	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return GenerateResponse{Provider: provider, Response: "Failed to decode response"}
+	}
+
+	return GenerateResponse{Provider: provider, Response: response.Content}
 }
