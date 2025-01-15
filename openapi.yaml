@@ -19,6 +19,42 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ProviderModels"
+  /llms/{provider}/generate:
+    post:
+      summary: Generate content with a specific provider's LLM
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - ollama
+              - groq
+              - openai
+              - google
+              - cloudflare
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                prompt:
+                  type: string
+      responses:
+        "200":
+          description: Generated content
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: string
   /llms/{provider}/v1/models:
     get:
       summary: List models of a specific provider
