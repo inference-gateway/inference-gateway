@@ -8,11 +8,12 @@ import (
 	oidc "github.com/coreos/go-oidc"
 	config "github.com/edenreich/inference-gateway/config"
 	logger "github.com/edenreich/inference-gateway/logger"
+	gin "github.com/gin-gonic/gin"
 	oauth2 "golang.org/x/oauth2"
 )
 
 type OIDCAuthenticator interface {
-	Middleware(next http.Handler) http.Handler
+	Middleware() gin.HandlerFunc
 }
 
 type OIDCAuthenticatorImpl struct {
@@ -50,12 +51,20 @@ func NewOIDCAuthenticator(logger logger.Logger, cfg config.Config) (OIDCAuthenti
 	}, nil
 }
 
-// Verify the ID token and if authenticated pass the request to the next handler
-func (a *OIDCAuthenticatorImpl) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHeader := r.Header.Get("Authorization")
+// Noop implementation of the OIDCAuthenticator interface
+func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+	}
+}
+
+// Middleware implementation of the OIDCAuthenticator interface
+func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
 			return
 		}
 
@@ -63,18 +72,13 @@ func (a *OIDCAuthenticatorImpl) Middleware(next http.Handler) http.Handler {
 		idToken, err := a.verifier.Verify(context.Background(), token)
 		if err != nil {
 			a.logger.Error("Failed to verify ID token: %v", err)
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
 			return
 		}
 
-		type contextKey string
-		const idTokenKey contextKey = "idToken"
-		ctx := context.WithValue(r.Context(), idTokenKey, idToken)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
+		c.Set("idToken", idToken)
 
-// Noop implementation of the OIDCAuthenticator interface
-func (a *OIDCAuthenticatorNoop) Middleware(next http.Handler) http.Handler {
-	return next
+		c.Next()
+	}
 }

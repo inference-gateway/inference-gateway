@@ -5,7 +5,6 @@ RUN go mod download
 
 COPY config ./config
 COPY logger ./logger
-COPY gateway ./gateway
 COPY otel ./otel
 COPY cmd ./cmd
 COPY api ./api

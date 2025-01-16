@@ -2,20 +2,33 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"strings"
 	"sync"
 
+	config "github.com/edenreich/inference-gateway/config"
 	l "github.com/edenreich/inference-gateway/logger"
+	"github.com/edenreich/inference-gateway/otel"
+	"github.com/gin-gonic/gin"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Router interface {
-	FetchAllModelsHandler(w http.ResponseWriter, r *http.Request)
+	NotFoundHandler(c *gin.Context)
+	ProxyHandler(c *gin.Context)
+	HealthcheckHandler(c *gin.Context)
+	FetchAllModelsHandler(c *gin.Context)
+	GenerateProvidersTokenHandler(c *gin.Context)
+	ValidateProvider(provider string) (*Provider, bool)
 }
 
 type RouterImpl struct {
-	Logger l.Logger
+	cfg    config.Config
+	logger l.Logger
+	tp     otel.TracerProvider
 }
 
 type ErrorResponse struct {
@@ -26,29 +39,89 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func (router *RouterImpl) errorResponseJSON(w http.ResponseWriter, err error, status int) {
-	var response ErrorResponse
-	response.Error = err.Error()
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(&response)
-	if err != nil {
-		router.Logger.Error("response failed", err)
-	}
-	http.Error(w, err.Error(), status)
-}
-
-func (router *RouterImpl) responseJSON(w http.ResponseWriter, data interface{}, status int) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	err := json.NewEncoder(w).Encode(data)
-	if err != nil {
-		router.Logger.Error("response failed", err)
+func NewRouter(cfg config.Config, logger l.Logger, tp otel.TracerProvider) Router {
+	return &RouterImpl{
+		cfg,
+		logger,
+		tp,
 	}
 }
 
-func (router *RouterImpl) Healthcheck(w http.ResponseWriter, r *http.Request) {
-	router.Logger.Debug("Healthcheck")
-	router.responseJSON(w, Response{Message: "OK"}, http.StatusOK)
+type Provider struct {
+	Name  string `json:"name"`
+	URL   string `json:"url"`
+	Token string `json:"token"`
+}
+
+func (router *RouterImpl) ValidateProvider(provider string) (*Provider, bool) {
+	cfg := router.cfg
+	providers := map[string]Provider{
+		"ollama":     {Name: "Ollama", URL: cfg.OllamaAPIURL, Token: ""},
+		"groq":       {Name: "Groq", URL: cfg.GroqAPIURL, Token: cfg.GroqAPIKey},
+		"openai":     {Name: "OpenAI", URL: cfg.OpenaiAPIURL, Token: cfg.OpenaiAPIKey},
+		"google":     {Name: "Google", URL: cfg.GoogleAIStudioURL, Token: cfg.GoogleAIStudioKey},
+		"cloudflare": {Name: "Cloudflare", URL: cfg.CloudflareAPIURL, Token: cfg.CloudflareAPIKey},
+	}
+
+	p, ok := providers[provider]
+	if !ok {
+		return nil, false
+	}
+
+	return &p, ok
+}
+
+func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
+	router.logger.Error("Requested route is not found", nil)
+	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
+}
+
+func (router *RouterImpl) ProxyHandler(c *gin.Context) {
+	p := c.Param("provider")
+	provider, ok := router.ValidateProvider(p)
+	if !ok {
+		router.logger.Error("Requested unsupported provider", nil, "provider", provider)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
+		return
+	}
+
+	if router.cfg.EnableTelemetry {
+		ctx := c.Request.Context()
+		_, span := router.tp.Tracer("inference-gateway").Start(ctx, "proxy-request")
+		defer span.End()
+		span.AddEvent("Proxying request", trace.WithAttributes(
+			semconv.HTTPMethodKey.String(c.Request.Method),
+			semconv.HTTPTargetKey.String(c.Request.URL.String()),
+			semconv.HTTPRequestContentLengthKey.Int64(c.Request.ContentLength),
+		))
+	}
+
+	c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/proxy/"+p)
+
+	if provider.Token != "" && provider.Name != "Ollama" && provider.Name != "Google" {
+		c.Request.Header.Set("Authorization", "Bearer "+provider.Token)
+	}
+
+	if provider.Name == "Google" {
+		query := c.Request.URL.Query()
+		query.Set("key", provider.Token)
+		c.Request.URL.RawQuery = query.Encode()
+	}
+
+	remote, _ := url.Parse(provider.URL)
+	proxy := httputil.NewSingleHostReverseProxy(remote)
+	proxy.Director = func(req *http.Request) {
+		req.Header = c.Request.Header
+		req.Host = remote.Host
+		req.URL.Host = remote.Host
+		req.URL.Scheme = remote.Scheme
+	}
+	proxy.ServeHTTP(c.Writer, c.Request)
+}
+
+func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
+	router.logger.Debug("Healthcheck")
+	c.JSON(http.StatusOK, Response{Message: "OK"})
 }
 
 type ModelResponse struct {
@@ -56,14 +129,14 @@ type ModelResponse struct {
 	Models   []interface{} `json:"models"`
 }
 
-func (router *RouterImpl) FetchAllModelsHandler(w http.ResponseWriter, r *http.Request) {
+func (router *RouterImpl) FetchAllModelsHandler(c *gin.Context) {
 	var wg sync.WaitGroup
 	modelProviders := map[string]string{
-		"ollama":     "http://localhost:8080/llms/ollama/v1/models",
-		"groq":       "http://localhost:8080/llms/groq/openai/v1/models",
-		"openai":     "http://localhost:8080/llms/openai/v1/models",
-		"google":     "http://localhost:8080/llms/google/v1beta/models",
-		"cloudflare": "http://localhost:8080/llms/cloudflare/ai/finetunes/public",
+		"ollama":     "http://localhost:8080/proxy/ollama/v1/models",
+		"groq":       "http://localhost:8080/proxy/groq/openai/v1/models",
+		"openai":     "http://localhost:8080/proxy/openai/v1/models",
+		"google":     "http://localhost:8080/proxy/google/v1beta/models",
+		"cloudflare": "http://localhost:8080/proxy/cloudflare/ai/finetunes/public",
 	}
 
 	ch := make(chan ModelResponse, len(modelProviders))
@@ -80,7 +153,7 @@ func (router *RouterImpl) FetchAllModelsHandler(w http.ResponseWriter, r *http.R
 		allModels = append(allModels, model)
 	}
 
-	router.responseJSON(w, allModels, http.StatusOK)
+	c.JSON(http.StatusOK, allModels)
 }
 
 func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- ModelResponse) {
@@ -137,25 +210,25 @@ type GenerateResponse struct {
 	Response string `json:"response"`
 }
 
-func (router *RouterImpl) GenerateProvidersTokenHandler(w http.ResponseWriter, r *http.Request) {
+func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	var req GenerateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		router.errorResponseJSON(w, fmt.Errorf("invalid request payload. %w", err), http.StatusBadRequest)
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
 		return
 	}
 
-	provider := r.PathValue("provider")
+	provider := c.Param("provider")
 	providers := map[string]string{
-		"ollama":     "http://localhost:8080/llms/ollama/api/generate",
-		"groq":       "http://localhost:8080/llms/groq/openai/v1/chat/completions",
-		"openai":     "http://localhost:8080/llms/openai/v1/completions",
-		"google":     "http://localhost:8080/llms/google/v1beta/models/{model}:generateContent",
-		"cloudflare": "http://localhost:8080/llms/cloudflare/ai/run/@cf/meta/{model}",
+		"ollama":     "http://localhost:8080/proxy/ollama/api/generate",
+		"groq":       "http://localhost:8080/proxy/groq/openai/v1/chat/completions",
+		"openai":     "http://localhost:8080/proxy/openai/v1/completions",
+		"google":     "http://localhost:8080/proxy/google/v1beta/models/{model}:generateContent",
+		"cloudflare": "http://localhost:8080/proxy/cloudflare/ai/run/@cf/meta/{model}",
 	}
 
 	url, ok := providers[provider]
 	if !ok {
-		router.errorResponseJSON(w, fmt.Errorf("requested unsupported provider"), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
 		return
 	}
 
@@ -164,7 +237,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(w http.ResponseWriter, r
 	}
 
 	response := generateToken(url, provider, req)
-	router.responseJSON(w, response, http.StatusOK)
+	c.JSON(http.StatusOK, response)
 }
 
 func generateToken(url string, provider string, req GenerateRequest) GenerateResponse {
