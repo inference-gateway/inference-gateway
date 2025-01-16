@@ -112,6 +112,9 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		c.Request.URL.RawQuery = query.Encode()
 	}
 
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Request.Header.Set("Accept", "application/json")
+
 	remote, _ := url.Parse(provider.URL)
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 	proxy.Director = func(req *http.Request) {
@@ -217,6 +220,18 @@ type GenerateRequestGroq struct {
 	} `json:"messages"`
 }
 
+type GenerateRequestGoogleParts struct {
+	Text string `json:"text"`
+}
+
+type GenerateRequestGoogleContents struct {
+	Parts []GenerateRequestGoogleParts `json:"parts"`
+}
+
+type GenerateRequestGoogle struct {
+	Contents GenerateRequestGoogleContents `json:"contents"`
+}
+
 type ResponseTokens struct {
 	Role    string `json:"role"`
 	Model   string `json:"model"`
@@ -238,6 +253,23 @@ type GenerateResponseGroq struct {
 	Choices []struct {
 		Message GenerateResponseGroqMessage `json:"message"`
 	} `json:"choices"`
+}
+
+type GenerateResponseGooglePart struct {
+	Text string `json:"text"`
+}
+
+type GenerateResponseGoogleContent struct {
+	Parts []GenerateResponseGooglePart `json:"parts"`
+	Role  string                       `json:"role"`
+}
+
+type GenerateResponseGooglCandidate struct {
+	Content GenerateResponseGoogleContent `json:"content"`
+}
+
+type GenerateResponseGoogle struct {
+	Candidates []GenerateResponseGooglCandidate `json:"candidates"`
 }
 
 func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
@@ -278,7 +310,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 
 	response, err := generateToken(provider, req.Model, req.Prompt)
 	if err != nil {
-		router.logger.Error("Failed to generate token", nil, "provider", provider)
+		router.logger.Error("Failed to generate token", err, "provider", provider)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
 		return
 	}
@@ -321,6 +353,40 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 			Role:    groqResponse.Choices[0].Message.Role,
 			Model:   model,
 			Content: groqResponse.Choices[0].Message.Content,
+		}}, nil
+	}
+
+	if provider.Name == "Google" {
+		payload := GenerateRequestGoogle{
+			Contents: GenerateRequestGoogleContents{
+				Parts: []GenerateRequestGoogleParts{
+					{
+						Text: prompt,
+					},
+				},
+			},
+		}
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+
+		resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+		defer resp.Body.Close()
+
+		var response GenerateResponseGoogle
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+
+		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
+			Role:    response.Candidates[0].Content.Role,
+			Model:   model,
+			Content: response.Candidates[0].Content.Parts[0].Text,
 		}}, nil
 	}
 
