@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -221,6 +222,14 @@ type GenerateRequestGroq struct {
 	} `json:"messages"`
 }
 
+type GenerateRequestOpenAI struct {
+	Model    string `json:"model"`
+	Messages []struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	} `json:"messages"`
+}
+
 type GenerateRequestGoogleParts struct {
 	Text string `json:"text"`
 }
@@ -254,6 +263,13 @@ type GenerateResponseGroqMessage struct {
 }
 
 type GenerateResponseGroq struct {
+	Model   string `json:"model"`
+	Choices []struct {
+		Message GenerateResponseGroqMessage `json:"message"`
+	} `json:"choices"`
+}
+
+type GenerateResponseOpenAI struct {
 	Model   string `json:"model"`
 	Choices []struct {
 		Message GenerateResponseGroqMessage `json:"message"`
@@ -302,7 +318,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	providersEndpoints := map[string]string{
 		"Ollama":     "/api/generate",
 		"Groq":       "/openai/v1/chat/completions",
-		"Openai":     "/v1/completions",
+		"OpenAI":     "/v1/completions",
 		"Google":     "/v1beta/models/{model}:generateContent",
 		"Cloudflare": "/ai/run/@cf/meta/{model}",
 	}
@@ -369,6 +385,43 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 		}}, nil
 	}
 
+	if provider.Name == "OpenAI" {
+		payload := GenerateRequestOpenAI{
+			Model: model,
+			Messages: []struct {
+				Role    string `json:"role"`
+				Content string `json:"content"`
+			}{
+				{
+					Role:    "user",
+					Content: prompt,
+				},
+			},
+		}
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+
+		resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+		defer resp.Body.Close()
+
+		var openAIResponse GenerateResponseOpenAI
+		err = json.NewDecoder(resp.Body).Decode(&openAIResponse)
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+
+		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
+			Role:    openAIResponse.Choices[0].Message.Role,
+			Model:   model,
+			Content: openAIResponse.Choices[0].Message.Content,
+		}}, nil
+	}
+
 	if provider.Name == "Google" {
 		payload := GenerateRequestGoogle{
 			Contents: GenerateRequestGoogleContents{
@@ -431,5 +484,5 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 		}}, nil
 	}
 
-	return GenerateResponse{}, nil
+	return GenerateResponse{}, errors.New("provider not implemented")
 }
