@@ -115,13 +115,14 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Request.Header.Set("Accept", "application/json")
 
-	remote, _ := url.Parse(provider.URL)
+	remote, _ := url.Parse(provider.URL + c.Request.URL.Path)
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 	proxy.Director = func(req *http.Request) {
 		req.Header = c.Request.Header
 		req.Host = remote.Host
 		req.URL.Host = remote.Host
 		req.URL.Scheme = remote.Scheme
+		req.URL.Path = remote.Path
 	}
 	proxy.ServeHTTP(c.Writer, c.Request)
 }
@@ -232,6 +233,10 @@ type GenerateRequestGoogle struct {
 	Contents GenerateRequestGoogleContents `json:"contents"`
 }
 
+type GenerateRequestCloudflare struct {
+	Prompt string `json:"prompt"`
+}
+
 type ResponseTokens struct {
 	Role    string `json:"role"`
 	Model   string `json:"model"`
@@ -270,6 +275,10 @@ type GenerateResponseGooglCandidate struct {
 
 type GenerateResponseGoogle struct {
 	Candidates []GenerateResponseGooglCandidate `json:"candidates"`
+}
+
+type GenerateResponseCloudflare struct {
+	Result string `json:"result"`
 }
 
 func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
@@ -387,6 +396,34 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 			Role:    response.Candidates[0].Content.Role,
 			Model:   model,
 			Content: response.Candidates[0].Content.Parts[0].Text,
+		}}, nil
+	}
+
+	if provider.Name == "Cloudflare" {
+		payload := GenerateRequestCloudflare{
+			Prompt: prompt,
+		}
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+
+		resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+		defer resp.Body.Close()
+
+		var response GenerateResponseCloudflare
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+
+		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
+			Role:    "user",
+			Model:   model,
+			Content: response.Result,
 		}}, nil
 	}
 
