@@ -70,6 +70,7 @@ func main() {
 	r.GET("/llms", api.FetchAllModelsHandler)
 	r.POST("/llms/:provider/generate", api.GenerateProvidersTokenHandler)
 	r.GET("/proxy/:provider/*path", api.ProxyHandler)
+	r.POST("/proxy/:provider/*path", api.ProxyHandler)
 	r.GET("/health", api.HealthcheckHandler)
 	r.NoRoute(api.NotFoundHandler)
 
