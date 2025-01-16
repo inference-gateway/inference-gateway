@@ -10,7 +10,7 @@ import (
 	"time"
 
 	api "github.com/edenreich/inference-gateway/api"
-	middleware "github.com/edenreich/inference-gateway/api/middlewares"
+	middlewares "github.com/edenreich/inference-gateway/api/middlewares"
 	config "github.com/edenreich/inference-gateway/config"
 	l "github.com/edenreich/inference-gateway/logger"
 	otel "github.com/edenreich/inference-gateway/otel"
@@ -53,7 +53,7 @@ func main() {
 		defer span.End()
 	}
 
-	oidcAuthenticator, err := middleware.NewOIDCAuthenticator(logger, cfg)
+	oidcAuthenticator, err := middlewares.NewOIDCAuthenticator(logger, cfg)
 	if err != nil {
 		logger.Error("Failed to initialize OIDC authenticator: %v", err)
 		return
