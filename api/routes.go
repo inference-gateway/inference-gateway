@@ -35,7 +35,7 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-type Response struct {
+type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
@@ -48,19 +48,20 @@ func NewRouter(cfg config.Config, logger l.Logger, tp otel.TracerProvider) Route
 }
 
 type Provider struct {
-	Name  string `json:"name"`
-	URL   string `json:"url"`
-	Token string `json:"token"`
+	Name     string `json:"name"`
+	URL      string `json:"url"`
+	ProxyURL string `json:"proxy_url"`
+	Token    string `json:"token"`
 }
 
 func (router *RouterImpl) ValidateProvider(provider string) (*Provider, bool) {
 	cfg := router.cfg
 	providers := map[string]Provider{
-		"ollama":     {Name: "Ollama", URL: cfg.OllamaAPIURL, Token: ""},
-		"groq":       {Name: "Groq", URL: cfg.GroqAPIURL, Token: cfg.GroqAPIKey},
-		"openai":     {Name: "OpenAI", URL: cfg.OpenaiAPIURL, Token: cfg.OpenaiAPIKey},
-		"google":     {Name: "Google", URL: cfg.GoogleAIStudioURL, Token: cfg.GoogleAIStudioKey},
-		"cloudflare": {Name: "Cloudflare", URL: cfg.CloudflareAPIURL, Token: cfg.CloudflareAPIKey},
+		"ollama":     {Name: "Ollama", URL: cfg.OllamaAPIURL, ProxyURL: "http://localhost:8080/proxy/ollama", Token: ""},
+		"groq":       {Name: "Groq", URL: cfg.GroqAPIURL, ProxyURL: "http://localhost:8080/proxy/groq", Token: cfg.GroqAPIKey},
+		"openai":     {Name: "OpenAI", URL: cfg.OpenaiAPIURL, ProxyURL: "http://localhost:8080/proxy/openai", Token: cfg.OpenaiAPIKey},
+		"google":     {Name: "Google", URL: cfg.GoogleAIStudioURL, ProxyURL: "http://localhost:8080/proxy/google", Token: cfg.GoogleAIStudioKey},
+		"cloudflare": {Name: "Cloudflare", URL: cfg.CloudflareAPIURL, ProxyURL: "http://localhost:8080/proxy/cloudflare", Token: cfg.CloudflareAPIKey},
 	}
 
 	p, ok := providers[provider]
@@ -124,7 +125,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 
 func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 	router.logger.Debug("Healthcheck")
-	c.JSON(http.StatusOK, Response{Message: "OK"})
+	c.JSON(http.StatusOK, ResponseJSON{Message: "OK"})
 }
 
 type ModelResponse struct {
@@ -208,9 +209,35 @@ type GenerateRequest struct {
 	Prompt string `json:"prompt"`
 }
 
+type GenerateRequestGroq struct {
+	Model    string `json:"model"`
+	Messages []struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	} `json:"messages"`
+}
+
+type ResponseTokens struct {
+	Role    string `json:"role"`
+	Model   string `json:"model"`
+	Content string `json:"content"`
+}
+
 type GenerateResponse struct {
-	Provider string `json:"provider"`
-	Response string `json:"response"`
+	Provider string         `json:"provider"`
+	Response ResponseTokens `json:"response"`
+}
+
+type GenerateResponseGroqMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type GenerateResponseGroq struct {
+	Model   string `json:"model"`
+	Choices []struct {
+		Message GenerateResponseGroqMessage `json:"message"`
+	} `json:"choices"`
 }
 
 func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
@@ -220,47 +247,82 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	provider := c.Param("provider")
-	providers := map[string]string{
-		"ollama":     "http://localhost:8080/proxy/ollama/api/generate",
-		"groq":       "http://localhost:8080/proxy/groq/openai/v1/chat/completions",
-		"openai":     "http://localhost:8080/proxy/openai/v1/completions",
-		"google":     "http://localhost:8080/proxy/google/v1beta/models/{model}:generateContent",
-		"cloudflare": "http://localhost:8080/proxy/cloudflare/ai/run/@cf/meta/{model}",
-	}
-
-	url, ok := providers[provider]
+	provider, ok := router.ValidateProvider(c.Param("provider"))
 	if !ok {
+		router.logger.Error("Requested unsupported provider", nil, "provider", provider)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
 		return
 	}
 
-	if provider == "google" || provider == "cloudflare" {
+	providersEndpoints := map[string]string{
+		"Ollama":     "/api/generate",
+		"Groq":       "/openai/v1/chat/completions",
+		"Openai":     "/v1/completions",
+		"Google":     "/v1beta/models/{model}:generateContent",
+		"Cloudflare": "/ai/run/@cf/meta/{model}",
+	}
+
+	url, ok := providersEndpoints[provider.Name]
+	if !ok {
+		router.logger.Error("Requested unsupported provider", nil, "provider", provider)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
+		return
+	}
+
+	if provider.Name == "Google" || provider.Name == "Cloudflare" {
 		url = strings.Replace(url, "{model}", req.Model, 1)
 	}
 
-	response := generateToken(url, provider, req)
+	provider.URL = provider.ProxyURL + url
+	var response GenerateResponse
+
+	response, err := generateToken(provider, req.Model, req.Prompt)
+	if err != nil {
+		router.logger.Error("Failed to generate token", nil, "provider", provider)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
+		return
+	}
+
 	c.JSON(http.StatusOK, response)
 }
 
-func generateToken(url string, provider string, req GenerateRequest) GenerateResponse {
-	payload, err := json.Marshal(req)
-	if err != nil {
-		return GenerateResponse{Provider: provider, Response: "Failed to marshal request payload"}
+func generateToken(provider *Provider, model string, prompt string) (GenerateResponse, error) {
+	if provider.Name == "Groq" {
+		payload := GenerateRequestGroq{
+			Model: model,
+			Messages: []struct {
+				Role    string `json:"role"`
+				Content string `json:"content"`
+			}{
+				{
+					Role:    "user",
+					Content: prompt,
+				},
+			},
+		}
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+
+		resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+		defer resp.Body.Close()
+
+		var groqResponse GenerateResponseGroq
+		err = json.NewDecoder(resp.Body).Decode(&groqResponse)
+		if err != nil {
+			return GenerateResponse{}, err
+		}
+
+		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
+			Role:    groqResponse.Choices[0].Message.Role,
+			Model:   model,
+			Content: groqResponse.Choices[0].Message.Content,
+		}}, nil
 	}
 
-	resp, err := http.Post(url, "application/json", strings.NewReader(string(payload)))
-	if err != nil {
-		return GenerateResponse{Provider: provider, Response: "Failed to generate token"}
-	}
-	defer resp.Body.Close()
-
-	var response struct {
-		Content string `json:"content"`
-	}
-	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return GenerateResponse{Provider: provider, Response: "Failed to decode response"}
-	}
-
-	return GenerateResponse{Provider: provider, Response: response.Content}
+	return GenerateResponse{}, nil
 }
