@@ -277,8 +277,12 @@ type GenerateResponseGoogle struct {
 	Candidates []GenerateResponseGooglCandidate `json:"candidates"`
 }
 
+type GenerateResponseCloudflareResult struct {
+	Response string `json:"response"`
+}
+
 type GenerateResponseCloudflare struct {
-	Result string `json:"result"`
+	Result GenerateResponseCloudflareResult `json:"result"`
 }
 
 func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
@@ -421,9 +425,9 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 		}
 
 		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
-			Role:    "user",
+			Role:    "assistant", // It's not provided by cloudflare so we set it to assistant
 			Model:   model,
-			Content: response.Result,
+			Content: response.Result.Response,
 		}}, nil
 	}
 
