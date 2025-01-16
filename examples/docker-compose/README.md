@@ -18,13 +18,13 @@ docker compose up -d
 2. List the available models of a specific API, for example Groq:
 
 ```bash
-curl -x GET http://localhost:8080/llms | jq .groq.models
+curl -X GET http://localhost:8080/llms | jq '.[] | select(.provider == "groq") | .models'
 ```
 
 Or the local models:
 
 ```bash
-curl -X GET http://localhost:8080/llms | jq .ollama.models
+curl -X GET http://localhost:8080/llms | jq '.[] | select(.provider == "ollama") | .models'
 ```
 
 3. Use a specific API models, for example Groq:
