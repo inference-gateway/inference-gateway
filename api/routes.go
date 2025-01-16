@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/edenreich/inference-gateway/api/providers"
 	config "github.com/edenreich/inference-gateway/config"
 	l "github.com/edenreich/inference-gateway/logger"
 	"github.com/edenreich/inference-gateway/otel"
@@ -215,38 +216,6 @@ type GenerateRequest struct {
 	Prompt string `json:"prompt"`
 }
 
-type GenerateRequestGroq struct {
-	Model    string `json:"model"`
-	Messages []struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	} `json:"messages"`
-}
-
-type GenerateRequestOpenAI struct {
-	Model    string `json:"model"`
-	Messages []struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	} `json:"messages"`
-}
-
-type GenerateRequestGoogleParts struct {
-	Text string `json:"text"`
-}
-
-type GenerateRequestGoogleContents struct {
-	Parts []GenerateRequestGoogleParts `json:"parts"`
-}
-
-type GenerateRequestGoogle struct {
-	Contents GenerateRequestGoogleContents `json:"contents"`
-}
-
-type GenerateRequestCloudflare struct {
-	Prompt string `json:"prompt"`
-}
-
 type ResponseTokens struct {
 	Role    string `json:"role"`
 	Model   string `json:"model"`
@@ -256,50 +225,6 @@ type ResponseTokens struct {
 type GenerateResponse struct {
 	Provider string         `json:"provider"`
 	Response ResponseTokens `json:"response"`
-}
-
-type GenerateResponseGroqMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type GenerateResponseGroq struct {
-	Model   string `json:"model"`
-	Choices []struct {
-		Message GenerateResponseGroqMessage `json:"message"`
-	} `json:"choices"`
-}
-
-type GenerateResponseOpenAI struct {
-	Model   string `json:"model"`
-	Choices []struct {
-		Message GenerateResponseGroqMessage `json:"message"`
-	} `json:"choices"`
-}
-
-type GenerateResponseGooglePart struct {
-	Text string `json:"text"`
-}
-
-type GenerateResponseGoogleContent struct {
-	Parts []GenerateResponseGooglePart `json:"parts"`
-	Role  string                       `json:"role"`
-}
-
-type GenerateResponseGooglCandidate struct {
-	Content GenerateResponseGoogleContent `json:"content"`
-}
-
-type GenerateResponseGoogle struct {
-	Candidates []GenerateResponseGooglCandidate `json:"candidates"`
-}
-
-type GenerateResponseCloudflareResult struct {
-	Response string `json:"response"`
-}
-
-type GenerateResponseCloudflare struct {
-	Result GenerateResponseCloudflareResult `json:"result"`
 }
 
 func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
@@ -340,8 +265,8 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 
 	response, err := generateToken(provider, req.Model, req.Prompt)
 	if err != nil {
-		router.logger.Error("failed to generate token", err, "provider", provider)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
+		router.logger.Error("failed to generate tokens", err, "provider", provider)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate tokens"})
 		return
 	}
 
@@ -355,49 +280,43 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 
 	switch provider.Name {
 	case "Groq":
-		payload = GenerateRequestGroq{
+		payload = providers.GenerateRequestGroq{
 			Model: model,
-			Messages: []struct {
-				Role    string `json:"role"`
-				Content string `json:"content"`
-			}{
+			Messages: []providers.GenerateRequestGroqMessage{
 				{
 					Role:    "user",
 					Content: prompt,
 				},
 			},
 		}
-		response = &GenerateResponseGroq{}
+		response = &providers.GenerateResponseGroq{}
 	case "OpenAI":
-		payload = GenerateRequestOpenAI{
+		payload = providers.GenerateRequestOpenAI{
 			Model: model,
-			Messages: []struct {
-				Role    string `json:"role"`
-				Content string `json:"content"`
-			}{
+			Messages: []providers.GenerateRequestOpenAIMessage{
 				{
 					Role:    "user",
 					Content: prompt,
 				},
 			},
 		}
-		response = &GenerateResponseOpenAI{}
+		response = &providers.GenerateResponseOpenAI{}
 	case "Google":
-		payload = GenerateRequestGoogle{
-			Contents: GenerateRequestGoogleContents{
-				Parts: []GenerateRequestGoogleParts{
+		payload = providers.GenerateRequestGoogle{
+			Contents: providers.GenerateRequestGoogleContents{
+				Parts: []providers.GenerateRequestGoogleParts{
 					{
 						Text: prompt,
 					},
 				},
 			},
 		}
-		response = &GenerateResponseGoogle{}
+		response = &providers.GenerateResponseGoogle{}
 	case "Cloudflare":
-		payload = GenerateRequestCloudflare{
+		payload = providers.GenerateRequestCloudflare{
 			Prompt: prompt,
 		}
-		response = &GenerateResponseCloudflare{}
+		response = &providers.GenerateResponseCloudflare{}
 	default:
 		return GenerateResponse{}, errors.New("provider not implemented")
 	}
@@ -420,7 +339,7 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 
 	switch provider.Name {
 	case "Groq":
-		groqResponse := response.(*GenerateResponseGroq)
+		groqResponse := response.(*providers.GenerateResponseGroq)
 		if len(groqResponse.Choices) > 0 && len(groqResponse.Choices[0].Message.Content) > 0 {
 			role = groqResponse.Choices[0].Message.Role
 			content = groqResponse.Choices[0].Message.Content
@@ -428,7 +347,7 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 			return GenerateResponse{}, errors.New("invalid response from Groq")
 		}
 	case "OpenAI":
-		openAIResponse := response.(*GenerateResponseOpenAI)
+		openAIResponse := response.(*providers.GenerateResponseOpenAI)
 		if len(openAIResponse.Choices) > 0 && len(openAIResponse.Choices[0].Message.Content) > 0 {
 			role = openAIResponse.Choices[0].Message.Role
 			content = openAIResponse.Choices[0].Message.Content
@@ -436,7 +355,7 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 			return GenerateResponse{}, errors.New("invalid response from OpenAI")
 		}
 	case "Google":
-		googleResponse := response.(*GenerateResponseGoogle)
+		googleResponse := response.(*providers.GenerateResponseGoogle)
 		if len(googleResponse.Candidates) > 0 && len(googleResponse.Candidates[0].Content.Parts) > 0 {
 			role = googleResponse.Candidates[0].Content.Role
 			content = googleResponse.Candidates[0].Content.Parts[0].Text
@@ -444,7 +363,7 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 			return GenerateResponse{}, errors.New("invalid response from Google")
 		}
 	case "Cloudflare":
-		cloudflareResponse := response.(*GenerateResponseCloudflare)
+		cloudflareResponse := response.(*providers.GenerateResponseCloudflare)
 		if cloudflareResponse.Result.Response != "" {
 			role = "assistant" // It's not provided by Cloudflare so we set it to assistant
 			content = cloudflareResponse.Result.Response
