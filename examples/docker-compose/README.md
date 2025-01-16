@@ -18,17 +18,17 @@ docker compose up -d
 2. List the available models of a specific API, for example Groq:
 
 ```bash
-curl http://localhost:8080/llms/groq/openai/v1/models
+curl -x GET http://localhost:8080/llms | jq .groq.models
 ```
 
 Or the local models:
 
 ```bash
-curl http://localhost:8080/llms/ollama/v1/models
+curl -X GET http://localhost:8080/llms | jq .ollama.models
 ```
 
 3. Use a specific API models, for example Groq:
 
 ```bash
-curl http://localhost:8080/llms/groq/openai/v1/chat/completions -s -d '{"model": "llama-3.3-70b-versatile","messages": [{"role": "user","content": "Explain the importance of fast language models"}], "stream": true}'
+curl -X POST http://localhost:8080/llms/groq/generate -d '{"model": "llama-3.3-70b-versatile", "prompt": "Explain the importance of fast language models. Keep it short and concise."}' | jq .
 ```
