@@ -74,7 +74,7 @@ func (router *RouterImpl) ValidateProvider(provider string) (*Provider, bool) {
 }
 
 func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
-	router.logger.Error("Requested route is not found", nil)
+	router.logger.Error("requested route is not found", nil)
 	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
 }
 
@@ -82,7 +82,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
 	provider, ok := router.ValidateProvider(p)
 	if !ok {
-		router.logger.Error("Requested unsupported provider", nil, "provider", provider)
+		router.logger.Error("requested unsupported provider", nil, "provider", provider)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
 		return
 	}
@@ -101,6 +101,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/proxy/"+p)
 
 	if provider.Token == "" && provider.Name != "Ollama" {
+		router.logger.Error("provider token is missing", nil, "provider", provider)
 		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Provider token is missing"})
 		return
 	} else if provider.Name != "Google" {
@@ -129,7 +130,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 }
 
 func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
-	router.logger.Debug("Healthcheck")
+	router.logger.Debug("healthcheck")
 	c.JSON(http.StatusOK, ResponseJSON{Message: "OK"})
 }
 
@@ -310,7 +311,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 
 	provider, ok := router.ValidateProvider(c.Param("provider"))
 	if !ok {
-		router.logger.Error("Requested unsupported provider", nil, "provider", provider)
+		router.logger.Error("requested unsupported provider", nil, "provider", provider)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
 		return
 	}
@@ -325,7 +326,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 
 	url, ok := providersEndpoints[provider.Name]
 	if !ok {
-		router.logger.Error("Requested unsupported provider", nil, "provider", provider)
+		router.logger.Error("requested unsupported provider", nil, "provider", provider)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
 		return
 	}
@@ -339,7 +340,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 
 	response, err := generateToken(provider, req.Model, req.Prompt)
 	if err != nil {
-		router.logger.Error("Failed to generate token", err, "provider", provider)
+		router.logger.Error("failed to generate token", err, "provider", provider)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate token"})
 		return
 	}
@@ -348,8 +349,13 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 }
 
 func generateToken(provider *Provider, model string, prompt string) (GenerateResponse, error) {
-	if provider.Name == "Groq" {
-		payload := GenerateRequestGroq{
+	var payload interface{}
+	var response interface{}
+	var role, content string
+
+	switch provider.Name {
+	case "Groq":
+		payload = GenerateRequestGroq{
 			Model: model,
 			Messages: []struct {
 				Role    string `json:"role"`
@@ -361,32 +367,9 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 				},
 			},
 		}
-		payloadBytes, err := json.Marshal(payload)
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-
-		resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-		defer resp.Body.Close()
-
-		var groqResponse GenerateResponseGroq
-		err = json.NewDecoder(resp.Body).Decode(&groqResponse)
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-
-		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
-			Role:    groqResponse.Choices[0].Message.Role,
-			Model:   model,
-			Content: groqResponse.Choices[0].Message.Content,
-		}}, nil
-	}
-
-	if provider.Name == "OpenAI" {
-		payload := GenerateRequestOpenAI{
+		response = &GenerateResponseGroq{}
+	case "OpenAI":
+		payload = GenerateRequestOpenAI{
 			Model: model,
 			Messages: []struct {
 				Role    string `json:"role"`
@@ -398,32 +381,9 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 				},
 			},
 		}
-		payloadBytes, err := json.Marshal(payload)
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-
-		resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-		defer resp.Body.Close()
-
-		var openAIResponse GenerateResponseOpenAI
-		err = json.NewDecoder(resp.Body).Decode(&openAIResponse)
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-
-		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
-			Role:    openAIResponse.Choices[0].Message.Role,
-			Model:   model,
-			Content: openAIResponse.Choices[0].Message.Content,
-		}}, nil
-	}
-
-	if provider.Name == "Google" {
-		payload := GenerateRequestGoogle{
+		response = &GenerateResponseOpenAI{}
+	case "Google":
+		payload = GenerateRequestGoogle{
 			Contents: GenerateRequestGoogleContents{
 				Parts: []GenerateRequestGoogleParts{
 					{
@@ -432,57 +392,70 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 				},
 			},
 		}
-		payloadBytes, err := json.Marshal(payload)
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-
-		resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-		defer resp.Body.Close()
-
-		var response GenerateResponseGoogle
-		err = json.NewDecoder(resp.Body).Decode(&response)
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-
-		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
-			Role:    response.Candidates[0].Content.Role,
-			Model:   model,
-			Content: response.Candidates[0].Content.Parts[0].Text,
-		}}, nil
-	}
-
-	if provider.Name == "Cloudflare" {
-		payload := GenerateRequestCloudflare{
+		response = &GenerateResponseGoogle{}
+	case "Cloudflare":
+		payload = GenerateRequestCloudflare{
 			Prompt: prompt,
 		}
-		payloadBytes, err := json.Marshal(payload)
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-
-		resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-		defer resp.Body.Close()
-
-		var response GenerateResponseCloudflare
-		err = json.NewDecoder(resp.Body).Decode(&response)
-		if err != nil {
-			return GenerateResponse{}, err
-		}
-
-		return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
-			Role:    "assistant", // It's not provided by cloudflare so we set it to assistant
-			Model:   model,
-			Content: response.Result.Response,
-		}}, nil
+		response = &GenerateResponseCloudflare{}
+	default:
+		return GenerateResponse{}, errors.New("provider not implemented")
 	}
 
-	return GenerateResponse{}, errors.New("provider not implemented")
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return GenerateResponse{}, err
+	}
+
+	resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
+	if err != nil {
+		return GenerateResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(response)
+	if err != nil {
+		return GenerateResponse{}, err
+	}
+
+	switch provider.Name {
+	case "Groq":
+		groqResponse := response.(*GenerateResponseGroq)
+		if len(groqResponse.Choices) > 0 && len(groqResponse.Choices[0].Message.Content) > 0 {
+			role = groqResponse.Choices[0].Message.Role
+			content = groqResponse.Choices[0].Message.Content
+		} else {
+			return GenerateResponse{}, errors.New("invalid response from Groq")
+		}
+	case "OpenAI":
+		openAIResponse := response.(*GenerateResponseOpenAI)
+		if len(openAIResponse.Choices) > 0 && len(openAIResponse.Choices[0].Message.Content) > 0 {
+			role = openAIResponse.Choices[0].Message.Role
+			content = openAIResponse.Choices[0].Message.Content
+		} else {
+			return GenerateResponse{}, errors.New("invalid response from OpenAI")
+		}
+	case "Google":
+		googleResponse := response.(*GenerateResponseGoogle)
+		if len(googleResponse.Candidates) > 0 && len(googleResponse.Candidates[0].Content.Parts) > 0 {
+			role = googleResponse.Candidates[0].Content.Role
+			content = googleResponse.Candidates[0].Content.Parts[0].Text
+		} else {
+			return GenerateResponse{}, errors.New("invalid response from Google")
+		}
+	case "Cloudflare":
+		cloudflareResponse := response.(*GenerateResponseCloudflare)
+		if cloudflareResponse.Result.Response != "" {
+			role = "assistant" // It's not provided by Cloudflare so we set it to assistant
+			content = cloudflareResponse.Result.Response
+		} else {
+			return GenerateResponse{}, errors.New("invalid response from Cloudflare")
+		}
+	}
+
+	return GenerateResponse{Provider: provider.Name, Response: ResponseTokens{
+		Role:    role,
+		Model:   model,
+		Content: content,
+	}}, nil
 }
