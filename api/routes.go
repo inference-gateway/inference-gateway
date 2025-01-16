@@ -98,8 +98,13 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 
 	c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/proxy/"+p)
 
-	if provider.Token != "" && provider.Name != "Ollama" && provider.Name != "Google" {
-		c.Request.Header.Set("Authorization", "Bearer "+provider.Token)
+	if provider.Token == "" && provider.Name != "Ollama" {
+		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Provider token is missing"})
+		return
+	} else {
+		if provider.Name != "Google" {
+			c.Request.Header.Set("Authorization", "Bearer "+provider.Token)
+		}
 	}
 
 	if provider.Name == "Google" {
