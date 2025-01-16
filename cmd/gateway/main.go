@@ -62,7 +62,7 @@ func main() {
 	api := api.NewRouter(cfg, logger, tp)
 	r := gin.New()
 	r.Use(func(c *gin.Context) {
-		logger.Info("Request received", "method", c.Request.Method, "path", c.Request.URL.Path)
+		logger.Info("Request received", "method", c.Request.Method, "host", c.Request.Host, "path", c.Request.URL.Path)
 		c.Next()
 	})
 	r.Use(oidcAuthenticator.Middleware())
