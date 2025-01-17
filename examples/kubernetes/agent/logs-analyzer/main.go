@@ -18,6 +18,7 @@ import (
 	rest "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	homedir "k8s.io/client-go/util/homedir"
+	yaml "sigs.k8s.io/yaml"
 )
 
 const prompt = `
@@ -100,7 +101,11 @@ func main() {
 				re := regexp.MustCompile(`(?i)error`)
 				for _, line := range strings.Split(buf.String(), "\n") {
 					if re.MatchString(line) {
-						errorLog := fmt.Sprintf("Namespace: %s, Pod: %s, Log: %s", ns.Name, pod.Name, line)
+						podSpec, err := yaml.Marshal(pod.Spec)
+						if err != nil {
+							log.Fatalf("Error marshalling pod spec: %v", err)
+						}
+						errorLog := fmt.Sprintf("Error: %s\nNamespace: %s\nPod: %s\nSpec: %s", line, ns.Name, pod.Name, string(podSpec))
 						errorLogs = append(errorLogs, errorLog)
 					}
 				}

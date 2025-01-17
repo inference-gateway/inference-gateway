@@ -24,5 +24,5 @@ spec:
             [
               "sh",
               "-c",
-              "echo 'time error the nginx could not start due to low memory configurations' >&2; exit 1",
+              "echo 'error the nginx could not start due to low memory configurations' >&2; exit 1",
             ]

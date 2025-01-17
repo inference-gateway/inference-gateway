@@ -54,25 +54,30 @@ The agent should tell you what's wrong with the cluster and suggest a fix.
 
 Wait for a few minutes and you should see something like this:
 
-```
-Error summary: Nginx pod failed due to time error.
+```md
+Analysis result:
+**Error Summary:** Nginx failed to start in Pod "fail" (Namespace: default) due to low memory configurations.
 
-Potential solutions:
-1. Check system clock.
-2. Verify Nginx config.
+**Root Cause:** Insufficient memory allocation.
 
-Recommendations:
-1. Monitor system time.
-2. Validate config before deployment.
+**Potential Solutions:**
+
+1. Increase memory limit (e.g., `kubectl edit deploy -n default`).
+2. Optimize nginx configuration (e.g., reduce worker processes).
+3. Scale up resources (e.g., add more nodes to the cluster).
+
+**Recommendations:** Monitor memory usage and adjust configurations accordingly to prevent similar issues.
 ```
 
 Not the most useful agent, but you get the idea.
 
-You can improve the prompt and the suggestions by modifying the `logs-analyzer/main.go` file to slowly fine tune the results, you can also try to give the LLM more context or implement Consensus by letting multiple LLMs analyze the same log and pick the best possible answer to display to the user in the logs.
+I think it could've been better if the log message was more descriptive, but you can improve it and also the prompt by modifying the `logs-analyzer/main.go` file.
 
-That same solution you can also email to the user, or send it to a slack channel, or even create a Jira ticket with the solution and assign it to the user, there is a lot of things you can do with the AI agent.
+you can also try to give the LLM more context or implement Consensus by letting multiple LLMs analyze the same log and pick the best possible consistent answer to display to to the user in the logs.
 
-7. Cleanup:
+That same solution you can also email to the user, or send it to a slack channel, or even create a Jira ticket with the solution and assign it to the user, there is a lot of things you can do with AI agent.
+
+1. Finally let's cleanup the cluster:
 
 ```bash
 ctlptl delete -f Cluster.yaml --cascade=true
