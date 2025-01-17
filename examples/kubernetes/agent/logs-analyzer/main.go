@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/edenreich/inference-gateway/sdk"
-
 	filepath "path/filepath"
 
+	sdk "github.com/edenreich/inference-gateway-go-sdk"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubernetes "k8s.io/client-go/kubernetes"
