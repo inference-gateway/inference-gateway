@@ -279,6 +279,13 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 	var role, content string
 
 	switch provider.Name {
+	case "Ollama":
+		payload = providers.GenerateRequestOllama{
+			Model:  model,
+			Prompt: prompt,
+			Stream: false,
+		}
+		response = &providers.GenerateResponseOllama{}
 	case "Groq":
 		payload = providers.GenerateRequestGroq{
 			Model: model,
@@ -338,6 +345,14 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 	}
 
 	switch provider.Name {
+	case "Ollama":
+		ollamaResponse := response.(*providers.GenerateResponseOllama)
+		if ollamaResponse.Response != "" {
+			role = "assistant" // It's not provided by Ollama so we set it to assistant
+			content = ollamaResponse.Response
+		} else {
+			return GenerateResponse{}, errors.New("invalid response from Ollama")
+		}
 	case "Groq":
 		groqResponse := response.(*providers.GenerateResponseGroq)
 		if len(groqResponse.Choices) > 0 && len(groqResponse.Choices[0].Message.Content) > 0 {

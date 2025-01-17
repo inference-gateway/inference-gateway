@@ -12,6 +12,8 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command: >
       "ollama serve & sleep 5 && ollama pull phi3:3.8b && tail -f /dev/null"
+    environment:
+      OLLAMA_HOST: 0.0.0.0:8080
     volumes:
       - docker-compose-ollama-data:/.ollama
 
