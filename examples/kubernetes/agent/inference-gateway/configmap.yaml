@@ -1,0 +1,29 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app: inference-gateway
+data:
+  # General settings
+  APPLICATION_NAME: "inference-gateway"
+  ENABLE_TELEMETRY: "false"
+  ENVIRONMENT: "production"
+  ENABLE_AUTH: "false"
+  OIDC_ISSUER_URL: "http://keycloak.keycloak:8080/realms/inference-gateway-realm"
+  # Server settings
+  SERVER_HOST: "0.0.0.0"
+  SERVER_PORT: "8080"
+  SERVER_READ_TIMEOUT: "30s"
+  SERVER_WRITE_TIMEOUT: "30s"
+  SERVER_IDLE_TIMEOUT: "120s"
+  SERVER_TLS_CERT_PATH: ""
+  SERVER_TLS_KEY_PATH: ""
+  # API URLs and keys
+  OLLAMA_API_URL: "http://ollama.ollama:8080"
+  GROQ_API_URL: "https://api.groq.com"
+  OPENAI_API_URL: "https://api.openai.com"
+  GOOGLE_AISTUDIO_API_URL: "https://generativelanguage.googleapis.com"
+  CLOUDFLARE_API_URL: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"

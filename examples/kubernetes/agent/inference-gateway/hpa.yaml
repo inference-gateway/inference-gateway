@@ -1,0 +1,39 @@
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app: inference-gateway
+spec:
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inference-gateway
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 5
+          periodSeconds: 300
+    scaleUp:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 5
+          periodSeconds: 300
+        - type: Percent
+          value: 200
+          periodSeconds: 300
+      selectPolicy: Max

@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: failing-deployment
+spec:
+  selector:
+    matchLabels:
+      app: failing-deployment
+  template:
+    metadata:
+      labels:
+        app: failing-deployment
+    spec:
+      containers:
+        - name: failing-deployment
+          image: nginx:alpine
+          resources:
+            limits:
+              memory: 10Mi
+              cpu: 10m
+          ports:
+            - containerPort: 8080
+          command:
+            [
+              "sh",
+              "-c",
+              "echo 'time error the nginx could not start due to low memory configurations' >&2; exit 1",
+            ]

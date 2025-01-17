@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: logs-analyzer
+  namespace: logs-analyzer
+  labels:
+    app: logs-analyzer
+spec:
+  selector:
+    matchLabels:
+      app: logs-analyzer
+  template:
+    metadata:
+      labels:
+        app: logs-analyzer
+    spec:
+      serviceAccountName: logs-analyzer
+      containers:
+        - name: logs-analyzer
+          image: local-registry:5000/dummyrepo/logs-analyzer:latest
+          resources:
+            limits:
+              memory: 128Mi
+              cpu: 200m
+          imagePullPolicy: Always
