@@ -2,5 +2,10 @@
 
 Configurations.md linguist-generated=true
 examples/docker-compose/.env.example linguist-generated=true
+examples/kubernetes/basic/inference-gateway/configmap.yaml linguist-generated=true
+examples/kubernetes/basic/inference-gateway/secret.yaml linguist-generated=true
 examples/kubernetes/hybrid/inference-gateway/configmap.yaml linguist-generated=true
 examples/kubernetes/hybrid/inference-gateway/secret.yaml linguist-generated=true
+examples/kubernetes/authentication/inference-gateway/configmap.yaml linguist-generated=true
+examples/kubernetes/authentication/inference-gateway/secret.yaml linguist-generated=true
+sdk/go-client/** linguist-generated=true
