@@ -34,9 +34,10 @@ Your task is to analyze the following error log and provide a detailed summary o
 3. Provide any additional recommendations to prevent similar issues in the future.
 
 # Output
-- The length of the answer should be max 500 characters.
+- The length of the answer should be max 1000 characters.
 - Provide a concise summary of the issue.
-- List potential solutions and recommendations.
+- List potential solutions with examples.
+- Mention the Pod, Namespace, and any other relevant information.
 `
 
 func main() {
@@ -129,7 +130,7 @@ func main() {
 				log.Printf("Error analyzing log: %v", err)
 				continue
 			}
-			fmt.Printf("Analysis result: %s\n", response)
+			fmt.Printf("Analysis result: %s\n", response.Response.Content)
 		}
 
 		// Sleep for 1min before analyzing logs again

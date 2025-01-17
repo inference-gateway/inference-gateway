@@ -52,6 +52,26 @@ kubectl -n logs-analyzer logs -f deployment/logs-analyzer --all-containers
 
 The agent should tell you what's wrong with the cluster and suggest a fix.
 
+Wait for a few minutes and you should see something like this:
+
+```
+Error summary: Nginx pod failed due to time error.
+
+Potential solutions:
+1. Check system clock.
+2. Verify Nginx config.
+
+Recommendations:
+1. Monitor system time.
+2. Validate config before deployment.
+```
+
+Not the most useful agent, but you get the idea.
+
+You can improve the prompt and the suggestions by modifying the `logs-analyzer/main.go` file to slowly fine tune the results, you can also try to give the LLM more context or implement Consensus by letting multiple LLMs analyze the same log and pick the best possible answer to display to the user in the logs.
+
+That same solution you can also email to the user, or send it to a slack channel, or even create a Jira ticket with the solution and assign it to the user, there is a lot of things you can do with the AI agent.
+
 7. Cleanup:
 
 ```bash
