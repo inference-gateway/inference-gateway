@@ -6,7 +6,6 @@ tasks:
     desc: "Generate the gateway"
     cmds:
       - go generate ./...
-      - docker run --rm -v .:/app -w /app openapitools/openapi-generator-cli:v7.10.0 generate -i openapi.yaml -g go -o /app/sdk/go-client
 
   tidy:
     desc: "Tidy the gateway"

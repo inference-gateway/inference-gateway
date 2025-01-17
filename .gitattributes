@@ -8,4 +8,3 @@ examples/kubernetes/hybrid/inference-gateway/configmap.yaml linguist-generated=t
 examples/kubernetes/hybrid/inference-gateway/secret.yaml linguist-generated=true
 examples/kubernetes/authentication/inference-gateway/configmap.yaml linguist-generated=true
 examples/kubernetes/authentication/inference-gateway/secret.yaml linguist-generated=true
-sdk/go-client/** linguist-generated=true
