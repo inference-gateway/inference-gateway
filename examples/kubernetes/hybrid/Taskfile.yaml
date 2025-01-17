@@ -7,13 +7,17 @@ tasks:
     desc: Deploy the Inference Gateway
     cmds:
       - kubectl apply -f inference-gateway/namespace.yaml
+      - kubectl apply -f inference-gateway/serviceaccount.yaml
       - kubectl apply -f inference-gateway/
+      - kubectl -n inference-gateway rollout status deployment/inference-gateway
 
   deploy-ollama:
     desc: Deploy the Ollama service
     cmds:
       - kubectl apply -f ollama/namespace.yaml
+      - kubectl apply -f ollama/serviceaccount.yaml
       - kubectl apply -f ollama/
+      - kubectl -n ollama rollout status deployment/ollama
 
   deploy:
     desc: Deploy the Inference Gateway and Ollama service
@@ -56,7 +60,7 @@ tasks:
   cluster-delete:
     desc: Delete a local Kubernetes cluster
     cmds:
-      - ctlptl delete -f Cluster.yaml
+      - ctlptl delete -f Cluster.yaml --cascade=true
 
   clean:
     desc: Clean the project

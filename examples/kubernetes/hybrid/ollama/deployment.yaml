@@ -46,7 +46,7 @@ spec:
             - "ollama pull phi3:3.8b && tail -f /dev/null"
           env:
             - name: OLLAMA_HOST
-              value: "127.0.0.1"
+              value: "127.0.0.1:8080"
           resources:
             limits:
               cpu: 1000m

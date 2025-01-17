@@ -17,8 +17,12 @@ task deploy-ollama
 3. Wait for the Ollama deployment to be completely rolled out and ready(could take a while due to 2GB download, roughly 3min on a standard internet bandwidth):
 
 ```bash
-kubectl -n ollama rollout status deployment/ollama
+kubectl -n ollama logs -f deployment/ollama
 ```
+
+Inspect the logs and see if the pull of the model is completed: `pull success`.
+
+If you see in the logs `msg="downloading..."` it means the model is still being downloaded.
 
 4. Deploy the Inference Gateway onto Kubernetes:
 
@@ -26,29 +30,57 @@ kubectl -n ollama rollout status deployment/ollama
 task deploy-inference-gateway
 ```
 
-5. Wait for the Inference Gateway deployment to be completely rolled out and ready:
-
-```bash
-kubectl -n inference-gateway rollout status deployment/inference-gateway
-```
-
-6. Proxy the Inference Gateway, to access it locally:
+5. Proxy the Inference Gateway, to access it locally:
 
 ```bash
 task proxy
 ```
 
-7. Check the available Ollama local LLMs:
+6. Check the available Ollama local LLMs:
 
 ```bash
-curl -X GET http://localhost:8080/llms/ollama/v1/models
+curl -X GET http://localhost:8080/llms | jq '.[] | select(.provider == "ollama") | .models'
 ```
 
-8. Send a request to the Inference Gateway:
+7. Send a request to the Inference Gateway:
 
 ```bash
-curl -X POST http://localhost:8080/llms/ollama/api/generate -d '{"model": "phi3:3.8b", "prompt": "Why is the sky blue? keep it short and concise."}'
+curl -X POST http://localhost:8080/llms/ollama/generate -d '{"model": "phi3:3.8b", "prompt": "Why is the sky blue? keep it short and concise."}'
 ```
+
+8. Add a cloud provider's LLM to the Inference Gateway, by setting the API Key in the Kubernetes [secret](inference-gateway/secret.yaml):
+
+```bash
+...
+  GROQ_API_KEY=<GROQ_API_KEY>
+...
+```
+
+9. Deploy the new secret:
+
+```bash
+kubectl apply -f inference-gateway/secret.yaml
+```
+
+10. Restart the Inference Gateway so the changes take effect:
+
+```bash
+kubectl -n inference-gateway rollout restart deployment/inference-gateway
+```
+
+11. Proxy the Inference Gateway, to access it locally:
+
+```bash
+task proxy
+```
+
+12. Send a similar request to the Inference Gateway, but this time using the cloud provider's LLM:
+
+```bash
+curl -X POST http://localhost:8080/llms/groq/generate -d '{"model": "llama-3.3-70b-versatile", "prompt": "Explain the importance of fast language models. Keep it short and concise."}' | jq .
+```
+
+And that's how you can interact with both local and cloud provider's Large Language Models using the Inference Gateway. All from a similar interface.
 
 \*\* You can refer to the [Taskfile.yaml](./Taskfile.yaml) at any point for detailed information about the tasks used in this example.
 
