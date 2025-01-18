@@ -27,6 +27,11 @@ func main() {
 
 	var tp otel.TracerProvider
 	var logger l.Logger
+	logger, err = l.NewLogger(cfg.Environment)
+	if err != nil {
+		log.Printf("Logger init error: %v", err)
+		return
+	}
 
 	if cfg.EnableTelemetry {
 		otel := &otel.OpenTelemetryImpl{}
@@ -42,7 +47,6 @@ func main() {
 		}()
 		logger.Info("OpenTelemetry initialized")
 	} else {
-		logger = l.NewLogger(cfg.Environment)
 		logger.Info("OpenTelemetry is disabled")
 	}
 

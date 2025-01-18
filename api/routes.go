@@ -1,8 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -64,6 +66,7 @@ func (router *RouterImpl) ValidateProvider(provider string) (*Provider, bool) {
 		"openai":     {Name: "OpenAI", URL: cfg.OpenaiAPIURL, ProxyURL: "http://localhost:8080/proxy/openai", Token: cfg.OpenaiAPIKey},
 		"google":     {Name: "Google", URL: cfg.GoogleAIStudioURL, ProxyURL: "http://localhost:8080/proxy/google", Token: cfg.GoogleAIStudioKey},
 		"cloudflare": {Name: "Cloudflare", URL: cfg.CloudflareAPIURL, ProxyURL: "http://localhost:8080/proxy/cloudflare", Token: cfg.CloudflareAPIKey},
+		"cohere":     {Name: "Cohere", URL: cfg.CohereAPIURL, ProxyURL: "http://localhost:8080/proxy/cohere", Token: cfg.CohereAPIKey},
 	}
 
 	p, ok := providers[provider]
@@ -120,6 +123,27 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 
 	remote, _ := url.Parse(provider.URL + c.Request.URL.Path)
 	proxy := httputil.NewSingleHostReverseProxy(remote)
+
+	if router.cfg.Environment == "development" {
+		proxy.ModifyResponse = func(resp *http.Response) error {
+			bodyBytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				router.logger.Error("Failed to read response from proxy", err)
+				return err
+			}
+
+			var body interface{}
+			if err := json.Unmarshal(bodyBytes, &body); err != nil {
+				router.logger.Error("Failed to unmarshal response from proxy", err)
+				return err
+			}
+
+			router.logger.Debug("Proxy response received", "status", resp.StatusCode, "body", body)
+			resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			return nil
+		}
+	}
+
 	proxy.Director = func(req *http.Request) {
 		req.Header = c.Request.Header
 		req.Host = remote.Host
@@ -148,6 +172,7 @@ func (router *RouterImpl) FetchAllModelsHandler(c *gin.Context) {
 		"openai":     "http://localhost:8080/proxy/openai/v1/models",
 		"google":     "http://localhost:8080/proxy/google/v1beta/models",
 		"cloudflare": "http://localhost:8080/proxy/cloudflare/ai/finetunes/public",
+		"cohere":     "http://localhost:8080/proxy/cohere/v1/models",
 	}
 
 	ch := make(chan ModelResponse, len(modelProviders))
@@ -200,6 +225,18 @@ func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- Mode
 		return
 	}
 
+	if provider == "cohere" {
+		var response struct {
+			Models []interface{} `json:"models"`
+		}
+		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
+			return
+		}
+		ch <- ModelResponse{Provider: provider, Models: response.Models}
+		return
+	}
+
 	var response struct {
 		Object string        `json:"object"`
 		Data   []interface{} `json:"data"`
@@ -247,6 +284,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		"OpenAI":     "/v1/completions",
 		"Google":     "/v1beta/models/{model}:generateContent",
 		"Cloudflare": "/ai/run/@cf/meta/{model}",
+		"Cohere":     "/v2/chat",
 	}
 
 	url, ok := providersEndpoints[provider.Name]
@@ -324,6 +362,17 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 			Prompt: prompt,
 		}
 		response = &providers.GenerateResponseCloudflare{}
+	case "Cohere":
+		payload = &providers.GenerateRequestCohere{
+			Model: model,
+			Messages: []providers.GenerateRequestCohereMessage{
+				{
+					Role:    "user",
+					Content: prompt,
+				},
+			},
+		}
+		response = &providers.GenerateResponseCohere{}
 	default:
 		return GenerateResponse{}, errors.New("provider not implemented")
 	}
@@ -380,10 +429,18 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 	case "Cloudflare":
 		cloudflareResponse := response.(*providers.GenerateResponseCloudflare)
 		if cloudflareResponse.Result.Response != "" {
-			role = "assistant" // It's not provided by Cloudflare so we set it to assistant
+			role = "assistant"
 			content = cloudflareResponse.Result.Response
 		} else {
 			return GenerateResponse{}, errors.New("invalid response from Cloudflare")
+		}
+	case "Cohere":
+		cohereResponse := response.(*providers.GenerateResponseCohere)
+		if cohereResponse.Message.Content[0].Text != "" {
+			role = cohereResponse.Message.Role
+			content = cohereResponse.Message.Content[0].Text
+		} else {
+			return GenerateResponse{}, errors.New("invalid response from Cohere")
 		}
 	}
 

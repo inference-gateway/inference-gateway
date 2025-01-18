@@ -1,121 +1,81 @@
 package logger
 
 import (
-	"encoding/json"
 	"errors"
-	"log"
-	"os"
+
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-//go:generate mockgen -source=logger.go -destination=mocks/logger.go -package=mocks
 type Logger interface {
 	Info(message string, fields ...interface{})
 	Debug(message string, fields ...interface{})
 	Error(message string, err error, fields ...interface{})
+	Fatal(message string, err error, fields ...interface{})
 }
 
-type LoggerImpl struct {
-	Environment string
+type LoggerZapImpl struct {
+	env    string
+	logger *zap.Logger
 }
 
-type LogEntry struct {
-	Level   string                 `json:"level"`
-	Message string                 `json:"message"`
-	Fields  map[string]interface{} `json:"fields,omitempty"`
-}
-
-func NewLogger(env string) *LoggerImpl {
-	return &LoggerImpl{
-		Environment: env,
+// NewLogger initializes a logger
+func NewLogger(env string) (Logger, error) {
+	var cfg zap.Config
+	if env == "development" {
+		cfg = zap.NewDevelopmentConfig()
+	} else {
+		cfg = zap.NewProductionConfig()
+		cfg.EncoderConfig.TimeKey = "timestamp"
+		cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	}
-}
-
-func (l *LoggerImpl) Info(message string, fields ...interface{}) {
-	entry := LogEntry{
-		Level:   "INFO",
-		Message: message,
-		Fields:  make(map[string]interface{}),
-	}
-	for i := 0; i < len(fields); i += 2 {
-		if i+1 < len(fields) {
-			key, ok := fields[i].(string)
-			if !ok {
-				continue
-			}
-			entry.Fields[key] = fields[i+1]
-		}
-	}
-	l.output(entry)
-}
-
-func (l *LoggerImpl) Debug(message string, fields ...interface{}) {
-	if l.Environment == "development" {
-		entry := LogEntry{
-			Level:   "DEBUG",
-			Message: message,
-			Fields:  make(map[string]interface{}),
-		}
-		for i := 0; i < len(fields); i += 2 {
-			if i+1 < len(fields) {
-				key, ok := fields[i].(string)
-				if !ok {
-					continue
-				}
-				entry.Fields[key] = fields[i+1]
-			}
-		}
-		l.output(entry)
-	}
-}
-
-func (l *LoggerImpl) Error(message string, err error, fields ...interface{}) {
-	if err == nil {
-		err = errors.New("unknown error")
-	}
-	entry := LogEntry{
-		Level:   "ERROR",
-		Message: message + ": " + err.Error(),
-		Fields:  make(map[string]interface{}),
-	}
-	for i := 0; i < len(fields); i += 2 {
-		if i+1 < len(fields) {
-			key, ok := fields[i].(string)
-			if !ok {
-				continue
-			}
-			entry.Fields[key] = fields[i+1]
-		}
-	}
-	l.output(entry)
-}
-
-func (l *LoggerImpl) Fatal(message string, err error, fields ...interface{}) {
-	if err == nil {
-		err = errors.New("unknown error")
-	}
-	entry := LogEntry{
-		Level:   "FATAL",
-		Message: message + ": " + err.Error(),
-		Fields:  make(map[string]interface{}),
-	}
-	for i := 0; i < len(fields); i += 2 {
-		if i+1 < len(fields) {
-			key, ok := fields[i].(string)
-			if !ok {
-				continue
-			}
-			entry.Fields[key] = fields[i+1]
-		}
-	}
-	l.output(entry)
-	os.Exit(1)
-}
-
-func (l *LoggerImpl) output(entry LogEntry) {
-	b, err := json.Marshal(entry)
+	zapLogger, err := cfg.Build()
 	if err != nil {
-		log.Printf("Failed to marshal log entry: %v", err)
-		return
+		return nil, err
 	}
-	log.Println(string(b))
+	return &LoggerZapImpl{
+		env:    env,
+		logger: zapLogger,
+	}, nil
+}
+
+func (l *LoggerZapImpl) Info(message string, fields ...interface{}) {
+	l.logger.Info(message, parseFields(fields...)...)
+}
+
+func (l *LoggerZapImpl) Debug(message string, fields ...interface{}) {
+	if l.env == "development" {
+		l.logger.Debug(message, parseFields(fields...)...)
+	}
+}
+
+func (l *LoggerZapImpl) Error(message string, err error, fields ...interface{}) {
+	if err == nil {
+		err = errors.New("unknown error")
+	}
+	fields = append(fields, "error", err.Error())
+	l.logger.Error(message, parseFields(fields...)...)
+}
+
+func (l *LoggerZapImpl) Fatal(message string, err error, fields ...interface{}) {
+	if err == nil {
+		err = errors.New("unknown error")
+	}
+	fields = append(fields, "error", err.Error())
+	l.logger.Fatal(message, parseFields(fields...)...)
+}
+
+func parseFields(kv ...interface{}) []zap.Field {
+	var fields []zap.Field
+	for i := 0; i < len(kv); i += 2 {
+		if i+1 < len(kv) {
+			key, ok := kv[i].(string)
+			if !ok {
+				continue
+			}
+			val := kv[i+1]
+			fields = append(fields, zap.Any(key, val))
+		}
+	}
+	return fields
 }

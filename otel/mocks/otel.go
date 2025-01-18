@@ -14,7 +14,6 @@ import (
 
 	config "github.com/edenreich/inference-gateway/config"
 	otel "github.com/edenreich/inference-gateway/otel"
-	logr "github.com/go-logr/logr"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -55,18 +54,4 @@ func (m *MockOpenTelemetry) Init(config config.Config) (otel.TracerProvider, err
 func (mr *MockOpenTelemetryMockRecorder) Init(config any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockOpenTelemetry)(nil).Init), config)
-}
-
-// NewLogger mocks base method.
-func (m *MockOpenTelemetry) NewLogger(name string) logr.Logger {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NewLogger", name)
-	ret0, _ := ret[0].(logr.Logger)
-	return ret0
-}
-
-// NewLogger indicates an expected call of NewLogger.
-func (mr *MockOpenTelemetryMockRecorder) NewLogger(name any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewLogger", reflect.TypeOf((*MockOpenTelemetry)(nil).NewLogger), name)
 }
