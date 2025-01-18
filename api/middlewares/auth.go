@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	oidc "github.com/coreos/go-oidc"
+	oidcV3 "github.com/coreos/go-oidc/v3/oidc"
 	config "github.com/edenreich/inference-gateway/config"
 	logger "github.com/edenreich/inference-gateway/logger"
 	gin "github.com/gin-gonic/gin"
@@ -18,7 +18,7 @@ type OIDCAuthenticator interface {
 
 type OIDCAuthenticatorImpl struct {
 	logger   logger.Logger
-	verifier *oidc.IDTokenVerifier
+	verifier *oidcV3.IDTokenVerifier
 	config   oauth2.Config
 }
 
@@ -30,12 +30,12 @@ func NewOIDCAuthenticator(logger logger.Logger, cfg config.Config) (OIDCAuthenti
 		return &OIDCAuthenticatorNoop{}, nil
 	}
 
-	provider, err := oidc.NewProvider(context.Background(), cfg.OIDCIssuerURL)
+	provider, err := oidcV3.NewProvider(context.Background(), cfg.OIDCIssuerURL)
 	if err != nil {
 		return nil, err
 	}
 
-	oidcConfig := &oidc.Config{
+	oidcConfig := &oidcV3.Config{
 		ClientID: cfg.OIDCClientID,
 	}
 
@@ -46,7 +46,7 @@ func NewOIDCAuthenticator(logger logger.Logger, cfg config.Config) (OIDCAuthenti
 			ClientID:     cfg.OIDCClientID,
 			ClientSecret: cfg.OIDCClientSecret,
 			Endpoint:     provider.Endpoint(),
-			Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+			Scopes:       []string{oidcV3.ScopeOpenID, "profile", "email"},
 		},
 	}, nil
 }
