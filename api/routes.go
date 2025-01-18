@@ -436,7 +436,7 @@ func generateToken(provider *Provider, model string, prompt string) (GenerateRes
 		}
 	case "Cohere":
 		cohereResponse := response.(*providers.GenerateResponseCohere)
-		if cohereResponse.Message.Content[0].Text != "" {
+		if len(cohereResponse.Message.Content) > 0 && cohereResponse.Message.Content[0].Text != "" {
 			role = cohereResponse.Message.Role
 			content = cohereResponse.Message.Content[0].Text
 		} else {
