@@ -48,6 +48,8 @@ type Config struct {
 	GoogleAIStudioKey string `env:"GOOGLE_AISTUDIO_API_KEY" type:"secret" description:"The Access token for Google AI Studio API"`
 	CloudflareAPIURL  string `env:"CLOUDFLARE_API_URL, default=https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}" description:"The URL for Cloudflare API"`
 	CloudflareAPIKey  string `env:"CLOUDFLARE_API_KEY" type:"secret" description:"The Access token for Cloudflare API"`
+	CohereAPIURL      string `env:"COHERE_API_URL, default=https://api.cohere.com" description:"The URL for Cohere API"`
+	CohereAPIKey      string `env:"COHERE_API_KEY" type:"secret" description:"The Access token for Cohere API"`
 }
 
 // Load loads the configuration from environment variables.
