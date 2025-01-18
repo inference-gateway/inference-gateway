@@ -37,3 +37,5 @@
 | GOOGLE_AISTUDIO_API_KEY |  | The Access token for Google AI Studio API |
 | CLOUDFLARE_API_URL | https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID} | The URL for Cloudflare API |
 | CLOUDFLARE_API_KEY |  | The Access token for Cloudflare API |
+| COHERE_API_URL | https://api.cohere.com | The URL for Cohere API |
+| COHERE_API_KEY |  | The Access token for Cohere API |

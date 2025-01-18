@@ -49,6 +49,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - [Groq Cloud](https://console.groq.com/)
 - [Google](https://aistudio.google.com/)
 - [Cloudflare](https://www.cloudflare.com/)
+- [Cohere](https://docs.cohere.com/docs/the-cohere-platform)
 
 ## Configuration
 
