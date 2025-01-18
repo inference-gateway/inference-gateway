@@ -1,7 +1,7 @@
 ---
 services:
   inference-gateway:
-    image: ghcr.io/edenreich/inference-gateway:v0.1.1
+    image: ghcr.io/edenreich/inference-gateway:v0.1.2
     ports:
       - 8080:8080
     env_file:
