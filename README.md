@@ -107,7 +107,8 @@ The Inference Gateway can be configured using environment variables. The followi
 
 More SDKs could be generated using the OpenAPI specification. The following SDKs are currently available:
 
-- [Go SDK](https://github.com/edenreich/inference-gateway-go-sdk)
+- [Go](https://github.com/edenreich/inference-gateway-go-sdk)
+- [Python](https://github.com/edenreich/inference-gateway-python-sdk)
 
 ## License
 
