@@ -8,6 +8,7 @@ COPY logger ./logger
 COPY otel ./otel
 COPY cmd ./cmd
 COPY api ./api
+COPY providers ./providers
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o inference-gateway ./cmd/gateway/main.go
 
