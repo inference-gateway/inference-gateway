@@ -1,13 +1,8 @@
 package providers
 
-type GenerateRequestGroqMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
 type GenerateRequestGroq struct {
-	Model    string                       `json:"model"`
-	Messages []GenerateRequestGroqMessage `json:"messages"`
+	Model    string            `json:"model"`
+	Messages []GenerateMessage `json:"messages"`
 }
 
 type GenerateResponseGroqMessage struct {

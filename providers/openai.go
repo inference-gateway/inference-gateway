@@ -1,13 +1,8 @@
 package providers
 
-type GenerateRequestOpenAIMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
 type GenerateRequestOpenAI struct {
-	Model    string                         `json:"model"`
-	Messages []GenerateRequestOpenAIMessage `json:"messages"`
+	Model    string            `json:"model"`
+	Messages []GenerateMessage `json:"messages"`
 }
 
 type GenerateResponseOpenAIMessage struct {

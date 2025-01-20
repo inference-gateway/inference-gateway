@@ -1,13 +1,8 @@
 package providers
 
-type GenerateRequestCohereMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
 type GenerateRequestCohere struct {
-	Model    string                         `json:"model"`
-	Messages []GenerateRequestCohereMessage `json:"messages"`
+	Model    string            `json:"model"`
+	Messages []GenerateMessage `json:"messages"`
 }
 
 type GenerateResponseCohereContent struct {

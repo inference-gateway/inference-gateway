@@ -37,29 +37,40 @@ paths:
               properties:
                 model:
                   type: string
-                prompt:
+                messages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      role:
+                        type: string
+                        enum:
+                          - system
+                          - user
+                          - assistant
+                      content:
+                        type: string
+    responses:
+      "200":
+        description: Generated content
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                provider:
                   type: string
-      responses:
-        "200":
-          description: Generated content
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  provider:
-                    type: string
-                  response:
-                    type: string
-        "500":
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+                response:
+                  type: string
+      "500":
+        description: Internal server error
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
   /health:
     get:
       summary: Health check
