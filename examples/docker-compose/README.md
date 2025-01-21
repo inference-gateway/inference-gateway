@@ -30,5 +30,19 @@ curl -X GET http://localhost:8080/llms | jq '.[] | select(.provider == "ollama")
 3. Use a specific API models, for example Groq:
 
 ```bash
-curl -X POST http://localhost:8080/llms/groq/generate -d '{"model": "llama-3.3-70b-versatile", "prompt": "Explain the importance of fast language models. Keep it short and concise."}' | jq .
+curl -X POST http://localhost:8080/llms/groq/generate \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "llama-3.3-70b-versatile",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "Explain the importance of fast language models. Keep it short and concise."
+      }
+    ],
+  }' | jq .
 ```

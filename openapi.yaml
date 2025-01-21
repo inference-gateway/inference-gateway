@@ -61,6 +61,22 @@ paths:
                 provider:
                   type: string
                 response:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                    model:
+                      type: string
+                    content:
+                      type: string
+      "400":
+        description: Bad request
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
                   type: string
       "500":
         description: Internal server error

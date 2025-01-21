@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"errors"
 	"io"
@@ -132,14 +133,44 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 				return err
 			}
 
-			var body interface{}
-			if err := json.Unmarshal(bodyBytes, &body); err != nil {
-				router.logger.Error("Failed to unmarshal response from proxy", err)
-				return err
+			// Always restore the body
+			defer func() {
+				resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			}()
+
+			// Only attempt to parse JSON responses
+			if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+				contentBody := bodyBytes
+
+				// Handle gzipped content only if we have actual content
+				if resp.Header.Get("Content-Encoding") == "gzip" && len(bodyBytes) > 0 {
+					reader, err := gzip.NewReader(bytes.NewReader(bodyBytes))
+					if err != nil {
+						router.logger.Error("Invalid gzip content", err)
+					} else {
+						defer reader.Close()
+						if decompressed, err := io.ReadAll(reader); err == nil {
+							contentBody = decompressed
+						} else {
+							router.logger.Error("Failed to read gzipped content", err)
+						}
+					}
+				}
+
+				// Try to parse as JSON regardless of gzip success/failure
+				var body interface{}
+				if err := json.Unmarshal(contentBody, &body); err != nil {
+					router.logger.Error("Failed to unmarshal JSON response",
+						err,
+						"status", resp.StatusCode,
+						"content-type", resp.Header.Get("Content-Type"),
+						"content-encoding", resp.Header.Get("Content-Encoding"),
+						"content-length", len(contentBody))
+				} else {
+					router.logger.Debug("Proxy response", "body", body)
+				}
 			}
 
-			router.logger.Debug("Proxy response received", "status", resp.StatusCode, "body", body)
-			resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 			return nil
 		}
 	}
@@ -302,12 +333,11 @@ func generateTokens(provider *Provider, model string, messages []providers.Gener
 
 	switch provider.Name {
 	case "Ollama":
-		// Ollama expects a single prompt
-		prompt := messages[len(messages)-1].Content
 		payload = providers.GenerateRequestOllama{
 			Model:  model,
-			Prompt: prompt,
+			Prompt: getUserMessage(messages),
 			Stream: false,
+			System: getSystemMessage(messages),
 		}
 		response = &providers.GenerateResponseOllama{}
 	case "Groq":
@@ -323,8 +353,7 @@ func generateTokens(provider *Provider, model string, messages []providers.Gener
 		}
 		response = &providers.GenerateResponseOpenAI{}
 	case "Google":
-		// Google expects a different format
-		prompt := messages[len(messages)-1].Content
+		prompt := getSystemMessage(messages) + getUserMessage(messages)
 		payload = providers.GenerateRequestGoogle{
 			Contents: providers.GenerateRequestGoogleContents{
 				Parts: []providers.GenerateRequestGoogleParts{
@@ -336,13 +365,7 @@ func generateTokens(provider *Provider, model string, messages []providers.Gener
 		}
 		response = &providers.GenerateResponseGoogle{}
 	case "Cloudflare":
-		// Cloudflare expects a single prompt
-		var prompt string
-		if len(messages) > 1 && messages[0].Role == "system" {
-			prompt = messages[0].Content + "\n\n" + messages[len(messages)-1].Content
-		} else {
-			prompt = messages[len(messages)-1].Content
-		}
+		prompt := getSystemMessage(messages) + getUserMessage(messages)
 		payload = providers.GenerateRequestCloudflare{
 			Prompt: prompt,
 		}
@@ -429,4 +452,23 @@ func generateTokens(provider *Provider, model string, messages []providers.Gener
 		Model:   model,
 		Content: content,
 	}}, nil
+}
+
+func getSystemMessage(messages []providers.GenerateMessage) string {
+	for _, message := range messages {
+		if message.Role == "system" {
+			return message.Content
+		}
+	}
+	return ""
+}
+
+func getUserMessage(messages []providers.GenerateMessage) string {
+	var prompt string
+	for _, message := range messages {
+		if message.Role == "user" {
+			prompt += message.Content
+		}
+	}
+	return prompt
 }
