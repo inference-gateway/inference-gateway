@@ -56,7 +56,7 @@ func main() {
 		log.Fatalf("Error creating Kubernetes client: %v", err)
 	}
 
-	provider := "groq"                 // Using Groq API for analysis, but you can also use local Ollama provider if needed
+	provider := sdk.ProviderGroq       // Using Groq API for analysis, but you can also use local Ollama provider if needed
 	model := "llama-3.3-70b-versatile" // Using the Llama model for analysis
 	apiClient := sdk.NewClient("http://inference-gateway.inference-gateway:8080")
 
