@@ -11,7 +11,7 @@ import (
 
 	filepath "path/filepath"
 
-	sdk "github.com/inference-gateway/go-sdk"
+	sdk "github.com/inference-gateway/sdk"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubernetes "k8s.io/client-go/kubernetes"
@@ -21,7 +21,7 @@ import (
 	yaml "sigs.k8s.io/yaml"
 )
 
-const prompt = `
+const systemPrompt = `
 # System Instructions
 You are an AI assistant specialized in site reliability engineering.
 Your task is to analyze the following error log and provide a detailed summary of the issue along with potential solutions.
@@ -40,6 +40,8 @@ Your task is to analyze the following error log and provide a detailed summary o
 - List potential solutions with examples.
 - Mention the Pod, Namespace, and any other relevant information.
 `
+
+const userPrompt = `What's wrong with the following error log?`
 
 func main() {
 	config, err := rest.InClusterConfig()
@@ -130,7 +132,20 @@ func main() {
 				errorLog = errorLog[:100]
 			}
 
-			response, err := apiClient.GenerateContent(provider, model, fmt.Sprintf(prompt, errorLog))
+			response, err := apiClient.GenerateContent(
+				provider,
+				model,
+				[]sdk.Message{
+					{
+						Role:    sdk.RoleSystem,
+						Content: fmt.Sprintf(systemPrompt, errorLog),
+					},
+					{
+						Role:    sdk.RoleUser,
+						Content: userPrompt,
+					},
+				},
+			)
 			if err != nil {
 				log.Printf("Error analyzing log: %v", err)
 				continue

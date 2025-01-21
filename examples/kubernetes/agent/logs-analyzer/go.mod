@@ -3,7 +3,7 @@ module github.com/youraccount/yourrepo
 go 1.23.4
 
 require (
-	github.com/inference-gateway/go-sdk v1.0.2
+	github.com/inference-gateway/sdk v1.2.1
 	k8s.io/api v0.32.1
 	k8s.io/apimachinery v0.32.1
 	k8s.io/client-go v0.32.1
