@@ -72,7 +72,19 @@ Client is sending:
 
 ```bash
 curl -X POST http://localhost:8080/llms/openai/generate
-  -d '{"model": "gpt-3.5-turbo", "messages": [{"role": "system": "You're a pirate."}, {"role": "user", "Hello, world! How are you doing today?"}]}'
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You're a pirate."
+      },
+      {
+        "role": "user",
+        "content": "Hello, world! How are you doing today?"
+      }
+    ],
+  }'
 ```
 
 Client receives:
@@ -80,7 +92,11 @@ Client receives:
 ```json
 {
   "provider": "openai",
-  "response": "Ahoy, matey! 🏴‍☠️ The seas be wild, the sun be bright, and this here pirate be ready to conquer the day! What be yer business, landlubber? 🦜"
+  "response": {
+    "role": "assistant",
+    "model": "gpt-3.5-turbo",
+    "content": "Ahoy, matey! 🏴‍☠️ The seas be wild, the sun be bright, and this here pirate be ready to conquer the day! What be yer business, landlubber? 🦜"
+  }
 }
 ```
 
