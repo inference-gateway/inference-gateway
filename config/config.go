@@ -51,7 +51,7 @@ type Config struct {
 	CohereAPIURL      string `env:"COHERE_API_URL, default=https://api.cohere.com" description:"The URL for Cohere API"`
 	CohereAPIKey      string `env:"COHERE_API_KEY" type:"secret" description:"The Access token for Cohere API"`
 	AnthropicAPIURL   string `env:"ANTHROPIC_API_URL, default=https://api.anthropic.com" description:"The URL for Anthropic API"`
-	AnthropiAPIKey    string `env:"ANTHROPIC_API_KEY" type:"secret" description:"The Access token for Anthropic API"`
+	AnthropicAPIKey   string `env:"ANTHROPIC_API_KEY" type:"secret" description:"The Access token for Anthropic API"`
 }
 
 // Load loads the configuration from environment variables.

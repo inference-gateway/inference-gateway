@@ -64,7 +64,7 @@ func TestLoad(t *testing.T) {
 				CohereAPIURL:       "https://api.cohere.com",
 				CohereAPIKey:       "cohere123",
 				AnthropicAPIURL:    "https://api.anthropic.com",
-				AnthropiAPIKey:     "anthropic123",
+				AnthropicAPIKey:    "anthropic123",
 			},
 		},
 		{
@@ -95,7 +95,7 @@ func TestLoad(t *testing.T) {
 				CohereAPIURL:       "https://api.cohere.com",
 				CohereAPIKey:       "",
 				AnthropicAPIURL:    "https://api.anthropic.com",
-				AnthropiAPIKey:     "",
+				AnthropicAPIKey:    "",
 			},
 		},
 		{
@@ -159,7 +159,7 @@ func TestLoad(t *testing.T) {
 				CohereAPIURL:       "https://api.cohere.com",
 				CohereAPIKey:       "",
 				AnthropicAPIURL:    "https://api.anthropic.com",
-				AnthropiAPIKey:     "",
+				AnthropicAPIKey:    "",
 			},
 		},
 	}
