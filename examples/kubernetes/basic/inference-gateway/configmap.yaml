@@ -28,3 +28,4 @@ data:
   GOOGLE_AISTUDIO_API_URL: "https://generativelanguage.googleapis.com"
   CLOUDFLARE_API_URL: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
   COHERE_API_URL: "https://api.cohere.com"
+  ANTHROPIC_API_URL: "https://api.anthropic.com"

@@ -39,3 +39,5 @@
 | CLOUDFLARE_API_KEY |  | The Access token for Cloudflare API |
 | COHERE_API_URL | https://api.cohere.com | The URL for Cohere API |
 | COHERE_API_KEY |  | The Access token for Cohere API |
+| ANTHROPIC_API_URL | https://api.anthropic.com | The URL for Anthropic API |
+| ANTHROPIC_API_KEY |  | The Access token for Anthropic API |
