@@ -110,7 +110,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		router.logger.Error("provider token is missing", nil, "provider", provider)
 		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Provider token is missing"})
 		return
-	} else if provider.Name != "Google" {
+	} else if provider.Name != "Google" && provider.Name != "Anthropic" {
 		c.Request.Header.Set("Authorization", "Bearer "+provider.Token)
 	}
 
@@ -118,6 +118,11 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		query := c.Request.URL.Query()
 		query.Set("key", provider.Token)
 		c.Request.URL.RawQuery = query.Encode()
+	}
+
+	if provider.Name == "Anthropic" {
+		c.Request.Header.Set("x-api-key", provider.Token)
+		c.Request.Header.Set("anthropic-version", "2023-06-01")
 	}
 
 	c.Request.Header.Set("Content-Type", "application/json")
