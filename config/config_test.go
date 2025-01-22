@@ -35,6 +35,7 @@ func TestLoad(t *testing.T) {
 				"GOOGLE_AISTUDIO_API_KEY": "google123",
 				"CLOUDFLARE_API_KEY":      "cloudflare123",
 				"COHERE_API_KEY":          "cohere123",
+				"ANTHROPIC_API_KEY":       "anthropic123",
 			},
 			expectedCfg: config.Config{
 				ApplicationName:    "inference-gateway",
@@ -62,6 +63,8 @@ func TestLoad(t *testing.T) {
 				CloudflareAPIKey:   "cloudflare123",
 				CohereAPIURL:       "https://api.cohere.com",
 				CohereAPIKey:       "cohere123",
+				AnthropicAPIURL:    "https://api.anthropic.com",
+				AnthropiAPIKey:     "anthropic123",
 			},
 		},
 		{
@@ -91,6 +94,8 @@ func TestLoad(t *testing.T) {
 				CloudflareAPIKey:   "",
 				CohereAPIURL:       "https://api.cohere.com",
 				CohereAPIKey:       "",
+				AnthropicAPIURL:    "https://api.anthropic.com",
+				AnthropiAPIKey:     "",
 			},
 		},
 		{
@@ -153,6 +158,8 @@ func TestLoad(t *testing.T) {
 				CloudflareAPIKey:   "",
 				CohereAPIURL:       "https://api.cohere.com",
 				CohereAPIKey:       "",
+				AnthropicAPIURL:    "https://api.anthropic.com",
+				AnthropiAPIKey:     "",
 			},
 		},
 	}
