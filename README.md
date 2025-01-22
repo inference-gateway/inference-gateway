@@ -60,12 +60,13 @@ graph TD
     IG1 --> P[Proxy Gateway]
     IG2 --> P[Proxy Gateway]
     IG3 --> P[Proxy Gateway]
-    P[Proxy Gateway] --> C[Ollama API]
-    P[Proxy Gateway] --> D[Groq API]
-    P[Proxy Gateway] --> E[OpenAI API]
-    P[Proxy Gateway] --> F[Google API]
-    P[Proxy Gateway] --> G[Cloudflare API]
-    P[Proxy Gateway] --> H[Cohere API]
+    P[Proxy Gateway] --> C[Ollama]
+    P[Proxy Gateway] --> D[Groq]
+    P[Proxy Gateway] --> E[OpenAI]
+    P[Proxy Gateway] --> F[Google]
+    P[Proxy Gateway] --> G[Cloudflare]
+    P[Proxy Gateway] --> H[Cohere]
+    P[Proxy Gateway] --> H[Anthropic]
 ```
 
 Client is sending:
@@ -108,6 +109,7 @@ Client receives:
 - [Google](https://aistudio.google.com/)
 - [Cloudflare](https://www.cloudflare.com/)
 - [Cohere](https://docs.cohere.com/docs/the-cohere-platform)
+- [Anthropic](https://docs.anthropic.com/en/api/getting-started)
 
 ## Configuration
 
