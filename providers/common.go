@@ -7,15 +7,11 @@ import (
 )
 
 type Provider struct {
-	ID                string
-	Name              string
-	URL               string
-	ProxyURL          string
-	Token             string
-	GenerateTokensURL string
-	// AuthMethod        string
-	// AuthHeaderName    string
-	// ResponseWrapper   string
+	ID       string
+	Name     string
+	URL      string
+	ProxyURL string
+	Token    string
 }
 
 type ModelsResponse struct {
