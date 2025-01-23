@@ -184,7 +184,7 @@ type ModelResponse struct {
 
 func (router *RouterImpl) FetchAllModelsHandler(c *gin.Context) {
 	var wg sync.WaitGroup
-	modelProviders := router.cfg.GetEndpointsListModels()
+	modelProviders := router.cfg.ListLLMsEndpoints()
 
 	ch := make(chan providers.ModelsResponse, len(modelProviders))
 	for provider, url := range modelProviders {
@@ -220,7 +220,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	providerGenTokensURL := router.cfg.GetEndpointsGenerateTokens(provider.ID)
+	providerGenTokensURL := router.cfg.GenTokensEndpoint(provider.ID)
 
 	if provider.Name == "Google" || provider.Name == "Cloudflare" {
 		providerGenTokensURL = strings.Replace(providerGenTokensURL, "{model}", req.Model, 1)

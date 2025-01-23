@@ -77,8 +77,8 @@ var listEndpoints = map[string]string{
 	"anthropic":  "/v1/models",
 }
 
-// GetEndpointsListModels returns the endpoints for listing models
-func (cfg *Config) GetEndpointsListModels() map[string]string {
+// ListLLMsEndpoints returns the endpoints for listing models
+func (cfg *Config) ListLLMsEndpoints() map[string]string {
 	return listEndpoints
 }
 
@@ -92,8 +92,8 @@ var generateEndpoints = map[string]string{
 	"anthropic":  "/v1/messages",
 }
 
-// GetEndpointsGenerateTokens returns the endpoint for generating tokens for the given provider.
-func (cfg *Config) GetEndpointsGenerateTokens(providerID string) string {
+// GenTokensEndpoint returns the endpoint for generating tokens for the given provider.
+func (cfg *Config) GenTokensEndpoint(providerID string) string {
 	return generateEndpoints[providerID]
 }
 
