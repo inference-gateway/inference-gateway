@@ -226,10 +226,9 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		providerGenTokensURL = strings.Replace(providerGenTokensURL, "{model}", req.Model, 1)
 	}
 
-	provider.URL = provider.ProxyURL + providerGenTokensURL
+	url := provider.ProxyURL + providerGenTokensURL
 	var response providers.GenerateResponse
-
-	response, err := generateTokens(provider, req.Model, req.Messages)
+	response, err := generateTokens(provider, url, req.Model, req.Messages)
 	if err != nil {
 		router.logger.Error("failed to generate tokens", err, "provider", provider)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate tokens"})
@@ -239,7 +238,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func generateTokens(provider *providers.Provider, model string, messages []providers.GenerateMessage) (providers.GenerateResponse, error) {
+func generateTokens(provider *providers.Provider, url string, model string, messages []providers.GenerateMessage) (providers.GenerateResponse, error) {
 	payload := provider.BuildGenTokensRequest(model, messages)
 
 	payloadBytes, err := json.Marshal(payload)
@@ -247,7 +246,7 @@ func generateTokens(provider *providers.Provider, model string, messages []provi
 		return providers.GenerateResponse{}, err
 	}
 
-	resp, err := http.Post(provider.URL, "application/json", strings.NewReader(string(payloadBytes)))
+	resp, err := http.Post(url, "application/json", strings.NewReader(string(payloadBytes)))
 	if err != nil {
 		return providers.GenerateResponse{}, err
 	}
