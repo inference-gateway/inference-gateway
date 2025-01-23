@@ -67,30 +67,32 @@ func (cfg *Config) Providers() map[string]providers.Provider {
 	}
 }
 
+var listEndpoints = map[string]string{
+	"ollama":     "/v1/models",
+	"groq":       "/openai/v1/models",
+	"openai":     "/v1/models",
+	"google":     "/v1beta/models",
+	"cloudflare": "/ai/finetunes/public",
+	"cohere":     "/v1/models",
+	"anthropic":  "/v1/models",
+}
+
 func (cfg *Config) GetEndpointsListModels() map[string]string {
-	return map[string]string{
-		"ollama":     "/v1/models",
-		"groq":       "/openai/v1/models",
-		"openai":     "/v1/models",
-		"google":     "/v1beta/models",
-		"cloudflare": "/ai/finetunes/public",
-		"cohere":     "/v1/models",
-		"anthropic":  "/v1/models",
-	}
+	return listEndpoints
+}
+
+var generateEndpoints = map[string]string{
+	"ollama":     "/api/generate",
+	"groq":       "/openai/v1/chat/completions",
+	"openai":     "/v1/completions",
+	"google":     "/v1beta/models/{model}:generateContent",
+	"cloudflare": "/ai/run/@cf/meta/{model}",
+	"cohere":     "/v2/chat",
+	"anthropic":  "/v1/messages",
 }
 
 func (cfg *Config) GetEndpointsGenerateTokens(providerID string) string {
-	providers := map[string]string{
-		"ollama":     "/api/generate",
-		"groq":       "/openai/v1/chat/completions",
-		"openai":     "/v1/completions",
-		"google":     "/v1beta/models/{model}:generateContent",
-		"cloudflare": "/ai/run/@cf/meta/{model}",
-		"cohere":     "/v2/chat",
-		"anthropic":  "/v1/messages",
-	}
-
-	return providers[providerID]
+	return generateEndpoints[providerID]
 }
 
 // Load loads the configuration from environment variables.
