@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -27,7 +26,7 @@ type Router interface {
 	HealthcheckHandler(c *gin.Context)
 	FetchAllModelsHandler(c *gin.Context)
 	GenerateProvidersTokenHandler(c *gin.Context)
-	ValidateProvider(provider string) (*Provider, bool)
+	ValidateProvider(provider string) (*providers.Provider, bool)
 }
 
 type RouterImpl struct {
@@ -52,26 +51,8 @@ func NewRouter(cfg config.Config, logger l.Logger, tp otel.TracerProvider) Route
 	}
 }
 
-type Provider struct {
-	Name     string `json:"name"`
-	URL      string `json:"url"`
-	ProxyURL string `json:"proxy_url"`
-	Token    string `json:"token"`
-}
-
-func (router *RouterImpl) ValidateProvider(provider string) (*Provider, bool) {
-	cfg := router.cfg
-	providers := map[string]Provider{
-		"ollama":     {Name: "Ollama", URL: cfg.OllamaAPIURL, ProxyURL: "http://localhost:8080/proxy/ollama", Token: ""},
-		"groq":       {Name: "Groq", URL: cfg.GroqAPIURL, ProxyURL: "http://localhost:8080/proxy/groq", Token: cfg.GroqAPIKey},
-		"openai":     {Name: "OpenAI", URL: cfg.OpenaiAPIURL, ProxyURL: "http://localhost:8080/proxy/openai", Token: cfg.OpenaiAPIKey},
-		"google":     {Name: "Google", URL: cfg.GoogleAIStudioURL, ProxyURL: "http://localhost:8080/proxy/google", Token: cfg.GoogleAIStudioKey},
-		"cloudflare": {Name: "Cloudflare", URL: cfg.CloudflareAPIURL, ProxyURL: "http://localhost:8080/proxy/cloudflare", Token: cfg.CloudflareAPIKey},
-		"cohere":     {Name: "Cohere", URL: cfg.CohereAPIURL, ProxyURL: "http://localhost:8080/proxy/cohere", Token: cfg.CohereAPIKey},
-		"anthropic":  {Name: "Anthropic", URL: cfg.AnthropicAPIURL, ProxyURL: "http://localhost:8080/proxy/anthropic", Token: cfg.AnthropicAPIKey},
-	}
-
-	p, ok := providers[provider]
+func (router *RouterImpl) ValidateProvider(provider string) (*providers.Provider, bool) {
+	p, ok := router.cfg.Providers()[provider]
 	if !ok {
 		return nil, false
 	}
@@ -203,87 +184,26 @@ type ModelResponse struct {
 
 func (router *RouterImpl) FetchAllModelsHandler(c *gin.Context) {
 	var wg sync.WaitGroup
-	modelProviders := map[string]string{
-		"ollama":     "http://localhost:8080/proxy/ollama/v1/models",
-		"groq":       "http://localhost:8080/proxy/groq/openai/v1/models",
-		"openai":     "http://localhost:8080/proxy/openai/v1/models",
-		"google":     "http://localhost:8080/proxy/google/v1beta/models",
-		"cloudflare": "http://localhost:8080/proxy/cloudflare/ai/finetunes/public",
-		"cohere":     "http://localhost:8080/proxy/cohere/v1/models",
-		"anthropic":  "http://localhost:8080/proxy/anthropic/v1/models",
-	}
+	modelProviders := router.cfg.GetEndpointsListModels()
 
-	ch := make(chan ModelResponse, len(modelProviders))
+	ch := make(chan providers.ModelsResponse, len(modelProviders))
 	for provider, url := range modelProviders {
 		wg.Add(1)
-		go fetchModels(url, provider, &wg, ch)
+		go func(url, provider string) {
+			defer wg.Done()
+			ch <- providers.FetchModels(url, provider)
+		}(url, provider)
 	}
 
 	wg.Wait()
 	close(ch)
 
-	var allModels []ModelResponse
+	var allModels []providers.ModelsResponse
 	for model := range ch {
 		allModels = append(allModels, model)
 	}
 
 	c.JSON(http.StatusOK, allModels)
-}
-
-func fetchModels(url string, provider string, wg *sync.WaitGroup, ch chan<- ModelResponse) {
-	defer wg.Done()
-	resp, err := http.Get(url)
-	if err != nil {
-		ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
-		return
-	}
-	defer resp.Body.Close()
-
-	if provider == "google" {
-		var response struct {
-			Models []interface{} `json:"models"`
-		}
-		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
-			return
-		}
-		ch <- ModelResponse{Provider: provider, Models: response.Models}
-		return
-	}
-
-	if provider == "cloudflare" {
-		var response struct {
-			Result []interface{} `json:"result"`
-		}
-		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
-			return
-		}
-		ch <- ModelResponse{Provider: provider, Models: response.Result}
-		return
-	}
-
-	if provider == "cohere" {
-		var response struct {
-			Models []interface{} `json:"models"`
-		}
-		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
-			return
-		}
-		ch <- ModelResponse{Provider: provider, Models: response.Models}
-		return
-	}
-
-	var response struct {
-		Object string        `json:"object"`
-		Data   []interface{} `json:"data"`
-	}
-	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		ch <- ModelResponse{Provider: provider, Models: []interface{}{}}
-		return
-	}
-	ch <- ModelResponse{Provider: provider, Models: response.Data}
 }
 
 func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
@@ -300,28 +220,13 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	providersEndpoints := map[string]string{
-		"Ollama":     "/api/generate",
-		"Groq":       "/openai/v1/chat/completions",
-		"OpenAI":     "/v1/completions",
-		"Google":     "/v1beta/models/{model}:generateContent",
-		"Cloudflare": "/ai/run/@cf/meta/{model}",
-		"Cohere":     "/v2/chat",
-		"Anthropic":  "/v1/messages",
-	}
-
-	url, ok := providersEndpoints[provider.Name]
-	if !ok {
-		router.logger.Error("requested unsupported provider", nil, "provider", provider)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
-		return
-	}
+	providerGenTokensURL := router.cfg.GetEndpointsGenerateTokens()[provider.ID]
 
 	if provider.Name == "Google" || provider.Name == "Cloudflare" {
-		url = strings.Replace(url, "{model}", req.Model, 1)
+		providerGenTokensURL = strings.Replace(providerGenTokensURL, "{model}", req.Model, 1)
 	}
 
-	provider.URL = provider.ProxyURL + url
+	provider.URL = provider.ProxyURL + providerGenTokensURL
 	var response providers.GenerateResponse
 
 	response, err := generateTokens(provider, req.Model, req.Messages)
@@ -334,65 +239,8 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func generateTokens(provider *Provider, model string, messages []providers.GenerateMessage) (providers.GenerateResponse, error) {
-	var payload interface{}
-	var response interface{}
-	var role, content string
-
-	switch provider.Name {
-	case "Ollama":
-		payload = providers.GenerateRequestOllama{
-			Model:  model,
-			Prompt: getUserMessage(messages),
-			Stream: false,
-			System: getSystemMessage(messages),
-		}
-		response = &providers.GenerateResponseOllama{}
-	case "Groq":
-		payload = providers.GenerateRequestGroq{
-			Model:    model,
-			Messages: messages,
-		}
-		response = &providers.GenerateResponseGroq{}
-	case "OpenAI":
-		payload = providers.GenerateRequestOpenAI{
-			Model:    model,
-			Messages: messages,
-		}
-		response = &providers.GenerateResponseOpenAI{}
-	case "Google":
-		prompt := getSystemMessage(messages) + getUserMessage(messages)
-		payload = providers.GenerateRequestGoogle{
-			Contents: providers.GenerateRequestGoogleContents{
-				Parts: []providers.GenerateRequestGoogleParts{
-					{
-						Text: prompt,
-					},
-				},
-			},
-		}
-		response = &providers.GenerateResponseGoogle{}
-	case "Cloudflare":
-		prompt := getSystemMessage(messages) + getUserMessage(messages)
-		payload = providers.GenerateRequestCloudflare{
-			Prompt: prompt,
-		}
-		response = &providers.GenerateResponseCloudflare{}
-	case "Cohere":
-		payload = providers.GenerateRequestCohere{
-			Model:    model,
-			Messages: messages,
-		}
-		response = &providers.GenerateResponseCohere{}
-	case "Anthropic":
-		payload = providers.GenerateRequestAnthropic{
-			Model:    model,
-			Messages: messages,
-		}
-		response = &providers.GenerateResponseAnthropic{}
-	default:
-		return providers.GenerateResponse{}, errors.New("provider not implemented")
-	}
+func generateTokens(provider *providers.Provider, model string, messages []providers.GenerateMessage) (providers.GenerateResponse, error) {
+	payload := provider.BuildGenTokensRequest(model, messages)
 
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
@@ -405,92 +253,16 @@ func generateTokens(provider *Provider, model string, messages []providers.Gener
 	}
 	defer resp.Body.Close()
 
+	var response interface{}
 	err = json.NewDecoder(resp.Body).Decode(response)
 	if err != nil {
 		return providers.GenerateResponse{}, err
 	}
 
-	switch provider.Name {
-	case "Ollama":
-		ollamaResponse := response.(*providers.GenerateResponseOllama)
-		if ollamaResponse.Response != "" {
-			role = "assistant" // It's not provided by Ollama so we set it to assistant
-			content = ollamaResponse.Response
-		} else {
-			return providers.GenerateResponse{}, errors.New("invalid response from Ollama")
-		}
-	case "Groq":
-		groqResponse := response.(*providers.GenerateResponseGroq)
-		if len(groqResponse.Choices) > 0 && len(groqResponse.Choices[0].Message.Content) > 0 {
-			role = groqResponse.Choices[0].Message.Role
-			content = groqResponse.Choices[0].Message.Content
-		} else {
-			return providers.GenerateResponse{}, errors.New("invalid response from Groq")
-		}
-	case "OpenAI":
-		openAIResponse := response.(*providers.GenerateResponseOpenAI)
-		if len(openAIResponse.Choices) > 0 && len(openAIResponse.Choices[0].Message.Content) > 0 {
-			role = openAIResponse.Choices[0].Message.Role
-			content = openAIResponse.Choices[0].Message.Content
-		} else {
-			return providers.GenerateResponse{}, errors.New("invalid response from OpenAI")
-		}
-	case "Google":
-		googleResponse := response.(*providers.GenerateResponseGoogle)
-		if len(googleResponse.Candidates) > 0 && len(googleResponse.Candidates[0].Content.Parts) > 0 {
-			role = googleResponse.Candidates[0].Content.Role
-			content = googleResponse.Candidates[0].Content.Parts[0].Text
-		} else {
-			return providers.GenerateResponse{}, errors.New("invalid response from Google")
-		}
-	case "Cloudflare":
-		cloudflareResponse := response.(*providers.GenerateResponseCloudflare)
-		if cloudflareResponse.Result.Response != "" {
-			role = "assistant"
-			content = cloudflareResponse.Result.Response
-		} else {
-			return providers.GenerateResponse{}, errors.New("invalid response from Cloudflare")
-		}
-	case "Cohere":
-		cohereResponse := response.(*providers.GenerateResponseCohere)
-		if len(cohereResponse.Message.Content) > 0 && cohereResponse.Message.Content[0].Text != "" {
-			role = cohereResponse.Message.Role
-			content = cohereResponse.Message.Content[0].Text
-		} else {
-			return providers.GenerateResponse{}, errors.New("invalid response from Cohere")
-		}
-	case "Anthropic":
-		anthropicResponse := response.(*providers.GenerateResponseAnthropic)
-		if len(anthropicResponse.Choices) > 0 && len(anthropicResponse.Choices[0].Message.Content) > 0 {
-			role = anthropicResponse.Choices[0].Message.Role
-			content = anthropicResponse.Choices[0].Message.Content
-		} else {
-			return providers.GenerateResponse{}, errors.New("invalid response from Anthropic")
-		}
+	r, err := provider.BuildGenTokensResponse(model, response)
+	if err != nil {
+		return providers.GenerateResponse{}, err
 	}
 
-	return providers.GenerateResponse{Provider: provider.Name, Response: providers.ResponseTokens{
-		Role:    role,
-		Model:   model,
-		Content: content,
-	}}, nil
-}
-
-func getSystemMessage(messages []providers.GenerateMessage) string {
-	for _, message := range messages {
-		if message.Role == "system" {
-			return message.Content
-		}
-	}
-	return ""
-}
-
-func getUserMessage(messages []providers.GenerateMessage) string {
-	var prompt string
-	for _, message := range messages {
-		if message.Role == "user" {
-			prompt += message.Content
-		}
-	}
-	return prompt
+	return r, nil
 }

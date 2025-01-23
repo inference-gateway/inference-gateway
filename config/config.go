@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -52,6 +53,42 @@ type Config struct {
 	CohereAPIKey      string `env:"COHERE_API_KEY" type:"secret" description:"The Access token for Cohere API"`
 	AnthropicAPIURL   string `env:"ANTHROPIC_API_URL, default=https://api.anthropic.com" description:"The URL for Anthropic API"`
 	AnthropicAPIKey   string `env:"ANTHROPIC_API_KEY" type:"secret" description:"The Access token for Anthropic API"`
+}
+
+func (cfg *Config) Providers() map[string]providers.Provider {
+	return map[string]providers.Provider{
+		"ollama":     {ID: "ollama", Name: "Ollama", URL: cfg.OllamaAPIURL, ProxyURL: "http://localhost:8080/proxy/ollama", Token: ""},
+		"groq":       {ID: "groq", Name: "Groq", URL: cfg.GroqAPIURL, ProxyURL: "http://localhost:8080/proxy/groq", Token: cfg.GroqAPIKey},
+		"openai":     {ID: "openai", Name: "OpenAI", URL: cfg.OpenaiAPIURL, ProxyURL: "http://localhost:8080/proxy/openai", Token: cfg.OpenaiAPIKey},
+		"google":     {ID: "google", Name: "Google", URL: cfg.GoogleAIStudioURL, ProxyURL: "http://localhost:8080/proxy/google", Token: cfg.GoogleAIStudioKey},
+		"cloudflare": {ID: "cloudflare", Name: "Cloudflare", URL: cfg.CloudflareAPIURL, ProxyURL: "http://localhost:8080/proxy/cloudflare", Token: cfg.CloudflareAPIKey},
+		"cohere":     {ID: "cohere", Name: "Cohere", URL: cfg.CohereAPIURL, ProxyURL: "http://localhost:8080/proxy/cohere", Token: cfg.CohereAPIKey},
+		"anthropic":  {ID: "anthropic", Name: "Anthropic", URL: cfg.AnthropicAPIURL, ProxyURL: "http://localhost:8080/proxy/anthropic", Token: cfg.AnthropicAPIKey},
+	}
+}
+
+func (cfg *Config) GetEndpointsListModels() map[string]string {
+	return map[string]string{
+		"ollama":     "/proxy/v1/models",
+		"groq":       "/proxy/openai/v1/models",
+		"openai":     "/proxy/v1/models",
+		"google":     "/proxy/v1beta/models",
+		"cloudflare": "/proxy/ai/finetunes/public",
+		"cohere":     "/proxy/v1/models",
+		"anthropic":  "/proxy/v1/models",
+	}
+}
+
+func (cfg *Config) GetEndpointsGenerateTokens() map[string]string {
+	return map[string]string{
+		"Ollama":     "/api/generate",
+		"Groq":       "/openai/v1/chat/completions",
+		"OpenAI":     "/v1/completions",
+		"Google":     "/v1beta/models/{model}:generateContent",
+		"Cloudflare": "/ai/run/@cf/meta/{model}",
+		"Cohere":     "/v2/chat",
+		"Anthropic":  "/v1/messages",
+	}
 }
 
 // Load loads the configuration from environment variables.

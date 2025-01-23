@@ -1,5 +1,9 @@
 package providers
 
+type GetModelsResponseCohere struct {
+	Models []interface{} `json:"models"`
+}
+
 type GenerateRequestCohere struct {
 	Model    string            `json:"model"`
 	Messages []GenerateMessage `json:"messages"`

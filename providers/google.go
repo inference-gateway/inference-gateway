@@ -12,6 +12,10 @@ type GenerateRequestGoogle struct {
 	Contents GenerateRequestGoogleContents `json:"contents"`
 }
 
+type GetModelsResponseGoogle struct {
+	Models []interface{} `json:"models"`
+}
+
 type GenerateResponseGooglePart struct {
 	Text string `json:"text"`
 }
