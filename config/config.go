@@ -69,13 +69,13 @@ func (cfg *Config) Providers() map[string]providers.Provider {
 
 func (cfg *Config) GetEndpointsListModels() map[string]string {
 	return map[string]string{
-		"ollama":     "/proxy/v1/models",
-		"groq":       "/proxy/openai/v1/models",
-		"openai":     "/proxy/v1/models",
-		"google":     "/proxy/v1beta/models",
-		"cloudflare": "/proxy/ai/finetunes/public",
-		"cohere":     "/proxy/v1/models",
-		"anthropic":  "/proxy/v1/models",
+		"ollama":     "/v1/models",
+		"groq":       "/openai/v1/models",
+		"openai":     "/v1/models",
+		"google":     "/v1beta/models",
+		"cloudflare": "/ai/finetunes/public",
+		"cohere":     "/v1/models",
+		"anthropic":  "/v1/models",
 	}
 }
 
