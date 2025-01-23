@@ -220,7 +220,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	providerGenTokensURL := router.cfg.GetEndpointsGenerateTokens()[provider.ID]
+	providerGenTokensURL := router.cfg.GetEndpointsGenerateTokens(provider.ID)
 
 	if provider.Name == "Google" || provider.Name == "Cloudflare" {
 		providerGenTokensURL = strings.Replace(providerGenTokensURL, "{model}", req.Model, 1)

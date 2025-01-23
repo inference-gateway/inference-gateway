@@ -79,16 +79,18 @@ func (cfg *Config) GetEndpointsListModels() map[string]string {
 	}
 }
 
-func (cfg *Config) GetEndpointsGenerateTokens() map[string]string {
-	return map[string]string{
-		"Ollama":     "/api/generate",
-		"Groq":       "/openai/v1/chat/completions",
-		"OpenAI":     "/v1/completions",
-		"Google":     "/v1beta/models/{model}:generateContent",
-		"Cloudflare": "/ai/run/@cf/meta/{model}",
-		"Cohere":     "/v2/chat",
-		"Anthropic":  "/v1/messages",
+func (cfg *Config) GetEndpointsGenerateTokens(providerID string) string {
+	providers := map[string]string{
+		"ollama":     "/api/generate",
+		"groq":       "/openai/v1/chat/completions",
+		"openai":     "/v1/completions",
+		"google":     "/v1beta/models/{model}:generateContent",
+		"cloudflare": "/ai/run/@cf/meta/{model}",
+		"cohere":     "/v2/chat",
+		"anthropic":  "/v1/messages",
 	}
+
+	return providers[providerID]
 }
 
 // Load loads the configuration from environment variables.
