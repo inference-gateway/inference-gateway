@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -17,7 +18,7 @@ import (
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
-	trace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Router interface {
@@ -65,6 +66,118 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
 }
 
+// providerAuth holds provider authentication configuration
+type providerAuth struct {
+	Type   string            // "bearer", "query", "header"
+	Key    string            // header name or query parameter name
+	Value  string            // token or API key
+	Extras map[string]string // additional headers/params
+}
+
+// TODO - move this to a config
+func getProviderAuth(provider *providers.Provider) providerAuth {
+	switch provider.Name {
+	case "Google":
+		return providerAuth{
+			Type:  "query",
+			Key:   "key",
+			Value: provider.Token,
+		}
+	case "Anthropic":
+		return providerAuth{
+			Type:  "header",
+			Key:   "x-api-key",
+			Value: provider.Token,
+			Extras: map[string]string{
+				"anthropic-version": "2023-06-01",
+			},
+		}
+	default:
+		return providerAuth{
+			Type:  "bearer",
+			Value: provider.Token,
+		}
+	}
+}
+
+// setupRequestAuth configures authentication for the request
+func (router *RouterImpl) setupRequestAuth(c *gin.Context, provider *providers.Provider) error {
+	if provider.Token == "" && provider.Name != "Ollama" {
+		return fmt.Errorf("provider token is missing")
+	}
+
+	auth := getProviderAuth(provider)
+	switch auth.Type {
+	case "query":
+		query := c.Request.URL.Query()
+		query.Set(auth.Key, auth.Value)
+		c.Request.URL.RawQuery = query.Encode()
+	case "header":
+		c.Request.Header.Set(auth.Key, auth.Value)
+		for k, v := range auth.Extras {
+			c.Request.Header.Set(k, v)
+		}
+	case "bearer":
+		c.Request.Header.Set("Authorization", "Bearer "+auth.Value)
+	}
+
+	return nil
+}
+
+// logJSONResponse logs the JSON response in development mode
+func (router *RouterImpl) logJSONResponse(resp *http.Response, body []byte) {
+	var data interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		router.logger.Error("Failed to unmarshal JSON response", err)
+		return
+	}
+
+	router.logger.Debug("Proxy response", "status", resp.StatusCode, "body", data)
+}
+
+// handleProxyResponse processes the proxy response in development mode
+func (router *RouterImpl) logProxyResponseInDev(resp *http.Response) error {
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		router.logger.Error("Failed to read response from proxy", err)
+		return err
+	}
+
+	// Always restore the body
+	defer func() {
+		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	}()
+
+	if !strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
+		return nil
+	}
+
+	contentBody := router.handleGzippedContent(resp, bodyBytes)
+	router.logJSONResponse(resp, contentBody)
+	return nil
+}
+
+// handleGzippedContent decompresses gzipped content in development mode
+func (router *RouterImpl) handleGzippedContent(resp *http.Response, bodyBytes []byte) []byte {
+	if resp.Header.Get("Content-Encoding") != "gzip" || len(bodyBytes) == 0 {
+		return bodyBytes
+	}
+
+	reader, err := gzip.NewReader(bytes.NewReader(bodyBytes))
+	if err != nil {
+		router.logger.Error("Invalid gzip content", err)
+	} else {
+		defer reader.Close()
+		if decompressed, err := io.ReadAll(reader); err == nil {
+			bodyBytes = decompressed
+		} else {
+			router.logger.Error("Failed to read gzipped content", err)
+		}
+	}
+
+	return bodyBytes
+}
+
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
 	provider, ok := router.ValidateProvider(p)
@@ -74,6 +187,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		return
 	}
 
+	// TODO - move this to a middleware
 	if router.cfg.EnableTelemetry {
 		ctx := c.Request.Context()
 		_, span := router.tp.Tracer("inference-gateway").Start(ctx, "proxy-request")
@@ -85,80 +199,25 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		))
 	}
 
+	// Update request path and setup auth
 	c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/proxy/"+p)
-
-	if provider.Token == "" && provider.Name != "Ollama" {
-		router.logger.Error("provider token is missing", nil, "provider", provider)
-		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Provider token is missing"})
+	if err := router.setupRequestAuth(c, provider); err != nil {
+		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: err.Error()})
 		return
-	} else if provider.Name != "Google" && provider.Name != "Anthropic" {
-		c.Request.Header.Set("Authorization", "Bearer "+provider.Token)
 	}
 
-	if provider.Name == "Google" {
-		query := c.Request.URL.Query()
-		query.Set("key", provider.Token)
-		c.Request.URL.RawQuery = query.Encode()
-	}
-
-	if provider.Name == "Anthropic" {
-		c.Request.Header.Set("x-api-key", provider.Token)
-		c.Request.Header.Set("anthropic-version", "2023-06-01")
-	}
-
+	// Setup common headers
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Request.Header.Set("Accept", "application/json")
 
+	// Create and configure proxy
 	remote, _ := url.Parse(provider.URL + c.Request.URL.Path)
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
-	if router.cfg.Environment == "development" {
+	// Log proxy responses in development mode only
+	if router.cfg.Environment != "development" {
 		proxy.ModifyResponse = func(resp *http.Response) error {
-			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				router.logger.Error("Failed to read response from proxy", err)
-				return err
-			}
-
-			// Always restore the body
-			defer func() {
-				resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-			}()
-
-			// Only attempt to parse JSON responses
-			if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
-				contentBody := bodyBytes
-
-				// Handle gzipped content only if we have actual content
-				if resp.Header.Get("Content-Encoding") == "gzip" && len(bodyBytes) > 0 {
-					reader, err := gzip.NewReader(bytes.NewReader(bodyBytes))
-					if err != nil {
-						router.logger.Error("Invalid gzip content", err)
-					} else {
-						defer reader.Close()
-						if decompressed, err := io.ReadAll(reader); err == nil {
-							contentBody = decompressed
-						} else {
-							router.logger.Error("Failed to read gzipped content", err)
-						}
-					}
-				}
-
-				// Try to parse as JSON regardless of gzip success/failure
-				var body interface{}
-				if err := json.Unmarshal(contentBody, &body); err != nil {
-					router.logger.Error("Failed to unmarshal JSON response",
-						err,
-						"status", resp.StatusCode,
-						"content-type", resp.Header.Get("Content-Type"),
-						"content-encoding", resp.Header.Get("Content-Encoding"),
-						"content-length", len(contentBody))
-				} else {
-					router.logger.Debug("Proxy response", "body", body)
-				}
-			}
-
-			return nil
+			return router.logProxyResponseInDev(resp)
 		}
 	}
 
