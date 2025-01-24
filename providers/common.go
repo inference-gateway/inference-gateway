@@ -7,11 +7,13 @@ import (
 )
 
 type Provider struct {
-	ID       string
-	Name     string
-	URL      string
-	ProxyURL string
-	Token    string
+	ID            string
+	Name          string
+	URL           string
+	ProxyURL      string
+	Token         string
+	AuthType      string
+	ExtraXHeaders map[string]string
 }
 
 type ModelsResponse struct {

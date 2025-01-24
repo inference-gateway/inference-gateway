@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
@@ -64,64 +63,6 @@ func (router *RouterImpl) ValidateProvider(provider string) (*providers.Provider
 func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 	router.logger.Error("requested route is not found", nil)
 	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
-}
-
-// providerAuth holds provider authentication configuration
-type providerAuth struct {
-	Type   string            // "bearer", "query", "header"
-	Key    string            // header name or query parameter name
-	Value  string            // token or API key
-	Extras map[string]string // additional headers/params
-}
-
-// TODO - move this to a config
-func getProviderAuth(provider *providers.Provider) providerAuth {
-	switch provider.Name {
-	case "Google":
-		return providerAuth{
-			Type:  "query",
-			Key:   "key",
-			Value: provider.Token,
-		}
-	case "Anthropic":
-		return providerAuth{
-			Type:  "header",
-			Key:   "x-api-key",
-			Value: provider.Token,
-			Extras: map[string]string{
-				"anthropic-version": "2023-06-01",
-			},
-		}
-	default:
-		return providerAuth{
-			Type:  "bearer",
-			Value: provider.Token,
-		}
-	}
-}
-
-// setupRequestAuth configures authentication for the request
-func (router *RouterImpl) setupRequestAuth(c *gin.Context, provider *providers.Provider) error {
-	if provider.Token == "" && provider.Name != "Ollama" {
-		return fmt.Errorf("provider token is missing")
-	}
-
-	auth := getProviderAuth(provider)
-	switch auth.Type {
-	case "query":
-		query := c.Request.URL.Query()
-		query.Set(auth.Key, auth.Value)
-		c.Request.URL.RawQuery = query.Encode()
-	case "header":
-		c.Request.Header.Set(auth.Key, auth.Value)
-		for k, v := range auth.Extras {
-			c.Request.Header.Set(k, v)
-		}
-	case "bearer":
-		c.Request.Header.Set("Authorization", "Bearer "+auth.Value)
-	}
-
-	return nil
 }
 
 // logJSONResponse logs the JSON response in development mode
@@ -199,10 +140,20 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		))
 	}
 
-	// Update request path and setup auth
-	c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/proxy/"+p)
-	if err := router.setupRequestAuth(c, provider); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: err.Error()})
+	// Setup authentication headers or query params
+	if provider.AuthType == "bearer" {
+		c.Request.Header.Set("Authorization", "Bearer "+provider.Token)
+	} else if provider.AuthType == "xheader" {
+		c.Request.Header.Set("x-api-key", provider.Token)
+		for k, v := range provider.ExtraXHeaders {
+			c.Request.Header.Set(k, v)
+		}
+	} else if provider.AuthType == "query" {
+		query := c.Request.URL.Query()
+		query.Set("key", provider.Token)
+		c.Request.URL.RawQuery = query.Encode()
+	} else {
+		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
 		return
 	}
 
