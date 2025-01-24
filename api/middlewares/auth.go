@@ -24,8 +24,8 @@ type OIDCAuthenticatorImpl struct {
 
 type OIDCAuthenticatorNoop struct{}
 
-// NewOIDCAuthenticator creates a new OIDCAuthenticator instance
-func NewOIDCAuthenticator(logger logger.Logger, cfg config.Config) (OIDCAuthenticator, error) {
+// NewOIDCAuthenticatorMiddleware creates a new OIDCAuthenticator instance
+func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OIDCAuthenticator, error) {
 	if !cfg.EnableAuth {
 		return &OIDCAuthenticatorNoop{}, nil
 	}

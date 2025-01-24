@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+//go:generate mockgen -source=logger.go -destination=mocks/logger_mock.go -package=mocks
 type Logger interface {
 	Info(message string, fields ...interface{})
 	Debug(message string, fields ...interface{})

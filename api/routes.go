@@ -13,12 +13,10 @@ import (
 	gin "github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
-	"go.opentelemetry.io/otel/trace"
 )
 
+//go:generate mockgen -source=routes.go -destination=mocks/routes_mock.go -package=mocks
 type Router interface {
 	NotFoundHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
@@ -31,7 +29,6 @@ type Router interface {
 type RouterImpl struct {
 	cfg    config.Config
 	logger l.Logger
-	tp     otel.TracerProvider
 }
 
 type ErrorResponse struct {
@@ -42,11 +39,10 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger l.Logger, tp otel.TracerProvider) Router {
+func NewRouter(cfg config.Config, logger *l.Logger) Router {
 	return &RouterImpl{
 		cfg,
-		logger,
-		tp,
+		*logger,
 	}
 }
 
@@ -71,18 +67,6 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		router.logger.Error("requested unsupported provider", nil, "provider", provider)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
 		return
-	}
-
-	// TODO - move this to a middleware
-	if router.cfg.EnableTelemetry {
-		ctx := c.Request.Context()
-		_, span := router.tp.Tracer("inference-gateway").Start(ctx, "proxy-request")
-		defer span.End()
-		span.AddEvent("Proxying request", trace.WithAttributes(
-			semconv.HTTPMethodKey.String(c.Request.Method),
-			semconv.HTTPTargetKey.String(c.Request.URL.String()),
-			semconv.HTTPRequestContentLengthKey.Int64(c.Request.ContentLength),
-		))
 	}
 
 	// Setup authentication headers or query params
@@ -165,6 +149,12 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	var req providers.GenerateRequest
 	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+		return
+	}
+
+	if req.Model == "" {
+		router.logger.Error("model is required", nil)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Model is required"})
 		return
 	}
 

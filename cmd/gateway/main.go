@@ -57,18 +57,33 @@ func main() {
 		defer span.End()
 	}
 
-	oidcAuthenticator, err := middlewares.NewOIDCAuthenticator(logger, cfg)
+	loggerMiddleware, err := middlewares.NewLoggerMiddleware(&logger)
+	if err != nil {
+		logger.Error("Failed to initialize logger middleware: %v", err)
+		return
+	}
+
+	var telemetry middlewares.Telemetry
+	if cfg.EnableTelemetry {
+		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, tp)
+		if err != nil {
+			logger.Error("Failed to initialize telemetry middleware: %v", err)
+			return
+		}
+	}
+
+	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(logger, cfg)
 	if err != nil {
 		logger.Error("Failed to initialize OIDC authenticator: %v", err)
 		return
 	}
 
-	api := api.NewRouter(cfg, logger, tp)
+	api := api.NewRouter(cfg, &logger)
 	r := gin.New()
-	r.Use(func(c *gin.Context) {
-		logger.Info("Request received", "method", c.Request.Method, "host", c.Request.Host, "path", c.Request.URL.Path)
-		c.Next()
-	})
+	r.Use(loggerMiddleware.Middleware())
+	if cfg.EnableTelemetry {
+		r.Use(telemetry.Middleware())
+	}
 	r.Use(oidcAuthenticator.Middleware())
 
 	r.GET("/llms", api.FetchAllModelsHandler)
