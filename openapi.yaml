@@ -369,7 +369,6 @@ components:
                       properties:
                         response:
                           type: string
-
         cohere:
           url: "https://api.cohere.com"
           auth_type: "bearer"
