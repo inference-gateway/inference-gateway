@@ -1,4 +1,4 @@
-package api
+package tests
 
 import (
 	"bytes"
@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/inference-gateway/inference-gateway/api"
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/logger/mocks"
 	"github.com/inference-gateway/inference-gateway/providers"
+	"github.com/inference-gateway/inference-gateway/tests/mocks"
+
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -26,9 +29,14 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockLogger) {
 		Environment:     "test",
 	}
 
+	// Create HTTP client with reasonable timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
 	// Pass mockLogger as logger.Logger interface
 	var l logger.Logger = mockLogger
-	router := NewRouter(cfg, &l)
+	router := api.NewRouter(cfg, &l, client)
 	r := gin.New()
 	r.GET("/health", router.HealthcheckHandler)
 	r.GET("/llms", router.FetchAllModelsHandler)

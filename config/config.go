@@ -57,13 +57,13 @@ type Config struct {
 
 func (cfg *Config) Providers() map[string]providers.Provider {
 	return map[string]providers.Provider{
-		"ollama":     {ID: "ollama", Name: "Ollama", URL: cfg.OllamaAPIURL, ProxyURL: "http://localhost:8080/proxy/ollama", Token: "", AuthType: "bearer", ExtraXHeaders: map[string]string{}},
-		"groq":       {ID: "groq", Name: "Groq", URL: cfg.GroqAPIURL, ProxyURL: "http://localhost:8080/proxy/groq", Token: cfg.GroqAPIKey, AuthType: "bearer", ExtraXHeaders: map[string]string{}},
-		"openai":     {ID: "openai", Name: "OpenAI", URL: cfg.OpenaiAPIURL, ProxyURL: "http://localhost:8080/proxy/openai", Token: cfg.OpenaiAPIKey, AuthType: "bearer", ExtraXHeaders: map[string]string{}},
-		"google":     {ID: "google", Name: "Google", URL: cfg.GoogleAIStudioURL, ProxyURL: "http://localhost:8080/proxy/google", Token: cfg.GoogleAIStudioKey, AuthType: "query", ExtraXHeaders: map[string]string{}},
-		"cloudflare": {ID: "cloudflare", Name: "Cloudflare", URL: cfg.CloudflareAPIURL, ProxyURL: "http://localhost:8080/proxy/cloudflare", Token: cfg.CloudflareAPIKey, AuthType: "bearer", ExtraXHeaders: map[string]string{}},
-		"cohere":     {ID: "cohere", Name: "Cohere", URL: cfg.CohereAPIURL, ProxyURL: "http://localhost:8080/proxy/cohere", Token: cfg.CohereAPIKey, AuthType: "bearer", ExtraXHeaders: map[string]string{}},
-		"anthropic":  {ID: "anthropic", Name: "Anthropic", URL: cfg.AnthropicAPIURL, ProxyURL: "http://localhost:8080/proxy/anthropic", Token: cfg.AnthropicAPIKey, AuthType: "xheader", ExtraXHeaders: map[string]string{"anthropic-version": "2023-06-01"}},
+		"ollama":     &providers.ProviderImpl{ID: "ollama", Name: "Ollama", URL: cfg.OllamaAPIURL, ProxyURL: "http://localhost:8080/proxy/ollama", Token: "", AuthType: "bearer", ExtraXHeaders: map[string]string{}},
+		"groq":       &providers.ProviderImpl{ID: "groq", Name: "Groq", URL: cfg.GroqAPIURL, ProxyURL: "http://localhost:8080/proxy/groq", Token: cfg.GroqAPIKey, AuthType: "bearer", ExtraXHeaders: map[string]string{}},
+		"openai":     &providers.ProviderImpl{ID: "openai", Name: "OpenAI", URL: cfg.OpenaiAPIURL, ProxyURL: "http://localhost:8080/proxy/openai", Token: cfg.OpenaiAPIKey, AuthType: "bearer", ExtraXHeaders: map[string]string{}},
+		"google":     &providers.ProviderImpl{ID: "google", Name: "Google", URL: cfg.GoogleAIStudioURL, ProxyURL: "http://localhost:8080/proxy/google", Token: cfg.GoogleAIStudioKey, AuthType: "query", ExtraXHeaders: map[string]string{}},
+		"cloudflare": &providers.ProviderImpl{ID: "cloudflare", Name: "Cloudflare", URL: cfg.CloudflareAPIURL, ProxyURL: "http://localhost:8080/proxy/cloudflare", Token: cfg.CloudflareAPIKey, AuthType: "bearer", ExtraXHeaders: map[string]string{}},
+		"cohere":     &providers.ProviderImpl{ID: "cohere", Name: "Cohere", URL: cfg.CohereAPIURL, ProxyURL: "http://localhost:8080/proxy/cohere", Token: cfg.CohereAPIKey, AuthType: "bearer", ExtraXHeaders: map[string]string{}},
+		"anthropic":  &providers.ProviderImpl{ID: "anthropic", Name: "Anthropic", URL: cfg.AnthropicAPIURL, ProxyURL: "http://localhost:8080/proxy/anthropic", Token: cfg.AnthropicAPIKey, AuthType: "xheader", ExtraXHeaders: map[string]string{"anthropic-version": "2023-06-01"}},
 	}
 }
 

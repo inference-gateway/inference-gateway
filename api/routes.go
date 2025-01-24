@@ -1,7 +1,10 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -16,19 +19,21 @@ import (
 	providers "github.com/inference-gateway/inference-gateway/providers"
 )
 
-//go:generate mockgen -source=routes.go -destination=mocks/routes_mock.go -package=mocks
+//go:generate mockgen -source=routes.go -destination=../tests/mocks/routes.go -package=mocks
 type Router interface {
+	GetClient() http.Client
 	NotFoundHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	FetchAllModelsHandler(c *gin.Context)
 	GenerateProvidersTokenHandler(c *gin.Context)
-	ValidateProvider(provider string) (*providers.Provider, bool)
+	ValidateProvider(provider string) (providers.Provider, bool)
 }
 
 type RouterImpl struct {
 	cfg    config.Config
 	logger l.Logger
+	client http.Client
 }
 
 type ErrorResponse struct {
@@ -39,20 +44,25 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger *l.Logger) Router {
+func NewRouter(cfg config.Config, logger *l.Logger, client *http.Client) Router {
 	return &RouterImpl{
 		cfg,
 		*logger,
+		*client,
 	}
 }
 
-func (router *RouterImpl) ValidateProvider(provider string) (*providers.Provider, bool) {
+func (router *RouterImpl) GetClient() http.Client {
+	return router.client
+}
+
+func (router *RouterImpl) ValidateProvider(provider string) (providers.Provider, bool) {
 	p, ok := router.cfg.Providers()[provider]
 	if !ok {
 		return nil, false
 	}
 
-	return &p, ok
+	return p, ok
 }
 
 func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
@@ -70,17 +80,18 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	}
 
 	// Setup authentication headers or query params
-	switch provider.AuthType {
+	token := provider.GetToken()
+	switch provider.GetAuthType() {
 	case "bearer":
-		c.Request.Header.Set("Authorization", "Bearer "+provider.Token)
+		c.Request.Header.Set("Authorization", "Bearer "+token)
 	case "xheader":
-		c.Request.Header.Set("x-api-key", provider.Token)
-		for k, v := range provider.ExtraXHeaders {
+		c.Request.Header.Set("x-api-key", token)
+		for k, v := range provider.GetExtraXHeaders() {
 			c.Request.Header.Set(k, v)
 		}
 	case "query":
 		query := c.Request.URL.Query()
-		query.Set("key", provider.Token)
+		query.Set("key", token)
 		c.Request.URL.RawQuery = query.Encode()
 	default:
 		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
@@ -92,7 +103,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	c.Request.Header.Set("Accept", "application/json")
 
 	// Create and configure proxy
-	remote, _ := url.Parse(provider.URL + c.Request.URL.Path)
+	remote, _ := url.Parse(provider.GetURL() + c.Request.URL.Path)
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
 	// Log proxy responses in development mode only
@@ -165,47 +176,66 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	providerGenTokensURL := router.cfg.GenTokensEndpoint(provider.ID)
-	if provider.Name == "Google" || provider.Name == "Cloudflare" {
+	providerGenTokensURL := router.cfg.GenTokensEndpoint(provider.GetID())
+	providerName := provider.GetName()
+	if providerName == "Google" || providerName == "Cloudflare" {
 		providerGenTokensURL = strings.Replace(providerGenTokensURL, "{model}", req.Model, 1)
 	}
 
-	url := provider.ProxyURL + providerGenTokensURL
+	url := provider.GetProxyURL() + providerGenTokensURL
 	var response providers.GenerateResponse
-	response, err := generateTokens(provider, url, req.Model, req.Messages)
+
+	response, err := generateTokens(provider, url, req.Model, req.Messages, router.client)
 	if err != nil {
 		router.logger.Error("failed to generate tokens", err, "provider", provider)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to generate tokens"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to generate tokens"})
 		return
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-func generateTokens(provider *providers.Provider, url string, model string, messages []providers.GenerateMessage) (providers.GenerateResponse, error) {
-	payload := provider.BuildGenTokensRequest(model, messages)
-
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		return providers.GenerateResponse{}, err
+func generateTokens(provider providers.Provider, url string, model string, messages []providers.GenerateMessage, client http.Client) (providers.GenerateResponse, error) {
+	if provider == nil {
+		return providers.GenerateResponse{}, errors.New("provider cannot be nil")
 	}
 
-	resp, err := http.Post(url, "application/json", strings.NewReader(string(payloadBytes)))
+	if url == "" {
+		return providers.GenerateResponse{}, errors.New("url cannot be empty")
+	}
+
+	payload := provider.BuildGenTokensRequest(model, messages)
+	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
-		return providers.GenerateResponse{}, err
+		return providers.GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payloadBytes))
+	if err != nil {
+		return providers.GenerateResponse{}, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return providers.GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return providers.GenerateResponse{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	var response interface{}
-	err = json.NewDecoder(resp.Body).Decode(response)
-	if err != nil {
-		return providers.GenerateResponse{}, err
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return providers.GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	r, err := provider.BuildGenTokensResponse(model, response)
+	result, err := provider.BuildGenTokensResponse(model, response)
 	if err != nil {
-		return providers.GenerateResponse{}, err
+		return providers.GenerateResponse{}, fmt.Errorf("failed to build response: %w", err)
 	}
 
-	return r, nil
+	return result, nil
 }

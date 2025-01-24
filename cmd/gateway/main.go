@@ -78,7 +78,10 @@ func main() {
 		return
 	}
 
-	api := api.NewRouter(cfg, &logger)
+	client := http.Client{
+		Timeout: cfg.ServerReadTimeout + (time.Second + 5), // Add 5 seconds more for the client than the configured server ReadTimeout, maybe it should be in the configurable, haven't decided yet.
+	}
+	api := api.NewRouter(cfg, &logger, &client)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.EnableTelemetry {

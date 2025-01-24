@@ -6,7 +6,20 @@ import (
 	"net/http"
 )
 
-type Provider struct {
+//go:generate mockgen -source=common.go -destination=../tests/mocks/provider.go -package=mocks
+type Provider interface {
+	GetID() string
+	GetName() string
+	GetURL() string
+	GetProxyURL() string
+	GetToken() string
+	GetAuthType() string
+	GetExtraXHeaders() map[string]string
+	BuildGenTokensRequest(model string, messages []GenerateMessage) interface{}
+	BuildGenTokensResponse(model string, responseBody interface{}) (GenerateResponse, error)
+}
+
+type ProviderImpl struct {
 	ID            string
 	Name          string
 	URL           string
@@ -59,7 +72,7 @@ func FetchModels(url string, provider string) ModelsResponse {
 	}
 }
 
-func (p *Provider) BuildGenTokensRequest(model string, messages []GenerateMessage) interface{} {
+func (p *ProviderImpl) BuildGenTokensRequest(model string, messages []GenerateMessage) interface{} {
 	switch p.ID {
 	case "ollama":
 		return GenerateRequestOllama{
@@ -107,7 +120,7 @@ func (p *Provider) BuildGenTokensRequest(model string, messages []GenerateMessag
 	}
 }
 
-func (p *Provider) BuildGenTokensResponse(model string, responseBody interface{}) (GenerateResponse, error) {
+func (p *ProviderImpl) BuildGenTokensResponse(model string, responseBody interface{}) (GenerateResponse, error) {
 	var role, content string
 
 	switch p.ID {
@@ -202,6 +215,34 @@ type GetModelsResponse struct {
 type GenerateResponse struct {
 	Provider string         `json:"provider"`
 	Response ResponseTokens `json:"response"`
+}
+
+func (p *ProviderImpl) GetID() string {
+	return p.ID
+}
+
+func (p *ProviderImpl) GetName() string {
+	return p.Name
+}
+
+func (p *ProviderImpl) GetURL() string {
+	return p.URL
+}
+
+func (p *ProviderImpl) GetProxyURL() string {
+	return p.ProxyURL
+}
+
+func (p *ProviderImpl) GetToken() string {
+	return p.Token
+}
+
+func (p *ProviderImpl) GetAuthType() string {
+	return p.AuthType
+}
+
+func (p *ProviderImpl) GetExtraXHeaders() map[string]string {
+	return p.ExtraXHeaders
 }
 
 func getSystemMessage(messages []GenerateMessage) string {

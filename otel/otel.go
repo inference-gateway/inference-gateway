@@ -15,7 +15,7 @@ type TracerProvider = *sdktrace.TracerProvider
 
 type TraceSpan = trace.Span
 
-//go:generate mockgen -source=otel.go -destination=mocks/otel.go -package=mocks
+//go:generate mockgen -source=otel.go -destination=../tests/mocks/otel.go -package=mocks
 type OpenTelemetry interface {
 	Init(config config.Config) (TracerProvider, error)
 }
