@@ -1,15 +1,14 @@
 package api
 
 import (
-	"bytes"
-	"compress/gzip"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 	"sync"
+
+	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
 	gin "github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -65,60 +64,6 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
 }
 
-// logJSONResponse logs the JSON response in development mode
-func (router *RouterImpl) logJSONResponse(resp *http.Response, body []byte) {
-	var data interface{}
-	if err := json.Unmarshal(body, &data); err != nil {
-		router.logger.Error("Failed to unmarshal JSON response", err)
-		return
-	}
-
-	router.logger.Debug("Proxy response", "status", resp.StatusCode, "body", data)
-}
-
-// handleProxyResponse processes the proxy response in development mode
-func (router *RouterImpl) logProxyResponseInDev(resp *http.Response) error {
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		router.logger.Error("Failed to read response from proxy", err)
-		return err
-	}
-
-	// Always restore the body
-	defer func() {
-		resp.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-	}()
-
-	if !strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
-		return nil
-	}
-
-	contentBody := router.handleGzippedContent(resp, bodyBytes)
-	router.logJSONResponse(resp, contentBody)
-	return nil
-}
-
-// handleGzippedContent decompresses gzipped content in development mode
-func (router *RouterImpl) handleGzippedContent(resp *http.Response, bodyBytes []byte) []byte {
-	if resp.Header.Get("Content-Encoding") != "gzip" || len(bodyBytes) == 0 {
-		return bodyBytes
-	}
-
-	reader, err := gzip.NewReader(bytes.NewReader(bodyBytes))
-	if err != nil {
-		router.logger.Error("Invalid gzip content", err)
-	} else {
-		defer reader.Close()
-		if decompressed, err := io.ReadAll(reader); err == nil {
-			bodyBytes = decompressed
-		} else {
-			router.logger.Error("Failed to read gzipped content", err)
-		}
-	}
-
-	return bodyBytes
-}
-
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
 	provider, ok := router.ValidateProvider(p)
@@ -167,10 +112,9 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
 	// Log proxy responses in development mode only
-	if router.cfg.Environment != "development" {
-		proxy.ModifyResponse = func(resp *http.Response) error {
-			return router.logProxyResponseInDev(resp)
-		}
+	if router.cfg.Environment == "development" {
+		devModifier := proxymodifier.NewDevResponseModifier(router.logger)
+		proxy.ModifyResponse = devModifier.Modify
 	}
 
 	proxy.Director = func(req *http.Request) {
