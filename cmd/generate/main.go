@@ -6,17 +6,92 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"html/template"
+	"os/exec"
+
 	"os"
 	"reflect"
 	"strings"
 
 	config "github.com/inference-gateway/inference-gateway/config"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+	"gopkg.in/yaml.v3"
 )
 
 var (
 	output string
 	_type  string
 )
+
+// OpenAPI schema structures
+type OpenAPISchema struct {
+	Components struct {
+		Schemas struct {
+			Providers struct {
+				XProviderConfigs map[string]ProviderConfig `yaml:"x-provider-configs"`
+			} `yaml:"Providers"`
+		}
+	}
+}
+
+// ExtraHeader can be either string or []string
+type ExtraHeader struct {
+	Values []string
+}
+
+// UnmarshalYAML implements custom unmarshaling for ExtraHeader
+func (h *ExtraHeader) UnmarshalYAML(value *yaml.Node) error {
+	switch value.Kind {
+	case yaml.ScalarNode:
+		h.Values = []string{value.Value}
+	case yaml.SequenceNode:
+		var values []string
+		if err := value.Decode(&values); err != nil {
+			return err
+		}
+		h.Values = values
+	default:
+		return fmt.Errorf("unexpected header value type")
+	}
+	return nil
+}
+
+type ProviderEndpoints struct {
+	List     string `yaml:"list"`
+	Generate string `yaml:"generate"`
+}
+
+// Structures for OpenAPI schema parsing
+type SchemaProperty struct {
+	Type       string                 `yaml:"type"`
+	Properties map[string]SchemaField `yaml:"properties"`
+	Items      *SchemaField           `yaml:"items"`
+	Ref        string                 `yaml:"$ref"`
+}
+
+type SchemaField struct {
+	Type       string                 `yaml:"type"`
+	Properties map[string]SchemaField `yaml:"properties"`
+	Items      *SchemaField           `yaml:"items"`
+	Ref        string                 `yaml:"$ref"`
+}
+
+type EndpointSchema struct {
+	Endpoint string `yaml:"endpoint"`
+	Method   string `yaml:"method"`
+	Schema   struct {
+		Request  SchemaProperty `yaml:"request"`
+		Response SchemaProperty `yaml:"response"`
+	} `yaml:"schema"`
+}
+
+type ProviderConfig struct {
+	URL          string                    `yaml:"url"`
+	AuthType     string                    `yaml:"auth_type"`
+	ExtraHeaders map[string]ExtraHeader    `yaml:"extra_headers,omitempty"`
+	Endpoints    map[string]EndpointSchema `yaml:"endpoints"`
+}
 
 func init() {
 	flag.StringVar(&output, "output", "", "Path to the output file")
@@ -31,17 +106,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	comments := parseStructComments("config.go", "Config")
-
 	switch _type {
 	case "Env":
+		comments := parseStructComments("config.go", "Config")
 		generateEnvExample(output, comments)
 	case "ConfigMap":
+		comments := parseStructComments("config.go", "Config")
 		generateConfigMap(output, comments)
 	case "Secret":
+		comments := parseStructComments("config.go", "Config")
 		generateSecret(output, comments)
 	case "MD":
+		comments := parseStructComments("config.go", "Config")
 		generateMD(output, comments)
+	case "Provider":
+		if err := generateProviders(output, "openapi.yaml"); err != nil {
+			fmt.Printf("Error generating providers: %v\n", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Println("Invalid type specified")
 		os.Exit(1)
@@ -245,5 +327,133 @@ func generateMD(filePath string, comments map[string]string) {
 	err := os.WriteFile(filePath, []byte(sb.String()), 0644)
 	if err != nil {
 		fmt.Printf("Error writing %s: %v\n", filePath, err)
+	}
+}
+
+func generateProviders(output string, openapiPath string) error {
+	// Read OpenAPI spec
+	data, err := os.ReadFile(openapiPath)
+	if err != nil {
+		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
+	}
+
+	var schema OpenAPISchema
+	if err := yaml.Unmarshal(data, &schema); err != nil {
+		return fmt.Errorf("failed to parse OpenAPI spec: %w", err)
+	}
+
+	providers := schema.Components.Schemas.Providers.XProviderConfigs
+
+	// Generate provider files
+	for name, config := range providers {
+		if err := generateProviderFile(output, name, config); err != nil {
+			return fmt.Errorf("failed to generate provider %s: %w", name, err)
+		}
+	}
+
+	return nil
+}
+
+func generateProviderFile(destination, name string, config ProviderConfig) error {
+	caser := cases.Title(language.English)
+
+	funcMap := template.FuncMap{
+		"title":        caser.String,
+		"generateType": generateType,
+	}
+
+	tmpl := template.Must(template.New("provider").
+		Funcs(funcMap).
+		Parse(`package providers
+
+{{- if .Config.ExtraHeaders }}
+// Extra headers for {{title .Name}} provider
+var {{title .Name}}ExtraHeaders = map[string][]string{
+    {{- range $key, $header := .Config.ExtraHeaders}}
+    "{{$key}}": {"{{index $header.Values 0}}"},
+    {{- end}}
+}
+{{end}}
+
+{{- with .Config.Endpoints.list.Schema.Response }}
+type GetModelsResponse{{title $.Name}} struct {
+    {{- if eq .Type "object" }}
+    {{- range $key, $prop := .Properties }}
+    {{title $key}} {{generateType $prop}} ` + "`json:\"{{$key}}\"`" + `
+    {{- end }}
+    {{- end }}
+}
+{{end}}
+
+{{- with .Config.Endpoints.generate.Schema }}
+{{- if .Request.Properties }}
+type GenerateRequest{{title $.Name}} struct {
+    {{- range $key, $prop := .Request.Properties }}
+    {{title $key}} {{generateType $prop}} ` + "`json:\"{{$key}}\"`" + `
+    {{- end }}
+}
+{{end}}
+
+{{- if .Response.Properties }}
+type GenerateResponse{{title $.Name}} struct {
+    {{- range $key, $prop := .Response.Properties }}
+    {{title $key}} {{generateType $prop}} ` + "`json:\"{{$key}}\"`" + `
+    {{- end }}
+}
+{{end}}
+{{end}}`))
+
+	data := struct {
+		Name   string
+		Config ProviderConfig
+	}{
+		Name:   name,
+		Config: config,
+	}
+
+	fileName := fmt.Sprintf("%s/%s.go", destination, strings.ToLower(name))
+	f, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, data); err != nil {
+		return err
+	}
+
+	// Run go fmt on the generated file
+	cmd := exec.Command("go", "fmt", fileName)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to format %s: %w", fileName, err)
+	}
+
+	return nil
+}
+
+func generateType(field SchemaField) string {
+	switch field.Type {
+	case "string":
+		return "string"
+	case "integer":
+		return "int"
+	case "boolean":
+		return "bool"
+	case "array":
+		if field.Items != nil {
+			return "[]" + generateType(*field.Items)
+		}
+		return "[]interface{}"
+	case "object":
+		if len(field.Properties) > 0 {
+			return "struct{}"
+		}
+		return "map[string]interface{}"
+	default:
+		if field.Ref != "" {
+			parts := strings.Split(field.Ref, "/")
+			return parts[len(parts)-1]
+		}
+		return "interface{}"
 	}
 }
