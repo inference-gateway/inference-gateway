@@ -142,3 +142,319 @@ components:
         - cloudflare
         - cohere
         - anthropic
+      x-provider-configs:
+        ollama:
+          url: "http://ollama:8080"
+          auth_type: "none"
+          endpoints:
+            list:
+              endpoint: "/v1/models"
+              method: "GET"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                    limit:
+                      type: integer
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Model"
+            generate:
+              endpoint: "/api/generate"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    prompt:
+                      type: string
+                    stream:
+                      type: boolean
+                    system:
+                      type: string
+                response:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                    response:
+                      type: object
+                      properties:
+                        role:
+                          type: string
+                        model:
+                          type: string
+                        content:
+                          type: string
+        groq:
+          url: "https://api.groq.com"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/openai/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: interface{}
+            generate:
+              endpoint: "/openai/v1/chat/completions"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Message"
+                response:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    choices:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          message:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                              content:
+                                type: string
+        openai:
+          url: "https://api.openai.com"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: interface{}
+            generate:
+              endpoint: "/v1/completions"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Message"
+                response:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    choices:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          message:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                              content:
+                                type: string
+
+        google:
+          url: "https://generativelanguage.googleapis.com"
+          auth_type: "query"
+          endpoints:
+            list:
+              endpoint: "/v1beta/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: interface{}
+            generate:
+              endpoint: "/v1beta/models/{model}:generateContent"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    contents:
+                      type: object
+                      properties:
+                        parts:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              text:
+                                type: string
+                response:
+                  type: object
+                  properties:
+                    candidates:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          content:
+                            type: object
+                            properties:
+                              parts:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    text:
+                                      type: string
+                              role:
+                                type: string
+        cloudflare:
+          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/ai/finetunes/public"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    result:
+                      type: array
+                      items:
+                        type: interface{}
+            generate:
+              endpoint: "/v1/chat/completions"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    prompt:
+                      type: string
+                response:
+                  type: object
+                  properties:
+                    result:
+                      type: object
+                      properties:
+                        response:
+                          type: string
+
+        cohere:
+          url: "https://api.cohere.com"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: interface{}
+            generate:
+              endpoint: "/v2/chat"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Message"
+                response:
+                  type: object
+                  properties:
+                    message:
+                      type: object
+                      properties:
+                        role:
+                          type: string
+                        content:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              type:
+                                type: string
+                              text:
+                                type: string
+
+        anthropic:
+          url: "https://api.anthropic.com"
+          auth_type: "xheader"
+          extra_headers:
+            anthropic-version: "2023-06-01"
+          endpoints:
+            list:
+              endpoint: "/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: interface{}
+            generate:
+              endpoint: "/v1/messages"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/Message"
+                response:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    choices:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          message:
+                            $ref: "#/components/schemas/Message"
