@@ -1,20 +1,15 @@
 package providers
 
+type GetModelsResponseGroq struct {
+	Models []interface{} `json:"models"`
+}
+
 type GenerateRequestGroq struct {
-	Model    string            `json:"model"`
-	Messages []GenerateMessage `json:"messages"`
-}
-
-type GenerateResponseGroqMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type GenerateResponseGroqChoice struct {
-	Message GenerateResponseGroqMessage `json:"message"`
+	Messages []Message `json:"messages"`
+	Model    string    `json:"model"`
 }
 
 type GenerateResponseGroq struct {
-	Model   string                       `json:"model"`
-	Choices []GenerateResponseGroqChoice `json:"choices"`
+	Choices []struct{} `json:"choices"`
+	Model   string     `json:"model"`
 }

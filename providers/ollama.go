@@ -1,5 +1,9 @@
 package providers
 
+type GetModelsResponseOllama struct {
+	Models []Model `json:"models"`
+}
+
 type GenerateRequestOllama struct {
 	Model  string `json:"model"`
 	Prompt string `json:"prompt"`
@@ -8,5 +12,6 @@ type GenerateRequestOllama struct {
 }
 
 type GenerateResponseOllama struct {
-	Response string `json:"response"`
+	Provider string   `json:"provider"`
+	Response struct{} `json:"response"`
 }

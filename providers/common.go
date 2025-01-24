@@ -6,32 +6,86 @@ import (
 	"net/http"
 )
 
+// Provider defines common interface for all providers
+//
 //go:generate mockgen -source=common.go -destination=../tests/mocks/provider.go -package=mocks
 type Provider interface {
 	GetID() string
 	GetName() string
 	GetURL() string
-	GetProxyURL() string
 	GetToken() string
 	GetAuthType() string
-	GetExtraXHeaders() map[string]string
-	BuildGenTokensRequest(model string, messages []GenerateMessage) interface{}
-	BuildGenTokensResponse(model string, responseBody interface{}) (GenerateResponse, error)
+	GetExtraHeaders() map[string][]string
+	GetAPIVersion() string
 }
 
+// BaseProvider implements common provider functionality
 type ProviderImpl struct {
-	ID            string
-	Name          string
-	URL           string
-	ProxyURL      string
-	Token         string
-	AuthType      string
-	ExtraXHeaders map[string]string
+	ID           string
+	Name         string
+	URL          string
+	Token        string
+	AuthType     string
+	ExtraHeaders map[string][]string
+}
+
+func (p *ProviderImpl) GetID() string {
+	return p.ID
+}
+
+func (p *ProviderImpl) GetName() string {
+	return p.Name
+}
+
+func (p *ProviderImpl) GetURL() string {
+	return p.URL
+}
+
+func (p *ProviderImpl) GetToken() string {
+	return p.Token
+}
+
+func (p *ProviderImpl) GetAuthType() string {
+	return p.AuthType
+}
+
+func (p *ProviderImpl) GetExtraHeaders() map[string][]string {
+	return p.ExtraHeaders
 }
 
 type ModelsResponse struct {
 	Provider string        `json:"provider"`
 	Models   []interface{} `json:"models"`
+}
+
+var listEndpoints = map[string]string{
+	"ollama":     "/v1/models",
+	"groq":       "/openai/v1/models",
+	"openai":     "/v1/models",
+	"google":     "/v1beta/models",
+	"cloudflare": "/ai/finetunes/public",
+	"cohere":     "/v1/models",
+	"anthropic":  "/v1/models",
+}
+
+// ListLLMsEndpoints returns the endpoints for listing models
+func (p *ProviderImpl) ListLLMsEndpoints() map[string]string {
+	return listEndpoints
+}
+
+var generateEndpoints = map[string]string{
+	"ollama":     "/api/generate",
+	"groq":       "/openai/v1/chat/completions",
+	"openai":     "/v1/completions",
+	"google":     "/v1beta/models/{model}:generateContent",
+	"cloudflare": "/ai/run/@cf/meta/{model}",
+	"cohere":     "/v2/chat",
+	"anthropic":  "/v1/messages",
+}
+
+// GenTokensEndpoint returns the endpoint for generating tokens for the given provider.
+func (p *ProviderImpl) GenTokensEndpoint(providerID string) string {
+	return generateEndpoints[providerID]
 }
 
 func FetchModels(url string, provider string) ModelsResponse {
@@ -42,27 +96,30 @@ func FetchModels(url string, provider string) ModelsResponse {
 	defer resp.Body.Close()
 
 	switch provider {
-	case "google":
+	case GoogleID:
 		var response GetModelsResponseGoogle
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return ModelsResponse{Provider: provider, Models: []interface{}{}}
 		}
 		return ModelsResponse{Provider: provider, Models: response.Models}
-
-	case "cloudflare":
+	case CloudflareID:
 		var response GetModelsResponseCloudflare
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return ModelsResponse{Provider: provider, Models: []interface{}{}}
 		}
 		return ModelsResponse{Provider: provider, Models: response.Result}
-
-	case "cohere":
+	case CohereID:
 		var response GetModelsResponseCohere
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return ModelsResponse{Provider: provider, Models: []interface{}{}}
 		}
 		return ModelsResponse{Provider: provider, Models: response.Models}
-
+	case AnthropicID:
+		var response GetModelsResponseAnthropic
+		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			return ModelsResponse{Provider: provider, Models: []interface{}{}}
+		}
+		return ModelsResponse{Provider: provider, Models: response.Models}
 	default:
 		var response GetModelsResponse
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -72,26 +129,26 @@ func FetchModels(url string, provider string) ModelsResponse {
 	}
 }
 
-func (p *ProviderImpl) BuildGenTokensRequest(model string, messages []GenerateMessage) interface{} {
-	switch p.ID {
-	case "ollama":
+func (p *ProviderImpl) BuildGenTokensRequest(model string, messages []Message) interface{} {
+	switch p.GetID() {
+	case OllamaID:
 		return GenerateRequestOllama{
 			Model:  model,
 			Prompt: getUserMessage(messages),
 			Stream: false,
 			System: getSystemMessage(messages),
 		}
-	case "groq":
+	case GroqID:
 		return GenerateRequestGroq{
 			Model:    model,
 			Messages: messages,
 		}
-	case "openai":
+	case OpenaiID:
 		return GenerateRequestOpenAI{
 			Model:    model,
 			Messages: messages,
 		}
-	case "google":
+	case GoogleID:
 		prompt := getSystemMessage(messages) + getUserMessage(messages)
 		return GenerateRequestGoogle{
 			Contents: GenerateRequestGoogleContents{
@@ -102,13 +159,18 @@ func (p *ProviderImpl) BuildGenTokensRequest(model string, messages []GenerateMe
 				},
 			},
 		}
-	case "cloudflare":
+	case CloudflareID:
 		prompt := getSystemMessage(messages) + getUserMessage(messages)
 		return GenerateRequestCloudflare{
 			Prompt: prompt,
 		}
-	case "cohere":
+	case CohereID:
 		return GenerateRequestCohere{
+			Model:    model,
+			Messages: messages,
+		}
+	case AnthropicID:
+		return GenerateRequestAnthropic{
 			Model:    model,
 			Messages: messages,
 		}
@@ -123,7 +185,7 @@ func (p *ProviderImpl) BuildGenTokensRequest(model string, messages []GenerateMe
 func (p *ProviderImpl) BuildGenTokensResponse(model string, responseBody interface{}) (GenerateResponse, error) {
 	var role, content string
 
-	switch p.ID {
+	switch p.GetID() {
 	case "ollama":
 		ollamaResponse := responseBody.(*GenerateResponseOllama)
 		if ollamaResponse.Response != "" {
@@ -191,14 +253,14 @@ func (p *ProviderImpl) BuildGenTokensResponse(model string, responseBody interfa
 	}}, nil
 }
 
-type GenerateMessage struct {
+type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
 type GenerateRequest struct {
-	Model    string            `json:"model"`
-	Messages []GenerateMessage `json:"messages"`
+	Model    string    `json:"model"`
+	Messages []Message `json:"messages"`
 }
 
 type ResponseTokens struct {
@@ -217,35 +279,7 @@ type GenerateResponse struct {
 	Response ResponseTokens `json:"response"`
 }
 
-func (p *ProviderImpl) GetID() string {
-	return p.ID
-}
-
-func (p *ProviderImpl) GetName() string {
-	return p.Name
-}
-
-func (p *ProviderImpl) GetURL() string {
-	return p.URL
-}
-
-func (p *ProviderImpl) GetProxyURL() string {
-	return p.ProxyURL
-}
-
-func (p *ProviderImpl) GetToken() string {
-	return p.Token
-}
-
-func (p *ProviderImpl) GetAuthType() string {
-	return p.AuthType
-}
-
-func (p *ProviderImpl) GetExtraXHeaders() map[string]string {
-	return p.ExtraXHeaders
-}
-
-func getSystemMessage(messages []GenerateMessage) string {
+func getSystemMessage(messages []Message) string {
 	for _, message := range messages {
 		if message.Role == "system" {
 			return message.Content
@@ -254,7 +288,7 @@ func getSystemMessage(messages []GenerateMessage) string {
 	return ""
 }
 
-func getUserMessage(messages []GenerateMessage) string {
+func getUserMessage(messages []Message) string {
 	var prompt string
 	for _, message := range messages {
 		if message.Role == "user" {

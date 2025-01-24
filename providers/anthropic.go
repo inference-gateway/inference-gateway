@@ -1,15 +1,20 @@
 package providers
 
-type GenerateRequestAnthropic struct {
-	Model    string            `json:"model"`
-	Messages []GenerateMessage `json:"messages"`
+// Extra headers for Anthropic provider
+var AnthropicExtraHeaders = map[string][]string{
+	"anthropic-version": {"2023-06-01"},
 }
 
-type GenerateResponseAnthropicChoice struct {
-	Message GenerateMessage `json:"message"`
+type GetModelsResponseAnthropic struct {
+	Models []interface{} `json:"models"`
+}
+
+type GenerateRequestAnthropic struct {
+	Messages []Message `json:"messages"`
+	Model    string    `json:"model"`
 }
 
 type GenerateResponseAnthropic struct {
-	Model   string                            `json:"model"`
-	Choices []GenerateResponseAnthropicChoice `json:"choices"`
+	Choices []struct{} `json:"choices"`
+	Model   string     `json:"model"`
 }

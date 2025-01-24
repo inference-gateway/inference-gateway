@@ -1,20 +1,15 @@
 package providers
 
-type GenerateRequestOpenAI struct {
-	Model    string            `json:"model"`
-	Messages []GenerateMessage `json:"messages"`
+type GetModelsResponseOpenai struct {
+	Models []interface{} `json:"models"`
 }
 
-type GenerateResponseOpenAIMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+type GenerateRequestOpenai struct {
+	Messages []Message `json:"messages"`
+	Model    string    `json:"model"`
 }
 
-type GenerateResponseOpenAIChoice struct {
-	Message GenerateResponseOpenAIMessage `json:"message"`
-}
-
-type GenerateResponseOpenAI struct {
-	Model   string                         `json:"model"`
-	Choices []GenerateResponseOpenAIChoice `json:"choices"`
+type GenerateResponseOpenai struct {
+	Choices []struct{} `json:"choices"`
+	Model   string     `json:"model"`
 }

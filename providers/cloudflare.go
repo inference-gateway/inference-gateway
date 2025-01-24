@@ -1,17 +1,13 @@
 package providers
 
-type GenerateRequestCloudflare struct {
-	Prompt string `json:"prompt"`
-}
-
 type GetModelsResponseCloudflare struct {
 	Result []interface{} `json:"result"`
 }
 
-type GenerateResponseCloudflareResult struct {
-	Response string `json:"response"`
+type GenerateRequestCloudflare struct {
+	Prompt string `json:"prompt"`
 }
 
 type GenerateResponseCloudflare struct {
-	Result GenerateResponseCloudflareResult `json:"result"`
+	Result struct{} `json:"result"`
 }

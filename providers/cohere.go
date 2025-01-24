@@ -5,20 +5,10 @@ type GetModelsResponseCohere struct {
 }
 
 type GenerateRequestCohere struct {
-	Model    string            `json:"model"`
-	Messages []GenerateMessage `json:"messages"`
-}
-
-type GenerateResponseCohereContent struct {
-	TypeStr string `json:"type"`
-	Text    string `json:"text"`
-}
-
-type GenerateResponseCohereMessage struct {
-	Role    string                          `json:"role"`
-	Content []GenerateResponseCohereContent `json:"content"`
+	Messages []Message `json:"messages"`
+	Model    string    `json:"model"`
 }
 
 type GenerateResponseCohere struct {
-	Message GenerateResponseCohereMessage `json:"message"`
+	Message struct{} `json:"message"`
 }
