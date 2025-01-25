@@ -144,6 +144,7 @@ components:
         - anthropic
       x-provider-configs:
         ollama:
+          id: "ollama"
           url: "http://ollama:8080"
           auth_type: "none"
           env_vars:
@@ -198,6 +199,7 @@ components:
                         content:
                           type: string
         groq:
+          id: "groq"
           url: "https://api.groq.com"
           auth_type: "bearer"
           endpoints:
@@ -243,6 +245,7 @@ components:
                               content:
                                 type: string
         openai:
+          id: "openai"
           url: "https://api.openai.com"
           auth_type: "bearer"
           endpoints:
@@ -287,8 +290,8 @@ components:
                                 type: string
                               content:
                                 type: string
-
         google:
+          id: "google"
           url: "https://generativelanguage.googleapis.com"
           auth_type: "query"
           endpoints:
@@ -341,6 +344,7 @@ components:
                               role:
                                 type: string
         cloudflare:
+          id: "cloudflare"
           url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
           auth_type: "bearer"
           endpoints:
@@ -373,6 +377,7 @@ components:
                         response:
                           type: string
         cohere:
+          id: "cohere"
           url: "https://api.cohere.com"
           auth_type: "bearer"
           endpoints:
@@ -417,8 +422,8 @@ components:
                                 type: string
                               text:
                                 type: string
-
         anthropic:
+          id: "anthropic"
           url: "https://api.anthropic.com"
           auth_type: "xheader"
           extra_headers:
