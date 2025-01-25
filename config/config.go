@@ -33,13 +33,13 @@ type Config struct {
 	Server *ServerConfig `env:", prefix=SERVER_" description:"The configuration for the server"`
 
 	// Providers settings
-	Anthropic  *ProviderConfig `env:", prefix=ANTHROPIC_" id:"anthropic" name:"Anthropic" url:"https://api.anthropic.com" auth_type:"xheader"`
-	Cloudflare *ProviderConfig `env:", prefix=CLOUDFLARE_" id:"cloudflare" name:"Cloudflare" url:"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}" auth_type:"bearer"`
-	Cohere     *ProviderConfig `env:", prefix=COHERE_" id:"cohere" name:"Cohere" url:"https://api.cohere.com" auth_type:"bearer"`
-	Google     *ProviderConfig `env:", prefix=GOOGLE_" id:"google" name:"Google" url:"https://generativelanguage.googleapis.com" auth_type:"query"`
-	Groq       *ProviderConfig `env:", prefix=GROQ_" id:"groq" name:"Groq" url:"https://api.groq.com" auth_type:"bearer"`
-	Ollama     *ProviderConfig `env:", prefix=OLLAMA_" id:"ollama" name:"Ollama" url:"http://ollama:8080" auth_type:"none"`
-	Openai     *ProviderConfig `env:", prefix=OPENAI_" id:"openai" name:"Openai" url:"https://api.openai.com" auth_type:"bearer"`
+	Anthropic  *AnthropicConfig  `env:", prefix=ANTHROPIC_" id:"anthropic" name:"Anthropic" url:"https://api.anthropic.com" auth_type:"xheader"`
+	Cloudflare *CloudflareConfig `env:", prefix=CLOUDFLARE_" id:"cloudflare" name:"Cloudflare" url:"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}" auth_type:"bearer"`
+	Cohere     *CohereConfig     `env:", prefix=COHERE_" id:"cohere" name:"Cohere" url:"https://api.cohere.com" auth_type:"bearer"`
+	Google     *GoogleConfig     `env:", prefix=GOOGLE_" id:"google" name:"Google" url:"https://generativelanguage.googleapis.com" auth_type:"query"`
+	Groq       *GroqConfig       `env:", prefix=GROQ_" id:"groq" name:"Groq" url:"https://api.groq.com" auth_type:"bearer"`
+	Ollama     *OllamaConfig     `env:", prefix=OLLAMA_" id:"ollama" name:"Ollama" url:"http://ollama:8080" auth_type:"none"`
+	Openai     *OpenaiConfig     `env:", prefix=OPENAI_" id:"openai" name:"Openai" url:"https://api.openai.com" auth_type:"bearer"`
 }
 
 // OIDC holds the configuration for the OIDC provider
@@ -58,6 +58,98 @@ type ServerConfig struct {
 	IdleTimeout  time.Duration `env:"IDLE_TIMEOUT, default=120s" description:"The server idle timeout"`
 	TLSCertPath  string        `env:"TLS_CERT_PATH" description:"The path to the TLS certificate"`
 	TLSKeyPath   string        `env:"TLS_KEY_PATH" description:"The path to the TLS key"`
+}
+
+// AnthropicConfig holds the specific provider config
+type AnthropicConfig struct {
+	ID           string              `env:"ID, default=anthropic" description:"The provider ID"`
+	Name         string              `env:"NAME, default=Anthropic" description:"The provider name"`
+	URL          string              `env:"API_URL, default=https://api.anthropic.com" description:"The provider API URL"`
+	Token        string              `env:"API_KEY" type:"secret" description:"The provider API key"`
+	AuthType     string              `env:"AUTH_TYPE, default=xheader" description:"The provider auth type"`
+	ExtraHeaders map[string][]string `env:"EXTRA_HEADERS" description:"Extra headers for provider requests"`
+	Endpoints    struct {
+		List     string
+		Generate string
+	}
+}
+
+// CloudflareConfig holds the specific provider config
+type CloudflareConfig struct {
+	ID        string `env:"ID, default=cloudflare" description:"The provider ID"`
+	Name      string `env:"NAME, default=Cloudflare" description:"The provider name"`
+	URL       string `env:"API_URL, default=https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}" description:"The provider API URL"`
+	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
+	AuthType  string `env:"AUTH_TYPE, default=bearer" description:"The provider auth type"`
+	Endpoints struct {
+		List     string
+		Generate string
+	}
+}
+
+// CohereConfig holds the specific provider config
+type CohereConfig struct {
+	ID        string `env:"ID, default=cohere" description:"The provider ID"`
+	Name      string `env:"NAME, default=Cohere" description:"The provider name"`
+	URL       string `env:"API_URL, default=https://api.cohere.com" description:"The provider API URL"`
+	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
+	AuthType  string `env:"AUTH_TYPE, default=bearer" description:"The provider auth type"`
+	Endpoints struct {
+		List     string
+		Generate string
+	}
+}
+
+// GoogleConfig holds the specific provider config
+type GoogleConfig struct {
+	ID        string `env:"ID, default=google" description:"The provider ID"`
+	Name      string `env:"NAME, default=Google" description:"The provider name"`
+	URL       string `env:"API_URL, default=https://generativelanguage.googleapis.com" description:"The provider API URL"`
+	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
+	AuthType  string `env:"AUTH_TYPE, default=query" description:"The provider auth type"`
+	Endpoints struct {
+		List     string
+		Generate string
+	}
+}
+
+// GroqConfig holds the specific provider config
+type GroqConfig struct {
+	ID        string `env:"ID, default=groq" description:"The provider ID"`
+	Name      string `env:"NAME, default=Groq" description:"The provider name"`
+	URL       string `env:"API_URL, default=https://api.groq.com" description:"The provider API URL"`
+	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
+	AuthType  string `env:"AUTH_TYPE, default=bearer" description:"The provider auth type"`
+	Endpoints struct {
+		List     string
+		Generate string
+	}
+}
+
+// OllamaConfig holds the specific provider config
+type OllamaConfig struct {
+	ID        string `env:"ID, default=ollama" description:"The provider ID"`
+	Name      string `env:"NAME, default=Ollama" description:"The provider name"`
+	URL       string `env:"API_URL, default=http://ollama:8080" description:"The provider API URL"`
+	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
+	AuthType  string `env:"AUTH_TYPE, default=none" description:"The provider auth type"`
+	Endpoints struct {
+		List     string
+		Generate string
+	}
+}
+
+// OpenaiConfig holds the specific provider config
+type OpenaiConfig struct {
+	ID        string `env:"ID, default=openai" description:"The provider ID"`
+	Name      string `env:"NAME, default=Openai" description:"The provider name"`
+	URL       string `env:"API_URL, default=https://api.openai.com" description:"The provider API URL"`
+	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
+	AuthType  string `env:"AUTH_TYPE, default=bearer" description:"The provider auth type"`
+	Endpoints struct {
+		List     string
+		Generate string
+	}
 }
 
 // Load loads the configuration from environment variables

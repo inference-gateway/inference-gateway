@@ -87,6 +87,7 @@ type EndpointSchema struct {
 }
 
 type ProviderConfig struct {
+	ID           string                    `yaml:"id"`
 	URL          string                    `yaml:"url"`
 	AuthType     string                    `yaml:"auth_type"`
 	ExtraHeaders map[string]ExtraHeader    `yaml:"extra_headers,omitempty"`
@@ -461,5 +462,145 @@ func generateType(field SchemaField) string {
 }
 
 func generateConfig(output, openapi string) {
+	// Read OpenAPI spec
+	data, err := os.ReadFile(openapi)
+	if err != nil {
+		fmt.Printf("Error reading OpenAPI spec: %v\n", err)
+		os.Exit(1)
+	}
 
+	var schema OpenAPISchema
+	if err := yaml.Unmarshal(data, &schema); err != nil {
+		fmt.Printf("Error parsing OpenAPI spec: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Generate config file
+	providers := schema.Components.Schemas.Providers.XProviderConfigs
+	if err := generateConfigFile(output, providers); err != nil {
+		fmt.Printf("Error generating config file: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func generateConfigFile(destination string, providers map[string]ProviderConfig) error {
+	caser := cases.Title(language.English)
+
+	funcMap := template.FuncMap{
+		"title": caser.String,
+		"upper": strings.ToUpper,
+	}
+
+	tmpl := template.Must(template.New("config").
+		Funcs(funcMap).
+		Parse(`package config
+
+import (
+    "context"
+    "time"
+
+    "github.com/sethvargo/go-envconfig"
+)
+
+// Config holds the configuration for the Inference Gateway.
+//go:generate go run ../cmd/generate/main.go -type=Env -output=../examples/docker-compose/.env.example
+//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/basic/inference-gateway/configmap.yaml
+//go:generate go run ../cmd/generate/main.go -type=Secret -output=../examples/kubernetes/basic/inference-gateway/secret.yaml
+//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/hybrid/inference-gateway/configmap.yaml
+//go:generate go run ../cmd/generate/main.go -type=Secret -output=../examples/kubernetes/hybrid/inference-gateway/secret.yaml
+//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/authentication/inference-gateway/configmap.yaml
+//go:generate go run ../cmd/generate/main.go -type=Secret -output=../examples/kubernetes/authentication/inference-gateway/secret.yaml
+//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/agent/inference-gateway/configmap.yaml
+//go:generate go run ../cmd/generate/main.go -type=Secret -output=../examples/kubernetes/agent/inference-gateway/secret.yaml
+//go:generate go run ../cmd/generate/main.go -type=MD -output=../Configurations.md
+type Config struct {
+    // General settings
+    ApplicationName string ` + "`env:\"APPLICATION_NAME, default=inference-gateway\" description:\"The name of the application\"`" + `
+    Environment     string ` + "`env:\"ENVIRONMENT, default=production\" description:\"The environment in which the application is running\"`" + `
+    EnableTelemetry bool   ` + "`env:\"ENABLE_TELEMETRY, default=false\" description:\"Enable telemetry for the server\"`" + `
+    EnableAuth      bool   ` + "`env:\"ENABLE_AUTH, default=false\" description:\"Enable authentication\"`" + `
+
+    // Auth settings
+    OIDC *OIDC ` + "`env:\", prefix=OIDC_\" description:\"The OIDC configuration\"`" + `
+
+    // Server settings
+    Server *ServerConfig ` + "`env:\", prefix=SERVER_\" description:\"The configuration for the server\"`" + `
+
+    // Providers settings{{- /* Trim space after comment */}}
+    {{- range $name, $config := .Providers}}
+    {{title $name}} *{{title $name}}Config ` + "`env:\", prefix={{upper $name}}_\" id:\"{{$name}}\" name:\"{{title $name}}\" url:\"{{$config.URL}}\" auth_type:\"{{$config.AuthType}}\"`" + `
+    {{- end}}
+}
+
+// OIDC holds the configuration for the OIDC provider
+type OIDC struct {
+    OIDCIssuerURL    string ` + "`env:\"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm\" description:\"The OIDC issuer URL\"`" + `
+    OIDCClientID     string ` + "`env:\"CLIENT_ID, default=inference-gateway-client\" type:\"secret\" description:\"The OIDC client ID\"`" + `
+    OIDCClientSecret string ` + "`env:\"CLIENT_SECRET\" type:\"secret\" description:\"The OIDC client secret\"`" + `
+}
+
+// ServerConfig holds the configuration for the server
+type ServerConfig struct {
+    Host         string        ` + "`env:\"HOST, default=0.0.0.0\" description:\"The host address for the server\"`" + `
+    Port         string        ` + "`env:\"PORT, default=8080\" description:\"The port on which the server will listen\"`" + `
+    ReadTimeout  time.Duration ` + "`env:\"READ_TIMEOUT, default=30s\" description:\"The server read timeout\"`" + `
+    WriteTimeout time.Duration ` + "`env:\"WRITE_TIMEOUT, default=30s\" description:\"The server write timeout\"`" + `
+    IdleTimeout  time.Duration ` + "`env:\"IDLE_TIMEOUT, default=120s\" description:\"The server idle timeout\"`" + `
+    TLSCertPath  string        ` + "`env:\"TLS_CERT_PATH\" description:\"The path to the TLS certificate\"`" + `
+    TLSKeyPath   string        ` + "`env:\"TLS_KEY_PATH\" description:\"The path to the TLS key\"`" + `
+}
+
+{{- range $name, $config := .Providers}}
+// {{title $name -}}Config holds the specific provider config{{- /* Trim space after comment */}}
+type {{title $name}}Config struct {
+    ID           string              ` + "`env:\"ID, default={{$config.ID}}\" description:\"The provider ID\"`" + `
+    Name         string              ` + "`env:\"NAME, default={{title $name}}\" description:\"The provider name\"`" + `
+    URL          string              ` + "`env:\"API_URL, default={{$config.URL}}\" description:\"The provider API URL\"`" + `
+    Token        string              ` + "`env:\"API_KEY\" type:\"secret\" description:\"The provider API key\"`" + `
+    AuthType     string              ` + "`env:\"AUTH_TYPE, default={{$config.AuthType}}\" description:\"The provider auth type\"`" + `
+    {{- if $config.ExtraHeaders}}
+    ExtraHeaders map[string][]string ` + "`env:\"EXTRA_HEADERS\" description:\"Extra headers for provider requests\"`" + `
+    {{- end}}
+    Endpoints    struct {
+        List     string
+        Generate string
+    }
+}
+{{end}}
+
+// Load loads the configuration from environment variables
+func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
+    if err := envconfig.ProcessWith(context.Background(), &envconfig.Config{
+        Target:   cfg,
+        Lookuper: lookuper,
+    }); err != nil {
+        return Config{}, err
+    }
+    return *cfg, nil
+}
+`))
+
+	data := struct {
+		Providers map[string]ProviderConfig
+	}{
+		Providers: providers,
+	}
+
+	f, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, data); err != nil {
+		return err
+	}
+
+	// Run go fmt on the generated file
+	cmd := exec.Command("go", "fmt", destination)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to format %s: %w", destination, err)
+	}
+
+	return nil
 }
