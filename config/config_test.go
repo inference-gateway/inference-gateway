@@ -41,7 +41,7 @@ func TestLoad(t *testing.T) {
 					providers.OllamaID: {
 						ID:       providers.OllamaID,
 						Name:     "Ollama",
-						URL:      "http://ollama:8080",
+						URL:      config.ProviderOllamaDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeNone,
 						Endpoints: struct {
 							List     string
@@ -51,7 +51,7 @@ func TestLoad(t *testing.T) {
 					providers.GroqID: {
 						ID:       providers.GroqID,
 						Name:     "Groq",
-						URL:      "https://api.groq.com",
+						URL:      config.ProviderGroqDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -61,7 +61,7 @@ func TestLoad(t *testing.T) {
 					providers.OpenaiID: {
 						ID:       providers.OpenaiID,
 						Name:     "Openai",
-						URL:      "https://api.openai.com",
+						URL:      config.ProviderOpenaiDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -71,7 +71,7 @@ func TestLoad(t *testing.T) {
 					providers.GoogleID: {
 						ID:       providers.GoogleID,
 						Name:     "Google",
-						URL:      "https://generativelanguage.googleapis.com",
+						URL:      config.ProviderGoogleDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeQuery,
 						Endpoints: struct {
 							List     string
@@ -81,7 +81,7 @@ func TestLoad(t *testing.T) {
 					providers.CloudflareID: {
 						ID:       providers.CloudflareID,
 						Name:     "Cloudflare",
-						URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
+						URL:      config.ProviderCloudflareDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -91,7 +91,7 @@ func TestLoad(t *testing.T) {
 					providers.CohereID: {
 						ID:       providers.CohereID,
 						Name:     "Cohere",
-						URL:      "https://api.cohere.com",
+						URL:      config.ProviderCohereDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -101,7 +101,7 @@ func TestLoad(t *testing.T) {
 					providers.AnthropicID: {
 						ID:       providers.AnthropicID,
 						Name:     "Anthropic",
-						URL:      "https://api.anthropic.com",
+						URL:      config.ProviderAnthropicDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeXHeader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
@@ -161,7 +161,7 @@ func TestLoad(t *testing.T) {
 					providers.GroqID: {
 						ID:       providers.GroqID,
 						Name:     "Groq",
-						URL:      "https://api.groq.com",
+						URL:      config.ProviderGroqDefaultBaseURL,
 						Token:    "groq123",
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
@@ -172,7 +172,7 @@ func TestLoad(t *testing.T) {
 					providers.OpenaiID: {
 						ID:       providers.OpenaiID,
 						Name:     "Openai",
-						URL:      "https://api.openai.com",
+						URL:      config.ProviderOpenaiDefaultBaseURL,
 						Token:    "openai123",
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
@@ -183,7 +183,7 @@ func TestLoad(t *testing.T) {
 					providers.GoogleID: {
 						ID:       providers.GoogleID,
 						Name:     "Google",
-						URL:      "https://generativelanguage.googleapis.com",
+						URL:      config.ProviderGoogleDefaultBaseURL,
 						Token:    "google123",
 						AuthType: config.ProviderAuthTypeQuery,
 						Endpoints: struct {
@@ -194,7 +194,7 @@ func TestLoad(t *testing.T) {
 					providers.CloudflareID: {
 						ID:       providers.CloudflareID,
 						Name:     "Cloudflare",
-						URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
+						URL:      config.ProviderCloudflareDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -204,7 +204,7 @@ func TestLoad(t *testing.T) {
 					providers.CohereID: {
 						ID:       providers.CohereID,
 						Name:     "Cohere",
-						URL:      "https://api.cohere.com",
+						URL:      config.ProviderCohereDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -214,7 +214,7 @@ func TestLoad(t *testing.T) {
 					providers.AnthropicID: {
 						ID:       providers.AnthropicID,
 						Name:     "Anthropic",
-						URL:      "https://api.anthropic.com",
+						URL:      config.ProviderAnthropicDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeXHeader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
@@ -277,7 +277,7 @@ func TestLoad(t *testing.T) {
 						ID:       providers.OllamaID,
 						Name:     "Ollama",
 						URL:      "http://custom-ollama:8080",
-						AuthType: "none",
+						AuthType: config.ProviderAuthTypeNone,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -286,7 +286,7 @@ func TestLoad(t *testing.T) {
 					providers.GroqID: {
 						ID:       providers.GroqID,
 						Name:     "Groq",
-						URL:      "https://api.groq.com",
+						URL:      config.ProviderGroqDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -296,7 +296,7 @@ func TestLoad(t *testing.T) {
 					providers.OpenaiID: {
 						ID:       providers.OpenaiID,
 						Name:     "Openai",
-						URL:      "https://api.openai.com",
+						URL:      config.ProviderOpenaiDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -306,8 +306,8 @@ func TestLoad(t *testing.T) {
 					providers.GoogleID: {
 						ID:       providers.GoogleID,
 						Name:     "Google",
-						URL:      "https://generativelanguage.googleapis.com",
-						AuthType: "query",
+						URL:      config.ProviderGoogleDefaultBaseURL,
+						AuthType: config.ProviderAuthTypeQuery,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -316,7 +316,7 @@ func TestLoad(t *testing.T) {
 					providers.CloudflareID: {
 						ID:       providers.CloudflareID,
 						Name:     "Cloudflare",
-						URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
+						URL:      config.ProviderCloudflareDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -326,7 +326,7 @@ func TestLoad(t *testing.T) {
 					providers.CohereID: {
 						ID:       providers.CohereID,
 						Name:     "Cohere",
-						URL:      "https://api.cohere.com",
+						URL:      config.ProviderCohereDefaultBaseURL,
 						AuthType: config.ProviderAuthTypeBearer,
 						Endpoints: struct {
 							List     string
@@ -336,8 +336,8 @@ func TestLoad(t *testing.T) {
 					providers.AnthropicID: {
 						ID:       providers.AnthropicID,
 						Name:     "Anthropic",
-						URL:      "https://api.anthropic.com",
-						AuthType: "xheader",
+						URL:      config.ProviderAnthropicDefaultBaseURL,
+						AuthType: config.ProviderAuthTypeXHeader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},

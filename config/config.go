@@ -17,6 +17,16 @@ const (
 	ProviderAuthTypeNone    = "none"
 )
 
+const (
+	ProviderAnthropicDefaultBaseURL  = "https://api.anthropic.com"
+	ProviderCloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+	ProviderCohereDefaultBaseURL     = "https://api.cohere.com"
+	ProviderGoogleDefaultBaseURL     = "https://generativelanguage.googleapis.com"
+	ProviderGroqDefaultBaseURL       = "https://api.groq.com"
+	ProviderOllamaDefaultBaseURL     = "http://ollama:8080"
+	ProviderOpenaiDefaultBaseURL     = "https://api.openai.com"
+)
+
 // Base provider configuration
 type BaseProviderConfig struct {
 	ID           string
@@ -145,37 +155,37 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 		providers.CloudflareID: {
 			ID:       providers.CloudflareID,
 			Name:     "Cloudflare",
-			URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
+			URL:      ProviderCloudflareDefaultBaseURL,
 			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.CohereID: {
 			ID:       providers.CohereID,
 			Name:     "Cohere",
-			URL:      "https://api.cohere.com",
+			URL:      ProviderCohereDefaultBaseURL,
 			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.GoogleID: {
 			ID:       providers.GoogleID,
 			Name:     "Google",
-			URL:      "https://generativelanguage.googleapis.com",
+			URL:      ProviderGoogleDefaultBaseURL,
 			AuthType: ProviderAuthTypeQuery,
 		},
 		providers.GroqID: {
 			ID:       providers.GroqID,
 			Name:     "Groq",
-			URL:      "https://api.groq.com",
+			URL:      ProviderGroqDefaultBaseURL,
 			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.OllamaID: {
 			ID:       providers.OllamaID,
 			Name:     "Ollama",
-			URL:      "http://ollama:8080",
+			URL:      ProviderOllamaDefaultBaseURL,
 			AuthType: ProviderAuthTypeNone,
 		},
 		providers.OpenaiID: {
 			ID:       providers.OpenaiID,
 			Name:     "Openai",
-			URL:      "https://api.openai.com",
+			URL:      ProviderOpenaiDefaultBaseURL,
 			AuthType: ProviderAuthTypeBearer,
 		},
 	}
