@@ -102,7 +102,7 @@ func TestLoad(t *testing.T) {
 						ID:       providers.AnthropicID,
 						Name:     providers.AnthropicDisplayName,
 						URL:      providers.AnthropicDefaultBaseURL,
-						AuthType: providers.AuthTypeXHeader,
+						AuthType: providers.AuthTypeXheader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},
@@ -215,7 +215,7 @@ func TestLoad(t *testing.T) {
 						ID:       providers.AnthropicID,
 						Name:     providers.AnthropicDisplayName,
 						URL:      providers.AnthropicDefaultBaseURL,
-						AuthType: providers.AuthTypeXHeader,
+						AuthType: providers.AuthTypeXheader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},
@@ -337,7 +337,7 @@ func TestLoad(t *testing.T) {
 						ID:       providers.AnthropicID,
 						Name:     providers.AnthropicDisplayName,
 						URL:      providers.AnthropicDefaultBaseURL,
-						AuthType: providers.AuthTypeXHeader,
+						AuthType: providers.AuthTypeXheader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},

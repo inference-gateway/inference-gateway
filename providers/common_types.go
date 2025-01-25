@@ -3,7 +3,7 @@ package providers
 // The authentication type of the specific provider
 const (
 	AuthTypeBearer  = "bearer"
-	AuthTypeXHeader = "xheader"
+	AuthTypeXheader = "xheader"
 	AuthTypeQuery   = "query"
 	AuthTypeNone    = "none"
 )

@@ -505,9 +505,9 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
         {{- range $name, $config := .Providers}}
         providers.{{title $name}}ID: {
             ID:       providers.{{title $name}}ID,
-            Name:     "{{title $name}}",
-            URL:      "{{$config.URL}}",
-            AuthType: "{{$config.AuthType}}",
+            Name:     providers.{{title $name}}DisplayName,
+            URL:      providers.{{title $name}}DefaultBaseURL,
+            AuthType: providers.AuthType{{title $config.AuthType}},
             {{- if $config.ExtraHeaders}}
             ExtraHeaders: map[string][]string{
                 {{- range $key, $header := $config.ExtraHeaders}}

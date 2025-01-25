@@ -130,7 +130,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 			ID:       providers.AnthropicID,
 			Name:     providers.AnthropicDisplayName,
 			URL:      providers.AnthropicDefaultBaseURL,
-			AuthType: providers.AuthTypeXHeader,
+			AuthType: providers.AuthTypeXheader,
 			ExtraHeaders: map[string][]string{
 				"anthropic-version": {"2023-06-01"},
 			},
