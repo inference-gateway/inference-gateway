@@ -30,21 +30,21 @@ func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OI
 		return &OIDCAuthenticatorNoop{}, nil
 	}
 
-	provider, err := oidcV3.NewProvider(context.Background(), cfg.OIDCIssuerURL)
+	provider, err := oidcV3.NewProvider(context.Background(), cfg.OIDC.IssuerURL)
 	if err != nil {
 		return nil, err
 	}
 
 	oidcConfig := &oidcV3.Config{
-		ClientID: cfg.OIDCClientID,
+		ClientID: cfg.OIDC.ClientID,
 	}
 
 	return &OIDCAuthenticatorImpl{
 		logger:   logger,
 		verifier: provider.Verifier(oidcConfig),
 		config: oauth2.Config{
-			ClientID:     cfg.OIDCClientID,
-			ClientSecret: cfg.OIDCClientSecret,
+			ClientID:     cfg.OIDC.ClientID,
+			ClientSecret: cfg.OIDC.ClientSecret,
 			Endpoint:     provider.Endpoint(),
 			Scopes:       []string{oidcV3.ScopeOpenID, "profile", "email"},
 		},
