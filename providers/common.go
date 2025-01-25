@@ -58,36 +58,6 @@ type ModelsResponse struct {
 	Models   []interface{} `json:"models"`
 }
 
-var listEndpoints = map[string]string{
-	"ollama":     "/v1/models",
-	"groq":       "/openai/v1/models",
-	"openai":     "/v1/models",
-	"google":     "/v1beta/models",
-	"cloudflare": "/ai/finetunes/public",
-	"cohere":     "/v1/models",
-	"anthropic":  "/v1/models",
-}
-
-// ListLLMsEndpoints returns the endpoints for listing models
-func (p *ProviderImpl) ListLLMsEndpoints() map[string]string {
-	return listEndpoints
-}
-
-var generateEndpoints = map[string]string{
-	"ollama":     "/api/generate",
-	"groq":       "/openai/v1/chat/completions",
-	"openai":     "/v1/completions",
-	"google":     "/v1beta/models/{model}:generateContent",
-	"cloudflare": "/ai/run/@cf/meta/{model}",
-	"cohere":     "/v2/chat",
-	"anthropic":  "/v1/messages",
-}
-
-// GenTokensEndpoint returns the endpoint for generating tokens for the given provider.
-func (p *ProviderImpl) GenTokensEndpoint(providerID string) string {
-	return generateEndpoints[providerID]
-}
-
 func FetchModels(url string, provider string) ModelsResponse {
 	resp, err := http.Get(url)
 	if err != nil {
