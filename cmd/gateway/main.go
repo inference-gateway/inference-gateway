@@ -15,11 +15,12 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
+	"github.com/sethvargo/go-envconfig"
 )
 
 func main() {
 	var config config.Config
-	cfg, err := config.Load()
+	cfg, err := config.Load(envconfig.OsLookuper())
 	if err != nil {
 		log.Printf("Config load error: %v", err)
 		return
@@ -79,7 +80,7 @@ func main() {
 	}
 
 	client := http.Client{
-		Timeout: cfg.ServerReadTimeout + (time.Second + 5), // Add 5 seconds more for the client than the configured server ReadTimeout, maybe it should be in the configurable, haven't decided yet.
+		Timeout: cfg.Server.ReadTimeout + (time.Second + 5), // Add 5 seconds more for the client than the configured server ReadTimeout, maybe it should be in the configurable, haven't decided yet.
 	}
 	api := api.NewRouter(cfg, &logger, &client)
 	r := gin.New()
@@ -97,21 +98,21 @@ func main() {
 	r.NoRoute(api.NotFoundHandler)
 
 	server := &http.Server{
-		Addr:         cfg.ServerHost + ":" + cfg.ServerPort,
+		Addr:         cfg.Server.Host + ":" + cfg.Server.Port,
 		Handler:      r,
-		ReadTimeout:  cfg.ServerReadTimeout,
-		WriteTimeout: cfg.ServerWriteTimeout,
-		IdleTimeout:  cfg.ServerIdleTimeout,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
 
-	if cfg.ServerTLSCertPath != "" && cfg.ServerTLSKeyPath != "" {
+	if cfg.Server.TLSCertPath != "" && cfg.Server.TLSKeyPath != "" {
 		go func() {
 			if cfg.EnableTelemetry {
 				span.AddEvent("Starting Inference Gateway with TLS")
 			}
-			logger.Info("Starting Inference Gateway with TLS", "port", cfg.ServerPort)
+			logger.Info("Starting Inference Gateway with TLS", "port", cfg.Server.Port)
 
-			if err := server.ListenAndServeTLS(cfg.ServerTLSCertPath, cfg.ServerTLSKeyPath); err != nil && err != http.ErrServerClosed {
+			if err := server.ListenAndServeTLS(cfg.Server.TLSCertPath, cfg.Server.TLSKeyPath); err != nil && err != http.ErrServerClosed {
 				logger.Error("ListenAndServeTLS error", err)
 			}
 		}()
@@ -120,7 +121,7 @@ func main() {
 			if cfg.EnableTelemetry {
 				span.AddEvent("Starting Inference Gateway")
 			}
-			logger.Info("Starting Inference Gateway", "port", cfg.ServerPort)
+			logger.Info("Starting Inference Gateway", "port", cfg.Server.Port)
 
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				logger.Error("ListenAndServe error", err)
