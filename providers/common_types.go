@@ -1,5 +1,25 @@
 package providers
 
+// The authentication type of the specific provider
+const (
+	AuthTypeBearer  = "bearer"
+	AuthTypeXHeader = "xheader"
+	AuthTypeQuery   = "query"
+	AuthTypeNone    = "none"
+)
+
+// The default base URLs of each provider
+const (
+	AnthropicDefaultBaseURL  = "https://api.anthropic.com"
+	CloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+	CohereDefaultBaseURL     = "https://api.cohere.com"
+	GoogleDefaultBaseURL     = "https://generativelanguage.googleapis.com"
+	GroqDefaultBaseURL       = "https://api.groq.com"
+	OllamaDefaultBaseURL     = "http://ollama:8080"
+	OpenaiDefaultBaseURL     = "https://api.openai.com"
+)
+
+// The ID's of each provider
 const (
 	OllamaID     = "ollama"
 	GroqID       = "groq"
@@ -8,6 +28,17 @@ const (
 	CohereID     = "cohere"
 	CloudflareID = "cloudflare"
 	GoogleID     = "google"
+)
+
+// Display names for providers
+const (
+	OllamaDisplayName     = "Ollama"
+	GroqDisplayName       = "Groq"
+	AnthropicDisplayName  = "Anthropic"
+	OpenaiDisplayName     = "Openai"
+	CloudflareDisplayName = "Cloudflare"
+	CohereDisplayName     = "Cohere"
+	GoogleDisplayName     = "Google"
 )
 
 type Model struct {

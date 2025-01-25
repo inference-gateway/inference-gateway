@@ -10,35 +10,6 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
-const (
-	ProviderAuthTypeBearer  = "bearer"
-	ProviderAuthTypeXHeader = "xheader"
-	ProviderAuthTypeQuery   = "query"
-	ProviderAuthTypeNone    = "none"
-)
-
-// The default base URLs of each provider
-const (
-	ProviderAnthropicDefaultBaseURL  = "https://api.anthropic.com"
-	ProviderCloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
-	ProviderCohereDefaultBaseURL     = "https://api.cohere.com"
-	ProviderGoogleDefaultBaseURL     = "https://generativelanguage.googleapis.com"
-	ProviderGroqDefaultBaseURL       = "https://api.groq.com"
-	ProviderOllamaDefaultBaseURL     = "http://ollama:8080"
-	ProviderOpenaiDefaultBaseURL     = "https://api.openai.com"
-)
-
-// Display names for providers
-const (
-	ProviderAnthropicDisplayName  = "Anthropic"
-	ProviderCloudflareDisplayName = "Cloudflare"
-	ProviderCohereDisplayName     = "Cohere"
-	ProviderGoogleDisplayName     = "Google"
-	ProviderGroqDisplayName       = "Groq"
-	ProviderOllamaDisplayName     = "Ollama"
-	ProviderOpenaiDisplayName     = "Openai"
-)
-
 // Base provider configuration
 type BaseProviderConfig struct {
 	ID           string
@@ -157,48 +128,48 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	defaultProviders := map[string]BaseProviderConfig{
 		providers.AnthropicID: {
 			ID:       providers.AnthropicID,
-			Name:     "Anthropic",
-			URL:      "https://api.anthropic.com",
-			AuthType: ProviderAuthTypeXHeader,
+			Name:     providers.AnthropicDisplayName,
+			URL:      providers.AnthropicDefaultBaseURL,
+			AuthType: providers.AuthTypeXHeader,
 			ExtraHeaders: map[string][]string{
 				"anthropic-version": {"2023-06-01"},
 			},
 		},
 		providers.CloudflareID: {
 			ID:       providers.CloudflareID,
-			Name:     ProviderCloudflareDisplayName,
-			URL:      ProviderCloudflareDefaultBaseURL,
-			AuthType: ProviderAuthTypeBearer,
+			Name:     providers.CloudflareDisplayName,
+			URL:      providers.CloudflareDefaultBaseURL,
+			AuthType: providers.AuthTypeBearer,
 		},
 		providers.CohereID: {
 			ID:       providers.CohereID,
-			Name:     ProviderCohereDisplayName,
-			URL:      ProviderCohereDefaultBaseURL,
-			AuthType: ProviderAuthTypeBearer,
+			Name:     providers.CohereDisplayName,
+			URL:      providers.CohereDefaultBaseURL,
+			AuthType: providers.AuthTypeBearer,
 		},
 		providers.GoogleID: {
 			ID:       providers.GoogleID,
-			Name:     ProviderGoogleDisplayName,
-			URL:      ProviderGoogleDefaultBaseURL,
-			AuthType: ProviderAuthTypeQuery,
+			Name:     providers.GoogleDisplayName,
+			URL:      providers.GoogleDefaultBaseURL,
+			AuthType: providers.AuthTypeQuery,
 		},
 		providers.GroqID: {
 			ID:       providers.GroqID,
-			Name:     ProviderGroqDisplayName,
-			URL:      ProviderGroqDefaultBaseURL,
-			AuthType: ProviderAuthTypeBearer,
+			Name:     providers.GroqDisplayName,
+			URL:      providers.GroqDefaultBaseURL,
+			AuthType: providers.AuthTypeBearer,
 		},
 		providers.OllamaID: {
 			ID:       providers.OllamaID,
-			Name:     ProviderOllamaDisplayName,
-			URL:      ProviderOllamaDefaultBaseURL,
-			AuthType: ProviderAuthTypeNone,
+			Name:     providers.OllamaDisplayName,
+			URL:      providers.OllamaDefaultBaseURL,
+			AuthType: providers.AuthTypeNone,
 		},
 		providers.OpenaiID: {
 			ID:       providers.OpenaiID,
-			Name:     ProviderOpenaiDisplayName,
-			URL:      ProviderOpenaiDefaultBaseURL,
-			AuthType: ProviderAuthTypeBearer,
+			Name:     providers.OpenaiDisplayName,
+			URL:      providers.OpenaiDefaultBaseURL,
+			AuthType: providers.AuthTypeBearer,
 		},
 	}
 

@@ -40,9 +40,9 @@ func TestLoad(t *testing.T) {
 				Providers: map[string]*config.BaseProviderConfig{
 					providers.OllamaID: {
 						ID:       providers.OllamaID,
-						Name:     config.ProviderOllamaDisplayName,
-						URL:      config.ProviderOllamaDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeNone,
+						Name:     providers.OllamaDisplayName,
+						URL:      providers.OllamaDefaultBaseURL,
+						AuthType: providers.AuthTypeNone,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -50,9 +50,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.GroqID: {
 						ID:       providers.GroqID,
-						Name:     config.ProviderGroqDisplayName,
-						URL:      config.ProviderGroqDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.GroqDisplayName,
+						URL:      providers.GroqDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -60,9 +60,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.OpenaiID: {
 						ID:       providers.OpenaiID,
-						Name:     config.ProviderOpenaiDisplayName,
-						URL:      config.ProviderOpenaiDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.OpenaiDisplayName,
+						URL:      providers.OpenaiDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -70,9 +70,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.GoogleID: {
 						ID:       providers.GoogleID,
-						Name:     config.ProviderGoogleDisplayName,
-						URL:      config.ProviderGoogleDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeQuery,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
+						AuthType: providers.AuthTypeQuery,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -80,9 +80,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.CloudflareID: {
 						ID:       providers.CloudflareID,
-						Name:     config.ProviderCloudflareDisplayName,
-						URL:      config.ProviderCloudflareDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.CloudflareDisplayName,
+						URL:      providers.CloudflareDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -90,9 +90,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.CohereID: {
 						ID:       providers.CohereID,
-						Name:     config.ProviderCohereDisplayName,
-						URL:      config.ProviderCohereDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.CohereDisplayName,
+						URL:      providers.CohereDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -100,9 +100,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.AnthropicID: {
 						ID:       providers.AnthropicID,
-						Name:     config.ProviderAnthropicDisplayName,
-						URL:      config.ProviderAnthropicDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeXHeader,
+						Name:     providers.AnthropicDisplayName,
+						URL:      providers.AnthropicDefaultBaseURL,
+						AuthType: providers.AuthTypeXHeader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},
@@ -150,9 +150,9 @@ func TestLoad(t *testing.T) {
 				Providers: map[string]*config.BaseProviderConfig{
 					providers.OllamaID: {
 						ID:       providers.OllamaID,
-						Name:     config.ProviderOllamaDisplayName,
+						Name:     providers.OllamaDisplayName,
 						URL:      "http://custom-ollama:8080",
-						AuthType: config.ProviderAuthTypeNone,
+						AuthType: providers.AuthTypeNone,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -160,10 +160,10 @@ func TestLoad(t *testing.T) {
 					},
 					providers.GroqID: {
 						ID:       providers.GroqID,
-						Name:     config.ProviderGroqDisplayName,
-						URL:      config.ProviderGroqDefaultBaseURL,
+						Name:     providers.GroqDisplayName,
+						URL:      providers.GroqDefaultBaseURL,
 						Token:    "groq123",
-						AuthType: config.ProviderAuthTypeBearer,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -171,10 +171,10 @@ func TestLoad(t *testing.T) {
 					},
 					providers.OpenaiID: {
 						ID:       providers.OpenaiID,
-						Name:     config.ProviderOpenaiDisplayName,
-						URL:      config.ProviderOpenaiDefaultBaseURL,
+						Name:     providers.OpenaiDisplayName,
+						URL:      providers.OpenaiDefaultBaseURL,
 						Token:    "openai123",
-						AuthType: config.ProviderAuthTypeBearer,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -182,10 +182,10 @@ func TestLoad(t *testing.T) {
 					},
 					providers.GoogleID: {
 						ID:       providers.GoogleID,
-						Name:     config.ProviderGoogleDisplayName,
-						URL:      config.ProviderGoogleDefaultBaseURL,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
 						Token:    "google123",
-						AuthType: config.ProviderAuthTypeQuery,
+						AuthType: providers.AuthTypeQuery,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -193,9 +193,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.CloudflareID: {
 						ID:       providers.CloudflareID,
-						Name:     config.ProviderCloudflareDisplayName,
-						URL:      config.ProviderCloudflareDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.CloudflareDisplayName,
+						URL:      providers.CloudflareDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -203,9 +203,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.CohereID: {
 						ID:       providers.CohereID,
-						Name:     config.ProviderCohereDisplayName,
-						URL:      config.ProviderCohereDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.CohereDisplayName,
+						URL:      providers.CohereDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -213,9 +213,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.AnthropicID: {
 						ID:       providers.AnthropicID,
-						Name:     config.ProviderAnthropicDisplayName,
-						URL:      config.ProviderAnthropicDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeXHeader,
+						Name:     providers.AnthropicDisplayName,
+						URL:      providers.AnthropicDefaultBaseURL,
+						AuthType: providers.AuthTypeXHeader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},
@@ -275,9 +275,9 @@ func TestLoad(t *testing.T) {
 				Providers: map[string]*config.BaseProviderConfig{
 					providers.OllamaID: {
 						ID:       providers.OllamaID,
-						Name:     config.ProviderOllamaDisplayName,
+						Name:     providers.OllamaDisplayName,
 						URL:      "http://custom-ollama:8080",
-						AuthType: config.ProviderAuthTypeNone,
+						AuthType: providers.AuthTypeNone,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -285,9 +285,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.GroqID: {
 						ID:       providers.GroqID,
-						Name:     config.ProviderGroqDisplayName,
-						URL:      config.ProviderGroqDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.GroqDisplayName,
+						URL:      providers.GroqDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -295,9 +295,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.OpenaiID: {
 						ID:       providers.OpenaiID,
-						Name:     config.ProviderOpenaiDisplayName,
-						URL:      config.ProviderOpenaiDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.OpenaiDisplayName,
+						URL:      providers.OpenaiDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -305,9 +305,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.GoogleID: {
 						ID:       providers.GoogleID,
-						Name:     config.ProviderGoogleDisplayName,
-						URL:      config.ProviderGoogleDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeQuery,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
+						AuthType: providers.AuthTypeQuery,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -315,9 +315,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.CloudflareID: {
 						ID:       providers.CloudflareID,
-						Name:     config.ProviderCloudflareDisplayName,
-						URL:      config.ProviderCloudflareDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.CloudflareDisplayName,
+						URL:      providers.CloudflareDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -325,9 +325,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.CohereID: {
 						ID:       providers.CohereID,
-						Name:     config.ProviderCohereDisplayName,
-						URL:      config.ProviderCohereDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeBearer,
+						Name:     providers.CohereDisplayName,
+						URL:      providers.CohereDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
 						Endpoints: struct {
 							List     string
 							Generate string
@@ -335,9 +335,9 @@ func TestLoad(t *testing.T) {
 					},
 					providers.AnthropicID: {
 						ID:       providers.AnthropicID,
-						Name:     config.ProviderAnthropicDisplayName,
-						URL:      config.ProviderAnthropicDefaultBaseURL,
-						AuthType: config.ProviderAuthTypeXHeader,
+						Name:     providers.AnthropicDisplayName,
+						URL:      providers.AnthropicDefaultBaseURL,
+						AuthType: providers.AuthTypeXHeader,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},
