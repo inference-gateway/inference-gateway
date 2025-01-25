@@ -32,18 +32,24 @@ type Config struct {
 	// Server settings
 	Server *ServerConfig `env:", prefix=SERVER_" description:"The configuration for the server"`
 
-	// Providers
-	Providers map[string][]string `env:"" description:"The configuration for the providers"`
+	// Providers settings
+	Anthropic  *ProviderConfig `env:", prefix=ANTHROPIC_" id:"anthropic" name:"Anthropic" url:"https://api.anthropic.com" auth_type:"xheader"`
+	Cloudflare *ProviderConfig `env:", prefix=CLOUDFLARE_" id:"cloudflare" name:"Cloudflare" url:"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}" auth_type:"bearer"`
+	Cohere     *ProviderConfig `env:", prefix=COHERE_" id:"cohere" name:"Cohere" url:"https://api.cohere.com" auth_type:"bearer"`
+	Google     *ProviderConfig `env:", prefix=GOOGLE_" id:"google" name:"Google" url:"https://generativelanguage.googleapis.com" auth_type:"query"`
+	Groq       *ProviderConfig `env:", prefix=GROQ_" id:"groq" name:"Groq" url:"https://api.groq.com" auth_type:"bearer"`
+	Ollama     *ProviderConfig `env:", prefix=OLLAMA_" id:"ollama" name:"Ollama" url:"http://ollama:8080" auth_type:"none"`
+	Openai     *ProviderConfig `env:", prefix=OPENAI_" id:"openai" name:"Openai" url:"https://api.openai.com" auth_type:"bearer"`
 }
 
-// OIDC holds the configuration for the OIDC provider.
+// OIDC holds the configuration for the OIDC provider
 type OIDC struct {
 	OIDCIssuerURL    string `env:"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm" description:"The OIDC issuer URL"`
 	OIDCClientID     string `env:"CLIENT_ID, default=inference-gateway-client" type:"secret" description:"The OIDC client ID"`
 	OIDCClientSecret string `env:"CLIENT_SECRET" type:"secret" description:"The OIDC client secret"`
 }
 
-// ServerConfig holds the configuration for the server.
+// ServerConfig holds the configuration for the server
 type ServerConfig struct {
 	Host         string        `env:"HOST, default=0.0.0.0" description:"The host address for the server"`
 	Port         string        `env:"PORT, default=8080" description:"The port on which the server will listen"`
@@ -54,7 +60,7 @@ type ServerConfig struct {
 	TLSKeyPath   string        `env:"TLS_KEY_PATH" description:"The path to the TLS key"`
 }
 
-// Load loads the configuration from environment variables.
+// Load loads the configuration from environment variables
 func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	if err := envconfig.ProcessWith(context.Background(), &envconfig.Config{
 		Target:   cfg,
@@ -62,6 +68,5 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	}); err != nil {
 		return Config{}, err
 	}
-
 	return *cfg, nil
 }

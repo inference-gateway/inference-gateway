@@ -124,6 +124,8 @@ func main() {
 			fmt.Printf("Error generating providers: %v\n", err)
 			os.Exit(1)
 		}
+	case "Config":
+		generateConfig(output, "openapi.yaml")
 	default:
 		fmt.Println("Invalid type specified")
 		os.Exit(1)
@@ -456,4 +458,8 @@ func generateType(field SchemaField) string {
 		}
 		return "interface{}"
 	}
+}
+
+func generateConfig(output, openapi string) {
+
 }
