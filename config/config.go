@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"os"
 	"strings"
 	"time"
 
@@ -56,11 +55,6 @@ type BaseProviderConfig struct {
 		List     string
 		Generate string
 	}
-}
-
-// Get token from environment variable
-func (p *BaseProviderConfig) GetToken() string {
-	return os.Getenv(strings.ToUpper(p.ID) + "_API_KEY")
 }
 
 func (p *BaseProviderConfig) GetExtraHeaders() map[string][]string {
