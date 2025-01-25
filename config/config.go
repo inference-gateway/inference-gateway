@@ -17,6 +17,7 @@ const (
 	ProviderAuthTypeNone    = "none"
 )
 
+// The default base URLs of each provider
 const (
 	ProviderAnthropicDefaultBaseURL  = "https://api.anthropic.com"
 	ProviderCloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
@@ -25,6 +26,17 @@ const (
 	ProviderGroqDefaultBaseURL       = "https://api.groq.com"
 	ProviderOllamaDefaultBaseURL     = "http://ollama:8080"
 	ProviderOpenaiDefaultBaseURL     = "https://api.openai.com"
+)
+
+// Display names for providers
+const (
+	ProviderAnthropicDisplayName  = "Anthropic"
+	ProviderCloudflareDisplayName = "Cloudflare"
+	ProviderCohereDisplayName     = "Cohere"
+	ProviderGoogleDisplayName     = "Google"
+	ProviderGroqDisplayName       = "Groq"
+	ProviderOllamaDisplayName     = "Ollama"
+	ProviderOpenaiDisplayName     = "Openai"
 )
 
 // Base provider configuration
@@ -154,37 +166,37 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 		},
 		providers.CloudflareID: {
 			ID:       providers.CloudflareID,
-			Name:     "Cloudflare",
+			Name:     ProviderCloudflareDisplayName,
 			URL:      ProviderCloudflareDefaultBaseURL,
 			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.CohereID: {
 			ID:       providers.CohereID,
-			Name:     "Cohere",
+			Name:     ProviderCohereDisplayName,
 			URL:      ProviderCohereDefaultBaseURL,
 			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.GoogleID: {
 			ID:       providers.GoogleID,
-			Name:     "Google",
+			Name:     ProviderGoogleDisplayName,
 			URL:      ProviderGoogleDefaultBaseURL,
 			AuthType: ProviderAuthTypeQuery,
 		},
 		providers.GroqID: {
 			ID:       providers.GroqID,
-			Name:     "Groq",
+			Name:     ProviderGroqDisplayName,
 			URL:      ProviderGroqDefaultBaseURL,
 			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.OllamaID: {
 			ID:       providers.OllamaID,
-			Name:     "Ollama",
+			Name:     ProviderOllamaDisplayName,
 			URL:      ProviderOllamaDefaultBaseURL,
 			AuthType: ProviderAuthTypeNone,
 		},
 		providers.OpenaiID: {
 			ID:       providers.OpenaiID,
-			Name:     "Openai",
+			Name:     ProviderOpenaiDisplayName,
 			URL:      ProviderOpenaiDefaultBaseURL,
 			AuthType: ProviderAuthTypeBearer,
 		},
