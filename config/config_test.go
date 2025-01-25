@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/inference-gateway/inference-gateway/config"
+	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/stretchr/testify/assert"
 )
@@ -36,77 +37,79 @@ func TestLoad(t *testing.T) {
 					WriteTimeout: 30 * time.Second,
 					IdleTimeout:  120 * time.Second,
 				},
-				Ollama: &config.OllamaConfig{
-					ID:       "ollama",
-					Name:     "Ollama",
-					URL:      "http://ollama:8080",
-					AuthType: "none",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Groq: &config.GroqConfig{
-					ID:       "groq",
-					Name:     "Groq",
-					URL:      "https://api.groq.com",
-					AuthType: "bearer",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Openai: &config.OpenaiConfig{
-					ID:       "openai",
-					Name:     "Openai",
-					URL:      "https://api.openai.com",
-					AuthType: "bearer",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Google: &config.GoogleConfig{
-					ID:       "google",
-					Name:     "Google",
-					URL:      "https://generativelanguage.googleapis.com",
-					AuthType: "query",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Cloudflare: &config.CloudflareConfig{
-					ID:       "cloudflare",
-					Name:     "Cloudflare",
-					URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
-					AuthType: "bearer",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Cohere: &config.CohereConfig{
-					ID:       "cohere",
-					Name:     "Cohere",
-					URL:      "https://api.cohere.com",
-					AuthType: "bearer",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Anthropic: &config.AnthropicConfig{
-					ID:       "anthropic",
-					Name:     "Anthropic",
-					URL:      "https://api.anthropic.com",
-					AuthType: "xheader",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-					ExtraHeaders: map[string][]string{
-						"anthropic-version": {"2023-06-01"},
+				Providers: map[string]*config.BaseProviderConfig{
+					providers.OllamaID: {
+						ID:       providers.OllamaID,
+						Name:     "Ollama",
+						URL:      "http://ollama:8080",
+						AuthType: "none",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.GroqID: {
+						ID:       providers.GroqID,
+						Name:     "Groq",
+						URL:      "https://api.groq.com",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.OpenaiID: {
+						ID:       providers.OpenaiID,
+						Name:     "Openai",
+						URL:      "https://api.openai.com",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     "Google",
+						URL:      "https://generativelanguage.googleapis.com",
+						AuthType: "query",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.CloudflareID: {
+						ID:       providers.CloudflareID,
+						Name:     "Cloudflare",
+						URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.CohereID: {
+						ID:       providers.CohereID,
+						Name:     "Cohere",
+						URL:      "https://api.cohere.com",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.AnthropicID: {
+						ID:       providers.AnthropicID,
+						Name:     "Anthropic",
+						URL:      "https://api.anthropic.com",
+						AuthType: "xheader",
+						ExtraHeaders: map[string][]string{
+							"anthropic-version": {"2023-06-01"},
+						},
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
 					},
 				},
 			},
@@ -144,56 +147,82 @@ func TestLoad(t *testing.T) {
 					WriteTimeout: 60 * time.Second,
 					IdleTimeout:  180 * time.Second,
 				},
-				Ollama: &config.OllamaConfig{
-					ID:       "ollama",
-					Name:     "Ollama",
-					URL:      "http://custom-ollama:8080",
-					Token:    "",
-					AuthType: "none",
-				},
-				Groq: &config.GroqConfig{
-					ID:       "groq",
-					Name:     "Groq",
-					URL:      "https://api.groq.com",
-					Token:    "groq123",
-					AuthType: "bearer",
-				},
-				Openai: &config.OpenaiConfig{
-					ID:       "openai",
-					Name:     "Openai",
-					URL:      "https://api.openai.com",
-					Token:    "openai123",
-					AuthType: "bearer",
-				},
-				Google: &config.GoogleConfig{
-					ID:       "google",
-					Name:     "Google",
-					URL:      "https://generativelanguage.googleapis.com",
-					Token:    "google123",
-					AuthType: "query",
-				},
-				Cloudflare: &config.CloudflareConfig{
-					ID:       "cloudflare",
-					Name:     "Cloudflare",
-					URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
-					Token:    "",
-					AuthType: "bearer",
-				},
-				Cohere: &config.CohereConfig{
-					ID:       "cohere",
-					Name:     "Cohere",
-					URL:      "https://api.cohere.com",
-					Token:    "",
-					AuthType: "bearer",
-				},
-				Anthropic: &config.AnthropicConfig{
-					ID:       "anthropic",
-					Name:     "Anthropic",
-					URL:      "https://api.anthropic.com",
-					Token:    "",
-					AuthType: "xheader",
-					ExtraHeaders: map[string][]string{
-						"anthropic-version": {"2023-06-01"},
+				Providers: map[string]*config.BaseProviderConfig{
+					providers.OllamaID: {
+						ID:       providers.OllamaID,
+						Name:     "Ollama",
+						URL:      "http://custom-ollama:8080",
+						AuthType: "none",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.GroqID: {
+						ID:       providers.GroqID,
+						Name:     "Groq",
+						URL:      "https://api.groq.com",
+						Token:    "groq123",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.OpenaiID: {
+						ID:       providers.OpenaiID,
+						Name:     "Openai",
+						URL:      "https://api.openai.com",
+						Token:    "openai123",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     "Google",
+						URL:      "https://generativelanguage.googleapis.com",
+						Token:    "google123",
+						AuthType: "query",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.CloudflareID: {
+						ID:       providers.CloudflareID,
+						Name:     "Cloudflare",
+						URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.CohereID: {
+						ID:       providers.CohereID,
+						Name:     "Cohere",
+						URL:      "https://api.cohere.com",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.AnthropicID: {
+						ID:       providers.AnthropicID,
+						Name:     "Anthropic",
+						URL:      "https://api.anthropic.com",
+						AuthType: "xheader",
+						ExtraHeaders: map[string][]string{
+							"anthropic-version": {"2023-06-01"},
+						},
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
 					},
 				},
 			},
@@ -243,78 +272,80 @@ func TestLoad(t *testing.T) {
 					WriteTimeout: 30 * time.Second,
 					IdleTimeout:  120 * time.Second,
 				},
-				Ollama: &config.OllamaConfig{
-					ID:       "ollama",
-					Name:     "Ollama",
-					URL:      "http://custom-ollama:8080",
-					AuthType: "none",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Groq: &config.GroqConfig{
-					ID:       "groq",
-					Name:     "Groq",
-					AuthType: "bearer",
-					URL:      "https://api.groq.com",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Openai: &config.OpenaiConfig{
-					ID:       "openai",
-					Name:     "Openai",
-					AuthType: "bearer",
-					URL:      "https://api.openai.com",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Google: &config.GoogleConfig{
-					ID:       "google",
-					Name:     "Google",
-					AuthType: "query",
-					URL:      "https://generativelanguage.googleapis.com",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Cloudflare: &config.CloudflareConfig{
-					ID:       "cloudflare",
-					Name:     "Cloudflare",
-					AuthType: "bearer",
-					URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Cohere: &config.CohereConfig{
-					ID:       "cohere",
-					Name:     "Cohere",
-					AuthType: "bearer",
-					URL:      "https://api.cohere.com",
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
-				},
-				Anthropic: &config.AnthropicConfig{
-					ID:       "anthropic",
-					Name:     "Anthropic",
-					AuthType: "xheader",
-					URL:      "https://api.anthropic.com",
-					ExtraHeaders: map[string][]string{
-						"anthropic-version": {"2023-06-01"},
+				Providers: map[string]*config.BaseProviderConfig{
+					providers.OllamaID: {
+						ID:       providers.OllamaID,
+						Name:     "Ollama",
+						URL:      "http://custom-ollama:8080",
+						AuthType: "none",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
 					},
-					Endpoints: struct {
-						List     string
-						Generate string
-					}{},
+					providers.GroqID: {
+						ID:       providers.GroqID,
+						Name:     "Groq",
+						URL:      "https://api.groq.com",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.OpenaiID: {
+						ID:       providers.OpenaiID,
+						Name:     "Openai",
+						URL:      "https://api.openai.com",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     "Google",
+						URL:      "https://generativelanguage.googleapis.com",
+						AuthType: "query",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.CloudflareID: {
+						ID:       providers.CloudflareID,
+						Name:     "Cloudflare",
+						URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.CohereID: {
+						ID:       providers.CohereID,
+						Name:     "Cohere",
+						URL:      "https://api.cohere.com",
+						AuthType: "bearer",
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
+					providers.AnthropicID: {
+						ID:       providers.AnthropicID,
+						Name:     "Anthropic",
+						URL:      "https://api.anthropic.com",
+						AuthType: "xheader",
+						ExtraHeaders: map[string][]string{
+							"anthropic-version": {"2023-06-01"},
+						},
+						Endpoints: struct {
+							List     string
+							Generate string
+						}{},
+					},
 				},
 			},
 		},

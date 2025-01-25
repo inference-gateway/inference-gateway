@@ -2,150 +2,77 @@ package config
 
 import (
 	"context"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/sethvargo/go-envconfig"
 )
 
-func (p *Config) GetProviders() []providers.Provider {
-	return []providers.Provider{
-		&providers.ProviderImpl{
-			ID:           p.Anthropic.ID,
-			Name:         p.Anthropic.Name,
-			URL:          p.Anthropic.URL,
-			Token:        p.Anthropic.Token,
-			AuthType:     p.Anthropic.AuthType,
-			ExtraHeaders: p.Anthropic.ExtraHeaders,
-		},
-		&providers.ProviderImpl{
-			ID:       p.Cloudflare.ID,
-			Name:     p.Cloudflare.Name,
-			URL:      p.Cloudflare.URL,
-			Token:    p.Cloudflare.Token,
-			AuthType: p.Cloudflare.AuthType,
-		},
-		&providers.ProviderImpl{
-			ID:       p.Cohere.ID,
-			Name:     p.Cohere.Name,
-			URL:      p.Cohere.URL,
-			Token:    p.Cohere.Token,
-			AuthType: p.Cohere.AuthType,
-		},
-		&providers.ProviderImpl{
-			ID:       p.Google.ID,
-			Name:     p.Google.Name,
-			URL:      p.Google.URL,
-			Token:    p.Google.Token,
-			AuthType: p.Google.AuthType,
-		},
-		&providers.ProviderImpl{
-			ID:       p.Groq.ID,
-			Name:     p.Groq.Name,
-			URL:      p.Groq.URL,
-			Token:    p.Groq.Token,
-			AuthType: p.Groq.AuthType,
-		},
-		&providers.ProviderImpl{
-			ID:       p.Ollama.ID,
-			Name:     p.Ollama.Name,
-			URL:      p.Ollama.URL,
-			Token:    p.Ollama.Token,
-			AuthType: p.Ollama.AuthType,
-		},
-		&providers.ProviderImpl{
-			ID:       p.Openai.ID,
-			Name:     p.Openai.Name,
-			URL:      p.Openai.URL,
-			Token:    p.Openai.Token,
-			AuthType: p.Openai.AuthType,
-		},
+func (c *Config) GetProviders() []providers.Provider {
+	providerList := make([]providers.Provider, 0, len(c.Providers))
+	for _, provider := range c.Providers {
+		providerList = append(providerList, &providers.ProviderImpl{
+			ID:           provider.ID,
+			Name:         provider.Name,
+			URL:          provider.URL,
+			Token:        provider.Token,
+			AuthType:     provider.AuthType,
+			ExtraHeaders: provider.ExtraHeaders,
+		})
 	}
+	return providerList
 }
 
-func (p *Config) GetProvider(name string) providers.Provider {
-	switch name {
-	case providers.AnthropicID:
+func (c *Config) GetProvider(name string) providers.Provider {
+	if provider, ok := c.Providers[name]; ok {
 		return &providers.ProviderImpl{
-			ID:           p.Anthropic.ID,
-			Name:         p.Anthropic.Name,
-			URL:          p.Anthropic.URL,
-			Token:        p.Anthropic.Token,
-			AuthType:     p.Anthropic.AuthType,
-			ExtraHeaders: p.Anthropic.ExtraHeaders,
+			ID:           provider.ID,
+			Name:         provider.Name,
+			URL:          provider.URL,
+			Token:        provider.Token,
+			AuthType:     provider.AuthType,
+			ExtraHeaders: provider.ExtraHeaders,
 		}
-	case providers.CloudflareID:
-		return &providers.ProviderImpl{
-			ID:       p.Cloudflare.ID,
-			Name:     p.Cloudflare.Name,
-			URL:      p.Cloudflare.URL,
-			Token:    p.Cloudflare.Token,
-			AuthType: p.Cloudflare.AuthType,
-		}
-	case providers.CohereID:
-		return &providers.ProviderImpl{
-			ID:       p.Cohere.ID,
-			Name:     p.Cohere.Name,
-			URL:      p.Cohere.URL,
-			Token:    p.Cohere.Token,
-			AuthType: p.Cohere.AuthType,
-		}
-	case providers.GoogleID:
-		return &providers.ProviderImpl{
-			ID:       p.Google.ID,
-			Name:     p.Google.Name,
-			URL:      p.Google.URL,
-			Token:    p.Google.Token,
-			AuthType: p.Google.AuthType,
-		}
-	case providers.GroqID:
-		return &providers.ProviderImpl{
-			ID:       p.Groq.ID,
-			Name:     p.Groq.Name,
-			URL:      p.Groq.URL,
-			Token:    p.Groq.Token,
-			AuthType: p.Groq.AuthType,
-		}
-	case providers.OllamaID:
-		return &providers.ProviderImpl{
-			ID:       p.Ollama.ID,
-			Name:     p.Ollama.Name,
-			URL:      p.Ollama.URL,
-			Token:    p.Ollama.Token,
-			AuthType: p.Ollama.AuthType,
-		}
-	case providers.OpenaiID:
-		return &providers.ProviderImpl{
-			ID:       p.Openai.ID,
-			Name:     p.Openai.Name,
-			URL:      p.Openai.URL,
-			Token:    p.Openai.Token,
-			AuthType: p.Openai.AuthType,
-		}
-	default:
-		return nil
 	}
+	return nil
 }
 
 func (c *Config) SupportedProvider(name string) bool {
-	switch name {
-	case providers.AnthropicID:
-		return true
-	case providers.CloudflareID:
-		return true
-	case providers.CohereID:
-		return true
-	case providers.GoogleID:
-		return true
-	case providers.GroqID:
-		return true
-	case providers.OllamaID:
-		return true
-	case providers.OpenaiID:
-		return true
-	default:
-		return false
+	_, ok := c.Providers[name]
+	return ok
+}
+
+// Base provider configuration
+type BaseProviderConfig struct {
+	ID           string
+	Name         string
+	URL          string
+	Token        string
+	AuthType     string
+	ExtraHeaders map[string][]string
+	Endpoints    struct {
+		List     string
+		Generate string
 	}
+}
+
+// Get token from environment variable
+func (p *BaseProviderConfig) GetToken() string {
+	return os.Getenv(strings.ToUpper(p.ID) + "_API_KEY")
+}
+
+func (p *BaseProviderConfig) GetExtraHeaders() map[string][]string {
+	return p.ExtraHeaders
+}
+
+func (p *BaseProviderConfig) EndpointList() string {
+	return p.Endpoints.List
+}
+
+func (p *BaseProviderConfig) EndpointGenerate() string {
+	return p.Endpoints.Generate
 }
 
 // Config holds the configuration for the Inference Gateway.
@@ -174,13 +101,7 @@ type Config struct {
 	Server *ServerConfig `env:", prefix=SERVER_" description:"The configuration for the server"`
 
 	// Providers settings
-	Anthropic  *AnthropicConfig  `env:", prefix=ANTHROPIC_" id:"anthropic" name:"Anthropic" url:"https://api.anthropic.com" auth_type:"xheader"`
-	Cloudflare *CloudflareConfig `env:", prefix=CLOUDFLARE_" id:"cloudflare" name:"Cloudflare" url:"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}" auth_type:"bearer"`
-	Cohere     *CohereConfig     `env:", prefix=COHERE_" id:"cohere" name:"Cohere" url:"https://api.cohere.com" auth_type:"bearer"`
-	Google     *GoogleConfig     `env:", prefix=GOOGLE_" id:"google" name:"Google" url:"https://generativelanguage.googleapis.com" auth_type:"query"`
-	Groq       *GroqConfig       `env:", prefix=GROQ_" id:"groq" name:"Groq" url:"https://api.groq.com" auth_type:"bearer"`
-	Ollama     *OllamaConfig     `env:", prefix=OLLAMA_" id:"ollama" name:"Ollama" url:"http://ollama:8080" auth_type:"none"`
-	Openai     *OpenaiConfig     `env:", prefix=OPENAI_" id:"openai" name:"Openai" url:"https://api.openai.com" auth_type:"bearer"`
+	Providers map[string]*BaseProviderConfig
 }
 
 // OIDC holds the configuration for the OIDC provider
@@ -201,98 +122,6 @@ type ServerConfig struct {
 	TLSKeyPath   string        `env:"TLS_KEY_PATH" description:"The path to the TLS key"`
 }
 
-// AnthropicConfig holds the specific provider config
-type AnthropicConfig struct {
-	ID           string              `env:"ID, default=anthropic" description:"The provider ID"`
-	Name         string              `env:"NAME, default=Anthropic" description:"The provider name"`
-	URL          string              `env:"API_URL, default=https://api.anthropic.com" description:"The provider API URL"`
-	Token        string              `env:"API_KEY" type:"secret" description:"The provider API key"`
-	AuthType     string              `env:"AUTH_TYPE, default=xheader" description:"The provider auth type"`
-	ExtraHeaders map[string][]string `env:"EXTRA_HEADERS, default=anthropic-version:2023-06-01" description:"Extra headers for provider requests"`
-	Endpoints    struct {
-		List     string
-		Generate string
-	}
-}
-
-// CloudflareConfig holds the specific provider config
-type CloudflareConfig struct {
-	ID        string `env:"ID, default=cloudflare" description:"The provider ID"`
-	Name      string `env:"NAME, default=Cloudflare" description:"The provider name"`
-	URL       string `env:"API_URL, default=https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}" description:"The provider API URL"`
-	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
-	AuthType  string `env:"AUTH_TYPE, default=bearer" description:"The provider auth type"`
-	Endpoints struct {
-		List     string
-		Generate string
-	}
-}
-
-// CohereConfig holds the specific provider config
-type CohereConfig struct {
-	ID        string `env:"ID, default=cohere" description:"The provider ID"`
-	Name      string `env:"NAME, default=Cohere" description:"The provider name"`
-	URL       string `env:"API_URL, default=https://api.cohere.com" description:"The provider API URL"`
-	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
-	AuthType  string `env:"AUTH_TYPE, default=bearer" description:"The provider auth type"`
-	Endpoints struct {
-		List     string
-		Generate string
-	}
-}
-
-// GoogleConfig holds the specific provider config
-type GoogleConfig struct {
-	ID        string `env:"ID, default=google" description:"The provider ID"`
-	Name      string `env:"NAME, default=Google" description:"The provider name"`
-	URL       string `env:"API_URL, default=https://generativelanguage.googleapis.com" description:"The provider API URL"`
-	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
-	AuthType  string `env:"AUTH_TYPE, default=query" description:"The provider auth type"`
-	Endpoints struct {
-		List     string
-		Generate string
-	}
-}
-
-// GroqConfig holds the specific provider config
-type GroqConfig struct {
-	ID        string `env:"ID, default=groq" description:"The provider ID"`
-	Name      string `env:"NAME, default=Groq" description:"The provider name"`
-	URL       string `env:"API_URL, default=https://api.groq.com" description:"The provider API URL"`
-	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
-	AuthType  string `env:"AUTH_TYPE, default=bearer" description:"The provider auth type"`
-	Endpoints struct {
-		List     string
-		Generate string
-	}
-}
-
-// OllamaConfig holds the specific provider config
-type OllamaConfig struct {
-	ID        string `env:"ID, default=ollama" description:"The provider ID"`
-	Name      string `env:"NAME, default=Ollama" description:"The provider name"`
-	URL       string `env:"API_URL, default=http://ollama:8080" description:"The provider API URL"`
-	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
-	AuthType  string `env:"AUTH_TYPE, default=none" description:"The provider auth type"`
-	Endpoints struct {
-		List     string
-		Generate string
-	}
-}
-
-// OpenaiConfig holds the specific provider config
-type OpenaiConfig struct {
-	ID        string `env:"ID, default=openai" description:"The provider ID"`
-	Name      string `env:"NAME, default=Openai" description:"The provider name"`
-	URL       string `env:"API_URL, default=https://api.openai.com" description:"The provider API URL"`
-	Token     string `env:"API_KEY" type:"secret" description:"The provider API key"`
-	AuthType  string `env:"AUTH_TYPE, default=bearer" description:"The provider auth type"`
-	Endpoints struct {
-		List     string
-		Generate string
-	}
-}
-
 // Load loads the configuration from environment variables
 func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	if err := envconfig.ProcessWith(context.Background(), &envconfig.Config{
@@ -301,5 +130,78 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	}); err != nil {
 		return Config{}, err
 	}
+
+	// Set provider defaults if not configured
+	defaultProviders := map[string]BaseProviderConfig{
+		providers.AnthropicID: {
+			ID:       providers.AnthropicID,
+			Name:     "Anthropic",
+			URL:      "https://api.anthropic.com",
+			AuthType: "xheader",
+			ExtraHeaders: map[string][]string{
+				"anthropic-version": {"2023-06-01"},
+			},
+		},
+		providers.OpenaiID: {
+			ID:       providers.OpenaiID,
+			Name:     "Openai",
+			URL:      "https://api.openai.com",
+			AuthType: "bearer",
+		},
+		providers.GoogleID: {
+			ID:       providers.GoogleID,
+			Name:     "Google",
+			URL:      "https://generativelanguage.googleapis.com",
+			AuthType: "query",
+		},
+		providers.CloudflareID: {
+			ID:       providers.CloudflareID,
+			Name:     "Cloudflare",
+			URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
+			AuthType: "bearer",
+		},
+		providers.CohereID: {
+			ID:       providers.CohereID,
+			Name:     "Cohere",
+			URL:      "https://api.cohere.com",
+			AuthType: "bearer",
+		},
+		providers.GroqID: {
+			ID:       providers.GroqID,
+			Name:     "Groq",
+			URL:      "https://api.groq.com",
+			AuthType: "bearer",
+		},
+		providers.OllamaID: {
+			ID:       providers.OllamaID,
+			Name:     "Ollama",
+			URL:      "http://ollama:8080",
+			AuthType: "none",
+		},
+	}
+
+	// Initialize Providers map if nil
+	if cfg.Providers == nil {
+		cfg.Providers = make(map[string]*BaseProviderConfig)
+	}
+
+	// Set defaults for each provider
+	for id, defaults := range defaultProviders {
+		if _, exists := cfg.Providers[id]; !exists {
+			providerCfg := defaults // Create copy
+			url, ok := lookuper.Lookup(strings.ToUpper(id) + "_API_URL")
+			if ok {
+				providerCfg.URL = url
+			}
+
+			token, ok := lookuper.Lookup(strings.ToUpper(id) + "_API_KEY")
+			if !ok {
+				println("Warn: provider " + id + " is not configured")
+			}
+			providerCfg.Token = token
+			cfg.Providers[id] = &providerCfg
+		}
+	}
+
 	return *cfg, nil
 }
