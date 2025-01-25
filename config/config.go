@@ -10,6 +10,13 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
+const (
+	ProviderAuthTypeBearer  = "bearer"
+	ProviderAuthTypeXHeader = "xheader"
+	ProviderAuthTypeQuery   = "query"
+	ProviderAuthTypeNone    = "none"
+)
+
 // Base provider configuration
 type BaseProviderConfig struct {
 	ID           string
@@ -130,7 +137,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 			ID:       providers.AnthropicID,
 			Name:     "Anthropic",
 			URL:      "https://api.anthropic.com",
-			AuthType: "xheader",
+			AuthType: ProviderAuthTypeXHeader,
 			ExtraHeaders: map[string][]string{
 				"anthropic-version": {"2023-06-01"},
 			},
@@ -139,37 +146,37 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 			ID:       providers.CloudflareID,
 			Name:     "Cloudflare",
 			URL:      "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}",
-			AuthType: "bearer",
+			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.CohereID: {
 			ID:       providers.CohereID,
 			Name:     "Cohere",
 			URL:      "https://api.cohere.com",
-			AuthType: "bearer",
+			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.GoogleID: {
 			ID:       providers.GoogleID,
 			Name:     "Google",
 			URL:      "https://generativelanguage.googleapis.com",
-			AuthType: "query",
+			AuthType: ProviderAuthTypeQuery,
 		},
 		providers.GroqID: {
 			ID:       providers.GroqID,
 			Name:     "Groq",
 			URL:      "https://api.groq.com",
-			AuthType: "bearer",
+			AuthType: ProviderAuthTypeBearer,
 		},
 		providers.OllamaID: {
 			ID:       providers.OllamaID,
 			Name:     "Ollama",
 			URL:      "http://ollama:8080",
-			AuthType: "none",
+			AuthType: ProviderAuthTypeNone,
 		},
 		providers.OpenaiID: {
 			ID:       providers.OpenaiID,
 			Name:     "Openai",
 			URL:      "https://api.openai.com",
-			AuthType: "bearer",
+			AuthType: ProviderAuthTypeBearer,
 		},
 	}
 
