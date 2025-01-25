@@ -146,6 +146,9 @@ components:
         ollama:
           url: "http://ollama:8080"
           auth_type: "none"
+          env_vars:
+            - OLLAMA_URL
+          secrets: {}
           endpoints:
             list:
               endpoint: "/v1/models"
