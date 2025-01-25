@@ -5,7 +5,8 @@ tasks:
   generate:
     desc: "Generate the gateway"
     cmds:
-      - go generate ./...
+      - go run cmd/generate/main.go -type Providers -output providers
+      # - go generate ./...
 
   tidy:
     desc: "Tidy the gateway"

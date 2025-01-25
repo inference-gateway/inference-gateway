@@ -119,7 +119,7 @@ func main() {
 	case "MD":
 		comments := parseStructComments("config.go", "Config")
 		generateMD(output, comments)
-	case "Provider":
+	case "Providers":
 		if err := generateProviders(output, "openapi.yaml"); err != nil {
 			fmt.Printf("Error generating providers: %v\n", err)
 			os.Exit(1)
