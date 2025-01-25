@@ -9,40 +9,6 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
-func (c *Config) GetProviders() []providers.Provider {
-	providerList := make([]providers.Provider, 0, len(c.Providers))
-	for _, provider := range c.Providers {
-		providerList = append(providerList, &providers.ProviderImpl{
-			ID:           provider.ID,
-			Name:         provider.Name,
-			URL:          provider.URL,
-			Token:        provider.Token,
-			AuthType:     provider.AuthType,
-			ExtraHeaders: provider.ExtraHeaders,
-		})
-	}
-	return providerList
-}
-
-func (c *Config) GetProvider(name string) providers.Provider {
-	if provider, ok := c.Providers[name]; ok {
-		return &providers.ProviderImpl{
-			ID:           provider.ID,
-			Name:         provider.Name,
-			URL:          provider.URL,
-			Token:        provider.Token,
-			AuthType:     provider.AuthType,
-			ExtraHeaders: provider.ExtraHeaders,
-		}
-	}
-	return nil
-}
-
-func (c *Config) SupportedProvider(name string) bool {
-	_, ok := c.Providers[name]
-	return ok
-}
-
 // Base provider configuration
 type BaseProviderConfig struct {
 	ID           string
@@ -84,39 +50,76 @@ func (p *BaseProviderConfig) EndpointGenerate() string {
 type Config struct {
 	// General settings
 	ApplicationName string `env:"APPLICATION_NAME, default=inference-gateway" description:"The name of the application"`
-	Environment     string `env:"ENVIRONMENT, default=production" description:"The environment in which the application is running"`
-	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry for the server"`
+	Environment     string `env:"ENVIRONMENT, default=production" description:"The environment"`
+	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
 	EnableAuth      bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
 
 	// Auth settings
-	OIDC *OIDC `env:", prefix=OIDC_" description:"The OIDC configuration"`
+	OIDC *OIDC `env:", prefix=OIDC_" description:"OIDC configuration"`
 
 	// Server settings
-	Server *ServerConfig `env:", prefix=SERVER_" description:"The configuration for the server"`
+	Server *ServerConfig `env:", prefix=SERVER_" description:"Server configuration"`
 
-	// Providers settings
+	// Providers map
 	Providers map[string]*BaseProviderConfig
 }
 
-// OIDC holds the configuration for the OIDC provider
+// OIDC configuration
 type OIDC struct {
-	IssuerURL    string `env:"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm" description:"The OIDC issuer URL"`
-	ClientID     string `env:"CLIENT_ID, default=inference-gateway-client" type:"secret" description:"The OIDC client ID"`
-	ClientSecret string `env:"CLIENT_SECRET" type:"secret" description:"The OIDC client secret"`
+	IssuerURL    string `env:"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
+	ClientID     string `env:"CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
+	ClientSecret string `env:"CLIENT_SECRET" type:"secret" description:"OIDC client secret"`
 }
 
-// ServerConfig holds the configuration for the server
+// Server configuration
 type ServerConfig struct {
-	Host         string        `env:"HOST, default=0.0.0.0" description:"The host address for the server"`
-	Port         string        `env:"PORT, default=8080" description:"The port on which the server will listen"`
-	ReadTimeout  time.Duration `env:"READ_TIMEOUT, default=30s" description:"The server read timeout"`
-	WriteTimeout time.Duration `env:"WRITE_TIMEOUT, default=30s" description:"The server write timeout"`
-	IdleTimeout  time.Duration `env:"IDLE_TIMEOUT, default=120s" description:"The server idle timeout"`
-	TLSCertPath  string        `env:"TLS_CERT_PATH" description:"The path to the TLS certificate"`
-	TLSKeyPath   string        `env:"TLS_KEY_PATH" description:"The path to the TLS key"`
+	Host         string        `env:"HOST, default=0.0.0.0" description:"Server host"`
+	Port         string        `env:"PORT, default=8080" description:"Server port"`
+	ReadTimeout  time.Duration `env:"READ_TIMEOUT, default=30s" description:"Read timeout"`
+	WriteTimeout time.Duration `env:"WRITE_TIMEOUT, default=30s" description:"Write timeout"`
+	IdleTimeout  time.Duration `env:"IDLE_TIMEOUT, default=120s" description:"Idle timeout"`
+	TLSCertPath  string        `env:"TLS_CERT_PATH" description:"TLS certificate path"`
+	TLSKeyPath   string        `env:"TLS_KEY_PATH" description:"TLS key path"`
 }
 
-// Load loads the configuration from environment variables
+// GetProviders returns a list of providers
+func (c *Config) GetProviders() []providers.Provider {
+	providerList := make([]providers.Provider, 0, len(c.Providers))
+	for _, provider := range c.Providers {
+		providerList = append(providerList, &providers.ProviderImpl{
+			ID:           provider.ID,
+			Name:         provider.Name,
+			URL:          provider.URL,
+			Token:        provider.Token,
+			AuthType:     provider.AuthType,
+			ExtraHeaders: provider.ExtraHeaders,
+		})
+	}
+	return providerList
+}
+
+// GetProvider returns a provider by id
+func (c *Config) GetProvider(id string) providers.Provider {
+	if provider, ok := c.Providers[id]; ok {
+		return &providers.ProviderImpl{
+			ID:           provider.ID,
+			Name:         provider.Name,
+			URL:          provider.URL,
+			Token:        provider.Token,
+			AuthType:     provider.AuthType,
+			ExtraHeaders: provider.ExtraHeaders,
+		}
+	}
+	return nil
+}
+
+// SupportedProvider checks if a provider is supported
+func (c *Config) SupportedProvider(id string) bool {
+	_, ok := c.Providers[id]
+	return ok
+}
+
+// Load configuration
 func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	if err := envconfig.ProcessWith(context.Background(), &envconfig.Config{
 		Target:   cfg,
@@ -136,18 +139,6 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 				"anthropic-version": {"2023-06-01"},
 			},
 		},
-		providers.OpenaiID: {
-			ID:       providers.OpenaiID,
-			Name:     "Openai",
-			URL:      "https://api.openai.com",
-			AuthType: "bearer",
-		},
-		providers.GoogleID: {
-			ID:       providers.GoogleID,
-			Name:     "Google",
-			URL:      "https://generativelanguage.googleapis.com",
-			AuthType: "query",
-		},
 		providers.CloudflareID: {
 			ID:       providers.CloudflareID,
 			Name:     "Cloudflare",
@@ -159,6 +150,12 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 			Name:     "Cohere",
 			URL:      "https://api.cohere.com",
 			AuthType: "bearer",
+		},
+		providers.GoogleID: {
+			ID:       providers.GoogleID,
+			Name:     "Google",
+			URL:      "https://generativelanguage.googleapis.com",
+			AuthType: "query",
 		},
 		providers.GroqID: {
 			ID:       providers.GroqID,
@@ -172,6 +169,12 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 			URL:      "http://ollama:8080",
 			AuthType: "none",
 		},
+		providers.OpenaiID: {
+			ID:       providers.OpenaiID,
+			Name:     "Openai",
+			URL:      "https://api.openai.com",
+			AuthType: "bearer",
+		},
 	}
 
 	// Initialize Providers map if nil
@@ -182,7 +185,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	// Set defaults for each provider
 	for id, defaults := range defaultProviders {
 		if _, exists := cfg.Providers[id]; !exists {
-			providerCfg := defaults // Create copy
+			providerCfg := defaults
 			url, ok := lookuper.Lookup(strings.ToUpper(id) + "_API_URL")
 			if ok {
 				providerCfg.URL = url

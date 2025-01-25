@@ -114,17 +114,3 @@ func (mr *MockRouterMockRecorder) ProxyHandler(c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProxyHandler", reflect.TypeOf((*MockRouter)(nil).ProxyHandler), c)
 }
-
-// SupportedProvider mocks base method.
-func (m *MockRouter) SupportedProvider(provider string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SupportedProvider", provider)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// SupportedProvider indicates an expected call of SupportedProvider.
-func (mr *MockRouterMockRecorder) SupportedProvider(provider any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SupportedProvider", reflect.TypeOf((*MockRouter)(nil).SupportedProvider), provider)
-}

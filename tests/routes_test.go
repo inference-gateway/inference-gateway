@@ -138,18 +138,20 @@ func TestProxyHandler_UnreachableHost(t *testing.T) {
 	cfg := config.Config{
 		ApplicationName: "inference-gateway-test",
 		Environment:     "test",
-		Ollama: &config.OllamaConfig{
-			ID:       "ollama",
-			Name:     "Ollama",
-			URL:      "http://ollama:8080",
-			Token:    "",
-			AuthType: "none",
-			Endpoints: struct {
-				List     string
-				Generate string
-			}{
-				List:     "/v1/models",
-				Generate: "/v1/generate",
+		Providers: map[string]*config.BaseProviderConfig{
+			providers.OllamaID: {
+				ID:       providers.OllamaID,
+				Name:     "Ollama",
+				URL:      "http://ollama:8080",
+				Token:    "",
+				AuthType: "none",
+				Endpoints: struct {
+					List     string
+					Generate string
+				}{
+					List:     "/v1/models",
+					Generate: "/v1/generate",
+				},
 			},
 		},
 	}
