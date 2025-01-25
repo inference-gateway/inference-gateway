@@ -44,9 +44,9 @@ type Config struct {
 
 // OIDC holds the configuration for the OIDC provider
 type OIDC struct {
-	OIDCIssuerURL    string `env:"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm" description:"The OIDC issuer URL"`
-	OIDCClientID     string `env:"CLIENT_ID, default=inference-gateway-client" type:"secret" description:"The OIDC client ID"`
-	OIDCClientSecret string `env:"CLIENT_SECRET" type:"secret" description:"The OIDC client secret"`
+	IssuerURL    string `env:"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm" description:"The OIDC issuer URL"`
+	ClientID     string `env:"CLIENT_ID, default=inference-gateway-client" type:"secret" description:"The OIDC client ID"`
+	ClientSecret string `env:"CLIENT_SECRET" type:"secret" description:"The OIDC client secret"`
 }
 
 // ServerConfig holds the configuration for the server
@@ -67,7 +67,7 @@ type AnthropicConfig struct {
 	URL          string              `env:"API_URL, default=https://api.anthropic.com" description:"The provider API URL"`
 	Token        string              `env:"API_KEY" type:"secret" description:"The provider API key"`
 	AuthType     string              `env:"AUTH_TYPE, default=xheader" description:"The provider auth type"`
-	ExtraHeaders map[string][]string `env:"EXTRA_HEADERS" description:"Extra headers for provider requests"`
+	ExtraHeaders map[string][]string `env:"EXTRA_HEADERS, default=anthropic-version:2023-06-01" description:"Extra headers for provider requests"`
 	Endpoints    struct {
 		List     string
 		Generate string
