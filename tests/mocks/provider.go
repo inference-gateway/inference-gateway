@@ -12,7 +12,6 @@ package mocks
 import (
 	reflect "reflect"
 
-	providers "github.com/inference-gateway/inference-gateway/providers"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -40,33 +39,18 @@ func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 	return m.recorder
 }
 
-// BuildGenTokensRequest mocks base method.
-func (m *MockProvider) BuildGenTokensRequest(model string, messages []providers.GenerateMessage) any {
+// GetAPIVersion mocks base method.
+func (m *MockProvider) GetAPIVersion() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BuildGenTokensRequest", model, messages)
-	ret0, _ := ret[0].(any)
+	ret := m.ctrl.Call(m, "GetAPIVersion")
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// BuildGenTokensRequest indicates an expected call of BuildGenTokensRequest.
-func (mr *MockProviderMockRecorder) BuildGenTokensRequest(model, messages any) *gomock.Call {
+// GetAPIVersion indicates an expected call of GetAPIVersion.
+func (mr *MockProviderMockRecorder) GetAPIVersion() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildGenTokensRequest", reflect.TypeOf((*MockProvider)(nil).BuildGenTokensRequest), model, messages)
-}
-
-// BuildGenTokensResponse mocks base method.
-func (m *MockProvider) BuildGenTokensResponse(model string, responseBody any) (providers.GenerateResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BuildGenTokensResponse", model, responseBody)
-	ret0, _ := ret[0].(providers.GenerateResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// BuildGenTokensResponse indicates an expected call of BuildGenTokensResponse.
-func (mr *MockProviderMockRecorder) BuildGenTokensResponse(model, responseBody any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildGenTokensResponse", reflect.TypeOf((*MockProvider)(nil).BuildGenTokensResponse), model, responseBody)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAPIVersion", reflect.TypeOf((*MockProvider)(nil).GetAPIVersion))
 }
 
 // GetAuthType mocks base method.
@@ -83,18 +67,18 @@ func (mr *MockProviderMockRecorder) GetAuthType() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthType", reflect.TypeOf((*MockProvider)(nil).GetAuthType))
 }
 
-// GetExtraXHeaders mocks base method.
-func (m *MockProvider) GetExtraXHeaders() map[string]string {
+// GetExtraHeaders mocks base method.
+func (m *MockProvider) GetExtraHeaders() map[string][]string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetExtraXHeaders")
-	ret0, _ := ret[0].(map[string]string)
+	ret := m.ctrl.Call(m, "GetExtraHeaders")
+	ret0, _ := ret[0].(map[string][]string)
 	return ret0
 }
 
-// GetExtraXHeaders indicates an expected call of GetExtraXHeaders.
-func (mr *MockProviderMockRecorder) GetExtraXHeaders() *gomock.Call {
+// GetExtraHeaders indicates an expected call of GetExtraHeaders.
+func (mr *MockProviderMockRecorder) GetExtraHeaders() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExtraXHeaders", reflect.TypeOf((*MockProvider)(nil).GetExtraXHeaders))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExtraHeaders", reflect.TypeOf((*MockProvider)(nil).GetExtraHeaders))
 }
 
 // GetID mocks base method.
@@ -123,20 +107,6 @@ func (m *MockProvider) GetName() string {
 func (mr *MockProviderMockRecorder) GetName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockProvider)(nil).GetName))
-}
-
-// GetProxyURL mocks base method.
-func (m *MockProvider) GetProxyURL() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProxyURL")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetProxyURL indicates an expected call of GetProxyURL.
-func (mr *MockProviderMockRecorder) GetProxyURL() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProxyURL", reflect.TypeOf((*MockProvider)(nil).GetProxyURL))
 }
 
 // GetToken mocks base method.

@@ -128,3 +128,49 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestProxyHandler_UnreachableHost(t *testing.T) {
+	// Setup
+	r, mockLogger := setupTestRouter(t)
+	mockLogger.EXPECT().Error("proxy request failed", gomock.Any())
+
+	// Configure test router with unreachable host
+	cfg := config.Config{
+		ApplicationName: "inference-gateway-test",
+		Environment:     "test",
+		Ollama: &config.OllamaConfig{
+			ID:       "ollama",
+			Name:     "Ollama",
+			URL:      "http://ollama:8080",
+			Token:    "",
+			AuthType: "none",
+			Endpoints: struct {
+				List     string
+				Generate string
+			}{
+				List:     "/v1/models",
+				Generate: "/v1/generate",
+			},
+		},
+	}
+
+	var l logger.Logger = mockLogger
+	router := api.NewRouter(cfg, &l, &http.Client{
+		Timeout: 1 * time.Second,
+	})
+
+	r.Any("/proxy/:provider/*proxyPath", router.ProxyHandler)
+
+	// Execute
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/proxy/ollama/v1/models", nil)
+	r.ServeHTTP(w, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadGateway, w.Code)
+
+	var response api.ErrorResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Contains(t, response.Error, "Failed to reach upstream server")
+}

@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 
 	gin "github.com/gin-gonic/gin"
-	providers "github.com/inference-gateway/inference-gateway/providers"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -116,17 +115,16 @@ func (mr *MockRouterMockRecorder) ProxyHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProxyHandler", reflect.TypeOf((*MockRouter)(nil).ProxyHandler), c)
 }
 
-// ValidateProvider mocks base method.
-func (m *MockRouter) ValidateProvider(provider string) (providers.Provider, bool) {
+// SupportedProvider mocks base method.
+func (m *MockRouter) SupportedProvider(provider string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateProvider", provider)
-	ret0, _ := ret[0].(providers.Provider)
-	ret1, _ := ret[1].(bool)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "SupportedProvider", provider)
+	ret0, _ := ret[0].(bool)
+	return ret0
 }
 
-// ValidateProvider indicates an expected call of ValidateProvider.
-func (mr *MockRouterMockRecorder) ValidateProvider(provider any) *gomock.Call {
+// SupportedProvider indicates an expected call of SupportedProvider.
+func (mr *MockRouterMockRecorder) SupportedProvider(provider any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateProvider", reflect.TypeOf((*MockRouter)(nil).ValidateProvider), provider)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SupportedProvider", reflect.TypeOf((*MockRouter)(nil).SupportedProvider), provider)
 }
