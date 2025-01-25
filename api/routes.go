@@ -59,17 +59,10 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
-	ok := router.cfg.SupportedProvider(p)
-	if !ok {
-		router.logger.Error("requested unsupported provider", nil, "provider", p)
+	provider, err := router.cfg.GetProvider(p)
+	if err != nil {
+		router.logger.Error("requested unsupported provider", err, "provider", p)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
-		return
-	}
-
-	provider := router.cfg.GetProvider(p)
-	if provider == nil {
-		router.logger.Error("provider not found", nil, "provider", provider)
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Provider not found"})
 		return
 	}
 
@@ -177,18 +170,16 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	ok := router.cfg.SupportedProvider(c.Param("provider"))
-	if !ok {
-		router.logger.Error("requested unsupported provider", nil, "provider", c.Param("provider"))
+	provider, err := router.cfg.GetProvider(c.Param("provider"))
+	if err != nil {
+		router.logger.Error("requested unsupported provider", err, "provider", c.Param("provider"))
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
 		return
 	}
 
-	provider := router.cfg.GetProvider(c.Param("provider"))
-
 	var response providers.GenerateResponse
 
-	response, err := provider.GenerateTokens(req.Model, req.Messages, router.client)
+	response, err = provider.GenerateTokens(req.Model, req.Messages, router.client)
 	if err != nil {
 		router.logger.Error("failed to generate tokens", err, "provider", provider)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to generate tokens"})

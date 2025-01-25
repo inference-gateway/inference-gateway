@@ -378,6 +378,7 @@ func generateConfigFile(destination string, providers map[string]ProviderConfig)
 
 import (
     "context"
+	"fmt"
     "strings"
     "time"
 
@@ -475,24 +476,19 @@ func (c *Config) GetProviders() []providers.Provider {
 }
 
 // GetProvider returns a provider by id
-func (c *Config) GetProvider(id string) providers.Provider {
-    if provider, ok := c.Providers[id]; ok {
-        return &providers.ProviderImpl{
-            ID:           provider.ID,
-            Name:         provider.Name,
-            URL:          provider.URL,
-            Token:        provider.Token,
-            AuthType:     provider.AuthType,
-            ExtraHeaders: provider.ExtraHeaders,
-        }
-    }
-    return nil
-}
-
-// SupportedProvider checks if a provider is supported
-func (c *Config) SupportedProvider(id string) bool {
-    _, ok := c.Providers[id]
-    return ok
+func (c *Config) GetProvider(id string) (providers.Provider, error) {
+	provider, ok := c.Providers[id]
+	if !ok {
+		return nil, fmt.Errorf("provider %s not found", id)
+	}
+	return &providers.ProviderImpl{
+		ID:           provider.ID,
+		Name:         provider.Name,
+		URL:          provider.URL,
+		Token:        provider.Token,
+		AuthType:     provider.AuthType,
+		ExtraHeaders: provider.ExtraHeaders,
+	}, nil
 }
 
 // Load configuration
