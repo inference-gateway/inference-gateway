@@ -499,8 +499,57 @@ import (
     "context"
     "time"
 
+	"github.com/inference-gateway/inference-gateway/providers"
     "github.com/sethvargo/go-envconfig"
 )
+
+func (p *Config) GetProviders() []providers.Provider {
+    return []providers.Provider{
+        {{- range $name, $config := .Providers}}
+        &providers.ProviderImpl{
+            ID:           p.{{title $name}}.ID,
+            Name:         p.{{title $name}}.Name,
+            URL:          p.{{title $name}}.URL,
+            Token:        p.{{title $name}}.Token,
+            AuthType:     p.{{title $name}}.AuthType,
+            {{- if $config.ExtraHeaders}}
+            ExtraHeaders: p.{{title $name}}.ExtraHeaders,
+            {{- end}}
+        },
+        {{- end}}
+    }
+}
+
+func (p *Config) GetProvider(name string) providers.Provider {
+    switch name {
+    {{- range $name, $config := .Providers}}
+    case providers.{{title $name}}ID:
+        return &providers.ProviderImpl{
+            ID:           p.{{title $name}}.ID,
+            Name:         p.{{title $name}}.Name,
+            URL:          p.{{title $name}}.URL,
+            Token:        p.{{title $name}}.Token,
+            AuthType:     p.{{title $name}}.AuthType,
+            {{- if $config.ExtraHeaders}}
+            ExtraHeaders: p.{{title $name}}.ExtraHeaders,
+            {{- end}}
+        }
+    {{- end}}
+    default:
+        return nil
+    }
+}
+
+func (c *Config) SupportedProvider(name string) bool {
+    switch name {
+    {{- range $name, $config := .Providers}}
+    case providers.{{title $name}}ID:
+        return true
+    {{- end}}
+    default:
+        return false
+    }
+}
 
 // Config holds the configuration for the Inference Gateway.
 //go:generate go run ../cmd/generate/main.go -type=Env -output=../examples/docker-compose/.env.example

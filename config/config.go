@@ -4,8 +4,149 @@ import (
 	"context"
 	"time"
 
+	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/sethvargo/go-envconfig"
 )
+
+func (p *Config) GetProviders() []providers.Provider {
+	return []providers.Provider{
+		&providers.ProviderImpl{
+			ID:           p.Anthropic.ID,
+			Name:         p.Anthropic.Name,
+			URL:          p.Anthropic.URL,
+			Token:        p.Anthropic.Token,
+			AuthType:     p.Anthropic.AuthType,
+			ExtraHeaders: p.Anthropic.ExtraHeaders,
+		},
+		&providers.ProviderImpl{
+			ID:       p.Cloudflare.ID,
+			Name:     p.Cloudflare.Name,
+			URL:      p.Cloudflare.URL,
+			Token:    p.Cloudflare.Token,
+			AuthType: p.Cloudflare.AuthType,
+		},
+		&providers.ProviderImpl{
+			ID:       p.Cohere.ID,
+			Name:     p.Cohere.Name,
+			URL:      p.Cohere.URL,
+			Token:    p.Cohere.Token,
+			AuthType: p.Cohere.AuthType,
+		},
+		&providers.ProviderImpl{
+			ID:       p.Google.ID,
+			Name:     p.Google.Name,
+			URL:      p.Google.URL,
+			Token:    p.Google.Token,
+			AuthType: p.Google.AuthType,
+		},
+		&providers.ProviderImpl{
+			ID:       p.Groq.ID,
+			Name:     p.Groq.Name,
+			URL:      p.Groq.URL,
+			Token:    p.Groq.Token,
+			AuthType: p.Groq.AuthType,
+		},
+		&providers.ProviderImpl{
+			ID:       p.Ollama.ID,
+			Name:     p.Ollama.Name,
+			URL:      p.Ollama.URL,
+			Token:    p.Ollama.Token,
+			AuthType: p.Ollama.AuthType,
+		},
+		&providers.ProviderImpl{
+			ID:       p.Openai.ID,
+			Name:     p.Openai.Name,
+			URL:      p.Openai.URL,
+			Token:    p.Openai.Token,
+			AuthType: p.Openai.AuthType,
+		},
+	}
+}
+
+func (p *Config) GetProvider(name string) providers.Provider {
+	switch name {
+	case providers.AnthropicID:
+		return &providers.ProviderImpl{
+			ID:           p.Anthropic.ID,
+			Name:         p.Anthropic.Name,
+			URL:          p.Anthropic.URL,
+			Token:        p.Anthropic.Token,
+			AuthType:     p.Anthropic.AuthType,
+			ExtraHeaders: p.Anthropic.ExtraHeaders,
+		}
+	case providers.CloudflareID:
+		return &providers.ProviderImpl{
+			ID:       p.Cloudflare.ID,
+			Name:     p.Cloudflare.Name,
+			URL:      p.Cloudflare.URL,
+			Token:    p.Cloudflare.Token,
+			AuthType: p.Cloudflare.AuthType,
+		}
+	case providers.CohereID:
+		return &providers.ProviderImpl{
+			ID:       p.Cohere.ID,
+			Name:     p.Cohere.Name,
+			URL:      p.Cohere.URL,
+			Token:    p.Cohere.Token,
+			AuthType: p.Cohere.AuthType,
+		}
+	case providers.GoogleID:
+		return &providers.ProviderImpl{
+			ID:       p.Google.ID,
+			Name:     p.Google.Name,
+			URL:      p.Google.URL,
+			Token:    p.Google.Token,
+			AuthType: p.Google.AuthType,
+		}
+	case providers.GroqID:
+		return &providers.ProviderImpl{
+			ID:       p.Groq.ID,
+			Name:     p.Groq.Name,
+			URL:      p.Groq.URL,
+			Token:    p.Groq.Token,
+			AuthType: p.Groq.AuthType,
+		}
+	case providers.OllamaID:
+		return &providers.ProviderImpl{
+			ID:       p.Ollama.ID,
+			Name:     p.Ollama.Name,
+			URL:      p.Ollama.URL,
+			Token:    p.Ollama.Token,
+			AuthType: p.Ollama.AuthType,
+		}
+	case providers.OpenaiID:
+		return &providers.ProviderImpl{
+			ID:       p.Openai.ID,
+			Name:     p.Openai.Name,
+			URL:      p.Openai.URL,
+			Token:    p.Openai.Token,
+			AuthType: p.Openai.AuthType,
+		}
+	default:
+		return nil
+	}
+}
+
+func (c *Config) SupportedProvider(name string) bool {
+	switch name {
+	case providers.AnthropicID:
+		return true
+	case providers.CloudflareID:
+		return true
+	case providers.CohereID:
+		return true
+	case providers.GoogleID:
+		return true
+	case providers.GroqID:
+		return true
+	case providers.OllamaID:
+		return true
+	case providers.OpenaiID:
+		return true
+	default:
+		return false
+	}
+}
 
 // Config holds the configuration for the Inference Gateway.
 //
