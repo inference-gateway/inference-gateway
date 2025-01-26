@@ -2,7 +2,6 @@ package config
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -42,38 +41,6 @@ type ServerConfig struct {
 	IdleTimeout  time.Duration `env:"IDLE_TIMEOUT, default=120s" description:"Idle timeout"`
 	TlsCertPath  string        `env:"TLS_CERT_PATH" description:"TLS certificate path"`
 	TlsKeyPath   string        `env:"TLS_KEY_PATH" description:"TLS key path"`
-}
-
-// GetProviders returns a list of providers
-func (c *Config) GetProviders() []providers.Provider {
-	providerList := make([]providers.Provider, 0, len(c.Providers))
-	for _, provider := range c.Providers {
-		providerList = append(providerList, &providers.ProviderImpl{
-			ID:           provider.ID,
-			Name:         provider.Name,
-			URL:          provider.URL,
-			Token:        provider.Token,
-			AuthType:     provider.AuthType,
-			ExtraHeaders: provider.ExtraHeaders,
-		})
-	}
-	return providerList
-}
-
-// GetProvider returns a provider by id
-func (c *Config) GetProvider(id string) (providers.Provider, error) {
-	provider, ok := c.Providers[id]
-	if !ok {
-		return nil, fmt.Errorf("provider %s not found", id)
-	}
-	return &providers.ProviderImpl{
-		ID:           provider.ID,
-		Name:         provider.Name,
-		URL:          provider.URL,
-		Token:        provider.Token,
-		AuthType:     provider.AuthType,
-		ExtraHeaders: provider.ExtraHeaders,
-	}, nil
 }
 
 // Load configuration

@@ -1,5 +1,7 @@
 package providers
 
+import "fmt"
+
 // Base provider configuration
 type Config struct {
 	ID           string
@@ -12,6 +14,38 @@ type Config struct {
 		List     string
 		Generate string
 	}
+}
+
+// GetProviders returns a list of providers
+func GetProviders(cfg map[string]*Config) []Provider {
+	providerList := make([]Provider, 0, len(cfg))
+	for _, provider := range cfg {
+		providerList = append(providerList, &ProviderImpl{
+			ID:           provider.ID,
+			Name:         provider.Name,
+			URL:          provider.URL,
+			Token:        provider.Token,
+			AuthType:     provider.AuthType,
+			ExtraHeaders: provider.ExtraHeaders,
+		})
+	}
+	return providerList
+}
+
+// GetProvider returns a provider by id
+func GetProvider(cfg map[string]*Config, id string) (Provider, error) {
+	provider, ok := cfg[id]
+	if !ok {
+		return nil, fmt.Errorf("provider %s not found", id)
+	}
+	return &ProviderImpl{
+		ID:           provider.ID,
+		Name:         provider.Name,
+		URL:          provider.URL,
+		Token:        provider.Token,
+		AuthType:     provider.AuthType,
+		ExtraHeaders: provider.ExtraHeaders,
+	}, nil
 }
 
 // The registry of all providers

@@ -59,7 +59,7 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
-	provider, err := router.cfg.GetProvider(p)
+	provider, err := providers.GetProvider(router.cfg.Providers, p)
 	if err != nil {
 		router.logger.Error("requested unsupported provider", err, "provider", p)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
@@ -135,7 +135,7 @@ type ModelResponse struct {
 
 func (router *RouterImpl) FetchAllModelsHandler(c *gin.Context) {
 	var wg sync.WaitGroup
-	p := router.cfg.GetProviders()
+	p := providers.GetProviders(router.cfg.Providers)
 
 	ch := make(chan providers.ModelsResponse, len(p))
 	for _, provider := range p {
@@ -170,7 +170,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	provider, err := router.cfg.GetProvider(c.Param("provider"))
+	provider, err := providers.GetProvider(router.cfg.Providers, c.Param("provider"))
 	if err != nil {
 		router.logger.Error("requested unsupported provider", err, "provider", c.Param("provider"))
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
