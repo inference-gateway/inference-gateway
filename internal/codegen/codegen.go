@@ -40,26 +40,38 @@ func GenerateProviders(output string, openapiPath string) error {
 func GenerateConfig(destination string, oas string) error {
 	schema, err := openapi.Read(oas)
 	if err != nil {
-		fmt.Printf("Error reading OpenAPI spec: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
 	}
-
-	providers := schema.Components.Schemas.Providers.XProviderConfigs
 
 	caser := cases.Title(language.English)
 
 	funcMap := template.FuncMap{
-		"title": caser.String,
-		"upper": strings.ToUpper,
+		"title":      caser.String,
+		"upper":      strings.ToUpper,
+		"trimPrefix": strings.TrimPrefix,
+		"pascalCase": func(s string) string {
+			parts := strings.Split(s, "_")
+			for i, part := range parts {
+				parts[i] = cases.Title(language.English).String(strings.ToLower(part))
+			}
+			return strings.Join(parts, "")
+		},
+		"fieldType": func(env string, fieldType string) string {
+			if strings.HasPrefix(env, "ENABLE_") {
+				return "bool"
+			}
+			if strings.HasSuffix(env, "_TIMEOUT") {
+				return "time.Duration"
+			}
+			return "string"
+		},
 	}
 
-	tmpl := template.Must(template.New("config").
-		Funcs(funcMap).
-		Parse(`package config
+	tmpl := template.Must(template.New("config").Funcs(funcMap).Parse(`package config
 
 import (
     "context"
-	"fmt"
+    "fmt"
     "strings"
     "time"
 
@@ -69,54 +81,69 @@ import (
 
 // Config holds the configuration for the Inference Gateway
 type Config struct {
-    // General settings
-    ApplicationName string ` + "`env:\"APPLICATION_NAME, default=inference-gateway\" description:\"The name of the application\"`" + `
-    Environment    string ` + "`env:\"ENVIRONMENT, default=production\" description:\"The environment\"`" + `
-    EnableTelemetry bool   ` + "`env:\"ENABLE_TELEMETRY, default=false\" description:\"Enable telemetry\"`" + `
-    EnableAuth     bool   ` + "`env:\"ENABLE_AUTH, default=false\" description:\"Enable authentication\"`" + `
-
-    // Auth settings
+    {{- range $section := .Sections }}
+    {{- range $name, $section := $section }}
+    {{- if eq $name "general" }}
+    // {{ $section.Title }}
+    {{- range $setting := $section.Settings }}
+    {{- range $field := $setting }}
+    {{ pascalCase $field.Env }} {{ fieldType $field.Env "string" }} ` + "`env:\"{{ $field.Env }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+    {{- end }}
+    {{- end }}
+    {{- else if eq $name "oidc" }}
+    // OIDC settings
     OIDC *OIDC ` + "`env:\", prefix=OIDC_\" description:\"OIDC configuration\"`" + `
-
+    {{- else if eq $name "server" }}
     // Server settings
     Server *ServerConfig ` + "`env:\", prefix=SERVER_\" description:\"Server configuration\"`" + `
+    {{- end }}
+    {{- end }}
+    {{- end }}
 
     // Providers map
     Providers map[string]*providers.Config
 }
 
+{{- range $section := .Sections }}
+{{- range $name, $section := $section }}
+{{- if eq $name "oidc" }}
+
 // OIDC configuration
 type OIDC struct {
-    IssuerURL    string ` + "`env:\"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm\" description:\"OIDC issuer URL\"`" + `
-    ClientID     string ` + "`env:\"CLIENT_ID, default=inference-gateway-client\" type:\"secret\" description:\"OIDC client ID\"`" + `
-    ClientSecret string ` + "`env:\"CLIENT_SECRET\" type:\"secret\" description:\"OIDC client secret\"`" + `
+    {{- range $setting := $section.Settings }}
+    {{- range $field := $setting }}
+    {{ pascalCase (trimPrefix $field.Env "OIDC_") }} string ` + "`env:\"{{ trimPrefix $field.Env \"OIDC_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\"{{if $field.Secret}} type:\"secret\"{{end}} description:\"{{$field.Description}}\"`" + `
+    {{- end }}
+    {{- end }}
 }
+{{- else if eq $name "server" }}
 
 // Server configuration
 type ServerConfig struct {
-    Host         string        ` + "`env:\"HOST, default=0.0.0.0\" description:\"Server host\"`" + `
-    Port         string        ` + "`env:\"PORT, default=8080\" description:\"Server port\"`" + `
-    ReadTimeout  time.Duration ` + "`env:\"READ_TIMEOUT, default=30s\" description:\"Read timeout\"`" + `
-    WriteTimeout time.Duration ` + "`env:\"WRITE_TIMEOUT, default=30s\" description:\"Write timeout\"`" + `
-    IdleTimeout  time.Duration ` + "`env:\"IDLE_TIMEOUT, default=120s\" description:\"Idle timeout\"`" + `
-    TLSCertPath  string        ` + "`env:\"TLS_CERT_PATH\" description:\"TLS certificate path\"`" + `
-    TLSKeyPath   string        ` + "`env:\"TLS_KEY_PATH\" description:\"TLS key path\"`" + `
+    {{- range $setting := $section.Settings }}
+    {{- range $field := $setting }}
+    {{ pascalCase (trimPrefix $field.Env "SERVER_") }} {{ fieldType $field.Env "string" }} ` + "`env:\"{{ trimPrefix $field.Env \"SERVER_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+    {{- end }}
+    {{- end }}
 }
+{{- end }}
+{{- end }}
+{{- end }}
 
 // GetProviders returns a list of providers
 func (c *Config) GetProviders() []providers.Provider {
-    providerList := make([]providers.Provider, 0, len(c.Providers))
-    for _, provider := range c.Providers {
-        providerList = append(providerList, &providers.ProviderImpl{
-            ID:           provider.ID,
-            Name:         provider.Name,
-            URL:          provider.URL,
-            Token:        provider.Token,
-            AuthType:     provider.AuthType,
-            ExtraHeaders: provider.ExtraHeaders,
-        })
-    }
-    return providerList
+	providerList := make([]providers.Provider, 0, len(c.Providers))
+	for _, provider := range c.Providers {
+		providerList = append(providerList, &providers.ProviderImpl{
+			ID:           provider.ID,
+			Name:         provider.Name,
+			URL:          provider.URL,
+			Token:        provider.Token,
+			AuthType:     provider.AuthType,
+			ExtraHeaders: provider.ExtraHeaders,
+		})
+	}
+	return providerList
 }
 
 // GetProvider returns a provider by id
@@ -168,13 +195,14 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
     }
 
     return *cfg, nil
-}
-`))
+}`))
 
 	data := struct {
+		Sections  []map[string]openapi.Section
 		Providers map[string]openapi.ProviderConfig
 	}{
-		Providers: providers,
+		Sections:  schema.Components.Schemas.Config.XConfig.Sections,
+		Providers: schema.Components.Schemas.Providers.XProviderConfigs,
 	}
 
 	f, err := os.Create(destination)
@@ -187,7 +215,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 		return err
 	}
 
-	// Run go fmt on the generated file
+	// Format generated code
 	cmd := exec.Command("go", "fmt", destination)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to format %s: %w", destination, err)

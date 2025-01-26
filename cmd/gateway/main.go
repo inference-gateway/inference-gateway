@@ -105,14 +105,14 @@ func main() {
 		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
 
-	if cfg.Server.TLSCertPath != "" && cfg.Server.TLSKeyPath != "" {
+	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
 		go func() {
 			if cfg.EnableTelemetry {
 				span.AddEvent("Starting Inference Gateway with TLS")
 			}
 			logger.Info("Starting Inference Gateway with TLS", "port", cfg.Server.Port)
 
-			if err := server.ListenAndServeTLS(cfg.Server.TLSCertPath, cfg.Server.TLSKeyPath); err != nil && err != http.ErrServerClosed {
+			if err := server.ListenAndServeTLS(cfg.Server.TlsCertPath, cfg.Server.TlsKeyPath); err != nil && err != http.ErrServerClosed {
 				logger.Error("ListenAndServeTLS error", err)
 			}
 		}()

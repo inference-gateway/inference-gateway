@@ -10,24 +10,15 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
-// Config holds the configuration for the Inference Gateway.
-//
-//go:generate go run ../cmd/generate/main.go -type=Env -output=../examples/docker-compose/.env.example
-//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/basic/inference-gateway/configmap.yaml
-//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/hybrid/inference-gateway/configmap.yaml
-//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/authentication/inference-gateway/configmap.yaml
-//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/agent/inference-gateway/configmap.yaml
-//go:generate go run ../cmd/generate/main.go -type=MD -output=../Configurations.md
+// Config holds the configuration for the Inference Gateway
 type Config struct {
 	// General settings
 	ApplicationName string `env:"APPLICATION_NAME, default=inference-gateway" description:"The name of the application"`
 	Environment     string `env:"ENVIRONMENT, default=production" description:"The environment"`
 	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
 	EnableAuth      bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
-
-	// Auth settings
+	// OIDC settings
 	OIDC *OIDC `env:", prefix=OIDC_" description:"OIDC configuration"`
-
 	// Server settings
 	Server *ServerConfig `env:", prefix=SERVER_" description:"Server configuration"`
 
@@ -37,8 +28,8 @@ type Config struct {
 
 // OIDC configuration
 type OIDC struct {
-	IssuerURL    string `env:"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
-	ClientID     string `env:"CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
+	IssuerUrl    string `env:"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
+	ClientId     string `env:"CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
 	ClientSecret string `env:"CLIENT_SECRET" type:"secret" description:"OIDC client secret"`
 }
 
@@ -49,8 +40,8 @@ type ServerConfig struct {
 	ReadTimeout  time.Duration `env:"READ_TIMEOUT, default=30s" description:"Read timeout"`
 	WriteTimeout time.Duration `env:"WRITE_TIMEOUT, default=30s" description:"Write timeout"`
 	IdleTimeout  time.Duration `env:"IDLE_TIMEOUT, default=120s" description:"Idle timeout"`
-	TLSCertPath  string        `env:"TLS_CERT_PATH" description:"TLS certificate path"`
-	TLSKeyPath   string        `env:"TLS_KEY_PATH" description:"TLS key path"`
+	TlsCertPath  string        `env:"TLS_CERT_PATH" description:"TLS certificate path"`
+	TlsKeyPath   string        `env:"TLS_KEY_PATH" description:"TLS key path"`
 }
 
 // GetProviders returns a list of providers

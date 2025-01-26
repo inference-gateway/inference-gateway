@@ -26,8 +26,8 @@ func TestLoad(t *testing.T) {
 				Environment:     "production",
 				EnableAuth:      false,
 				OIDC: &config.OIDC{
-					IssuerURL:    "http://keycloak:8080/realms/inference-gateway-realm",
-					ClientID:     "inference-gateway-client",
+					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",
+					ClientId:     "inference-gateway-client",
 					ClientSecret: "",
 				},
 				Server: &config.ServerConfig{
@@ -136,8 +136,8 @@ func TestLoad(t *testing.T) {
 				Environment:     "development",
 				EnableAuth:      false,
 				OIDC: &config.OIDC{
-					IssuerURL:    "http://keycloak:8080/realms/inference-gateway-realm",
-					ClientID:     "inference-gateway-client",
+					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",
+					ClientId:     "inference-gateway-client",
 					ClientSecret: "",
 				},
 				Server: &config.ServerConfig{
@@ -261,8 +261,8 @@ func TestLoad(t *testing.T) {
 				Environment:     "development",
 				EnableAuth:      false,
 				OIDC: &config.OIDC{
-					IssuerURL:    "http://keycloak:8080/realms/inference-gateway-realm",
-					ClientID:     "inference-gateway-client",
+					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",
+					ClientId:     "inference-gateway-client",
 					ClientSecret: "",
 				},
 				Server: &config.ServerConfig{
