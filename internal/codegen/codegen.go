@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// GenerateProviders generates providers Request Response schemas from an OpenAPI spec
 func GenerateProviders(output string, openapiPath string) error {
 	// Read OpenAPI spec
 	data, err := os.ReadFile(openapiPath)
@@ -37,6 +38,7 @@ func GenerateProviders(output string, openapiPath string) error {
 	return nil
 }
 
+// GenerateConfig generates a configuration file from an OpenAPI spec
 func GenerateConfig(destination string, oas string) error {
 	schema, err := openapi.Read(oas)
 	if err != nil {
@@ -71,7 +73,6 @@ func GenerateConfig(destination string, oas string) error {
 
 import (
     "context"
-    "fmt"
     "strings"
     "time"
 
@@ -192,6 +193,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	return nil
 }
 
+// GenerateProvidersRegistry generates a registry of all providers from OpenAPI Spec
 func GenerateProvidersRegistry(destination string, oas string) error {
 	schema, err := openapi.Read(oas)
 	if err != nil {
@@ -211,6 +213,8 @@ func GenerateProvidersRegistry(destination string, oas string) error {
 		Funcs(funcMap).
 		Parse(`package providers
 
+import "fmt"
+
 // Base provider configuration
 type Config struct {
 	ID           string
@@ -223,6 +227,38 @@ type Config struct {
 		List     string
 		Generate string
 	}
+}
+
+// GetProviders returns a list of providers
+func GetProviders(cfg map[string]*Config) []Provider {
+	providerList := make([]Provider, 0, len(cfg))
+	for _, provider := range cfg {
+		providerList = append(providerList, &ProviderImpl{
+			ID:           provider.ID,
+			Name:         provider.Name,
+			URL:          provider.URL,
+			Token:        provider.Token,
+			AuthType:     provider.AuthType,
+			ExtraHeaders: provider.ExtraHeaders,
+		})
+	}
+	return providerList
+}
+
+// GetProvider returns a provider by id
+func GetProvider(cfg map[string]*Config, id string) (Provider, error) {
+	provider, ok := cfg[id]
+	if !ok {
+		return nil, fmt.Errorf("provider %s not found", id)
+	}
+	return &ProviderImpl{
+		ID:           provider.ID,
+		Name:         provider.Name,
+		URL:          provider.URL,
+		Token:        provider.Token,
+		AuthType:     provider.AuthType,
+		ExtraHeaders: provider.ExtraHeaders,
+	}, nil
 }
 
 // The registry of all providers
