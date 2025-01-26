@@ -17,7 +17,7 @@ tasks:
       - go run cmd/generate/main.go -type ConfigMap -output examples/kubernetes/authentication/inference-gateway/configmap.yaml
       - go run cmd/generate/main.go -type ConfigMap -output examples/kubernetes/hybrid/inference-gateway/configmap.yaml
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/.env.example
-      # - go generate ./...
+      - go generate ./...
 
   tidy:
     desc: "Tidy the gateway"

@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-//go:generate mockgen -source=config.go -destination=../tests/mocks/provider.go -package=mocks
+//go:generate mockgen -source=management.go -destination=../tests/mocks/provider.go -package=mocks
 type Provider interface {
 	GetID() string
 	GetName() string
