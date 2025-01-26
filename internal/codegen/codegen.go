@@ -67,14 +67,7 @@ import (
     "github.com/sethvargo/go-envconfig"
 )
 
-// Config holds the configuration for the Inference Gateway.
-//
-//go:generate go run ../cmd/generate/main.go -type=Env -output=../examples/docker-compose/.env.example
-//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/basic/inference-gateway/configmap.yaml
-//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/hybrid/inference-gateway/configmap.yaml
-//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/authentication/inference-gateway/configmap.yaml
-//go:generate go run ../cmd/generate/main.go -type=ConfigMap -output=../examples/kubernetes/agent/inference-gateway/configmap.yaml
-//go:generate go run ../cmd/generate/main.go -type=MD -output=../Configurations.md
+// Config holds the configuration for the Inference Gateway
 type Config struct {
     // General settings
     ApplicationName string ` + "`env:\"APPLICATION_NAME, default=inference-gateway\" description:\"The name of the application\"`" + `
