@@ -3,10 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"sort"
 
 	"os"
-	"strings"
 
 	"github.com/inference-gateway/inference-gateway/internal/codegen"
 	"github.com/inference-gateway/inference-gateway/internal/mdgen"
@@ -249,25 +247,6 @@ func main() {
 // 	return os.WriteFile(filePath, []byte(sb.String()), 0644)
 // }
 
-func writeFields(sb *strings.Builder, fields map[string]FieldInfo) {
-	keys := make([]string, 0, len(fields))
-	for k := range fields {
-		if k != "" {
-			keys = append(keys, k)
-		}
-	}
-	sort.Strings(keys)
-
-	for _, key := range keys {
-		field := fields[key]
-		if field.DefaultValue != "" {
-			sb.WriteString(fmt.Sprintf("  %s: \"%s\"\n", field.EnvName, field.DefaultValue))
-		} else {
-			sb.WriteString(fmt.Sprintf("  %s: \"\"\n", field.EnvName))
-		}
-	}
-}
-
 // func generateSecret(filePath string) error {
 // 	cfg := &config.Config{}
 // 	fields := generateFromConfig(cfg)
@@ -292,21 +271,4 @@ type FieldInfo struct {
 	DefaultValue string
 	Description  string
 	IsSecret     bool
-}
-
-func parseEnvTag(tag string) (envName, defaultValue string, isSecret bool) {
-	parts := strings.Split(tag, ",")
-	envName = strings.TrimSpace(parts[0])
-
-	for _, part := range parts[1:] {
-		part = strings.TrimSpace(part)
-		if strings.HasPrefix(part, "default=") {
-			defaultValue = strings.Trim(strings.TrimPrefix(part, "default="), "\"")
-		}
-		if strings.Contains(part, "type:\"secret\"") {
-			isSecret = true
-		}
-	}
-
-	return
 }
