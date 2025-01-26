@@ -33,8 +33,14 @@ func main() {
 	case "Env":
 		// dockergen.GenerateEnvExample(output)
 	case "ConfigMap":
-		// kubegen.GenerateConfigMap(output)
+		fmt.Printf("Generating ConfigMap to %s\n", output)
+		err := kubegen.GenerateConfigMap(output, "openapi.yaml")
+		if err != nil {
+			fmt.Printf("Error generating config map: %v\n", err)
+			os.Exit(1)
+		}
 	case "Secret":
+		fmt.Printf("Generating Secret to %s\n", output)
 		err := kubegen.GenerateSecret(output, "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating secret: %v\n", err)

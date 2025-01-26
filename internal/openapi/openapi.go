@@ -22,34 +22,12 @@ type OpenAPISchema struct {
 }
 
 type ConfigSchema struct {
-	General struct {
-		ApplicationName ConfigField `yaml:"application_name"`
-		Environment     ConfigField `yaml:"environment"`
-		EnableTelemetry ConfigField `yaml:"enable_telemetry"`
-		EnableAuth      ConfigField `yaml:"enable_auth"`
-	} `yaml:"general"`
-	OIDC struct {
-		IssuerURL    ConfigField `yaml:"issuer_url"`
-		ClientID     ConfigField `yaml:"client_id"`
-		ClientSecret ConfigField `yaml:"client_secret"`
-	} `yaml:"oidc"`
-	Server struct {
-		Host         ConfigField `yaml:"host"`
-		Port         ConfigField `yaml:"port"`
-		ReadTimeout  ConfigField `yaml:"read_timeout"`
-		WriteTimeout ConfigField `yaml:"write_timeout"`
-		IdleTimeout  ConfigField `yaml:"idle_timeout"`
-		TLSCertPath  ConfigField `yaml:"tls_cert_path"`
-		TLSKeyPath   ConfigField `yaml:"tls_key_path"`
-	} `yaml:"server"`
-	Providers struct {
-		Type   string `yaml:"type"`
-		Key    string `yaml:"key"`
-		Values struct {
-			URL   ConfigField `yaml:"url"`
-			Token ConfigField `yaml:"token"`
-		} `yaml:"values"`
-	} `yaml:"providers"`
+	Sections []map[string]Section `yaml:"sections"`
+}
+
+type Section struct {
+	Title    string                   `yaml:"title"`
+	Settings []map[string]ConfigField `yaml:"settings"`
 }
 
 type ConfigField struct {
