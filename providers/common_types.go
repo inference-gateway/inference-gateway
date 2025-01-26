@@ -45,7 +45,7 @@ type Model struct {
 	Name string `json:"name"`
 }
 
-type ModelsResponse struct {
+type ListModelsResponse struct {
 	Provider string        `json:"provider"`
 	Models   []interface{} `json:"models"`
 }

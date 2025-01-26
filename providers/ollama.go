@@ -1,7 +1,7 @@
 package providers
 
 type GetModelsResponseOllama struct {
-	Models []Model `json:"models"`
+	Models []interface{} `json:"models"`
 }
 
 type GenerateRequestOllama struct {

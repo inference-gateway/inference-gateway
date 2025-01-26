@@ -40,7 +40,7 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockLogger) {
 	router := api.NewRouter(cfg, &l, client)
 	r := gin.New()
 	r.GET("/health", router.HealthcheckHandler)
-	r.GET("/llms", router.FetchAllModelsHandler)
+	r.GET("/llms", router.ListAllModelsHandler)
 	r.POST("/llms/:provider/generate", router.GenerateProvidersTokenHandler)
 
 	return r, mockLogger
@@ -70,7 +70,7 @@ func TestFetchAllModelsHandler(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	var response []providers.ModelsResponse
+	var response []providers.ListModelsResponse
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 }

@@ -1,7 +1,5 @@
 package providers
 
-import "fmt"
-
 // Endpoints exposed by each provider
 type Endpoints struct {
 	List     string
@@ -19,38 +17,6 @@ type Config struct {
 	Endpoints    Endpoints
 }
 
-// GetProviders returns a list of providers
-func GetProviders(cfg map[string]*Config) []Provider {
-	providerList := make([]Provider, 0, len(cfg))
-	for _, provider := range cfg {
-		providerList = append(providerList, &ProviderImpl{
-			ID:           provider.ID,
-			Name:         provider.Name,
-			URL:          provider.URL,
-			Token:        provider.Token,
-			AuthType:     provider.AuthType,
-			ExtraHeaders: provider.ExtraHeaders,
-		})
-	}
-	return providerList
-}
-
-// GetProvider returns a provider by id
-func GetProvider(cfg map[string]*Config, id string) (Provider, error) {
-	provider, ok := cfg[id]
-	if !ok {
-		return nil, fmt.Errorf("provider %s not found", id)
-	}
-	return &ProviderImpl{
-		ID:           provider.ID,
-		Name:         provider.Name,
-		URL:          provider.URL,
-		Token:        provider.Token,
-		AuthType:     provider.AuthType,
-		ExtraHeaders: provider.ExtraHeaders,
-	}, nil
-}
-
 // The registry of all providers
 var Registry = map[string]Config{
 	AnthropicID: {
@@ -61,41 +27,69 @@ var Registry = map[string]Config{
 		ExtraHeaders: map[string][]string{
 			"anthropic-version": {"2023-06-01"},
 		},
+		Endpoints: Endpoints{
+			List:     "/v1/models",
+			Generate: "/v1/messages",
+		},
 	},
 	CloudflareID: {
 		ID:       CloudflareID,
 		Name:     CloudflareDisplayName,
 		URL:      CloudflareDefaultBaseURL,
 		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			List:     "/ai/finetunes/public",
+			Generate: "/v1/chat/completions",
+		},
 	},
 	CohereID: {
 		ID:       CohereID,
 		Name:     CohereDisplayName,
 		URL:      CohereDefaultBaseURL,
 		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			List:     "/v1/models",
+			Generate: "/v2/chat",
+		},
 	},
 	GoogleID: {
 		ID:       GoogleID,
 		Name:     GoogleDisplayName,
 		URL:      GoogleDefaultBaseURL,
 		AuthType: AuthTypeQuery,
+		Endpoints: Endpoints{
+			List:     "/v1beta/models",
+			Generate: "/v1beta/models/{model}:generateContent",
+		},
 	},
 	GroqID: {
 		ID:       GroqID,
 		Name:     GroqDisplayName,
 		URL:      GroqDefaultBaseURL,
 		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			List:     "/openai/v1/models",
+			Generate: "/openai/v1/chat/completions",
+		},
 	},
 	OllamaID: {
 		ID:       OllamaID,
 		Name:     OllamaDisplayName,
 		URL:      OllamaDefaultBaseURL,
 		AuthType: AuthTypeNone,
+		Endpoints: Endpoints{
+			List:     "/api/tags",
+			Generate: "/api/generate",
+		},
 	},
 	OpenaiID: {
 		ID:       OpenaiID,
 		Name:     OpenaiDisplayName,
 		URL:      OpenaiDefaultBaseURL,
 		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			List:     "/v1/models",
+			Generate: "/v1/chat/completions",
+		},
 	},
 }

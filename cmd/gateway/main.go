@@ -90,7 +90,8 @@ func main() {
 	}
 	r.Use(oidcAuthenticator.Middleware())
 
-	r.GET("/llms", api.FetchAllModelsHandler)
+	r.GET("/llms", api.ListAllModelsHandler)
+	r.GET("/llms/:provider", api.ListModelsHandler)
 	r.POST("/llms/:provider/generate", api.GenerateProvidersTokenHandler)
 	r.GET("/proxy/:provider/*path", api.ProxyHandler)
 	r.POST("/proxy/:provider/*path", api.ProxyHandler)

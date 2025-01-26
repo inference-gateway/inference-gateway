@@ -19,6 +19,22 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ProviderModels"
+  /llms/{provider}:
+    get:
+      summary: List all models for a specific provider
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Providers"
+      responses:
+        "200":
+          description: A list of models
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderModels"
   /llms/{provider}/generate:
     post:
       summary: Generate content with a specific provider's LLM
@@ -226,7 +242,7 @@ components:
           auth_type: "none"
           endpoints:
             list:
-              endpoint: "/v1/models"
+              endpoint: "/api/tags"
               method: "GET"
               schema:
                 request:

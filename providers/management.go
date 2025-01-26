@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	l "github.com/inference-gateway/inference-gateway/logger"
 )
 
 //go:generate mockgen -source=management.go -destination=../tests/mocks/provider.go -package=mocks
@@ -17,108 +19,154 @@ type Provider interface {
 	GetToken() string
 	GetAuthType() string
 	GetExtraHeaders() map[string][]string
+	GetClient() *http.Client
 
-	ListModels() ModelsResponse
-	GenerateTokens(model string, messages []Message, client http.Client) (GenerateResponse, error)
+	ListModels() ListModelsResponse
+	GenerateTokens(model string, messages []Message) (GenerateResponse, error)
 }
 
 type ProviderImpl struct {
-	ID           string
-	Name         string
-	URL          string
-	Token        string
-	AuthType     string
-	ExtraHeaders map[string][]string
-	Endpoints    Endpoints
+	id           string
+	name         string
+	url          string
+	token        string
+	authType     string
+	extraHeaders map[string][]string
+	endpoints    Endpoints
+	client       *http.Client
+	logger       l.Logger
+}
+
+func NewProvider(cfg map[string]*Config, id string, logger *l.Logger, client *http.Client) (Provider, error) {
+	provider, ok := cfg[id]
+	if !ok {
+		return nil, fmt.Errorf("provider %s not found", id)
+	}
+
+	return &ProviderImpl{
+		id:           provider.ID,
+		name:         provider.Name,
+		url:          provider.URL,
+		token:        provider.Token,
+		authType:     provider.AuthType,
+		extraHeaders: provider.ExtraHeaders,
+		endpoints:    provider.Endpoints,
+		client:       client,
+		logger:       *logger,
+	}, nil
 }
 
 func (p *ProviderImpl) GetID() string {
-	return p.ID
+	return p.id
 }
 
 func (p *ProviderImpl) GetName() string {
-	return p.Name
+	return p.name
 }
 
 func (p *ProviderImpl) GetURL() string {
-	return p.URL
+	return p.url
 }
 
 func (p *ProviderImpl) GetToken() string {
-	return p.Token
+	return p.token
 }
 
 func (p *ProviderImpl) GetAuthType() string {
-	return p.AuthType
+	return p.authType
 }
 
 func (p *ProviderImpl) GetExtraHeaders() map[string][]string {
-	return p.ExtraHeaders
+	return p.extraHeaders
 }
 
 func (p *ProviderImpl) EndpointList() string {
-	return p.Endpoints.List
+	return p.endpoints.List
 }
 
 func (p *ProviderImpl) EndpointGenerate() string {
-	return p.Endpoints.Generate
+	return p.endpoints.Generate
 }
 
-func (p *ProviderImpl) ListModels() ModelsResponse {
-	// resp, err := http.Get(p.GetListURL())
-	resp, err := http.Get("")
+func (p *ProviderImpl) SetClient(client *http.Client) {
+	p.client = client
+}
+
+func (p *ProviderImpl) GetClient() *http.Client {
+	return p.client
+}
+
+func (p *ProviderImpl) ListModels() ListModelsResponse {
+	url := "http://127.0.0.1:8080/proxy/" + p.GetID() + p.EndpointList()
+
+	p.logger.Debug("list models", "url", url)
+	resp, err := p.client.Get(url)
 	if err != nil {
-		return ModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+		p.logger.Error("failed to make request", err, "provider", p.GetName())
+		return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
 	}
 	defer resp.Body.Close()
 
+	var response interface{}
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		p.logger.Error("failed to decode response", err, "provider", p.GetName())
+		return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+	}
+
 	switch p.GetID() {
+	case OllamaID:
+		var response GetModelsResponseOllama
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+		}
+		return ListModelsResponse{Provider: p.GetName(), Models: response.Models}
 	case GoogleID:
 		var response GetModelsResponseGoogle
-		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
 		}
-		return ModelsResponse{Provider: p.GetName(), Models: response.Models}
+		return ListModelsResponse{Provider: p.GetName(), Models: response.Models}
 	case CloudflareID:
 		var response GetModelsResponseCloudflare
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
 		}
-		return ModelsResponse{Provider: p.GetName(), Models: response.Result}
+		return ListModelsResponse{Provider: p.GetName(), Models: response.Result}
 	case CohereID:
 		var response GetModelsResponseCohere
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
 		}
-		return ModelsResponse{Provider: p.GetName(), Models: response.Models}
+		return ListModelsResponse{Provider: p.GetName(), Models: response.Models}
 	case AnthropicID:
 		var response GetModelsResponseAnthropic
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
 		}
-		return ModelsResponse{Provider: p.GetName(), Models: response.Models}
+		return ListModelsResponse{Provider: p.GetName(), Models: response.Models}
 	default:
 		var response GetModelsResponse
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
 		}
-		return ModelsResponse{Provider: p.GetName(), Models: response.Data}
+		return ListModelsResponse{Provider: p.GetName(), Models: response.Data}
 	}
+
 }
 
-func (p *ProviderImpl) GenerateTokens(model string, messages []Message, client http.Client) (GenerateResponse, error) {
+func (p *ProviderImpl) GenerateTokens(model string, messages []Message) (GenerateResponse, error) {
 	if p == nil {
 		return GenerateResponse{}, errors.New("provider cannot be nil")
 	}
 
-	// Start with provider's base URL
-	// TODO - move the hardcoded proxy string to config
-	url := "/proxy/" + p.EndpointGenerate()
-
-	// Handle provider-specific URL construction
+	url := "/proxy/" + p.GetID() + p.EndpointGenerate()
 	providerName := p.GetName()
 	if providerName == "Google" || providerName == "Cloudflare" {
-		// Replace model placeholder in URL
 		url = strings.Replace(url, "{model}", model, 1)
 	}
 
@@ -135,7 +183,7 @@ func (p *ProviderImpl) GenerateTokens(model string, messages []Message, client h
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := p.client.Do(req)
 	if err != nil {
 		return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
 	}

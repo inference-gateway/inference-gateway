@@ -18,18 +18,18 @@ import (
 
 //go:generate mockgen -source=routes.go -destination=../tests/mocks/routes.go -package=mocks
 type Router interface {
-	GetClient() http.Client
-	NotFoundHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
-	HealthcheckHandler(c *gin.Context)
-	FetchAllModelsHandler(c *gin.Context)
+	ListAllModelsHandler(c *gin.Context)
+	ListModelsHandler(c *gin.Context)
 	GenerateProvidersTokenHandler(c *gin.Context)
+	HealthcheckHandler(c *gin.Context)
+	NotFoundHandler(c *gin.Context)
 }
 
 type RouterImpl struct {
 	cfg    config.Config
 	logger l.Logger
-	client http.Client
+	client *http.Client
 }
 
 type ErrorResponse struct {
@@ -44,12 +44,8 @@ func NewRouter(cfg config.Config, logger *l.Logger, client *http.Client) Router 
 	return &RouterImpl{
 		cfg,
 		*logger,
-		*client,
+		client,
 	}
-}
-
-func (router *RouterImpl) GetClient() http.Client {
-	return router.client
 }
 
 func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
@@ -59,7 +55,7 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
-	provider, err := providers.GetProvider(router.cfg.Providers, p)
+	provider, err := providers.NewProvider(router.cfg.Providers, p, &router.logger, router.client)
 	if err != nil {
 		router.logger.Error("requested unsupported provider", err, "provider", p)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
@@ -99,12 +95,6 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	remote, _ := url.Parse(provider.GetURL() + c.Request.URL.Path)
 	proxy := httputil.NewSingleHostReverseProxy(remote)
 
-	// Log proxy responses in development mode only
-	if router.cfg.Environment == "development" {
-		devModifier := proxymodifier.NewDevResponseModifier(router.logger)
-		proxy.ModifyResponse = devModifier.Modify
-	}
-
 	// Add error handler for proxy failures
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		router.logger.Error("proxy request failed", err)
@@ -118,13 +108,29 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		}
 	}
 
+	// Configure proxy director
 	proxy.Director = func(req *http.Request) {
 		req.Header = c.Request.Header
 		req.Host = remote.Host
 		req.URL.Host = remote.Host
 		req.URL.Scheme = remote.Scheme
-		req.URL.Path = remote.Path
+		req.URL.Path = c.Param("path")
+
+		if router.cfg.Environment == "development" {
+			router.logger.Debug("proxying request",
+				"from", c.Request.URL.String(),
+				"to", req.URL.String(),
+				"method", req.Method,
+			)
+		}
 	}
+
+	// Log proxy responses in development mode only
+	if router.cfg.Environment == "development" {
+		devModifier := proxymodifier.NewDevResponseModifier(router.logger)
+		proxy.ModifyResponse = devModifier.Modify
+	}
+
 	proxy.ServeHTTP(c.Writer, c.Request)
 }
 
@@ -138,23 +144,48 @@ type ModelResponse struct {
 	Models   []interface{} `json:"models"`
 }
 
-func (router *RouterImpl) FetchAllModelsHandler(c *gin.Context) {
-	var wg sync.WaitGroup
-	p := providers.GetProviders(router.cfg.Providers)
+func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
+	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, router.client)
+	if err != nil {
+		router.logger.Error("requested unsupported provider", err, "provider", c.Param("provider"))
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
+		return
+	}
 
-	ch := make(chan providers.ModelsResponse, len(p))
-	for _, provider := range p {
+	response := provider.ListModels()
+	c.JSON(http.StatusOK, response)
+}
+
+func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
+	var wg sync.WaitGroup
+	providersCfg := router.cfg.Providers
+
+	ch := make(chan providers.ListModelsResponse, len(providersCfg))
+
+	for providerID := range providersCfg {
 		wg.Add(1)
-		go func(provider providers.Provider) {
+		go func(id string) {
 			defer wg.Done()
-			ch <- provider.ListModels()
-		}(provider)
+
+			provider, err := providers.NewProvider(providersCfg, id, &router.logger, router.client)
+			if err != nil {
+				router.logger.Error("failed to create provider", err)
+				ch <- providers.ListModelsResponse{
+					Provider: id,
+					Models:   []interface{}{},
+				}
+				return
+			}
+
+			response := provider.ListModels()
+			ch <- response
+		}(providerID)
 	}
 
 	wg.Wait()
 	close(ch)
 
-	var allModels []providers.ModelsResponse
+	var allModels []providers.ListModelsResponse
 	for model := range ch {
 		allModels = append(allModels, model)
 	}
@@ -175,7 +206,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	provider, err := providers.GetProvider(router.cfg.Providers, c.Param("provider"))
+	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, router.client)
 	if err != nil {
 		router.logger.Error("requested unsupported provider", err, "provider", c.Param("provider"))
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
@@ -183,7 +214,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	}
 
 	var response providers.GenerateResponse
-	response, err = provider.GenerateTokens(req.Model, req.Messages, router.client)
+	response, err = provider.GenerateTokens(req.Model, req.Messages)
 	if err != nil {
 		router.logger.Error("failed to generate tokens", err, "provider", provider)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to generate tokens"})

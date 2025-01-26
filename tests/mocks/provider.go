@@ -141,10 +141,10 @@ func (mr *MockProviderMockRecorder) GetURL() *gomock.Call {
 }
 
 // ListModels mocks base method.
-func (m *MockProvider) ListModels() providers.ModelsResponse {
+func (m *MockProvider) ListModels() providers.ListModelsResponse {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListModels")
-	ret0, _ := ret[0].(providers.ModelsResponse)
+	ret0, _ := ret[0].(providers.ListModelsResponse)
 	return ret0
 }
 
