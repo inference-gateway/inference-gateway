@@ -28,6 +28,10 @@ type ProviderImpl struct {
 	Token        string
 	AuthType     string
 	ExtraHeaders map[string][]string
+	Endpoints    struct {
+		List     string
+		Generate string
+	}
 }
 
 func (p *ProviderImpl) GetID() string {
@@ -52,6 +56,14 @@ func (p *ProviderImpl) GetAuthType() string {
 
 func (p *ProviderImpl) GetExtraHeaders() map[string][]string {
 	return p.ExtraHeaders
+}
+
+func (p *ProviderImpl) EndpointList() string {
+	return p.Endpoints.List
+}
+
+func (p *ProviderImpl) EndpointGenerate() string {
+	return p.Endpoints.Generate
 }
 
 func (p *ProviderImpl) ListModels() ModelsResponse {

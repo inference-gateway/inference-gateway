@@ -127,7 +127,16 @@ func main() {
 			os.Exit(1)
 		}
 	case "Config":
-		generateConfig(output, "openapi.yaml")
+		err := generateConfig(output, "openapi.yaml")
+		if err != nil {
+			fmt.Printf("Error generating config: %v\n", err)
+			os.Exit(1)
+		}
+		err = generateProvidersRegistry("providers/registry.go", "openapi.yaml")
+		if err != nil {
+			fmt.Printf("Error generating providers registry: %v\n", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Println("Invalid type specified")
 		os.Exit(1)
@@ -342,29 +351,29 @@ func generateType(field SchemaField) string {
 	}
 }
 
-func generateConfig(output, openapi string) {
-	// Read OpenAPI spec
+func readOpenAPI(openapi string) (*OpenAPISchema, error) {
 	data, err := os.ReadFile(openapi)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read OpenAPI spec: %w", err)
+	}
+
+	var schema OpenAPISchema
+	if err := yaml.Unmarshal(data, &schema); err != nil {
+		return nil, fmt.Errorf("failed to parse OpenAPI spec: %w", err)
+	}
+
+	return &schema, nil
+}
+
+func generateConfig(destination string, openapi string) error {
+	schema, err := readOpenAPI(openapi)
 	if err != nil {
 		fmt.Printf("Error reading OpenAPI spec: %v\n", err)
 		os.Exit(1)
 	}
 
-	var schema OpenAPISchema
-	if err := yaml.Unmarshal(data, &schema); err != nil {
-		fmt.Printf("Error parsing OpenAPI spec: %v\n", err)
-		os.Exit(1)
-	}
-
-	// Generate config file
 	providers := schema.Components.Schemas.Providers.XProviderConfigs
-	if err := generateConfigFile(output, providers); err != nil {
-		fmt.Printf("Error generating config file: %v\n", err)
-		os.Exit(1)
-	}
-}
 
-func generateConfigFile(destination string, providers map[string]ProviderConfig) error {
 	caser := cases.Title(language.English)
 
 	funcMap := template.FuncMap{
@@ -385,32 +394,6 @@ import (
     "github.com/inference-gateway/inference-gateway/providers"
     "github.com/sethvargo/go-envconfig"
 )
-
-// Base provider configuration
-type BaseProviderConfig struct {
-    ID           string              
-    Name         string              
-    URL          string              
-    Token        string              
-    AuthType     string              
-    ExtraHeaders map[string][]string 
-    Endpoints    struct {
-        List     string
-        Generate string
-    }
-}
-
-func (p *BaseProviderConfig) GetExtraHeaders() map[string][]string {
-    return p.ExtraHeaders
-}
-
-func (p *BaseProviderConfig) EndpointList() string {
-    return p.Endpoints.List
-}
-
-func (p *BaseProviderConfig) EndpointGenerate() string {
-    return p.Endpoints.Generate
-}
 
 // Config holds the configuration for the Inference Gateway.
 //
@@ -438,7 +421,7 @@ type Config struct {
     Server *ServerConfig ` + "`env:\", prefix=SERVER_\" description:\"Server configuration\"`" + `
 
     // Providers map
-    Providers map[string]*BaseProviderConfig
+    Providers map[string]*providers.Config
 }
 
 // OIDC configuration
@@ -500,32 +483,13 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
         return Config{}, err
     }
 
-    // Set provider defaults if not configured
-    defaultProviders := map[string]BaseProviderConfig{
-        {{- range $name, $config := .Providers}}
-        providers.{{title $name}}ID: {
-            ID:       providers.{{title $name}}ID,
-            Name:     providers.{{title $name}}DisplayName,
-            URL:      providers.{{title $name}}DefaultBaseURL,
-            AuthType: providers.AuthType{{title $config.AuthType}},
-            {{- if $config.ExtraHeaders}}
-            ExtraHeaders: map[string][]string{
-                {{- range $key, $header := $config.ExtraHeaders}}
-                "{{$key}}": {"{{index $header.Values 0}}"},
-                {{- end}}
-            },
-            {{- end}}
-        },
-        {{- end}}
-    }
-
     // Initialize Providers map if nil
     if cfg.Providers == nil {
-        cfg.Providers = make(map[string]*BaseProviderConfig)
+        cfg.Providers = make(map[string]*providers.Config)
     }
 
     // Set defaults for each provider
-    for id, defaults := range defaultProviders {
+    for id, defaults := range providers.Registry {
         if _, exists := cfg.Providers[id]; !exists {
             providerCfg := defaults
             url, ok := lookuper.Lookup(strings.ToUpper(id) + "_API_URL")
@@ -545,6 +509,83 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
     return *cfg, nil
 }
 `))
+
+	data := struct {
+		Providers map[string]ProviderConfig
+	}{
+		Providers: providers,
+	}
+
+	f, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, data); err != nil {
+		return err
+	}
+
+	// Run go fmt on the generated file
+	cmd := exec.Command("go", "fmt", destination)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to format %s: %w", destination, err)
+	}
+
+	return nil
+}
+
+func generateProvidersRegistry(destination string, openapi string) error {
+	schema, err := readOpenAPI(openapi)
+	if err != nil {
+		fmt.Printf("Error reading OpenAPI spec: %v\n", err)
+		os.Exit(1)
+	}
+
+	providers := schema.Components.Schemas.Providers.XProviderConfigs
+
+	caser := cases.Title(language.English)
+
+	funcMap := template.FuncMap{
+		"title": caser.String,
+	}
+
+	tmpl := template.Must(template.New("registry").
+		Funcs(funcMap).
+		Parse(`package providers
+
+// Base provider configuration
+type Config struct {
+	ID           string
+	Name         string
+	URL          string
+	Token        string
+	AuthType     string
+	ExtraHeaders map[string][]string
+	Endpoints    struct {
+		List     string
+		Generate string
+	}
+}
+
+// The registry of all providers
+var Registry = map[string]Config{
+	{{- range $name, $config := .Providers}}
+	{{title $name}}ID: {
+		ID:       {{title $name}}ID,
+		Name:     {{title $name}}DisplayName,
+		URL:      {{title $name}}DefaultBaseURL,
+		AuthType: AuthType{{title $config.AuthType}},
+		{{- if $config.ExtraHeaders}}
+		ExtraHeaders: map[string][]string{
+			{{- range $key, $header := $config.ExtraHeaders}}
+			"{{$key}}": {"{{index $header.Values 0}}"},
+			{{- end}}
+		},
+		{{- end}}
+	},
+	{{- end}}
+}`))
 
 	data := struct {
 		Providers map[string]ProviderConfig

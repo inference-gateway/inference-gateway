@@ -10,32 +10,6 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
-// Base provider configuration
-type BaseProviderConfig struct {
-	ID           string
-	Name         string
-	URL          string
-	Token        string
-	AuthType     string
-	ExtraHeaders map[string][]string
-	Endpoints    struct {
-		List     string
-		Generate string
-	}
-}
-
-func (p *BaseProviderConfig) GetExtraHeaders() map[string][]string {
-	return p.ExtraHeaders
-}
-
-func (p *BaseProviderConfig) EndpointList() string {
-	return p.Endpoints.List
-}
-
-func (p *BaseProviderConfig) EndpointGenerate() string {
-	return p.Endpoints.Generate
-}
-
 // Config holds the configuration for the Inference Gateway.
 //
 //go:generate go run ../cmd/generate/main.go -type=Env -output=../examples/docker-compose/.env.example
@@ -62,7 +36,7 @@ type Config struct {
 	Server *ServerConfig `env:", prefix=SERVER_" description:"Server configuration"`
 
 	// Providers map
-	Providers map[string]*BaseProviderConfig
+	Providers map[string]*providers.Config
 }
 
 // OIDC configuration
@@ -124,62 +98,13 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 		return Config{}, err
 	}
 
-	// Set provider defaults if not configured
-	defaultProviders := map[string]BaseProviderConfig{
-		providers.AnthropicID: {
-			ID:       providers.AnthropicID,
-			Name:     providers.AnthropicDisplayName,
-			URL:      providers.AnthropicDefaultBaseURL,
-			AuthType: providers.AuthTypeXheader,
-			ExtraHeaders: map[string][]string{
-				"anthropic-version": {"2023-06-01"},
-			},
-		},
-		providers.CloudflareID: {
-			ID:       providers.CloudflareID,
-			Name:     providers.CloudflareDisplayName,
-			URL:      providers.CloudflareDefaultBaseURL,
-			AuthType: providers.AuthTypeBearer,
-		},
-		providers.CohereID: {
-			ID:       providers.CohereID,
-			Name:     providers.CohereDisplayName,
-			URL:      providers.CohereDefaultBaseURL,
-			AuthType: providers.AuthTypeBearer,
-		},
-		providers.GoogleID: {
-			ID:       providers.GoogleID,
-			Name:     providers.GoogleDisplayName,
-			URL:      providers.GoogleDefaultBaseURL,
-			AuthType: providers.AuthTypeQuery,
-		},
-		providers.GroqID: {
-			ID:       providers.GroqID,
-			Name:     providers.GroqDisplayName,
-			URL:      providers.GroqDefaultBaseURL,
-			AuthType: providers.AuthTypeBearer,
-		},
-		providers.OllamaID: {
-			ID:       providers.OllamaID,
-			Name:     providers.OllamaDisplayName,
-			URL:      providers.OllamaDefaultBaseURL,
-			AuthType: providers.AuthTypeNone,
-		},
-		providers.OpenaiID: {
-			ID:       providers.OpenaiID,
-			Name:     providers.OpenaiDisplayName,
-			URL:      providers.OpenaiDefaultBaseURL,
-			AuthType: providers.AuthTypeBearer,
-		},
-	}
-
 	// Initialize Providers map if nil
 	if cfg.Providers == nil {
-		cfg.Providers = make(map[string]*BaseProviderConfig)
+		cfg.Providers = make(map[string]*providers.Config)
 	}
 
 	// Set defaults for each provider
-	for id, defaults := range defaultProviders {
+	for id, defaults := range providers.Registry {
 		if _, exists := cfg.Providers[id]; !exists {
 			providerCfg := defaults
 			url, ok := lookuper.Lookup(strings.ToUpper(id) + "_API_URL")

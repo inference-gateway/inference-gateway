@@ -138,7 +138,7 @@ func TestProxyHandler_UnreachableHost(t *testing.T) {
 	cfg := config.Config{
 		ApplicationName: "inference-gateway-test",
 		Environment:     "test",
-		Providers: map[string]*config.BaseProviderConfig{
+		Providers: map[string]*providers.Config{
 			providers.OllamaID: {
 				ID:       providers.OllamaID,
 				Name:     "Ollama",
