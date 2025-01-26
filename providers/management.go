@@ -29,10 +29,7 @@ type ProviderImpl struct {
 	Token        string
 	AuthType     string
 	ExtraHeaders map[string][]string
-	Endpoints    struct {
-		List     string
-		Generate string
-	}
+	Endpoints    Endpoints
 }
 
 func (p *ProviderImpl) GetID() string {
@@ -116,7 +113,7 @@ func (p *ProviderImpl) GenerateTokens(model string, messages []Message, client h
 
 	// Start with provider's base URL
 	// TODO - move the hardcoded proxy string to config
-	url := "http://localhost:8080/proxy/" + p.EndpointGenerate()
+	url := "/proxy/" + p.EndpointGenerate()
 
 	// Handle provider-specific URL construction
 	providerName := p.GetName()

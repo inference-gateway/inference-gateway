@@ -2,6 +2,12 @@ package providers
 
 import "fmt"
 
+// Endpoints exposed by each provider
+type Endpoints struct {
+	List     string
+	Generate string
+}
+
 // Base provider configuration
 type Config struct {
 	ID           string
@@ -10,10 +16,7 @@ type Config struct {
 	Token        string
 	AuthType     string
 	ExtraHeaders map[string][]string
-	Endpoints    struct {
-		List     string
-		Generate string
-	}
+	Endpoints    Endpoints
 }
 
 // GetProviders returns a list of providers

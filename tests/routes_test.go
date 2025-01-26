@@ -153,10 +153,7 @@ func TestProxyHandler_UnreachableHost(t *testing.T) {
 				URL:      "http://ollama:8080",
 				Token:    "",
 				AuthType: providers.AuthTypeNone,
-				Endpoints: struct {
-					List     string
-					Generate string
-				}{
+				Endpoints: providers.Endpoints{
 					List:     "/v1/models",
 					Generate: "/v1/generate",
 				},

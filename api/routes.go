@@ -183,7 +183,6 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	}
 
 	var response providers.GenerateResponse
-
 	response, err = provider.GenerateTokens(req.Model, req.Messages, router.client)
 	if err != nil {
 		router.logger.Error("failed to generate tokens", err, "provider", provider)
