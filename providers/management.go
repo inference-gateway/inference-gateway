@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 //go:generate mockgen -source=management.go -destination=../tests/mocks/provider.go -package=mocks
@@ -113,12 +114,15 @@ func (p *ProviderImpl) GenerateTokens(model string, messages []Message, client h
 		return GenerateResponse{}, errors.New("provider cannot be nil")
 	}
 
-	// TODO - build provider generate URL
-	var url string
+	// Start with provider's base URL
+	// TODO - move the hardcoded proxy string to config
+	url := "http://localhost:8080/proxy/" + p.EndpointGenerate()
 
+	// Handle provider-specific URL construction
 	providerName := p.GetName()
 	if providerName == "Google" || providerName == "Cloudflare" {
-		// providerGenTokensURL = strings.Replace(providerGenTokensURL, "{model}", req.Model, 1)
+		// Replace model placeholder in URL
+		url = strings.Replace(url, "{model}", model, 1)
 	}
 
 	payload := p.BuildGenTokensRequest(model, messages)

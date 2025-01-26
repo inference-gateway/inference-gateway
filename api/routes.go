@@ -108,9 +108,12 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		router.logger.Error("proxy request failed", err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadGateway)
-		json.NewEncoder(w).Encode(ErrorResponse{
+		err = json.NewEncoder(w).Encode(ErrorResponse{
 			Error: fmt.Sprintf("Failed to reach upstream server: %v", err),
 		})
+		if err != nil {
+			router.logger.Error("failed to write error response", err)
+		}
 	}
 
 	proxy.Director = func(req *http.Request) {
