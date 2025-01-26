@@ -132,6 +132,77 @@ components:
                 type: string
               created:
                 type: integer
+    Config:
+      x-config:
+        general:
+          application_name:
+            env: "APPLICATION_NAME"
+            default: "inference-gateway"
+            description: "The name of the application"
+          environment:
+            env: "ENVIRONMENT"
+            default: "production"
+            description: "The environment"
+          enable_telemetry:
+            env: "ENABLE_TELEMETRY"
+            default: "false"
+            description: "Enable telemetry"
+          enable_auth:
+            env: "ENABLE_AUTH"
+            default: "false"
+            description: "Enable authentication"
+        oidc:
+          issuer_url:
+            env: "OIDC_ISSUER_URL"
+            default: "http://keycloak:8080/realms/inference-gateway-realm"
+            description: "OIDC issuer URL"
+          client_id:
+            env: "OIDC_CLIENT_ID"
+            default: "inference-gateway-client"
+            description: "OIDC client ID"
+            secret: true
+          client_secret:
+            env: "OIDC_CLIENT_SECRET"
+            description: "OIDC client secret"
+            secret: true
+        server:
+          host:
+            env: "SERVER_HOST"
+            default: "0.0.0.0"
+            description: "Server host"
+          port:
+            env: "SERVER_PORT"
+            default: "8080"
+            description: "Server port"
+          read_timeout:
+            env: "SERVER_READ_TIMEOUT"
+            default: "30s"
+            description: "Read timeout"
+          write_timeout:
+            env: "SERVER_WRITE_TIMEOUT"
+            default: "30s"
+            description: "Write timeout"
+          idle_timeout:
+            env: "SERVER_IDLE_TIMEOUT"
+            default: "120s"
+            description: "Idle timeout"
+          tls_cert_path:
+            env: "SERVER_TLS_CERT_PATH"
+            description: "TLS certificate path"
+          tls_key_path:
+            env: "SERVER_TLS_KEY_PATH"
+            description: "TLS key path"
+        providers:
+          type: map
+          key: provider_id
+          values:
+            url:
+              env: "{key}_API_URL"
+              description: "The provider API URL"
+            token:
+              env: "{key}_API_KEY"
+              description: "The provider API key"
+              secret: true
     Providers:
       type: string
       enum:
