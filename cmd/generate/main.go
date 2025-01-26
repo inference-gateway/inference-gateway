@@ -37,16 +37,12 @@ func main() {
 
 	switch _type {
 	case "Env":
-		// comments := parseStructComments("config.go", "Config")
-		// generateEnvExample(output)
+		// dockergen.GenerateEnvExample(output)
 	case "ConfigMap":
-		// comments := parseStructComments("config.go", "Config")
-		// generateConfigMap(output)
+		// kubegen.GenerateConfigMap(output)
 	case "Secret":
-		// comments := parseStructComments("config.go", "Config")
-		// generateSecret(output)
+		// kubegen.GenerateSecret(output)
 	case "MD":
-		// comments := parseStructComments("config.go", "Config")
 		err := mdgen.GenerateConfigurationsMD(output, "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating MD: %v\n", err)
