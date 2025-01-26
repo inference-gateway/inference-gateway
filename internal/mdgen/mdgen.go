@@ -3,8 +3,8 @@ package mdgen
 import (
 	"fmt"
 	"os"
-	"sort"
 	"strings"
+	"text/template"
 
 	"github.com/inference-gateway/inference-gateway/internal/openapi"
 	"golang.org/x/text/cases"
@@ -12,110 +12,69 @@ import (
 )
 
 func GenerateConfigurationsMD(filePath string, oas string) error {
-	// Read OpenAPI spec
 	schema, err := openapi.Read(oas)
 	if err != nil {
 		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
 	}
 
-	configSchema := schema.Components.Schemas.Config.XConfig
-	providers := schema.Components.Schemas.Providers.XProviderConfigs
+	tmpl := `# Inference Gateway Configuration
 
-	var sb strings.Builder
-	sb.WriteString("# Inference Gateway Configuration\n\n")
+{{- range $section := .Sections }}
+{{- range $name, $section := $section }}
+{{- if not (eq $section.Title "Providers") }}
+## {{ $section.Title }}
 
-	// Helper function to write section
-	writeSection := func(title string, fields map[string]openapi.ConfigField) {
-		sb.WriteString(fmt.Sprintf("## %s\n\n", title))
-		sb.WriteString("| Environment Variable | Default Value | Description |\n")
-		sb.WriteString("|---------------------|---------------|-------------|\n")
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+{{- range $setting := $section.Settings }}
+{{- range $field := $setting }}
+| {{ $field.Env }} | ` + "`{{ if $field.Default }}{{ $field.Default }}{{ else }}\"\"{{ end }}`" + ` | {{ $field.Description }} |
+{{- end }}
+{{- end }}
 
-		// Sort keys for consistent output
-		keys := make([]string, 0, len(fields))
-		for k := range fields {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
+{{- end }}
+{{- end }}
+{{- end }}
+## API URLs and keys
 
-		for _, key := range keys {
-			field := fields[key]
-			defaultVal := "`" + field.Default + "`"
-			if field.Default == "" {
-				defaultVal = "`\"\"`"
-			}
-			sb.WriteString(fmt.Sprintf("| %s | %s | %s |\n",
-				field.Env,
-				defaultVal,
-				field.Description,
-			))
-		}
-		sb.WriteString("\n")
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+{{- range $name, $provider := .Providers }}
+| {{ upper $name }}_API_URL | ` + "`{{ $provider.URL }}`" + ` | The URL for {{ title $name }} API |
+{{- end }}
+`
+
+	// Create template with functions
+	funcMap := template.FuncMap{
+		"upper": strings.ToUpper,
+		"title": cases.Title(language.English).String,
 	}
 
-	// Write General Settings
-	generalFields := map[string]openapi.ConfigField{
-		"application_name": configSchema.General.ApplicationName,
-		"environment":      configSchema.General.Environment,
-		"enable_telemetry": configSchema.General.EnableTelemetry,
-		"enable_auth":      configSchema.General.EnableAuth,
+	t, err := template.New("configurations").Funcs(funcMap).Parse(tmpl)
+	if err != nil {
+		return fmt.Errorf("failed to parse template: %w", err)
 	}
-	writeSection("General Settings", generalFields)
 
-	// Write OIDC Settings
-	oidcFields := map[string]openapi.ConfigField{
-		"issuer_url":    configSchema.OIDC.IssuerURL,
-		"client_id":     configSchema.OIDC.ClientID,
-		"client_secret": configSchema.OIDC.ClientSecret,
+	// Create file
+	f, err := os.Create(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
 	}
-	writeSection("OIDC Settings", oidcFields)
+	defer f.Close()
 
-	// Write Server Settings
-	serverFields := map[string]openapi.ConfigField{
-		"host":          configSchema.Server.Host,
-		"port":          configSchema.Server.Port,
-		"read_timeout":  configSchema.Server.ReadTimeout,
-		"write_timeout": configSchema.Server.WriteTimeout,
-		"idle_timeout":  configSchema.Server.IdleTimeout,
-		"tls_cert_path": configSchema.Server.TLSCertPath,
-		"tls_key_path":  configSchema.Server.TLSKeyPath,
+	// Prepare template data
+	data := struct {
+		Sections  []map[string]openapi.Section
+		Providers map[string]openapi.ProviderConfig
+	}{
+		Sections:  schema.Components.Schemas.Config.XConfig.Sections,
+		Providers: schema.Components.Schemas.Providers.XProviderConfigs,
 	}
-	writeSection("Server Settings", serverFields)
 
-	// Write Provider Settings
-	sb.WriteString("## API URLs and keys\n\n")
-	sb.WriteString("| Environment Variable | Default Value | Description |\n")
-	sb.WriteString("|---------------------|---------------|-------------|\n")
-
-	// Sort provider names for consistent output
-	providerNames := make([]string, 0, len(providers))
-	for name := range providers {
-		providerNames = append(providerNames, name)
+	// Execute template
+	if err := t.Execute(f, data); err != nil {
+		return fmt.Errorf("failed to execute template: %w", err)
 	}
-	sort.Strings(providerNames)
 
-	// Write provider configurations
-	caser := cases.Title(language.English)
-	for _, name := range providerNames {
-		config := providers[name]
-		urlVar := strings.ToUpper(name) + "_API_URL"
-		tokenVar := strings.ToUpper(name) + "_API_KEY"
-
-		// Write URL
-		sb.WriteString(fmt.Sprintf("| %s | `%s` | The URL for %s API |\n",
-			urlVar,
-			config.URL,
-			caser.String(name),
-		))
-
-		// Write Token if provider requires authentication
-		if config.AuthType != "none" {
-			sb.WriteString(fmt.Sprintf("| %s | `\"\"` | The Access token for %s API |\n",
-				tokenVar,
-				caser.String(name),
-			))
-		}
-	}
-	sb.WriteString("\n")
-
-	return os.WriteFile(filePath, []byte(sb.String()), 0644)
+	return nil
 }
