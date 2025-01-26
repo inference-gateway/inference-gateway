@@ -32,32 +32,35 @@ func main() {
 
 	switch _type {
 	case "Env":
+		fmt.Printf("Generating Dot Env to %s\n", output)
 		err := dockergen.GenerateEnvExample(output, "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating env example: %v\n", err)
 			os.Exit(1)
 		}
 	case "ConfigMap":
-		fmt.Printf("Generating ConfigMap to %s\n", output)
+		fmt.Printf("Generating Kubernetes ConfigMap to %s\n", output)
 		err := kubegen.GenerateConfigMap(output, "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating config map: %v\n", err)
 			os.Exit(1)
 		}
 	case "Secret":
-		fmt.Printf("Generating Secret to %s\n", output)
+		fmt.Printf("Generating Kubernetes Secret to %s\n", output)
 		err := kubegen.GenerateSecret(output, "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating secret: %v\n", err)
 			os.Exit(1)
 		}
 	case "MD":
+		fmt.Printf("Generating Markdown to %s\n", output)
 		err := mdgen.GenerateConfigurationsMD(output, "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating MD: %v\n", err)
 			os.Exit(1)
 		}
 	case "Providers":
+		fmt.Printf("Generating Providers to directory %s\n", output)
 		if err := codegen.GenerateProviders(output, "openapi.yaml"); err != nil {
 			fmt.Printf("Error generating providers: %v\n", err)
 			os.Exit(1)
