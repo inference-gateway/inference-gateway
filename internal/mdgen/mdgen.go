@@ -11,7 +11,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-func GenerateMD(filePath string, oas string) error {
+func GenerateConfigurationsMD(filePath string, oas string) error {
 	// Read OpenAPI spec
 	schema, err := openapi.Read(oas)
 	if err != nil {

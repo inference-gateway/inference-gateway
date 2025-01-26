@@ -47,7 +47,7 @@ func main() {
 		// generateSecret(output)
 	case "MD":
 		// comments := parseStructComments("config.go", "Config")
-		err := mdgen.GenerateMD(output, "openapi.yaml")
+		err := mdgen.GenerateConfigurationsMD(output, "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating MD: %v\n", err)
 			os.Exit(1)
