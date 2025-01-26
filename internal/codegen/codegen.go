@@ -207,6 +207,83 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	return nil
 }
 
+func GenerateProvidersRegistry(destination string, oas string) error {
+	schema, err := openapi.Read(oas)
+	if err != nil {
+		fmt.Printf("Error reading OpenAPI spec: %v\n", err)
+		os.Exit(1)
+	}
+
+	providers := schema.Components.Schemas.Providers.XProviderConfigs
+
+	caser := cases.Title(language.English)
+
+	funcMap := template.FuncMap{
+		"title": caser.String,
+	}
+
+	tmpl := template.Must(template.New("registry").
+		Funcs(funcMap).
+		Parse(`package providers
+
+// Base provider configuration
+type Config struct {
+	ID           string
+	Name         string
+	URL          string
+	Token        string
+	AuthType     string
+	ExtraHeaders map[string][]string
+	Endpoints    struct {
+		List     string
+		Generate string
+	}
+}
+
+// The registry of all providers
+var Registry = map[string]Config{
+	{{- range $name, $config := .Providers}}
+	{{title $name}}ID: {
+		ID:       {{title $name}}ID,
+		Name:     {{title $name}}DisplayName,
+		URL:      {{title $name}}DefaultBaseURL,
+		AuthType: AuthType{{title $config.AuthType}},
+		{{- if $config.ExtraHeaders}}
+		ExtraHeaders: map[string][]string{
+			{{- range $key, $header := $config.ExtraHeaders}}
+			"{{$key}}": {"{{index $header.Values 0}}"},
+			{{- end}}
+		},
+		{{- end}}
+	},
+	{{- end}}
+}`))
+
+	data := struct {
+		Providers map[string]openapi.ProviderConfig
+	}{
+		Providers: providers,
+	}
+
+	f, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, data); err != nil {
+		return err
+	}
+
+	// Run go fmt on the generated file
+	cmd := exec.Command("go", "fmt", destination)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to format %s: %w", destination, err)
+	}
+
+	return nil
+}
+
 func generateProviderFile(destination, name string, config openapi.ProviderConfig) error {
 	caser := cases.Title(language.English)
 
