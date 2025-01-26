@@ -3,9 +3,9 @@ version: "3"
 
 tasks:
   generate:
-    desc: "Generate the gateway"
+    desc: "Generate the gateway from OpenAPI Spec"
     cmds:
-      # - go run cmd/generate/main.go -type Providers -output providers
+      - go run cmd/generate/main.go -type Providers -output providers
       - go run cmd/generate/main.go -type Config -output config/config.go
       - go run cmd/generate/main.go -type MD -output Configurations.md
       - go run cmd/generate/main.go -type Secret -output examples/kubernetes/basic/inference-gateway/secret.yaml
