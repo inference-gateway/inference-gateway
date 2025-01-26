@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/inference-gateway/inference-gateway/internal/codegen"
+	"github.com/inference-gateway/inference-gateway/internal/dockergen"
 	"github.com/inference-gateway/inference-gateway/internal/kubegen"
 	"github.com/inference-gateway/inference-gateway/internal/mdgen"
 )
@@ -31,7 +32,11 @@ func main() {
 
 	switch _type {
 	case "Env":
-		// dockergen.GenerateEnvExample(output)
+		err := dockergen.GenerateEnvExample(output, "openapi.yaml")
+		if err != nil {
+			fmt.Printf("Error generating env example: %v\n", err)
+			os.Exit(1)
+		}
 	case "ConfigMap":
 		fmt.Printf("Generating ConfigMap to %s\n", output)
 		err := kubegen.GenerateConfigMap(output, "openapi.yaml")
