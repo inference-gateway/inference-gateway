@@ -3,18 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"html/template"
 	"os/exec"
 	"sort"
 
 	"os"
-	"reflect"
 	"strings"
 
-	config "github.com/inference-gateway/inference-gateway/config"
+	"github.com/inference-gateway/inference-gateway/internal/mdgen"
+	"github.com/inference-gateway/inference-gateway/internal/openapi"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
@@ -24,76 +21,6 @@ var (
 	output string
 	_type  string
 )
-
-// OpenAPI schema structures
-type OpenAPISchema struct {
-	Components struct {
-		Schemas struct {
-			Providers struct {
-				XProviderConfigs map[string]ProviderConfig `yaml:"x-provider-configs"`
-			} `yaml:"Providers"`
-		}
-	}
-}
-
-// ExtraHeader can be either string or []string
-type ExtraHeader struct {
-	Values []string
-}
-
-// UnmarshalYAML implements custom unmarshaling for ExtraHeader
-func (h *ExtraHeader) UnmarshalYAML(value *yaml.Node) error {
-	switch value.Kind {
-	case yaml.ScalarNode:
-		h.Values = []string{value.Value}
-	case yaml.SequenceNode:
-		var values []string
-		if err := value.Decode(&values); err != nil {
-			return err
-		}
-		h.Values = values
-	default:
-		return fmt.Errorf("unexpected header value type")
-	}
-	return nil
-}
-
-type ProviderEndpoints struct {
-	List     string `yaml:"list"`
-	Generate string `yaml:"generate"`
-}
-
-// Structures for OpenAPI schema parsing
-type SchemaProperty struct {
-	Type       string                 `yaml:"type"`
-	Properties map[string]SchemaField `yaml:"properties"`
-	Items      *SchemaField           `yaml:"items"`
-	Ref        string                 `yaml:"$ref"`
-}
-
-type SchemaField struct {
-	Type       string                 `yaml:"type"`
-	Properties map[string]SchemaField `yaml:"properties"`
-	Items      *SchemaField           `yaml:"items"`
-	Ref        string                 `yaml:"$ref"`
-}
-
-type EndpointSchema struct {
-	Endpoint string `yaml:"endpoint"`
-	Method   string `yaml:"method"`
-	Schema   struct {
-		Request  SchemaProperty `yaml:"request"`
-		Response SchemaProperty `yaml:"response"`
-	} `yaml:"schema"`
-}
-
-type ProviderConfig struct {
-	ID           string                    `yaml:"id"`
-	URL          string                    `yaml:"url"`
-	AuthType     string                    `yaml:"auth_type"`
-	ExtraHeaders map[string]ExtraHeader    `yaml:"extra_headers"`
-	Endpoints    map[string]EndpointSchema `yaml:"endpoints"`
-}
 
 func init() {
 	flag.StringVar(&output, "output", "", "Path to the output file")
@@ -111,16 +38,20 @@ func main() {
 	switch _type {
 	case "Env":
 		// comments := parseStructComments("config.go", "Config")
-		generateEnvExample(output)
+		// generateEnvExample(output)
 	case "ConfigMap":
 		// comments := parseStructComments("config.go", "Config")
-		generateConfigMap(output)
+		// generateConfigMap(output)
 	case "Secret":
 		// comments := parseStructComments("config.go", "Config")
-		generateSecret(output)
+		// generateSecret(output)
 	case "MD":
-		comments := parseStructComments("config.go", "Config")
-		generateMD(output, comments)
+		// comments := parseStructComments("config.go", "Config")
+		err := mdgen.GenerateMD(output, "openapi.yaml")
+		if err != nil {
+			fmt.Printf("Error generating MD: %v\n", err)
+			os.Exit(1)
+		}
 	case "Providers":
 		if err := generateProviders(output, "openapi.yaml"); err != nil {
 			fmt.Printf("Error generating providers: %v\n", err)
@@ -143,86 +74,6 @@ func main() {
 	}
 }
 
-func parseStructComments(filename, structName string) map[string]string {
-	fset := token.NewFileSet()
-	node, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
-	if err != nil {
-		fmt.Printf("Error parsing file: %v\n", err)
-		os.Exit(1)
-	}
-
-	comments := make(map[string]string)
-	ast.Inspect(node, func(n ast.Node) bool {
-		ts, ok := n.(*ast.TypeSpec)
-		if !ok || ts.Name.Name != structName {
-			return true
-		}
-
-		st, ok := ts.Type.(*ast.StructType)
-		if !ok {
-			return true
-		}
-
-		for _, field := range st.Fields.List {
-			if field.Doc != nil {
-				for _, comment := range field.Doc.List {
-					comments[field.Names[0].Name] = strings.TrimSpace(strings.TrimPrefix(comment.Text, "//"))
-				}
-			}
-		}
-		return false
-	})
-
-	return comments
-}
-
-func generateMD(filePath string, comments map[string]string) {
-	var cfg config.Config
-	v := reflect.ValueOf(cfg)
-	t := v.Type()
-
-	var sb strings.Builder
-	sb.WriteString("# Inference Gateway Configuration\n")
-
-	currentGroup := ""
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		envTag := field.Tag.Get("env")
-		if envTag == "" {
-			continue
-		}
-		envParts := strings.Split(envTag, ",")
-		envName := envParts[0]
-		description := field.Tag.Get("description")
-		defaultValue := ""
-		for _, part := range envParts {
-			part = strings.Trim(part, " ")
-			if strings.HasPrefix(part, "default=") {
-				defaultValue = strings.TrimPrefix(part, "default=")
-				break
-			}
-		}
-
-		group := comments[field.Name]
-		if group != currentGroup {
-			if group != "" {
-				sb.WriteString("\n")
-				sb.WriteString(fmt.Sprintf("## %s\n\n", group))
-				sb.WriteString("| Key | Default Value | Description |\n")
-				sb.WriteString("| --- | ------------- | ----------- |\n")
-				currentGroup = group
-			}
-		}
-
-		sb.WriteString(fmt.Sprintf("| %s | %s | %s |\n", envName, defaultValue, description))
-	}
-
-	err := os.WriteFile(filePath, []byte(sb.String()), 0644)
-	if err != nil {
-		fmt.Printf("Error writing %s: %v\n", filePath, err)
-	}
-}
-
 func generateProviders(output string, openapiPath string) error {
 	// Read OpenAPI spec
 	data, err := os.ReadFile(openapiPath)
@@ -230,7 +81,7 @@ func generateProviders(output string, openapiPath string) error {
 		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
 	}
 
-	var schema OpenAPISchema
+	var schema openapi.OpenAPISchema
 	if err := yaml.Unmarshal(data, &schema); err != nil {
 		return fmt.Errorf("failed to parse OpenAPI spec: %w", err)
 	}
@@ -247,7 +98,7 @@ func generateProviders(output string, openapiPath string) error {
 	return nil
 }
 
-func generateProviderFile(destination, name string, config ProviderConfig) error {
+func generateProviderFile(destination, name string, config openapi.ProviderConfig) error {
 	caser := cases.Title(language.English)
 
 	funcMap := template.FuncMap{
@@ -298,7 +149,7 @@ type GenerateResponse{{title $.Name}} struct {
 
 	data := struct {
 		Name   string
-		Config ProviderConfig
+		Config openapi.ProviderConfig
 	}{
 		Name:   name,
 		Config: config,
@@ -324,7 +175,7 @@ type GenerateResponse{{title $.Name}} struct {
 	return nil
 }
 
-func generateType(field SchemaField) string {
+func generateType(field openapi.SchemaField) string {
 	switch field.Type {
 	case "string":
 		return "string"
@@ -351,22 +202,8 @@ func generateType(field SchemaField) string {
 	}
 }
 
-func readOpenAPI(openapi string) (*OpenAPISchema, error) {
-	data, err := os.ReadFile(openapi)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read OpenAPI spec: %w", err)
-	}
-
-	var schema OpenAPISchema
-	if err := yaml.Unmarshal(data, &schema); err != nil {
-		return nil, fmt.Errorf("failed to parse OpenAPI spec: %w", err)
-	}
-
-	return &schema, nil
-}
-
-func generateConfig(destination string, openapi string) error {
-	schema, err := readOpenAPI(openapi)
+func generateConfig(destination string, oas string) error {
+	schema, err := openapi.Read(oas)
 	if err != nil {
 		fmt.Printf("Error reading OpenAPI spec: %v\n", err)
 		os.Exit(1)
@@ -511,7 +348,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 `))
 
 	data := struct {
-		Providers map[string]ProviderConfig
+		Providers map[string]openapi.ProviderConfig
 	}{
 		Providers: providers,
 	}
@@ -535,8 +372,8 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	return nil
 }
 
-func generateProvidersRegistry(destination string, openapi string) error {
-	schema, err := readOpenAPI(openapi)
+func generateProvidersRegistry(destination string, oas string) error {
+	schema, err := openapi.Read(oas)
 	if err != nil {
 		fmt.Printf("Error reading OpenAPI spec: %v\n", err)
 		os.Exit(1)
@@ -588,7 +425,7 @@ var Registry = map[string]Config{
 }`))
 
 	data := struct {
-		Providers map[string]ProviderConfig
+		Providers map[string]openapi.ProviderConfig
 	}{
 		Providers: providers,
 	}
@@ -612,189 +449,189 @@ var Registry = map[string]Config{
 	return nil
 }
 
-func generateFromConfig(cfg *config.Config) map[string]FieldInfo {
-	fields := make(map[string]FieldInfo)
-	t := reflect.TypeOf(*cfg)
+// func generateFromConfig(cfg *config.Config) map[string]FieldInfo {
+// 	fields := make(map[string]FieldInfo)
+// 	t := reflect.TypeOf(*cfg)
 
-	// Process base struct fields
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		tag := field.Tag.Get("env")
-		desc := field.Tag.Get("description")
-		if tag == "" {
-			continue
-		}
+// 	// Process base struct fields
+// 	for i := 0; i < t.NumField(); i++ {
+// 		field := t.Field(i)
+// 		tag := field.Tag.Get("env")
+// 		desc := field.Tag.Get("description")
+// 		if tag == "" {
+// 			continue
+// 		}
 
-		// Parse env tag
-		envName, defaultValue, isSecret := parseEnvTag(tag)
-		fields[field.Name] = FieldInfo{
-			EnvName:      envName,
-			DefaultValue: defaultValue,
-			Description:  desc,
-			IsSecret:     isSecret,
-		}
+// 		// Parse env tag
+// 		envName, defaultValue, isSecret := parseEnvTag(tag)
+// 		fields[field.Name] = FieldInfo{
+// 			EnvName:      envName,
+// 			DefaultValue: defaultValue,
+// 			Description:  desc,
+// 			IsSecret:     isSecret,
+// 		}
 
-		// Handle nested structs (OIDC, Server, Provider configs)
-		if field.Type.Kind() == reflect.Ptr {
-			nestedFields := processNestedStruct(field)
-			for k, v := range nestedFields {
-				fields[k] = v
-			}
-		}
-	}
-	return fields
-}
+// 		// Handle nested structs (OIDC, Server, Provider configs)
+// 		if field.Type.Kind() == reflect.Ptr {
+// 			nestedFields := processNestedStruct(field)
+// 			for k, v := range nestedFields {
+// 				fields[k] = v
+// 			}
+// 		}
+// 	}
+// 	return fields
+// }
 
-func processNestedStruct(field reflect.StructField) map[string]FieldInfo {
-	fields := make(map[string]FieldInfo)
+// func processNestedStruct(field reflect.StructField) map[string]FieldInfo {
+// 	fields := make(map[string]FieldInfo)
 
-	structType := field.Type.Elem()
-	prefix := ""
+// 	structType := field.Type.Elem()
+// 	prefix := ""
 
-	// Extract clean prefix from env tag
-	if tag := field.Tag.Get("env"); tag != "" {
-		parts := strings.Split(tag, ",")
-		for _, part := range parts {
-			part = strings.TrimSpace(part)
-			if strings.HasPrefix(part, "prefix=") {
-				prefix = strings.Trim(strings.TrimPrefix(part, "prefix="), "\"")
-				break
-			}
-		}
-	}
+// 	// Extract clean prefix from env tag
+// 	if tag := field.Tag.Get("env"); tag != "" {
+// 		parts := strings.Split(tag, ",")
+// 		for _, part := range parts {
+// 			part = strings.TrimSpace(part)
+// 			if strings.HasPrefix(part, "prefix=") {
+// 				prefix = strings.Trim(strings.TrimPrefix(part, "prefix="), "\"")
+// 				break
+// 			}
+// 		}
+// 	}
 
-	// Process nested struct fields
-	for i := 0; i < structType.NumField(); i++ {
-		nestedField := structType.Field(i)
-		tag := nestedField.Tag.Get("env")
-		desc := nestedField.Tag.Get("description")
+// 	// Process nested struct fields
+// 	for i := 0; i < structType.NumField(); i++ {
+// 		nestedField := structType.Field(i)
+// 		tag := nestedField.Tag.Get("env")
+// 		desc := nestedField.Tag.Get("description")
 
-		if tag == "" {
-			continue
-		}
+// 		if tag == "" {
+// 			continue
+// 		}
 
-		// Parse env tag without prefix=
-		envName, defaultValue, isSecret := parseEnvTag(tag)
+// 		// Parse env tag without prefix=
+// 		envName, defaultValue, isSecret := parseEnvTag(tag)
 
-		// Add clean prefix to env name
-		if prefix != "" {
-			envName = prefix + envName
-		}
+// 		// Add clean prefix to env name
+// 		if prefix != "" {
+// 			envName = prefix + envName
+// 		}
 
-		fields[nestedField.Name] = FieldInfo{
-			EnvName:      envName,
-			DefaultValue: defaultValue,
-			Description:  desc,
-			IsSecret:     isSecret,
-		}
+// 		fields[nestedField.Name] = FieldInfo{
+// 			EnvName:      envName,
+// 			DefaultValue: defaultValue,
+// 			Description:  desc,
+// 			IsSecret:     isSecret,
+// 		}
 
-		// Handle nested struct fields recursively
-		if nestedField.Type.Kind() == reflect.Ptr {
-			nestedFields := processNestedStruct(nestedField)
-			for k, v := range nestedFields {
-				fields[k] = v
-			}
-		}
-	}
+// 		// Handle nested struct fields recursively
+// 		if nestedField.Type.Kind() == reflect.Ptr {
+// 			nestedFields := processNestedStruct(nestedField)
+// 			for k, v := range nestedFields {
+// 				fields[k] = v
+// 			}
+// 		}
+// 	}
 
-	return fields
-}
+// 	return fields
+// }
 
-func generateEnvExample(filePath string) error {
-	cfg := &config.Config{}
-	fields := generateFromConfig(cfg)
+// func generateEnvExample(filePath string) error {
+// 	cfg := &config.Config{}
+// 	fields := generateFromConfig(cfg)
 
-	var sb strings.Builder
-	for _, field := range fields {
-		if field.Description != "" {
-			sb.WriteString(fmt.Sprintf("# %s\n", field.Description))
-		}
-		sb.WriteString(fmt.Sprintf("%s=%s\n", field.EnvName, field.DefaultValue))
-	}
+// 	var sb strings.Builder
+// 	for _, field := range fields {
+// 		if field.Description != "" {
+// 			sb.WriteString(fmt.Sprintf("# %s\n", field.Description))
+// 		}
+// 		sb.WriteString(fmt.Sprintf("%s=%s\n", field.EnvName, field.DefaultValue))
+// 	}
 
-	return os.WriteFile(filePath, []byte(sb.String()), 0644)
-}
+// 	return os.WriteFile(filePath, []byte(sb.String()), 0644)
+// }
 
-func generateConfigMap(filePath string) error {
-	cfg := &config.Config{}
-	fields := generateFromConfig(cfg)
+// func generateConfigMap(filePath string) error {
+// 	cfg := &config.Config{}
+// 	fields := generateFromConfig(cfg)
 
-	// Group fields by category
-	general := make(map[string]FieldInfo)
-	server := make(map[string]FieldInfo)
-	api := make(map[string]FieldInfo)
+// 	// Group fields by category
+// 	general := make(map[string]FieldInfo)
+// 	server := make(map[string]FieldInfo)
+// 	api := make(map[string]FieldInfo)
 
-	// Provider prefixes to ensure we catch all
-	providers := []string{
-		"OLLAMA_",
-		"GROQ_",
-		"OPENAI_",
-		"GOOGLE_",
-		"CLOUDFLARE_",
-		"COHERE_",
-		"ANTHROPIC_",
-	}
+// 	// Provider prefixes to ensure we catch all
+// 	providers := []string{
+// 		"OLLAMA_",
+// 		"GROQ_",
+// 		"OPENAI_",
+// 		"GOOGLE_",
+// 		"CLOUDFLARE_",
+// 		"COHERE_",
+// 		"ANTHROPIC_",
+// 	}
 
-	for _, field := range fields {
-		if field.IsSecret {
-			continue
-		}
+// 	for _, field := range fields {
+// 		if field.IsSecret {
+// 			continue
+// 		}
 
-		// Check if field belongs to a provider
-		isProviderField := false
-		for _, prefix := range providers {
-			if strings.HasPrefix(field.EnvName, prefix) {
-				if strings.HasSuffix(field.EnvName, "_API_URL") {
-					api[field.EnvName] = field
-					isProviderField = true
-					break
-				}
-			}
-		}
+// 		// Check if field belongs to a provider
+// 		isProviderField := false
+// 		for _, prefix := range providers {
+// 			if strings.HasPrefix(field.EnvName, prefix) {
+// 				if strings.HasSuffix(field.EnvName, "_API_URL") {
+// 					api[field.EnvName] = field
+// 					isProviderField = true
+// 					break
+// 				}
+// 			}
+// 		}
 
-		// If not a provider field, categorize normally
-		if !isProviderField {
-			switch {
-			case strings.HasPrefix(field.EnvName, "SERVER_"):
-				server[field.EnvName] = field
-			case strings.HasPrefix(field.EnvName, "OIDC_"):
-				if !strings.Contains(field.EnvName, "SECRET") {
-					general[field.EnvName] = field
-				}
-			case !strings.Contains(field.EnvName, "API_KEY") &&
-				!strings.Contains(field.EnvName, "TOKEN"):
-				general[field.EnvName] = field
-			}
-		}
-	}
+// 		// If not a provider field, categorize normally
+// 		if !isProviderField {
+// 			switch {
+// 			case strings.HasPrefix(field.EnvName, "SERVER_"):
+// 				server[field.EnvName] = field
+// 			case strings.HasPrefix(field.EnvName, "OIDC_"):
+// 				if !strings.Contains(field.EnvName, "SECRET") {
+// 					general[field.EnvName] = field
+// 				}
+// 			case !strings.Contains(field.EnvName, "API_KEY") &&
+// 				!strings.Contains(field.EnvName, "TOKEN"):
+// 				general[field.EnvName] = field
+// 			}
+// 		}
+// 	}
 
-	var sb strings.Builder
-	sb.WriteString("---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n")
-	sb.WriteString("  name: inference-gateway\n")
-	sb.WriteString("  namespace: inference-gateway\n")
-	sb.WriteString("  labels:\n    app: inference-gateway\n")
-	sb.WriteString("data:\n")
+// 	var sb strings.Builder
+// 	sb.WriteString("---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n")
+// 	sb.WriteString("  name: inference-gateway\n")
+// 	sb.WriteString("  namespace: inference-gateway\n")
+// 	sb.WriteString("  labels:\n    app: inference-gateway\n")
+// 	sb.WriteString("data:\n")
 
-	// Write general settings
-	if len(general) > 0 {
-		sb.WriteString("  # General settings\n")
-		writeFields(&sb, general)
-	}
+// 	// Write general settings
+// 	if len(general) > 0 {
+// 		sb.WriteString("  # General settings\n")
+// 		writeFields(&sb, general)
+// 	}
 
-	// Write server settings
-	if len(server) > 0 {
-		sb.WriteString("  # Server settings\n")
-		writeFields(&sb, server)
-	}
+// 	// Write server settings
+// 	if len(server) > 0 {
+// 		sb.WriteString("  # Server settings\n")
+// 		writeFields(&sb, server)
+// 	}
 
-	// Write API URLs
-	if len(api) > 0 {
-		sb.WriteString("  # API URLs and keys\n")
-		writeFields(&sb, api)
-	}
+// 	// Write API URLs
+// 	if len(api) > 0 {
+// 		sb.WriteString("  # API URLs and keys\n")
+// 		writeFields(&sb, api)
+// 	}
 
-	return os.WriteFile(filePath, []byte(sb.String()), 0644)
-}
+// 	return os.WriteFile(filePath, []byte(sb.String()), 0644)
+// }
 
 func writeFields(sb *strings.Builder, fields map[string]FieldInfo) {
 	keys := make([]string, 0, len(fields))
@@ -815,24 +652,24 @@ func writeFields(sb *strings.Builder, fields map[string]FieldInfo) {
 	}
 }
 
-func generateSecret(filePath string) error {
-	cfg := &config.Config{}
-	fields := generateFromConfig(cfg)
+// func generateSecret(filePath string) error {
+// 	cfg := &config.Config{}
+// 	fields := generateFromConfig(cfg)
 
-	var sb strings.Builder
-	sb.WriteString("apiVersion: v1\nkind: Secret\nmetadata:\n  name: inference-gateway\ntype: Opaque\nstringData:\n")
+// 	var sb strings.Builder
+// 	sb.WriteString("apiVersion: v1\nkind: Secret\nmetadata:\n  name: inference-gateway\ntype: Opaque\nstringData:\n")
 
-	for _, field := range fields {
-		if field.IsSecret {
-			if field.Description != "" {
-				sb.WriteString(fmt.Sprintf("  # %s\n", field.Description))
-			}
-			sb.WriteString(fmt.Sprintf("  %s: \"\"\n", field.EnvName))
-		}
-	}
+// 	for _, field := range fields {
+// 		if field.IsSecret {
+// 			if field.Description != "" {
+// 				sb.WriteString(fmt.Sprintf("  # %s\n", field.Description))
+// 			}
+// 			sb.WriteString(fmt.Sprintf("  %s: \"\"\n", field.EnvName))
+// 		}
+// 	}
 
-	return os.WriteFile(filePath, []byte(sb.String()), 0644)
-}
+// 	return os.WriteFile(filePath, []byte(sb.String()), 0644)
+// }
 
 type FieldInfo struct {
 	EnvName      string
