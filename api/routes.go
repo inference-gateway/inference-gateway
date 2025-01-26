@@ -69,14 +69,16 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	// Setup authentication headers or query params
 	token := provider.GetToken()
 	switch provider.GetAuthType() {
-	case "bearer":
+	case providers.AuthTypeBearer:
 		c.Request.Header.Set("Authorization", "Bearer "+token)
-	case "xheader":
+	case providers.AuthTypeXheader:
 		c.Request.Header.Set("x-api-key", token)
-	case "query":
+	case providers.AuthTypeQuery:
 		query := c.Request.URL.Query()
 		query.Set("key", token)
 		c.Request.URL.RawQuery = query.Encode()
+	case providers.AuthTypeNone:
+		// Do Nothing
 	default:
 		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
 		return

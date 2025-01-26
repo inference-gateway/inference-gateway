@@ -3,6 +3,7 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -132,9 +133,16 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 func TestProxyHandler_UnreachableHost(t *testing.T) {
 	// Setup
 	r, mockLogger := setupTestRouter(t)
-	mockLogger.EXPECT().Error("proxy request failed", gomock.Any())
 
-	// Configure test router with unreachable host
+	// Setup logger expectation with specific error message
+	mockLogger.EXPECT().Error("proxy request failed", gomock.Any()).Times(1)
+
+	// Create custom transport that simulates network failure
+	failingTransport := &mockTransport{
+		err: fmt.Errorf("connection refused"),
+	}
+
+	// Configure test router with failing client
 	cfg := config.Config{
 		ApplicationName: "inference-gateway-test",
 		Environment:     "test",
@@ -144,7 +152,7 @@ func TestProxyHandler_UnreachableHost(t *testing.T) {
 				Name:     "Ollama",
 				URL:      "http://ollama:8080",
 				Token:    "",
-				AuthType: "none",
+				AuthType: providers.AuthTypeNone,
 				Endpoints: struct {
 					List     string
 					Generate string
@@ -158,21 +166,44 @@ func TestProxyHandler_UnreachableHost(t *testing.T) {
 
 	var l logger.Logger = mockLogger
 	router := api.NewRouter(cfg, &l, &http.Client{
-		Timeout: 1 * time.Second,
+		Transport: failingTransport,
+		Timeout:   1 * time.Second,
 	})
 
 	r.Any("/proxy/:provider/*proxyPath", router.ProxyHandler)
 
-	// Execute
-	w := httptest.NewRecorder()
+	// Create custom response writer that skips CloseNotifier
+	w := &customResponseWriter{
+		ResponseRecorder: httptest.NewRecorder(),
+	}
+
+	// Execute request
 	req := httptest.NewRequest(http.MethodGet, "/proxy/ollama/v1/models", nil)
 	r.ServeHTTP(w, req)
 
-	// Assert
+	// Assert response
 	assert.Equal(t, http.StatusBadGateway, w.Code)
 
 	var response api.ErrorResponse
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Contains(t, response.Error, "Failed to reach upstream server")
+}
+
+// Custom response writer that skips CloseNotifier
+type customResponseWriter struct {
+	*httptest.ResponseRecorder
+}
+
+func (w *customResponseWriter) CloseNotify() <-chan bool {
+	return nil
+}
+
+// Mock transport that always fails
+type mockTransport struct {
+	err error
+}
+
+func (t *mockTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, t.err
 }
