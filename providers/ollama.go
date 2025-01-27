@@ -1,7 +1,21 @@
 package providers
 
-type GetModelsResponseOllama struct {
-	Models []interface{} `json:"models"`
+type ListModelsResponseOllama struct {
+	Models []Model `json:"models"`
+}
+
+func (l *ListModelsResponseOllama) Transform() ListModelsResponse {
+	var models []map[string]interface{}
+	for _, model := range l.Models {
+		models = append(models, map[string]interface{}{
+			"name": model.Name,
+			"id":   OllamaID,
+		})
+	}
+	return ListModelsResponse{
+		Provider: OllamaDisplayName,
+		Models:   models,
+	}
 }
 
 type GenerateRequestOllama struct {

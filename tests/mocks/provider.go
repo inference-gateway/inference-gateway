@@ -42,18 +42,18 @@ func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 }
 
 // GenerateTokens mocks base method.
-func (m *MockProvider) GenerateTokens(model string, messages []providers.Message, client http.Client) (providers.GenerateResponse, error) {
+func (m *MockProvider) GenerateTokens(model string, messages []providers.Message) (providers.GenerateResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateTokens", model, messages, client)
+	ret := m.ctrl.Call(m, "GenerateTokens", model, messages)
 	ret0, _ := ret[0].(providers.GenerateResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GenerateTokens indicates an expected call of GenerateTokens.
-func (mr *MockProviderMockRecorder) GenerateTokens(model, messages, client any) *gomock.Call {
+func (mr *MockProviderMockRecorder) GenerateTokens(model, messages any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTokens", reflect.TypeOf((*MockProvider)(nil).GenerateTokens), model, messages, client)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTokens", reflect.TypeOf((*MockProvider)(nil).GenerateTokens), model, messages)
 }
 
 // GetAuthType mocks base method.
@@ -68,6 +68,20 @@ func (m *MockProvider) GetAuthType() string {
 func (mr *MockProviderMockRecorder) GetAuthType() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthType", reflect.TypeOf((*MockProvider)(nil).GetAuthType))
+}
+
+// GetClient mocks base method.
+func (m *MockProvider) GetClient() *http.Client {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClient")
+	ret0, _ := ret[0].(*http.Client)
+	return ret0
+}
+
+// GetClient indicates an expected call of GetClient.
+func (mr *MockProviderMockRecorder) GetClient() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClient", reflect.TypeOf((*MockProvider)(nil).GetClient))
 }
 
 // GetExtraHeaders mocks base method.

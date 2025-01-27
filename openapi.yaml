@@ -18,7 +18,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/ProviderModels"
+                  $ref: "#/components/schemas/ListModelsResponse"
   /llms/{provider}:
     get:
       summary: List all models for a specific provider
@@ -45,46 +45,17 @@ paths:
           schema:
             $ref: "#/components/schemas/Providers"
       requestBody:
-        required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                model:
-                  type: string
-                messages:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      role:
-                        type: string
-                        enum:
-                          - system
-                          - user
-                          - assistant
-                      content:
-                        type: string
-    responses:
-      "200":
-        description: Generated content
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                provider:
-                  type: string
-                response:
-                  type: object
-                  properties:
-                    role:
-                      type: string
-                    model:
-                      type: string
-                    content:
-                      type: string
+              $ref: "#/components/schemas/GenerateRequest"
+      responses:
+        "200":
+          description: Generated content
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateResponse"
       "400":
         description: Bad request
         content:
@@ -119,17 +90,102 @@ components:
         Authentication is available but disabled by default.
         To enable authentication, Set ENABLE_AUTH to true.
   schemas:
+    Message:
+      type: object
+      description: "Message structure for provider requests"
+      properties:
+        role:
+          type: string
+          enum:
+            - system
+            - user
+            - assistant
+        content:
+          type: string
+    ListModelsResponse:
+      type: object
+      description: "Response structure for listing models"
+      properties:
+        provider:
+          type: string
+        models:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    GenerateRequest:
+      type: object
+      description: "Request structure for token generation"
+      required:
+        - model
+        - messages
+      properties:
+        model:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+    ResponseTokens:
+      type: object
+      description: "Token response structure"
+      properties:
+        role:
+          type: string
+        model:
+          type: string
+        content:
+          type: string
+    GenerateResponse:
+      type: object
+      description: "Response structure for token generation"
+      properties:
+        provider:
+          type: string
+        response:
+          $ref: "#/components/schemas/ResponseTokens"
+    GetModelsResponse:
+      type: object
+      description: "Generic model listing response"
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
     Model:
       type: object
       properties:
-        id:
+        name:
           type: string
-        object:
+        model:
           type: string
-        owned_by:
+        modified_at:
           type: string
-        created:
+          format: date-time
+        size:
           type: integer
+        digest:
+          type: string
+        details:
+          type: object
+          properties:
+            parent_model:
+              type: string
+            format:
+              type: string
+            family:
+              type: string
+            families:
+              type: array
+              items:
+                type: string
+            parameter_size:
+              type: string
+            quantization_level:
+              type: string
     ProviderModels:
       type: object
       properties:
@@ -225,6 +281,14 @@ components:
                     env: "{key}_API_KEY"
                     description: "The provider API key"
                     secret: true
+    AuthType:
+      type: string
+      description: "Authentication type for providers"
+      enum:
+        - bearer
+        - xheader
+        - query
+        - none
     Providers:
       type: string
       enum:
@@ -245,13 +309,6 @@ components:
               endpoint: "/api/tags"
               method: "GET"
               schema:
-                request:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                    limit:
-                      type: integer
                 response:
                   type: object
                   properties:
@@ -259,6 +316,17 @@ components:
                       type: array
                       items:
                         $ref: "#/components/schemas/Model"
+                  x-transform:
+                    target: "ListModelsResponse"
+                    mapping:
+                      provider: "OllamaDisplayName"
+                      models:
+                        source: "models"
+                        transform:
+                          - source: "name"
+                            target: "name"
+                          - constant: "ollama"
+                            target: "id"
             generate:
               endpoint: "/api/generate"
               method: "POST"

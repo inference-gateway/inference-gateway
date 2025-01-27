@@ -1,5 +1,7 @@
 package providers
 
+import "time"
+
 // The authentication type of the specific provider
 const (
 	AuthTypeBearer  = "bearer"
@@ -21,57 +23,55 @@ const (
 
 // The ID's of each provider
 const (
-	OllamaID     = "ollama"
-	GroqID       = "groq"
-	OpenaiID     = "openai"
 	AnthropicID  = "anthropic"
-	CohereID     = "cohere"
 	CloudflareID = "cloudflare"
+	CohereID     = "cohere"
 	GoogleID     = "google"
+	GroqID       = "groq"
+	OllamaID     = "ollama"
+	OpenaiID     = "openai"
 )
 
 // Display names for providers
 const (
-	OllamaDisplayName     = "Ollama"
-	GroqDisplayName       = "Groq"
 	AnthropicDisplayName  = "Anthropic"
-	OpenaiDisplayName     = "Openai"
 	CloudflareDisplayName = "Cloudflare"
 	CohereDisplayName     = "Cohere"
 	GoogleDisplayName     = "Google"
+	GroqDisplayName       = "Groq"
+	OllamaDisplayName     = "Ollama"
+	OpenaiDisplayName     = "Openai"
 )
 
-type Model struct {
-	Name string `json:"name"`
+// Common response and request types
+type AuthType struct {
 }
-
-type ListModelsResponse struct {
-	Provider string        `json:"provider"`
-	Models   []interface{} `json:"models"`
-}
-
-type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
 type GenerateRequest struct {
-	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
+	Model    string    `json:"model"`
 }
-
-type ResponseTokens struct {
-	Role    string `json:"role"`
-	Model   string `json:"model"`
-	Content string `json:"content"`
-}
-
-type GetModelsResponse struct {
-	Object string        `json:"object"`
-	Data   []interface{} `json:"data"`
-}
-
 type GenerateResponse struct {
 	Provider string         `json:"provider"`
 	Response ResponseTokens `json:"response"`
+}
+type ListModelsResponse struct {
+	Models   []map[string]interface{} `json:"models"`
+	Provider string                   `json:"provider"`
+}
+type Message struct {
+	Content string `json:"content"`
+	Role    string `json:"role"`
+}
+type Model struct {
+	Details     struct{}      `json:"details"`
+	Digest      string        `json:"digest"`
+	Model       string        `json:"model"`
+	Modified_at time.Duration `json:"modified_at"`
+	Name        string        `json:"name"`
+	Size        int           `json:"size"`
+}
+type ResponseTokens struct {
+	Content string `json:"content"`
+	Model   string `json:"model"`
+	Role    string `json:"role"`
 }

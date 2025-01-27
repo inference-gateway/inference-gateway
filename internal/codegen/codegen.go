@@ -213,8 +213,6 @@ func GenerateProvidersRegistry(destination string, oas string) error {
 		Funcs(funcMap).
 		Parse(`package providers
 
-import "fmt"
-
 // Endpoints exposed by each provider
 type Endpoints struct {
 	List     string
@@ -230,38 +228,6 @@ type Config struct {
 	AuthType     string
 	ExtraHeaders map[string][]string
 	Endpoints    Endpoints
-}
-
-// GetProviders returns a list of providers
-func GetProviders(cfg map[string]*Config) []Provider {
-	providerList := make([]Provider, 0, len(cfg))
-	for _, provider := range cfg {
-		providerList = append(providerList, &ProviderImpl{
-			ID:           provider.ID,
-			Name:         provider.Name,
-			URL:          provider.URL,
-			Token:        provider.Token,
-			AuthType:     provider.AuthType,
-			ExtraHeaders: provider.ExtraHeaders,
-		})
-	}
-	return providerList
-}
-
-// GetProvider returns a provider by id
-func GetProvider(cfg map[string]*Config, id string) (Provider, error) {
-	provider, ok := cfg[id]
-	if !ok {
-		return nil, fmt.Errorf("provider %s not found", id)
-	}
-	return &ProviderImpl{
-		ID:           provider.ID,
-		Name:         provider.Name,
-		URL:          provider.URL,
-		Token:        provider.Token,
-		AuthType:     provider.AuthType,
-		ExtraHeaders: provider.ExtraHeaders,
-	}, nil
 }
 
 // The registry of all providers
@@ -308,12 +274,99 @@ var Registry = map[string]Config{
 	return nil
 }
 
+// GenerateCommonTypes generates common types from OpenAPI spec
+func GenerateCommonTypes(destination string, oas string) error {
+	schema, err := openapi.Read(oas)
+	if err != nil {
+		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
+	}
+
+	caser := cases.Title(language.English)
+
+	funcMap := template.FuncMap{
+		"title":        caser.String,
+		"generateType": generateType,
+		"hasPrefix":    strings.HasPrefix,
+	}
+
+	tmpl := template.Must(template.New("common").
+		Funcs(funcMap).
+		Parse(`package providers
+
+import "time"
+
+// The authentication type of the specific provider
+const (
+	{{- range $type := .Schemas.AuthType.Enum }}
+	AuthType{{title .}} = "{{.}}"
+	{{- end }}
+)
+
+// The default base URLs of each provider
+const (
+	{{- range $name, $config := .Providers }}
+	{{title $name}}DefaultBaseURL = "{{$config.URL}}"
+	{{- end }}
+)
+
+// The ID's of each provider
+const (
+	{{- range $name, $config := .Providers }}
+	{{title $name}}ID = "{{$config.ID}}"
+	{{- end }}
+)
+
+// Display names for providers
+const (
+	{{- range $name, $config := .Providers }}  
+	{{title $name}}DisplayName = "{{title $name}}"
+	{{- end }}
+)
+
+// Common response and request types
+{{- range $name, $schema := .Schemas }}
+type {{$name}} struct {
+	{{- range $field, $prop := $schema.Properties }}
+	{{title $field}} {{generateType $prop}} ` + "`json:\"{{$field}}\"`" + `
+	{{- end }}
+}
+
+{{- end }}
+`))
+
+	data := struct {
+		Providers map[string]openapi.ProviderConfig
+		Schemas   map[string]openapi.SchemaProperty
+	}{
+		Providers: schema.Components.Schemas.Providers.XProviderConfigs,
+		Schemas:   openapi.GetSchemas(schema),
+	}
+
+	f, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, data); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("go", "fmt", destination)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to format %s: %w", destination, err)
+	}
+
+	return nil
+}
+
 func generateProviderFile(destination, name string, config openapi.ProviderConfig) error {
 	caser := cases.Title(language.English)
 
 	funcMap := template.FuncMap{
 		"title":        caser.String,
 		"generateType": generateType,
+		"hasPrefix":    strings.HasPrefix,
 	}
 
 	tmpl := template.Must(template.New("provider").
@@ -330,11 +383,32 @@ var {{title .Name}}ExtraHeaders = map[string][]string{
 {{end}}
 
 {{- with .Config.Endpoints.list.Schema.Response }}
-type GetModelsResponse{{title $.Name}} struct {
+type ListModelsResponse{{title $.Name}} struct {
     {{- if eq .Type "object" }}
     {{- range $key, $prop := .Properties }}
+	{{- if not (hasPrefix $key "x-") }}
     {{title $key}} {{generateType $prop}} ` + "`json:\"{{$key}}\"`" + `
     {{- end }}
+    {{- end }}
+}
+{{end}}
+
+// Transform converts provider-specific response to common format
+func (r *ListModelsResponse{{title $.Name}}) Transform() ListModelsResponse {
+    {{- with .XTransform }}
+    var models []map[string]interface{}
+    {{- range .Mapping.Models.Transform }}
+    for _, model := range r.Models {
+        models = append(models, map[string]interface{}{
+            {{- range . }}
+            "{{.Target}}": {{if .Source}}model.{{.Source}}{{else}}"{{.Constant}}"{{end}},
+            {{- end }}
+        })
+    }
+    return ListModelsResponse{
+        Provider: {{.Mapping.Provider}},
+        Models:   models,
+    }
     {{- end }}
 }
 {{end}}
@@ -385,29 +459,37 @@ type GenerateResponse{{title $.Name}} struct {
 	return nil
 }
 
-func generateType(field openapi.SchemaField) string {
-	switch field.Type {
+func generateType(prop openapi.Property) string {
+	// Handle references first
+	if prop.Ref != "" {
+		parts := strings.Split(prop.Ref, "/")
+		return parts[len(parts)-1]
+	}
+
+	// Handle arrays
+	if prop.Type == "array" && prop.Items != nil {
+		return "[]" + generateType(*prop.Items)
+	}
+
+	// Map basic types
+	switch prop.Type {
 	case "string":
+		if prop.Format == "date-time" {
+			return "time.Duration"
+		}
 		return "string"
+	case "number":
+		return "float64"
 	case "integer":
 		return "int"
 	case "boolean":
 		return "bool"
-	case "array":
-		if field.Items != nil {
-			return "[]" + generateType(*field.Items)
-		}
-		return "[]interface{}"
 	case "object":
-		if len(field.Properties) > 0 {
+		if len(prop.Properties) > 0 {
 			return "struct{}"
 		}
 		return "map[string]interface{}"
 	default:
-		if field.Ref != "" {
-			parts := strings.Split(field.Ref, "/")
-			return parts[len(parts)-1]
-		}
 		return "interface{}"
 	}
 }

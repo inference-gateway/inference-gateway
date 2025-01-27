@@ -1,6 +1,6 @@
 package providers
 
-type GetModelsResponseGroq struct {
+type ListModelsResponseGroq struct {
 	Models []interface{} `json:"models"`
 }
 

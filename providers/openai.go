@@ -1,6 +1,6 @@
 package providers
 
-type GetModelsResponseOpenai struct {
+type ListModelsResponseOpenai struct {
 	Models []interface{} `json:"models"`
 }
 

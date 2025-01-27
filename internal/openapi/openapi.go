@@ -7,6 +7,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+func GetSchemas(schema *OpenAPISchema) map[string]SchemaProperty {
+	return map[string]SchemaProperty{
+		"AuthType":           schema.Components.Schemas.AuthType,
+		"Message":            schema.Components.Schemas.Message,
+		"Model":              schema.Components.Schemas.Model,
+		"ListModelsResponse": schema.Components.Schemas.ListResponse,
+		"GenerateRequest":    schema.Components.Schemas.GenerateRequest,
+		"GenerateResponse":   schema.Components.Schemas.GenerateResponse,
+		"ResponseTokens":     schema.Components.Schemas.ResponseToken,
+	}
+}
+
 // OpenAPI schema structures
 type OpenAPISchema struct {
 	Components struct {
@@ -17,6 +29,13 @@ type OpenAPISchema struct {
 			Providers struct {
 				XProviderConfigs map[string]ProviderConfig `yaml:"x-provider-configs"`
 			} `yaml:"Providers"`
+			AuthType         SchemaProperty `yaml:"AuthType"`
+			Message          SchemaProperty `yaml:"Message"`
+			Model            SchemaProperty `yaml:"Model"`
+			ListResponse     SchemaProperty `yaml:"ListModelsResponse"`
+			GenerateRequest  SchemaProperty `yaml:"GenerateRequest"`
+			GenerateResponse SchemaProperty `yaml:"GenerateResponse"`
+			ResponseToken    SchemaProperty `yaml:"ResponseTokens"`
 		}
 	}
 }
@@ -64,12 +83,46 @@ type ProviderEndpoints struct {
 	Generate string `yaml:"generate"`
 }
 
+type Transform struct {
+	Target  string       `yaml:"target"`
+	Mapping TransformMap `yaml:"mapping"`
+}
+
+type TransformMap struct {
+	Provider string   `yaml:"provider"`
+	Models   ModelMap `yaml:"models,omitempty"`
+}
+
+type ModelMap struct {
+	Source    string         `yaml:"source,omitempty"`
+	Transform []TransformRef `yaml:"transform"`
+}
+
+type TransformRef struct {
+	Source   string `yaml:"source,omitempty"`
+	Target   string `yaml:"target"`
+	Constant string `yaml:"constant,omitempty"`
+}
+
+type Property struct {
+	Type        string              `yaml:"type"`
+	Format      string              `yaml:"format,omitempty"`
+	Description string              `yaml:"description,omitempty"`
+	Ref         string              `yaml:"$ref,omitempty"`
+	Enum        []string            `yaml:"enum,omitempty"`
+	Properties  map[string]Property `yaml:"properties,omitempty"`
+	Items       *Property           `yaml:"items,omitempty"`
+}
+
 // Structures for OpenAPI schema parsing
 type SchemaProperty struct {
-	Type       string                 `yaml:"type"`
-	Properties map[string]SchemaField `yaml:"properties"`
-	Items      *SchemaField           `yaml:"items"`
-	Ref        string                 `yaml:"$ref"`
+	Type        string              `yaml:"type"`
+	Description string              `yaml:"description"`
+	Properties  map[string]Property `yaml:"properties"`
+	Required    []string            `yaml:"required,omitempty"`
+	Items       *Property           `yaml:"items,omitempty"`
+	Enum        []string            `yaml:"enum,omitempty"`
+	XTransform  *Transform          `yaml:"x-transform,omitempty"`
 }
 
 type SchemaField struct {

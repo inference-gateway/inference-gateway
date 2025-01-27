@@ -103,60 +103,52 @@ func (p *ProviderImpl) ListModels() ListModelsResponse {
 	resp, err := p.client.Get(url)
 	if err != nil {
 		p.logger.Error("failed to make request", err, "provider", p.GetName())
-		return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+		return ListModelsResponse{Provider: p.GetName(), Models: []map[string]interface{}{}}
 	}
 	defer resp.Body.Close()
 
-	var response interface{}
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		p.logger.Error("failed to decode response", err, "provider", p.GetName())
-		return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
-	}
-
 	switch p.GetID() {
 	case OllamaID:
-		var response GetModelsResponseOllama
+		var response ListModelsResponseOllama
 		err = json.NewDecoder(resp.Body).Decode(&response)
 		if err != nil {
 			p.logger.Error("failed to decode response", err, "provider", p.GetName())
-			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			return ListModelsResponse{Provider: p.GetName(), Models: []map[string]interface{}{}}
 		}
-		return ListModelsResponse{Provider: p.GetName(), Models: response.Models}
+		return response.Transform()
 	case GoogleID:
-		var response GetModelsResponseGoogle
+		var response ListModelsResponseGoogle
 		err = json.NewDecoder(resp.Body).Decode(&response)
 		if err != nil {
 			p.logger.Error("failed to decode response", err, "provider", p.GetName())
-			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			return ListModelsResponse{Provider: p.GetName(), Models: []map[string]interface{}{}}
 		}
-		return ListModelsResponse{Provider: p.GetName(), Models: response.Models}
+		return response.Transform()
 	case CloudflareID:
-		var response GetModelsResponseCloudflare
+		var response ListModelsResponseCloudflare
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return ListModelsResponse{Provider: p.GetName(), Models: []map[string]interface{}{}}
 		}
-		return ListModelsResponse{Provider: p.GetName(), Models: response.Result}
+		return response.Transform()
 	case CohereID:
-		var response GetModelsResponseCohere
+		var response ListModelsResponseCohere
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return ListModelsResponse{Provider: p.GetName(), Models: []map[string]interface{}{}}
 		}
-		return ListModelsResponse{Provider: p.GetName(), Models: response.Models}
+		return response.Transform()
 	case AnthropicID:
-		var response GetModelsResponseAnthropic
+		var response ListModelsResponseAnthropic
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return ListModelsResponse{Provider: p.GetName(), Models: []map[string]interface{}{}}
 		}
-		return ListModelsResponse{Provider: p.GetName(), Models: response.Models}
+		return response.Transform()
 	default:
-		var response GetModelsResponse
-		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return ListModelsResponse{Provider: p.GetName(), Models: []interface{}{}}
-		}
-		return ListModelsResponse{Provider: p.GetName(), Models: response.Data}
+		p.logger.Error("provider not found", nil, "provider", p.GetName())
+		return ListModelsResponse{Provider: p.GetName(), Models: []map[string]interface{}{}}
 	}
-
 }
 
 func (p *ProviderImpl) GenerateTokens(model string, messages []Message) (GenerateResponse, error) {

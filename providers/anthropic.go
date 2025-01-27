@@ -5,8 +5,22 @@ var AnthropicExtraHeaders = map[string][]string{
 	"anthropic-version": {"2023-06-01"},
 }
 
-type GetModelsResponseAnthropic struct {
+type ListModelsResponseAnthropic struct {
 	Models []interface{} `json:"models"`
+}
+
+func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
+	var models []map[string]interface{}
+	for _, model := range l.Models {
+		models = append(models, map[string]interface{}{
+			"name": model,
+			"id":   AnthropicID,
+		})
+	}
+	return ListModelsResponse{
+		Provider: AnthropicDisplayName,
+		Models:   models,
+	}
 }
 
 type GenerateRequestAnthropic struct {
