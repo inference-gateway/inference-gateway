@@ -6,7 +6,7 @@ type ListModelsResponseResultCloudflare struct {
 	Description string `json:"description"`
 	CreatedAt   string `json:"created_at"`
 	ModifiedAt  string `json:"modified_at"`
-	Public      bool   `json:"public"`
+	Public      int    `json:"public"`
 	Model       string `json:"model"`
 }
 
