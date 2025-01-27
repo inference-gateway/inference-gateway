@@ -10,7 +10,6 @@
 package mocks
 
 import (
-	http "net/http"
 	reflect "reflect"
 
 	providers "github.com/inference-gateway/inference-gateway/providers"
@@ -71,10 +70,10 @@ func (mr *MockProviderMockRecorder) GetAuthType() *gomock.Call {
 }
 
 // GetClient mocks base method.
-func (m *MockProvider) GetClient() *http.Client {
+func (m *MockProvider) GetClient() providers.Client {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClient")
-	ret0, _ := ret[0].(*http.Client)
+	ret0, _ := ret[0].(providers.Client)
 	return ret0
 }
 

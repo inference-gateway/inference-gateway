@@ -29,7 +29,7 @@ type Router interface {
 type RouterImpl struct {
 	cfg    config.Config
 	logger l.Logger
-	client *http.Client
+	client providers.Client
 }
 
 type ErrorResponse struct {
@@ -40,7 +40,7 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger *l.Logger, client *http.Client) Router {
+func NewRouter(cfg config.Config, logger *l.Logger, client providers.Client) Router {
 	return &RouterImpl{
 		cfg,
 		*logger,
@@ -55,7 +55,7 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
-	provider, err := providers.NewProvider(router.cfg.Providers, p, &router.logger, router.client)
+	provider, err := providers.NewProvider(router.cfg.Providers, p, &router.logger, &router.client)
 	if err != nil {
 		router.logger.Error("requested unsupported provider", err, "provider", p)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
@@ -145,7 +145,7 @@ type ModelResponse struct {
 }
 
 func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
-	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, router.client)
+	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, &router.client)
 	if err != nil {
 		router.logger.Error("requested unsupported provider", err, "provider", c.Param("provider"))
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
@@ -167,7 +167,7 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 		go func(id string) {
 			defer wg.Done()
 
-			provider, err := providers.NewProvider(providersCfg, id, &router.logger, router.client)
+			provider, err := providers.NewProvider(providersCfg, id, &router.logger, &router.client)
 			if err != nil {
 				router.logger.Error("failed to create provider", err)
 				ch <- providers.ListModelsResponse{
@@ -206,7 +206,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, router.client)
+	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, &router.client)
 	if err != nil {
 		router.logger.Error("requested unsupported provider", err, "provider", c.Param("provider"))
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})

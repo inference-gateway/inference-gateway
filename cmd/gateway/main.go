@@ -15,6 +15,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
+	providers "github.com/inference-gateway/inference-gateway/providers"
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -79,10 +80,15 @@ func main() {
 		return
 	}
 
-	client := http.Client{
-		Timeout: cfg.Server.ReadTimeout + (time.Second + 5), // Add 5 seconds more for the client than the configured server ReadTimeout, maybe it should be in the configurable, haven't decided yet.
+	scheme := "http"
+	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
+		scheme = "https"
 	}
-	api := api.NewRouter(cfg, &logger, &client)
+
+	clientTransport := providers.NewTransport(cfg.Server.ReadTimeout)
+	client := providers.NewClient(scheme, cfg.Server.Host, cfg.Server.Port, cfg.Server.ReadTimeout, clientTransport)
+
+	api := api.NewRouter(cfg, &logger, client)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.EnableTelemetry {
@@ -93,8 +99,7 @@ func main() {
 	r.GET("/llms", api.ListAllModelsHandler)
 	r.GET("/llms/:provider", api.ListModelsHandler)
 	r.POST("/llms/:provider/generate", api.GenerateProvidersTokenHandler)
-	r.GET("/proxy/:provider/*path", api.ProxyHandler)
-	r.POST("/proxy/:provider/*path", api.ProxyHandler)
+	r.Any("/proxy/:provider/*path", api.ProxyHandler)
 	r.GET("/health", api.HealthcheckHandler)
 	r.NoRoute(api.NotFoundHandler)
 

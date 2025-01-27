@@ -19,7 +19,7 @@ type Provider interface {
 	GetToken() string
 	GetAuthType() string
 	GetExtraHeaders() map[string][]string
-	GetClient() *http.Client
+	GetClient() Client
 
 	ListModels() ListModelsResponse
 	GenerateTokens(model string, messages []Message) (GenerateResponse, error)
@@ -33,11 +33,11 @@ type ProviderImpl struct {
 	authType     string
 	extraHeaders map[string][]string
 	endpoints    Endpoints
-	client       *http.Client
+	client       Client
 	logger       l.Logger
 }
 
-func NewProvider(cfg map[string]*Config, id string, logger *l.Logger, client *http.Client) (Provider, error) {
+func NewProvider(cfg map[string]*Config, id string, logger *l.Logger, client *Client) (Provider, error) {
 	provider, ok := cfg[id]
 	if !ok {
 		return nil, fmt.Errorf("provider %s not found", id)
@@ -51,7 +51,7 @@ func NewProvider(cfg map[string]*Config, id string, logger *l.Logger, client *ht
 		authType:     provider.AuthType,
 		extraHeaders: provider.ExtraHeaders,
 		endpoints:    provider.Endpoints,
-		client:       client,
+		client:       *client,
 		logger:       *logger,
 	}, nil
 }
@@ -88,16 +88,16 @@ func (p *ProviderImpl) EndpointGenerate() string {
 	return p.endpoints.Generate
 }
 
-func (p *ProviderImpl) SetClient(client *http.Client) {
+func (p *ProviderImpl) SetClient(client Client) {
 	p.client = client
 }
 
-func (p *ProviderImpl) GetClient() *http.Client {
+func (p *ProviderImpl) GetClient() Client {
 	return p.client
 }
 
 func (p *ProviderImpl) ListModels() ListModelsResponse {
-	url := "http://127.0.0.1:8080/proxy/" + p.GetID() + p.EndpointList()
+	url := "/proxy/" + p.GetID() + p.EndpointList()
 
 	p.logger.Debug("list models", "url", url)
 	resp, err := p.client.Get(url)

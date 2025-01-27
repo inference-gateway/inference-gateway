@@ -63,12 +63,12 @@ type Message struct {
 	Role    string `json:"role"`
 }
 type Model struct {
-	Details     struct{}      `json:"details"`
-	Digest      string        `json:"digest"`
-	Model       string        `json:"model"`
-	Modified_at time.Duration `json:"modified_at"`
-	Name        string        `json:"name"`
-	Size        int           `json:"size"`
+	Details    struct{}  `json:"details"`
+	Digest     string    `json:"digest"`
+	Model      string    `json:"model"`
+	ModifiedAt time.Time `json:"modified_at"`
+	Name       string    `json:"name"`
+	Size       int       `json:"size"`
 }
 type ResponseTokens struct {
 	Content string `json:"content"`

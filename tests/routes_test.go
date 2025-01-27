@@ -31,9 +31,9 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockLogger) {
 	}
 
 	// Create HTTP client with reasonable timeout
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
+	timeout := 1 * time.Second
+	transport := providers.NewTransport(timeout)
+	client := providers.NewClient("http", "localhost", "8080", timeout, transport)
 
 	// Pass mockLogger as logger.Logger interface
 	var l logger.Logger = mockLogger
@@ -134,15 +134,21 @@ func TestProxyHandler_UnreachableHost(t *testing.T) {
 	// Setup
 	r, mockLogger := setupTestRouter(t)
 
-	// Setup logger expectation with specific error message
+	// Create mock controller
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Create mock client
+	mockClient := mocks.NewMockClient(ctrl)
+	mockClient.EXPECT().
+		Get(gomock.Any()).
+		Return(nil, fmt.Errorf("connection refused")).
+		AnyTimes()
+
+	// Setup logger expectation
 	mockLogger.EXPECT().Error("proxy request failed", gomock.Any()).Times(1)
 
-	// Create custom transport that simulates network failure
-	failingTransport := &mockTransport{
-		err: fmt.Errorf("connection refused"),
-	}
-
-	// Configure test router with failing client
+	// Configure test router with mock client
 	cfg := config.Config{
 		ApplicationName: "inference-gateway-test",
 		Environment:     "test",
@@ -162,14 +168,11 @@ func TestProxyHandler_UnreachableHost(t *testing.T) {
 	}
 
 	var l logger.Logger = mockLogger
-	router := api.NewRouter(cfg, &l, &http.Client{
-		Transport: failingTransport,
-		Timeout:   1 * time.Second,
-	})
+	router := api.NewRouter(cfg, &l, mockClient)
 
 	r.Any("/proxy/:provider/*proxyPath", router.ProxyHandler)
 
-	// Create custom response writer that skips CloseNotifier
+	// Create custom response writer
 	w := &customResponseWriter{
 		ResponseRecorder: httptest.NewRecorder(),
 	}
@@ -194,13 +197,4 @@ type customResponseWriter struct {
 
 func (w *customResponseWriter) CloseNotify() <-chan bool {
 	return nil
-}
-
-// Mock transport that always fails
-type mockTransport struct {
-	err error
-}
-
-func (t *mockTransport) RoundTrip(*http.Request) (*http.Response, error) {
-	return nil, t.err
 }
