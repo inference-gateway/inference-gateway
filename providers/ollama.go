@@ -1,7 +1,23 @@
 package providers
 
+type OllamaDetails struct {
+	Format            string      `json:"format"`
+	Family            string      `json:"family"`
+	Families          interface{} `json:"families"`
+	ParameterSize     string      `json:"parameter_size"`
+	QuantizationLevel string      `json:"quantization_level"`
+}
+
+type OllamaModel struct {
+	Name       string        `json:"name"`
+	ModifiedAt string        `json:"modified_at"`
+	Size       int           `json:"size"`
+	Digest     string        `json:"digest"`
+	Details    OllamaDetails `json:"details"`
+}
+
 type ListModelsResponseOllama struct {
-	Models []Model `json:"models"`
+	Models []OllamaModel `json:"models"`
 }
 
 func (l *ListModelsResponseOllama) Transform() ListModelsResponse {

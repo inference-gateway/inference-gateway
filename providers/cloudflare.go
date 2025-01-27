@@ -1,6 +1,6 @@
 package providers
 
-type ListModelsResponseResultCloudflare struct {
+type CloudflareModel struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -11,7 +11,7 @@ type ListModelsResponseResultCloudflare struct {
 }
 
 type ListModelsResponseCloudflare struct {
-	Result []ListModelsResponseResultCloudflare `json:"result"`
+	Result []CloudflareModel `json:"result"`
 }
 
 func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
