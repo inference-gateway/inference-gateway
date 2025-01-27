@@ -12,7 +12,7 @@ func (l *ListModelsResponseGoogle) Transform() ListModelsResponse {
 		})
 	}
 	return ListModelsResponse{
-		Provider: OllamaDisplayName,
+		Provider: GoogleDisplayName,
 		Models:   models,
 	}
 }
