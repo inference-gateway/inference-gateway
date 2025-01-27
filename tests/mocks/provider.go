@@ -154,11 +154,12 @@ func (mr *MockProviderMockRecorder) GetURL() *gomock.Call {
 }
 
 // ListModels mocks base method.
-func (m *MockProvider) ListModels() providers.ListModelsResponse {
+func (m *MockProvider) ListModels() (providers.ListModelsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListModels")
 	ret0, _ := ret[0].(providers.ListModelsResponse)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ListModels indicates an expected call of ListModels.

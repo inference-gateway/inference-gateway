@@ -190,6 +190,73 @@ func TestProxyHandler_UnreachableHost(t *testing.T) {
 	assert.Contains(t, response.Error, "Failed to reach upstream server")
 }
 
+var providerFactory = providers.NewProvider
+
+func TestProxyHandler_TokenValidation(t *testing.T) {
+	tests := []struct {
+		name           string
+		providerID     string
+		authType       string
+		token          string
+		expectedStatus int
+		expectedError  string
+		setupMocks     func(*mocks.MockLogger, *mocks.MockProvider)
+	}{
+		{
+			name:           "Missing Required Token",
+			providerID:     providers.GroqID,
+			authType:       providers.AuthTypeBearer,
+			token:          "",
+			expectedStatus: http.StatusBadRequest,
+			expectedError:  "Provider requires an API key. Please configure the provider's API key.",
+			setupMocks: func(ml *mocks.MockLogger, mp *mocks.MockProvider) {
+				ml.EXPECT().Error("provider requires authentication but no API key was configured",
+					gomock.Any(),
+					"provider",
+					providers.GroqID)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			r, mockLogger := setupTestRouter(t)
+			mockProvider := mocks.NewMockProvider(ctrl)
+
+			originalFactory := providerFactory
+			providerFactory = func(cfg map[string]*providers.Config, id string, logger *logger.Logger, client *providers.Client) (providers.Provider, error) {
+				return mockProvider, nil
+			}
+			defer func() { providerFactory = originalFactory }()
+
+			tt.setupMocks(mockLogger, mockProvider)
+
+			cfg := config.Config{
+				ApplicationName: "inference-gateway-test",
+				Environment:     "test",
+				Providers: map[string]*providers.Config{
+					tt.providerID: {
+						ID: tt.providerID,
+					},
+				},
+			}
+
+			var l logger.Logger = mockLogger
+			router := api.NewRouter(cfg, &l, nil)
+			r.Any("/proxy/:provider/*proxyPath", router.ProxyHandler)
+
+			w := &customResponseWriter{
+				ResponseRecorder: httptest.NewRecorder(),
+			}
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/proxy/%s/v1/models", tt.providerID), nil)
+			r.ServeHTTP(w, req)
+		})
+	}
+}
+
 // Custom response writer that skips CloseNotifier
 type customResponseWriter struct {
 	*httptest.ResponseRecorder

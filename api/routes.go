@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"sync"
 
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
@@ -57,8 +58,13 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
 	provider, err := providers.NewProvider(router.cfg.Providers, p, &router.logger, &router.client)
 	if err != nil {
-		router.logger.Error("requested unsupported provider", err, "provider", p)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
+		if strings.Contains(err.Error(), "token not configured") {
+			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", p)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+			return
+		}
+		router.logger.Error("provider not found or not supported", err, "provider", p)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
 		return
 	}
 
@@ -147,12 +153,23 @@ type ModelResponse struct {
 func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, &router.client)
 	if err != nil {
-		router.logger.Error("requested unsupported provider", err, "provider", c.Param("provider"))
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
+		if strings.Contains(err.Error(), "token not configured") {
+			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", provider)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+			return
+		}
+		router.logger.Error("provider not found or not supported", err, "provider", provider)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
 		return
 	}
 
-	response := provider.ListModels()
+	response, err := provider.ListModels()
+	if err != nil {
+		router.logger.Error("failed to list models", err, "provider", provider)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to list models"})
+		return
+	}
+
 	c.JSON(http.StatusOK, response)
 }
 
@@ -177,7 +194,15 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 				return
 			}
 
-			response := provider.ListModels()
+			response, err := provider.ListModels()
+			if err != nil {
+				router.logger.Error("failed to list models", err, "provider", provider)
+				ch <- providers.ListModelsResponse{
+					Provider: id,
+					Models:   []map[string]interface{}{},
+				}
+				return
+			}
 			ch <- response
 		}(providerID)
 	}
@@ -208,8 +233,13 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 
 	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, &router.client)
 	if err != nil {
-		router.logger.Error("requested unsupported provider", err, "provider", c.Param("provider"))
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Requested unsupported provider"})
+		if strings.Contains(err.Error(), "token not configured") {
+			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", provider)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+			return
+		}
+		router.logger.Error("provider not found or not supported", err, "provider", provider)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
 		return
 	}
 

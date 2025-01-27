@@ -52,7 +52,8 @@ func (l *LoggerZapImpl) Debug(message string, fields ...interface{}) {
 
 func (l *LoggerZapImpl) Error(message string, err error, fields ...interface{}) {
 	if err == nil {
-		err = errors.New("unknown error")
+		l.logger.Error(message, parseFields(fields...)...)
+		return
 	}
 	fields = append(fields, "error", err.Error())
 	l.logger.Error(message, parseFields(fields...)...)
