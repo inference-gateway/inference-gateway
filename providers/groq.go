@@ -55,10 +55,6 @@ func (r *GenerateRequest) TransformGroq() GenerateRequestGroq {
 	}
 }
 
-func float64Ptr(v float64) *float64 {
-	return &v
-}
-
 type GroqUsage struct {
 	QueueTime        float64 `json:"queue_time"`
 	PromptTokens     int     `json:"prompt_tokens"`

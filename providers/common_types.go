@@ -74,3 +74,7 @@ type ResponseTokens struct {
 	Model   string `json:"model"`
 	Role    string `json:"role"`
 }
+
+func float64Ptr(v float64) *float64 {
+	return &v
+}
