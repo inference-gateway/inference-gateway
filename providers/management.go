@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	l "github.com/inference-gateway/inference-gateway/logger"
@@ -101,7 +102,13 @@ func (p *ProviderImpl) GetClient() Client {
 }
 
 func (p *ProviderImpl) ListModels() (ListModelsResponse, error) {
-	url := "/proxy/" + p.GetID() + p.EndpointList()
+	baseURL, err := url.Parse(p.GetURL())
+	if err != nil {
+		p.logger.Error("failed to parse base URL", err)
+		return ListModelsResponse{}, fmt.Errorf("failed to parse base URL: %v", err)
+	}
+
+	url := "/proxy/" + p.GetID() + baseURL.Path + p.EndpointList()
 
 	p.logger.Debug("list models", "url", url)
 	resp, err := p.client.Get(url)
