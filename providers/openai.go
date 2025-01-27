@@ -35,7 +35,7 @@ func (l *ListModelsResponseOpenai) Transform() ListModelsResponse {
 		})
 	}
 	return ListModelsResponse{
-		Provider: OllamaDisplayName,
+		Provider: OpenaiDisplayName,
 		Models:   models,
 	}
 }
