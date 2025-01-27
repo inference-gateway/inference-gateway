@@ -198,57 +198,122 @@ func (p *ProviderImpl) GenerateTokens(model string, messages []Message) (Generat
 		url = strings.Replace(url, "{model}", model, 1)
 	}
 
-	// Build and send request
-	payload := p.BuildGenTokensRequest(model, messages)
-	payloadBytes, err := json.Marshal(payload)
-	if err != nil {
-		p.logger.Error("failed to marshal request", err)
-		return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	resp, err := p.client.Post(url, "application/json", string(payloadBytes))
-	if err != nil {
-		p.logger.Error("failed to make request", err)
-		return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		p.logger.Error("request failed", fmt.Errorf("status code: %d", resp.StatusCode))
-		return GenerateResponse{}, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
+	genRequest := GenerateRequest{
+		Model:    model,
+		Messages: messages,
 	}
 
 	switch p.GetID() {
 	case OllamaID:
+		// Request
+		payload := genRequest.TransformOllama()
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			p.logger.Error("failed to marshal request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
+		}
+		resp, err := p.client.Post(url, "application/json", string(payloadBytes))
+		if err != nil {
+			p.logger.Error("failed to make request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			p.logger.Error("request failed", fmt.Errorf("status code: %d", resp.StatusCode))
+			return GenerateResponse{}, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
+		}
+
+		// Response
 		var response GenerateResponseOllama
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			p.logger.Error("failed to decode response", err)
 			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
 		}
 		return response.Transform(), nil
-	// case GroqID:
-	// 	var response GenerateResponseGroq
-	// 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-	// 		p.logger.Error("failed to decode response", err)
-	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
-	// 	}
-	// 	return response.Transform(), nil
-	// case OpenaiID:
-	// 	var response GenerateResponseOpenai
-	// 	err = json.NewDecoder(resp.Body).Decode(&response)
-	// 	if err != nil {
-	// 		p.logger.Error("failed to decode response", err, "provider", p.GetName())
-	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
-	// 	}
-	// 	return response.Transform(), nil
-	// case GoogleID:
-	// 	var response GenerateResponseGoogle
-	// 	err = json.NewDecoder(resp.Body).Decode(&response)
-	// 	if err != nil {
-	// 		p.logger.Error("failed to decode response", err, "provider", p.GetName())
-	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
-	// 	}
-	// 	return response.Transform(), nil
+	case GroqID:
+		// Request
+		payload := genRequest.TransformGroq()
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			p.logger.Error("failed to marshal request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
+		}
+		resp, err := p.client.Post(url, "application/json", string(payloadBytes))
+		if err != nil {
+			p.logger.Error("failed to make request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			p.logger.Error("request failed", fmt.Errorf("status code: %d", resp.StatusCode))
+			return GenerateResponse{}, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
+		}
+
+		// Response
+		var response GenerateResponseGroq
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			p.logger.Error("failed to decode response", err)
+			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return response.Transform(), nil
+	case OpenaiID:
+		// Request
+		payload := genRequest.TransformOpenai()
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			p.logger.Error("failed to marshal request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
+		}
+		resp, err := p.client.Post(url, "application/json", string(payloadBytes))
+		if err != nil {
+			p.logger.Error("failed to make request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			p.logger.Error("request failed", fmt.Errorf("status code: %d", resp.StatusCode))
+			return GenerateResponse{}, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
+		}
+
+		// Response
+		var response GenerateResponseOpenai
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return response.Transform(), nil
+	case GoogleID:
+		// Request
+		payload := genRequest.TransformGoogle()
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			p.logger.Error("failed to marshal request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
+		}
+		resp, err := p.client.Post(url, "application/json", string(payloadBytes))
+		if err != nil {
+			p.logger.Error("failed to make request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			p.logger.Error("request failed", fmt.Errorf("status code: %d", resp.StatusCode))
+			return GenerateResponse{}, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
+		}
+
+		// Response
+		var response GenerateResponseGoogle
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return response.Transform(), nil
 	// case CloudflareID:
 	// 	var response GenerateResponseCloudflare
 	// 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {

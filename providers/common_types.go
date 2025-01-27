@@ -41,6 +41,12 @@ const (
 	OpenaiDisplayName     = "Openai"
 )
 
+const (
+	SystemRole    = "system"
+	UserRole      = "user"
+	AssistantRole = "assistant"
+)
+
 // Common response and request types
 type AuthType struct {
 }
