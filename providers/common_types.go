@@ -42,9 +42,9 @@ const (
 )
 
 const (
-	SystemRole    = "system"
-	UserRole      = "user"
-	AssistantRole = "assistant"
+	RoleSystem    = "system"
+	RoleUser      = "user"
+	RoleAssistant = "assistant"
 )
 
 // Common response and request types

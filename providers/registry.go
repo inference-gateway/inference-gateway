@@ -23,7 +23,7 @@ const (
 
 	// Cloudflare endpoints
 	CloudflareListEndpoint     = "/ai/finetunes/public"
-	CloudflareGenerateEndpoint = "/v1/chat/completions"
+	CloudflareGenerateEndpoint = "/ai/run/@cf/meta/{model}"
 
 	// Anthropic endpoints
 	AnthropicListEndpoint     = "/v1/models"
