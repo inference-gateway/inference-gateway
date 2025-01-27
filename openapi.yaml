@@ -315,18 +315,29 @@ components:
                     models:
                       type: array
                       items:
-                        $ref: "#/components/schemas/Model"
-                  x-transform:
-                    target: "ListModelsResponse"
-                    mapping:
-                      provider: "OllamaDisplayName"
-                      models:
-                        source: "models"
-                        transform:
-                          - source: "name"
-                            target: "name"
-                          - constant: "ollama"
-                            target: "id"
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          modified_at:
+                            type: string
+                          size:
+                            type: integer
+                          digest:
+                            type: string
+                          details:
+                            type: object
+                            properties:
+                              format:
+                                type: string
+                              family:
+                                type: string
+                              families:
+                                type: array
+                                items:
+                                  type: string
+                              parameter_size:
+                                type: string
             generate:
               endpoint: "/api/generate"
               method: "POST"
@@ -368,10 +379,28 @@ components:
                 response:
                   type: object
                   properties:
-                    models:
+                    object:
+                      type: string
+                    data:
                       type: array
                       items:
-                        type: interface{}
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          object:
+                            type: string
+                          created:
+                            type: integer
+                            format: int64
+                          owned_by:
+                            type: string
+                          active:
+                            type: boolean
+                          context_window:
+                            type: integer
+                          public_apps:
+                            type: object
             generate:
               endpoint: "/openai/v1/chat/completions"
               method: "POST"
@@ -414,10 +443,50 @@ components:
                 response:
                   type: object
                   properties:
-                    models:
+                    object:
+                      type: string
+                    data:
                       type: array
                       items:
-                        type: interface{}
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          object:
+                            type: string
+                          created:
+                            type: integer
+                            format: int64
+                          owned_by:
+                            type: string
+                          permission:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                id:
+                                  type: string
+                                object:
+                                  type: string
+                                created:
+                                  type: integer
+                                  format: int64
+                                allow_create_engine:
+                                  type: boolean
+                                allow_sampling:
+                                  type: boolean
+                                allow_logprobs:
+                                  type: boolean
+                                allow_search_indices:
+                                  type: boolean
+                                allow_view:
+                                  type: boolean
+                                allow_fine_tuning:
+                                  type: boolean
+                          root:
+                            type: string
+                          parent:
+                            type: string
             generate:
               endpoint: "/v1/completions"
               method: "POST"
@@ -463,7 +532,37 @@ components:
                     models:
                       type: array
                       items:
-                        type: interface{}
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          base_model_id:
+                            type: string
+                          version:
+                            type: string
+                          display_name:
+                            type: string
+                          description:
+                            type: string
+                          input_token_limit:
+                            type: integer
+                          output_token_limit:
+                            type: integer
+                          supported_generation_methods:
+                            type: array
+                            items:
+                              type: string
+                          temperature:
+                            type: number
+                            format: float64
+                          max_temperature:
+                            type: number
+                            format: float64
+                          top_p:
+                            type: number
+                            format: float64
+                          top_k:
+                            type: integer
             generate:
               endpoint: "/v1beta/models/{model}:generateContent"
               method: "POST"
@@ -516,7 +615,22 @@ components:
                     result:
                       type: array
                       items:
-                        type: interface{}
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          name:
+                            type: string
+                          description:
+                            type: string
+                          created_at:
+                            type: string
+                          modified_at:
+                            type: string
+                          public:
+                            type: integer
+                          model:
+                            type: string
             generate:
               endpoint: "/v1/chat/completions"
               method: "POST"
@@ -549,7 +663,27 @@ components:
                     models:
                       type: array
                       items:
-                        type: interface{}
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          endpoints:
+                            type: array
+                            items:
+                              type: string
+                          finetuned:
+                            type: boolean
+                          context_length:
+                            type: number
+                            format: float64
+                          tokenizer_url:
+                            type: string
+                          default_endpoints:
+                            type: array
+                            items:
+                              type: string
+                    next_page_token:
+                      type: string
             generate:
               endpoint: "/v2/chat"
               method: "POST"
@@ -597,7 +731,22 @@ components:
                     models:
                       type: array
                       items:
-                        type: interface{}
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                          id:
+                            type: string
+                          display_name:
+                            type: string
+                          created_at:
+                            type: string
+                    has_more:
+                      type: boolean
+                    first_id:
+                      type: string
+                    last_id:
+                      type: string
             generate:
               endpoint: "/v1/messages"
               method: "POST"
