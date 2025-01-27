@@ -1,5 +1,35 @@
 package providers
 
+const (
+	// Ollama endpoints
+	OllamaListEndpoint     = "/api/tags"
+	OllamaGenerateEndpoint = "/api/generate"
+
+	// OpenAI endpoints
+	OpenAIListEndpoint     = "/v1/models"
+	OpenAIGenerateEndpoint = "/v1/chat/completions"
+
+	// Groq endpoints
+	GroqListEndpoint     = "/openai/v1/models"
+	GroqGenerateEndpoint = "/openai/v1/chat/completions"
+
+	// Google endpoints
+	GoogleListEndpoint     = "/v1beta/models"
+	GoogleGenerateEndpoint = "/v1beta/models/{model}:generateContent"
+
+	// Cohere endpoints
+	CohereListEndpoint     = "/v1/models"
+	CohereGenerateEndpoint = "/v2/chat"
+
+	// Cloudflare endpoints
+	CloudflareListEndpoint     = "/ai/finetunes/public"
+	CloudflareGenerateEndpoint = "/v1/chat/completions"
+
+	// Anthropic endpoints
+	AnthropicListEndpoint     = "/v1/models"
+	AnthropicGenerateEndpoint = "/v1/messages"
+)
+
 // Endpoints exposed by each provider
 type Endpoints struct {
 	List     string
@@ -28,8 +58,8 @@ var Registry = map[string]Config{
 			"anthropic-version": {"2023-06-01"},
 		},
 		Endpoints: Endpoints{
-			List:     "/v1/models",
-			Generate: "/v1/messages",
+			List:     AnthropicListEndpoint,
+			Generate: AnthropicGenerateEndpoint,
 		},
 	},
 	CloudflareID: {
@@ -38,8 +68,8 @@ var Registry = map[string]Config{
 		URL:      CloudflareDefaultBaseURL,
 		AuthType: AuthTypeBearer,
 		Endpoints: Endpoints{
-			List:     "/ai/finetunes/public",
-			Generate: "/v1/chat/completions",
+			List:     CloudflareListEndpoint,
+			Generate: CloudflareGenerateEndpoint,
 		},
 	},
 	CohereID: {
@@ -48,8 +78,8 @@ var Registry = map[string]Config{
 		URL:      CohereDefaultBaseURL,
 		AuthType: AuthTypeBearer,
 		Endpoints: Endpoints{
-			List:     "/v1/models",
-			Generate: "/v2/chat",
+			List:     CohereListEndpoint,
+			Generate: CohereGenerateEndpoint,
 		},
 	},
 	GoogleID: {
@@ -58,8 +88,8 @@ var Registry = map[string]Config{
 		URL:      GoogleDefaultBaseURL,
 		AuthType: AuthTypeQuery,
 		Endpoints: Endpoints{
-			List:     "/v1beta/models",
-			Generate: "/v1beta/models/{model}:generateContent",
+			List:     GoogleListEndpoint,
+			Generate: GoogleGenerateEndpoint,
 		},
 	},
 	GroqID: {
@@ -68,8 +98,8 @@ var Registry = map[string]Config{
 		URL:      GroqDefaultBaseURL,
 		AuthType: AuthTypeBearer,
 		Endpoints: Endpoints{
-			List:     "/openai/v1/models",
-			Generate: "/openai/v1/chat/completions",
+			List:     GroqListEndpoint,
+			Generate: GroqGenerateEndpoint,
 		},
 	},
 	OllamaID: {
@@ -78,8 +108,8 @@ var Registry = map[string]Config{
 		URL:      OllamaDefaultBaseURL,
 		AuthType: AuthTypeNone,
 		Endpoints: Endpoints{
-			List:     "/api/tags",
-			Generate: "/api/generate",
+			List:     OllamaListEndpoint,
+			Generate: OllamaGenerateEndpoint,
 		},
 	},
 	OpenaiID: {
@@ -88,8 +118,8 @@ var Registry = map[string]Config{
 		URL:      OpenaiDefaultBaseURL,
 		AuthType: AuthTypeBearer,
 		Endpoints: Endpoints{
-			List:     "/v1/models",
-			Generate: "/v1/chat/completions",
+			List:     OpenAIListEndpoint,
+			Generate: OpenAIGenerateEndpoint,
 		},
 	},
 }
