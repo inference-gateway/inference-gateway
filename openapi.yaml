@@ -536,32 +536,32 @@ components:
                         properties:
                           name:
                             type: string
-                          base_model_id:
+                          baseModelId:
                             type: string
                           version:
                             type: string
-                          display_name:
+                          displayName:
                             type: string
                           description:
                             type: string
-                          input_token_limit:
+                          inputTokenLimit:
                             type: integer
-                          output_token_limit:
+                          outputTokenLimit:
                             type: integer
-                          supported_generation_methods:
+                          supportedGenerationMethods:
                             type: array
                             items:
                               type: string
                           temperature:
                             type: number
                             format: float64
-                          max_temperature:
+                          maxTemperature:
                             type: number
                             format: float64
-                          top_p:
+                          topP:
                             type: number
                             format: float64
-                          top_k:
+                          topK:
                             type: integer
             generate:
               endpoint: "/v1beta/models/{model}:generateContent"
@@ -571,15 +571,19 @@ components:
                   type: object
                   properties:
                     contents:
-                      type: object
-                      properties:
-                        parts:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              text:
-                                type: string
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          parts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                text:
+                                  type: string
+                          role:
+                            type: string
                 response:
                   type: object
                   properties:
@@ -598,8 +602,42 @@ components:
                                   properties:
                                     text:
                                       type: string
-                              role:
+                          finishReason:
+                            type: string
+                          safetyRatings:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                category:
+                                  type: string
+                                probability:
+                                  type: string
+                    promptFeedback:
+                      type: object
+                      properties:
+                        safetyRatings:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              category:
                                 type: string
+                              probability:
+                                type: string
+                        blockReason:
+                          type: string
+                    usageMetadata:
+                      type: object
+                      properties:
+                        promptTokenCount:
+                          type: integer
+                        candidatesTokenCount:
+                          type: integer
+                        totalTokenCount:
+                          type: integer
+                    modelVersion:
+                      type: string
         cloudflare:
           id: "cloudflare"
           url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
