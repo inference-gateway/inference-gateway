@@ -1,14 +1,24 @@
 package providers
 
+type CohereModel struct {
+	Name             string   `json:"name"`
+	Endpoints        []string `json:"endpoints"`
+	Finetuned        bool     `json:"finetuned"`
+	ContextLength    float64  `json:"context_length"`
+	TokenizerURL     string   `json:"tokenizer_url"`
+	DefaultEndpoints []string `json:"default_endpoints"`
+}
+
 type ListModelsResponseCohere struct {
-	Models []interface{} `json:"models"`
+	Models        []CohereModel `json:"models"`
+	NextPageToken string        `json:"next_page_token"`
 }
 
 func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
 	var models []Model
 	for _, model := range l.Models {
 		models = append(models, Model{
-			Name: model.(string),
+			Name: model.Name,
 		})
 	}
 	return ListModelsResponse{
