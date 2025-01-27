@@ -33,11 +33,51 @@ func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
 }
 
 type GenerateRequestAnthropic struct {
-	Messages []Message `json:"messages"`
-	Model    string    `json:"model"`
+	Model     string    `json:"model"`
+	MaxTokens *int      `json:"max_tokens,omitempty"`
+	Messages  []Message `json:"messages"`
+}
+
+func (r *GenerateRequest) TransformAnthropic() GenerateRequestAnthropic {
+	return GenerateRequestAnthropic{
+		Model:     r.Model,
+		Messages:  r.Messages,
+		MaxTokens: intPtr(1024), // TODO - make it possible to pass this in the request, depending on the provider
+	}
+}
+
+type AnthropicContent struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+type AnthropicUsage struct {
+	InputTokens  int `json:"input_tokens"`
+	OutputTokens int `json:"output_tokens"`
 }
 
 type GenerateResponseAnthropic struct {
-	Choices []struct{} `json:"choices"`
-	Model   string     `json:"model"`
+	ID           string             `json:"id"`
+	Type         string             `json:"type"`
+	Role         string             `json:"role"`
+	Content      []AnthropicContent `json:"content"`
+	Model        string             `json:"model"`
+	StopReason   string             `json:"stop_reason"`
+	StopSequence interface{}        `json:"stop_sequence"`
+	Usage        AnthropicUsage     `json:"usage"`
+}
+
+func (g *GenerateResponseAnthropic) Transform() GenerateResponse {
+	if len(g.Content) == 0 {
+		return GenerateResponse{}
+	}
+
+	return GenerateResponse{
+		Provider: AnthropicDisplayName,
+		Response: ResponseTokens{
+			Role:    g.Role,
+			Content: g.Content[0].Text,
+			Model:   g.Model,
+		},
+	}
 }

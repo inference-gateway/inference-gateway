@@ -78,3 +78,7 @@ type ResponseTokens struct {
 func float64Ptr(v float64) *float64 {
 	return &v
 }
+
+func intPtr(v int) *int {
+	return &v
+}

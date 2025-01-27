@@ -368,13 +368,33 @@ func (p *ProviderImpl) GenerateTokens(model string, messages []Message) (Generat
 			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
 		}
 		return response.Transform(), nil
-	// case AnthropicID:
-	// 	var response GenerateResponseAnthropic
-	// 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
-	// 		p.logger.Error("failed to decode response", err, "provider", p.GetName())
-	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
-	// 	}
-	// 	return response.Transform(), nil
+	case AnthropicID:
+		// Request
+		payload := genRequest.TransformAnthropic()
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			p.logger.Error("failed to marshal request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
+		}
+		resp, err := p.client.Post(url, "application/json", string(payloadBytes))
+		if err != nil {
+			p.logger.Error("failed to make request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			p.logger.Error("request failed", fmt.Errorf("status code: %d", resp.StatusCode))
+			return GenerateResponse{}, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
+		}
+
+		// Response
+		var response GenerateResponseAnthropic
+		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return response.Transform(), nil
 	default:
 		p.logger.Error("unsupported provider", nil)
 		return GenerateResponse{}, fmt.Errorf("unsupported provider: %s", p.GetID())
