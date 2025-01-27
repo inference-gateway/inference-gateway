@@ -4,16 +4,16 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 
 ### GET Endpoints
 
-| Description            | Curl Command                                                    |
-| ---------------------- | --------------------------------------------------------------- |
-| List all models        | `curl -X GET http://localhost:8080/llms`                        |
-| List Ollama models     | `curl -X GET http://localhost:8080/proxy/ollama/v1/models`      |
-| List Groq models       | `curl -X GET http://localhost:8080/proxy/groq/openai/v1/models` |
-| List OpenAI models     | `curl -X GET http://localhost:8080/proxy/openai/v1/models`      |
-| List Google models     | `curl -X GET http://localhost:8080/proxy/google/v1beta/models`  |
-| List Cloudflare models | `curl -X GET http://localhost:8080/proxy/cloudflare/ai/models`  |
-| List Cohere models     | `curl -X GET http://localhost:8080/proxy/cohere/v1/models`      |
-| List Anthropic models  | `curl -X GET http://localhost:8080/proxy/anthropic/v1/models`   |
+| Description            | Curl Command                                        |
+| ---------------------- | --------------------------------------------------- |
+| List all models        | `curl -X GET http://localhost:8080/llms`            |
+| List Ollama models     | `curl -X GET http://localhost:8080/llms/ollama`     |
+| List Groq models       | `curl -X GET http://localhost:8080/llms/groq`       |
+| List OpenAI models     | `curl -X GET http://localhost:8080/llms/openai`     |
+| List Google models     | `curl -X GET http://localhost:8080/llms/google`     |
+| List Cloudflare models | `curl -X GET http://localhost:8080/llms/cloudflare` |
+| List Cohere models     | `curl -X GET http://localhost:8080/llms/cohere`     |
+| List Anthropic models  | `curl -X GET http://localhost:8080/llms/anthropic`  |
 
 ### POST Endpoints
 
