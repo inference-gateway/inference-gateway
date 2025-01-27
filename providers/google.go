@@ -5,11 +5,10 @@ type ListModelsResponseGoogle struct {
 }
 
 func (l *ListModelsResponseGoogle) Transform() ListModelsResponse {
-	var models []map[string]interface{}
+	var models []Model
 	for _, model := range l.Models {
-		models = append(models, map[string]interface{}{
-			"name": model.Name,
-			"id":   OllamaID,
+		models = append(models, Model{
+			Name: model.Name,
 		})
 	}
 	return ListModelsResponse{

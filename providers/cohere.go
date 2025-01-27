@@ -5,11 +5,10 @@ type ListModelsResponseCohere struct {
 }
 
 func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
-	var models []map[string]interface{}
+	var models []Model
 	for _, model := range l.Models {
-		models = append(models, map[string]interface{}{
-			"name": model,
-			"id":   CohereID,
+		models = append(models, Model{
+			Name: model.(string),
 		})
 	}
 	return ListModelsResponse{

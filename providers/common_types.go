@@ -1,7 +1,5 @@
 package providers
 
-import "time"
-
 // The authentication type of the specific provider
 const (
 	AuthTypeBearer  = "bearer"
@@ -55,20 +53,15 @@ type GenerateResponse struct {
 	Response ResponseTokens `json:"response"`
 }
 type ListModelsResponse struct {
-	Models   []map[string]interface{} `json:"models"`
-	Provider string                   `json:"provider"`
+	Models   []Model `json:"models"`
+	Provider string  `json:"provider"`
 }
 type Message struct {
 	Content string `json:"content"`
 	Role    string `json:"role"`
 }
 type Model struct {
-	Details    struct{}  `json:"details"`
-	Digest     string    `json:"digest"`
-	Model      string    `json:"model"`
-	ModifiedAt time.Time `json:"modified_at"`
-	Name       string    `json:"name"`
-	Size       int       `json:"size"`
+	Name string `json:"name"`
 }
 type ResponseTokens struct {
 	Content string `json:"content"`

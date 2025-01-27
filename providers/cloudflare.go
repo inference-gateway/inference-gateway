@@ -5,11 +5,10 @@ type ListModelsResponseCloudflare struct {
 }
 
 func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
-	var models []map[string]interface{}
+	var models []Model
 	for _, model := range l.Result {
-		models = append(models, map[string]interface{}{
-			"name": model,
-			"id":   CloudflareID,
+		models = append(models, Model{
+			Name: model.(string),
 		})
 	}
 	return ListModelsResponse{

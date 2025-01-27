@@ -189,7 +189,7 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 				router.logger.Error("failed to create provider", err)
 				ch <- providers.ListModelsResponse{
 					Provider: id,
-					Models:   []map[string]interface{}{},
+					Models:   []providers.Model{},
 				}
 				return
 			}
@@ -199,7 +199,7 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 				router.logger.Error("failed to list models", err, "provider", provider)
 				ch <- providers.ListModelsResponse{
 					Provider: id,
-					Models:   []map[string]interface{}{},
+					Models:   []providers.Model{},
 				}
 				return
 			}
