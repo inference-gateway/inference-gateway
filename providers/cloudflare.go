@@ -1,14 +1,24 @@
 package providers
 
+type ListModelsResponseResultCloudflare struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	CreatedAt   string `json:"created_at"`
+	ModifiedAt  string `json:"modified_at"`
+	Public      bool   `json:"public"`
+	Model       string `json:"model"`
+}
+
 type ListModelsResponseCloudflare struct {
-	Result []interface{} `json:"result"`
+	Result []ListModelsResponseResultCloudflare `json:"result"`
 }
 
 func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 	var models []Model
 	for _, model := range l.Result {
 		models = append(models, Model{
-			Name: model.(string),
+			Name: model.Name,
 		})
 	}
 	return ListModelsResponse{
