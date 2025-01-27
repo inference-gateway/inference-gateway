@@ -1,7 +1,6 @@
 package providers
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -70,7 +69,11 @@ func (p *ProviderImpl) GetName() string {
 }
 
 func (p *ProviderImpl) GetURL() string {
-	return p.url
+	baseURL := p.url
+	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
+		baseURL = "http://" + baseURL
+	}
+	return baseURL
 }
 
 func (p *ProviderImpl) GetToken() string {
@@ -135,7 +138,6 @@ func (p *ProviderImpl) ListModels() (ListModelsResponse, error) {
 			return ListModelsResponse{}, fmt.Errorf("failed to decode response: %w", err)
 		}
 		return response.Transform(), nil
-
 	case OpenaiID:
 		var response ListModelsResponseOpenai
 		err = json.NewDecoder(resp.Body).Decode(&response)
@@ -184,44 +186,92 @@ func (p *ProviderImpl) GenerateTokens(model string, messages []Message) (Generat
 		return GenerateResponse{}, errors.New("provider cannot be nil")
 	}
 
-	url := "/proxy/" + p.GetID() + p.EndpointGenerate()
-	providerName := p.GetName()
-	if providerName == "Google" || providerName == "Cloudflare" {
+	baseURL, err := url.Parse(p.GetURL())
+	if err != nil {
+		p.logger.Error("failed to parse base URL", err)
+		return GenerateResponse{}, fmt.Errorf("failed to parse base URL: %v", err)
+	}
+
+	// Construct URL with model parameter if needed
+	url := "/proxy/" + p.GetID() + baseURL.Path + p.EndpointGenerate()
+	if p.GetID() == GoogleID || p.GetID() == CloudflareID {
 		url = strings.Replace(url, "{model}", model, 1)
 	}
 
+	// Build and send request
 	payload := p.BuildGenTokensRequest(model, messages)
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
+		p.logger.Error("failed to marshal request", err)
 		return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(payloadBytes))
+	resp, err := p.client.Post(url, "application/json", string(payloadBytes))
 	if err != nil {
-		return GenerateResponse{}, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := p.client.Do(req)
-	if err != nil {
+		p.logger.Error("failed to make request", err)
 		return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return GenerateResponse{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		p.logger.Error("request failed", fmt.Errorf("status code: %d", resp.StatusCode))
+		return GenerateResponse{}, fmt.Errorf("request failed with status code: %d", resp.StatusCode)
 	}
 
-	var response interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+	switch p.GetID() {
+	case OllamaID:
+		var response GenerateResponseOllama
+		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			p.logger.Error("failed to decode response", err)
+			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return response.Transform(), nil
+	// case GroqID:
+	// 	var response GenerateResponseGroq
+	// 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	// 		p.logger.Error("failed to decode response", err)
+	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+	// 	}
+	// 	return response.Transform(), nil
+	// case OpenaiID:
+	// 	var response GenerateResponseOpenai
+	// 	err = json.NewDecoder(resp.Body).Decode(&response)
+	// 	if err != nil {
+	// 		p.logger.Error("failed to decode response", err, "provider", p.GetName())
+	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+	// 	}
+	// 	return response.Transform(), nil
+	// case GoogleID:
+	// 	var response GenerateResponseGoogle
+	// 	err = json.NewDecoder(resp.Body).Decode(&response)
+	// 	if err != nil {
+	// 		p.logger.Error("failed to decode response", err, "provider", p.GetName())
+	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+	// 	}
+	// 	return response.Transform(), nil
+	// case CloudflareID:
+	// 	var response GenerateResponseCloudflare
+	// 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	// 		p.logger.Error("failed to decode response", err, "provider", p.GetName())
+	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+	// 	}
+	// 	return response.Transform(), nil
+	// case CohereID:
+	// 	var response GenerateResponseCohere
+	// 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	// 		p.logger.Error("failed to decode response", err, "provider", p.GetName())
+	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+	// 	}
+	// 	return response.Transform(), nil
+	// case AnthropicID:
+	// 	var response GenerateResponseAnthropic
+	// 	if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	// 		p.logger.Error("failed to decode response", err, "provider", p.GetName())
+	// 		return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+	// 	}
+	// 	return response.Transform(), nil
+	default:
+		p.logger.Error("unsupported provider", nil)
+		return GenerateResponse{}, fmt.Errorf("unsupported provider: %s", p.GetID())
 	}
-
-	result, err := p.BuildGenTokensResponse(model, response)
-	if err != nil {
-		return GenerateResponse{}, fmt.Errorf("failed to build response: %w", err)
-	}
-
-	return result, nil
 }
