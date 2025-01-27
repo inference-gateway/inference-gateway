@@ -128,6 +128,15 @@ func (p *ProviderImpl) ListModels() (ListModelsResponse, error) {
 			return ListModelsResponse{}, fmt.Errorf("failed to decode response: %w", err)
 		}
 		return response.Transform(), nil
+
+	case OpenaiID:
+		var response ListModelsResponseOpenai
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		if err != nil {
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return ListModelsResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return response.Transform(), nil
 	case GoogleID:
 		var response ListModelsResponseGoogle
 		err = json.NewDecoder(resp.Body).Decode(&response)
