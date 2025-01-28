@@ -34,7 +34,8 @@ func GenerateEnvExample(output string, oas string) error {
 {{- range $name, $provider := .Providers }}
 {{ upper $name }}_API_URL={{ $provider.URL }}
 {{ upper $name }}_API_KEY=
-{{- end }}`
+{{- end }}
+`
 
 	// Create template with functions
 	t, err := template.New("env").Funcs(template.FuncMap{
