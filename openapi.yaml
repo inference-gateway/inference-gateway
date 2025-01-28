@@ -2,7 +2,8 @@
 openapi: 3.1.0
 info:
   title: Inference Gateway API
-  description: API for interacting with various language models through the Inference Gateway.
+  description: |
+    API for interacting with various language models through the Inference Gateway.
   version: 1.0.0
 servers:
   - url: http://localhost:8080
@@ -14,7 +15,7 @@ paths:
         - bearerAuth: []
       responses:
         "200":
-          description: A list of models
+          description: A list of models by provider
           content:
             application/json:
               schema:
@@ -22,15 +23,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/ListModelsResponse"
         "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized: Invalid or missing JWT token"
+          $ref: "#/components/responses/Unauthorized"
   /llms/{provider}:
     get:
       summary: List all models for a specific provider
@@ -48,17 +41,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProviderModels"
+                $ref: "#/components/schemas/ListModelsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized: Invalid or missing JWT token"
+          $ref: "#/components/responses/Unauthorized"
   /llms/{provider}/generate:
     post:
       summary: Generate content with a specific provider's LLM
@@ -83,33 +70,131 @@ paths:
               schema:
                 $ref: "#/components/schemas/GenerateResponse"
         "400":
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
+          $ref: "#/components/responses/BadRequest"
         "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Unauthorized: Invalid or missing JWT token"
+          $ref: "#/components/responses/Unauthorized"
         "500":
-          description: Internal server error
+          $ref: "#/components/responses/InternalError"
+  /proxy/{provider}/{path}:
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Providers"
+      - name: path
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        description: The remaining path to proxy to the provider
+    get:
+      summary: Proxy GET request to provider
+      operationId: proxyGet
+      responses:
+        "200":
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  error:
-                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    post:
+      summary: Proxy POST request to provider
+      operationId: proxyPost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    put:
+      summary: Proxy PUT request to provider
+      operationId: proxyPut
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Proxy DELETE request to provider
+      operationId: proxyDelete
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Proxy PATCH request to provider
+      operationId: proxyPatch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
   /health:
     get:
       summary: Health check
@@ -117,40 +202,92 @@ paths:
         "200":
           description: Health check successful
 components:
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
       description: |
-        Authentication is optional by default. To enable authentication, set ENABLE_AUTH to true. When enabled, requests must include a valid JWT token in the Authorization header.
+        Authentication is optional by default.
+        To enable authentication, set ENABLE_AUTH to true.
+        When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
+    Providers:
+      type: string
+      enum:
+        - ollama
+        - groq
+        - openai
+        - google
+        - cloudflare
+        - cohere
+        - anthropic
+    AuthType:
+      type: string
+      description: Authentication type for providers
+      enum:
+        - bearer
+        - xheader
+        - query
+        - none
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+    MessageRole:
+      type: string
+      description: Role of the message sender
+      enum:
+        - system
+        - user
+        - assistant
     Message:
       type: object
-      description: "Message structure for provider requests"
+      description: Message structure for provider requests
       properties:
         role:
-          type: string
-          enum:
-            - system
-            - user
-            - assistant
+          $ref: "#/components/schemas/MessageRole"
         content:
+          type: string
+    Model:
+      type: object
+      description: Common model information
+      properties:
+        name:
           type: string
     ListModelsResponse:
       type: object
-      description: "Response structure for listing models"
+      description: Response structure for listing models
       properties:
         provider:
-          type: string
+          $ref: "#/components/schemas/Providers"
         models:
           type: array
           items:
-            type: object
-            additionalProperties: true
+            $ref: "#/components/schemas/Model"
     GenerateRequest:
       type: object
-      description: "Request structure for token generation"
+      description: Request structure for token generation
       required:
         - model
         - messages
@@ -163,7 +300,7 @@ components:
             $ref: "#/components/schemas/Message"
     ResponseTokens:
       type: object
-      description: "Token response structure"
+      description: Token response structure
       properties:
         role:
           type: string
@@ -173,72 +310,12 @@ components:
           type: string
     GenerateResponse:
       type: object
-      description: "Response structure for token generation"
+      description: Response structure for token generation
       properties:
         provider:
           type: string
         response:
           $ref: "#/components/schemas/ResponseTokens"
-    GetModelsResponse:
-      type: object
-      description: "Generic model listing response"
-      properties:
-        object:
-          type: string
-        data:
-          type: array
-          items:
-            type: object
-            additionalProperties: true
-    Model:
-      type: object
-      properties:
-        name:
-          type: string
-        model:
-          type: string
-        modified_at:
-          type: string
-          format: date-time
-        size:
-          type: integer
-        digest:
-          type: string
-        details:
-          type: object
-          properties:
-            parent_model:
-              type: string
-            format:
-              type: string
-            family:
-              type: string
-            families:
-              type: array
-              items:
-                type: string
-            parameter_size:
-              type: string
-            quantization_level:
-              type: string
-    ProviderModels:
-      type: object
-      properties:
-        provider:
-          $ref: "#/components/schemas/Providers"
-        models:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              object:
-                type: string
-              owned_by:
-                type: string
-              created:
-                type: integer
     Config:
       x-config:
         sections:
@@ -316,24 +393,6 @@ components:
                     env: "{key}_API_KEY"
                     description: "The provider API key"
                     secret: true
-    AuthType:
-      type: string
-      description: "Authentication type for providers"
-      enum:
-        - bearer
-        - xheader
-        - query
-        - none
-    Providers:
-      type: string
-      enum:
-        - ollama
-        - groq
-        - openai
-        - google
-        - cloudflare
-        - cohere
-        - anthropic
       x-provider-configs:
         ollama:
           id: "ollama"
