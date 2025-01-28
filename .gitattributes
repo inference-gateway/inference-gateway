@@ -11,3 +11,5 @@ examples/kubernetes/hybrid/inference-gateway/configmap.yaml linguist-generated=t
 examples/kubernetes/hybrid/inference-gateway/secret.yaml linguist-generated=true
 examples/kubernetes/authentication/inference-gateway/configmap.yaml linguist-generated=true
 examples/kubernetes/authentication/inference-gateway/secret.yaml linguist-generated=true
+examples/kubernetes/agent/inference-gateway/configmap.yaml linguist-generated=true
+examples/kubernetes/agent/inference-gateway/secret.yaml linguist-generated=true
