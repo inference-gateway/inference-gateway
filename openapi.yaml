@@ -56,24 +56,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GenerateResponse"
-      "400":
-        description: Bad request
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                error:
-                  type: string
-      "500":
-        description: Internal server error
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                error:
-                  type: string
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
   /health:
     get:
       summary: Health check
@@ -353,6 +353,10 @@ components:
                       type: boolean
                     system:
                       type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
                 response:
                   type: object
                   properties:
@@ -367,70 +371,6 @@ components:
                           type: string
                         content:
                           type: string
-        groq:
-          id: "groq"
-          url: "https://api.groq.com"
-          auth_type: "bearer"
-          endpoints:
-            list:
-              endpoint: "/openai/v1/models"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    object:
-                      type: string
-                    data:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                          object:
-                            type: string
-                          created:
-                            type: integer
-                            format: int64
-                          owned_by:
-                            type: string
-                          active:
-                            type: boolean
-                          context_window:
-                            type: integer
-                          public_apps:
-                            type: object
-            generate:
-              endpoint: "/openai/v1/chat/completions"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    messages:
-                      type: array
-                      items:
-                        $ref: "#/components/schemas/Message"
-                response:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    choices:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          message:
-                            type: object
-                            properties:
-                              role:
-                                type: string
-                              content:
-                                type: string
         openai:
           id: "openai"
           url: "https://api.openai.com"
@@ -488,7 +428,7 @@ components:
                           parent:
                             type: string
             generate:
-              endpoint: "/v1/completions"
+              endpoint: "/v1/chat/completions"
               method: "POST"
               schema:
                 request:
@@ -499,7 +439,89 @@ components:
                     messages:
                       type: array
                       items:
-                        $ref: "#/components/schemas/Message"
+                        type: object
+                        properties:
+                          role:
+                            type: string
+                          content:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
+                response:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    choices:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          message:
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                              content:
+                                type: string
+        groq:
+          id: "groq"
+          url: "https://api.groq.com"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/openai/v1/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    object:
+                      type: string
+                    data:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          object:
+                            type: string
+                          created:
+                            type: integer
+                            format: int64
+                          owned_by:
+                            type: string
+                          active:
+                            type: boolean
+                          context_window:
+                            type: integer
+                          public_apps:
+                            type: object
+            generate:
+              endpoint: "/openai/v1/chat/completions"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    model:
+                      type: string
+                    messages:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          role:
+                            type: string
+                          content:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
                 response:
                   type: object
                   properties:
@@ -584,6 +606,10 @@ components:
                                   type: string
                           role:
                             type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
                 response:
                   type: object
                   properties:
@@ -678,6 +704,12 @@ components:
                   properties:
                     prompt:
                       type: string
+                    model:
+                      type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
                 response:
                   type: object
                   properties:
@@ -734,7 +766,16 @@ components:
                     messages:
                       type: array
                       items:
-                        $ref: "#/components/schemas/Message"
+                        type: object
+                        properties:
+                          role:
+                            type: string
+                          content:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
                 response:
                   type: object
                   properties:
@@ -797,7 +838,16 @@ components:
                     messages:
                       type: array
                       items:
-                        $ref: "#/components/schemas/Message"
+                        type: object
+                        properties:
+                          role:
+                            type: string
+                          content:
+                            type: string
+                    temperature:
+                      type: number
+                      format: float64
+                      default: 0.7
                 response:
                   type: object
                   properties:
@@ -809,4 +859,9 @@ components:
                         type: object
                         properties:
                           message:
-                            $ref: "#/components/schemas/Message"
+                            type: object
+                            properties:
+                              role:
+                                type: string
+                              content:
+                                type: string
