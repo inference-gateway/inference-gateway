@@ -10,6 +10,8 @@ paths:
   /llms:
     get:
       summary: List all language models
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: A list of models
@@ -19,6 +21,16 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ListModelsResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized: Invalid or missing JWT token"
   /llms/{provider}:
     get:
       summary: List all models for a specific provider
@@ -28,6 +40,8 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Providers"
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: A list of models
@@ -35,6 +49,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProviderModels"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized: Invalid or missing JWT token"
   /llms/{provider}/generate:
     post:
       summary: Generate content with a specific provider's LLM
@@ -44,6 +68,8 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Providers"
+      security:
+        - bearerAuth: []
       requestBody:
         content:
           application/json:
@@ -65,6 +91,16 @@ paths:
                 properties:
                   error:
                     type: string
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Unauthorized: Invalid or missing JWT token"
         "500":
           description: Internal server error
           content:
@@ -87,8 +123,7 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        Authentication is available but disabled by default.
-        To enable authentication, Set ENABLE_AUTH to true.
+        Authentication is optional by default. To enable authentication, set ENABLE_AUTH to true. When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
     Message:
       type: object
