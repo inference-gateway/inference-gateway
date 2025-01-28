@@ -11,6 +11,7 @@ paths:
   /llms:
     get:
       summary: List all language models
+      operationId: listModels
       security:
         - bearerAuth: []
       responses:
@@ -27,6 +28,7 @@ paths:
   /llms/{provider}:
     get:
       summary: List all models for a specific provider
+      operationId: listModelsByProvider
       parameters:
         - name: provider
           in: path
@@ -49,6 +51,7 @@ paths:
   /llms/{provider}/generate:
     post:
       summary: Generate content with a specific provider's LLM
+      operationId: generateContent
       parameters:
         - name: provider
           in: path
@@ -95,11 +98,7 @@ paths:
       operationId: proxyGet
       responses:
         "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
+          $ref: "#/components/responses/ProviderResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -112,17 +111,10 @@ paths:
       summary: Proxy POST request to provider
       operationId: proxyPost
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
+        $ref: "#/components/requestBodies/ProviderRequest"
       responses:
         "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
+          $ref: "#/components/responses/ProviderResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -135,17 +127,10 @@ paths:
       summary: Proxy PUT request to provider
       operationId: proxyPut
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
+        $ref: "#/components/requestBodies/ProviderRequest"
       responses:
         "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
+          $ref: "#/components/responses/ProviderResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -159,11 +144,7 @@ paths:
       operationId: proxyDelete
       responses:
         "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
+          $ref: "#/components/responses/ProviderResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -176,17 +157,10 @@ paths:
       summary: Proxy PATCH request to provider
       operationId: proxyPatch
       requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
+        $ref: "#/components/requestBodies/ProviderRequest"
       responses:
         "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
+          $ref: "#/components/responses/ProviderResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -202,6 +176,57 @@ paths:
         "200":
           description: Health check successful
 components:
+  requestBodies:
+    ProviderRequest:
+      required: true
+      description: |
+        ProviderRequest depends on the specific provider and endpoint being called
+        If you decide to use this approach, please follow the provider-specific documentations.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              model:
+                type: string
+              messages:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    role:
+                      type: string
+                    content:
+                      type: string
+              temperature:
+                type: number
+                format: float64
+                default: 0.7
+            examples:
+              - openai:
+                  summary: OpenAI chat completion request
+                  value:
+                    model: "gpt-3.5-turbo"
+                    messages:
+                      - role: "user"
+                        content: "Hello! How can I assist you today?"
+                    temperature: 0.7
+              - google:
+                  summary: Google Gemini request
+                  value:
+                    model: "gemini-1.0-pro"
+                    messages:
+                      - role: "user"
+                        content: "What is machine learning?"
+                    temperature: 0.3
+              - anthropic:
+                  summary: Anthropic Claude request
+                  value:
+                    model: "claude-3-opus-20240229"
+                    messages:
+                      - role: "user"
+                        content: "Explain quantum computing"
+                    temperature: 0.5
   responses:
     BadRequest:
       description: Bad request
@@ -221,6 +246,63 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    ProviderResponse:
+      description: |
+        ProviderResponse depends on the specific provider and endpoint being called
+        If you decide to use this approach, please follow the provider-specific documentations.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ProviderSpecificResponse"
+          examples:
+            openai:
+              summary: OpenAI API response
+              value:
+                {
+                  "id": "chatcmpl-123",
+                  "object": "chat.completion",
+                  "created": 1677652288,
+                  "model": "gpt-3.5-turbo",
+                  "choices":
+                    [
+                      {
+                        "index": 0,
+                        "message":
+                          {
+                            "role": "assistant",
+                            "content": "Hello! How can I help you today?",
+                          },
+                        "finish_reason": "stop",
+                      },
+                    ],
+                }
+            google:
+              summary: Google API response
+              value:
+                {
+                  "candidates":
+                    [
+                      {
+                        "content":
+                          {
+                            "parts":
+                              [
+                                {
+                                  "text": "Hello! How can I assist you today?",
+                                },
+                              ],
+                          },
+                        "finishReason": "STOP",
+                        "safetyRatings":
+                          [
+                            {
+                              "category": "HARM_CATEGORY_HARASSMENT",
+                              "probability": "NEGLIGIBLE",
+                            },
+                          ],
+                      },
+                    ],
+                }
   securitySchemes:
     bearerAuth:
       type: http
@@ -241,7 +323,51 @@ components:
         - cloudflare
         - cohere
         - anthropic
-    AuthType:
+    ProviderSpecificResponse:
+      type: object
+      description: |
+        Provider-specific response format. Examples:
+
+        OpenAI GET /v1/models response:
+        ```json
+        {
+          "data": [
+            {
+              "id": "gpt-4",
+              "object": "model",
+              "created": 1687882410
+            }
+          ]
+        }
+        ```
+
+        Google GET /v1beta/models response:
+        ```json
+        {
+          "models": [
+            {
+              "name": "models/gemini-1.0-pro",
+              "version": "001",
+              "displayName": "Gemini 1.0 Pro",
+              "description": "The best model for scaling across a wide range of tasks"
+            }
+          ]
+        }
+        ```
+
+        Anthropic GET /v1/models response:
+        ```json
+        {
+          "models": [
+            {
+              "name": "claude-3-opus-20240229",
+              "description": "Most capable model for highly complex tasks"
+            }
+          ]
+        }
+        ```
+      additionalProperties: true
+    ProviderAuthType:
       type: string
       description: Authentication type for providers
       enum:
