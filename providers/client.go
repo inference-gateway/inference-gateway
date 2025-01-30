@@ -56,6 +56,7 @@ func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
 			TLSClientConfig: &tls.Config{
 				MinVersion: tlsMinVersion,
 			},
+			ForceAttemptHTTP2: true,
 		},
 	}
 
