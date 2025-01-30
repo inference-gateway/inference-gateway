@@ -48,27 +48,32 @@ const (
 )
 
 // Common response and request types
-type AuthType struct {
-}
 type GenerateRequest struct {
 	Messages []Message `json:"messages"`
 	Model    string    `json:"model"`
+	Stream   bool      `json:"stream"`
+	SSEvents bool      `json:"ss_events"`
 }
+
 type GenerateResponse struct {
 	Provider string         `json:"provider"`
 	Response ResponseTokens `json:"response"`
 }
+
 type ListModelsResponse struct {
 	Models   []Model `json:"models"`
 	Provider string  `json:"provider"`
 }
+
 type Message struct {
 	Content string `json:"content"`
 	Role    string `json:"role"`
 }
+
 type Model struct {
 	Name string `json:"name"`
 }
+
 type ResponseTokens struct {
 	Content string `json:"content"`
 	Model   string `json:"model"`

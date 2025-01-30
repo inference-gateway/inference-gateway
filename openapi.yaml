@@ -424,6 +424,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Message"
+        stream:
+          type: boolean
+          default: false
+          description: Whether to stream tokens as they are generated
+        ssevents:
+          type: boolean
+          default: false
+          description: Whether to use Server-Sent Events for token generation
     ResponseTokens:
       type: object
       description: Token response structure

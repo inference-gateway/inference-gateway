@@ -91,7 +91,7 @@ func (r *GenerateRequest) TransformOllama() GenerateRequestOllama {
 		Model:  r.Model,
 		Prompt: lastMessage,
 		System: systemPrompt,
-		Stream: false, // Default to non-streaming
+		Stream: r.Stream,
 		Options: &OllamaOptions{
 			Temperature: float64Ptr(0.7), // Default temperature
 		},

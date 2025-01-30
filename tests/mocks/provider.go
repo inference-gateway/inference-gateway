@@ -168,3 +168,18 @@ func (mr *MockProviderMockRecorder) ListModels(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModels", reflect.TypeOf((*MockProvider)(nil).ListModels), ctx)
 }
+
+// StreamTokens mocks base method.
+func (m *MockProvider) StreamTokens(ctx context.Context, model string, messages []providers.Message) (<-chan providers.GenerateResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StreamTokens", ctx, model, messages)
+	ret0, _ := ret[0].(<-chan providers.GenerateResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StreamTokens indicates an expected call of StreamTokens.
+func (mr *MockProviderMockRecorder) StreamTokens(ctx, model, messages any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamTokens", reflect.TypeOf((*MockProvider)(nil).StreamTokens), ctx, model, messages)
+}

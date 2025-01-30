@@ -26,3 +26,23 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 | api.cloudflare.com                | `curl -X POST http://localhost:8080/llms/cloudflare/generate -d '{"model":"llama-3.1-8b-instruct","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'` |
 | api.cohere.com                    | `curl -X POST http://localhost:8080/llms/cohere/generate -d '{"model":"command-r","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'`                 |
 | api.anthropic.com                 | `curl -X POST http://localhost:8080/llms/anthropic/generate -d '{"model":"claude-3-opus-20240229","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'` |
+
+You can set the stream as an optional flag in the request body to enable streaming of tokens. The default value is `false`.
+
+```json
+{
+  "model": "phi3:3.8b",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Why is the sky blue? keep it short and concise."
+    }
+  ],
+  "stream": true,
+  "ss_events": true // Optional parameter to enable server-side events, for easy parsing on the client side
+}
+```

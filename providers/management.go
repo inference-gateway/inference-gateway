@@ -1,12 +1,16 @@
 package providers
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	l "github.com/inference-gateway/inference-gateway/logger"
@@ -26,6 +30,7 @@ type Provider interface {
 	// Fetchers
 	ListModels(ctx context.Context) (ListModelsResponse, error)
 	GenerateTokens(ctx context.Context, model string, messages []Message) (GenerateResponse, error)
+	StreamTokens(ctx context.Context, model string, messages []Message) (<-chan GenerateResponse, error)
 }
 
 type ProviderImpl struct {
@@ -212,7 +217,6 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 		return GenerateResponse{}, fmt.Errorf("failed to parse base URL: %v", err)
 	}
 
-	// Construct URL with model parameter if needed
 	url := "/proxy/" + p.GetID() + baseURL.Path + p.EndpointGenerate()
 	if p.GetID() == GoogleID || p.GetID() == CloudflareID {
 		url = strings.Replace(url, "{model}", model, 1)
@@ -386,6 +390,200 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 	}
 }
 
+func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages []Message) (<-chan GenerateResponse, error) {
+	if p == nil {
+		return nil, errors.New("provider cannot be nil")
+	}
+
+	baseURL, err := url.Parse(p.GetURL())
+	if err != nil {
+		p.logger.Error("failed to parse base URL", err)
+		return nil, fmt.Errorf("failed to parse base URL: %v", err)
+	}
+
+	url := "/proxy/" + p.GetID() + baseURL.Path + p.EndpointGenerate()
+	if p.GetID() == GoogleID || p.GetID() == CloudflareID {
+		url = strings.Replace(url, "{model}", model, 1)
+	}
+
+	streamCh := make(chan GenerateResponse)
+
+	genRequest := GenerateRequest{
+		Model:    model,
+		Messages: messages,
+		Stream:   true,
+	}
+
+	// Transform request based on provider
+	var payloadBytes []byte
+	switch p.GetID() {
+	case OllamaID:
+		payload := genRequest.TransformOllama()
+		payloadBytes, err = json.Marshal(payload)
+	case OpenaiID:
+		payload := genRequest.TransformOpenai()
+		payloadBytes, err = json.Marshal(payload)
+	case GroqID:
+		payload := genRequest.TransformGroq()
+		payloadBytes, err = json.Marshal(payload)
+	case GoogleID:
+		payload := genRequest.TransformGoogle()
+		payloadBytes, err = json.Marshal(payload)
+	case CloudflareID:
+		payload := genRequest.TransformCloudflare()
+		payloadBytes, err = json.Marshal(payload)
+	case CohereID:
+		payload := genRequest.TransformCohere()
+		payloadBytes, err = json.Marshal(payload)
+	case AnthropicID:
+		payload := genRequest.TransformAnthropic()
+		payloadBytes, err = json.Marshal(payload)
+	default:
+		p.logger.Error("unsupported provider", nil)
+		return nil, fmt.Errorf("unsupported provider")
+	}
+
+	if err != nil {
+		p.logger.Error("failed to marshal request", err)
+		return nil, fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payloadBytes))
+	if err != nil {
+		p.logger.Error("failed to create request", err)
+		return nil, fmt.Errorf("failed to create request: %v", err)
+	}
+
+	// Set content type header
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		p.logger.Error("failed to make request", err)
+		return nil, fmt.Errorf("failed to make request: %v", err)
+	}
+
+	reader := bufio.NewReader(resp.Body)
+
+	go func() {
+		defer resp.Body.Close()
+		defer close(streamCh)
+
+		for {
+			line, err := reader.ReadBytes('\n')
+			if err != nil {
+				if err != io.EOF {
+					p.logger.Error("failed to read stream", err)
+				}
+				return
+			}
+
+			if len(line) == 0 {
+				continue
+			}
+
+			// Unmarshal response based on provider
+			var chunk interface{}
+			switch p.GetID() {
+			case OllamaID:
+				var response GenerateResponseOllama
+				if err := json.Unmarshal(line, &response); err != nil {
+					p.logger.Error("failed to unmarshal chunk", err)
+					continue
+				}
+				chunk = response
+			case OpenaiID:
+				event, err := ParseSSE(line)
+				if err != nil {
+					if err.Error() == "stream ended" {
+						return
+					}
+					continue
+				}
+				var response GenerateResponseOpenai
+				if err := json.Unmarshal(event.Data, &response); err != nil {
+					p.logger.Error("failed to unmarshal chunk", err)
+					continue
+				}
+				chunk = response
+			case GroqID:
+				event, err := ParseSSE(line)
+				if err != nil {
+					if err.Error() == "stream ended" {
+						return
+					}
+					continue
+				}
+				var response GenerateResponseGroq
+				if err := json.Unmarshal(event.Data, &response); err != nil {
+					p.logger.Error("failed to unmarshal chunk", err)
+					continue
+				}
+				chunk = response
+			case GoogleID:
+				var response GenerateResponseGoogle
+				if err := json.Unmarshal(line, &response); err != nil {
+					p.logger.Error("failed to unmarshal chunk", err)
+					continue
+				}
+				chunk = response
+			case CloudflareID:
+				var response GenerateResponseCloudflare
+				if err := json.Unmarshal(line, &response); err != nil {
+					p.logger.Error("failed to unmarshal chunk", err)
+					continue
+				}
+				chunk = response
+			case CohereID:
+				var response GenerateResponseCohere
+				if err := json.Unmarshal(line, &response); err != nil {
+					p.logger.Error("failed to unmarshal chunk", err)
+					continue
+				}
+				chunk = response
+			case AnthropicID:
+				var response GenerateResponseAnthropic
+				if err := json.Unmarshal(line, &response); err != nil {
+					p.logger.Error("failed to unmarshal chunk", err)
+					continue
+				}
+				chunk = response
+			default:
+				p.logger.Error("unsupported provider for streaming", nil)
+				return
+			}
+
+			// Transform and send chunk
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				switch v := chunk.(type) {
+				case GenerateResponseOllama:
+					streamCh <- v.Transform()
+				case GenerateResponseOpenai:
+					streamCh <- v.Transform()
+				case GenerateResponseGroq:
+					streamCh <- v.Transform()
+				case GenerateResponseGoogle:
+					streamCh <- v.Transform()
+				case GenerateResponseCloudflare:
+					streamCh <- v.Transform()
+				case GenerateResponseCohere:
+					streamCh <- v.Transform()
+				case GenerateResponseAnthropic:
+					streamCh <- v.Transform()
+				default:
+					p.logger.Error("unsupported response type", nil)
+				}
+			}
+		}
+	}()
+
+	return streamCh, nil
+}
+
 func fetchTokens(ctx context.Context, client Client, url string, payload []byte, logger l.Logger) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader(string(payload)))
 	if err != nil {
@@ -406,4 +604,85 @@ func fetchTokens(ctx context.Context, client Client, url string, payload []byte,
 	}
 
 	return resp, nil
+}
+
+// SSEEvent represents a Server-Sent Event
+type SSEEvent struct {
+	ID      string
+	Event   string
+	Data    []byte
+	Retry   int64
+	Comment string
+}
+
+// Some providers have SSE built-in and some don't, for now I'll just
+// chop off the "data: " prefix and add it after the unmarshal process
+// I think it's up to the user to decide if they want SSE or not, therefore
+// I made it configurable in the GenerateRequest struct
+func ParseSSE(line []byte) (*SSEEvent, error) {
+	// Skip empty lines
+	if len(bytes.TrimSpace(line)) == 0 {
+		return nil, fmt.Errorf("empty line")
+	}
+
+	event := &SSEEvent{}
+
+	// Split into lines in case we got multiple in one chunk
+	lines := bytes.Split(line, []byte("\n"))
+
+	for _, line := range lines {
+		line = bytes.TrimSpace(line)
+
+		// Skip empty lines
+		if len(line) == 0 {
+			continue
+		}
+
+		// Handle comments
+		if bytes.HasPrefix(line, []byte(":")) {
+			event.Comment = string(bytes.TrimPrefix(line, []byte(": ")))
+			continue
+		}
+
+		// Split field and value
+		parts := bytes.SplitN(line, []byte(":"), 2)
+		if len(parts) != 2 {
+			continue
+		}
+
+		field := string(bytes.TrimSpace(parts[0]))
+		// Skip first space in value if present
+		value := parts[1]
+		if len(value) > 0 && value[0] == ' ' {
+			value = value[1:]
+		}
+
+		switch field {
+		case "data":
+			// Handle potential multi-line data
+			if len(event.Data) > 0 {
+				event.Data = append(event.Data, '\n')
+			}
+			event.Data = append(event.Data, value...)
+
+		case "event":
+			event.Event = string(value)
+
+		case "id":
+			event.ID = string(value)
+
+		case "retry":
+			retry, err := strconv.ParseInt(string(value), 10, 64)
+			if err == nil {
+				event.Retry = retry
+			}
+		}
+	}
+
+	// Special case for [DONE] message
+	if bytes.Equal(event.Data, []byte("[DONE]")) {
+		return nil, fmt.Errorf("stream ended")
+	}
+
+	return event, nil
 }

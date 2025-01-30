@@ -48,9 +48,9 @@ type GenerateRequestGroq struct {
 
 func (r *GenerateRequest) TransformGroq() GenerateRequestGroq {
 	return GenerateRequestGroq{
-		Messages: r.Messages,
-		Model:    r.Model,
-		// Set default temperature to 1.0 as per Groq docs
+		Messages:    r.Messages,
+		Model:       r.Model,
+		Stream:      &r.Stream,
 		Temperature: float64Ptr(1.0),
 	}
 }
@@ -70,9 +70,15 @@ type GroqMessage struct {
 	Content string `json:"content"`
 }
 
+type GroqDelta struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
 type GroqChoice struct {
 	Index        int         `json:"index"`
 	Message      GroqMessage `json:"message"`
+	Delta        GroqDelta   `json:"delta,omitempty"`
 	LogProbs     interface{} `json:"logprobs"`
 	FinishReason string      `json:"finish_reason"`
 }
@@ -95,12 +101,22 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 		return GenerateResponse{}
 	}
 
+	response := ResponseTokens{
+		Model: g.Model,
+	}
+
+	isStreaming := g.Choices[0].Delta.Content != "" || g.Choices[0].Delta.Role != ""
+	if isStreaming {
+		response.Content = g.Choices[0].Delta.Content
+		response.Role = g.Choices[0].Delta.Role
+	} else {
+		// Non-streaming response (Message)
+		response.Content = g.Choices[0].Message.Content
+		response.Role = g.Choices[0].Message.Role
+	}
+
 	return GenerateResponse{
 		Provider: GroqDisplayName,
-		Response: ResponseTokens{
-			Role:    g.Choices[0].Message.Role,
-			Model:   g.Model,
-			Content: g.Choices[0].Message.Content,
-		},
+		Response: response,
 	}
 }
