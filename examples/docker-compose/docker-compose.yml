@@ -7,6 +7,20 @@ services:
     env_file:
       - .env
 
+  # inference-gateway-debug:
+  #   build:
+  #     context: ../../
+  #     dockerfile: Dockerfile.debug
+  #   ports:
+  #     - 8080:8080
+  #     - 2345:2345
+  #   security_opt:
+  #     - "seccomp:unconfined"
+  #   cap_add:
+  #     - SYS_PTRACE
+  #   env_file:
+  #     - .env
+
   ollama:
     image: ollama/ollama:latest
     entrypoint: ["/bin/sh", "-c"]
@@ -14,6 +28,8 @@ services:
       "ollama serve & sleep 5 && ollama pull phi3:3.8b && tail -f /dev/null"
     environment:
       OLLAMA_HOST: 0.0.0.0:8080
+    ports:
+      - 8081:8080
     volumes:
       - docker-compose-ollama-data:/.ollama
 

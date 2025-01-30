@@ -1,0 +1,23 @@
+FROM golang:1.23-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY config ./config
+COPY logger ./logger
+COPY otel ./otel
+COPY cmd ./cmd
+COPY api ./api
+COPY providers ./providers
+COPY internal ./internal
+
+RUN CGO_ENABLED=0 GOOS=linux go build -gcflags="all=-N -l" -o inference-gateway ./cmd/gateway/main.go
+
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+FROM alpine:latest
+WORKDIR /app
+COPY --from=builder /app/inference-gateway /app/
+COPY --from=builder /go/bin/dlv /dlv
+EXPOSE 8080 2345
+CMD [ "/dlv", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient", "exec", "/app/inference-gateway" ]
