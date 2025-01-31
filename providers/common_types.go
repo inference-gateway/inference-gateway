@@ -98,6 +98,9 @@ func intPtr(v int) *int {
 type EventType string
 
 const (
+	EventStreamStart    EventType = "stream-start"
+	EventTextGeneration EventType = "text-generation"
+
 	EventMessageStart EventType = "message-start"
 	EventContentStart EventType = "content-start"
 	EventContentDelta EventType = "content-delta"
@@ -152,11 +155,15 @@ func parseSSE(line []byte) (*SSEvent, error) {
 		case "data":
 			event.Data = value
 
-			if bytes.Contains(value, []byte(EventMessageStart)) {
+			if bytes.Contains(value, []byte(EventStreamStart)) {
+				event.EventType = EventStreamStart
+			} else if bytes.Contains(value, []byte(EventMessageStart)) {
 				event.EventType = EventMessageStart
 			} else if bytes.Contains(value, []byte(EventContentStart)) {
 				event.EventType = EventContentStart
 			} else if bytes.Contains(value, []byte(EventContentDelta)) {
+				event.EventType = EventContentDelta
+			} else if bytes.Contains(value, []byte(EventTextGeneration)) {
 				event.EventType = EventContentDelta
 			} else if bytes.Contains(value, []byte(EventContentEnd)) {
 				event.EventType = EventContentEnd
@@ -203,13 +210,21 @@ type StreamParser interface {
 	ParseChunk(reader *bufio.Reader) (*SSEvent, error)
 }
 
-func NewStreamParser(provider string) StreamParser {
+func NewStreamParser(provider string) (StreamParser, error) {
 	switch provider {
 	case OllamaID:
-		return &OllamaStreamParser{}
+		return &OllamaStreamParser{}, nil
 	case OpenaiID:
-		return &OpenaiStreamParser{}
+		return &OpenaiStreamParser{}, nil
+	case GoogleID:
+		return &GoogleStreamParser{}, nil
+	case GroqID:
+		return &GroqStreamParser{}, nil
+	case CohereID:
+		return &CohereStreamParser{}, nil
+	case AnthropicID:
+		return &AnthropicStreamParser{}, nil
 	default:
-		return &GroqStreamParser{}
+		return nil, fmt.Errorf("unsupported provider: %s", provider)
 	}
 }

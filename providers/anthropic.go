@@ -1,5 +1,7 @@
 package providers
 
+import "bufio"
+
 // Extra headers for Anthropic provider
 var AnthropicExtraHeaders = map[string][]string{
 	"anthropic-version": {"2023-06-01"},
@@ -80,4 +82,20 @@ func (g *GenerateResponseAnthropic) Transform() GenerateResponse {
 			Model:   g.Model,
 		},
 	}
+}
+
+type AnthropicStreamParser struct{}
+
+func (p *AnthropicStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
+	rawchunk, err := readSSEChunk(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := parseSSE(rawchunk)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }

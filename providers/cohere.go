@@ -1,5 +1,7 @@
 package providers
 
+import "bufio"
+
 type CohereModel struct {
 	Name             string   `json:"name"`
 	Endpoints        []string `json:"endpoints"`
@@ -33,7 +35,7 @@ type CohereResponseFormat struct {
 }
 
 type CohereCitationOptions struct {
-	Content interface{} `json:"content,omitempty"` // Could be further defined based on needs
+	Content interface{} `json:"content,omitempty"`
 }
 
 type CohereDocument struct {
@@ -159,4 +161,20 @@ func (g *CohereStreamResponse) Transform() GenerateResponse {
 		}
 	}
 	return GenerateResponse{}
+}
+
+type CohereStreamParser struct{}
+
+func (p *CohereStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
+	rawchunk, err := readSSEChunk(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := parseSSE(rawchunk)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }

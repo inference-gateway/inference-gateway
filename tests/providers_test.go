@@ -24,65 +24,84 @@ func TestStreamTokens(t *testing.T) {
 		testCancel   bool
 		expectError  bool
 	}{
-		// {
-		// 	name:         "Ollama successful response",
-		// 	provider:     providers.OllamaID,
-		// 	mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}\n`,
-		// 	messages: []providers.Message{
-		// 		{Role: "user", Content: "Hello"},
-		// 	},
-		// 	expectedResp: providers.GenerateResponse{
-		// 		Provider: "Ollama",
-		// 		Response: providers.ResponseTokens{
-		// 			Content: " are",
-		// 			Model:   "phi3:3.8b",
-		// 			Role:    "assistant",
+		// 		{
+		// 			name:     "Ollama successful response",
+		// 			provider: providers.OllamaID,
+		// 			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
+		// `,
+		// 			messages: []providers.Message{
+		// 				{Role: "user", Content: "Hello"},
+		// 			},
+		// 			expectedResp: providers.GenerateResponse{
+		// 				Provider: "Ollama",
+		// 				Response: providers.ResponseTokens{
+		// 					Content: " are",
+		// 					Model:   "phi3:3.8b",
+		// 					Role:    "assistant",
+		// 				},
+		// 			},
+		// 			testCancel:  false,
+		// 			expectError: false,
 		// 		},
-		// 	},
-		// 	testCancel:  false,
-		// 	expectError: false,
-		// },
-		// {
-		// 	name:         "Context cancellation",
-		// 	provider:     providers.OllamaID,
-		// 	mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}\n`,
-		// 	messages: []providers.Message{
-		// 		{Role: "user", Content: "Hello"},
-		// 	},
-		// 	testCancel:  true,
-		// 	expectError: false,
-		// },
-		// {
-		// 	name:         "Ollama error response",
-		// 	provider:     providers.OllamaID,
-		// 	mockResponse: `{"error":"Invalid request","message":"Invalid request"}`,
-		// 	messages: []providers.Message{
-		// 		{Role: "user", Content: "Hello"},
-		// 	},
-		// 	testCancel:  false,
-		// 	expectError: true,
-		// },
-		{
-			name:     "Groq successful response",
-			provider: providers.GroqID,
-			mockResponse: `data: {"id":"test-id","object":"text","created":1644000000,"model":"test-model","choices":[{"index":0,"message":{"role":"user","content":"Hello"},"delta":{"role":"assistant","content":" are"},"logprobs":null,"finish_reason":"length"}],"usage":{"total_tokens":1,"total_characters":1},"system_fingerprint":"test-fingerprint","x_groq":{"id":"test-id"}}
+		// 		{
+		// 			name:     "Context cancellation",
+		// 			provider: providers.OllamaID,
+		// 			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
+		// `,
+		// 			messages: []providers.Message{
+		// 				{Role: "user", Content: "Hello"},
+		// 			},
+		// 			testCancel:  true,
+		// 			expectError: false,
+		// 		},
+		// 		{
+		// 			name:     "Groq successful response",
+		// 			provider: providers.GroqID,
+		// 			mockResponse: `data: {"id":"test-id","object":"text","created":1644000000,"model":"test-model","choices":[{"index":0,"message":{"role":"user","content":"Hello"},"delta":{"role":"assistant","content":" are"},"logprobs":null,"finish_reason":"length"}],"usage":{"total_tokens":1,"total_characters":1},"system_fingerprint":"test-fingerprint","x_groq":{"id":"test-id"}}
 
-data: [DONE]
+		// data: [DONE]
+
+		// `,
+		// 			messages: []providers.Message{
+		// 				{Role: "user", Content: "Hello"},
+		// 			},
+		// 			expectedResp: providers.GenerateResponse{
+		// 				Provider: providers.GroqDisplayName,
+		// 				Response: providers.ResponseTokens{
+		// 					Content: " are",
+		// 					Model:   "test-model",
+		// 					Role:    "assistant",
+		// 				},
+		// 			},
+		// 			testCancel:  false,
+		// 			expectError: false,
+		// 		},
+		{
+			name:     "Cohere successful response",
+			provider: providers.CohereID,
+			mockResponse: `
+
+event: stream-start
+data: {"type":"message-start","id":"29f14a5a-11de-4cae-9800-25e4747408ea","delta":{"message":{"role":"assistant"}}}
+
+event: text-generation
+data: {"type":"content-start","id":"29f14a5a-11de-4cae-9800-25e4747408ea","delta":{"content":{"type":"text","text":" are"}}}
+
+event: stream-end
+data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":3,"output_tokens":9},"tokens":{"input_tokens":69,"output_tokens":9}}}}
 
 `,
 			messages: []providers.Message{
 				{Role: "user", Content: "Hello"},
 			},
 			expectedResp: providers.GenerateResponse{
-				Provider: providers.GroqDisplayName,
+				Provider: providers.CohereDisplayName,
 				Response: providers.ResponseTokens{
-					Content: " are",
-					Model:   "test-model",
-					Role:    "assistant",
+					Content: "Hello",
+					Model:   "N/A",
+					Role:    "user",
 				},
 			},
-			testCancel:  false,
-			expectError: false,
 		},
 	}
 

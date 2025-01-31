@@ -468,7 +468,11 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 		defer close(streamCh)
 
 		for {
-			streamParser := NewStreamParser(p.GetID())
+			streamParser, err := NewStreamParser(p.GetID())
+			if err != nil {
+				p.logger.Error("failed to create stream parser", err)
+				return
+			}
 
 			event, err := streamParser.ParseChunk(reader)
 			if err != nil {
