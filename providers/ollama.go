@@ -121,6 +121,11 @@ type GenerateResponseOllama struct {
 }
 
 func (g *GenerateResponseOllama) Transform() GenerateResponse {
+	event := EventContentDelta
+	if g.Done {
+		event = EventStreamEnd
+	}
+
 	return GenerateResponse{
 		Provider: OllamaDisplayName,
 		Response: ResponseTokens{
@@ -128,6 +133,7 @@ func (g *GenerateResponseOllama) Transform() GenerateResponse {
 			Model:   g.Model,
 			Role:    "assistant",
 		},
+		EventType: event,
 	}
 }
 
@@ -142,11 +148,15 @@ func (p *OllamaStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) 
 	}
 
 	event := EventStreamStart
-	if bytes.Contains(rawchunk, []byte(`"done":false}`)) {
+
+	// It's a weird API where we have to check for "done" to determine if it's a delta or end event
+	// Better would be if there were some metadata in the stream, so we don't have to search in the entire json for "done"
+	// But it is what it is - hopefully they improve it in the future
+	if bytes.Contains(rawchunk, []byte(`"done":false`)) {
 		event = EventContentDelta
 	}
 
-	if bytes.Contains(rawchunk, []byte(`"done":true}`)) {
+	if bytes.Contains(rawchunk, []byte(`"done":true`)) {
 		event = EventStreamEnd
 	}
 

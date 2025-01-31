@@ -45,6 +45,7 @@ func TestStreamTokens(t *testing.T) {
 						Model:   "phi3:3.8b",
 						Role:    "assistant",
 					},
+					EventType: providers.EventContentDelta,
 				},
 				{
 					Provider: "Ollama",
@@ -53,6 +54,7 @@ func TestStreamTokens(t *testing.T) {
 						Model:   "phi3:3.8b",
 						Role:    "assistant",
 					},
+					EventType: providers.EventContentDelta,
 				},
 				{
 					Provider: "Ollama",
@@ -61,6 +63,7 @@ func TestStreamTokens(t *testing.T) {
 						Model:   "phi3:3.8b",
 						Role:    "assistant",
 					},
+					EventType: providers.EventContentDelta,
 				},
 			},
 			testCancel:  false,
