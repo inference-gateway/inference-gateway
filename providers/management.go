@@ -570,6 +570,7 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 					streamCh <- v.Transform()
 				default:
 					p.logger.Error("unsupported response type", nil)
+					return
 				}
 			}
 		}
