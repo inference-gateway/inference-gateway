@@ -120,7 +120,7 @@ data: [DONE]
 
 `,
 			messages: []providers.Message{
-				{Role: "user", Content: "Hello"},
+				{Role: "user", Content: "Hi"},
 			},
 			expectedResponses: []providers.GenerateResponse{
 				{
