@@ -1,5 +1,7 @@
 package providers
 
+import "bufio"
+
 type GroqModel struct {
 	ID            string      `json:"id"`
 	Object        string      `json:"object"`
@@ -119,4 +121,20 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 		Provider: GroqDisplayName,
 		Response: response,
 	}
+}
+
+type GroqStreamParser struct{}
+
+func (p *GroqStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
+	rawchunk, err := readSSEChunk(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := parseSSE(rawchunk)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }

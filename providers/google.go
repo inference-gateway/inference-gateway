@@ -1,5 +1,7 @@
 package providers
 
+import "bufio"
+
 type GoogleModel struct {
 	Name                       string   `json:"name"`
 	BaseModelID                string   `json:"baseModelId"`
@@ -104,4 +106,21 @@ func (g *GenerateResponseGoogle) Transform() GenerateResponse {
 			Model:   g.ModelVersion,
 		},
 	}
+}
+
+type GoogleStreamParser struct{}
+
+func (p *GoogleStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
+	// TODO - check if it works
+	rawchunk, err := readSSEChunk(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := parseSSE(rawchunk)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }

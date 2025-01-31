@@ -1,5 +1,7 @@
 package providers
 
+import "bufio"
+
 type OpenaiPermission struct {
 	ID                 string `json:"id"`
 	Object             string `json:"object"`
@@ -96,4 +98,20 @@ func (g *GenerateResponseOpenai) Transform() GenerateResponse {
 			Content: g.Choices[0].Message.Content,
 		},
 	}
+}
+
+type OpenaiStreamParser struct{}
+
+func (p *OpenaiStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
+	rawchunk, err := readSSEChunk(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := parseSSE(rawchunk)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }

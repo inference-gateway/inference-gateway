@@ -10,7 +10,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	l "github.com/inference-gateway/inference-gateway/logger"
@@ -120,8 +119,6 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 	}
 
 	url := "/proxy/" + p.GetID() + baseURL.Path + p.EndpointList()
-
-	p.logger.Debug("list models", "url", url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -471,36 +468,66 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 		defer close(streamCh)
 
 		for {
-			line, err := reader.ReadBytes('\n')
+			streamParser := NewStreamParser(p.GetID())
+
+			event, err := streamParser.ParseChunk(reader)
 			if err != nil {
-				if err != io.EOF {
-					p.logger.Error("failed to read stream", err)
+				if err == io.EOF {
+					return
 				}
+				p.logger.Error("failed to read chunk", err)
 				return
 			}
 
-			if len(line) == 0 {
+			// if p.GetID() == OllamaID {
+			// 	// in ollama we take the whole line it's not formatted as SSE - it's raw json
+			// 	rawchunk, err = reader.ReadBytes('\n')
+			// 	event = &SSEvent{
+			// 		EventType: EventContentDelta,
+			// 		Data:      rawchunk,
+			// 	}
+			// 	if err != nil {
+			// 		if err == io.EOF {
+			// 			return
+			// 		}
+			// 		p.logger.Error("failed to read chunk", err)
+			// 		return
+			// 	}
+			// } else {
+			// 	rawchunk, err = readSSEChunk(reader)
+			// 	if err != nil {
+			// 		p.logger.Error("failed to read chunk", err)
+			// 		return
+			// 	}
+
+			// 	p.logger.Debug("line", "line", string(rawchunk))
+			// 	event, err = parseSSE(rawchunk)
+			// 	if err != nil {
+			// 		p.logger.Error("failed to parse event", err)
+			// 		return
+			// 	}
+			// }
+
+			if event.EventType == EventStreamEnd {
+				p.logger.Debug("stream ended", "provider", p.GetName())
+				return
+			}
+
+			p.logger.Debug("event", "event", event.EventType, "event-data", string(event.Data))
+			if event.EventType != EventContentDelta {
 				continue
 			}
 
-			// Unmarshal response based on provider
 			var chunk interface{}
 			switch p.GetID() {
 			case OllamaID:
 				var response GenerateResponseOllama
-				if err := json.Unmarshal(line, &response); err != nil {
+				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Error("failed to unmarshal chunk", err)
 					continue
 				}
 				chunk = response
 			case OpenaiID:
-				event, err := ParseSSE(line)
-				if err != nil {
-					if err.Error() == "stream ended" {
-						return
-					}
-					continue
-				}
 				var response GenerateResponseOpenai
 				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Error("failed to unmarshal chunk", err)
@@ -508,13 +535,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 				}
 				chunk = response
 			case GroqID:
-				event, err := ParseSSE(line)
-				if err != nil {
-					if err.Error() == "stream ended" {
-						return
-					}
-					continue
-				}
 				var response GenerateResponseGroq
 				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Error("failed to unmarshal chunk", err)
@@ -523,28 +543,35 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 				chunk = response
 			case GoogleID:
 				var response GenerateResponseGoogle
-				if err := json.Unmarshal(line, &response); err != nil {
+				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Error("failed to unmarshal chunk", err)
 					continue
 				}
 				chunk = response
 			case CloudflareID:
 				var response GenerateResponseCloudflare
-				if err := json.Unmarshal(line, &response); err != nil {
+				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Error("failed to unmarshal chunk", err)
 					continue
 				}
 				chunk = response
 			case CohereID:
-				var response GenerateResponseCohere
-				if err := json.Unmarshal(line, &response); err != nil {
-					p.logger.Error("failed to unmarshal chunk", err)
+
+				if event.EventType == EventMessageStart {
 					continue
+				}
+
+				var response CohereStreamResponse
+				if err := json.Unmarshal(event.Data, &response); err != nil {
+					p.logger.Debug("raw json", "json", string(event.Data))
+					p.logger.Debug("event", "event", event.EventType)
+					p.logger.Error("failed to unmarshal chunk", err)
+					return
 				}
 				chunk = response
 			case AnthropicID:
 				var response GenerateResponseAnthropic
-				if err := json.Unmarshal(line, &response); err != nil {
+				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Error("failed to unmarshal chunk", err)
 					continue
 				}
@@ -570,7 +597,7 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 					streamCh <- v.Transform()
 				case GenerateResponseCloudflare:
 					streamCh <- v.Transform()
-				case GenerateResponseCohere:
+				case CohereStreamResponse:
 					streamCh <- v.Transform()
 				case GenerateResponseAnthropic:
 					streamCh <- v.Transform()
@@ -604,85 +631,4 @@ func fetchTokens(ctx context.Context, client Client, url string, payload []byte,
 	}
 
 	return resp, nil
-}
-
-// SSEEvent represents a Server-Sent Event
-type SSEEvent struct {
-	ID      string
-	Event   string
-	Data    []byte
-	Retry   int64
-	Comment string
-}
-
-// Some providers have SSE built-in and some don't, for now I'll just
-// chop off the "data: " prefix and add it after the unmarshal process
-// I think it's up to the user to decide if they want SSE or not, therefore
-// I made it configurable in the GenerateRequest struct
-func ParseSSE(line []byte) (*SSEEvent, error) {
-	// Skip empty lines
-	if len(bytes.TrimSpace(line)) == 0 {
-		return nil, fmt.Errorf("empty line")
-	}
-
-	event := &SSEEvent{}
-
-	// Split into lines in case we got multiple in one chunk
-	lines := bytes.Split(line, []byte("\n"))
-
-	for _, line := range lines {
-		line = bytes.TrimSpace(line)
-
-		// Skip empty lines
-		if len(line) == 0 {
-			continue
-		}
-
-		// Handle comments
-		if bytes.HasPrefix(line, []byte(":")) {
-			event.Comment = string(bytes.TrimPrefix(line, []byte(": ")))
-			continue
-		}
-
-		// Split field and value
-		parts := bytes.SplitN(line, []byte(":"), 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		field := string(bytes.TrimSpace(parts[0]))
-		// Skip first space in value if present
-		value := parts[1]
-		if len(value) > 0 && value[0] == ' ' {
-			value = value[1:]
-		}
-
-		switch field {
-		case "data":
-			// Handle potential multi-line data
-			if len(event.Data) > 0 {
-				event.Data = append(event.Data, '\n')
-			}
-			event.Data = append(event.Data, value...)
-
-		case "event":
-			event.Event = string(value)
-
-		case "id":
-			event.ID = string(value)
-
-		case "retry":
-			retry, err := strconv.ParseInt(string(value), 10, 64)
-			if err == nil {
-				event.Retry = retry
-			}
-		}
-	}
-
-	// Special case for [DONE] message
-	if bytes.Equal(event.Data, []byte("[DONE]")) {
-		return nil, fmt.Errorf("stream ended")
-	}
-
-	return event, nil
 }

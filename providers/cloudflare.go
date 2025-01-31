@@ -1,5 +1,7 @@
 package providers
 
+import "bufio"
+
 type CloudflareModel struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
@@ -81,4 +83,21 @@ func (g *GenerateResponseCloudflare) Transform() GenerateResponse {
 			Model:   "", // Cloudflare doesn't return model info in response
 		},
 	}
+}
+
+type CloudflareStreamParser struct{}
+
+func (p *CloudflareStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
+	// TODO - check if it works
+	rawchunk, err := readSSEChunk(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	event, err := parseSSE(rawchunk)
+	if err != nil {
+		return nil, err
+	}
+
+	return event, nil
 }

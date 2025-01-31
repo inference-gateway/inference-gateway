@@ -73,7 +73,7 @@ func (r *GenerateRequest) TransformCohere() GenerateRequestCohere {
 	return GenerateRequestCohere{
 		Messages:    r.Messages,
 		Model:       r.Model,
-		Stream:      false,           // Default to non-streaming
+		Stream:      r.Stream,
 		Temperature: float64Ptr(0.3), // Default temperature as per docs
 	}
 }
@@ -83,9 +83,17 @@ type CohereContent struct {
 	Text string `json:"text"`
 }
 
+type CohereDeltaMessage struct {
+	Role    string        `json:"role,omitempty"`
+	Content CohereContent `json:"content"`
+}
+
 type CohereMessage struct {
-	Role    string          `json:"role"`
-	Content []CohereContent `json:"content"`
+	Role      string          `json:"role"`
+	Content   []CohereContent `json:"content,omitempty"`
+	ToolPlan  string          `json:"tool_plan"`
+	ToolCalls []interface{}   `json:"tool_calls"`
+	Citations []interface{}   `json:"citations"`
 }
 
 type CohereUsageUnits struct {
@@ -97,6 +105,16 @@ type CohereUsage struct {
 	BilledUnits CohereUsageUnits `json:"billed_units"`
 	Tokens      CohereUsageUnits `json:"tokens"`
 }
+
+type CohereEventType string
+
+const (
+	CohereEventMessageStart CohereEventType = "message-start"
+	CohereEventContentStart CohereEventType = "content-start"
+	CohereEventContentDelta CohereEventType = "content-delta"
+	CohereEventContentEnd   CohereEventType = "content-end"
+	CohereEventMessageEnd   CohereEventType = "message-end"
+)
 
 type GenerateResponseCohere struct {
 	ID           string        `json:"id"`
@@ -114,9 +132,31 @@ func (g *GenerateResponseCohere) Transform() GenerateResponse {
 	return GenerateResponse{
 		Provider: CohereDisplayName,
 		Response: ResponseTokens{
-			Role:    g.Message.Role,
+			Model:   "N/A", // Not provided by Cohere
 			Content: g.Message.Content[0].Text,
-			Model:   "", // Cohere doesn't return model info in response
+			Role:    g.Message.Role,
 		},
 	}
+}
+
+type CohereDelta struct {
+	Message CohereDeltaMessage `json:"message"`
+}
+
+type CohereStreamResponse struct {
+	Type  CohereEventType `json:"type,omitempty"`
+	Delta CohereDelta     `json:"delta,omitempty"`
+}
+
+func (g *CohereStreamResponse) Transform() GenerateResponse {
+	if g.Type == CohereEventContentDelta {
+		return GenerateResponse{
+			Provider: CohereDisplayName,
+			Response: ResponseTokens{
+				Content: g.Delta.Message.Content.Text,
+				Role:    g.Delta.Message.Role,
+			},
+		}
+	}
+	return GenerateResponse{}
 }

@@ -1,5 +1,7 @@
 package providers
 
+import "bufio"
+
 type OllamaDetails struct {
 	Format            string      `json:"format"`
 	Family            string      `json:"family"`
@@ -122,4 +124,18 @@ func (g *GenerateResponseOllama) Transform() GenerateResponse {
 			Role:    "assistant",
 		},
 	}
+}
+
+type OllamaStreamParser struct{}
+
+func (p *OllamaStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
+	rawchunk, err := reader.ReadBytes('\n')
+	if err != nil {
+		return nil, err
+	}
+
+	return &SSEvent{
+		EventType: EventContentDelta,
+		Data:      rawchunk,
+	}, nil
 }
