@@ -479,35 +479,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 				return
 			}
 
-			// if p.GetID() == OllamaID {
-			// 	// in ollama we take the whole line it's not formatted as SSE - it's raw json
-			// 	rawchunk, err = reader.ReadBytes('\n')
-			// 	event = &SSEvent{
-			// 		EventType: EventContentDelta,
-			// 		Data:      rawchunk,
-			// 	}
-			// 	if err != nil {
-			// 		if err == io.EOF {
-			// 			return
-			// 		}
-			// 		p.logger.Error("failed to read chunk", err)
-			// 		return
-			// 	}
-			// } else {
-			// 	rawchunk, err = readSSEChunk(reader)
-			// 	if err != nil {
-			// 		p.logger.Error("failed to read chunk", err)
-			// 		return
-			// 	}
-
-			// 	p.logger.Debug("line", "line", string(rawchunk))
-			// 	event, err = parseSSE(rawchunk)
-			// 	if err != nil {
-			// 		p.logger.Error("failed to parse event", err)
-			// 		return
-			// 	}
-			// }
-
 			if event.EventType == EventStreamEnd {
 				p.logger.Debug("stream ended", "provider", p.GetName())
 				return
