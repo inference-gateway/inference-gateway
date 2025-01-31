@@ -24,14 +24,99 @@ func TestStreamTokens(t *testing.T) {
 		testCancel        bool
 		expectError       bool
 	}{
+		// 		{
+		// 			name:     "Ollama successful response",
+		// 			provider: providers.OllamaID,
+		// 			mockResponse: `
+		// {"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":"how","done":false}
+		// {"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
+		// {"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" you?","done":false}
+		// {"model":"phi3:3.8b","created_at":"2025-01-31T16:47:15.158460303Z","response":"","done":true,"done_reason":"stop","context":[32006,29871],"total_duration":14508007757,"load_duration":4831567378,"prompt_eval_count":34,"prompt_eval_duration":1266000000,"eval_count":108,"eval_duration":8405000000}
+
+		// `,
+		// 			messages: []providers.Message{
+		// 				{Role: "user", Content: "Hello"},
+		// 			},
+		// 			expectedResponses: []providers.GenerateResponse{
+		// 				{
+		// 					Provider: "Ollama",
+		// 					Response: providers.ResponseTokens{
+		// 						Content: "how",
+		// 						Model:   "phi3:3.8b",
+		// 						Role:    "assistant",
+		// 					},
+		// 					EventType: providers.EventContentDelta,
+		// 				},
+		// 				{
+		// 					Provider: "Ollama",
+		// 					Response: providers.ResponseTokens{
+		// 						Content: " are",
+		// 						Model:   "phi3:3.8b",
+		// 						Role:    "assistant",
+		// 					},
+		// 					EventType: providers.EventContentDelta,
+		// 				},
+		// 				{
+		// 					Provider: "Ollama",
+		// 					Response: providers.ResponseTokens{
+		// 						Content: " you?",
+		// 						Model:   "phi3:3.8b",
+		// 						Role:    "assistant",
+		// 					},
+		// 					EventType: providers.EventContentDelta,
+		// 				},
+		// 			},
+		// 			testCancel:  false,
+		// 			expectError: false,
+		// 		},
+		// 		{
+		// 			name:     "Context cancellation",
+		// 			provider: providers.OllamaID,
+		// 			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
+		// 		`,
+		// 			messages: []providers.Message{
+		// 				{Role: "user", Content: "Hello"},
+		// 			},
+		// 			testCancel:  true,
+		// 			expectError: false,
+		// 		},
 		{
-			name:     "Ollama successful response",
-			provider: providers.OllamaID,
+			name:     "Groq successful response",
+			provider: providers.GroqID,
 			mockResponse: `
-{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":"how","done":false}
-{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
-{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" you?","done":false}
-{"model":"phi3:3.8b","created_at":"2025-01-31T16:47:15.158460303Z","response":"","done":true,"done_reason":"stop","context":[32006,29871],"total_duration":14508007757,"load_duration":4831567378,"prompt_eval_count":34,"prompt_eval_duration":1266000000,"eval_count":108,"eval_duration":8405000000}
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"x_groq":{"id":"req_***"}}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":"\\u003cthink\\u003e"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":"\\n\\n"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":"\\u003c/think\\u003e"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":"\\n\\n"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":"Hello"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":"!"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":" How"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":" can"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":" I"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":" assist"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":" you"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":" today"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":"?"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"content":" 😊"},"logprobs":null,"finish_reason":null}]}
+
+data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346485,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}],"x_groq":{"id":"req_***","usage":{"queue_time":0.027146241,"prompt_tokens":10,"prompt_time":0.003496928,"completion_tokens":16,"completion_time":0.058181818,"total_tokens":26,"total_time":0.061678746}}}
+
+data: [DONE]
 
 `,
 			messages: []providers.Message{
@@ -39,69 +124,144 @@ func TestStreamTokens(t *testing.T) {
 			},
 			expectedResponses: []providers.GenerateResponse{
 				{
-					Provider: "Ollama",
+					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
-						Content: "how",
-						Model:   "phi3:3.8b",
+						Content: "\\u003cthink\\u003e",
+						Model:   "test-model",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
 				},
 				{
-					Provider: "Ollama",
+					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
-						Content: " are",
-						Model:   "phi3:3.8b",
+						Content: "\\n\\n",
+						Model:   "test-model",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
 				},
 				{
-					Provider: "Ollama",
+					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
-						Content: " you?",
-						Model:   "phi3:3.8b",
+						Content: "\\u003c/think\\u003e",
+						Model:   "test-model",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "\\n\\n",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "Hello",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "!",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: " How",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: " can",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: " I",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: " assist",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: " you",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: " today",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "?",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: " 😊",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "",
+						Model:   "test-model",
+						Role:    "assistant",
+					},
+					EventType: providers.EventStreamEnd,
 				},
 			},
 			testCancel:  false,
 			expectError: false,
 		},
-		// 		{
-		// 			name:     "Context cancellation",
-		// 			provider: providers.OllamaID,
-		// 			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
-		// `,
-		// 			messages: []providers.Message{
-		// 				{Role: "user", Content: "Hello"},
-		// 			},
-		// 			testCancel:  true,
-		// 			expectError: false,
-		// 		},
-		// 		{
-		// 			name:     "Groq successful response",
-		// 			provider: providers.GroqID,
-		// 			mockResponse: `data: {"id":"test-id","object":"text","created":1644000000,"model":"test-model","choices":[{"index":0,"message":{"role":"user","content":"Hello"},"delta":{"role":"assistant","content":" are"},"logprobs":null,"finish_reason":"length"}],"usage":{"total_tokens":1,"total_characters":1},"system_fingerprint":"test-fingerprint","x_groq":{"id":"test-id"}}
-
-		// data: [DONE]
-
-		// `,
-		// 			messages: []providers.Message{
-		// 				{Role: "user", Content: "Hello"},
-		// 			},
-		// 			expectedResp: providers.GenerateResponse{
-		// 				Provider: providers.GroqDisplayName,
-		// 				Response: providers.ResponseTokens{
-		// 					Content: " are",
-		// 					Model:   "test-model",
-		// 					Role:    "assistant",
-		// 				},
-		// 			},
-		// 			testCancel:  false,
-		// 			expectError: false,
-		// 		},
 		// 		{
 		// 			name:     "Cohere successful response",
 		// 			provider: providers.CohereID,
