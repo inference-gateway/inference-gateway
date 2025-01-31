@@ -103,12 +103,11 @@ type EventType string
 const (
 	EventStreamStart    EventType = "stream-start"
 	EventTextGeneration EventType = "text-generation"
-
-	EventMessageStart EventType = "message-start"
-	EventContentStart EventType = "content-start"
-	EventContentDelta EventType = "content-delta"
-	EventContentEnd   EventType = "content-end"
-	EventStreamEnd    EventType = "message-end"
+	EventMessageStart   EventType = "message-start"
+	EventContentStart   EventType = "content-start"
+	EventContentDelta   EventType = "content-delta"
+	EventContentEnd     EventType = "content-end"
+	EventStreamEnd      EventType = "message-end"
 )
 
 const (
@@ -158,21 +157,22 @@ func parseSSE(line []byte) (*SSEvent, error) {
 		case "data":
 			event.Data = value
 
-			if bytes.Contains(value, []byte(EventStreamStart)) {
+			switch {
+			case bytes.Contains(value, []byte(EventStreamStart)):
 				event.EventType = EventStreamStart
-			} else if bytes.Contains(value, []byte(EventMessageStart)) {
+			case bytes.Contains(value, []byte(EventMessageStart)):
 				event.EventType = EventMessageStart
-			} else if bytes.Contains(value, []byte(EventContentStart)) {
+			case bytes.Contains(value, []byte(EventContentStart)):
 				event.EventType = EventContentStart
-			} else if bytes.Contains(value, []byte(EventContentDelta)) {
+			case bytes.Contains(value, []byte(EventContentDelta)):
 				event.EventType = EventContentDelta
-			} else if bytes.Contains(value, []byte(EventTextGeneration)) {
+			case bytes.Contains(value, []byte(EventTextGeneration)):
 				event.EventType = EventContentDelta
-			} else if bytes.Contains(value, []byte(EventContentEnd)) {
+			case bytes.Contains(value, []byte(EventContentEnd)):
 				event.EventType = EventContentEnd
-			} else if bytes.Contains(value, []byte(EventStreamEnd)) {
+			case bytes.Contains(value, []byte(EventStreamEnd)):
 				event.EventType = EventStreamEnd
-			} else {
+			default:
 				event.EventType = EventContentDelta
 			}
 
