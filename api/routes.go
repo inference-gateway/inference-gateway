@@ -99,7 +99,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	}
 
 	// Check if streaming is requested
-	isStreaming := c.Request.Header.Get("Accept") == "text/event-stream"
+	isStreaming := c.Request.Header.Get("Accept") == "text/event-stream" || c.Request.Header.Get("Content-Type") == "text/event-stream"
 
 	if isStreaming {
 		handleStreamingRequest(c, provider, router)
