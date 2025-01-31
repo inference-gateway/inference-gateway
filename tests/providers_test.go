@@ -18,6 +18,7 @@ func TestStreamTokens(t *testing.T) {
 	tests := []struct {
 		name              string
 		provider          string
+		model             string
 		mockResponse      string
 		messages          []providers.Message
 		expectedResponses []providers.GenerateResponse
@@ -83,6 +84,7 @@ func TestStreamTokens(t *testing.T) {
 		{
 			name:     "Groq successful response",
 			provider: providers.GroqID,
+			model:    "deepseek-r1-distill-llama-70b",
 			mockResponse: `
 data: {"id":"chatcmpl-***","object":"chat.completion.chunk","created":1738346484,"model":"deepseek-r1-distill-llama-70b","system_fingerprint":"fp_***","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}],"x_groq":{"id":"req_***"}}
 
@@ -127,7 +129,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: "\\u003cthink\\u003e",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -136,7 +138,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: "\\n\\n",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -145,7 +147,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: "\\u003c/think\\u003e",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -154,7 +156,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: "\\n\\n",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -163,7 +165,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: "Hello",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -172,7 +174,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: "!",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -181,7 +183,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: " How",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -190,7 +192,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: " can",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -199,7 +201,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: " I",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -208,7 +210,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: " assist",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -217,7 +219,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: " you",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -226,7 +228,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: " today",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -235,7 +237,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: "?",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -244,7 +246,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: " 😊",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventContentDelta,
@@ -253,7 +255,7 @@ data: [DONE]
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{
 						Content: "",
-						Model:   "test-model",
+						Model:   "deepseek-r1-distill-llama-70b",
 						Role:    "assistant",
 					},
 					EventType: providers.EventStreamEnd,
@@ -342,7 +344,7 @@ data: [DONE]
 			)
 			assert.NoError(t, err)
 
-			ch, err := provider.StreamTokens(ctx, "test-model", tt.messages)
+			ch, err := provider.StreamTokens(ctx, tt.model, tt.messages)
 			if tt.expectError {
 				assert.Error(t, err)
 				return
