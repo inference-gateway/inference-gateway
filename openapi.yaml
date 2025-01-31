@@ -427,11 +427,22 @@ components:
         stream:
           type: boolean
           default: false
-          description: Whether to stream tokens as they are generated
+          description: Whether to stream tokens as they are generated in raw json
         ssevents:
           type: boolean
           default: false
-          description: Whether to use Server-Sent Events for token generation
+          description: |
+            Whether to use Server-Sent Events for token generation.
+            When enabled, the response will be streamed as SSE with the following event types:
+              - message-start: Initial message event with assistant role
+              - stream-start: Stream initialization
+              - content-start: Content beginning
+              - content-delta: Content update with new tokens
+              - content-end: Content completion
+              - message-end: Message completion
+              - stream-end: Stream completion
+
+              **Note:** Depending on the provider, some events may not be present.
     ResponseTokens:
       type: object
       description: Token response structure

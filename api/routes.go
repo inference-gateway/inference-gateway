@@ -398,19 +398,26 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 				if req.SSEvents {
 					switch resp.EventType {
 					case providers.EventMessageStart:
-						c.SSEvent("message-start", `{"role":"assistant"}`)
+						c.SSEvent(string(providers.EventMessageStart), `{"role":"assistant"}`)
+
+					case providers.EventStreamStart:
+						c.SSEvent(string(providers.EventStreamStart), `{}`)
 
 					case providers.EventContentStart:
-						c.SSEvent("content-start", `{}`)
+						c.SSEvent(string(providers.EventContentStart), `{}`)
 
 					case providers.EventContentDelta:
-						c.SSEvent("content-delta", string(jsonData))
+						c.SSEvent(string(providers.EventContentDelta), string(jsonData))
 
 					case providers.EventContentEnd:
-						c.SSEvent("content-end", `{"type":"content-end","index":0}`)
+						c.SSEvent(string(providers.EventContentEnd), `{}`)
+
+					case providers.EventMessageEnd:
+						c.SSEvent(string(providers.EventMessageEnd), `{}`)
 
 					case providers.EventStreamEnd:
-						c.SSEvent("message-end", `{}`)
+						c.SSEvent(string(providers.EventStreamEnd), `{}`)
+
 					}
 					return true
 				}
