@@ -2,6 +2,7 @@ package providers
 
 import (
 	"bufio"
+	"encoding/json"
 
 	"github.com/inference-gateway/inference-gateway/logger"
 )
@@ -89,11 +90,6 @@ type CohereContent struct {
 	Text string `json:"text"`
 }
 
-type CohereDeltaMessage struct {
-	Role    string        `json:"role,omitempty"`
-	Content CohereContent `json:"content"`
-}
-
 type CohereMessage struct {
 	Role      string          `json:"role"`
 	Content   []CohereContent `json:"content,omitempty"`
@@ -135,28 +131,98 @@ func (g *GenerateResponseCohere) Transform() GenerateResponse {
 	}
 }
 
+type CohereDeltaMessage struct {
+	Role      string          `json:"role,omitempty"`
+	Content   json.RawMessage `json:"content,omitempty"`
+	ToolPlan  string          `json:"tool_plan,omitempty"`
+	ToolCalls []interface{}   `json:"tool_calls,omitempty"`
+	Citations []interface{}   `json:"citations,omitempty"`
+}
+
 type CohereDelta struct {
-	Message CohereDeltaMessage `json:"message"`
+	Message CohereDeltaMessage `json:"message,omitempty"`
 }
 
 type CohereStreamResponse struct {
+	Id    string      `json:"id,omitempty"`
 	Type  EventType   `json:"type,omitempty"`
 	Delta CohereDelta `json:"delta,omitempty"`
 }
 
+type CohereContentItem struct {
+	Type string `json:"type,omitempty"`
+	Text string `json:"text,omitempty"`
+}
+
 func (g *CohereStreamResponse) Transform() GenerateResponse {
-	if g.Type == EventContentDelta {
+	var content CohereContentItem
+	// Unfortunatly the content is a raw message, so we need to try and unmarshal it into CohereContentItem
+	// Sometimes it's array sometimes it's a structured object - weird and magical
+	if err := json.Unmarshal(g.Delta.Message.Content, &content); err != nil {
 		return GenerateResponse{
 			Provider: CohereDisplayName,
 			Response: ResponseTokens{
 				Model:   "N/A",
-				Content: g.Delta.Message.Content.Text,
+				Content: "",
+				Role:    "assistant",
+			},
+			EventType: g.Type,
+		}
+	}
+	switch g.Type {
+	case EventMessageStart:
+		return GenerateResponse{
+			Provider: CohereDisplayName,
+			Response: ResponseTokens{
+				Model:   "N/A",
+				Content: content.Text,
+				Role:    "assistant",
+			},
+			EventType: EventMessageStart,
+		}
+	case EventContentStart:
+		return GenerateResponse{
+			Provider: CohereDisplayName,
+			Response: ResponseTokens{
+				Model:   "N/A",
+				Content: content.Text,
+				Role:    "assistant",
+			},
+			EventType: EventContentStart,
+		}
+	case EventContentDelta:
+		return GenerateResponse{
+			Provider: CohereDisplayName,
+			Response: ResponseTokens{
+				Model:   "N/A",
+				Content: content.Text,
 				Role:    "assistant",
 			},
 			EventType: EventContentDelta,
 		}
+	case EventContentEnd:
+		return GenerateResponse{
+			Provider: CohereDisplayName,
+			Response: ResponseTokens{
+				Model:   "N/A",
+				Content: content.Text,
+				Role:    "assistant",
+			},
+			EventType: EventContentEnd,
+		}
+	case EventMessageEnd:
+		return GenerateResponse{
+			Provider: CohereDisplayName,
+			Response: ResponseTokens{
+				Model:   "N/A",
+				Content: content.Text,
+				Role:    "assistant",
+			},
+			EventType: EventMessageEnd,
+		}
+	default:
+		return GenerateResponse{}
 	}
-	return GenerateResponse{}
 }
 
 type CohereStreamParser struct {
@@ -164,12 +230,12 @@ type CohereStreamParser struct {
 }
 
 func (p *CohereStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
-	rawchunk, err := readSSEChunk(reader)
+	rawchunk, err := readSSEventsChunk(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	event, err := parseSSE(rawchunk)
+	event, err := parseSSEvents(rawchunk)
 	if err != nil {
 		return nil, err
 	}

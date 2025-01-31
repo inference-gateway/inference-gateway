@@ -165,12 +165,12 @@ type GroqStreamParser struct {
 }
 
 func (p *GroqStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
-	rawchunk, err := readSSEChunk(reader)
+	rawchunk, err := readSSEventsChunk(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	event, err := parseSSE(rawchunk)
+	event, err := parseSSEvents(rawchunk)
 	if err != nil {
 		return nil, err
 	}

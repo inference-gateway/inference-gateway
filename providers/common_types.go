@@ -102,12 +102,13 @@ type EventType string
 
 const (
 	EventStreamStart    EventType = "stream-start"
-	EventTextGeneration EventType = "text-generation"
 	EventMessageStart   EventType = "message-start"
 	EventContentStart   EventType = "content-start"
 	EventContentDelta   EventType = "content-delta"
 	EventContentEnd     EventType = "content-end"
-	EventStreamEnd      EventType = "message-end"
+	EventMessageEnd     EventType = "message-end"
+	EventStreamEnd      EventType = "stream-end"
+	EventTextGeneration EventType = "text-generation"
 )
 
 const (
@@ -127,7 +128,7 @@ type SSEvent struct {
 // chop off the "data: " prefix and add it after the unmarshal process
 // I think it's up to the user to decide if they want SSE or not, therefore
 // I made it configurable in the GenerateRequest struct
-func parseSSE(line []byte) (*SSEvent, error) {
+func parseSSEvents(line []byte) (*SSEvent, error) {
 	if len(bytes.TrimSpace(line)) == 0 {
 		return nil, fmt.Errorf("empty line")
 	}
@@ -170,6 +171,8 @@ func parseSSE(line []byte) (*SSEvent, error) {
 				event.EventType = EventContentDelta
 			case bytes.Contains(value, []byte(EventContentEnd)):
 				event.EventType = EventContentEnd
+			case bytes.Contains(value, []byte(EventMessageEnd)):
+				event.EventType = EventMessageEnd
 			case bytes.Contains(value, []byte(EventStreamEnd)):
 				event.EventType = EventStreamEnd
 			default:
@@ -184,7 +187,7 @@ func parseSSE(line []byte) (*SSEvent, error) {
 	return event, nil
 }
 
-func readSSEChunk(reader *bufio.Reader) ([]byte, error) {
+func readSSEventsChunk(reader *bufio.Reader) ([]byte, error) {
 	var buffer []byte
 
 	for {

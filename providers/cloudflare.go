@@ -95,12 +95,12 @@ type CloudflareStreamParser struct {
 
 func (p *CloudflareStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
 	// TODO - check if it works
-	rawchunk, err := readSSEChunk(reader)
+	rawchunk, err := readSSEventsChunk(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	event, err := parseSSE(rawchunk)
+	event, err := parseSSEvents(rawchunk)
 	if err != nil {
 		return nil, err
 	}

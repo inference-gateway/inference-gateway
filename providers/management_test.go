@@ -30,7 +30,7 @@ func TestParseSSEDebug(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			event, err := parseSSE([]byte(tc.input))
+			event, err := parseSSEvents([]byte(tc.input))
 			if err != nil {
 				t.Errorf("parseSSE() error = %v", err)
 				return
@@ -45,7 +45,7 @@ func TestParseSSEDebug(t *testing.T) {
 func TestParseSSEWithEmbeddedMessageStart(t *testing.T) {
 	input := `data: {"json": "{\"id\":\"d8c1879d-6c59-4eb7-8209-b184f81bcf15\",\"type\":\"message-start\",\"delta\":{\"message\":{\"role\":\"assistant\",\"content\":[],\"tool_plan\":\"\",\"tool_calls\":[],\"citations\":[]}}}"}`
 
-	event, err := parseSSE([]byte(input))
+	event, err := parseSSEvents([]byte(input))
 	if err != nil {
 		t.Fatalf("parseSSE() error = %v", err)
 	}

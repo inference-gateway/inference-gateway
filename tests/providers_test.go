@@ -28,8 +28,7 @@ func TestStreamTokens(t *testing.T) {
 		{
 			name:     "Ollama successful response",
 			provider: providers.OllamaID,
-			mockResponse: `
-{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":"how","done":false}
+			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":"how","done":false}
 {"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
 {"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" you?","done":false}
 {"model":"phi3:3.8b","created_at":"2025-01-31T16:47:15.158460303Z","response":"","done":true,"done_reason":"stop","context":[32006,29871],"total_duration":14508007757,"load_duration":4831567378,"prompt_eval_count":34,"prompt_eval_duration":1266000000,"eval_count":108,"eval_duration":8405000000}
@@ -74,7 +73,7 @@ func TestStreamTokens(t *testing.T) {
 			name:     "Context cancellation",
 			provider: providers.OllamaID,
 			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
-				`,
+						`,
 			messages: []providers.Message{
 				{Role: "user", Content: "Hello"},
 			},
@@ -273,43 +272,90 @@ data: [DONE]
 			testCancel:  false,
 			expectError: false,
 		},
-		// 		{
-		// 			name:     "Cohere successful response",
-		// 			provider: providers.CohereID,
-		// 			mockResponse: `
+		{
+			name:     "Cohere successful response",
+			provider: providers.CohereID,
+			mockResponse: `
 
-		// event: message-start
-		// data: {"id":"***","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
+event: message-start
+data: {"id":"***","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
-		// event: content-start
-		// data: {"type":"content-start","index":0,"delta":{"message":{"content":{"type":"text","text":""}}}}
+event: content-start
+data: {"type":"content-start","index":0,"delta":{"message":{"content":{"type":"text","text":""}}}}
 
-		// event: content-delta
-		// data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"Hello"}}}}
+event: content-delta
+data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"Hello"}}}}
 
-		// event: content-delta
-		// data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"oooo"}}}}
+event: content-delta
+data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"oooo"}}}}
 
-		// event: content-end
-		// data: {"type":"content-end","index":0}
+event: content-end
+data: {"type":"content-end","index":0}
 
-		// event: message-end
-		// data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":18,"output_tokens":55},"tokens":{"input_tokens":27,"output_tokens":55}}}}
+event: message-end
+data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":18,"output_tokens":55},"tokens":{"input_tokens":27,"output_tokens":55}}}}
 
-		// `,
-		// 			messages: []providers.Message{
-		// 				{Role: "user", Content: "Hello"},
-		// 			},
-		// 			expectedResp: providers.GenerateResponse{
-		// 				Provider: providers.CohereDisplayName,
-		// 				Response: providers.ResponseTokens{
-		// 					Content: "Hello",
-		// 					Model:   "N/A",
-		// 					Role:    "assistant",
-		// 				},
-		// 				EventType: providers.EventContentDelta,
-		// 			},
-		// 		},
+		`,
+			messages: []providers.Message{
+				{Role: "user", Content: "Hello"},
+			},
+			expectedResponses: []providers.GenerateResponse{
+				{
+					Provider: providers.CohereDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "",
+						Model:   "N/A",
+						Role:    "assistant",
+					},
+					EventType: providers.EventMessageStart,
+				},
+				{
+					Provider: providers.CohereDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "",
+						Model:   "N/A",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentStart,
+				},
+				{
+					Provider: providers.CohereDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "Hello",
+						Model:   "N/A",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.CohereDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "oooo",
+						Model:   "N/A",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: providers.CohereDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "",
+						Model:   "N/A",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentEnd,
+				},
+				{
+					Provider: providers.CohereDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "",
+						Model:   "N/A",
+						Role:    "assistant",
+					},
+					EventType: providers.EventMessageEnd,
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

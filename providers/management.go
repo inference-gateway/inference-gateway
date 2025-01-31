@@ -451,7 +451,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 		return nil, fmt.Errorf("failed to create request: %v", err)
 	}
 
-	// Set content type header
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "text/event-stream")
 
@@ -486,10 +485,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 			if event.EventType == EventStreamEnd {
 				// Close the channel by returning
 				return
-			}
-
-			if event.EventType != EventContentDelta {
-				continue
 			}
 
 			var chunk interface{}

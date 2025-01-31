@@ -142,6 +142,8 @@ type OllamaStreamParser struct {
 }
 
 func (p *OllamaStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
+	// It's good that they kept it simple, raw bytes
+	// so no need to pass it through parseSSEvents
 	rawchunk, err := reader.ReadBytes('\n')
 	if err != nil {
 		return nil, err
