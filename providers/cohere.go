@@ -1,6 +1,10 @@
 package providers
 
-import "bufio"
+import (
+	"bufio"
+
+	"github.com/inference-gateway/inference-gateway/logger"
+)
 
 type CohereModel struct {
 	Name             string   `json:"name"`
@@ -163,14 +167,16 @@ func (g *CohereStreamResponse) Transform() GenerateResponse {
 	return GenerateResponse{}
 }
 
-type CohereStreamParser struct{}
+type CohereStreamParser struct {
+	logger logger.Logger
+}
 
 func (p *CohereStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
 	rawchunk, err := readSSEChunk(reader)
 	if err != nil {
 		return nil, err
 	}
-
+	p.logger.Debug("Cohere SSE chunk", "chunk", string(rawchunk))
 	event, err := parseSSE(rawchunk)
 	if err != nil {
 		return nil, err

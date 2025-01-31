@@ -468,7 +468,7 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 		defer close(streamCh)
 
 		for {
-			streamParser, err := NewStreamParser(p.GetID())
+			streamParser, err := NewStreamParser(p.logger, p.GetID())
 			if err != nil {
 				p.logger.Error("failed to create stream parser", err)
 				return
@@ -531,11 +531,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 				}
 				chunk = response
 			case CohereID:
-
-				if event.EventType == EventMessageStart {
-					continue
-				}
-
 				var response CohereStreamResponse
 				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Debug("raw json", "json", string(event.Data))

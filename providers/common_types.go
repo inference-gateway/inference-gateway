@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+
+	"github.com/inference-gateway/inference-gateway/logger"
 )
 
 // The authentication type of the specific provider
@@ -210,20 +212,32 @@ type StreamParser interface {
 	ParseChunk(reader *bufio.Reader) (*SSEvent, error)
 }
 
-func NewStreamParser(provider string) (StreamParser, error) {
+func NewStreamParser(l logger.Logger, provider string) (StreamParser, error) {
 	switch provider {
 	case OllamaID:
-		return &OllamaStreamParser{}, nil
+		return &OllamaStreamParser{
+			logger: l,
+		}, nil
 	case OpenaiID:
-		return &OpenaiStreamParser{}, nil
+		return &OpenaiStreamParser{
+			logger: l,
+		}, nil
 	case GoogleID:
-		return &GoogleStreamParser{}, nil
+		return &GoogleStreamParser{
+			logger: l,
+		}, nil
 	case GroqID:
-		return &GroqStreamParser{}, nil
+		return &GroqStreamParser{
+			logger: l,
+		}, nil
 	case CohereID:
-		return &CohereStreamParser{}, nil
+		return &CohereStreamParser{
+			logger: l,
+		}, nil
 	case AnthropicID:
-		return &AnthropicStreamParser{}, nil
+		return &AnthropicStreamParser{
+			logger: l,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported provider: %s", provider)
 	}

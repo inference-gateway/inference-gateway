@@ -1,6 +1,10 @@
 package providers
 
-import "bufio"
+import (
+	"bufio"
+
+	"github.com/inference-gateway/inference-gateway/logger"
+)
 
 type CloudflareModel struct {
 	ID          string `json:"id"`
@@ -85,7 +89,9 @@ func (g *GenerateResponseCloudflare) Transform() GenerateResponse {
 	}
 }
 
-type CloudflareStreamParser struct{}
+type CloudflareStreamParser struct {
+	logger logger.Logger
+}
 
 func (p *CloudflareStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
 	// TODO - check if it works

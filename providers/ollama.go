@@ -1,6 +1,10 @@
 package providers
 
-import "bufio"
+import (
+	"bufio"
+
+	"github.com/inference-gateway/inference-gateway/logger"
+)
 
 type OllamaDetails struct {
 	Format            string      `json:"format"`
@@ -126,7 +130,9 @@ func (g *GenerateResponseOllama) Transform() GenerateResponse {
 	}
 }
 
-type OllamaStreamParser struct{}
+type OllamaStreamParser struct {
+	logger logger.Logger
+}
 
 func (p *OllamaStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
 	rawchunk, err := reader.ReadBytes('\n')

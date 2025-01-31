@@ -1,6 +1,10 @@
 package providers
 
-import "bufio"
+import (
+	"bufio"
+
+	"github.com/inference-gateway/inference-gateway/logger"
+)
 
 type GoogleModel struct {
 	Name                       string   `json:"name"`
@@ -108,7 +112,9 @@ func (g *GenerateResponseGoogle) Transform() GenerateResponse {
 	}
 }
 
-type GoogleStreamParser struct{}
+type GoogleStreamParser struct {
+	logger logger.Logger
+}
 
 func (p *GoogleStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
 	// TODO - check if it works

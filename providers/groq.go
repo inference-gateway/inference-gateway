@@ -1,6 +1,10 @@
 package providers
 
-import "bufio"
+import (
+	"bufio"
+
+	"github.com/inference-gateway/inference-gateway/logger"
+)
 
 type GroqModel struct {
 	ID            string      `json:"id"`
@@ -123,7 +127,9 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 	}
 }
 
-type GroqStreamParser struct{}
+type GroqStreamParser struct {
+	logger logger.Logger
+}
 
 func (p *GroqStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
 	rawchunk, err := readSSEChunk(reader)

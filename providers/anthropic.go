@@ -1,6 +1,10 @@
 package providers
 
-import "bufio"
+import (
+	"bufio"
+
+	"github.com/inference-gateway/inference-gateway/logger"
+)
 
 // Extra headers for Anthropic provider
 var AnthropicExtraHeaders = map[string][]string{
@@ -84,7 +88,9 @@ func (g *GenerateResponseAnthropic) Transform() GenerateResponse {
 	}
 }
 
-type AnthropicStreamParser struct{}
+type AnthropicStreamParser struct {
+	logger logger.Logger
+}
 
 func (p *AnthropicStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
 	rawchunk, err := readSSEChunk(reader)
