@@ -90,7 +90,7 @@ func (g *GenerateResponseCloudflare) Transform() GenerateResponse {
 }
 
 type CloudflareStreamParser struct {
-	logger logger.Logger
+	_ logger.Logger
 }
 
 func (p *CloudflareStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {

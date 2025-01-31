@@ -484,11 +484,10 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 			}
 
 			if event.EventType == EventStreamEnd {
-				// p.logger.Debug("stream ended", "provider", p.GetName())
+				// Close the channel by returning
 				return
 			}
 
-			// p.logger.Debug("event", "event", event.EventType, "event-data", string(event.Data))
 			if event.EventType != EventContentDelta {
 				continue
 			}
@@ -533,8 +532,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 			case CohereID:
 				var response CohereStreamResponse
 				if err := json.Unmarshal(event.Data, &response); err != nil {
-					p.logger.Debug("raw json", "json", string(event.Data))
-					p.logger.Debug("event", "event", event.EventType)
 					p.logger.Error("failed to unmarshal chunk", err)
 					return
 				}

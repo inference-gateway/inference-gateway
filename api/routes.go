@@ -383,20 +383,35 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		// Use Gin's streaming with proper context handling
 		c.Stream(func(w io.Writer) bool {
 			select {
-			case token, ok := <-streamCh:
+			case resp, ok := <-streamCh:
 				if !ok {
 					return false
 				}
 				// Marshal the token to JSON
-				jsonData, err := json.Marshal(token)
+				jsonData, err := json.Marshal(resp.Response) // Marshal only the response part
 				if err != nil {
 					router.logger.Error("failed to marshal token", err)
 					return false
 				}
 
+				// Standardize the response types also for Ollama
 				if req.SSEvents {
-					// Write SSE format
-					c.SSEvent("message", string(jsonData))
+					switch resp.EventType {
+					case providers.EventMessageStart:
+						c.SSEvent("message-start", `{"role":"assistant"}`)
+
+					case providers.EventContentStart:
+						c.SSEvent("content-start", `{}`)
+
+					case providers.EventContentDelta:
+						c.SSEvent("content-delta", string(jsonData))
+
+					case providers.EventContentEnd:
+						c.SSEvent("content-end", `{"type":"content-end","index":0}`)
+
+					case providers.EventStreamEnd:
+						c.SSEvent("message-end", `{}`)
+					}
 					return true
 				}
 

@@ -112,16 +112,6 @@ type CohereUsage struct {
 	Tokens      CohereUsageUnits `json:"tokens"`
 }
 
-type CohereEventType string
-
-const (
-	CohereEventMessageStart CohereEventType = "message-start"
-	CohereEventContentStart CohereEventType = "content-start"
-	CohereEventContentDelta CohereEventType = "content-delta"
-	CohereEventContentEnd   CohereEventType = "content-end"
-	CohereEventMessageEnd   CohereEventType = "message-end"
-)
-
 type GenerateResponseCohere struct {
 	ID           string        `json:"id"`
 	FinishReason string        `json:"finish_reason"`
@@ -138,9 +128,9 @@ func (g *GenerateResponseCohere) Transform() GenerateResponse {
 	return GenerateResponse{
 		Provider: CohereDisplayName,
 		Response: ResponseTokens{
-			Model:   "N/A", // Not provided by Cohere
+			Model:   "N/A",
 			Content: g.Message.Content[0].Text,
-			Role:    g.Message.Role,
+			Role:    "assistant",
 		},
 	}
 }
@@ -150,18 +140,20 @@ type CohereDelta struct {
 }
 
 type CohereStreamResponse struct {
-	Type  CohereEventType `json:"type,omitempty"`
-	Delta CohereDelta     `json:"delta,omitempty"`
+	Type  EventType   `json:"type,omitempty"`
+	Delta CohereDelta `json:"delta,omitempty"`
 }
 
 func (g *CohereStreamResponse) Transform() GenerateResponse {
-	if g.Type == CohereEventContentDelta {
+	if g.Type == EventContentDelta {
 		return GenerateResponse{
 			Provider: CohereDisplayName,
 			Response: ResponseTokens{
+				Model:   "N/A",
 				Content: g.Delta.Message.Content.Text,
-				Role:    g.Delta.Message.Role,
+				Role:    "assistant",
 			},
+			EventType: EventContentDelta,
 		}
 	}
 	return GenerateResponse{}
@@ -176,7 +168,7 @@ func (p *CohereStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) 
 	if err != nil {
 		return nil, err
 	}
-	p.logger.Debug("Cohere SSE chunk", "chunk", string(rawchunk))
+
 	event, err := parseSSE(rawchunk)
 	if err != nil {
 		return nil, err

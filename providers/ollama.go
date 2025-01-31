@@ -2,6 +2,7 @@ package providers
 
 import (
 	"bufio"
+	"bytes"
 
 	"github.com/inference-gateway/inference-gateway/logger"
 )
@@ -109,14 +110,14 @@ type GenerateResponseOllama struct {
 	CreatedAt          string `json:"created_at"`
 	Response           string `json:"response"`
 	Done               bool   `json:"done"`
-	DoneReason         string `json:"done_reason"`
-	Context            []int  `json:"context"`
-	TotalDuration      int64  `json:"total_duration"`
-	LoadDuration       int64  `json:"load_duration"`
-	PromptEvalCount    int    `json:"prompt_eval_count"`
-	PromptEvalDuration int64  `json:"prompt_eval_duration"`
-	EvalCount          int    `json:"eval_count"`
-	EvalDuration       int64  `json:"eval_duration"`
+	DoneReason         string `json:"done_reason,omitempty"`
+	Context            []int  `json:"context,omitempty"`
+	TotalDuration      int64  `json:"total_duration,omitempty"`
+	LoadDuration       int64  `json:"load_duration,omitempty"`
+	PromptEvalCount    int    `json:"prompt_eval_count,omitempty"`
+	PromptEvalDuration int64  `json:"prompt_eval_duration,omitempty"`
+	EvalCount          int    `json:"eval_count,omitempty"`
+	EvalDuration       int64  `json:"eval_duration,omitempty"`
 }
 
 func (g *GenerateResponseOllama) Transform() GenerateResponse {
@@ -140,8 +141,17 @@ func (p *OllamaStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) 
 		return nil, err
 	}
 
+	event := EventStreamStart
+	if bytes.Contains(rawchunk, []byte(`"done":false}`)) {
+		event = EventContentDelta
+	}
+
+	if bytes.Contains(rawchunk, []byte(`"done":true}`)) {
+		event = EventStreamEnd
+	}
+
 	return &SSEvent{
-		EventType: EventContentDelta,
+		EventType: event,
 		Data:      rawchunk,
 	}, nil
 }

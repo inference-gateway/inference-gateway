@@ -65,8 +65,9 @@ type GenerateRequest struct {
 }
 
 type GenerateResponse struct {
-	Provider string         `json:"provider"`
-	Response ResponseTokens `json:"response"`
+	Provider  string         `json:"provider"`
+	Response  ResponseTokens `json:"response"`
+	EventType EventType      `json:"event_type,omitempty"`
 }
 
 type ListModelsResponse struct {
@@ -85,8 +86,8 @@ type Model struct {
 
 type ResponseTokens struct {
 	Content string `json:"content"`
-	Model   string `json:"model"`
-	Role    string `json:"role"`
+	Model   string `json:"model,omitempty"`
+	Role    string `json:"role,omitempty"`
 }
 
 func float64Ptr(v float64) *float64 {

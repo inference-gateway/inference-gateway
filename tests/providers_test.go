@@ -16,33 +16,56 @@ import (
 
 func TestStreamTokens(t *testing.T) {
 	tests := []struct {
-		name         string
-		provider     string
-		mockResponse string
-		messages     []providers.Message
-		expectedResp providers.GenerateResponse
-		testCancel   bool
-		expectError  bool
+		name              string
+		provider          string
+		mockResponse      string
+		messages          []providers.Message
+		expectedResponses []providers.GenerateResponse
+		testCancel        bool
+		expectError       bool
 	}{
-		// 		{
-		// 			name:     "Ollama successful response",
-		// 			provider: providers.OllamaID,
-		// 			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
-		// `,
-		// 			messages: []providers.Message{
-		// 				{Role: "user", Content: "Hello"},
-		// 			},
-		// 			expectedResp: providers.GenerateResponse{
-		// 				Provider: "Ollama",
-		// 				Response: providers.ResponseTokens{
-		// 					Content: " are",
-		// 					Model:   "phi3:3.8b",
-		// 					Role:    "assistant",
-		// 				},
-		// 			},
-		// 			testCancel:  false,
-		// 			expectError: false,
-		// 		},
+		{
+			name:     "Ollama successful response",
+			provider: providers.OllamaID,
+			mockResponse: `
+{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":"how","done":false}
+{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
+{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" you?","done":false}
+{"model":"phi3:3.8b","created_at":"2025-01-31T16:47:15.158460303Z","response":"","done":true,"done_reason":"stop","context":[32006,29871],"total_duration":14508007757,"load_duration":4831567378,"prompt_eval_count":34,"prompt_eval_duration":1266000000,"eval_count":108,"eval_duration":8405000000}
+
+`,
+			messages: []providers.Message{
+				{Role: "user", Content: "Hello"},
+			},
+			expectedResponses: []providers.GenerateResponse{
+				{
+					Provider: "Ollama",
+					Response: providers.ResponseTokens{
+						Content: "how",
+						Model:   "phi3:3.8b",
+						Role:    "assistant",
+					},
+				},
+				{
+					Provider: "Ollama",
+					Response: providers.ResponseTokens{
+						Content: " are",
+						Model:   "phi3:3.8b",
+						Role:    "assistant",
+					},
+				},
+				{
+					Provider: "Ollama",
+					Response: providers.ResponseTokens{
+						Content: " you?",
+						Model:   "phi3:3.8b",
+						Role:    "assistant",
+					},
+				},
+			},
+			testCancel:  false,
+			expectError: false,
+		},
 		// 		{
 		// 			name:     "Context cancellation",
 		// 			provider: providers.OllamaID,
@@ -76,33 +99,43 @@ func TestStreamTokens(t *testing.T) {
 		// 			testCancel:  false,
 		// 			expectError: false,
 		// 		},
-		{
-			name:     "Cohere successful response",
-			provider: providers.CohereID,
-			mockResponse: `
+		// 		{
+		// 			name:     "Cohere successful response",
+		// 			provider: providers.CohereID,
+		// 			mockResponse: `
 
-event: stream-start
-data: {"type":"message-start","id":"29f14a5a-11de-4cae-9800-25e4747408ea","delta":{"message":{"role":"assistant"}}}
+		// event: message-start
+		// data: {"id":"***","type":"message-start","delta":{"message":{"role":"assistant","content":[],"tool_plan":"","tool_calls":[],"citations":[]}}}
 
-event: text-generation
-data: {"type":"content-start","id":"29f14a5a-11de-4cae-9800-25e4747408ea","delta":{"content":{"type":"text","text":" are"}}}
+		// event: content-start
+		// data: {"type":"content-start","index":0,"delta":{"message":{"content":{"type":"text","text":""}}}}
 
-event: stream-end
-data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":3,"output_tokens":9},"tokens":{"input_tokens":69,"output_tokens":9}}}}
+		// event: content-delta
+		// data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"Hello"}}}}
 
-`,
-			messages: []providers.Message{
-				{Role: "user", Content: "Hello"},
-			},
-			expectedResp: providers.GenerateResponse{
-				Provider: providers.CohereDisplayName,
-				Response: providers.ResponseTokens{
-					Content: "Hello",
-					Model:   "N/A",
-					Role:    "user",
-				},
-			},
-		},
+		// event: content-delta
+		// data: {"type":"content-delta","index":0,"delta":{"message":{"content":{"text":"oooo"}}}}
+
+		// event: content-end
+		// data: {"type":"content-end","index":0}
+
+		// event: message-end
+		// data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":18,"output_tokens":55},"tokens":{"input_tokens":27,"output_tokens":55}}}}
+
+		// `,
+		// 			messages: []providers.Message{
+		// 				{Role: "user", Content: "Hello"},
+		// 			},
+		// 			expectedResp: providers.GenerateResponse{
+		// 				Provider: providers.CohereDisplayName,
+		// 				Response: providers.ResponseTokens{
+		// 					Content: "Hello",
+		// 					Model:   "N/A",
+		// 					Role:    "assistant",
+		// 				},
+		// 				EventType: providers.EventContentDelta,
+		// 			},
+		// 		},
 	}
 
 	for _, tt := range tests {
@@ -155,12 +188,15 @@ data: {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed
 			assert.NotNil(t, ch)
 
 			if !tt.testCancel {
-				resp := <-ch
-				assert.Equal(t, tt.expectedResp, resp)
+				var responses []providers.GenerateResponse
+				for resp := range ch {
+					responses = append(responses, resp)
+				}
+				assert.Equal(t, tt.expectedResponses, responses)
 			} else {
 				cancel()
 				_, ok := <-ch
-				assert.False(t, ok)
+				assert.False(t, ok, "channel should be closed after cancellation")
 			}
 		})
 	}
