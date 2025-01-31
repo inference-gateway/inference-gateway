@@ -480,11 +480,11 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 			}
 
 			if event.EventType == EventStreamEnd {
-				p.logger.Debug("stream ended", "provider", p.GetName())
+				// p.logger.Debug("stream ended", "provider", p.GetName())
 				return
 			}
 
-			p.logger.Debug("event", "event", event.EventType, "event-data", string(event.Data))
+			// p.logger.Debug("event", "event", event.EventType, "event-data", string(event.Data))
 			if event.EventType != EventContentDelta {
 				continue
 			}

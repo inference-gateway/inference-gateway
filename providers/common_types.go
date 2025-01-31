@@ -135,11 +135,6 @@ func parseSSE(line []byte) (*SSEvent, error) {
 			continue
 		}
 
-		if bytes.Equal(line, []byte("data: [DONE]")) {
-			event.EventType = EventStreamEnd
-			return event, nil
-		}
-
 		parts := bytes.SplitN(line, []byte(":"), 2)
 		if len(parts) != 2 {
 			continue
@@ -148,19 +143,29 @@ func parseSSE(line []byte) (*SSEvent, error) {
 		field := string(bytes.TrimSpace(parts[0]))
 		value := bytes.TrimSpace(parts[1])
 
+		if bytes.Equal(value, []byte(Done)) {
+			event.EventType = EventStreamEnd
+			return event, nil
+		}
+
 		switch field {
 		case "data":
 			event.Data = value
-			if bytes.Equal(value, []byte("[DONE]")) {
+
+			if bytes.Contains(value, []byte(EventMessageStart)) {
+				event.EventType = EventMessageStart
+			} else if bytes.Contains(value, []byte(EventContentStart)) {
+				event.EventType = EventContentStart
+			} else if bytes.Contains(value, []byte(EventContentDelta)) {
+				event.EventType = EventContentDelta
+			} else if bytes.Contains(value, []byte(EventContentEnd)) {
+				event.EventType = EventContentEnd
+			} else if bytes.Contains(value, []byte(EventStreamEnd)) {
 				event.EventType = EventStreamEnd
 			} else {
-				// Check if data contains message-start type
-				if bytes.Contains(value, []byte("message-start")) {
-					event.EventType = EventMessageStart
-				} else {
-					event.EventType = EventContentDelta
-				}
+				event.EventType = EventContentDelta
 			}
+
 		case "event":
 			event.EventType = EventType(string(value))
 		}
