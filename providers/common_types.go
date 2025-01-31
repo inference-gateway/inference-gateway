@@ -190,10 +190,6 @@ func readSSEChunk(reader *bufio.Reader) ([]byte, error) {
 	for {
 		line, err := reader.ReadBytes('\n')
 
-		if bytes.Equal(line, []byte("\n")) {
-			continue
-		}
-
 		if err != nil {
 			if err == io.EOF {
 				if len(buffer) > 0 {
