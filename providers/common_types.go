@@ -51,9 +51,9 @@ const (
 )
 
 const (
-	RoleSystem    = "system"
-	RoleUser      = "user"
-	RoleAssistant = "assistant"
+	MessageRoleSystem    = "system"
+	MessageRoleUser      = "user"
+	MessageRoleAssistant = "assistant"
 )
 
 // Common response and request types

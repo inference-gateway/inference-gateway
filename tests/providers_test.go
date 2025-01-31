@@ -25,62 +25,62 @@ func TestStreamTokens(t *testing.T) {
 		testCancel        bool
 		expectError       bool
 	}{
-		// 		{
-		// 			name:     "Ollama successful response",
-		// 			provider: providers.OllamaID,
-		// 			mockResponse: `
-		// {"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":"how","done":false}
-		// {"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
-		// {"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" you?","done":false}
-		// {"model":"phi3:3.8b","created_at":"2025-01-31T16:47:15.158460303Z","response":"","done":true,"done_reason":"stop","context":[32006,29871],"total_duration":14508007757,"load_duration":4831567378,"prompt_eval_count":34,"prompt_eval_duration":1266000000,"eval_count":108,"eval_duration":8405000000}
+		{
+			name:     "Ollama successful response",
+			provider: providers.OllamaID,
+			mockResponse: `
+{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":"how","done":false}
+{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
+{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" you?","done":false}
+{"model":"phi3:3.8b","created_at":"2025-01-31T16:47:15.158460303Z","response":"","done":true,"done_reason":"stop","context":[32006,29871],"total_duration":14508007757,"load_duration":4831567378,"prompt_eval_count":34,"prompt_eval_duration":1266000000,"eval_count":108,"eval_duration":8405000000}
 
-		// `,
-		// 			messages: []providers.Message{
-		// 				{Role: "user", Content: "Hello"},
-		// 			},
-		// 			expectedResponses: []providers.GenerateResponse{
-		// 				{
-		// 					Provider: "Ollama",
-		// 					Response: providers.ResponseTokens{
-		// 						Content: "how",
-		// 						Model:   "phi3:3.8b",
-		// 						Role:    "assistant",
-		// 					},
-		// 					EventType: providers.EventContentDelta,
-		// 				},
-		// 				{
-		// 					Provider: "Ollama",
-		// 					Response: providers.ResponseTokens{
-		// 						Content: " are",
-		// 						Model:   "phi3:3.8b",
-		// 						Role:    "assistant",
-		// 					},
-		// 					EventType: providers.EventContentDelta,
-		// 				},
-		// 				{
-		// 					Provider: "Ollama",
-		// 					Response: providers.ResponseTokens{
-		// 						Content: " you?",
-		// 						Model:   "phi3:3.8b",
-		// 						Role:    "assistant",
-		// 					},
-		// 					EventType: providers.EventContentDelta,
-		// 				},
-		// 			},
-		// 			testCancel:  false,
-		// 			expectError: false,
-		// 		},
-		// 		{
-		// 			name:     "Context cancellation",
-		// 			provider: providers.OllamaID,
-		// 			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
-		// 		`,
-		// 			messages: []providers.Message{
-		// 				{Role: "user", Content: "Hello"},
-		// 			},
-		// 			testCancel:  true,
-		// 			expectError: false,
-		// 		},
+`,
+			messages: []providers.Message{
+				{Role: "user", Content: "Hello"},
+			},
+			expectedResponses: []providers.GenerateResponse{
+				{
+					Provider: "Ollama",
+					Response: providers.ResponseTokens{
+						Content: "how",
+						Model:   "phi3:3.8b",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: "Ollama",
+					Response: providers.ResponseTokens{
+						Content: " are",
+						Model:   "phi3:3.8b",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+				{
+					Provider: "Ollama",
+					Response: providers.ResponseTokens{
+						Content: " you?",
+						Model:   "phi3:3.8b",
+						Role:    "assistant",
+					},
+					EventType: providers.EventContentDelta,
+				},
+			},
+			testCancel:  false,
+			expectError: false,
+		},
+		{
+			name:     "Context cancellation",
+			provider: providers.OllamaID,
+			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
+				`,
+			messages: []providers.Message{
+				{Role: "user", Content: "Hello"},
+			},
+			testCancel:  true,
+			expectError: false,
+		},
 		{
 			name:     "Groq successful response",
 			provider: providers.GroqID,
@@ -125,6 +125,15 @@ data: [DONE]
 				{Role: "user", Content: "Hi"},
 			},
 			expectedResponses: []providers.GenerateResponse{
+				{
+					Provider: providers.GroqDisplayName,
+					Response: providers.ResponseTokens{
+						Content: "",
+						Model:   "deepseek-r1-distill-llama-70b",
+						Role:    "assistant",
+					},
+					EventType: providers.EventMessageStart,
+				},
 				{
 					Provider: providers.GroqDisplayName,
 					Response: providers.ResponseTokens{

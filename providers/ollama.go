@@ -90,7 +90,7 @@ func (r *GenerateRequest) TransformOllama() GenerateRequestOllama {
 
 	// Use first message as system prompt if it exists and is a system message
 	var systemPrompt string
-	if len(r.Messages) > 1 && r.Messages[0].Role == RoleSystem {
+	if len(r.Messages) > 1 && r.Messages[0].Role == MessageRoleSystem {
 		systemPrompt = r.Messages[0].Content
 	}
 

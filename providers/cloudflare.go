@@ -82,7 +82,7 @@ func (g *GenerateResponseCloudflare) Transform() GenerateResponse {
 	return GenerateResponse{
 		Provider: CloudflareDisplayName,
 		Response: ResponseTokens{
-			Role:    RoleAssistant,
+			Role:    MessageRoleAssistant,
 			Content: g.Result.Response,
 			Model:   "", // Cloudflare doesn't return model info in response
 		},

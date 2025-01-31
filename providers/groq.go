@@ -109,21 +109,54 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 
 	response := ResponseTokens{
 		Model: g.Model,
+		Role:  MessageRoleAssistant,
 	}
 
-	isStreaming := g.Choices[0].Delta.Content != "" || g.Choices[0].Delta.Role != ""
-	if isStreaming {
-		response.Content = g.Choices[0].Delta.Content
-		response.Role = g.Choices[0].Delta.Role
-	} else {
-		// Non-streaming response (Message)
+	// Handle non-streaming case using Message first
+	if g.Choices[0].Message.Content != "" {
 		response.Content = g.Choices[0].Message.Content
 		response.Role = g.Choices[0].Message.Role
+		return GenerateResponse{
+			Provider:  GroqDisplayName,
+			Response:  response,
+			EventType: EventContentDelta,
+		}
+	}
+
+	// Handle streaming cases with Delta field
+
+	// Handle initial message with role
+	if g.Choices[0].Delta.Role == MessageRoleAssistant && g.Choices[0].Delta.Content == "" {
+		return GenerateResponse{
+			Provider:  GroqDisplayName,
+			Response:  response,
+			EventType: EventMessageStart,
+		}
+	}
+
+	// Handle content delta
+	if g.Choices[0].Delta.Content != "" {
+		response.Content = g.Choices[0].Delta.Content
+		return GenerateResponse{
+			Provider:  GroqDisplayName,
+			Response:  response,
+			EventType: EventContentDelta,
+		}
+	}
+
+	// Handle stream end (empty delta with finish_reason "stop")
+	if g.Choices[0].FinishReason == "stop" {
+		return GenerateResponse{
+			Provider:  GroqDisplayName,
+			Response:  response,
+			EventType: EventStreamEnd,
+		}
 	}
 
 	return GenerateResponse{
-		Provider: GroqDisplayName,
-		Response: response,
+		Provider:  GroqDisplayName,
+		Response:  response,
+		EventType: EventContentDelta,
 	}
 }
 
