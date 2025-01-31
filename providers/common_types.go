@@ -187,10 +187,6 @@ func readSSEChunk(reader *bufio.Reader) ([]byte, error) {
 		buffer = append(buffer, line...)
 
 		if len(buffer) > 2 {
-			if bytes.Contains(buffer, []byte("data: [DONE]")) {
-				return buffer, nil
-			}
-
 			if bytes.HasSuffix(buffer, []byte("\n\n")) {
 				return buffer, nil
 			}
