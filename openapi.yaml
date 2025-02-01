@@ -1222,11 +1222,11 @@ components:
                                 type: string
         deepseek:
           id: "deepseek"
-          url: "http://deepseek:8080"
+          url: "https://api.deepseek.com/v1"
           auth_type: "none"
           endpoints:
             list:
-              endpoint: "/api/tags"
+              endpoint: "/v1/models"
               method: "GET"
               schema:
                 response:
@@ -1237,7 +1237,7 @@ components:
                       items:
                         $ref: "#/components/schemas/Model"
             generate:
-              endpoint: "/api/generate"
+              endpoint: "/v1/chat/completions"
               method: "POST"
               schema:
                 request:
