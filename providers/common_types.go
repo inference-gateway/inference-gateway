@@ -235,6 +235,10 @@ func NewStreamParser(l logger.Logger, provider string) (StreamParser, error) {
 		return &GroqStreamParser{
 			logger: l,
 		}, nil
+	case CloudflareID:
+		return &CloudflareStreamParser{
+			logger: l,
+		}, nil
 	case CohereID:
 		return &CohereStreamParser{
 			logger: l,

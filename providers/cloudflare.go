@@ -60,9 +60,9 @@ type GenerateRequestCloudflare struct {
 
 func (r *GenerateRequest) TransformCloudflare() GenerateRequestCloudflare {
 	return GenerateRequestCloudflare{
-		Messages: r.Messages,
-		Model:    r.Model,
-		// Set default temperature
+		Messages:    r.Messages,
+		Model:       r.Model,
+		Stream:      &r.Stream,
 		Temperature: float64Ptr(0.7),
 	}
 }
@@ -90,11 +90,10 @@ func (g *GenerateResponseCloudflare) Transform() GenerateResponse {
 }
 
 type CloudflareStreamParser struct {
-	_ logger.Logger
+	logger logger.Logger
 }
 
 func (p *CloudflareStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) {
-	// TODO - check if it works
 	rawchunk, err := readSSEventsChunk(reader)
 	if err != nil {
 		return nil, err

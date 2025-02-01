@@ -427,6 +427,10 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 		payload := genRequest.TransformGoogle()
 		payloadBytes, err = json.Marshal(payload)
 	case CloudflareID:
+		if genRequest.Stream {
+			p.logger.Error("streaming not supported for Cloudflare provider", nil)
+			return nil, fmt.Errorf("streaming is not supported for Cloudflare provider")
+		}
 		payload := genRequest.TransformCloudflare()
 		payloadBytes, err = json.Marshal(payload)
 	case CohereID:
