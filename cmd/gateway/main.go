@@ -93,8 +93,9 @@ func main() {
 	}
 
 	client := providers.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
+	providerRegistry := providers.NewProviderRegistry(cfg.Providers, logger)
 
-	api := api.NewRouter(cfg, &logger, client)
+	api := api.NewRouter(cfg, logger, providerRegistry, client)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.EnableTelemetry {

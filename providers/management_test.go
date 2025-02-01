@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
 	"go.uber.org/mock/gomock"
@@ -81,41 +80,8 @@ func BenchmarkListModels(b *testing.B) {
 
 	mockLogger.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	responses := map[string]struct {
-		body        string
-		contentType string
-	}{
-		providers.OllamaID: {
-			body:        `{"models":[{"name":"llama2","modified_at":"2024-01-01T00:00:00Z"}]}`,
-			contentType: "application/json",
-		},
-		providers.GroqID: {
-			body:        `{"models":[{"id":"llama-70b","created":1234567890}]}`,
-			contentType: "application/json",
-		},
-		providers.OpenaiID: {
-			body:        `{"data":[{"id":"gpt-4","owned_by":"openai"}]}`,
-			contentType: "application/json",
-		},
-		providers.AnthropicID: {
-			body:        `{"data":[{"id":"claude-3-opus-20240229","display_name":"Claude 3 Opus"}]}`,
-			contentType: "application/json",
-		},
-		providers.CloudflareID: {
-			body:        `{"result":[{"id":"@cf/meta/llama-2-7b","name":"Llama 2 7B","description":"Meta's Llama 2 7B model"}]}`,
-			contentType: "application/json",
-		},
-		providers.CohereID: {
-			body:        `{"models":[{"name":"command","endpoints":["generate","chat"],"context_length":4096}]}`,
-			contentType: "application/json",
-		},
-		providers.GoogleID: {
-			body:        `{"models":[{"name":"models/gemini-1.0-pro","version":"001","displayName":"Gemini 1.0 Pro"}]}`,
-			contentType: "application/json",
-		},
-	}
-
-	providersRegistry := map[string]*providers.Config{
+	// Define the config map used for building the provider registry.
+	configMap := map[string]*providers.Config{
 		providers.OllamaID: {
 			ID:       providers.OllamaID,
 			Name:     providers.OllamaDisplayName,
@@ -191,7 +157,44 @@ func BenchmarkListModels(b *testing.B) {
 		},
 	}
 
-	for providerID := range providersRegistry {
+	providerRegistry := providers.NewProviderRegistry(configMap, mockLogger)
+
+	responses := map[string]struct {
+		body        string
+		contentType string
+	}{
+		providers.OllamaID: {
+			body:        `{"models":[{"name":"llama2","modified_at":"2024-01-01T00:00:00Z"}]}`,
+			contentType: "application/json",
+		},
+		providers.GroqID: {
+			body:        `{"models":[{"id":"llama-70b","created":1234567890}]}`,
+			contentType: "application/json",
+		},
+		providers.OpenaiID: {
+			body:        `{"data":[{"id":"gpt-4","owned_by":"openai"}]}`,
+			contentType: "application/json",
+		},
+		providers.AnthropicID: {
+			body:        `{"data":[{"id":"claude-3-opus-20240229","display_name":"Claude 3 Opus"}]}`,
+			contentType: "application/json",
+		},
+		providers.CloudflareID: {
+			body:        `{"result":[{"id":"@cf/meta/llama-2-7b","name":"Llama 2 7B","description":"Meta's Llama 2 7B model"}]}`,
+			contentType: "application/json",
+		},
+		providers.CohereID: {
+			body:        `{"models":[{"name":"command","endpoints":["generate","chat"],"context_length":4096}]}`,
+			contentType: "application/json",
+		},
+		providers.GoogleID: {
+			body:        `{"models":[{"name":"models/gemini-1.0-pro","version":"001","displayName":"Gemini 1.0 Pro"}]}`,
+			contentType: "application/json",
+		},
+	}
+
+	// Iterate over the keys of the config map.
+	for providerID := range configMap {
 		b.Run(providerID, func(b *testing.B) {
 			mockClient.EXPECT().
 				Do(gomock.Any()).
@@ -204,9 +207,7 @@ func BenchmarkListModels(b *testing.B) {
 				}).
 				AnyTimes()
 
-			var l logger.Logger = mockLogger
-			var mc providers.Client = mockClient
-			provider, err := providers.NewProvider(providersRegistry, providerID, &l, &mc)
+			provider, err := providerRegistry.BuildProvider(providerID, mockClient)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -235,90 +236,38 @@ func BenchmarkGenerateTokens(b *testing.B) {
 		body        string
 		contentType string
 	}{
-		// providers.OllamaID: {
-		// 	body: `{
-		// 		"model": "llama2",
-		// 		"created_at": "2024-01-01T00:00:00Z",
-		// 		"response": "Hello! How can I help you?",
-		// 		"done": true,
-		// 		"context": [1, 2, 3],
-		// 		"total_duration": 1000000,
-		// 		"load_duration": 100000,
-		// 		"prompt_eval_count": 10,
-		// 		"eval_count": 20
-		// 	}`,
-		// 	contentType: "application/json",
-		// },
-		// providers.AnthropicID: {
-		// 	body: `{
-		// 		"id": "msg_123",
-		// 		"type": "message",
-		// 		"role": "assistant",
-		// 		"content": [{
-		// 			"type": "text",
-		// 			"text": "Hello! How can I help you?"
-		// 		}],
-		// 		"model": "claude-3-opus-20240229",
-		// 		"stop_reason": "end_turn",
-		// 		"stop_sequence": null
-		// 	}`,
-		// 	contentType: "application/json",
-		// },
 		providers.GroqID: {
 			body: `{
-				"id": "chatcmpl-123",
-				"object": "chat.completion",
-				"choices": [{
-					"index": 0,
-					"message": {
-						"role": "assistant",
-						"content": "Hello! How can I help you?"
-					},
-					"finish_reason": "stop"
-				}]
-			}`,
+                "id": "chatcmpl-123",
+                "object": "chat.completion",
+                "choices": [{
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": "Hello! How can I help you?"
+                    },
+                    "finish_reason": "stop"
+                }]
+            }`,
 			contentType: "application/json",
 		},
 		providers.OpenaiID: {
 			body: `{
-				"id": "chatcmpl-456", 
-				"object": "chat.completion",
-				"choices": [{
-					"message": {
-						"role": "assistant",
-						"content": "Hello! How can I help you?"
-					},
-					"finish_reason": "stop"
-				}]
-			}`,
+                "id": "chatcmpl-456", 
+                "object": "chat.completion",
+                "choices": [{
+                    "message": {
+                        "role": "assistant",
+                        "content": "Hello! How can I help you?"
+                    },
+                    "finish_reason": "stop"
+                }]
+            }`,
 			contentType: "application/json",
 		},
 	}
 
-	providersRegistry := map[string]*providers.Config{
-		// providers.OllamaID: {
-		// 	ID:       providers.OllamaID,
-		// 	Name:     providers.OllamaDisplayName,
-		// 	URL:      "http://test.local",
-		// 	AuthType: providers.AuthTypeNone,
-		// 	Token:    "test-token",
-		// 	Endpoints: providers.Endpoints{
-		// 		Generate: providers.OllamaGenerateEndpoint,
-		// 	},
-		// },
-		// providers.AnthropicID: {
-		// 	ID:       providers.AnthropicID,
-		// 	Name:     providers.AnthropicDisplayName,
-		// 	URL:      "http://test.local",
-		// 	AuthType: providers.AuthTypeXheader,
-		// 	Token:    "test-token",
-		// 	ExtraHeaders: map[string][]string{
-		// 		"anthropic-version": {"2023-06-01"},
-		// 	},
-		// 	Endpoints: providers.Endpoints{
-		// 		Generate: providers.AnthropicGenerateEndpoint,
-		// 	},
-		// },
+	providerConfigs := map[string]*providers.Config{
 		providers.GroqID: {
 			ID:       providers.GroqID,
 			Name:     providers.GroqDisplayName,
@@ -345,7 +294,9 @@ func BenchmarkGenerateTokens(b *testing.B) {
 		{Role: "user", Content: "Hello"},
 	}
 
-	for providerID := range providersRegistry {
+	registry := providers.NewProviderRegistry(providerConfigs, mockLogger)
+
+	for providerID := range providerConfigs {
 		b.Run(providerID, func(b *testing.B) {
 			mockClient.EXPECT().
 				Do(gomock.Any()).
@@ -358,9 +309,7 @@ func BenchmarkGenerateTokens(b *testing.B) {
 				}).
 				AnyTimes()
 
-			var l logger.Logger = mockLogger
-			var mc providers.Client = mockClient
-			provider, err := providers.NewProvider(providersRegistry, providerID, &l, &mc)
+			provider, err := registry.BuildProvider(providerID, mockClient)
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -369,12 +318,10 @@ func BenchmarkGenerateTokens(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				resp, err := provider.GenerateTokens(context.Background(), "test-model", messages)
 				if err != nil {
-					b.Fatalf("provider %s failed: %v\nResponse body: %s",
-						providerID, err, responses[providerID].body)
+					b.Fatalf("provider %s failed: %v\nResponse body: %s", providerID, err, responses[providerID].body)
 				}
 				if resp.Response.Content == "" {
-					b.Fatalf("empty response content from %s\nResponse body: %s",
-						providerID, responses[providerID].body)
+					b.Fatalf("empty response content from %s\nResponse body: %s", providerID, responses[providerID].body)
 				}
 			}
 		})

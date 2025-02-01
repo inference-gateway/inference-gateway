@@ -2,318 +2,297 @@ package tests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/inference-gateway/inference-gateway/api"
 	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
-
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
-func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockLogger) {
-	gin.SetMode(gin.TestMode)
+func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockLogger) {
 	ctrl := gomock.NewController(t)
+	mockRegistry := mocks.NewMockProviderRegistry(ctrl)
+	mockClient := mocks.NewMockClient(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
 
 	cfg := config.Config{
-		ApplicationName: "inference-gateway-test",
-		Environment:     "test",
 		Server: &config.ServerConfig{
-			ReadTimeout: 5000, // 5 seconds
-		},
-		Providers: map[string]*providers.Config{
-			"provider1": {},
-			"provider2": {},
+			ReadTimeout: 30000,
 		},
 	}
 
-	// Initialize the client configuration
-	clientConfig, err := providers.NewClientConfig()
-	if err != nil {
-		t.Fatalf("failed to initialize client configuration: %v", err)
-	}
+	router := api.NewRouter(cfg, mockLogger, mockRegistry, mockClient)
 
-	// Create the HTTP client
-	client := providers.NewHTTPClient(clientConfig, "http", "localhost", "8080")
-
-	// Pass mockLogger as logger.Logger interface
-	var l logger.Logger = mockLogger
-	router := api.NewRouter(cfg, &l, client)
+	// Setup Gin router
 	r := gin.New()
 	r.GET("/health", router.HealthcheckHandler)
-	r.GET("/models", router.ListAllModelsHandler)
+	r.GET("/llms/:provider/models", router.ListModelsHandler)
 	r.POST("/llms/:provider/generate", router.GenerateProvidersTokenHandler)
 
-	return r, mockLogger
+	return r, mockRegistry, mockClient, mockLogger
 }
 
-func TestHealthcheckHandler(t *testing.T) {
-	r, mockLogger := setupTestRouter(t)
-	mockLogger.EXPECT().Debug("healthcheck")
-
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	var response map[string]string
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "OK", response["message"])
-}
-
-func TestFetchAllModelsHandler(t *testing.T) {
-	// Initialize the logger
-	log, err := logger.NewLogger("development")
-	assert.NoError(t, err)
-
-	// Initialize the configuration
-	cfg := &config.Config{
-		Server: &config.ServerConfig{
-			ReadTimeout: 5000, // 5 seconds
+func TestRouterHandlers(t *testing.T) {
+	tests := []struct {
+		name         string
+		method       string
+		url          string
+		body         interface{}
+		setupMocks   func(*mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockLogger)
+		expectedCode int
+		expectedBody interface{}
+	}{
+		{
+			name:   "healthcheck returns OK",
+			method: "GET",
+			url:    "/health",
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				ml.EXPECT().Debug("healthcheck")
+			},
+			expectedCode: http.StatusOK,
+			expectedBody: gin.H{"message": "OK"},
 		},
-		Providers: map[string]*providers.Config{
-			"provider1": {},
-			"provider2": {},
+		{
+			name:   "list models returns models from provider",
+			method: "GET",
+			url:    "/llms/test-provider/models",
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
+				mr.EXPECT().
+					BuildProvider("test-provider", mc).
+					Return(mockProvider, nil)
+
+				mockProvider.EXPECT().
+					ListModels(gomock.Any()).
+					Return(providers.ListModelsResponse{
+						Provider: "test-provider",
+						Models: []providers.Model{
+							{Name: "Test Model 1"},
+						},
+					}, nil)
+			},
+			expectedCode: http.StatusOK,
+			expectedBody: providers.ListModelsResponse{
+				Provider: "test-provider",
+				Models: []providers.Model{
+					{Name: "Test Model 1"},
+				},
+			},
+		},
+		{
+			name:   "generate tokens returns response",
+			method: "POST",
+			url:    "/llms/test-provider/generate",
+			body: providers.GenerateRequest{
+				Model: "test-model",
+				Messages: []providers.Message{
+					{Role: "user", Content: "Hello"},
+				},
+			},
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
+				mr.EXPECT().
+					BuildProvider("test-provider", mc).
+					Return(mockProvider, nil)
+
+				mockProvider.EXPECT().
+					GenerateTokens(gomock.Any(), "test-model", gomock.Any()).
+					Return(providers.GenerateResponse{
+						Provider: "test-provider",
+						Response: providers.ResponseTokens{
+							Content: "Hello back!",
+							Model:   "test-model",
+							Role:    "assistant",
+						},
+					}, nil)
+			},
+			expectedCode: http.StatusOK,
+			expectedBody: providers.GenerateResponse{
+				Provider: "test-provider",
+				Response: providers.ResponseTokens{
+					Content: "Hello back!",
+					Model:   "test-model",
+					Role:    "assistant",
+				},
+			},
 		},
 	}
 
-	// Initialize the client configuration
-	clientConfig, err := providers.NewClientConfig()
-	assert.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router, mockRegistry, mockClient, mockLogger := setupTestRouter(t)
 
-	// Create the HTTP client
-	client := providers.NewHTTPClient(clientConfig, "http", "localhost", "8080")
+			if tt.setupMocks != nil {
+				tt.setupMocks(mockRegistry, mockClient, mockLogger)
+			}
 
-	// Initialize the router
-	router := api.NewRouter(*cfg, &log, client)
+			var req *http.Request
+			if tt.body != nil {
+				jsonBody, _ := json.Marshal(tt.body)
+				req = httptest.NewRequest(tt.method, tt.url, bytes.NewReader(jsonBody))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				req = httptest.NewRequest(tt.method, tt.url, nil)
+			}
 
-	// Create a new Gin engine
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.GET("/models", router.ListAllModelsHandler)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
 
-	// Create a new HTTP request
-	req, err := http.NewRequest(http.MethodGet, "/models", nil)
-	assert.NoError(t, err)
+			assert.Equal(t, tt.expectedCode, w.Code)
 
-	// Create a new HTTP recorder
-	w := httptest.NewRecorder()
+			expectedJSON, err := json.Marshal(tt.expectedBody)
+			assert.NoError(t, err)
 
-	// Create a new Gin context
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-
-	// Call the handler
-	router.ListAllModelsHandler(c)
-
-	// Check the response
-	assert.Equal(t, http.StatusOK, w.Code)
+			assert.Equal(t, string(expectedJSON), w.Body.String())
+		})
+	}
 }
 
 func TestGenerateProvidersTokenHandler(t *testing.T) {
 	tests := []struct {
-		name           string
-		provider       string
-		requestBody    map[string]interface{}
-		expectedStatus int
-		setupMocks     func(*mocks.MockLogger)
+		name         string
+		url          string
+		body         interface{}
+		setupMocks   func(*mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockLogger)
+		expectedCode int
+		expectedBody interface{}
 	}{
 		{
-			name:     "Invalid Provider",
-			provider: "invalid",
-			requestBody: map[string]interface{}{
-				"model": "test-model",
-				"messages": []map[string]string{
-					{"role": "user", "content": "test"},
-				},
+			name: "invalid request body",
+			url:  "/llms/test-provider/generate",
+			body: "invalid json",
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
 			},
-			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(ml *mocks.MockLogger) {
-				ml.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+			expectedCode: http.StatusBadRequest,
+			expectedBody: api.ErrorResponse{Error: "Failed to decode request"},
+		},
+		{
+			name: "missing model",
+			url:  "/llms/test-provider/generate",
+			body: providers.GenerateRequest{
+				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
+			},
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				ml.EXPECT().Error("model is required", nil)
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedBody: api.ErrorResponse{Error: "Model is required"},
+		},
+		{
+			name: "provider not configured",
+			url:  "/llms/test-provider/generate",
+			body: providers.GenerateRequest{
+				Model:    "test-model",
+				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
+			},
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				mr.EXPECT().
+					BuildProvider("test-provider", mc).
+					Return(nil, errors.New("token not configured"))
+				ml.EXPECT().
+					Error("provider requires authentication but no API key was configured",
+						gomock.Any(),
+						"provider", "test-provider")
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedBody: api.ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."},
+		},
+		{
+			name: "successful non-streaming request",
+			url:  "/llms/test-provider/generate",
+			body: providers.GenerateRequest{
+				Model:    "test-model",
+				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
+			},
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
+				mr.EXPECT().
+					BuildProvider("test-provider", mc).
+					Return(mockProvider, nil)
+				mockProvider.EXPECT().
+					GenerateTokens(gomock.Any(), "test-model", gomock.Any()).
+					Return(providers.GenerateResponse{
+						Provider: "test-provider",
+						Response: providers.ResponseTokens{
+							Content: "Hello back!",
+							Model:   "test-model",
+							Role:    "assistant",
+						},
+					}, nil)
+			},
+			expectedCode: http.StatusOK,
+			expectedBody: providers.GenerateResponse{
+				Provider: "test-provider",
+				Response: providers.ResponseTokens{
+					Content: "Hello back!",
+					Model:   "test-model",
+					Role:    "assistant",
+				},
 			},
 		},
 		{
-			name:     "Missing Model",
-			provider: "groq",
-			requestBody: map[string]interface{}{
-				"messages": []map[string]string{
-					{"role": "user", "content": "test"},
-				},
+			name: "generation timeout",
+			url:  "/llms/test-provider/generate",
+			body: providers.GenerateRequest{
+				Model:    "test-model",
+				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
-			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(ml *mocks.MockLogger) {
-				ml.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
+				mr.EXPECT().
+					BuildProvider("test-provider", mc).
+					Return(mockProvider, nil)
+				mockProvider.EXPECT().
+					GenerateTokens(gomock.Any(), "test-model", gomock.Any()).
+					Return(providers.GenerateResponse{}, context.DeadlineExceeded)
+				ml.EXPECT().
+					Error("request timed out", gomock.Any(), "provider", "test-provider")
 			},
+			expectedCode: http.StatusGatewayTimeout,
+			expectedBody: api.ErrorResponse{Error: "Request timed out"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r, mockLogger := setupTestRouter(t)
-			tt.setupMocks(mockLogger)
+			router, mockRegistry, mockClient, mockLogger := setupTestRouter(t)
 
-			body, err := json.Marshal(tt.requestBody)
-			assert.NoError(t, err)
+			if tt.setupMocks != nil {
+				tt.setupMocks(mockRegistry, mockClient, mockLogger)
+			}
+
+			var req *http.Request
+			if tt.body != nil {
+				var jsonBody []byte
+				if s, ok := tt.body.(string); ok {
+					jsonBody = []byte(s)
+				} else {
+					jsonBody, _ = json.Marshal(tt.body)
+				}
+				req = httptest.NewRequest(http.MethodPost, tt.url, bytes.NewReader(jsonBody))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				req = httptest.NewRequest(http.MethodPost, tt.url, nil)
+			}
 
 			w := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "/llms/"+tt.provider+"/generate", bytes.NewBuffer(body))
-			req.Header.Set("Content-Type", "application/json")
-			r.ServeHTTP(w, req)
+			router.ServeHTTP(w, req)
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
-		})
-	}
-}
+			assert.Equal(t, tt.expectedCode, w.Code)
 
-func TestProxyHandler_UnreachableHost(t *testing.T) {
-	// Setup
-	r, mockLogger := setupTestRouter(t)
-
-	// Create mock controller
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	// Create mock client
-	mockClient := mocks.NewMockClient(ctrl)
-	mockClient.EXPECT().
-		Get(gomock.Any()).
-		Return(nil, fmt.Errorf("connection refused")).
-		AnyTimes()
-
-	// Setup logger expectation
-	mockLogger.EXPECT().Error("proxy request failed", gomock.Any()).Times(1)
-
-	// Configure test router with mock client
-	cfg := config.Config{
-		ApplicationName: "inference-gateway-test",
-		Environment:     "test",
-		Providers: map[string]*providers.Config{
-			providers.OllamaID: {
-				ID:       providers.OllamaID,
-				Name:     "Ollama",
-				URL:      "http://ollama:8080",
-				Token:    "",
-				AuthType: providers.AuthTypeNone,
-				Endpoints: providers.Endpoints{
-					List:     "/v1/models",
-					Generate: "/v1/generate",
-				},
-			},
-		},
-	}
-
-	var l logger.Logger = mockLogger
-	router := api.NewRouter(cfg, &l, mockClient)
-
-	r.Any("/proxy/:provider/*proxyPath", router.ProxyHandler)
-
-	// Create custom response writer
-	w := &customResponseWriter{
-		ResponseRecorder: httptest.NewRecorder(),
-	}
-
-	// Execute request
-	req := httptest.NewRequest(http.MethodGet, "/proxy/ollama/v1/models", nil)
-	r.ServeHTTP(w, req)
-
-	// Assert response
-	assert.Equal(t, http.StatusBadGateway, w.Code)
-
-	var response api.ErrorResponse
-	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Contains(t, response.Error, "Failed to reach upstream server")
-}
-
-var providerFactory = providers.NewProvider
-
-func TestProxyHandler_TokenValidation(t *testing.T) {
-	tests := []struct {
-		name           string
-		providerID     string
-		authType       string
-		token          string
-		expectedStatus int
-		expectedError  string
-		setupMocks     func(*mocks.MockLogger, *mocks.MockProvider)
-	}{
-		{
-			name:           "Missing Required Token",
-			providerID:     providers.GroqID,
-			authType:       providers.AuthTypeBearer,
-			token:          "",
-			expectedStatus: http.StatusBadRequest,
-			expectedError:  "Provider requires an API key. Please configure the provider's API key.",
-			setupMocks: func(ml *mocks.MockLogger, mp *mocks.MockProvider) {
-				ml.EXPECT().Error("provider requires authentication but no API key was configured",
-					gomock.Any(),
-					"provider",
-					providers.GroqID)
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			r, mockLogger := setupTestRouter(t)
-			mockProvider := mocks.NewMockProvider(ctrl)
-
-			originalFactory := providerFactory
-			providerFactory = func(cfg map[string]*providers.Config, id string, logger *logger.Logger, client *providers.Client) (providers.Provider, error) {
-				return mockProvider, nil
-			}
-			defer func() { providerFactory = originalFactory }()
-
-			tt.setupMocks(mockLogger, mockProvider)
-
-			cfg := config.Config{
-				ApplicationName: "inference-gateway-test",
-				Environment:     "test",
-				Providers: map[string]*providers.Config{
-					tt.providerID: {
-						ID: tt.providerID,
-					},
-				},
-			}
-
-			var l logger.Logger = mockLogger
-			router := api.NewRouter(cfg, &l, nil)
-			r.Any("/proxy/:provider/*proxyPath", router.ProxyHandler)
-
-			w := &customResponseWriter{
-				ResponseRecorder: httptest.NewRecorder(),
-			}
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/proxy/%s/v1/models", tt.providerID), nil)
-			r.ServeHTTP(w, req)
-
-			assert.Equal(t, tt.expectedStatus, w.Code)
-
-			var response api.ErrorResponse
-			err := json.Unmarshal(w.Body.Bytes(), &response)
+			expectedJSON, err := json.Marshal(tt.expectedBody)
 			assert.NoError(t, err)
-			assert.Contains(t, response.Error, tt.expectedError)
+			assert.Equal(t, string(expectedJSON), strings.TrimSpace(w.Body.String()))
 		})
 	}
-}
-
-// Custom response writer that skips CloseNotifier
-type customResponseWriter struct {
-	*httptest.ResponseRecorder
-}
-
-func (w *customResponseWriter) CloseNotify() <-chan bool {
-	return nil
 }

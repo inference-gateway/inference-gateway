@@ -24,7 +24,6 @@ type Provider interface {
 	GetToken() string
 	GetAuthType() string
 	GetExtraHeaders() map[string][]string
-	GetClient() Client
 
 	// Fetchers
 	ListModels(ctx context.Context) (ListModelsResponse, error)
@@ -42,29 +41,6 @@ type ProviderImpl struct {
 	endpoints    Endpoints
 	client       Client
 	logger       l.Logger
-}
-
-func NewProvider(cfg map[string]*Config, id string, logger *l.Logger, client *Client) (Provider, error) {
-	provider, ok := cfg[id]
-	if !ok {
-		return nil, fmt.Errorf("provider %s not found", id)
-	}
-
-	if provider.AuthType != AuthTypeNone && provider.Token == "" {
-		return nil, fmt.Errorf("provider %s token not configured", id)
-	}
-
-	return &ProviderImpl{
-		id:           provider.ID,
-		name:         provider.Name,
-		url:          provider.URL,
-		token:        provider.Token,
-		authType:     provider.AuthType,
-		extraHeaders: provider.ExtraHeaders,
-		endpoints:    provider.Endpoints,
-		client:       *client,
-		logger:       *logger,
-	}, nil
 }
 
 func (p *ProviderImpl) GetID() string {
@@ -97,14 +73,6 @@ func (p *ProviderImpl) EndpointList() string {
 
 func (p *ProviderImpl) EndpointGenerate() string {
 	return p.endpoints.Generate
-}
-
-func (p *ProviderImpl) SetClient(client Client) {
-	p.client = client
-}
-
-func (p *ProviderImpl) GetClient() Client {
-	return p.client
 }
 
 func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, error) {

@@ -33,9 +33,10 @@ type Router interface {
 }
 
 type RouterImpl struct {
-	cfg    config.Config
-	logger l.Logger
-	client providers.Client
+	cfg      config.Config
+	logger   l.Logger
+	registry providers.ProviderRegistry
+	client   providers.Client
 }
 
 type ErrorResponse struct {
@@ -46,10 +47,11 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger *l.Logger, client providers.Client) Router {
+func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client) Router {
 	return &RouterImpl{
 		cfg,
-		*logger,
+		logger,
+		registry,
 		client,
 	}
 }
@@ -61,7 +63,7 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	p := c.Param("provider")
-	provider, err := providers.NewProvider(router.cfg.Providers, p, &router.logger, &router.client)
+	provider, err := router.registry.BuildProvider(p, router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
 			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", p)
@@ -242,7 +244,7 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 }
 
 func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
-	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, &router.client)
+	provider, err := router.registry.BuildProvider(c.Param("provider"), router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
 			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", provider.GetName())
@@ -286,7 +288,7 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 		go func(id string) {
 			defer wg.Done()
 
-			provider, err := providers.NewProvider(providersCfg, id, &router.logger, &router.client)
+			provider, err := router.registry.BuildProvider(providerID, router.client)
 			if err != nil {
 				router.logger.Error("failed to create provider", err)
 				ch <- providers.ListModelsResponse{
@@ -345,7 +347,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	provider, err := providers.NewProvider(router.cfg.Providers, c.Param("provider"), &router.logger, &router.client)
+	provider, err := router.registry.BuildProvider(c.Param("provider"), router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
 			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", c.Param("provider"))
@@ -361,13 +363,11 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	defer cancel()
 
 	if req.Stream {
-		// Set streaming headers
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
 		c.Header("Connection", "keep-alive")
 		c.Header("Transfer-Encoding", "chunked")
 
-		// Create streaming channel
 		streamCh, err := provider.StreamTokens(ctx, req.Model, req.Messages)
 		if err != nil {
 			router.logger.Error("failed to start streaming", err)
@@ -375,21 +375,19 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 			return
 		}
 
-		// Use Gin's streaming with proper context handling
 		c.Stream(func(w io.Writer) bool {
 			select {
 			case resp, ok := <-streamCh:
 				if !ok {
 					return false
 				}
-				// Marshal the token to JSON
-				jsonData, err := json.Marshal(resp.Response) // Marshal only the response part
+
+				jsonData, err := json.Marshal(resp.Response)
 				if err != nil {
 					router.logger.Error("failed to marshal token", err)
 					return false
 				}
 
-				// Standardize the response types also for Ollama
 				if req.SSEvents {
 					switch resp.EventType {
 					case providers.EventMessageStart:
@@ -436,7 +434,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 
 	response, err := provider.GenerateTokens(ctx, req.Model, req.Messages)
 	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
+		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
 			router.logger.Error("request timed out", err, "provider", c.Param("provider"))
 			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
 			return

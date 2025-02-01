@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
 	"github.com/stretchr/testify/assert"
@@ -73,7 +72,7 @@ func TestStreamTokens(t *testing.T) {
 			name:     "Context cancellation",
 			provider: providers.OllamaID,
 			mockResponse: `{"model":"phi3:3.8b","created_at":"2025-01-30T19:15:55.740038795Z","response":" are","done":false}
-						`,
+                        `,
 			messages: []providers.Message{
 				{Role: "user", Content: "Hello"},
 			},
@@ -295,7 +294,7 @@ data: {"type":"content-end","index":0}
 event: message-end
 data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"billed_units":{"input_tokens":18,"output_tokens":55},"tokens":{"input_tokens":27,"output_tokens":55}}}}
 
-		`,
+        `,
 			messages: []providers.Message{
 				{Role: "user", Content: "Hello"},
 			},
@@ -369,34 +368,74 @@ data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"bille
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			mockClient.EXPECT().
+			mockClient.
+				EXPECT().
 				Do(gomock.Any()).
 				Return(&http.Response{
 					Body:       io.NopCloser(strings.NewReader(tt.mockResponse)),
 					StatusCode: http.StatusOK,
 				}, nil)
 
-			providersRegistry := map[string]*providers.Config{
-				tt.provider: {
-					ID:   tt.provider,
-					Name: "ollama",
+			var cfg *providers.Config
+			switch tt.provider {
+			case providers.OllamaID:
+				cfg = &providers.Config{
+					ID:   providers.OllamaID,
+					Name: "Ollama",
 					URL:  "http://test.local",
 					Endpoints: providers.Endpoints{
 						Generate: "/api/generate",
 						List:     "/api/tags",
 					},
 					AuthType: providers.AuthTypeNone,
-				},
+				}
+			case providers.GroqID:
+				cfg = &providers.Config{
+					ID:   providers.GroqID,
+					Name: "Groq",
+					URL:  "http://test.local",
+					Endpoints: providers.Endpoints{
+						Generate: "/api/generate",
+						List:     "/api/tags",
+					},
+					AuthType: providers.AuthTypeBearer,
+					Token:    "test-token",
+				}
+			case providers.CohereID:
+				cfg = &providers.Config{
+					ID:   providers.CohereID,
+					Name: "Cohere",
+					URL:  "http://test.local",
+					Endpoints: providers.Endpoints{
+						Generate: "/api/generate",
+						List:     "/api/tags",
+					},
+					AuthType: providers.AuthTypeBearer,
+					Token:    "test-token",
+				}
+			default:
+				cfg = &providers.Config{
+					ID:   tt.provider,
+					Name: "Default",
+					URL:  "http://test.local",
+					Endpoints: providers.Endpoints{
+						Generate: "/api/generate",
+						List:     "/api/tags",
+					},
+					AuthType: providers.AuthTypeNone,
+					Token:    "test-token",
+				}
 			}
 
-			var ml logger.Logger = mockLogger
-			var mc providers.Client = mockClient
-			provider, err := providers.NewProvider(
-				providersRegistry,
-				tt.provider,
-				&ml,
-				&mc,
+			providersRegistry := providers.NewProviderRegistry(
+				map[string]*providers.Config{
+					cfg.ID: cfg,
+				},
+				mockLogger,
 			)
+
+			var mc providers.Client = mockClient
+			provider, err := providersRegistry.BuildProvider(cfg.ID, mc)
 			assert.NoError(t, err)
 
 			ch, err := provider.StreamTokens(ctx, tt.model, tt.messages)
