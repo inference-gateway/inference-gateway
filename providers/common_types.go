@@ -124,10 +124,7 @@ type SSEvent struct {
 	Data      []byte
 }
 
-// Some providers have SSE built-in and some don't, for now I'll just
-// chop off the "data: " prefix and add it after the unmarshal process
-// I think it's up to the user to decide if they want SSE or not, therefore
-// I made it configurable in the GenerateRequest struct
+// parseSSEvents parses a Server-Sent Event from a byte slice
 func parseSSEvents(line []byte) (*SSEvent, error) {
 	if len(bytes.TrimSpace(line)) == 0 {
 		return nil, fmt.Errorf("empty line")
