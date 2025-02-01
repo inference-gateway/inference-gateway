@@ -19,10 +19,6 @@ const (
 	GroqListEndpoint     = "/openai/v1/models"
 	GroqGenerateEndpoint = "/openai/v1/chat/completions"
 
-	// Google endpoints
-	GoogleListEndpoint     = "/v1beta/models"
-	GoogleGenerateEndpoint = "/v1beta/models/{model}:generateContent"
-
 	// Cohere endpoints
 	CohereListEndpoint     = "/v1/models"
 	CohereGenerateEndpoint = "/v2/chat"
@@ -131,16 +127,6 @@ var Registry = map[string]Config{
 		Endpoints: Endpoints{
 			List:     CohereListEndpoint,
 			Generate: CohereGenerateEndpoint,
-		},
-	},
-	GoogleID: {
-		ID:       GoogleID,
-		Name:     GoogleDisplayName,
-		URL:      GoogleDefaultBaseURL,
-		AuthType: AuthTypeQuery,
-		Endpoints: Endpoints{
-			List:     GoogleListEndpoint,
-			Generate: GoogleGenerateEndpoint,
 		},
 	},
 	GroqID: {

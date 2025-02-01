@@ -32,7 +32,6 @@ data:
   ANTHROPIC_API_URL: "https://api.anthropic.com"
   CLOUDFLARE_API_URL: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
   COHERE_API_URL: "https://api.cohere.com"
-  GOOGLE_API_URL: "https://generativelanguage.googleapis.com"
   GROQ_API_URL: "https://api.groq.com"
   OLLAMA_API_URL: "http://ollama:8080"
   OPENAI_API_URL: "https://api.openai.com"

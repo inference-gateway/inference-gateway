@@ -211,14 +211,6 @@ components:
                       - role: "user"
                         content: "Hello! How can I assist you today?"
                     temperature: 0.7
-              - google:
-                  summary: Google Gemini request
-                  value:
-                    model: "gemini-1.0-pro"
-                    messages:
-                      - role: "user"
-                        content: "What is machine learning?"
-                    temperature: 0.3
               - anthropic:
                   summary: Anthropic Claude request
                   value:
@@ -276,33 +268,6 @@ components:
                       },
                     ],
                 }
-            google:
-              summary: Google API response
-              value:
-                {
-                  "candidates":
-                    [
-                      {
-                        "content":
-                          {
-                            "parts":
-                              [
-                                {
-                                  "text": "Hello! How can I assist you today?",
-                                },
-                              ],
-                          },
-                        "finishReason": "STOP",
-                        "safetyRatings":
-                          [
-                            {
-                              "category": "HARM_CATEGORY_HARASSMENT",
-                              "probability": "NEGLIGIBLE",
-                            },
-                          ],
-                      },
-                    ],
-                }
   securitySchemes:
     bearerAuth:
       type: http
@@ -319,7 +284,6 @@ components:
         - ollama
         - groq
         - openai
-        - google
         - cloudflare
         - cohere
         - anthropic
@@ -336,20 +300,6 @@ components:
               "id": "gpt-4",
               "object": "model",
               "created": 1687882410
-            }
-          ]
-        }
-        ```
-
-        Google GET /v1beta/models response:
-        ```json
-        {
-          "models": [
-            {
-              "name": "models/gemini-1.0-pro",
-              "version": "001",
-              "displayName": "Gemini 1.0 Pro",
-              "description": "The best model for scaling across a wide range of tasks"
             }
           ]
         }
@@ -602,16 +552,6 @@ components:
                   env: "COHERE_API_KEY"
                   type: string
                   description: "Cohere API Key"
-                  secret: true
-                - name: google_api_url
-                  env: "GOOGLE_API_URL"
-                  type: string
-                  default: "https://generativelanguage.googleapis.com"
-                  description: "Google API URL"
-                - name: google_api_key
-                  env: "GOOGLE_API_KEY"
-                  type: string
-                  description: "Google API Key"
                   secret: true
                 - name: groq_api_url
                   env: "GROQ_API_URL"
@@ -883,131 +823,6 @@ components:
                                 type: string
                               content:
                                 type: string
-        google:
-          id: "google"
-          url: "https://generativelanguage.googleapis.com"
-          auth_type: "query"
-          endpoints:
-            list:
-              endpoint: "/v1beta/models"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    models:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          baseModelId:
-                            type: string
-                          version:
-                            type: string
-                          displayName:
-                            type: string
-                          description:
-                            type: string
-                          inputTokenLimit:
-                            type: integer
-                          outputTokenLimit:
-                            type: integer
-                          supportedGenerationMethods:
-                            type: array
-                            items:
-                              type: string
-                          temperature:
-                            type: number
-                            format: float64
-                          maxTemperature:
-                            type: number
-                            format: float64
-                          topP:
-                            type: number
-                            format: float64
-                          topK:
-                            type: integer
-            generate:
-              endpoint: "/v1beta/models/{model}:generateContent"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    contents:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          parts:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                text:
-                                  type: string
-                          role:
-                            type: string
-                    temperature:
-                      type: number
-                      format: float64
-                      default: 0.7
-                response:
-                  type: object
-                  properties:
-                    candidates:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          content:
-                            type: object
-                            properties:
-                              parts:
-                                type: array
-                                items:
-                                  type: object
-                                  properties:
-                                    text:
-                                      type: string
-                          finishReason:
-                            type: string
-                          safetyRatings:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                category:
-                                  type: string
-                                probability:
-                                  type: string
-                    promptFeedback:
-                      type: object
-                      properties:
-                        safetyRatings:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              category:
-                                type: string
-                              probability:
-                                type: string
-                        blockReason:
-                          type: string
-                    usageMetadata:
-                      type: object
-                      properties:
-                        promptTokenCount:
-                          type: integer
-                        candidatesTokenCount:
-                          type: integer
-                        totalTokenCount:
-                          type: integer
-                    modelVersion:
-                      type: string
         cloudflare:
           id: "cloudflare"
           url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"

@@ -145,16 +145,6 @@ func BenchmarkListModels(b *testing.B) {
 				List: "/models",
 			},
 		},
-		providers.GoogleID: {
-			ID:       providers.GoogleID,
-			Name:     providers.GoogleDisplayName,
-			URL:      "http://test.local",
-			AuthType: providers.AuthTypeQuery,
-			Token:    "test-token",
-			Endpoints: providers.Endpoints{
-				List: "/models",
-			},
-		},
 	}
 
 	providerRegistry := providers.NewProviderRegistry(configMap, mockLogger)
@@ -185,10 +175,6 @@ func BenchmarkListModels(b *testing.B) {
 		},
 		providers.CohereID: {
 			body:        `{"models":[{"name":"command","endpoints":["generate","chat"],"context_length":4096}]}`,
-			contentType: "application/json",
-		},
-		providers.GoogleID: {
-			body:        `{"models":[{"name":"models/gemini-1.0-pro","version":"001","displayName":"Gemini 1.0 Pro"}]}`,
 			contentType: "application/json",
 		},
 	}

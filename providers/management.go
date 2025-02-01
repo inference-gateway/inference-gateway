@@ -132,14 +132,6 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 			return ListModelsResponse{}, fmt.Errorf("failed to decode response: %w", err)
 		}
 		return response.Transform(), nil
-	case GoogleID:
-		var response ListModelsResponseGoogle
-		err = json.NewDecoder(resp.Body).Decode(&response)
-		if err != nil {
-			p.logger.Error("failed to decode response", err, "provider", p.GetName())
-			return ListModelsResponse{}, fmt.Errorf("failed to decode response: %w", err)
-		}
-		return response.Transform(), nil
 	case CloudflareID:
 		var response ListModelsResponseCloudflare
 		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -179,7 +171,7 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 	}
 
 	url := "/proxy/" + p.GetID() + baseURL.Path + p.EndpointGenerate()
-	if p.GetID() == GoogleID || p.GetID() == CloudflareID {
+	if p.GetID() == CloudflareID {
 		url = strings.Replace(url, "{model}", model, 1)
 	}
 
@@ -250,29 +242,6 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 
 		// Response
 		var response GenerateResponseOpenai
-		err = json.NewDecoder(resp.Body).Decode(&response)
-		if err != nil {
-			p.logger.Error("failed to decode response", err, "provider", p.GetName())
-			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
-		}
-		return response.Transform(), nil
-	case GoogleID:
-		// Request
-		payload := genRequest.TransformGoogle()
-		payloadBytes, err := json.Marshal(payload)
-		if err != nil {
-			p.logger.Error("failed to marshal request", err)
-			return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
-		}
-
-		resp, err := fetchTokens(ctx, p.client, url, payloadBytes, p.logger)
-		if err != nil {
-			p.logger.Error("failed to make request", err)
-			return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
-		}
-
-		// Response
-		var response GenerateResponseGoogle
 		err = json.NewDecoder(resp.Body).Decode(&response)
 		if err != nil {
 			p.logger.Error("failed to decode response", err, "provider", p.GetName())
@@ -363,7 +332,7 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 	}
 
 	url := "/proxy/" + p.GetID() + baseURL.Path + p.EndpointGenerate()
-	if p.GetID() == GoogleID || p.GetID() == CloudflareID {
+	if p.GetID() == CloudflareID {
 		url = strings.Replace(url, "{model}", model, 1)
 	}
 
@@ -386,9 +355,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 		payloadBytes, err = json.Marshal(payload)
 	case GroqID:
 		payload := genRequest.TransformGroq()
-		payloadBytes, err = json.Marshal(payload)
-	case GoogleID:
-		payload := genRequest.TransformGoogle()
 		payloadBytes, err = json.Marshal(payload)
 	case CloudflareID:
 		if genRequest.Stream {
@@ -478,13 +444,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 					continue
 				}
 				chunk = response
-			case GoogleID:
-				var response GenerateResponseGoogle
-				if err := json.Unmarshal(event.Data, &response); err != nil {
-					p.logger.Error("failed to unmarshal chunk", err)
-					continue
-				}
-				chunk = response
 			case CloudflareID:
 				var response GenerateResponseCloudflare
 				if err := json.Unmarshal(event.Data, &response); err != nil {
@@ -522,8 +481,6 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 				case GenerateResponseOpenai:
 					streamCh <- v.Transform()
 				case GenerateResponseGroq:
-					streamCh <- v.Transform()
-				case GenerateResponseGoogle:
 					streamCh <- v.Transform()
 				case GenerateResponseCloudflare:
 					streamCh <- v.Transform()

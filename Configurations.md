@@ -48,8 +48,6 @@
 | CLOUDFLARE_API_KEY | `""` | Cloudflare API Key |
 | COHERE_API_URL | `https://api.cohere.com` | Cohere API URL |
 | COHERE_API_KEY | `""` | Cohere API Key |
-| GOOGLE_API_URL | `https://generativelanguage.googleapis.com` | Google API URL |
-| GOOGLE_API_KEY | `""` | Google API Key |
 | GROQ_API_URL | `https://api.groq.com` | Groq API URL |
 | GROQ_API_KEY | `""` | Groq API Key |
 | OLLAMA_API_URL | `http://ollama:8080` | Ollama API URL |

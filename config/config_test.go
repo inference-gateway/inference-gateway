@@ -71,16 +71,6 @@ func TestLoad(t *testing.T) {
 							Generate: providers.CohereGenerateEndpoint,
 						},
 					},
-					providers.GoogleID: {
-						ID:       providers.GoogleID,
-						Name:     providers.GoogleDisplayName,
-						URL:      providers.GoogleDefaultBaseURL,
-						AuthType: providers.AuthTypeQuery,
-						Endpoints: providers.Endpoints{
-							List:     providers.GoogleListEndpoint,
-							Generate: providers.GoogleGenerateEndpoint,
-						},
-					},
 					providers.GroqID: {
 						ID:       providers.GroqID,
 						Name:     providers.GroqDisplayName,
@@ -128,7 +118,6 @@ func TestLoad(t *testing.T) {
 				"OLLAMA_API_URL":       "http://custom-ollama:8080",
 				"GROQ_API_KEY":         "groq123",
 				"OPENAI_API_KEY":       "openai123",
-				"GOOGLE_API_KEY":       "google123",
 			},
 			expectedCfg: config.Config{
 				ApplicationName: "test-app",
@@ -178,17 +167,6 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							List:     providers.OpenAIListEndpoint,
 							Generate: providers.OpenAIGenerateEndpoint,
-						},
-					},
-					providers.GoogleID: {
-						ID:       providers.GoogleID,
-						Name:     providers.GoogleDisplayName,
-						URL:      providers.GoogleDefaultBaseURL,
-						Token:    "google123",
-						AuthType: providers.AuthTypeQuery,
-						Endpoints: providers.Endpoints{
-							List:     providers.GoogleListEndpoint,
-							Generate: providers.GoogleGenerateEndpoint,
 						},
 					},
 					providers.CloudflareID: {
@@ -301,16 +279,6 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							List:     providers.OpenAIListEndpoint,
 							Generate: providers.OpenAIGenerateEndpoint,
-						},
-					},
-					providers.GoogleID: {
-						ID:       providers.GoogleID,
-						Name:     providers.GoogleDisplayName,
-						URL:      providers.GoogleDefaultBaseURL,
-						AuthType: providers.AuthTypeQuery,
-						Endpoints: providers.Endpoints{
-							List:     providers.GoogleListEndpoint,
-							Generate: providers.GoogleGenerateEndpoint,
 						},
 					},
 					providers.CloudflareID: {
