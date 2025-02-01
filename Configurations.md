@@ -1,7 +1,6 @@
 ## Configurations
 
 ### General settings
-
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 | APPLICATION_NAME | `inference-gateway` | The name of the application |
@@ -11,7 +10,6 @@
 
 
 ### OpenID Connect
-
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 | OIDC_ISSUER_URL | `http://keycloak:8080/realms/inference-gateway-realm` | OIDC issuer URL |
@@ -20,7 +18,6 @@
 
 
 ### Server settings
-
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 | SERVER_HOST | `0.0.0.0` | Server host |
@@ -33,7 +30,6 @@
 
 
 ### Client settings
-
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 | CLIENT_TIMEOUT | `30s` | Client timeout |
@@ -44,7 +40,6 @@
 
 
 ### Providers
-
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 | DEEPSEEK_API_URL | `https://api.deepseek.com/v1` | Deepseek API URL |

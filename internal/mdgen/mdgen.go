@@ -21,7 +21,6 @@ func GenerateConfigurationsMD(filePath string, oas string) error {
 {{- range $index, $sectionMap := .Sections }}
 {{ range $name, $section := $sectionMap }}
 ### {{ $section.Title }}
-
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 {{- range $setting := $section.Settings }}
