@@ -70,20 +70,6 @@ func (mr *MockProviderMockRecorder) GetAuthType() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthType", reflect.TypeOf((*MockProvider)(nil).GetAuthType))
 }
 
-// GetClient mocks base method.
-func (m *MockProvider) GetClient() providers.Client {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetClient")
-	ret0, _ := ret[0].(providers.Client)
-	return ret0
-}
-
-// GetClient indicates an expected call of GetClient.
-func (mr *MockProviderMockRecorder) GetClient() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClient", reflect.TypeOf((*MockProvider)(nil).GetClient))
-}
-
 // GetExtraHeaders mocks base method.
 func (m *MockProvider) GetExtraHeaders() map[string][]string {
 	m.ctrl.T.Helper()
