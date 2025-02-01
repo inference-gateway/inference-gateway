@@ -1,61 +1,29 @@
 package providers
 
-import (
-	"context"
-
-	l "github.com/inference-gateway/inference-gateway/logger"
-)
-
-// DeepseekProvider implements the Provider interface for deepseek.
-type DeepseekProvider struct {
-	ProviderImpl
+type DeepseekModel struct {
+	ID            string      `json:"id"`
+	Object        string      `json:"object"`
+	Created       int64       `json:"created"`
+	OwnedBy       string      `json:"owned_by"`
+	Active        bool        `json:"active"`
+	ContextWindow int         `json:"context_window"`
+	PublicApps    interface{} `json:"public_apps"`
 }
 
-// NewDeepseekProvider creates a new instance of deepseek provider.
-func NewDeepseekProvider(cfg *Config, logger l.Logger, client Client) Provider {
-	return &DeepseekProvider{
-		ProviderImpl: ProviderImpl{
-			id:           cfg.ID,
-			name:         "Deepseek",
-			url:          cfg.URL,
-			token:        cfg.Token,
-			authType:     cfg.AuthType,
-			extraHeaders: cfg.ExtraHeaders,
-			endpoints:    cfg.Endpoints,
-			client:       client,
-			logger:       logger,
-		},
-	}
+type ListModelsResponseDeepseek struct {
+	Object string          `json:"object"`
+	Data   []DeepseekModel `json:"data"`
 }
 
-// GenerateTokens returns a dummy response concatenating all message contents.
-func (p *DeepseekProvider) GenerateTokens(ctx context.Context, model string, messages []Message) (GenerateResponse, error) {
-	content := ""
-	for _, m := range messages {
-		content += m.Content + " "
+func (l *ListModelsResponseDeepseek) Transform() ListModelsResponse {
+	var models []Model
+	for _, model := range l.Data {
+		models = append(models, Model{
+			Name: model.ID,
+		})
 	}
-	resp := GenerateResponse{
-		Provider: p.GetID(),
-		Response: ResponseTokens{
-			Content: content,
-			Model:   model,
-			Role:    "assistant",
-		},
+	return ListModelsResponse{
+		Provider: DeepseekID,
+		Models:   models,
 	}
-	return resp, nil
-}
-
-// StreamTokens starts a streaming response by sending a single dummy token.
-func (p *DeepseekProvider) StreamTokens(ctx context.Context, model string, messages []Message) (<-chan GenerateResponse, error) {
-	ch := make(chan GenerateResponse)
-	go func() {
-		defer close(ch)
-		resp, err := p.GenerateTokens(ctx, model, messages)
-		if err != nil {
-			p.logger.Error("failed to generate tokens", err)
-			return
-		}
-		ch <- resp
-	}()
-	return ch, nil
 }

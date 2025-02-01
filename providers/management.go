@@ -193,6 +193,13 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 			return ListModelsResponse{}, fmt.Errorf("failed to decode response: %w", err)
 		}
 		return response.Transform(), nil
+	case DeepseekID:
+		var response ListModelsResponseDeepseek
+		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return ListModelsResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return response.Transform(), nil
 	default:
 		p.logger.Error("provider not found", nil, "provider", p.GetName())
 		return ListModelsResponse{}, fmt.Errorf("failed to decode response: %w", err)
