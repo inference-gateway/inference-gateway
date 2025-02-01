@@ -45,3 +45,6 @@ jobs:
 
       - name: Test
         run: go test -v ./...
+
+      - name: Benchmark
+        run: go test -bench=. -benchmem -benchtime=100x -count=3 ./providers/...
