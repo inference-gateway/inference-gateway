@@ -99,6 +99,7 @@ func intPtr(v int) *int {
 }
 
 type EventType string
+type EventTypeValue string
 
 const (
 	EventStreamStart    EventType = "stream-start"
@@ -109,6 +110,16 @@ const (
 	EventMessageEnd     EventType = "message-end"
 	EventStreamEnd      EventType = "stream-end"
 	EventTextGeneration EventType = "text-generation"
+)
+
+const (
+	EventStreamStartValue    EventTypeValue = `{"role":"assistant"}`
+	EventMessageStartValue   EventTypeValue = `{}`
+	EventContentStartValue   EventTypeValue = `{}`
+	EventContentEndValue     EventTypeValue = `{}`
+	EventMessageEndValue     EventTypeValue = `{}`
+	EventStreamEndValue      EventTypeValue = `{}`
+	EventTextGenerationValue EventTypeValue = `{}`
 )
 
 const (
