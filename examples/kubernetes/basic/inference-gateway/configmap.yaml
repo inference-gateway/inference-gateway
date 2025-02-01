@@ -29,6 +29,7 @@ data:
   CLIENT_IDLE_CONN_TIMEOUT: "30s"
   CLIENT_TLS_MIN_VERSION: "TLS12"
   # Providers
+  DEEPSEEK_API_URL: "https://api.deepseek.com/v1"
   ANTHROPIC_API_URL: "https://api.anthropic.com"
   CLOUDFLARE_API_URL: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
   COHERE_API_URL: "https://api.cohere.com"

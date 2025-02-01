@@ -17,19 +17,19 @@ func GenerateConfigurationsMD(filePath string, oas string) error {
 		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
 	}
 
-	const mdTemplate = `# Configuration Reference
-	
-	{{- range $section := .Sections }}
-	## {{ .Title }}
-	
-	| Environment Variable | Default Value | Description |
-	|---------------------|---------------|-------------|
-	{{- range .Settings }}
-	| {{ .Env }} | ` + "`{{ if .Default }}{{ .Default }}{{ else }}\"\"{{ end }}`" + ` | {{ .Description }} |
-	{{- end }}
-	
-	{{- end }}
-	`
+	const mdTemplate = `## Configurations
+{{- range $index, $sectionMap := .Sections }}
+{{ range $name, $section := $sectionMap }}
+### {{ $section.Title }}
+
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+{{- range $setting := $section.Settings }}
+| {{ $setting.Env }} | ` + "`{{ if $setting.Default }}{{ $setting.Default }}{{ else }}\"\"{{ end }}`" + ` | {{ $setting.Description }} |
+{{- end }}
+{{ end }}
+{{- end }}
+`
 
 	// Create template with functions
 	funcMap := template.FuncMap{

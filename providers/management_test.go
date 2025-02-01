@@ -43,7 +43,7 @@ func TestParseSSEDebug(t *testing.T) {
 }
 
 func TestParseSSEWithEmbeddedMessageStart(t *testing.T) {
-	input := `data: {"json": "{\"id\":\"d8c1879d-6c59-4eb7-8209-b184f81bcf15\",\"type\":\"message-start\",\"delta\":{\"message\":{\"role\":\"assistant\",\"content\":[],\"tool_plan\":\"\",\"tool_calls\":[],\"citations\":[]}}}"}`
+	input := `data: {"json": "{\"id\":\"***\",\"type\":\"message-start\",\"delta\":{\"message\":{\"role\":\"assistant\",\"content\":[],\"tool_plan\":\"\",\"tool_calls\":[],\"citations\":[]}}}"}`
 
 	event, err := parseSSEvents([]byte(input))
 	if err != nil {
