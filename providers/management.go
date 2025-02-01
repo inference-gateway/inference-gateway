@@ -76,11 +76,7 @@ func (p *ProviderImpl) GetName() string {
 }
 
 func (p *ProviderImpl) GetURL() string {
-	baseURL := p.url
-	if !strings.HasPrefix(baseURL, "http://") && !strings.HasPrefix(baseURL, "https://") {
-		baseURL = "http://" + baseURL
-	}
-	return baseURL
+	return p.url
 }
 
 func (p *ProviderImpl) GetToken() string {

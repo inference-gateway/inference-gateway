@@ -111,54 +111,43 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 }
 
 func handleStreamingRequest(c *gin.Context, provider providers.Provider, router *RouterImpl) {
-	// Set SSE headers
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
-	c.Header("Transfer-Encoding", "chunked")
-
-	// Parse provider URL properly
-	providerURL := provider.GetURL()
-	if !strings.HasPrefix(providerURL, "http") {
-		providerURL = "http://" + providerURL
+	for k, v := range map[string]string{
+		"Content-Type":      "text/event-stream",
+		"Cache-Control":     "no-cache",
+		"Connection":        "keep-alive",
+		"Transfer-Encoding": "chunked",
+	} {
+		c.Header(k, v)
 	}
 
-	// Get correct target URL without proxy prefix
-	targetURL := strings.TrimPrefix(c.Request.URL.Path, "/proxy/"+c.Param("provider"))
-	fullURL := providerURL + targetURL
+	providerURL := provider.GetURL()
+	fullURL := providerURL + strings.TrimPrefix(c.Request.URL.Path, "/proxy/"+c.Param("provider"))
 
-	// Create request with body copy
-	body, err := io.ReadAll(c.Request.Body)
+	// Read request body with a 10MB size limit for now, to prevent abuse
+	// Will make it configurable later perhaps as a middleware
+	const maxBodySize = 10 << 20
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, maxBodySize))
 	if err != nil {
 		router.logger.Error("failed to read request body", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
 		return
 	}
+	if len(body) >= int(maxBodySize) {
+		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+		return
+	}
 
-	// Create new request with proper context
 	ctx := c.Request.Context()
-	upstreamReq, err := http.NewRequestWithContext(
-		ctx,
-		c.Request.Method,
-		fullURL,
-		bytes.NewReader(body),
-	)
+	upstreamReq, err := http.NewRequestWithContext(ctx, c.Request.Method, fullURL, bytes.NewReader(body))
 	if err != nil {
 		router.logger.Error("failed to create upstream request", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
 		return
 	}
 
-	// Copy headers
 	upstreamReq.Header = c.Request.Header.Clone()
 
-	// Create HTTP client with timeouts
-	client := &http.Client{
-		Timeout: 0, // No timeout for streaming
-	}
-
-	// Make request
-	resp, err := client.Do(upstreamReq)
+	resp, err := router.client.Do(upstreamReq)
 	if err != nil {
 		router.logger.Error("failed to make upstream request", err)
 		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
@@ -166,34 +155,40 @@ func handleStreamingRequest(c *gin.Context, provider providers.Provider, router 
 	}
 	defer resp.Body.Close()
 
-	// Create buffered reader
-	reader := bufio.NewReader(resp.Body)
+	reader := bufio.NewReaderSize(resp.Body, 4096)
 
-	// Stream response
 	c.Stream(func(w io.Writer) bool {
 		select {
 		case <-ctx.Done():
 			return false
 		default:
-			line, err := reader.ReadBytes('\n')
-			if err != nil {
-				if err != io.EOF {
-					router.logger.Error("failed to read stream", err)
-				}
-				return false
-			}
+		}
 
-			if len(line) == 0 {
-				return true
+		line, err := reader.ReadBytes('\n')
+		if err != nil {
+			if err != io.EOF {
+				router.logger.Error("failed to read stream", err,
+					"url", fullURL,
+					"method", c.Request.Method)
 			}
+			return false
+		}
 
-			if _, err := w.Write(line); err != nil {
-				router.logger.Error("failed to write response", err)
-				return false
-			}
-
+		if len(line) == 0 {
 			return true
 		}
+
+		if _, err := w.Write(line); err != nil {
+			router.logger.Error("failed to write response", err,
+				"bytes", len(line))
+			return false
+		}
+
+		if flusher, ok := w.(http.Flusher); ok {
+			flusher.Flush()
+		}
+
+		return true
 	})
 }
 

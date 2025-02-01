@@ -69,8 +69,12 @@ func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
 }
 
 func (c *ClientImpl) Do(req *http.Request) (*http.Response, error) {
-	req.URL.Scheme = c.scheme
-	req.URL.Host = c.hostname + ":" + c.port
+	if req.URL.Scheme == "" {
+		req.URL.Scheme = c.scheme
+	}
+	if req.URL.Host == "" {
+		req.URL.Host = c.hostname + ":" + c.port
+	}
 
 	return c.client.Do(req)
 }
