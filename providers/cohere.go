@@ -235,7 +235,7 @@ func (p *CohereStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, error) 
 		return nil, err
 	}
 
-	event, err := parseSSEvents(rawchunk)
+	event, err := ParseSSEvents(rawchunk)
 	if err != nil {
 		return nil, err
 	}

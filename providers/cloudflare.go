@@ -99,7 +99,7 @@ func (p *CloudflareStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, err
 		return nil, err
 	}
 
-	event, err := parseSSEvents(rawchunk)
+	event, err := ParseSSEvents(rawchunk)
 	if err != nil {
 		return nil, err
 	}

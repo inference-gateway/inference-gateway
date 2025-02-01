@@ -135,8 +135,8 @@ type SSEvent struct {
 	Data      []byte
 }
 
-// parseSSEvents parses a Server-Sent Event from a byte slice
-func parseSSEvents(line []byte) (*SSEvent, error) {
+// ParseSSEvents parses a Server-Sent Event from a byte slice
+func ParseSSEvents(line []byte) (*SSEvent, error) {
 	if len(bytes.TrimSpace(line)) == 0 {
 		return nil, fmt.Errorf("empty line")
 	}

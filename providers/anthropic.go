@@ -98,7 +98,7 @@ func (p *AnthropicStreamParser) ParseChunk(reader *bufio.Reader) (*SSEvent, erro
 		return nil, err
 	}
 
-	event, err := parseSSEvents(rawchunk)
+	event, err := ParseSSEvents(rawchunk)
 	if err != nil {
 		return nil, err
 	}
