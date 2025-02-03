@@ -101,6 +101,16 @@ func TestLoad(t *testing.T) {
 							Generate: providers.OpenAIGenerateEndpoint,
 						},
 					},
+					providers.HuggingfaceID: {
+						ID:       providers.HuggingfaceID,
+						Name:     providers.HuggingfaceDisplayName,
+						URL:      providers.HuggingfaceDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							List:     providers.HuggingfaceListEndpoint,
+							Generate: providers.HuggingfaceGenerateEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -200,6 +210,16 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							List:     providers.AnthropicListEndpoint,
 							Generate: providers.AnthropicGenerateEndpoint,
+						},
+					},
+					providers.HuggingfaceID: {
+						ID:       providers.HuggingfaceID,
+						Name:     providers.HuggingfaceDisplayName,
+						URL:      providers.HuggingfaceDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							List:     providers.HuggingfaceListEndpoint,
+							Generate: providers.HuggingfaceGenerateEndpoint,
 						},
 					},
 				},
@@ -312,6 +332,16 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							List:     providers.AnthropicListEndpoint,
 							Generate: providers.AnthropicGenerateEndpoint,
+						},
+					},
+					providers.HuggingfaceID: {
+						ID:       providers.HuggingfaceID,
+						Name:     providers.HuggingfaceDisplayName,
+						URL:      providers.HuggingfaceDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							List:     providers.HuggingfaceListEndpoint,
+							Generate: providers.HuggingfaceGenerateEndpoint,
 						},
 					},
 				},
