@@ -19,32 +19,35 @@ const (
 
 // The default base URLs of each provider
 const (
-	AnthropicDefaultBaseURL  = "https://api.anthropic.com"
-	CloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
-	CohereDefaultBaseURL     = "https://api.cohere.com"
-	GroqDefaultBaseURL       = "https://api.groq.com"
-	OllamaDefaultBaseURL     = "http://ollama:8080"
-	OpenaiDefaultBaseURL     = "https://api.openai.com"
+	AnthropicDefaultBaseURL   = "https://api.anthropic.com"
+	CloudflareDefaultBaseURL  = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+	CohereDefaultBaseURL      = "https://api.cohere.com"
+	GroqDefaultBaseURL        = "https://api.groq.com"
+	OllamaDefaultBaseURL      = "http://ollama:8080"
+	OpenaiDefaultBaseURL      = "https://api.openai.com"
+	HuggingfaceDefaultBaseURL = "https://api-inference.huggingface.co"
 )
 
 // The ID's of each provider
 const (
-	AnthropicID  = "anthropic"
-	CloudflareID = "cloudflare"
-	CohereID     = "cohere"
-	GroqID       = "groq"
-	OllamaID     = "ollama"
-	OpenaiID     = "openai"
+	AnthropicID   = "anthropic"
+	CloudflareID  = "cloudflare"
+	CohereID      = "cohere"
+	GroqID        = "groq"
+	OllamaID      = "ollama"
+	OpenaiID      = "openai"
+	HuggingfaceID = "huggingface"
 )
 
 // Display names for providers
 const (
-	AnthropicDisplayName  = "Anthropic"
-	CloudflareDisplayName = "Cloudflare"
-	CohereDisplayName     = "Cohere"
-	GroqDisplayName       = "Groq"
-	OllamaDisplayName     = "Ollama"
-	OpenaiDisplayName     = "Openai"
+	AnthropicDisplayName   = "Anthropic"
+	CloudflareDisplayName  = "Cloudflare"
+	CohereDisplayName      = "Cohere"
+	GroqDisplayName        = "Groq"
+	OllamaDisplayName      = "Ollama"
+	OpenaiDisplayName      = "Openai"
+	HuggingfaceDisplayName = "HuggingFace"
 )
 
 const (

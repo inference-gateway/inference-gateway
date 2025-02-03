@@ -287,6 +287,7 @@ components:
         - cloudflare
         - cohere
         - anthropic
+        - huggingface
     ProviderSpecificResponse:
       type: object
       description: |
@@ -582,6 +583,16 @@ components:
                   env: "OPENAI_API_KEY"
                   type: string
                   description: "OpenAI API Key"
+                  secret: true
+                - name: huggingface_api_url
+                  env: "HUGGINGFACE_API_URL"
+                  type: string
+                  default: "https://huggingface.co"
+                  description: "HuggingFace API URL"
+                - name: huggingface_api_key
+                  env: "HUGGINGFACE_API_KEY"
+                  type: string
+                  description: "HuggingFace API Key"
                   secret: true
       x-provider-configs:
         ollama:
@@ -1024,3 +1035,46 @@ components:
                                 type: string
                               content:
                                 type: string
+        huggingface:
+          id: "huggingface"
+          url: "https://api-inference.huggingface.co"
+          auth_type: "bearer"
+          endpoints:
+            list:
+              endpoint: "/models"
+              method: "GET"
+              schema:
+                response:
+                  type: object
+                  properties:
+                    models:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          pipeline_tag:
+                            type: string
+                          likes:
+                            type: number
+            generate:
+              endpoint: "/models/{model}"
+              method: "POST"
+              schema:
+                request:
+                  type: object
+                  properties:
+                    inputs:
+                      type: string
+                    parameters:
+                      type: object
+                      additionalProperties: true
+                    options:
+                      type: object
+                      additionalProperties: true
+                response:
+                  type: object
+                  properties:
+                    generated_text:
+                      type: string

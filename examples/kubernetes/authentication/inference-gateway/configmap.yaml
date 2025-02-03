@@ -35,3 +35,4 @@ data:
   GROQ_API_URL: "https://api.groq.com"
   OLLAMA_API_URL: "http://ollama:8080"
   OPENAI_API_URL: "https://api.openai.com"
+  HUGGINGFACE_API_URL: "https://huggingface.co"

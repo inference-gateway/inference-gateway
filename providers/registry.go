@@ -30,6 +30,10 @@ const (
 	// Anthropic endpoints
 	AnthropicListEndpoint     = "/v1/models"
 	AnthropicGenerateEndpoint = "/v1/messages"
+
+	// Huggingface endpoints
+	HuggingfaceListEndpoint     = "/api/models?limit=1000" // It's also the default value I think there is no way to increase it, might need to introduce a search
+	HuggingfaceGenerateEndpoint = "/models/{model}"
 )
 
 // Endpoints exposed by each provider
@@ -157,6 +161,16 @@ var Registry = map[string]Config{
 		Endpoints: Endpoints{
 			List:     OpenAIListEndpoint,
 			Generate: OpenAIGenerateEndpoint,
+		},
+	},
+	HuggingfaceID: {
+		ID:       HuggingfaceID,
+		Name:     HuggingfaceDisplayName,
+		URL:      HuggingfaceDefaultBaseURL,
+		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			List:     HuggingfaceListEndpoint,
+			Generate: HuggingfaceGenerateEndpoint,
 		},
 	},
 }

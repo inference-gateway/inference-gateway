@@ -54,4 +54,6 @@
 | OLLAMA_API_KEY | `""` | Ollama API Key |
 | OPENAI_API_URL | `https://api.openai.com` | OpenAI API URL |
 | OPENAI_API_KEY | `""` | OpenAI API Key |
+| HUGGINGFACE_API_URL | `https://huggingface.co` | HuggingFace API URL |
+| HUGGINGFACE_API_KEY | `""` | HuggingFace API Key |
 
