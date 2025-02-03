@@ -2,7 +2,7 @@ package providers
 
 // HuggingFaceModel represents the model details returned from the HuggingFace API.
 type HuggingfaceModel struct {
-	_ID           string   `json:"_id"`
+	// _ID           string   `json:"_id"`
 	ID            string   `json:"id"`
 	Likes         int      `json:"likes"`
 	TrendingScore int      `json:"trending_score"`
