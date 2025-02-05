@@ -426,14 +426,6 @@ components:
           type: string
         content:
           type: string
-    GenerateResponse:
-      type: object
-      description: Response structure for token generation
-      properties:
-        provider:
-          type: string
-        response:
-          $ref: "#/components/schemas/ResponseTokens"
         tool_calls:
           type: array
           items:
@@ -449,6 +441,14 @@ components:
                     properties:
                       arguments:
                         type: object
+    GenerateResponse:
+      type: object
+      description: Response structure for token generation
+      properties:
+        provider:
+          type: string
+        response:
+          $ref: "#/components/schemas/ResponseTokens"
     Config:
       x-config:
         sections:

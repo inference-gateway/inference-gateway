@@ -82,13 +82,12 @@ type GenerateRequestOllama struct {
 	Options   *OllamaOptions `json:"options,omitempty"`
 	Images    []string       `json:"images,omitempty"`
 	KeepAlive string         `json:"keep_alive,omitempty"`
+	Tools     []Tool         `json:"tools,omitempty"`
 }
 
 func (r *GenerateRequest) TransformOllama() GenerateRequestOllama {
-	// Get the last message content as prompt since Ollama expects a single prompt
 	lastMessage := r.Messages[len(r.Messages)-1].Content
 
-	// Use first message as system prompt if it exists and is a system message
 	var systemPrompt string
 	if len(r.Messages) > 1 && r.Messages[0].Role == MessageRoleSystem {
 		systemPrompt = r.Messages[0].Content
@@ -100,8 +99,9 @@ func (r *GenerateRequest) TransformOllama() GenerateRequestOllama {
 		System: systemPrompt,
 		Stream: r.Stream,
 		Options: &OllamaOptions{
-			Temperature: float64Ptr(0.7), // Default temperature
+			Temperature: float64Ptr(0.7),
 		},
+		Tools: r.Tools,
 	}
 }
 

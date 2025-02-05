@@ -52,19 +52,13 @@ const (
 	MessageRoleSystem    = "system"
 	MessageRoleUser      = "user"
 	MessageRoleAssistant = "assistant"
+	MessageRoleTool      = "tool"
 )
 
-// Tool represents a function tool that can be called by the LLM
-type Tool struct {
-	Type     string        `json:"type"`
-	Function *FunctionTool `json:"function,omitempty"`
-}
-
-// FunctionTool represents a function that can be called
-type FunctionTool struct {
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	Parameters  ToolParams `json:"parameters"`
+// ToolProperty represents a parameter property
+type ToolProperty struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
 }
 
 // ToolParams represents the parameters for a function tool
@@ -74,10 +68,17 @@ type ToolParams struct {
 	Required   []string                `json:"required"`
 }
 
-// ToolProperty represents a parameter property
-type ToolProperty struct {
-	Type        string `json:"type"`
-	Description string `json:"description"`
+// FunctionTool represents a function that can be called
+type FunctionTool struct {
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Parameters  ToolParams `json:"parameters"`
+}
+
+// Tool represents a function tool that can be called by the LLM
+type Tool struct {
+	Type     string        `json:"type"`
+	Function *FunctionTool `json:"function,omitempty"`
 }
 
 // Common response and request types
@@ -98,15 +99,15 @@ type ToolCall struct {
 
 // FunctionToolCall represents a function call
 type FunctionToolCall struct {
-	Name      string          `json:"name"`
-	Arguments json.RawMessage `json:"arguments"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Parameters  json.RawMessage `json:"parameters"`
 }
 
 type GenerateResponse struct {
 	Provider  string         `json:"provider"`
 	Response  ResponseTokens `json:"response"`
 	EventType EventType      `json:"event_type,omitempty"`
-	ToolCalls []ToolCall     `json:"tool_calls,omitempty"`
 }
 
 type ListModelsResponse struct {
@@ -115,8 +116,9 @@ type ListModelsResponse struct {
 }
 
 type Message struct {
-	Content string `json:"content"`
-	Role    string `json:"role"`
+	Content   string     `json:"content"`
+	Role      string     `json:"role"`
+	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
 }
 
 type Model struct {
