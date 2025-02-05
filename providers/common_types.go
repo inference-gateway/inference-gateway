@@ -3,6 +3,7 @@ package providers
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -53,18 +54,59 @@ const (
 	MessageRoleAssistant = "assistant"
 )
 
+// Tool represents a function tool that can be called by the LLM
+type Tool struct {
+	Type     string        `json:"type"`
+	Function *FunctionTool `json:"function,omitempty"`
+}
+
+// FunctionTool represents a function that can be called
+type FunctionTool struct {
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Parameters  ToolParams `json:"parameters"`
+}
+
+// ToolParams represents the parameters for a function tool
+type ToolParams struct {
+	Type       string                  `json:"type"`
+	Properties map[string]ToolProperty `json:"properties"`
+	Required   []string                `json:"required"`
+}
+
+// ToolProperty represents a parameter property
+type ToolProperty struct {
+	Type        string `json:"type"`
+	Description string `json:"description"`
+}
+
 // Common response and request types
 type GenerateRequest struct {
 	Messages []Message `json:"messages"`
 	Model    string    `json:"model"`
 	Stream   bool      `json:"stream"`
 	SSEvents bool      `json:"ssevents"`
+	Tools    []Tool    `json:"tools"`
+}
+
+// ToolCall represents a tool invocation by the LLM
+type ToolCall struct {
+	ID       string           `json:"id"`
+	Type     string           `json:"type"`
+	Function FunctionToolCall `json:"function"`
+}
+
+// FunctionToolCall represents a function call
+type FunctionToolCall struct {
+	Name      string          `json:"name"`
+	Arguments json.RawMessage `json:"arguments"`
 }
 
 type GenerateResponse struct {
 	Provider  string         `json:"provider"`
 	Response  ResponseTokens `json:"response"`
 	EventType EventType      `json:"event_type,omitempty"`
+	ToolCalls []ToolCall     `json:"tool_calls,omitempty"`
 }
 
 type ListModelsResponse struct {
