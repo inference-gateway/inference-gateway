@@ -42,10 +42,20 @@ type GenerateRequestHuggingface struct {
 // TransformHuggingface converts a generic GenerateRequest to a HuggingFace-specific request.
 // Here we use the first message's content as input.
 func (r *GenerateRequest) TransformHuggingface() GenerateRequestHuggingface {
-	input := ""
-	if len(r.Messages) > 0 {
-		input = r.Messages[0].Content
+	if len(r.Messages) == 0 {
+		return GenerateRequestHuggingface{}
 	}
+	input := ""
+	// There are no Roles in the inputs for Huggingface, so we'll just append the content of the messages with hintful prefixes.
+	for _, message := range r.Messages {
+		if message.Content == "" {
+			continue
+		}
+		if message.Role == MessageRoleUser {
+			input += message.Content + "\n"
+		}
+	}
+
 	return GenerateRequestHuggingface{
 		Inputs:     input,
 		Parameters: map[string]interface{}{},
@@ -54,21 +64,29 @@ func (r *GenerateRequest) TransformHuggingface() GenerateRequestHuggingface {
 }
 
 // GenerateResponseHuggingface models the response body from the HuggingFace generate endpoint.
-type GenerateResponseHuggingface struct {
+type GenerateResponseTextHuggingface struct {
 	GeneratedText string `json:"generated_text"`
 }
 
+// GenerateResponseHuggingface wraps the API response for generating text.
+type GenerateResponseHuggingface []GenerateResponseTextHuggingface
+
 // Transform converts the HuggingFace-specific response to the common GenerateResponse.
 func (r *GenerateResponseHuggingface) Transform() GenerateResponse {
-	response := ResponseTokens{
-		Content: r.GeneratedText,
-		Model:   "", // Set model name if needed
-		Role:    MessageRoleAssistant,
+	if len(*r) == 0 {
+		return GenerateResponse{}
 	}
 
+	// The API is sending a slice of generated text responses, not sure why, but as their documentation shows they only consider
+	// the first element of the slice in a text-to-text models, so we'll do the same.
+	generated := (*r)[0]
+
 	return GenerateResponse{
-		Provider:  HuggingfaceDisplayName,
-		Response:  response,
-		EventType: EventContentDelta,
+		Provider: HuggingfaceDisplayName,
+		Response: ResponseTokens{
+			Content: generated.GeneratedText,
+			Model:   "", // Set model name if needed
+			Role:    MessageRoleAssistant,
+		},
 	}
 }

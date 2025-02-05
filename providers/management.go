@@ -178,7 +178,7 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 	}
 
 	url := "/proxy/" + p.GetID() + baseURL.Path + p.EndpointGenerate()
-	if p.GetID() == CloudflareID {
+	if p.GetID() == CloudflareID || p.GetID() == HuggingfaceID {
 		url = strings.Replace(url, "{model}", model, 1)
 	}
 
@@ -321,6 +321,28 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
 		}
 		return response.Transform(), nil
+	case HuggingfaceID:
+		// Request
+		payload := genRequest.TransformHuggingface()
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			p.logger.Error("failed to marshal request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to marshal request: %w", err)
+		}
+
+		resp, err := fetchTokens(ctx, p.client, url, payloadBytes, p.logger)
+		if err != nil {
+			p.logger.Error("failed to make request", err)
+			return GenerateResponse{}, fmt.Errorf("failed to make request: %w", err)
+		}
+
+		// Response
+		var response GenerateResponseHuggingface
+		if err = json.NewDecoder(resp.Body).Decode(&response); err != nil {
+			p.logger.Error("failed to decode response", err, "provider", p.GetName())
+			return GenerateResponse{}, fmt.Errorf("failed to decode response: %w", err)
+		}
+		return response.Transform(), nil
 	default:
 		p.logger.Error("unsupported provider", nil)
 		return GenerateResponse{}, fmt.Errorf("unsupported provider: %s", p.GetID())
@@ -375,6 +397,9 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 		payloadBytes, err = json.Marshal(payload)
 	case AnthropicID:
 		payload := genRequest.TransformAnthropic()
+		payloadBytes, err = json.Marshal(payload)
+	case HuggingfaceID:
+		payload := genRequest.TransformHuggingface()
 		payloadBytes, err = json.Marshal(payload)
 	default:
 		p.logger.Error("unsupported provider", nil)
