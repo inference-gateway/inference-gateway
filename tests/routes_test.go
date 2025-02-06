@@ -106,7 +106,7 @@ func TestRouterHandlers(t *testing.T) {
 					Return(mockProvider, nil)
 
 				mockProvider.EXPECT().
-					GenerateTokens(gomock.Any(), "test-model", gomock.Any()).
+					GenerateTokens(gomock.Any(), "test-model", gomock.Any(), gomock.Any()).
 					Return(providers.GenerateResponse{
 						Provider: "test-provider",
 						Response: providers.ResponseTokens{
@@ -220,7 +220,7 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 					BuildProvider("test-provider", mc).
 					Return(mockProvider, nil)
 				mockProvider.EXPECT().
-					GenerateTokens(gomock.Any(), "test-model", gomock.Any()).
+					GenerateTokens(gomock.Any(), "test-model", gomock.Any(), gomock.Any()).
 					Return(providers.GenerateResponse{
 						Provider: "test-provider",
 						Response: providers.ResponseTokens{
@@ -253,7 +253,7 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 					BuildProvider("test-provider", mc).
 					Return(mockProvider, nil)
 				mockProvider.EXPECT().
-					GenerateTokens(gomock.Any(), "test-model", gomock.Any()).
+					GenerateTokens(gomock.Any(), "test-model", gomock.Any(), gomock.Any()).
 					Return(providers.GenerateResponse{}, context.DeadlineExceeded)
 				ml.EXPECT().
 					Error("request timed out", gomock.Any(), "provider", "test-provider")

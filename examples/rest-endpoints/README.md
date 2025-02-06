@@ -49,37 +49,31 @@ You can set the stream as an optional flag in the request body to enable streami
 
 You can provide tools that the LLM can use to perform specific functions. Here are some examples:
 
-```json
-{
-  "model": "phi3:3.8b",
+```bash
+curl -X POST http://localhost:8080/llms/ollama/generate -d '{
+  "model": "llama3.2:1b",
   "messages": [
-    {
-      "role": "system",
-      "content": "You are a helpful assistant."
-    },
-    {
-      "role": "user",
-      "content": "Calculate 2+2"
-    }
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "What is the current weather in Toronto?"}
   ],
   "tools": [
     {
       "type": "function",
       "function": {
-        "name": "calculate",
-        "description": "Evaluate a mathematical expression",
+        "name": "get_current_weather",
+        "description": "Get the current weather of a city",
         "parameters": {
           "type": "object",
           "properties": {
-            "expression": {
+            "city": {
               "type": "string",
-              "description": "The mathematical expression to evaluate"
+              "description": "The name of the city"
             }
           },
-          "required": ["expression"]
+          "required": ["city"]
         }
       }
     }
   ]
-}
+}' | jq .
 ```

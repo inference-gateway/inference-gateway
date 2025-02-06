@@ -72,8 +72,7 @@ type OllamaOptions struct {
 
 type GenerateRequestOllama struct {
 	Model     string         `json:"model"`
-	Prompt    string         `json:"prompt"`
-	System    string         `json:"system,omitempty"`
+	Messages  []Message      `json:"messages"`
 	Template  string         `json:"template,omitempty"`
 	Context   []int          `json:"context,omitempty"`
 	Stream    bool           `json:"stream"`
@@ -86,18 +85,10 @@ type GenerateRequestOllama struct {
 }
 
 func (r *GenerateRequest) TransformOllama() GenerateRequestOllama {
-	lastMessage := r.Messages[len(r.Messages)-1].Content
-
-	var systemPrompt string
-	if len(r.Messages) > 1 && r.Messages[0].Role == MessageRoleSystem {
-		systemPrompt = r.Messages[0].Content
-	}
-
 	return GenerateRequestOllama{
-		Model:  r.Model,
-		Prompt: lastMessage,
-		System: systemPrompt,
-		Stream: r.Stream,
+		Model:    r.Model,
+		Messages: r.Messages,
+		Stream:   r.Stream,
 		Options: &OllamaOptions{
 			Temperature: float64Ptr(0.7),
 		},
@@ -106,35 +97,41 @@ func (r *GenerateRequest) TransformOllama() GenerateRequestOllama {
 }
 
 type GenerateResponseOllama struct {
-	Model              string `json:"model"`
-	CreatedAt          string `json:"created_at"`
-	Response           string `json:"response"`
-	Done               bool   `json:"done"`
-	DoneReason         string `json:"done_reason,omitempty"`
-	Context            []int  `json:"context,omitempty"`
-	TotalDuration      int64  `json:"total_duration,omitempty"`
-	LoadDuration       int64  `json:"load_duration,omitempty"`
-	PromptEvalCount    int    `json:"prompt_eval_count,omitempty"`
-	PromptEvalDuration int64  `json:"prompt_eval_duration,omitempty"`
-	EvalCount          int    `json:"eval_count,omitempty"`
-	EvalDuration       int64  `json:"eval_duration,omitempty"`
+	Model              string  `json:"model"`
+	CreatedAt          string  `json:"created_at"`
+	Message            Message `json:"message"`
+	Done               bool    `json:"done"`
+	DoneReason         string  `json:"done_reason,omitempty"`
+	Context            []int   `json:"context,omitempty"`
+	TotalDuration      int64   `json:"total_duration,omitempty"`
+	LoadDuration       int64   `json:"load_duration,omitempty"`
+	PromptEvalCount    int     `json:"prompt_eval_count,omitempty"`
+	PromptEvalDuration int64   `json:"prompt_eval_duration,omitempty"`
+	EvalCount          int     `json:"eval_count,omitempty"`
+	EvalDuration       int64   `json:"eval_duration,omitempty"`
 }
 
 func (g *GenerateResponseOllama) Transform() GenerateResponse {
-	event := EventContentDelta
-	if g.Done {
-		event = EventStreamEnd
-	}
-
-	return GenerateResponse{
+	response := GenerateResponse{
 		Provider: OllamaDisplayName,
 		Response: ResponseTokens{
-			Content: g.Response,
-			Model:   g.Model,
-			Role:    "assistant",
+			Content:   g.Message.Content,
+			Model:     g.Model,
+			Role:      g.Message.Role,
+			ToolCalls: g.Message.ToolCalls,
 		},
-		EventType: event,
 	}
+
+	if response.Response.Role == "" {
+		response.Response.Role = MessageRoleAssistant
+	}
+
+	response.EventType = EventContentDelta
+	if g.Done && g.DoneReason == "stop" {
+		response.EventType = EventStreamEnd
+	}
+
+	return response
 }
 
 type OllamaStreamParser struct {

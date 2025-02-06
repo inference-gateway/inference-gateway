@@ -9,7 +9,7 @@ import (
 const (
 	// Ollama endpoints
 	OllamaListEndpoint     = "/api/tags"
-	OllamaGenerateEndpoint = "/api/generate"
+	OllamaGenerateEndpoint = "/api/chat"
 
 	// OpenAI endpoints
 	OpenAIListEndpoint     = "/v1/models"

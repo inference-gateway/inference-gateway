@@ -22,8 +22,13 @@ func TestTransformOllama(t *testing.T) {
 				Stream: false,
 			},
 			expected: GenerateRequestOllama{
-				Model:  "llama2",
-				Prompt: "Hello",
+				Model: "llama2",
+				Messages: []Message{
+					{
+						Role:    MessageRoleUser,
+						Content: "Hello",
+					},
+				},
 				Stream: false,
 				Options: &OllamaOptions{
 					Temperature: float64Ptr(0.7),
@@ -41,9 +46,17 @@ func TestTransformOllama(t *testing.T) {
 				Stream: true,
 			},
 			expected: GenerateRequestOllama{
-				Model:  "llama2",
-				Prompt: "Hello",
-				System: "You are a helpful assistant",
+				Model: "llama2",
+				Messages: []Message{
+					{
+						Role:    MessageRoleSystem,
+						Content: "You are a helpful assistant",
+					},
+					{
+						Role:    MessageRoleUser,
+						Content: "Hello",
+					},
+				},
 				Stream: true,
 				Options: &OllamaOptions{
 					Temperature: float64Ptr(0.7),
@@ -79,8 +92,13 @@ func TestTransformOllama(t *testing.T) {
 				},
 			},
 			expected: GenerateRequestOllama{
-				Model:  "llama2",
-				Prompt: "Calculate 2+2",
+				Model: "llama2",
+				Messages: []Message{
+					{
+						Role:    MessageRoleUser,
+						Content: "Calculate 2+2",
+					},
+				},
 				Stream: false,
 				Options: &OllamaOptions{
 					Temperature: float64Ptr(0.7),
@@ -119,9 +137,13 @@ func TestTransformOllama(t *testing.T) {
 				Stream: true,
 			},
 			expected: GenerateRequestOllama{
-				Model:  "llama2",
-				Prompt: "What's the weather?",
-				System: "You are a helpful assistant",
+				Model: "llama2",
+				Messages: []Message{
+					{Role: MessageRoleSystem, Content: "You are a helpful assistant"},
+					{Role: MessageRoleUser, Content: "Hi"},
+					{Role: MessageRoleAssistant, Content: "Hello! How can I help?"},
+					{Role: MessageRoleUser, Content: "What's the weather?"},
+				},
 				Stream: true,
 				Options: &OllamaOptions{
 					Temperature: float64Ptr(0.7),
