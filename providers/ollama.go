@@ -100,6 +100,7 @@ type GenerateResponseOllama struct {
 	Model              string  `json:"model"`
 	CreatedAt          string  `json:"created_at"`
 	Message            Message `json:"message"`
+	Response           string  `json:"response,omitempty"`
 	Done               bool    `json:"done"`
 	DoneReason         string  `json:"done_reason,omitempty"`
 	Context            []int   `json:"context,omitempty"`
@@ -112,23 +113,34 @@ type GenerateResponseOllama struct {
 }
 
 func (g *GenerateResponseOllama) Transform() GenerateResponse {
+	isStreaming := false
+	if g.Response != "" {
+		isStreaming = true
+	}
+
+	content := g.Message.Content
+	if isStreaming {
+		content = g.Response
+	}
+
 	response := GenerateResponse{
 		Provider: OllamaDisplayName,
 		Response: ResponseTokens{
-			Content:   g.Message.Content,
+			Content:   content,
 			Model:     g.Model,
 			Role:      g.Message.Role,
 			ToolCalls: g.Message.ToolCalls,
 		},
 	}
 
-	if response.Response.Role == "" {
-		response.Response.Role = MessageRoleAssistant
-	}
-
-	response.EventType = EventContentDelta
-	if g.Done && g.DoneReason == "stop" {
-		response.EventType = EventStreamEnd
+	if isStreaming {
+		if response.Response.Role == "" {
+			response.Response.Role = MessageRoleAssistant
+		}
+		response.EventType = EventContentDelta
+		if g.Done && g.DoneReason == "stop" {
+			response.EventType = EventStreamEnd
+		}
 	}
 
 	return response
