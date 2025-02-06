@@ -1,11 +1,15 @@
 ---
 services:
   inference-gateway:
-    image: ghcr.io/inference-gateway/inference-gateway:v0.1.10
+    build:
+      context: ../../
+      dockerfile: Dockerfile
     ports:
       - 8080:8080
     env_file:
       - .env
+    networks:
+      - llama_internal
 
   # inference-gateway-debug:
   #   build:
@@ -20,18 +24,80 @@ services:
   #     - SYS_PTRACE
   #   env_file:
   #     - .env
+  #   networks:
+  #     - llama_internal
 
-  ollama:
-    image: ollama/ollama:latest
-    entrypoint: ["/bin/sh", "-c"]
-    command: >
-      "ollama serve & sleep 5 && ollama pull phi3:3.8b && tail -f /dev/null"
+  llama:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    user: 65534:65534
+    read_only: true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     environment:
-      OLLAMA_HOST: 0.0.0.0:8080
-    ports:
-      - 8081:8080
+      LLAMA_ARG_MODEL: /models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf
+      LLAMA_ARG_CTX_SIZE: 4096
+      LLAMA_ARG_N_PARALLEL: 2
+      LLAMA_ARG_ENDPOINT_METRICS: 1
+      LLAMA_ARG_HOST: 0.0.0.0
+      LLAMA_ARG_PORT: 8080
     volumes:
-      - docker-compose-ollama-data:/.ollama
+      - type: volume
+        source: docker-compose-llama-data
+        target: /models
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+        reservations:
+          memory: 4G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - llama_internal
+    depends_on:
+      model-downloader:
+        condition: service_completed_successfully
+
+  model-downloader:
+    image: python:3.14.0a4-alpine3.21
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    volumes:
+      - type: volume
+        source: docker-compose-llama-data
+        target: /models
+    environment:
+      - REPOSITORY_NAME=TheBloke
+      - MODEL_NAME=deepseek-coder-6.7B-instruct-GGUF
+      - MODEL_FILE_NAME=deepseek-coder-6.7b-instruct.Q4_K_M.gguf
+      - HF_TOKEN=${HF_TOKEN}
+    command: >
+      sh -c 'cd /models && 
+        apk update &&
+        pip install --upgrade pip &&
+        pip3 install huggingface_hub &&
+        huggingface-cli login --token $HF_TOKEN &&
+        if [ ! -f $MODEL_FILE_NAME ]; then
+          echo "Model $MODEL_NAME not found. Downloading model $MODEL_NAME"
+          huggingface-cli download $REPOSITORY_NAME/$MODEL_NAME $MODEL_FILE_NAME --local-dir . --local-dir-use-symlinks False
+        fi'
 
 volumes:
-  docker-compose-ollama-data:
+  docker-compose-llama-data:
+
+networks:
+  llama_internal:
+    internal: true
