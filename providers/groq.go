@@ -50,6 +50,7 @@ type GenerateRequestGroq struct {
 	} `json:"response_format,omitempty"`
 	Seed        *int    `json:"seed,omitempty"`
 	ServiceTier *string `json:"service_tier,omitempty"`
+	Tools       []Tool  `json:"tools,omitempty"`
 }
 
 func (r *GenerateRequest) TransformGroq() GenerateRequestGroq {
@@ -58,6 +59,7 @@ func (r *GenerateRequest) TransformGroq() GenerateRequestGroq {
 		Model:       r.Model,
 		Stream:      &r.Stream,
 		Temperature: float64Ptr(1.0),
+		Tools:       r.Tools,
 	}
 }
 
@@ -112,7 +114,6 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 		Role:  MessageRoleAssistant,
 	}
 
-	// Handle non-streaming case using Message first
 	if g.Choices[0].Message.Content != "" {
 		response.Content = g.Choices[0].Message.Content
 		response.Role = g.Choices[0].Message.Role
@@ -123,9 +124,6 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 		}
 	}
 
-	// Handle streaming cases with Delta field
-
-	// Handle initial message with role
 	if g.Choices[0].Delta.Role == MessageRoleAssistant && g.Choices[0].Delta.Content == "" {
 		return GenerateResponse{
 			Provider:  GroqDisplayName,
@@ -134,7 +132,6 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 		}
 	}
 
-	// Handle content delta
 	if g.Choices[0].Delta.Content != "" {
 		response.Content = g.Choices[0].Delta.Content
 		return GenerateResponse{
@@ -144,7 +141,6 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 		}
 	}
 
-	// Handle stream end (empty delta with finish_reason "stop")
 	if g.Choices[0].FinishReason == "stop" {
 		return GenerateResponse{
 			Provider:  GroqDisplayName,
