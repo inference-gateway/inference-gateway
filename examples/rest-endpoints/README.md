@@ -44,3 +44,42 @@ You can set the stream as an optional flag in the request body to enable streami
   "ssevents": true // Optional parameter to enable Server Sent Events(SSE), for easy parsing on the client side using browser's EventSource API
 }
 ```
+
+### Tool Calls
+
+You can provide tools that the LLM can use to perform specific functions. Here are some examples:
+
+```json
+{
+  "model": "phi3:3.8b",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Calculate 2+2"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "calculate",
+        "description": "Evaluate a mathematical expression",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "expression": {
+              "type": "string",
+              "description": "The mathematical expression to evaluate"
+            }
+          },
+          "required": ["expression"]
+        }
+      }
+    }
+  ]
+}
+```
