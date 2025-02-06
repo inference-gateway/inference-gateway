@@ -10,8 +10,126 @@ import (
 
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
+
+func TestListModels(t *testing.T) {
+	tests := []struct {
+		name          string
+		providerID    string
+		mockResponse  string
+		expectedError bool
+		expected      providers.ListModelsResponse
+	}{
+		{
+			name:       "Ollama successful response",
+			providerID: providers.OllamaID,
+			mockResponse: `{
+			"models": [
+				{
+				"name": "llama2",
+				"model": "llama2",
+				"modified_at": "2025-02-06T19:31:24.146864008Z",
+				"size": 2176178913,
+				"digest": "4f2dddddddddddd",
+				"details": {
+					"parent_model": "",
+					"format": "gguf",
+					"family": "phi3",
+					"families": [
+					"phi3"
+					],
+					"parameter_size": "3.8B",
+					"quantization_level": "Q4_0"
+				}
+				}
+			]
+			}`,
+			expectedError: false,
+			expected: providers.ListModelsResponse{
+				Provider: providers.OllamaID,
+				Models: []providers.Model{
+					{Name: "llama2"},
+				},
+			},
+		},
+		{
+			name:       "Groq successful response",
+			providerID: providers.GroqID,
+			mockResponse: `{
+                "object": "list",
+                "data": [
+                    {
+                        "id": "llama-70b",
+                        "created": 1234567890,
+                        "object": "model"
+                    }
+                ]
+            }`,
+			expectedError: false,
+			expected: providers.ListModelsResponse{
+				Provider: providers.GroqID,
+				Models: []providers.Model{
+					{Name: "llama-70b"},
+				},
+			},
+		},
+		{
+			name:          "Invalid JSON response",
+			providerID:    providers.OllamaID,
+			mockResponse:  `{"invalid": json}`,
+			expectedError: true,
+			expected:      providers.ListModelsResponse{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockLogger := mocks.NewMockLogger(ctrl)
+			mockClient := mocks.NewMockClient(ctrl)
+
+			mockLogger.EXPECT().
+				Error(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				AnyTimes()
+
+			mockClient.EXPECT().
+				Do(gomock.Any()).
+				Return(&http.Response{
+					Body:       io.NopCloser(strings.NewReader(tt.mockResponse)),
+					StatusCode: http.StatusOK,
+				}, nil)
+
+			cfg := map[string]*providers.Config{
+				tt.providerID: {
+					ID:       tt.providerID,
+					Name:     "Test Provider",
+					URL:      "http://test.local",
+					AuthType: providers.AuthTypeNone,
+					Endpoints: providers.Endpoints{
+						List: "/models",
+					},
+				},
+			}
+
+			registry := providers.NewProviderRegistry(cfg, mockLogger)
+			provider, err := registry.BuildProvider(tt.providerID, mockClient)
+			assert.NoError(t, err)
+			result, err := provider.ListModels(context.Background())
+
+			if tt.expectedError {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
 
 func TestParseSSEDebug(t *testing.T) {
 	testCases := []struct {

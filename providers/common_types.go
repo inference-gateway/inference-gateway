@@ -92,16 +92,16 @@ type GenerateRequest struct {
 
 // ToolCall represents a tool invocation by the LLM
 type ToolCall struct {
-	ID       string           `json:"id"`
-	Type     string           `json:"type"`
+	ID       string           `json:"id,omitempty"`
+	Type     string           `json:"type,omitempty"`
 	Function FunctionToolCall `json:"function"`
 }
 
 // FunctionToolCall represents a function call
 type FunctionToolCall struct {
 	Name        string          `json:"name"`
-	Description string          `json:"description"`
-	Parameters  json.RawMessage `json:"parameters"`
+	Description string          `json:"description,omitempty"`
+	Arguments   json.RawMessage `json:"arguments"`
 }
 
 type GenerateResponse struct {

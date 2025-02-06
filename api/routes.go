@@ -221,19 +221,11 @@ func handleProxyRequest(c *gin.Context, provider providers.Provider, router *Rou
 		req.URL.Path = c.Param("path")
 
 		if router.cfg.Environment == "development" {
-			body, err := io.ReadAll(req.Body)
-			if err != nil {
-				router.logger.Error("Error reading body: %v", err)
+			reqModifier := proxymodifier.NewDevRequestModifier(router.logger)
+			if err := reqModifier.Modify(req); err != nil {
+				router.logger.Error("failed to modify request", err)
 				return
 			}
-			router.logger.Debug("proxying request",
-				"from", c.Request.URL.String(),
-				"to", req.URL.String(),
-				"method", req.Method,
-				"headers", req.Header,
-				"body", string(body),
-			)
-			req.Body = io.NopCloser(bytes.NewBuffer(body))
 		}
 	}
 
