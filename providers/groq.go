@@ -109,55 +109,40 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 		Role:  MessageRoleAssistant,
 	}
 
-	if len(g.Choices[0].Message.ToolCalls) > 0 {
-		response.Content = g.Choices[0].Message.Reasoning
-		response.ToolCalls = g.Choices[0].Message.ToolCalls
-		return GenerateResponse{
-			Provider: GroqDisplayName,
-			Response: response,
-		}
+	choice := g.Choices[0]
+	resp := GenerateResponse{
+		Provider: GroqDisplayName,
+		Response: response,
 	}
 
-	if g.Choices[0].Message.Content != "" {
-		response.Content = g.Choices[0].Message.Content
-		response.Role = g.Choices[0].Message.Role
-		return GenerateResponse{
-			Provider:  GroqDisplayName,
-			Response:  response,
-			EventType: EventContentDelta,
-		}
+	switch {
+	case len(choice.Message.ToolCalls) > 0:
+		resp.Response.Content = choice.Message.Reasoning
+		resp.Response.ToolCalls = choice.Message.ToolCalls
+		return resp
+
+	case choice.Message.Content != "":
+		resp.Response.Content = choice.Message.Content
+		resp.Response.Role = choice.Message.Role
+		resp.EventType = EventContentDelta
+		return resp
+
+	case choice.Delta.Role == MessageRoleAssistant && choice.Delta.Content == "":
+		resp.EventType = EventMessageStart
+		return resp
+
+	case choice.Delta.Content != "":
+		resp.Response.Content = choice.Delta.Content
+		resp.EventType = EventContentDelta
+		return resp
+
+	case choice.FinishReason == "stop":
+		resp.EventType = EventStreamEnd
+		return resp
 	}
 
-	if g.Choices[0].Delta.Role == MessageRoleAssistant && g.Choices[0].Delta.Content == "" {
-		return GenerateResponse{
-			Provider:  GroqDisplayName,
-			Response:  response,
-			EventType: EventMessageStart,
-		}
-	}
-
-	if g.Choices[0].Delta.Content != "" {
-		response.Content = g.Choices[0].Delta.Content
-		return GenerateResponse{
-			Provider:  GroqDisplayName,
-			Response:  response,
-			EventType: EventContentDelta,
-		}
-	}
-
-	if g.Choices[0].FinishReason == "stop" {
-		return GenerateResponse{
-			Provider:  GroqDisplayName,
-			Response:  response,
-			EventType: EventStreamEnd,
-		}
-	}
-
-	return GenerateResponse{
-		Provider:  GroqDisplayName,
-		Response:  response,
-		EventType: EventContentDelta,
-	}
+	resp.EventType = EventContentDelta
+	return resp
 }
 
 type GroqStreamParser struct {
