@@ -18,6 +18,7 @@ services:
           cpus: "0.1"
     networks:
       - app_network
+      - external_network
 
   # inference-gateway-debug:
   #   build:
