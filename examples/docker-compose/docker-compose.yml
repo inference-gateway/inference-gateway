@@ -31,6 +31,7 @@ services:
     image: alpine/curl:latest
     networks:
       - app_network
+      - external_network
 
   ollama:
     image: ollama/ollama:latest
@@ -166,4 +167,5 @@ networks:
   app_network:
     internal: true
   external_network:
-    external: true
+    driver: bridge
+    internal: false
