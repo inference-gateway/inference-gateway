@@ -137,7 +137,11 @@ func Float64Ptr(v float64) *float64 {
 	return &v
 }
 
-func intPtr(v int) *int {
+func IntPtr(v int) *int {
+	return &v
+}
+
+func BoolPtr(v bool) *bool {
 	return &v
 }
 
@@ -279,9 +283,7 @@ func NewStreamParser(l logger.Logger, provider string) (StreamParser, error) {
 			logger: l,
 		}, nil
 	case GroqID:
-		return &GroqStreamParser{
-			logger: l,
-		}, nil
+		return NewGroqStreamParser(l), nil
 	case CloudflareID:
 		return &CloudflareStreamParser{
 			logger: l,

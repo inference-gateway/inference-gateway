@@ -48,7 +48,7 @@ func (r *GenerateRequest) TransformAnthropic() GenerateRequestAnthropic {
 	return GenerateRequestAnthropic{
 		Model:     r.Model,
 		Messages:  r.Messages,
-		MaxTokens: intPtr(1024), // TODO - make it possible to pass this in the request, depending on the provider
+		MaxTokens: IntPtr(1024), // TODO - make it possible to pass this in the request, depending on the provider
 	}
 }
 

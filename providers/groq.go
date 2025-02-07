@@ -145,6 +145,12 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 	return resp
 }
 
+func NewGroqStreamParser(logger logger.Logger) *GroqStreamParser {
+	return &GroqStreamParser{
+		logger: logger,
+	}
+}
+
 type GroqStreamParser struct {
 	logger logger.Logger
 }
