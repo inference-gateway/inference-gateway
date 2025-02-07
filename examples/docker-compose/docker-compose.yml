@@ -54,6 +54,14 @@ services:
       - type: volume
         source: docker-compose-ollama-data
         target: /.ollama
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 8G
+        reservations:
+          memory: 4G
+          cpus: "3"
     depends_on:
       ollama-model-downloader:
         condition: service_completed_successfully
@@ -66,8 +74,17 @@ services:
     environment:
       HOME: /
       OLLAMA_HOST: 127.0.0.0:8080
+      OLLAMA_MAX_LOADED_MODELS: 0
     command: >
       "ollama serve & sleep 5 && ollama pull deepseek-r1:1.5b"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          memory: 512M
+          cpus: "0.5"
     volumes:
       - type: volume
         source: docker-compose-ollama-data
