@@ -133,7 +133,7 @@ type ResponseTokens struct {
 	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
 }
 
-func float64Ptr(v float64) *float64 {
+func Float64Ptr(v float64) *float64 {
 	return &v
 }
 

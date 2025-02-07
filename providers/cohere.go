@@ -81,7 +81,7 @@ func (r *GenerateRequest) TransformCohere() GenerateRequestCohere {
 		Messages:    r.Messages,
 		Model:       r.Model,
 		Stream:      r.Stream,
-		Temperature: float64Ptr(0.3), // Default temperature as per docs
+		Temperature: Float64Ptr(0.3), // Default temperature as per docs
 	}
 }
 

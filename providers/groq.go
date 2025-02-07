@@ -58,7 +58,7 @@ func (r *GenerateRequest) TransformGroq() GenerateRequestGroq {
 		Messages:    r.Messages,
 		Model:       r.Model,
 		Stream:      &r.Stream,
-		Temperature: float64Ptr(1.0),
+		Temperature: Float64Ptr(1.0),
 		Tools:       r.Tools,
 	}
 }

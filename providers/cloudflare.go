@@ -63,7 +63,7 @@ func (r *GenerateRequest) TransformCloudflare() GenerateRequestCloudflare {
 		Messages:    r.Messages,
 		Model:       r.Model,
 		Stream:      &r.Stream,
-		Temperature: float64Ptr(0.7),
+		Temperature: Float64Ptr(0.7),
 	}
 }
 

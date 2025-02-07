@@ -90,7 +90,7 @@ func (r *GenerateRequest) TransformOllama() GenerateRequestOllama {
 		Messages: r.Messages,
 		Stream:   r.Stream,
 		Options: &OllamaOptions{
-			Temperature: float64Ptr(0.7),
+			Temperature: Float64Ptr(0.7),
 		},
 		Tools: r.Tools,
 	}

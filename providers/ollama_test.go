@@ -1,85 +1,86 @@
-package providers
+package providers_test
 
 import (
 	"testing"
 
+	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestTransformOllama(t *testing.T) {
 	tests := []struct {
 		name     string
-		request  GenerateRequest
-		expected GenerateRequestOllama
+		request  providers.GenerateRequest
+		expected providers.GenerateRequestOllama
 	}{
 		{
 			name: "basic user message only",
-			request: GenerateRequest{
+			request: providers.GenerateRequest{
 				Model: "llama2",
-				Messages: []Message{
-					{Role: MessageRoleUser, Content: "Hello"},
+				Messages: []providers.Message{
+					{Role: providers.MessageRoleUser, Content: "Hello"},
 				},
 				Stream: false,
 			},
-			expected: GenerateRequestOllama{
+			expected: providers.GenerateRequestOllama{
 				Model: "llama2",
-				Messages: []Message{
+				Messages: []providers.Message{
 					{
-						Role:    MessageRoleUser,
+						Role:    providers.MessageRoleUser,
 						Content: "Hello",
 					},
 				},
 				Stream: false,
-				Options: &OllamaOptions{
-					Temperature: float64Ptr(0.7),
+				Options: &providers.OllamaOptions{
+					Temperature: providers.Float64Ptr(0.7),
 				},
 			},
 		},
 		{
 			name: "with system message",
-			request: GenerateRequest{
+			request: providers.GenerateRequest{
 				Model: "llama2",
-				Messages: []Message{
-					{Role: MessageRoleSystem, Content: "You are a helpful assistant"},
-					{Role: MessageRoleUser, Content: "Hello"},
+				Messages: []providers.Message{
+					{Role: providers.MessageRoleSystem, Content: "You are a helpful assistant"},
+					{Role: providers.MessageRoleUser, Content: "Hello"},
 				},
 				Stream: true,
 			},
-			expected: GenerateRequestOllama{
+			expected: providers.GenerateRequestOllama{
 				Model: "llama2",
-				Messages: []Message{
+				Messages: []providers.Message{
 					{
-						Role:    MessageRoleSystem,
+						Role:    providers.MessageRoleSystem,
 						Content: "You are a helpful assistant",
 					},
 					{
-						Role:    MessageRoleUser,
+						Role:    providers.MessageRoleUser,
 						Content: "Hello",
 					},
 				},
 				Stream: true,
-				Options: &OllamaOptions{
-					Temperature: float64Ptr(0.7),
+				Options: &providers.OllamaOptions{
+					Temperature: providers.Float64Ptr(0.7),
 				},
 			},
 		},
 		{
 			name: "with tools",
-			request: GenerateRequest{
+			request: providers.GenerateRequest{
 				Model: "llama2",
-				Messages: []Message{
-					{Role: MessageRoleUser, Content: "Calculate 2+2"},
+				Messages: []providers.Message{
+					{Role: providers.MessageRoleUser, Content: "Calculate 2+2"},
 				},
 				Stream: false,
-				Tools: []Tool{
+				Tools: []providers.Tool{
 					{
 						Type: "function",
-						Function: &FunctionTool{
+						Function: &providers.FunctionTool{
 							Name:        "calculate",
 							Description: "Calculate a math expression",
-							Parameters: ToolParams{
+							Parameters: providers.ToolParams{
 								Type: "object",
-								Properties: map[string]ToolProperty{
+								Properties: map[string]providers.ToolProperty{
 									"expression": {
 										Type:        "string",
 										Description: "Math expression to evaluate",
@@ -91,27 +92,27 @@ func TestTransformOllama(t *testing.T) {
 					},
 				},
 			},
-			expected: GenerateRequestOllama{
+			expected: providers.GenerateRequestOllama{
 				Model: "llama2",
-				Messages: []Message{
+				Messages: []providers.Message{
 					{
-						Role:    MessageRoleUser,
+						Role:    providers.MessageRoleUser,
 						Content: "Calculate 2+2",
 					},
 				},
 				Stream: false,
-				Options: &OllamaOptions{
-					Temperature: float64Ptr(0.7),
+				Options: &providers.OllamaOptions{
+					Temperature: providers.Float64Ptr(0.7),
 				},
-				Tools: []Tool{
+				Tools: []providers.Tool{
 					{
 						Type: "function",
-						Function: &FunctionTool{
+						Function: &providers.FunctionTool{
 							Name:        "calculate",
 							Description: "Calculate a math expression",
-							Parameters: ToolParams{
+							Parameters: providers.ToolParams{
 								Type: "object",
-								Properties: map[string]ToolProperty{
+								Properties: map[string]providers.ToolProperty{
 									"expression": {
 										Type:        "string",
 										Description: "Math expression to evaluate",
@@ -126,27 +127,27 @@ func TestTransformOllama(t *testing.T) {
 		},
 		{
 			name: "multiple messages with system",
-			request: GenerateRequest{
+			request: providers.GenerateRequest{
 				Model: "llama2",
-				Messages: []Message{
-					{Role: MessageRoleSystem, Content: "You are a helpful assistant"},
-					{Role: MessageRoleUser, Content: "Hi"},
-					{Role: MessageRoleAssistant, Content: "Hello! How can I help?"},
-					{Role: MessageRoleUser, Content: "What's the weather?"},
+				Messages: []providers.Message{
+					{Role: providers.MessageRoleSystem, Content: "You are a helpful assistant"},
+					{Role: providers.MessageRoleUser, Content: "Hi"},
+					{Role: providers.MessageRoleAssistant, Content: "Hello! How can I help?"},
+					{Role: providers.MessageRoleUser, Content: "What's the weather?"},
 				},
 				Stream: true,
 			},
-			expected: GenerateRequestOllama{
+			expected: providers.GenerateRequestOllama{
 				Model: "llama2",
-				Messages: []Message{
-					{Role: MessageRoleSystem, Content: "You are a helpful assistant"},
-					{Role: MessageRoleUser, Content: "Hi"},
-					{Role: MessageRoleAssistant, Content: "Hello! How can I help?"},
-					{Role: MessageRoleUser, Content: "What's the weather?"},
+				Messages: []providers.Message{
+					{Role: providers.MessageRoleSystem, Content: "You are a helpful assistant"},
+					{Role: providers.MessageRoleUser, Content: "Hi"},
+					{Role: providers.MessageRoleAssistant, Content: "Hello! How can I help?"},
+					{Role: providers.MessageRoleUser, Content: "What's the weather?"},
 				},
 				Stream: true,
-				Options: &OllamaOptions{
-					Temperature: float64Ptr(0.7),
+				Options: &providers.OllamaOptions{
+					Temperature: providers.Float64Ptr(0.7),
 				},
 			},
 		},
