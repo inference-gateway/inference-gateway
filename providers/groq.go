@@ -73,11 +73,6 @@ type GroqUsage struct {
 	TotalTime        float64 `json:"total_time"`
 }
 
-type GroqMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
 type GroqDelta struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -85,7 +80,7 @@ type GroqDelta struct {
 
 type GroqChoice struct {
 	Index        int         `json:"index"`
-	Message      GroqMessage `json:"message"`
+	Message      Message     `json:"message"`
 	Delta        GroqDelta   `json:"delta,omitempty"`
 	LogProbs     interface{} `json:"logprobs"`
 	FinishReason string      `json:"finish_reason"`
@@ -112,6 +107,15 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 	response := ResponseTokens{
 		Model: g.Model,
 		Role:  MessageRoleAssistant,
+	}
+
+	if len(g.Choices[0].Message.ToolCalls) > 0 {
+		response.Content = g.Choices[0].Message.Reasoning
+		response.ToolCalls = g.Choices[0].Message.ToolCalls
+		return GenerateResponse{
+			Provider: GroqDisplayName,
+			Response: response,
+		}
 	}
 
 	if g.Choices[0].Message.Content != "" {
