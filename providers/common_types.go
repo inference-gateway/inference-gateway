@@ -116,10 +116,11 @@ type ListModelsResponse struct {
 }
 
 type Message struct {
-	Content   string     `json:"content"`
-	Role      string     `json:"role"`
-	ToolCalls []ToolCall `json:"tool_calls,omitempty"`
-	Reasoning string     `json:"reasoning,omitempty"`
+	Content    string     `json:"content"`
+	Role       string     `json:"role"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
+	Reasoning  string     `json:"reasoning,omitempty"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
 }
 
 type Model struct {
