@@ -103,7 +103,6 @@ func TestGenerateResponseGroqTransform(t *testing.T) {
 					Model:   "llama2",
 					Role:    "assistant",
 				},
-				EventType: providers.EventContentDelta,
 			},
 		},
 		{

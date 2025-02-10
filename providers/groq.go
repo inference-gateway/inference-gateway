@@ -93,7 +93,7 @@ type GenerateResponseGroq struct {
 	Created           int64        `json:"created"`
 	Model             string       `json:"model"`
 	Choices           []GroqChoice `json:"choices"`
-	Usage             GroqUsage    `json:"usage"`
+	Usage             *GroqUsage   `json:"usage,omitempty"`
 	SystemFingerprint string       `json:"system_fingerprint"`
 	XGroq             struct {
 		ID string `json:"id"`
@@ -110,12 +110,24 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 		Role:  MessageRoleAssistant,
 	}
 
-	choice := g.Choices[0]
 	resp := GenerateResponse{
 		Provider: GroqDisplayName,
 		Response: response,
 	}
 
+	if g.Usage != nil {
+		resp.Usage = &Usage{
+			QueueTime:        g.Usage.QueueTime,
+			PromptTokens:     g.Usage.PromptTokens,
+			PromptTime:       g.Usage.PromptTime,
+			CompletionTokens: g.Usage.CompletionTokens,
+			CompletionTime:   g.Usage.CompletionTime,
+			TotalTokens:      g.Usage.TotalTokens,
+			TotalTime:        g.Usage.TotalTime,
+		}
+	}
+
+	choice := g.Choices[0]
 	switch {
 	case len(choice.Message.ToolCalls) > 0:
 		resp.Response.Content = choice.Message.Reasoning
@@ -125,7 +137,6 @@ func (g *GenerateResponseGroq) Transform() GenerateResponse {
 	case choice.Message.Content != "":
 		resp.Response.Content = choice.Message.Content
 		resp.Response.Role = choice.Message.Role
-		resp.EventType = EventContentDelta
 		return resp
 
 	case choice.Delta.Role == MessageRoleAssistant && choice.Delta.Content == "":
