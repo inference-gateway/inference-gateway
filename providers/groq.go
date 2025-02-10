@@ -35,17 +35,17 @@ func (l *ListModelsResponseGroq) Transform() ListModelsResponse {
 }
 
 type GenerateRequestGroq struct {
-	Messages         []Message `json:"messages"`
-	Model            string    `json:"model"`
-	Temperature      *float64  `json:"temperature,omitempty"`
-	MaxTokens        *int      `json:"max_tokens,omitempty"`
-	TopP             *float64  `json:"top_p,omitempty"`
-	FrequencyPenalty *float64  `json:"frequency_penalty,omitempty"`
-	PresencePenalty  *float64  `json:"presence_penalty,omitempty"`
-	Stream           *bool     `json:"stream,omitempty"`
-	Stop             []string  `json:"stop,omitempty"`
-	User             *string   `json:"user,omitempty"`
-	ResponseFormat   *struct {
+	Messages            []Message `json:"messages"`
+	Model               string    `json:"model"`
+	Temperature         *float64  `json:"temperature,omitempty"`
+	MaxCompletionTokens *int      `json:"max_completion_tokens,omitempty"`
+	TopP                *float64  `json:"top_p,omitempty"`
+	FrequencyPenalty    *float64  `json:"frequency_penalty,omitempty"`
+	PresencePenalty     *float64  `json:"presence_penalty,omitempty"`
+	Stream              *bool     `json:"stream,omitempty"`
+	Stop                []string  `json:"stop,omitempty"`
+	User                *string   `json:"user,omitempty"`
+	ResponseFormat      *struct {
 		Type string `json:"type"`
 	} `json:"response_format,omitempty"`
 	Seed        *int    `json:"seed,omitempty"`
@@ -55,12 +55,12 @@ type GenerateRequestGroq struct {
 
 func (r *GenerateRequest) TransformGroq() GenerateRequestGroq {
 	return GenerateRequestGroq{
-		Messages:    r.Messages,
-		Model:       r.Model,
-		Stream:      &r.Stream,
-		Temperature: Float64Ptr(1.0),
-		Tools:       r.Tools,
-		MaxTokens:   r.MaxTokens,
+		Messages:            r.Messages,
+		Model:               r.Model,
+		Stream:              &r.Stream,
+		Temperature:         Float64Ptr(1.0),
+		Tools:               r.Tools,
+		MaxCompletionTokens: r.MaxTokens,
 	}
 }
 
