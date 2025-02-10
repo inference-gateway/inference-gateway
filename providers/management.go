@@ -27,7 +27,7 @@ type Provider interface {
 
 	// Fetchers
 	ListModels(ctx context.Context) (ListModelsResponse, error)
-	GenerateTokens(ctx context.Context, model string, messages []Message, tools []Tool) (GenerateResponse, error)
+	GenerateTokens(ctx context.Context, model string, messages []Message, tools []Tool, maxTokens int) (GenerateResponse, error)
 	StreamTokens(ctx context.Context, model string, messages []Message) (<-chan GenerateResponse, error)
 }
 
@@ -159,7 +159,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 	}
 }
 
-func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, messages []Message, tools []Tool) (GenerateResponse, error) {
+func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, messages []Message, tools []Tool, maxTokens int) (GenerateResponse, error) {
 	if p == nil {
 		return GenerateResponse{}, errors.New("provider cannot be nil")
 	}
@@ -176,9 +176,10 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 	}
 
 	genRequest := GenerateRequest{
-		Model:    model,
-		Messages: messages,
-		Tools:    tools,
+		Model:     model,
+		Messages:  messages,
+		Tools:     tools,
+		MaxTokens: maxTokens,
 	}
 
 	switch p.GetID() {

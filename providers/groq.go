@@ -38,7 +38,7 @@ type GenerateRequestGroq struct {
 	Messages            []Message `json:"messages"`
 	Model               string    `json:"model"`
 	Temperature         *float64  `json:"temperature,omitempty"`
-	MaxCompletionTokens *int      `json:"max_completion_tokens,omitempty"`
+	MaxCompletionTokens int       `json:"max_completion_tokens,omitempty"`
 	TopP                *float64  `json:"top_p,omitempty"`
 	FrequencyPenalty    *float64  `json:"frequency_penalty,omitempty"`
 	PresencePenalty     *float64  `json:"presence_penalty,omitempty"`

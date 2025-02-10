@@ -88,7 +88,7 @@ type GenerateRequest struct {
 	Stream    bool      `json:"stream"`
 	SSEvents  bool      `json:"ssevents"`
 	Tools     []Tool    `json:"tools"`
-	MaxTokens *int      `json:"max_tokens,omitempty"`
+	MaxTokens int       `json:"max_tokens,omitempty"`
 }
 
 // ToolCall represents a tool invocation by the LLM

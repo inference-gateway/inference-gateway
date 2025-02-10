@@ -420,7 +420,7 @@ func BenchmarkGenerateTokens(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				resp, err := provider.GenerateTokens(context.Background(), "test-model", messages, []providers.Tool{})
+				resp, err := provider.GenerateTokens(context.Background(), "test-model", messages, []providers.Tool{}, 200)
 				if err != nil {
 					b.Fatalf("provider %s failed: %v\nResponse body: %s", providerID, err, responses[providerID].body)
 				}

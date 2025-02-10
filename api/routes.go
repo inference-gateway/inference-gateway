@@ -431,7 +431,7 @@ func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 		return
 	}
 
-	response, err := provider.GenerateTokens(ctx, req.Model, req.Messages, req.Tools)
+	response, err := provider.GenerateTokens(ctx, req.Model, req.Messages, req.Tools, req.MaxTokens)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
 			router.logger.Error("request timed out", err, "provider", c.Param("provider"))
