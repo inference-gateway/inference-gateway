@@ -60,6 +60,7 @@ func (r *GenerateRequest) TransformGroq() GenerateRequestGroq {
 		Stream:      &r.Stream,
 		Temperature: Float64Ptr(1.0),
 		Tools:       r.Tools,
+		MaxTokens:   r.MaxTokens,
 	}
 }
 

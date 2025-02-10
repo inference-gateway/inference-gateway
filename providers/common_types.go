@@ -83,11 +83,12 @@ type Tool struct {
 
 // Common response and request types
 type GenerateRequest struct {
-	Messages []Message `json:"messages"`
-	Model    string    `json:"model"`
-	Stream   bool      `json:"stream"`
-	SSEvents bool      `json:"ssevents"`
-	Tools    []Tool    `json:"tools"`
+	Messages  []Message `json:"messages"`
+	Model     string    `json:"model"`
+	Stream    bool      `json:"stream"`
+	SSEvents  bool      `json:"ssevents"`
+	Tools     []Tool    `json:"tools"`
+	MaxTokens *int      `json:"max_tokens,omitempty"`
 }
 
 // ToolCall represents a tool invocation by the LLM
