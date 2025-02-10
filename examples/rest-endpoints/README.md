@@ -42,6 +42,7 @@ curl -X POST http://localhost:8080/llms/ollama/generate -d '{
   ],
   "stream": true,
   "ssevents": true
+  "max_tokens": 40
 }' | jq .
 ```
 
@@ -74,7 +75,8 @@ curl -X POST http://localhost:8080/llms/groq/generate -d '{
         }
       }
     }
-  ]
+  ],
+  "max_tokens": 40
 }' | jq .
 ```
 
