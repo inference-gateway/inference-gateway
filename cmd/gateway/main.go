@@ -56,8 +56,6 @@ func main() {
 			logger.Error("Failed to initialize telemetry middleware: %v", err)
 			return
 		}
-	} else {
-		telemetry, _ = middlewares.NewTelemetryMiddleware(cfg, nil, logger)
 	}
 
 	// Initialize OIDC authenticator middleware
