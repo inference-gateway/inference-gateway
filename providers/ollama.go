@@ -131,15 +131,6 @@ func (g *GenerateResponseOllama) Transform() GenerateResponse {
 			Role:      g.Message.Role,
 			ToolCalls: g.Message.ToolCalls,
 		},
-		Usage: &Usage{
-			PromptTokens:     g.PromptEvalCount,
-			CompletionTokens: g.EvalCount,
-			TotalTokens:      g.PromptEvalCount + g.EvalCount,
-			QueueTime:        0.0,                              // Ollama does not provide queue time
-			PromptTime:       g.PromptEvalDuration / 1000000.0, // Convert ns to ms
-			CompletionTime:   g.EvalDuration / 1000000.0,       // Convert ns to ms
-			TotalTime:        g.TotalDuration / 1000000.0,      // Convert ns to ms
-		},
 	}
 
 	if isStreaming {
@@ -149,6 +140,16 @@ func (g *GenerateResponseOllama) Transform() GenerateResponse {
 		response.EventType = EventContentDelta
 		if g.Done && g.DoneReason == "stop" {
 			response.EventType = EventStreamEnd
+		}
+	} else {
+		response.Usage = &Usage{
+			PromptTokens:     g.PromptEvalCount,
+			CompletionTokens: g.EvalCount,
+			TotalTokens:      g.PromptEvalCount + g.EvalCount,
+			QueueTime:        0.0,
+			PromptTime:       g.PromptEvalDuration / 1000000.0,
+			CompletionTime:   g.EvalDuration / 1000000.0,
+			TotalTime:        g.TotalDuration / 1000000.0,
 		}
 	}
 
