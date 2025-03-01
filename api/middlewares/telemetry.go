@@ -60,15 +60,16 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		model := requestBody.Model
 
 		provider := "unknown"
-		if strings.Contains(c.Request.URL.Path, "/openai/") {
+		switch {
+		case strings.Contains(c.Request.URL.Path, "/openai/"):
 			provider = "openai"
-		} else if strings.Contains(c.Request.URL.Path, "/anthropic/") {
+		case strings.Contains(c.Request.URL.Path, "/anthropic/"):
 			provider = "anthropic"
-		} else if strings.Contains(c.Request.URL.Path, "/groq/") {
+		case strings.Contains(c.Request.URL.Path, "/groq/"):
 			provider = "groq"
-		} else if strings.Contains(c.Request.URL.Path, "/cohere/") {
+		case strings.Contains(c.Request.URL.Path, "/cohere/"):
 			provider = "cohere"
-		} else if strings.Contains(c.Request.URL.Path, "/ollama/") {
+		case strings.Contains(c.Request.URL.Path, "/ollama/"):
 			provider = "ollama"
 		}
 
