@@ -1,0 +1,66 @@
+---
+version: "3"
+
+tasks:
+  cluster-create:
+    desc: Create a local Kubernetes cluster
+    cmds:
+      - k3d cluster create inference-monitoring --api-port 6443 --port '8080:80@loadbalancer'
+
+  cluster-delete:
+    desc: Delete the local Kubernetes cluster
+    cmds:
+      - k3d cluster delete inference-monitoring --all
+
+  deploy:
+    desc: Deploy all components
+    cmds:
+      - task: deploy-monitoring
+      - task: deploy-inference-gateway
+      - echo "All components deployed successfully!"
+
+  deploy-monitoring:
+    desc: Deploy monitoring components
+    cmds:
+      - kubectl apply -f otel-collector/namespace.yaml
+      - kubectl apply -f otel-collector/
+      - kubectl apply -f prometheus/
+      - kubectl apply -f grafana/
+      - kubectl rollout status -n monitoring deployment/otel-collector
+      - kubectl rollout status -n monitoring deployment/prometheus
+      - kubectl rollout status -n monitoring deployment/grafana
+
+  deploy-inference-gateway:
+    desc: Deploy the Inference Gateway
+    cmds:
+      - kubectl apply -f inference-gateway/namespace.yaml
+      - kubectl apply -f inference-gateway/
+      - kubectl rollout status -n inference-gateway deployment/inference-gateway
+
+  undeploy:
+    desc: Undeploy all components
+    cmds:
+      - kubectl delete -f inference-gateway/namespace.yaml --ignore-not-found
+      - kubectl delete -f otel-collector/namespace.yaml --ignore-not-found
+
+  restart-inference-gateway:
+    desc: Restart the Inference Gateway
+    cmds:
+      - kubectl -n inference-gateway rollout restart deployment/inference-gateway
+      - kubectl -n inference-gateway rollout status deployment/inference-gateway
+
+  proxy-grafana:
+    desc: Access Grafana dashboard locally
+    cmds:
+      - kubectl -n monitoring port-forward svc/grafana 3000:3000
+
+  proxy-inference-gateway:
+    desc: Access the Inference Gateway locally
+    cmds:
+      - kubectl -n inference-gateway port-forward svc/inference-gateway 8080:8080
+
+  clean:
+    desc: Clean the project
+    cmds:
+      - task: undeploy
+      - echo "Project cleaned successfully!"
