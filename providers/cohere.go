@@ -99,8 +99,8 @@ type CohereMessage struct {
 }
 
 type CohereUsageUnits struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
+	InputTokens  int64 `json:"input_tokens"`
+	OutputTokens int64 `json:"output_tokens"`
 }
 
 type CohereUsage struct {
@@ -127,6 +127,15 @@ func (g *GenerateResponseCohere) Transform() GenerateResponse {
 			Model:   "N/A",
 			Content: g.Message.Content[0].Text,
 			Role:    "assistant",
+		},
+		Usage: &Usage{
+			PromptTokens:     g.Usage.BilledUnits.InputTokens,
+			CompletionTokens: g.Usage.BilledUnits.OutputTokens,
+			TotalTokens:      g.Usage.BilledUnits.InputTokens + g.Usage.BilledUnits.OutputTokens,
+			QueueTime:        0.0, // Cohere does not provide queue time
+			PromptTime:       0.0, // Cohere does not provide prompt time
+			CompletionTime:   0.0, // Cohere does not provide completion time
+			TotalTime:        0.0, // Cohere does not provide total time
 		},
 	}
 }

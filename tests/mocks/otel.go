@@ -10,10 +10,10 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	config "github.com/inference-gateway/inference-gateway/config"
-	otel "github.com/inference-gateway/inference-gateway/otel"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,16 +42,39 @@ func (m *MockOpenTelemetry) EXPECT() *MockOpenTelemetryMockRecorder {
 }
 
 // Init mocks base method.
-func (m *MockOpenTelemetry) Init(config config.Config) (otel.TracerProvider, error) {
+func (m *MockOpenTelemetry) Init(config config.Config) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", config)
-	ret0, _ := ret[0].(otel.TracerProvider)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Init indicates an expected call of Init.
 func (mr *MockOpenTelemetryMockRecorder) Init(config any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockOpenTelemetry)(nil).Init), config)
+}
+
+// RecordTokenUsage mocks base method.
+func (m *MockOpenTelemetry) RecordTokenUsage(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordTokenUsage", ctx, provider, model, promptTokens, completionTokens, totalTokens)
+}
+
+// RecordTokenUsage indicates an expected call of RecordTokenUsage.
+func (mr *MockOpenTelemetryMockRecorder) RecordTokenUsage(ctx, provider, model, promptTokens, completionTokens, totalTokens any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordTokenUsage", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordTokenUsage), ctx, provider, model, promptTokens, completionTokens, totalTokens)
+}
+
+// RecordTokenUsageWithTime mocks base method.
+func (m *MockOpenTelemetry) RecordTokenUsageWithTime(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64, queueTime, promptTime, completionTime, totalTime float64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordTokenUsageWithTime", ctx, provider, model, promptTokens, completionTokens, totalTokens, queueTime, promptTime, completionTime, totalTime)
+}
+
+// RecordTokenUsageWithTime indicates an expected call of RecordTokenUsageWithTime.
+func (mr *MockOpenTelemetryMockRecorder) RecordTokenUsageWithTime(ctx, provider, model, promptTokens, completionTokens, totalTokens, queueTime, promptTime, completionTime, totalTime any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordTokenUsageWithTime", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordTokenUsageWithTime), ctx, provider, model, promptTokens, completionTokens, totalTokens, queueTime, promptTime, completionTime, totalTime)
 }

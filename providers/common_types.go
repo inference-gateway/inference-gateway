@@ -138,11 +138,11 @@ type ResponseTokens struct {
 
 type Usage struct {
 	QueueTime        float64 `json:"queue_time"`
-	PromptTokens     int     `json:"prompt_tokens"`
+	PromptTokens     int64   `json:"prompt_tokens"`
 	PromptTime       float64 `json:"prompt_time"`
-	CompletionTokens int     `json:"completion_tokens"`
+	CompletionTokens int64   `json:"completion_tokens"`
 	CompletionTime   float64 `json:"completion_time"`
-	TotalTokens      int     `json:"total_tokens"`
+	TotalTokens      int64   `json:"total_tokens"`
 	TotalTime        float64 `json:"total_time"`
 }
 
