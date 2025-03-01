@@ -336,6 +336,7 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
 	var req providers.GenerateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		router.logger.Error("failed to decode request", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
 		return
 	}
