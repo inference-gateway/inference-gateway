@@ -5,6 +5,7 @@ ENV ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom \
     CTLPTL_VERSION=0.8.34 \
     K3D_VERSION=v5.7.4 \
     KUBECTL_VERSION=v1.31.0 \
+    HELM_VERSION=v3.17.1 \
     GORELEASER_VERSION=v2.5.1 \
     GOLANG_CI_LINT_VERSION=v1.63.4
 
@@ -27,6 +28,8 @@ RUN apt-get update && \
     # Install kubectl
     curl -sSL https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${architecture_pretty}/kubectl -o /usr/local/bin/kubectl && \
     chmod +x /usr/local/bin/kubectl && \
+    # Install helm
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR=/usr/local/bin HELM_VERSION=${HELM_VERSION} sh && \
     # Install GoReleaser
     curl -sSL https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_Linux_${architecture_pretty}.tar.gz | tar -xzv -C /usr/local/bin goreleaser && \
     # Install golangci-lint
