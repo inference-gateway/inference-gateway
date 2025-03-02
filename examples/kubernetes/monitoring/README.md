@@ -5,6 +5,7 @@ This example demonstrates how to deploy the Inference Gateway with OpenTelemetry
 ## Prerequisites
 
 - Docker
+- ctlptl - CLI for declaratively setting up local Kubernetes clusters
 - k3d - Lightweight Kubernetes distribution
 - kubectl
 - Task - Task runner
