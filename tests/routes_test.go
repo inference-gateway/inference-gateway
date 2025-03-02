@@ -172,6 +172,7 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 			url:  "/llms/test-provider/generate",
 			body: "invalid json",
 			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				ml.EXPECT().Error("failed to decode request", gomock.Any())
 			},
 			expectedCode: http.StatusBadRequest,
 			expectedBody: api.ErrorResponse{Error: "Failed to decode request"},

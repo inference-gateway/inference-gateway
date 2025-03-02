@@ -16,6 +16,7 @@ import (
 	l "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -27,7 +28,7 @@ func main() {
 		return
 	}
 
-	var tp otel.TracerProvider
+	// Initialize logger
 	var logger l.Logger
 	logger, err = l.NewLogger(cfg.Environment)
 	if err != nil {
@@ -35,45 +36,75 @@ func main() {
 		return
 	}
 
+	// Initialize OpenTelemetry Prometheus exporter Server
+	var telemetryImpl otel.OpenTelemetry
 	if cfg.EnableTelemetry {
-		otel := &otel.OpenTelemetryImpl{}
-		tp, err = otel.Init(cfg)
+		telemetryImpl = &otel.OpenTelemetryImpl{}
+		err := telemetryImpl.Init(cfg)
 		if err != nil {
 			logger.Error("OpenTelemetry init error", err)
 			return
 		}
-		defer func() {
-			if err := tp.Shutdown(context.Background()); err != nil {
-				logger.Error("Tracer shutdown error", err)
+
+		metricsMux := http.NewServeMux()
+		metricsMux.Handle("/metrics", promhttp.Handler())
+
+		logger.Info("Telemetry initialized successfully")
+
+		metricsServer := &http.Server{
+			Addr:         ":9464",
+			Handler:      metricsMux,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+			IdleTimeout:  30 * time.Second,
+		}
+
+		go func() {
+			logger.Info("Starting metrics server", "port", "9464")
+			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Error("Metrics server failed", err)
 			}
 		}()
-		logger.Info("OpenTelemetry initialized")
-	} else {
-		logger.Info("OpenTelemetry is disabled")
+
+		defer func() {
+			logger.Info("Shutting down metrics server...")
+			ctxMetrics, cancelMetrics := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancelMetrics()
+
+			if err := metricsServer.Shutdown(ctxMetrics); err != nil {
+				logger.Error("Metrics server shutdown error", err)
+			} else {
+				logger.Info("Metrics server gracefully stopped")
+			}
+		}()
+
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := telemetryImpl.ShutDown(ctx); err != nil {
+				logger.Error("Error shutting down telemetry", err)
+			}
+		}()
 	}
 
-	ctx := context.Background()
-	var span otel.TraceSpan
-	if cfg.EnableTelemetry {
-		_, span = tp.Tracer(cfg.ApplicationName).Start(ctx, "main")
-		defer span.End()
-	}
-
+	// Initialize logger middleware
 	loggerMiddleware, err := middlewares.NewLoggerMiddleware(&logger)
 	if err != nil {
 		logger.Error("Failed to initialize logger middleware: %v", err)
 		return
 	}
 
+	// Initialize telemetry middleware
 	var telemetry middlewares.Telemetry
 	if cfg.EnableTelemetry {
-		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, tp)
+		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, logger)
 		if err != nil {
 			logger.Error("Failed to initialize telemetry middleware: %v", err)
 			return
 		}
 	}
 
+	// Initialize OIDC authenticator middleware
 	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(logger, cfg)
 	if err != nil {
 		logger.Error("Failed to initialize OIDC authenticator: %v", err)
@@ -87,7 +118,6 @@ func main() {
 
 	clientConfig, err := providers.NewClientConfig()
 	if err != nil {
-		span.RecordError(err)
 		log.Printf("fatal: failed to initialize client configuration: %v", err)
 		return
 	}
@@ -120,9 +150,6 @@ func main() {
 
 	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
 		go func() {
-			if cfg.EnableTelemetry {
-				span.AddEvent("Starting Inference Gateway with TLS")
-			}
 			logger.Info("Starting Inference Gateway with TLS", "port", cfg.Server.Port)
 
 			if err := server.ListenAndServeTLS(cfg.Server.TlsCertPath, cfg.Server.TlsKeyPath); err != nil && err != http.ErrServerClosed {
@@ -131,9 +158,6 @@ func main() {
 		}()
 	} else {
 		go func() {
-			if cfg.EnableTelemetry {
-				span.AddEvent("Starting Inference Gateway")
-			}
 			logger.Info("Starting Inference Gateway", "port", cfg.Server.Port)
 
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

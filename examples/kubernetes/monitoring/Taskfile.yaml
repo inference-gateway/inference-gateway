@@ -1,0 +1,111 @@
+---
+version: "3"
+
+tasks:
+  cluster-create:
+    desc: Create a local Kubernetes cluster with Grafana Operator
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - task: deploy-operators
+
+  cluster-delete:
+    desc: Delete the local Kubernetes cluster
+    cmds:
+      - ctlptl delete -f Cluster.yaml --cascade=true
+
+  deploy-operators:
+    desc: Deploy all needed operators to kube-system namespace
+    cmds:
+      - helm repo add grafana https://grafana.github.io/helm-charts
+      - helm repo update
+      - |
+        helm upgrade --install \
+          grafana-operator grafana/grafana-operator \
+          --namespace kube-system \
+          --create-namespace \
+          --version v5.16.0 \
+          --set watch.namespaces={monitoring} \
+          --wait && \
+          echo "Grafana Operator installed successfully!"
+      - |
+        helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+        helm repo update
+      - |
+        helm upgrade --install \
+          opentelemetry-operator open-telemetry/opentelemetry-operator \
+          --namespace kube-system \
+          --create-namespace \
+          --version 0.81.0 \
+          --set admissionWebhooks.certManager.enabled=false \
+          --set manager.collectorImage.repository=ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0 \
+          --wait && \
+          echo "OpenTelemetry Operator installed successfully!"
+      - |
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo update
+      - |
+        helm upgrade --install \
+          prometheus-operator prometheus-community/kube-prometheus-stack \
+          --namespace kube-system \
+          --create-namespace \
+          --version 69.6.0 \
+          --set prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
+          --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+          --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+          --wait && \
+          echo "Prometheus Operator installed successfully!"
+      - echo "All operators deployed successfully!"
+
+  deploy:
+    desc: Deploy all components
+    cmds:
+      - task: deploy-monitoring
+      - task: deploy-inference-gateway
+      - echo "All components deployed successfully!"
+
+  deploy-monitoring:
+    desc: Deploy monitoring components
+    cmds:
+      - kubectl create namespace monitoring --ignore-already-exists
+      - kubectl label namespace monitoring monitoring=true --overwrite
+      - kubectl label namespace inference-gateway monitoring=true --overwrite
+      - kubectl label namespace kube-system monitoring=true --overwrite
+      - kubectl apply -f otel/
+      - kubectl apply -f prometheus/
+      - kubectl apply -f grafana/
+      - echo "Monitoring stack deployed successfully!"
+
+  deploy-inference-gateway:
+    desc: Deploy the Inference Gateway
+    cmds:
+      - kubectl create namespace inference-gateway --ignore-already-exists
+      - kubectl apply -f inference-gateway/
+      - kubectl rollout status -n inference-gateway deployment/inference-gateway
+
+  undeploy:
+    desc: Undeploy all components
+    cmds:
+      - kubectl delete -f inference-gateway/namespace.yaml --ignore-not-found
+      - kubectl delete -f otel-collector/namespace.yaml --ignore-not-found
+
+  restart-inference-gateway:
+    desc: Restart the Inference Gateway
+    cmds:
+      - kubectl -n inference-gateway rollout restart deployment/inference-gateway
+      - kubectl -n inference-gateway rollout status deployment/inference-gateway
+
+  proxy-grafana:
+    desc: Access Grafana dashboard locally
+    cmds:
+      - kubectl -n monitoring port-forward svc/grafana 3000:3000
+
+  proxy-inference-gateway:
+    desc: Access the Inference Gateway locally
+    cmds:
+      - kubectl -n inference-gateway port-forward svc/inference-gateway 8080:8080
+
+  clean:
+    desc: Clean the project
+    cmds:
+      - task: undeploy
+      - echo "Project cleaned successfully!"

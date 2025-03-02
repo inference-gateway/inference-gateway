@@ -104,12 +104,12 @@ type GenerateResponseOllama struct {
 	Done               bool    `json:"done"`
 	DoneReason         string  `json:"done_reason,omitempty"`
 	Context            []int   `json:"context,omitempty"`
-	TotalDuration      int64   `json:"total_duration,omitempty"`
-	LoadDuration       int64   `json:"load_duration,omitempty"`
-	PromptEvalCount    int     `json:"prompt_eval_count,omitempty"`
-	PromptEvalDuration int64   `json:"prompt_eval_duration,omitempty"`
-	EvalCount          int     `json:"eval_count,omitempty"`
-	EvalDuration       int64   `json:"eval_duration,omitempty"`
+	TotalDuration      float64 `json:"total_duration,omitempty"`
+	LoadDuration       float64 `json:"load_duration,omitempty"`
+	PromptEvalCount    int64   `json:"prompt_eval_count,omitempty"`
+	PromptEvalDuration float64 `json:"prompt_eval_duration,omitempty"`
+	EvalCount          int64   `json:"eval_count,omitempty"`
+	EvalDuration       float64 `json:"eval_duration,omitempty"`
 }
 
 func (g *GenerateResponseOllama) Transform() GenerateResponse {
@@ -140,6 +140,16 @@ func (g *GenerateResponseOllama) Transform() GenerateResponse {
 		response.EventType = EventContentDelta
 		if g.Done && g.DoneReason == "stop" {
 			response.EventType = EventStreamEnd
+		}
+	} else {
+		response.Usage = &Usage{
+			PromptTokens:     g.PromptEvalCount,
+			CompletionTokens: g.EvalCount,
+			TotalTokens:      g.PromptEvalCount + g.EvalCount,
+			QueueTime:        0.0,
+			PromptTime:       g.PromptEvalDuration / 1000000.0,
+			CompletionTime:   g.EvalDuration / 1000000.0,
+			TotalTime:        g.TotalDuration / 1000000.0,
 		}
 	}
 
