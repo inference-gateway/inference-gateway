@@ -16,6 +16,7 @@ import (
 	l "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -27,11 +28,63 @@ func main() {
 		return
 	}
 
+	// Initialize logger
 	var logger l.Logger
 	logger, err = l.NewLogger(cfg.Environment)
 	if err != nil {
 		log.Printf("Logger init error: %v", err)
 		return
+	}
+
+	// Initialize OpenTelemetry Prometheus server
+	var telemetryImpl otel.OpenTelemetry
+	if cfg.EnableTelemetry {
+		telemetryImpl = &otel.OpenTelemetryImpl{}
+		err := telemetryImpl.Init(cfg)
+
+		metricsMux := http.NewServeMux()
+		metricsMux.Handle("/metrics", promhttp.Handler())
+
+		if err != nil {
+			logger.Error("Failed to initialize telemetry", err)
+		} else {
+			logger.Info("Telemetry initialized successfully")
+
+			metricsServer := &http.Server{
+				Addr:         ":9464",
+				Handler:      metricsMux,
+				ReadTimeout:  10 * time.Second,
+				WriteTimeout: 10 * time.Second,
+				IdleTimeout:  30 * time.Second,
+			}
+
+			go func() {
+				logger.Info("Starting metrics server", "port", "9464")
+				if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					logger.Error("Metrics server failed", err)
+				}
+			}()
+
+			defer func() {
+				logger.Info("Shutting down metrics server...")
+				ctxMetrics, cancelMetrics := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancelMetrics()
+
+				if err := metricsServer.Shutdown(ctxMetrics); err != nil {
+					logger.Error("Metrics server shutdown error", err)
+				} else {
+					logger.Info("Metrics server gracefully stopped")
+				}
+			}()
+		}
+
+		defer func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := telemetryImpl.ShutDown(ctx); err != nil {
+				logger.Error("Error shutting down telemetry", err)
+			}
+		}()
 	}
 
 	// Initialize logger middleware

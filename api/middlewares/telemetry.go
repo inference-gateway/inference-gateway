@@ -123,6 +123,16 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 					completionTokens,
 					totalTokens,
 				)
+
+				t.telemetry.RecordLatency(
+					c.Request.Context(),
+					model,
+					provider,
+					queueTime,
+					promptTime,
+					compTime,
+					totalTime,
+				)
 			}
 		}
 	}
