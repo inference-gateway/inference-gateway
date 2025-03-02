@@ -3,14 +3,20 @@ version: "3"
 
 tasks:
   cluster-create:
-    desc: Create a local Kubernetes cluster
+    desc: Create a local Kubernetes cluster with Grafana Operator
     cmds:
-      - k3d cluster create inference-monitoring --api-port 6443 --port '8080:80@loadbalancer'
+      - ctlptl apply -f Cluster.yaml
+      - kubectl create namespace monitoring
+      - helm repo add grafana https://grafana.github.io/helm-charts
+      - helm repo update
+      - helm install grafana-operator grafana/grafana-operator --namespace monitoring
+      - kubectl rollout status -n monitoring deployment/grafana-operator
+      - echo "Kubernetes cluster with Grafana Operator created successfully!"
 
   cluster-delete:
     desc: Delete the local Kubernetes cluster
     cmds:
-      - k3d cluster delete inference-monitoring --all
+      - ctlptl delete -f Cluster.yaml --cascade=true
 
   deploy:
     desc: Deploy all components
