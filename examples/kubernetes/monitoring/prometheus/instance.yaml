@@ -1,0 +1,40 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: inference-gateway-monitoring
+  namespace: monitoring
+  labels:
+    prometheus: inference-gateway
+spec:
+  replicas: 1
+  serviceAccountName: prometheus
+  securityContext:
+    fsGroup: 2000
+    runAsNonRoot: true
+    runAsUser: 1000
+  serviceMonitorSelector:
+    matchLabels:
+      app: inference-gateway
+  podMonitorSelector:
+    matchLabels:
+      app: inference-gateway
+  ruleSelector:
+    matchLabels:
+      app: inference-gateway
+      prometheus: inference-gateway
+      role: alert-rules
+  resources:
+    requests:
+      memory: 400Mi
+      cpu: 200m
+    limits:
+      memory: 800Mi
+      cpu: 500m
+  storage:
+    volumeClaimTemplate:
+      spec:
+        resources:
+          requests:
+            storage: 10Gi
+  retention: 15d

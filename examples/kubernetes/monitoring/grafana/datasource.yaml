@@ -1,0 +1,19 @@
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus-datasource
+  namespace: monitoring
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: "grafana"
+  datasource:
+    name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus.monitoring:9090
+    isDefault: true
+    jsonData:
+      tlsSkipVerify: true
+      timeInterval: "5s"
