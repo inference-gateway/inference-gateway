@@ -92,19 +92,19 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 
 	o.queueTimeHistogram, err4 = o.meter.Float64Histogram("llm.latency.queue_time",
 		metric.WithDescription("Time spent in queue before processing"),
-		metric.WithUnit("s"))
+		metric.WithUnit("ms"))
 
 	o.promptTimeHistogram, err5 = o.meter.Float64Histogram("llm.latency.prompt_time",
 		metric.WithDescription("Time spent processing the prompt"),
-		metric.WithUnit("s"))
+		metric.WithUnit("ms"))
 
 	o.completionTimeHistogram, err6 = o.meter.Float64Histogram("llm.latency.completion_time",
 		metric.WithDescription("Time spent generating the completion"),
-		metric.WithUnit("s"))
+		metric.WithUnit("ms"))
 
 	o.totalTimeHistogram, err7 = o.meter.Float64Histogram("llm.latency.total_time",
 		metric.WithDescription("Total time from request to response"),
-		metric.WithUnit("s"))
+		metric.WithUnit("ms"))
 
 	// Check for errors
 	for _, err := range []error{err1, err2, err3, err4, err5, err6, err7} {

@@ -36,47 +36,47 @@ func main() {
 		return
 	}
 
-	// Initialize OpenTelemetry Prometheus server
+	// Initialize OpenTelemetry Prometheus exporter Server
 	var telemetryImpl otel.OpenTelemetry
 	if cfg.EnableTelemetry {
 		telemetryImpl = &otel.OpenTelemetryImpl{}
 		err := telemetryImpl.Init(cfg)
+		if err != nil {
+			logger.Error("OpenTelemetry init error", err)
+			return
+		}
 
 		metricsMux := http.NewServeMux()
 		metricsMux.Handle("/metrics", promhttp.Handler())
 
-		if err != nil {
-			logger.Error("Failed to initialize telemetry", err)
-		} else {
-			logger.Info("Telemetry initialized successfully")
+		logger.Info("Telemetry initialized successfully")
 
-			metricsServer := &http.Server{
-				Addr:         ":9464",
-				Handler:      metricsMux,
-				ReadTimeout:  10 * time.Second,
-				WriteTimeout: 10 * time.Second,
-				IdleTimeout:  30 * time.Second,
-			}
-
-			go func() {
-				logger.Info("Starting metrics server", "port", "9464")
-				if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-					logger.Error("Metrics server failed", err)
-				}
-			}()
-
-			defer func() {
-				logger.Info("Shutting down metrics server...")
-				ctxMetrics, cancelMetrics := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancelMetrics()
-
-				if err := metricsServer.Shutdown(ctxMetrics); err != nil {
-					logger.Error("Metrics server shutdown error", err)
-				} else {
-					logger.Info("Metrics server gracefully stopped")
-				}
-			}()
+		metricsServer := &http.Server{
+			Addr:         ":9464",
+			Handler:      metricsMux,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+			IdleTimeout:  30 * time.Second,
 		}
+
+		go func() {
+			logger.Info("Starting metrics server", "port", "9464")
+			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Error("Metrics server failed", err)
+			}
+		}()
+
+		defer func() {
+			logger.Info("Shutting down metrics server...")
+			ctxMetrics, cancelMetrics := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancelMetrics()
+
+			if err := metricsServer.Shutdown(ctxMetrics); err != nil {
+				logger.Error("Metrics server shutdown error", err)
+			} else {
+				logger.Info("Metrics server gracefully stopped")
+			}
+		}()
 
 		defer func() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -97,14 +97,7 @@ func main() {
 	// Initialize telemetry middleware
 	var telemetry middlewares.Telemetry
 	if cfg.EnableTelemetry {
-		otelImpl := &otel.OpenTelemetryImpl{}
-		err = otelImpl.Init(cfg)
-		if err != nil {
-			logger.Error("OpenTelemetry init error", err)
-			return
-		}
-
-		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, otelImpl, logger)
+		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, logger)
 		if err != nil {
 			logger.Error("Failed to initialize telemetry middleware: %v", err)
 			return
