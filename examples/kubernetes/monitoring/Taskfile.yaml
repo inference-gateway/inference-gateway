@@ -6,12 +6,15 @@ tasks:
     desc: Create a local Kubernetes cluster with Grafana Operator
     cmds:
       - ctlptl apply -f Cluster.yaml
-      - kubectl create namespace monitoring
       - helm repo add grafana https://grafana.github.io/helm-charts
       - helm repo update
-      - helm install grafana-operator grafana/grafana-operator --namespace monitoring
-      - kubectl rollout status -n monitoring deployment/grafana-operator
-      - echo "Kubernetes cluster with Grafana Operator created successfully!"
+      - |
+        helm upgrade --install \
+          grafana-operator grafana/grafana-operator \
+          --namespace monitoring \
+          --create-namespace \
+          --wait && \
+          echo "Kubernetes cluster with Grafana Operator created successfully!"
 
   cluster-delete:
     desc: Delete the local Kubernetes cluster
