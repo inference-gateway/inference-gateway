@@ -120,7 +120,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(rate(llm_usage_total_tokens_total[5m])) by (model, provider)",
+              "expr": "sum(rate({__name__=~\"llm.usage.total_tokens_total\"}[5m])) by (model, provider)",
               "refId": "A",
               "legendFormat": "{{provider}} - {{model}}"
             }
@@ -211,7 +211,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_total_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "expr": "histogram_quantile(0.95, sum(rate({__name__=~\"llm.latency.total_time_milliseconds_bucket\"}[5m])) by (le, model, provider))",
               "refId": "A",
               "legendFormat": "{{provider}} - {{model}}"
             }
@@ -302,7 +302,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(rate(llm_usage_prompt_tokens_total[5m])) by (model, provider)",
+              "expr": "sum(rate({__name__=~\"llm.usage.prompt_tokens_total\"}[5m])) by (model, provider)",
               "refId": "A",
               "legendFormat": "{{provider}} - {{model}} - prompt"
             },
@@ -311,7 +311,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(rate(llm_usage_completion_tokens_total[5m])) by (model, provider)",
+              "expr": "sum(rate({__name__=~\"llm.usage.completion_tokens_total\"}[5m])) by (model, provider)",
               "refId": "B",
               "legendFormat": "{{provider}} - {{model}} - completion"
             }
@@ -402,7 +402,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_queue_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "expr": "histogram_quantile(0.95, sum(rate({__name__=~\"llm.latency.queue_time_milliseconds_bucket\"}[5m])) by (le, model, provider))",
               "refId": "A",
               "legendFormat": "{{provider}} - {{model}} - queue time"
             },
@@ -411,7 +411,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_prompt_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "expr": "histogram_quantile(0.95, sum(rate({__name__=~\"llm.latency.prompt_time_milliseconds_bucket\"}[5m])) by (le, model, provider))",
               "refId": "B",
               "legendFormat": "{{provider}} - {{model}} - prompt time"
             },
@@ -420,7 +420,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_completion_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "expr": "histogram_quantile(0.95, sum(rate({__name__=~\"llm.latency.completion_time_milliseconds_bucket\"}[5m])) by (le, model, provider))",
               "refId": "C",
               "legendFormat": "{{provider}} - {{model}} - completion time"
             }
@@ -676,7 +676,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(llm_usage_total_tokens_total) by (model, provider)",
+              "expr": "sum({__name__=~\"llm.usage.total_tokens_total\"}) by (model, provider)",
               "refId": "A",
               "legendFormat": "{{provider}} - {{model}}"
             }
