@@ -54,7 +54,7 @@ data:
 task deploy
 ```
 
-4. Access the grafa dashboard:
+4. Access the grafana dashboard:
 
 ```bash
 task proxy-grafana
