@@ -12,11 +12,4 @@ spec:
       admin_user: admin
       admin_password: admin
     server:
-      root_url: "%(protocol)s://%(domain)s/"
-  ingress:
-    metadata:
-      annotations:
-        kubernetes.io/ingress.class: "traefik"
-    spec:
-      rules:
-        - host: "grafana.local"
+      root_url: "%(protocol)s://localhost:3000/"
