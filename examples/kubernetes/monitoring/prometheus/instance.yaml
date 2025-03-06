@@ -7,7 +7,13 @@ metadata:
   labels:
     app: prometheus
 spec:
-  # serviceAccountName: prometheus
+  serviceAccountName: prometheus
+  serviceMonitorSelector:
+    matchLabels:
+      app: inference-gateway
+  serviceMonitorNamespaceSelector:
+    matchLabels:
+      monitoring: "true"
   resources:
     requests:
       memory: 256Mi

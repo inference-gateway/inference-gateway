@@ -39,6 +39,13 @@ tasks:
           --namespace kube-system \
           --create-namespace \
           --version 69.6.0 \
+          --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+          --set-string prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
+          --set prometheus.enabled=false \
+          --set alertmanager.enabled=false \
+          --set kubeStateMetrics.enabled=false \
+          --set nodeExporter.enabled=false \
+          --set grafana.enabled=false \
           --wait && \
           echo "Prometheus Operator installed successfully!"
       - echo "All operators deployed successfully!"
@@ -56,7 +63,10 @@ tasks:
       - kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply --server-side -f -
       - kubectl apply -f grafana/
       - kubectl apply -f prometheus/
-      - sleep 1 && kubectl rollout status -n monitoring deployment/grafana-deployment
+      - sleep 1
+      - kubectl rollout status -n monitoring deployment/grafana-deployment
+      - kubectl rollout status -n monitoring statefulset/prometheus-prometheus
+      - kubectl label namespace monitoring monitoring="true" --overwrite
       - echo "Monitoring stack deployed successfully!"
 
   deploy-inference-gateway:
@@ -65,6 +75,7 @@ tasks:
       - kubectl create namespace inference-gateway --dry-run=client -o yaml | kubectl apply --server-side -f -
       - kubectl apply -f inference-gateway/
       - kubectl rollout status -n inference-gateway deployment/inference-gateway
+      - kubectl label namespace inference-gateway monitoring="true" --overwrite
       - echo "Inference Gateway deployed successfully!"
 
   undeploy:
@@ -83,12 +94,13 @@ tasks:
   proxy-grafana:
     desc: Access Grafana dashboard locally
     cmds:
-      - kubectl -n monitoring port-forward svc/grafana 3000:3000
+      - kubectl -n monitoring port-forward svc/grafana-service 3000:3000
 
   proxy-inference-gateway:
     desc: Access the Inference Gateway locally
     cmds:
-      - kubectl -n inference-gateway port-forward svc/inference-gateway 8080:8080
+      - kubectl -n inference-gateway port-forward svc/inference-gateway 8080:8080 &
+      - kubectl -n inference-gateway port-forward svc/inference-gateway 9464:9464
 
   clean:
     desc: Clean the project
