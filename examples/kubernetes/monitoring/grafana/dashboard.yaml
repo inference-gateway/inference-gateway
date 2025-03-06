@@ -88,7 +88,8 @@ spec:
                     "value": 80
                   }
                 ]
-              }
+              },
+              "unit": "tokens/s"
             },
             "overrides": []
           },
@@ -111,7 +112,7 @@ spec:
               "sort": "none"
             }
           },
-          "title": "Request Rate",
+          "title": "Token Usage Rate",
           "type": "timeseries",
           "targets": [
             {
@@ -119,8 +120,9 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=\"inference-gateway\"}[1m])) by (route)",
-              "refId": "A"
+              "expr": "sum(rate(llm_usage_total_tokens_total[5m])) by (model, provider)",
+              "refId": "A",
+              "legendFormat": "{{provider}} - {{model}}"
             }
           ]
         },
@@ -178,7 +180,7 @@ spec:
                   }
                 ]
               },
-              "unit": "s"
+              "unit": "ms"
             },
             "overrides": []
           },
@@ -201,7 +203,7 @@ spec:
               "sort": "none"
             }
           },
-          "title": "Latency",
+          "title": "Total Latency",
           "type": "timeseries",
           "targets": [
             {
@@ -209,8 +211,9 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{service_name=\"inference-gateway\"}[5m])) by (le, route))",
-              "refId": "A"
+              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_total_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "refId": "A",
+              "legendFormat": "{{provider}} - {{model}}"
             }
           ]
         },
@@ -267,7 +270,8 @@ spec:
                     "value": 80
                   }
                 ]
-              }
+              },
+              "unit": "tokens/s"
             },
             "overrides": []
           },
@@ -290,7 +294,7 @@ spec:
               "sort": "none"
             }
           },
-          "title": "Total Tokens",
+          "title": "Token Usage Breakdown",
           "type": "timeseries",
           "targets": [
             {
@@ -298,8 +302,18 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(llm_total_tokens) by (model)",
-              "refId": "A"
+              "expr": "sum(rate(llm_usage_prompt_tokens_total[5m])) by (model, provider)",
+              "refId": "A",
+              "legendFormat": "{{provider}} - {{model}} - prompt"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(rate(llm_usage_completion_tokens_total[5m])) by (model, provider)",
+              "refId": "B",
+              "legendFormat": "{{provider}} - {{model}} - completion"
             }
           ]
         },
@@ -356,7 +370,8 @@ spec:
                     "value": 80
                   }
                 ]
-              }
+              },
+              "unit": "ms"
             },
             "overrides": []
           },
@@ -369,6 +384,175 @@ spec:
           "id": 4,
           "options": {
             "legend": {
+              "calcs": ["mean"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "title": "Latency Breakdown",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_queue_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "refId": "A",
+              "legendFormat": "{{provider}} - {{model}} - queue time"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_prompt_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "refId": "B",
+              "legendFormat": "{{provider}} - {{model}} - prompt time"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_completion_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "refId": "C",
+              "legendFormat": "{{provider}} - {{model}} - completion time"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "orange",
+                    "value": 50
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 16
+          },
+          "id": 5,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true
+          },
+          "title": "Resource Usage",
+          "type": "gauge",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "100 * (process_resident_memory_bytes / 1024 / 1024 / 64)",
+              "refId": "A",
+              "legendFormat": "Memory usage %"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0.5,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 16,
+            "x": 8,
+            "y": 16
+          },
+          "id": 6,
+          "options": {
+            "legend": {
               "calcs": [],
               "displayMode": "list",
               "placement": "bottom",
@@ -379,7 +563,7 @@ spec:
               "sort": "none"
             }
           },
-          "title": "Error Rate",
+          "title": "System Metrics",
           "type": "timeseries",
           "targets": [
             {
@@ -387,8 +571,114 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(rate(http_server_request_duration_seconds_count{service_name=\"inference-gateway\", status_code=~\"5..\"}[1m])) by (route) / sum(rate(http_server_request_duration_seconds_count{service_name=\"inference-gateway\"}[1m])) by (route)",
-              "refId": "A"
+              "expr": "rate(process_cpu_seconds_total[1m])",
+              "refId": "A",
+              "legendFormat": "CPU usage"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "process_resident_memory_bytes / 1024 / 1024",
+              "refId": "B",
+              "legendFormat": "Memory (MB)"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "go_goroutines",
+              "refId": "C",
+              "legendFormat": "Goroutines"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0.5,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "tokens"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 24
+          },
+          "id": 7,
+          "options": {
+            "legend": {
+              "calcs": ["lastNotNull", "sum"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "title": "Total Tokens (Cumulative)",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(llm_usage_total_tokens_total) by (model, provider)",
+              "refId": "A",
+              "legendFormat": "{{provider}} - {{model}}"
             }
           ]
         }
@@ -424,7 +714,7 @@ spec:
         ]
       },
       "time": {
-        "from": "now-1h",
+        "from": "now-30m",
         "to": "now"
       },
       "timepicker": {},

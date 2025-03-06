@@ -126,8 +126,8 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 
 				t.telemetry.RecordLatency(
 					c.Request.Context(),
-					model,
 					provider,
+					model,
 					queueTime,
 					promptTime,
 					compTime,

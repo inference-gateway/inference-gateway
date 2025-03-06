@@ -17,7 +17,7 @@ import (
 type OpenTelemetry interface {
 	Init(config config.Config) error
 	RecordTokenUsage(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64)
-	RecordLatency(ctx context.Context, model, provider string, queueTime, promptTime, completionTime, totalTime float64)
+	RecordLatency(ctx context.Context, provider, model string, queueTime, promptTime, completionTime, totalTime float64)
 	ShutDown(ctx context.Context) error
 }
 
@@ -116,10 +116,10 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 	return nil
 }
 
-func (o *OpenTelemetryImpl) RecordTokenUsage(ctx context.Context, model, provider string, promptTokens, completionTokens, totalTokens int64) {
+func (o *OpenTelemetryImpl) RecordTokenUsage(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64) {
 	attributes := []attribute.KeyValue{
-		attribute.String("model", model),
 		attribute.String("provider", provider),
+		attribute.String("model", model),
 	}
 
 	o.promptTokensCounter.Add(ctx, promptTokens, metric.WithAttributes(attributes...))
@@ -127,10 +127,10 @@ func (o *OpenTelemetryImpl) RecordTokenUsage(ctx context.Context, model, provide
 	o.totalTokensCounter.Add(ctx, promptTokens+completionTokens, metric.WithAttributes(attributes...))
 }
 
-func (o *OpenTelemetryImpl) RecordLatency(ctx context.Context, model, provider string, queueTime, promptTime, completionTime, totalTime float64) {
+func (o *OpenTelemetryImpl) RecordLatency(ctx context.Context, provider, model string, queueTime, promptTime, completionTime, totalTime float64) {
 	attributes := []attribute.KeyValue{
-		attribute.String("model", model),
 		attribute.String("provider", provider),
+		attribute.String("model", model),
 	}
 
 	o.queueTimeHistogram.Record(ctx, queueTime, metric.WithAttributes(attributes...))
