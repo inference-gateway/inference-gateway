@@ -65,7 +65,13 @@ task proxy-grafana
 - Username: `admin`
 - Password: `admin`
 
-6. Simulate a request to the Inference Gateway:
+6. Proxy the Inference Gateway service to your local machine:
+
+```bash
+kubectl port-forward svc/inference-gateway 8080:8080 -n inference-gateway
+```
+
+Send a bunch of requests:
 
 ```bash
 curl -X POST http://localhost:8080/llms/groq/generate -d '{
