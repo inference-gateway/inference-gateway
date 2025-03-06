@@ -12,7 +12,7 @@ spec:
     name: Prometheus
     type: prometheus
     access: proxy
-    url: http://prometheus.monitoring:9090
+    url: http://prometheus-operated.monitoring:9090
     isDefault: true
     jsonData:
       tlsSkipVerify: true
