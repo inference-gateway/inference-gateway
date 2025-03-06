@@ -65,6 +65,8 @@ task proxy-grafana
 - Username: `admin`
 - Password: `admin`
 
+Go to `Dashboards > monitoring > Inference Gateway Metrics` or just use the following link: `http://localhost:3000/d/inference-gateway/inference-gateway-metrics`.
+
 6. Proxy the Inference Gateway service to your local machine:
 
 ```bash
