@@ -31,16 +31,6 @@ tasks:
         helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
         helm repo update
       - |
-        helm upgrade --install \
-          opentelemetry-operator open-telemetry/opentelemetry-operator \
-          --namespace kube-system \
-          --create-namespace \
-          --version 0.81.0 \
-          --set admissionWebhooks.certManager.enabled=false \
-          --set manager.collectorImage.repository=ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:0.120.0 \
-          --wait && \
-          echo "OpenTelemetry Operator installed successfully!"
-      - |
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
         helm repo update
       - |
@@ -49,9 +39,6 @@ tasks:
           --namespace kube-system \
           --create-namespace \
           --version 69.6.0 \
-          --set prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
-          --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
-          --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
           --wait && \
           echo "Prometheus Operator installed successfully!"
       - echo "All operators deployed successfully!"
@@ -59,34 +46,33 @@ tasks:
   deploy:
     desc: Deploy all components
     cmds:
-      - task: deploy-monitoring
       - task: deploy-inference-gateway
+      - task: deploy-monitoring
       - echo "All components deployed successfully!"
 
   deploy-monitoring:
     desc: Deploy monitoring components
     cmds:
-      - kubectl create namespace monitoring --ignore-already-exists
-      - kubectl label namespace monitoring monitoring=true --overwrite
-      - kubectl label namespace inference-gateway monitoring=true --overwrite
-      - kubectl label namespace kube-system monitoring=true --overwrite
-      - kubectl apply -f otel/
-      - kubectl apply -f prometheus/
+      - kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply --server-side -f -
       - kubectl apply -f grafana/
+      - kubectl apply -f prometheus/
+      - sleep 1 && kubectl rollout status -n monitoring deployment/grafana-deployment
       - echo "Monitoring stack deployed successfully!"
 
   deploy-inference-gateway:
     desc: Deploy the Inference Gateway
     cmds:
-      - kubectl create namespace inference-gateway --ignore-already-exists
+      - kubectl create namespace inference-gateway --dry-run=client -o yaml | kubectl apply --server-side -f -
       - kubectl apply -f inference-gateway/
       - kubectl rollout status -n inference-gateway deployment/inference-gateway
+      - echo "Inference Gateway deployed successfully!"
 
   undeploy:
     desc: Undeploy all components
     cmds:
-      - kubectl delete -f inference-gateway/namespace.yaml --ignore-not-found
-      - kubectl delete -f otel-collector/namespace.yaml --ignore-not-found
+      - kubectl delete namespace inference-gateway --ignore-not-found
+      - kubectl delete namespace monitoring --ignore-not-found
+      - echo "All components undeployed successfully!"
 
   restart-inference-gateway:
     desc: Restart the Inference Gateway

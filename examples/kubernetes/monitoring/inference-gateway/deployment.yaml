@@ -15,13 +15,20 @@ spec:
     metadata:
       labels:
         app: inference-gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9464"
+        prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: inference-gateway
       containers:
         - name: inference-gateway
-          image: ghcr.io/inference-gateway/inference-gateway:v0.1.15
+          image: ghcr.io/inference-gateway/inference-gateway:latest
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
+            - name: metrics
+              containerPort: 9464
           resources:
             requests:
               memory: 32Mi

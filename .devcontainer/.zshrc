@@ -113,3 +113,6 @@ eval "$(task --completion zsh)"
 
 # For kubectl auto-completion
 source <(kubectl completion zsh)
+
+# For k3d completion
+source <(k3d completion zsh)
