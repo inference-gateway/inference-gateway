@@ -105,7 +105,7 @@ kubectl -n monitoring port-forward svc/grafana-service 3000:3000
 - Username: `admin`
 - Password: `admin`
 
-Go to `Dashboards > monitoring > Inference Gateway Metrics` or just use the following link: `http://localhost:3000/d/inference-gateway/inference-gateway-metrics`.
+Go to `Dashboards > monitoring > Inference Gateway Metrics` or just use the following link: [http://localhost:3000/d/inference-gateway/inference-gateway-metrics](http://localhost:3000/d/inference-gateway/inference-gateway-metrics).
 
 6. Proxy the Inference Gateway service to your local machine:
 
