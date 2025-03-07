@@ -116,3 +116,6 @@ source <(kubectl completion zsh)
 
 # For k3d completion
 source <(k3d completion zsh)
+
+# For ctlptl completion
+source <(ctlptl completion zsh)
