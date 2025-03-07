@@ -1,10 +1,10 @@
 # Monitoring with OTEL and Grafana Example
 
-This example demonstrates how to deploy the Inference Gateway with OpenTelemetry monitoring and visualize metrics using Grafana in a local Kubernetes cluster.
+This example demonstrates how to deploy the Inference Gateway with OpenTelemetry monitoring via Prometheus Exporter and visualize metrics using Grafana in a local Kubernetes cluster.
 
 ## Prerequisites
 
-- Docker
+- docker
 - ctlptl - CLI for declaratively setting up local Kubernetes clusters
 - k3d - Lightweight Kubernetes distribution
 - helm - Package manager for Kubernetes
