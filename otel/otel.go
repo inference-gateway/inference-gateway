@@ -76,7 +76,7 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 	otel.SetMeterProvider(o.meterProvider)
 
 	// Create meter
-	o.meter = o.meterProvider.Meter("inference-gateway")
+	o.meter = o.meterProvider.Meter(config.ApplicationName)
 
 	// Initialize metrics
 	var err1, err2, err3, err4, err5, err6, err7 error
