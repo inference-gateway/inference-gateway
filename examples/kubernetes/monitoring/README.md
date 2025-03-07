@@ -7,8 +7,8 @@ This example demonstrates how to deploy the Inference Gateway with OpenTelemetry
 - Docker
 - ctlptl - CLI for declaratively setting up local Kubernetes clusters
 - k3d - Lightweight Kubernetes distribution
+- helm - Package manager for Kubernetes
 - kubectl
-- Task - Task runner
 - jq (optional, for parsing JSON responses)
 
 ## Components
@@ -16,7 +16,6 @@ This example demonstrates how to deploy the Inference Gateway with OpenTelemetry
 This setup includes:
 
 - Inference Gateway - The main application that proxies LLM requests
-- OpenTelemetry Collector - Collects metrics from the Inference Gateway
 - Prometheus - Time-series database for storing metrics
 - Grafana - Visualization platform for metrics
 
@@ -25,7 +24,33 @@ This setup includes:
 1. Create the local cluster:
 
 ```bash
-task cluster-create
+ctlptl apply -f Cluster.yaml
+
+# Install Grafana and Prometheus
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+helm upgrade --install \
+  grafana-operator grafana/grafana-operator \
+  --namespace kube-system \
+  --create-namespace \
+  --version v5.16.0 \
+  --set watch.namespaces={monitoring} \
+  --wait
+helm upgrade --install \
+  prometheus-operator prometheus-community/kube-prometheus-stack \
+  --namespace kube-system \
+  --create-namespace \
+  --version 69.6.0 \
+  --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+  --set-string prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
+  --set prometheus.enabled=false \
+  --set alertmanager.enabled=false \
+  --set kubeStateMetrics.enabled=false \
+  --set nodeExporter.enabled=false \
+  --set grafana.enabled=false \
+  --wait
 ```
 
 2. Enable telemetry in the Inference Gateway [configmap.yaml](inference-gateway/configmap.yaml):
@@ -43,21 +68,36 @@ data:
   # General settings
   APPLICATION_NAME: "inference-gateway"
   ENVIRONMENT: "production"
-  ENABLE_TELEMETRY: "true"
+  ENABLE_TELEMETRY: "true" # <-- Enable telemetry
   ENABLE_AUTH: "false"
   ...
 ```
 
-3. Deploy monitoring components and the Inference Gateway:
+3. Deploy the Inference Gateway:
 
 ```bash
-task deploy
+kubectl create namespace inference-gateway --dry-run=client -o yaml | kubectl apply --server-side -f -
+kubectl apply -f inference-gateway/
+kubectl rollout status -n inference-gateway deployment/inference-gateway
+kubectl label namespace inference-gateway monitoring="true" --overwrite # This is important so that the Prometheus Operator can discover the service monitors
+```
+
+And the monitoring components:
+
+```bash
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply --server-side -f -
+kubectl apply -f grafana/
+kubectl apply -f prometheus/
+sleep 1
+kubectl rollout status -n monitoring deployment/grafana-deployment
+kubectl rollout status -n monitoring statefulset/prometheus-prometheus
+kubectl label namespace monitoring monitoring="true" --overwrite # This is important so that the Prometheus Operator can discover the service monitors
 ```
 
 4. Access the grafana dashboard:
 
 ```bash
-task proxy-grafana
+kubectl -n monitoring port-forward svc/grafana-service 3000:3000
 ```
 
 5. Open the browser and navigate to `http://localhost:3000`. Use the following credentials to log in:
@@ -90,5 +130,5 @@ curl -X POST http://localhost:8080/llms/groq/generate -d '{
 8. When you're done, clean up the resources:
 
 ```bash
-task cluster-delete
+ctlptl delete -f Cluster.yaml --cascade=true
 ```
