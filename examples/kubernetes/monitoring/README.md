@@ -125,7 +125,7 @@ PROVIDERS=("groq" "cohere")
 for PROVIDER in "${PROVIDERS[@]}"; do
   MODEL=${PROVIDER_MODELS[$PROVIDER]}
   echo "Testing $PROVIDER provider with model: $MODEL"
-  curl -X POST http://localhost:8080/llms/$PROVIDER/generate -d "{
+  curl -s -X POST http://localhost:8080/llms/$PROVIDER/generate -d "{
     \"model\": \"$MODEL\",
     \"messages\": [
       {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},
