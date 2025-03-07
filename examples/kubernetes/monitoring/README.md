@@ -113,16 +113,28 @@ Go to `Dashboards > monitoring > Inference Gateway Metrics` or just use the foll
 kubectl port-forward svc/inference-gateway 8080:8080 -n inference-gateway
 ```
 
-Send a bunch of requests:
+Send a bunch of requests to difference providers models:
 
 ```bash
-curl -X POST http://localhost:8080/llms/groq/generate -d '{
-  "model": "llama-3.3-70b-versatile",
-  "messages": [
-    {"role": "system", "content": "You are a helpful assistant."},
-    {"role": "user", "content": "Why is the sky blue? Keep it short and concise."}
-  ]
-}' | jq .
+declare -A PROVIDER_MODELS
+PROVIDER_MODELS=(
+  ["groq"]="llama-3.3-70b-versatile"
+  ["cohere"]="command-r"
+)
+PROVIDERS=("groq" "cohere")
+for PROVIDER in "${PROVIDERS[@]}"; do
+  MODEL=${PROVIDER_MODELS[$PROVIDER]}
+  echo "Testing $PROVIDER provider with model: $MODEL"
+  curl -X POST http://localhost:8080/llms/$PROVIDER/generate -d "{
+    \"model\": \"$MODEL\",
+    \"messages\": [
+      {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},
+      {\"role\": \"user\", \"content\": \"Why is the sky blue? Keep it short and concise.\"}
+    ]
+  }" | jq '.'
+  echo -e "\n------------------------------------\n"
+  sleep 2
+done
 ```
 
 7. View the metrics in the Grafana dashboard.
