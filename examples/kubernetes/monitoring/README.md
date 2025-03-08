@@ -26,7 +26,7 @@ This setup includes:
 ```bash
 ctlptl apply -f Cluster.yaml
 
-# Install Grafana and Prometheus
+# Install Grafana and Prometheus Operators
 helm repo add grafana https://grafana.github.io/helm-charts
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo update

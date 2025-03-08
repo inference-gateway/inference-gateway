@@ -81,28 +81,28 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 	// Initialize metrics
 	var err1, err2, err3, err4, err5, err6, err7 error
 
-	o.promptTokensCounter, err1 = o.meter.Int64Counter("llm.usage.prompt_tokens",
+	o.promptTokensCounter, err1 = o.meter.Int64Counter("llm_usage_prompt_tokens",
 		metric.WithDescription("Number of prompt tokens used"))
 
-	o.completionTokensCounter, err2 = o.meter.Int64Counter("llm.usage.completion_tokens",
+	o.completionTokensCounter, err2 = o.meter.Int64Counter("llm_usage_completion_tokens",
 		metric.WithDescription("Number of completion tokens used"))
 
-	o.totalTokensCounter, err3 = o.meter.Int64Counter("llm.usage.total_tokens",
+	o.totalTokensCounter, err3 = o.meter.Int64Counter("llm_usage_total_tokens",
 		metric.WithDescription("Total number of tokens used"))
 
-	o.queueTimeHistogram, err4 = o.meter.Float64Histogram("llm.latency.queue_time",
+	o.queueTimeHistogram, err4 = o.meter.Float64Histogram("llm_latency_queue_time",
 		metric.WithDescription("Time spent in queue before processing"),
 		metric.WithUnit("ms"))
 
-	o.promptTimeHistogram, err5 = o.meter.Float64Histogram("llm.latency.prompt_time",
+	o.promptTimeHistogram, err5 = o.meter.Float64Histogram("llm_latency_prompt_time",
 		metric.WithDescription("Time spent processing the prompt"),
 		metric.WithUnit("ms"))
 
-	o.completionTimeHistogram, err6 = o.meter.Float64Histogram("llm.latency.completion_time",
+	o.completionTimeHistogram, err6 = o.meter.Float64Histogram("llm_latency_completion_time",
 		metric.WithDescription("Time spent generating the completion"),
 		metric.WithUnit("ms"))
 
-	o.totalTimeHistogram, err7 = o.meter.Float64Histogram("llm.latency.total_time",
+	o.totalTimeHistogram, err7 = o.meter.Float64Histogram("llm_latency_total_time",
 		metric.WithDescription("Total time from request to response"),
 		metric.WithUnit("ms"))
 
