@@ -1,0 +1,51 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: ollama
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      serviceAccountName: ollama
+      containers:
+        - name: ollama-model
+          image: ollama/ollama:0.5.13
+          ports:
+            - containerPort: 11434
+          resources:
+            limits:
+              cpu: 3000m
+              memory: 5000Mi
+            requests:
+              cpu: 2000m
+              memory: 3000Mi
+          volumeMounts:
+            - name: ollama-models-store
+              mountPath: /root/.ollama/models
+        - name: ollama-model-puller
+          image: ollama/ollama:0.5.13
+          command:
+            - bash
+          args:
+            - -c
+            - "ollama pull tinyllama && tail -f /dev/null"
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+            requests:
+              cpu: 200m
+              memory: 200Mi
+      volumes:
+        - name: ollama-models-store
+          emptyDir: {}

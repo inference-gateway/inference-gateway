@@ -21,6 +21,31 @@ This setup includes:
 
 ## Implementation Steps
 
+Optionally deploy ollama for local LLM models:
+
+```bash
+kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply --server-side -f -
+kubectl apply -f ollama/
+kubectl rollout status -n ollama deployment/ollama
+```
+
+Configure the Inference Gateway to use the local ollama service:
+
+```yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app: inference-gateway
+data:
+  ...
+    OLLAMA_API_URL: "http://ollama.ollama:11434" # <-- Change to http://ollama.ollama:11434
+  ...
+```
+
 1. Create the local cluster:
 
 ```bash
@@ -120,8 +145,9 @@ declare -A PROVIDER_MODELS
 PROVIDER_MODELS=(
   ["groq"]="llama-3.3-70b-versatile"
   ["cohere"]="command-r"
+  ["ollama"]="tinyllama:latest"
 )
-PROVIDERS=("groq" "cohere")
+PROVIDERS=("groq" "cohere" "ollama")
 for PROVIDER in "${PROVIDERS[@]}"; do
   MODEL=${PROVIDER_MODELS[$PROVIDER]}
   echo "Testing $PROVIDER provider with model: $MODEL"
