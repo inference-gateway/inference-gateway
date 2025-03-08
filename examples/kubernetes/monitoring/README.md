@@ -21,7 +21,7 @@ This setup includes:
 
 ## Implementation Steps
 
-Optionally deploy ollama for local LLM models:
+Optionally deploy ollama for local LLMs:
 
 ```bash
 kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply --server-side -f -
