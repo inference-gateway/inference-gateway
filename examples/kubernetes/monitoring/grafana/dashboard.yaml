@@ -43,7 +43,7 @@ spec:
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "thresholds"
+                "mode": "palette-classic"
               },
               "mappings": [],
               "thresholds": {
@@ -67,30 +67,31 @@ spec:
           },
           "id": 1,
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "horizontal",
             "reduceOptions": {
-              "calcs": ["sum"],
+              "calcs": ["lastNotNull"],
               "fields": "",
               "values": false
             },
-            "textMode": "auto"
+            "showUnfilled": true,
+            "text": {}
           },
           "pluginVersion": "9.5.2",
-          "title": "Total Tokens (Current Range)",
-          "description": "Total tokens processed within the selected dashboard time range",
-          "type": "stat",
+          "title": "Total Tokens by Provider",
+          "description": "Total tokens processed in the current time range, aggregated by provider",
+          "type": "bargauge",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(increase(llm_usage_total_tokens_total[$__range])) by (model, provider)",
+              "expr": "sum(increase(llm_usage_total_tokens_total[$__range])) by (provider)",
               "refId": "A",
-              "legendFormat": "{{provider}} - {{model}}"
+              "legendFormat": "{{provider}}"
             }
           ]
         },
