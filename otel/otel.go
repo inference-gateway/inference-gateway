@@ -18,6 +18,9 @@ type OpenTelemetry interface {
 	Init(config config.Config) error
 	RecordTokenUsage(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64)
 	RecordLatency(ctx context.Context, provider, model string, queueTime, promptTime, completionTime, totalTime float64)
+	RecordRequestCount(ctx context.Context, provider, requestType string)
+	RecordResponseStatus(ctx context.Context, provider, requestType, requestPath string, statusCode int)
+	RecordRequestDuration(ctx context.Context, provider, requestType, requestPath string, durationMs float64)
 	ShutDown(ctx context.Context) error
 }
 
@@ -33,6 +36,11 @@ type OpenTelemetryImpl struct {
 	promptTimeHistogram     metric.Float64Histogram
 	completionTimeHistogram metric.Float64Histogram
 	totalTimeHistogram      metric.Float64Histogram
+
+	// New metrics
+	requestCounter           metric.Int64Counter
+	responseStatusCounter    metric.Int64Counter
+	requestDurationHistogram metric.Float64Histogram
 }
 
 func (o *OpenTelemetryImpl) Init(config config.Config) error {
@@ -79,7 +87,7 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 	o.meter = o.meterProvider.Meter(config.ApplicationName)
 
 	// Initialize metrics
-	var err1, err2, err3, err4, err5, err6, err7 error
+	var err1, err2, err3, err4, err5, err6, err7, err8, err9, err10 error
 
 	o.promptTokensCounter, err1 = o.meter.Int64Counter("llm_usage_prompt_tokens",
 		metric.WithDescription("Number of prompt tokens used"))
@@ -106,8 +114,18 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 		metric.WithDescription("Total time from request to response"),
 		metric.WithUnit("ms"))
 
+	o.requestCounter, err8 = o.meter.Int64Counter("llm_requests_total",
+		metric.WithDescription("Total number of requests processed"))
+
+	o.responseStatusCounter, err9 = o.meter.Int64Counter("llm_responses_total",
+		metric.WithDescription("Total number of responses by status code"))
+
+	o.requestDurationHistogram, err10 = o.meter.Float64Histogram("llm_request_duration",
+		metric.WithDescription("End-to-end request duration"),
+		metric.WithUnit("ms"))
+
 	// Check for errors
-	for _, err := range []error{err1, err2, err3, err4, err5, err6, err7} {
+	for _, err := range []error{err1, err2, err3, err4, err5, err6, err7, err8, err9, err10} {
 		if err != nil {
 			return err
 		}
@@ -124,7 +142,7 @@ func (o *OpenTelemetryImpl) RecordTokenUsage(ctx context.Context, provider, mode
 
 	o.promptTokensCounter.Add(ctx, promptTokens, metric.WithAttributes(attributes...))
 	o.completionTokensCounter.Add(ctx, completionTokens, metric.WithAttributes(attributes...))
-	o.totalTokensCounter.Add(ctx, promptTokens+completionTokens, metric.WithAttributes(attributes...))
+	o.totalTokensCounter.Add(ctx, totalTokens, metric.WithAttributes(attributes...))
 }
 
 func (o *OpenTelemetryImpl) RecordLatency(ctx context.Context, provider, model string, queueTime, promptTime, completionTime, totalTime float64) {
@@ -137,6 +155,36 @@ func (o *OpenTelemetryImpl) RecordLatency(ctx context.Context, provider, model s
 	o.promptTimeHistogram.Record(ctx, promptTime, metric.WithAttributes(attributes...))
 	o.completionTimeHistogram.Record(ctx, completionTime, metric.WithAttributes(attributes...))
 	o.totalTimeHistogram.Record(ctx, totalTime, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordRequestCount(ctx context.Context, provider, requestType string) {
+	attributes := []attribute.KeyValue{
+		attribute.String("provider", provider),
+		attribute.String("request_type", requestType),
+	}
+
+	o.requestCounter.Add(ctx, 1, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordResponseStatus(ctx context.Context, provider, requestType, requestPath string, statusCode int) {
+	attributes := []attribute.KeyValue{
+		attribute.String("provider", provider),
+		attribute.String("request_method", requestType),
+		attribute.String("request_path", requestPath),
+		attribute.Int("status_code", statusCode),
+	}
+
+	o.responseStatusCounter.Add(ctx, 1, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordRequestDuration(ctx context.Context, provider, requestType, requestPath string, durationMs float64) {
+	attributes := []attribute.KeyValue{
+		attribute.String("provider", provider),
+		attribute.String("request_method", requestType),
+		attribute.String("request_path", requestPath),
+	}
+
+	o.requestDurationHistogram.Record(ctx, durationMs, metric.WithAttributes(attributes...))
 }
 
 func (o *OpenTelemetryImpl) ShutDown(ctx context.Context) error {

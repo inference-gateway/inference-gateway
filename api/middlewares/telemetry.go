@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/inference-gateway/inference-gateway/config"
@@ -45,6 +46,8 @@ func (w *responseBodyWriter) Write(b []byte) (int, error) {
 
 func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		startTime := time.Now()
+
 		t.logger.Debug("Request URL", "url", c.Request.URL.Path)
 		if !strings.Contains(c.Request.URL.Path, "/generate") {
 			c.Next()
@@ -88,6 +91,12 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		c.Next()
 
 		// Post middleware begins
+		statusCode := c.Writer.Status()
+		duration := float64(time.Since(startTime).Milliseconds())
+
+		t.telemetry.RecordResponseStatus(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, statusCode)
+		t.telemetry.RecordRequestDuration(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, duration)
+
 		var responseData map[string]any
 		if err := json.Unmarshal(w.body.Bytes(), &responseData); err == nil {
 			if usage, ok := responseData["usage"].(map[string]any); ok {
