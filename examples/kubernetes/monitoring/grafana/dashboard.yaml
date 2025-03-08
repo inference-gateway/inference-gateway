@@ -43,6 +43,125 @@ spec:
           "fieldConfig": {
             "defaults": {
               "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "tokens"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": ["sum"],
+              "fields": "",
+              "values": false
+            },
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.5.2",
+          "title": "Total Tokens (Current Range)",
+          "description": "Total tokens processed within the selected dashboard time range",
+          "type": "stat",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(increase(llm_usage_total_tokens_total[$__range])) by (model, provider)",
+              "refId": "A",
+              "legendFormat": "{{provider}} - {{model}}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "id": 8,
+          "options": {
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "text": {}
+          },
+          "pluginVersion": "9.5.2",
+          "title": "Prompt Token Distribution by Provider (%)",
+          "description": "Percentage breakdown of token usage across different providers",
+          "type": "bargauge",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "100 * sum(increase(llm_usage_prompt_tokens_total[$__range])) by (provider) / scalar(sum(increase(llm_usage_prompt_tokens_total[$__range])))",
+              "refId": "A",
+              "legendFormat": "{{provider}}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
                 "mode": "palette-classic"
               },
               "custom": {
@@ -82,10 +201,6 @@ spec:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               },
@@ -97,13 +212,13 @@ spec:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 0
+            "y": 6
           },
-          "id": 1,
+          "id": 7,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": ["mean", "max"],
+              "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
             },
@@ -112,7 +227,8 @@ spec:
               "sort": "none"
             }
           },
-          "title": "Token Usage Rate",
+          "title": "Token Processing Rate",
+          "description": "Tokens processed per second of wall-clock time",
           "type": "timeseries",
           "targets": [
             {
@@ -173,14 +289,10 @@ spec:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               },
-              "unit": "ms"
+              "unit": "tokens/s"
             },
             "overrides": []
           },
@@ -188,9 +300,9 @@ spec:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 0
+            "y": 6
           },
-          "id": 2,
+          "id": 9,
           "options": {
             "legend": {
               "calcs": ["mean", "max"],
@@ -203,7 +315,8 @@ spec:
               "sort": "none"
             }
           },
-          "title": "Total Latency",
+          "title": "Model Generation Speed",
+          "description": "Actual token generation speed (tokens per second of active generation time)",
           "type": "timeseries",
           "targets": [
             {
@@ -211,9 +324,9 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_total_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "expr": "sum(rate(llm_usage_completion_tokens_total[5m])) by (model, provider) / (sum(rate(llm_latency_completion_time_milliseconds_sum[5m])) by (model, provider) / 1000)",
               "refId": "A",
-              "legendFormat": "{{provider}} - {{model}}"
+              "legendFormat": "{{provider}} - {{model}} generation speed"
             }
           ]
         },
@@ -264,10 +377,6 @@ spec:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               },
@@ -279,13 +388,13 @@ spec:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 8
+            "y": 14
           },
           "id": 3,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": ["mean"],
+              "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
             },
@@ -295,6 +404,7 @@ spec:
             }
           },
           "title": "Token Usage Breakdown",
+          "description": "Separate tracking of prompt and completion token usage rates",
           "type": "timeseries",
           "targets": [
             {
@@ -364,14 +474,10 @@ spec:
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
               },
-              "unit": "ms"
+              "unit": "none"
             },
             "overrides": []
           },
@@ -379,9 +485,9 @@ spec:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 8
+            "y": 14
           },
-          "id": 4,
+          "id": 10,
           "options": {
             "legend": {
               "calcs": ["mean"],
@@ -394,7 +500,184 @@ spec:
               "sort": "none"
             }
           },
-          "title": "Latency Breakdown",
+          "title": "Token Efficiency",
+          "description": "Ratio of completion tokens to prompt tokens (higher is better)",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(increase(llm_usage_completion_tokens_total[10m])) by (model, provider) / sum(increase(llm_usage_prompt_tokens_total[10m])) by (model, provider)",
+              "refId": "A",
+              "legendFormat": "{{provider}} - {{model}} efficiency ratio"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0.5,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 22
+          },
+          "id": 2,
+          "options": {
+            "legend": {
+              "calcs": ["mean", "max", "p95"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "title": "Total Request Latency (p95)",
+          "description": "95th percentile of total request-to-response time",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum(rate(llm_latency_total_time_milliseconds_bucket[5m])) by (le, model, provider))",
+              "refId": "A",
+              "legendFormat": "{{provider}} - {{model}}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0.5,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 22
+          },
+          "id": 4,
+          "options": {
+            "legend": {
+              "calcs": ["mean", "max"],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "title": "Latency Breakdown (p95)",
+          "description": "95th percentile of each stage in the request lifecycle",
           "type": "timeseries",
           "targets": [
             {
@@ -462,7 +745,7 @@ spec:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 16
+            "y": 30
           },
           "id": 5,
           "options": {
@@ -477,7 +760,8 @@ spec:
             "showThresholdLabels": false,
             "showThresholdMarkers": true
           },
-          "title": "Resource Usage",
+          "title": "Memory Usage",
+          "description": "Memory usage as a percentage of allocated memory (64MB)",
           "type": "gauge",
           "targets": [
             {
@@ -548,13 +832,13 @@ spec:
             "h": 8,
             "w": 16,
             "x": 8,
-            "y": 16
+            "y": 30
           },
           "id": 6,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": ["mean", "max"],
+              "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
             },
@@ -564,6 +848,7 @@ spec:
             }
           },
           "title": "System Metrics",
+          "description": "System-level metrics including CPU, memory, and goroutines",
           "type": "timeseries",
           "targets": [
             {
@@ -592,93 +877,6 @@ spec:
               "expr": "go_goroutines",
               "refId": "C",
               "legendFormat": "Goroutines"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0.5,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "tokens"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 24
-          },
-          "id": 7,
-          "options": {
-            "legend": {
-              "calcs": ["lastNotNull", "sum"],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "title": "Total Tokens",
-          "type": "stat",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum(increase(llm_usage_total_tokens_total[$__range])) by (model, provider)",
-              "refId": "A",
-              "legendFormat": "{{provider}} - {{model}}"
             }
           ]
         }
@@ -710,6 +908,33 @@ spec:
             "regex": "",
             "skipUrlSync": false,
             "type": "datasource"
+          },
+          {
+            "allValue": ".*",
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${datasource}"
+            },
+            "definition": "label_values(llm_usage_total_tokens_total, provider)",
+            "hide": 0,
+            "includeAll": true,
+            "multi": true,
+            "name": "provider",
+            "options": [],
+            "query": {
+              "query": "label_values(llm_usage_total_tokens_total, provider)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 0,
+            "type": "query"
           }
         ]
       },
