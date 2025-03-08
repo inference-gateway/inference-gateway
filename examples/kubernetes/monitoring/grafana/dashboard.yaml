@@ -45,6 +45,10 @@ spec:
               "color": {
                 "mode": "palette-classic"
               },
+              "custom": {
+                "displayMode": "gradient",
+                "fillOpacity": 70
+              },
               "mappings": [],
               "thresholds": {
                 "mode": "absolute",
@@ -57,11 +61,30 @@ spec:
               },
               "unit": "tokens"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byRegexp",
+                  "options": ".*\\(%\\)$"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "percent"
+                  },
+                  {
+                    "id": "color",
+                    "value": {
+                      "mode": "palette-classic"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
-            "h": 6,
-            "w": 12,
+            "h": 8,
+            "w": 24,
             "x": 0,
             "y": 0
           },
@@ -80,8 +103,8 @@ spec:
             "text": {}
           },
           "pluginVersion": "9.5.2",
-          "title": "Total Tokens by Provider",
-          "description": "Total tokens processed in the current time range, aggregated by provider",
+          "title": "Prompt Token Usage by Provider",
+          "description": "Total prompt tokens processed and percentage distribution by provider",
           "type": "bargauge",
           "targets": [
             {
@@ -89,69 +112,18 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(increase(llm_usage_total_tokens_total[$__range])) by (provider)",
+              "expr": "sum(increase(llm_usage_prompt_tokens_total[$__range])) by (provider)",
               "refId": "A",
-              "legendFormat": "{{provider}}"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "percent"
+              "legendFormat": "{{provider}} - Total"
             },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 12,
-            "x": 12,
-            "y": 0
-          },
-          "id": 8,
-          "options": {
-            "displayMode": "gradient",
-            "minVizHeight": 10,
-            "minVizWidth": 0,
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": ["lastNotNull"],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true,
-            "text": {}
-          },
-          "pluginVersion": "9.5.2",
-          "title": "Prompt Token Distribution by Provider (%)",
-          "description": "Percentage breakdown of token usage across different providers",
-          "type": "bargauge",
-          "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
               "expr": "100 * sum(increase(llm_usage_prompt_tokens_total[$__range])) by (provider) / scalar(sum(increase(llm_usage_prompt_tokens_total[$__range])))",
-              "refId": "A",
-              "legendFormat": "{{provider}}"
+              "refId": "B",
+              "legendFormat": "{{provider}} - (%)"
             }
           ]
         },
