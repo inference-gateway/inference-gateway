@@ -46,5 +46,6 @@
   "remoteEnv": {
     "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
   },
-  "forwardPorts": [8080]
+  "forwardPorts": [8080],
+  "runArgs": ["--add-host=inference-gateway.local:127.0.0.1"]
 }

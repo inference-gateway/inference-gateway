@@ -20,6 +20,8 @@ tasks:
       - go run cmd/generate/main.go -type ConfigMap -output examples/kubernetes/hybrid/inference-gateway/configmap.yaml
       - go run cmd/generate/main.go -type Secret -output examples/kubernetes/monitoring/inference-gateway/secret.yaml
       - go run cmd/generate/main.go -type ConfigMap -output examples/kubernetes/monitoring/inference-gateway/configmap.yaml
+      - go run cmd/generate/main.go -type Secret -output examples/kubernetes/tls/inference-gateway/secret.yaml
+      - go run cmd/generate/main.go -type ConfigMap -output examples/kubernetes/tls/inference-gateway/configmap.yaml
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/.env.example
       - go generate ./providers/... ./api/... ./otel/...
 

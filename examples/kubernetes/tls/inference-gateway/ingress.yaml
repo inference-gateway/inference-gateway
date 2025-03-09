@@ -1,0 +1,25 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  annotations:
+    cert-manager.io/cluster-issuer: selfsigned-issuer
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - inference-gateway.local
+      secretName: inference-gateway-tls
+  rules:
+    - host: inference-gateway.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: inference-gateway
+                port:
+                  number: 8080

@@ -17,6 +17,8 @@ RUN apt-get update && \
     architecture_pretty="amd64"; \
     fi && \
     echo "Installing depenenices for ${architecture}" && \
+    # Install networking utilities
+    apt-get install -y iputils-ping dnsutils && \
     # Install powerlevel10k theme
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k && \
     # Install Task
