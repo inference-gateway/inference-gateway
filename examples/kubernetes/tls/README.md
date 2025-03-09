@@ -80,7 +80,7 @@ helm install cert-manager jetstack/cert-manager \
 4. Create a self-signed ClusterIssuer (for development):
 
 ```bash
-kubectl apply -f cert-manager/issuer.yaml
+kubectl apply -f cert-manager/clusterissuer.yaml
 ```
 
 5. Deploy the Inference Gateway:
