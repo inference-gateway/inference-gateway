@@ -96,6 +96,8 @@ kubectl apply -f inference-gateway/
 echo "127.0.0.1 inference-gateway.local" >> /etc/hosts
 ```
 
+\*\* Note: if you're using the devcontainer (which is also recommended) - you already have this entry in the /etc/hosts file.
+
 7. Test the Inference Gateway with HTTPS:
 
 ```bash
