@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.19-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.2.18...v0.2.19-rc.1) (2025-03-10)
+
+### 👷 CI
+
+* **release:** Add container image scanning and signing steps to release workflow ([46071f1](https://github.com/inference-gateway/inference-gateway/commit/46071f1d7ac30f9c7b292cc2bc7e50dbed20852c))
+
+### 🔧 Miscellaneous
+
+* **todo:** Add step to sign container images in release workflow ([1df3cc0](https://github.com/inference-gateway/inference-gateway/commit/1df3cc0e6f138c042e69cf85199dba9deb24e83a))
+
 ## [0.2.18](https://github.com/inference-gateway/inference-gateway/compare/v0.2.17...v0.2.18) (2025-03-10)
 
 ### 🐛 Bug Fixes
