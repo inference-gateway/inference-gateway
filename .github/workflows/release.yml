@@ -129,6 +129,5 @@ jobs:
       - name: Run GoReleaser
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ needs.github_release.outputs.new_release_version }}
         run: |
-          goreleaser release --clean --tag v${VERSION}
+          goreleaser release --clean
