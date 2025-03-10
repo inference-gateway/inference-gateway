@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.20-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.2.20-rc.1...v0.2.20-rc.2) (2025-03-10)
+
+### 👷 CI
+
+* **release:** Remove git user configuration step from release workflow ([5f032e7](https://github.com/inference-gateway/inference-gateway/commit/5f032e703f9fd4b028956bb3f8f2058c37859b13))
+
 ## [0.2.20-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.2.19...v0.2.20-rc.1) (2025-03-10)
 
 ### 👷 CI
