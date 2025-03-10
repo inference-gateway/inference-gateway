@@ -52,6 +52,11 @@ jobs:
             @semantic-release/git \
             @semantic-release/github
 
+      - name: Configure git user
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+
       - name: Create a release if needed
         id: semantic
         env:
