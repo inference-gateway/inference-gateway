@@ -116,9 +116,6 @@ jobs:
           persist-credentials: false
           ref: ${{ github.ref }}
 
-      - name: Fetch latest tags
-        run: git fetch --tags -f
-
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
