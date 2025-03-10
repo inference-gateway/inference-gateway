@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.20-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.2.19...v0.2.20-rc.1) (2025-03-10)
+
+### 👷 CI
+
+* **release:** Add output logging for version determination error ([125c5df](https://github.com/inference-gateway/inference-gateway/commit/125c5df680f2b733e32257f22579c4cc775ae07b))
+* **release:** Enable caching for Go setup in release workflow ([f99aa3b](https://github.com/inference-gateway/inference-gateway/commit/f99aa3bd0fadfe1967c3b168ab5908655710911e))
+* **release:** Remove git user configuration step from workflow ([1d70b32](https://github.com/inference-gateway/inference-gateway/commit/1d70b3264980ab328f4c37f18be80393ef4d31f6))
+* **release:** Revert, check whether this was breaking ([479f678](https://github.com/inference-gateway/inference-gateway/commit/479f6782e55c017c5ea4b11fe1b348ee75d77c0e))
+* **release:** Use variable for bot email in release workflow ([b9ac6af](https://github.com/inference-gateway/inference-gateway/commit/b9ac6afef86a8f408e20196cf7a95e65d2855c56))
+
 ## [0.2.19](https://github.com/inference-gateway/inference-gateway/compare/v0.2.18...v0.2.19) (2025-03-10)
 
 ### 👷 CI
