@@ -62,8 +62,8 @@ jobs:
           # Create first release if not exists using gh cli - Initial Release Version 0.1.0
           # This is an HACK because semantic release doesn't support versions under 1.0.0
           # But if we already have a release then it respects it and start to increment from there
-          if ! gh release view 0.1.0 >/dev/null 2>&1; then
-            gh release create 0.1.0 --title "Initial Release" --notes "Initial Release" --target main
+          if ! gh release view v0.1.0 >/dev/null 2>&1; then
+            gh release create v0.1.0 --title "Initial Release" --notes "Initial Release" --target main
           fi
 
           # Run semantic-release in dry-run first to capture version
