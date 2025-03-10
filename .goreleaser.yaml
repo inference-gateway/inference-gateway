@@ -80,4 +80,4 @@ changelog:
   disable: true
 
 release:
-  mode: keep-existing
+  disable: true

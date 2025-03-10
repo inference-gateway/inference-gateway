@@ -131,4 +131,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          goreleaser release --clean
+          goreleaser release --clean --skip=announce,publish
+
+      - name: Upload Artifacts to Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.github_release.outputs.new_release_version }}
+        run: |
+          # Find all archives created by GoReleaser
+          for file in dist/inference-gateway_*; do
+            echo "Uploading $file to release v${VERSION}"
+            gh release upload v${VERSION} "$file" --clobber
+          done
+
+          # Upload checksums
+          gh release upload v${VERSION} "dist/checksums.txt" --clobber
