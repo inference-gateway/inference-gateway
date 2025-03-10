@@ -101,6 +101,7 @@ jobs:
       - github_release
     permissions:
       contents: write
+      packages: write
     if: needs.github_release.outputs.new_release_published == 'true'
     steps:
       - name: Checkout code
