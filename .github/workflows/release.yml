@@ -2,9 +2,7 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -12,14 +10,104 @@ permissions:
   packages: write
 
 jobs:
-  release:
+  github_release:
+    name: Github Release
     runs-on: ubuntu-24.04
-
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
+      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.2.0
+        with:
+          node-version: "22"
+
+      - name: Install semantic release and plugins
+        run: |
+          npm install -g semantic-release@v24.2.1 \
+            conventional-changelog-cli \
+            conventional-changelog-conventionalcommits \
+            @semantic-release/changelog \
+            @semantic-release/exec \
+            @semantic-release/git \
+            @semantic-release/github
+
+      - name: Configure git user
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+
+      - name: Create a release if needed
+        id: semantic
+        env:
+          CI: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_AUTHOR_NAME: "GitHub Actions Bot"
+          GIT_AUTHOR_EMAIL: "eden.reich@gmail.com"
+          GIT_COMMITTER_NAME: "GitHub Actions Bot"
+          GIT_COMMITTER_EMAIL: "eden.reich@gmail.com"
+        run: |
+          # Create first release if not exists using gh cli - Initial Release Version 0.1.0
+          # This is an HACK because semantic release doesn't support versions under 1.0.0
+          # But if we already have a release then it respects it and start to increment from there
+          if ! gh release view 0.1.0 >/dev/null 2>&1; then
+            gh release create 0.1.0 --title "Initial Release" --notes "Initial Release" --target main
+          fi
+
+          # Run semantic-release in dry-run first to capture version
+          DRY_OUTPUT=$(semantic-release --dry-run 2>&1 || true)
+
+          # Check if there are no changes
+          if $(echo "$DRY_OUTPUT" | grep -q "no new version is released"); then
+            echo "No new release needed"
+            echo "new_release_published=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Extract version from dry run output
+          VERSION=$(echo "$DRY_OUTPUT" | grep -o "The next release version is [0-9]\+\.[0-9]\+\.[0-9]\+\(-rc\.[0-9]\+\)\?" | cut -d ' ' -f6)
+          if [ -z "$VERSION" ]; then
+            echo "Error: Could not determine version"
+            exit 1
+          fi
+
+          echo "new_release_version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Run actual release
+          if semantic-release; then
+            echo "Successfully released version $VERSION"
+            echo "new_release_published=true" >> $GITHUB_OUTPUT
+          else
+            echo "Release failed"
+            exit 1
+          fi
+
+  upload_artifacts:
+    name: Upload Artifacts
+    runs-on: ubuntu-24.04
+    needs:
+      - github_release
+    permissions:
+      contents: write
+    if: needs.github_release.outputs.new_release_published == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@v4
@@ -36,4 +124,5 @@ jobs:
       - name: Run GoReleaser
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: goreleaser release --clean
+        run: |
+          goreleaser release --clean

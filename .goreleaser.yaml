@@ -76,37 +76,39 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
-release:
-  github:
-    owner: inference-gateway
-    name: inference-gateway
-  footer: >-
-    ---
-
-    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
-
 changelog:
-  use: github
-  format: "{{.SHA}}: {{.Message}} (@{{.AuthorUsername}})"
-  sort: asc
-  groups:
-    - title: "✨ Features"
-      regexp: '^.*?feat(\(.+\))??!?:.+$'
-      order: 0
-    - title: "🐛 Bug fixes"
-      regexp: '^.*?fix(\(.+\))??!?:.+$'
-      order: 1
-    - title: "📚 Documentation"
-      regexp: '^.*?docs(\(.+\))??!?:.+$'
-      order: 2
-    - title: "🔒 Security updates"
-      regexp: '^.*?sec(\(.+\))??!?:.+$'
-      order: 3
-    - title: "🔧 Continues Integration"
-      regexp: '^.*?(ci)(\(.+\))?!?:.+$'
-      order: 4
-    - title: "🔨 Improvements"
-      regexp: '^.*?(refactor|perf|test|build)(\(.+\))?!?:.+$'
-      order: 5
-    - title: "🔄 Miscellaneous"
-      order: 9999
+  disable: true
+# release:
+#   github:
+#     owner: inference-gateway
+#     name: inference-gateway
+#   footer: >-
+#     ---
+
+#     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
+
+# changelog:
+#   use: github
+#   format: "{{.SHA}}: {{.Message}} (@{{.AuthorUsername}})"
+#   sort: asc
+#   groups:
+#     - title: "✨ Features"
+#       regexp: '^.*?feat(\(.+\))??!?:.+$'
+#       order: 0
+#     - title: "🐛 Bug fixes"
+#       regexp: '^.*?fix(\(.+\))??!?:.+$'
+#       order: 1
+#     - title: "📚 Documentation"
+#       regexp: '^.*?docs(\(.+\))??!?:.+$'
+#       order: 2
+#     - title: "🔒 Security updates"
+#       regexp: '^.*?sec(\(.+\))??!?:.+$'
+#       order: 3
+#     - title: "🔧 Continues Integration"
+#       regexp: '^.*?(ci)(\(.+\))?!?:.+$'
+#       order: 4
+#     - title: "🔨 Improvements"
+#       regexp: '^.*?(refactor|perf|test|build)(\(.+\))?!?:.+$'
+#       order: 5
+#     - title: "🔄 Miscellaneous"
+#       order: 9999

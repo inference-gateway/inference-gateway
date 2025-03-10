@@ -1,0 +1,62 @@
+---
+branches:
+  - { name: main, prerelease: false, channel: latest }
+  - { name: "rc/*", prerelease: rc, channel: rc }
+verifyConditions:
+  - "@semantic-release/github"
+  - "@semantic-release/git"
+
+plugins:
+  - - "@semantic-release/commit-analyzer"
+    - preset: "conventionalcommits"
+      releaseRules:
+        - { type: "feat", release: "minor" }
+        - { type: "impr", release: "patch" }
+        - { type: "refactor", release: "patch" }
+        - { type: "perf", release: "patch" }
+        - { type: "fix", release: "patch" }
+        - { type: "ci", release: "patch" }
+        - { type: "docs", release: "patch" }
+        - { type: "style", release: "patch" }
+        - { type: "test", release: "patch" }
+        - { type: "build", release: "patch" }
+        - { type: "chore", release: "patch", scope: "!release" }
+
+  - - "@semantic-release/release-notes-generator"
+    - preset: "conventionalcommits"
+      presetConfig:
+        types:
+          - { type: "feat", section: "✨ Features" }
+          - { type: "impr", section: "🚀 Improvements" }
+          - { type: "refactor", section: "♻️ Improvements" }
+          - { type: "perf", section: "⚡️ Improvements" }
+          - { type: "fix", section: "🐛 Bug Fixes" }
+          - { type: "ci", section: "👷 CI" }
+          - { type: "docs", section: "📚 Documentation" }
+          - { type: "chore", section: "🔧 Miscellaneous" }
+          - { type: "style", section: "🎨 Miscellaneous" }
+          - { type: "test", section: "✅ Miscellaneous" }
+          - { type: "build", section: "🔨 Miscellaneous" }
+
+  - - "@semantic-release/changelog"
+    - changelogFile: CHANGELOG.md
+      changelogTitle: "# Changelog\n\nAll notable changes to this project will be documented in this file."
+      verifyConditions: true
+
+  - - "@semantic-release/exec"
+    - verifyConditions: "go mod tidy"
+
+  - - "@semantic-release/github"
+    - assets:
+        - CHANGELOG.md
+      releasedLabels: ["released"]
+      releaseNameTemplate: "🚀 Version ${nextRelease.version}"
+      successCommentCondition: "false"
+
+  - - "@semantic-release/git"
+    - assets:
+        - CHANGELOG.md
+      message: "chore(release): 🔖 ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+
+repositoryUrl: "https://github.com/inference-gateway/inference-gateway"
+tagFormat: "v${version}"
