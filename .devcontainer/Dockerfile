@@ -7,7 +7,8 @@ ENV ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom \
     KUBECTL_VERSION=v1.31.0 \
     HELM_VERSION=v3.17.1 \
     GORELEASER_VERSION=v2.5.1 \
-    GOLANG_CI_LINT_VERSION=v1.63.4
+    GOLANG_CI_LINT_VERSION=v1.63.4 \
+    GITHUB_CLI_VERSION=2.68.1
 
 RUN apt-get update && \
     # Determine architecture
@@ -36,6 +37,11 @@ RUN apt-get update && \
     curl -fsSL https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_Linux_${architecture_pretty}.tar.gz | tar -xzv -C /usr/local/bin goreleaser && \
     # Install golangci-lint
     curl -fsSL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin ${GOLANG_CI_LINT_VERSION} && \
+    # Install GitHub CLI
+    curl -fsSL https://github.com/cli/cli/releases/download/v${GITHUB_CLI_VERSION}/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}.tar.gz -o /tmp/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}.tar.gz && \
+    tar -xzf /tmp/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}.tar.gz -C /tmp && \
+    chmod +x /tmp/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}/bin/gh && \
+    mv /tmp/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}/bin/gh /usr/local/bin/gh && \
     # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
