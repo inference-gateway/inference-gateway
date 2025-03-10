@@ -8,15 +8,13 @@ permissions:
   contents: write
   id-token: write
   packages: write
+  issues: write
+  pull-requests: write
 
 jobs:
   github_release:
     name: Github Release
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
     outputs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
@@ -33,6 +31,15 @@ jobs:
         uses: actions/setup-node@v4.2.0
         with:
           node-version: "22"
+
+      - name: Configure Git signing
+        run: |
+          echo "${{ secrets.BOT_GPG_PRIVATE_KEY }}" | gpg --import
+          git config --global user.signingkey ${{ secrets.BOT_GPG_KEY_ID }}
+          git config --global commit.gpgsign true
+          git config --global commit.signoff true
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'eden.reich@gmail.com'
 
       - name: Install semantic release and plugins
         run: |
@@ -99,9 +106,6 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - github_release
-    permissions:
-      contents: write
-      packages: write
     if: needs.github_release.outputs.new_release_published == 'true'
     steps:
       - name: Checkout code
