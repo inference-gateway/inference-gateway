@@ -40,7 +40,7 @@ jobs:
           git config --global commit.gpgsign true
           git config --global commit.signoff true
           git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'eden.reich@gmail.com'
+          git config --global user.email ${{ vars.BOT_EMAIL }}
 
       - name: Install semantic release and plugins
         run: |
@@ -58,9 +58,9 @@ jobs:
           CI: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_AUTHOR_NAME: "GitHub Actions Bot"
-          GIT_AUTHOR_EMAIL: "eden.reich@gmail.com"
+          GIT_AUTHOR_EMAIL: ${{ vars.BOT_EMAIL }}
           GIT_COMMITTER_NAME: "GitHub Actions Bot"
-          GIT_COMMITTER_EMAIL: "eden.reich@gmail.com"
+          GIT_COMMITTER_EMAIL: ${{ vars.BOT_EMAIL }}
         run: |
           # Create first release if not exists using gh cli - Initial Release Version 0.1.0
           # This is an HACK because semantic release doesn't support versions under 1.0.0
