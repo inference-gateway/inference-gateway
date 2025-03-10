@@ -39,8 +39,8 @@ dockers:
     use: buildx
     dockerfile: Dockerfile.goreleaser
     image_templates:
-      - "ghcr.io/inference-gateway/inference-gateway:latest"
       - "ghcr.io/inference-gateway/inference-gateway:{{ .Tag }}"
+      - "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/arm64"
       - "--pull"
@@ -54,8 +54,8 @@ dockers:
     use: buildx
     dockerfile: Dockerfile.goreleaser
     image_templates:
-      - "ghcr.io/inference-gateway/inference-gateway:latest"
       - "ghcr.io/inference-gateway/inference-gateway:{{ .Tag }}"
+      - "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--pull"
@@ -63,7 +63,6 @@ dockers:
       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
       - "--label=org.opencontainers.image.version={{ .Version }}"
-
 archives:
   - format: tar.gz
     name_template: >-
@@ -78,37 +77,3 @@ checksum:
 
 changelog:
   disable: true
-# release:
-#   github:
-#     owner: inference-gateway
-#     name: inference-gateway
-#   footer: >-
-#     ---
-
-#     Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
-
-# changelog:
-#   use: github
-#   format: "{{.SHA}}: {{.Message}} (@{{.AuthorUsername}})"
-#   sort: asc
-#   groups:
-#     - title: "✨ Features"
-#       regexp: '^.*?feat(\(.+\))??!?:.+$'
-#       order: 0
-#     - title: "🐛 Bug fixes"
-#       regexp: '^.*?fix(\(.+\))??!?:.+$'
-#       order: 1
-#     - title: "📚 Documentation"
-#       regexp: '^.*?docs(\(.+\))??!?:.+$'
-#       order: 2
-#     - title: "🔒 Security updates"
-#       regexp: '^.*?sec(\(.+\))??!?:.+$'
-#       order: 3
-#     - title: "🔧 Continues Integration"
-#       regexp: '^.*?(ci)(\(.+\))?!?:.+$'
-#       order: 4
-#     - title: "🔨 Improvements"
-#       regexp: '^.*?(refactor|perf|test|build)(\(.+\))?!?:.+$'
-#       order: 5
-#     - title: "🔄 Miscellaneous"
-#       order: 9999
