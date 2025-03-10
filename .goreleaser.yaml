@@ -78,3 +78,6 @@ checksum:
 
 changelog:
   disable: true
+
+release:
+  mode: keep-existing
