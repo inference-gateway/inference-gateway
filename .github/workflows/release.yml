@@ -140,9 +140,17 @@ jobs:
         run: |
           # Find all archives created by GoReleaser
           for file in dist/inference-gateway_*; do
+            # Skip directories
+            if [ -d "$file" ]; then
+              echo "Skipping directory: $file"
+              continue
+            fi
+            
             echo "Uploading $file to release v${VERSION}"
             gh release upload v${VERSION} "$file" --clobber
           done
 
-          # Upload checksums
-          gh release upload v${VERSION} "dist/checksums.txt" --clobber
+          # Upload checksums file if it exists
+          if [ -f "dist/checksums.txt" ]; then
+            gh release upload v${VERSION} "dist/checksums.txt" --clobber
+          fi
