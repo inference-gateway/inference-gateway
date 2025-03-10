@@ -109,6 +109,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: false
 
+      - name: Fetch latest tags
+        run: git fetch --tags -f
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -126,4 +129,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.github_release.outputs.new_release_version }}
         run: |
-          goreleaser release --clean
+          goreleaser release --clean --tag v${VERSION}
