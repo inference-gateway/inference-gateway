@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.20-rc.3](https://github.com/inference-gateway/inference-gateway/compare/v0.2.20-rc.2...v0.2.20-rc.3) (2025-03-10)
+
+### 👷 CI
+
+* **release:** update semantic-release to version 24.2.3 ([d22d27d](https://github.com/inference-gateway/inference-gateway/commit/d22d27dfa88cbc790247a661fd67fe446ec04207))
+
 ## [0.2.20-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.2.20-rc.1...v0.2.20-rc.2) (2025-03-10)
 
 ### 👷 CI
