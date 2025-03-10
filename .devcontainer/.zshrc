@@ -119,3 +119,9 @@ source <(k3d completion zsh)
 
 # For ctlptl completion
 source <(ctlptl completion zsh)
+
+# for goreleaser completion
+source <(goreleaser completion zsh)
+
+# for gh completion
+source <(gh completion -s zsh)
