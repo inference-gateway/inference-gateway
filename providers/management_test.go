@@ -49,8 +49,15 @@ func TestListModels(t *testing.T) {
 			expectedError: false,
 			expected: providers.ListModelsResponse{
 				Provider: providers.OllamaID,
+				Object:   "list",
 				Data: []providers.Model{
-					{ID: "llama2"},
+					{
+						ID:       "llama2",
+						Object:   "model",
+						Created:  0,
+						OwnedBy:  "phi3",
+						ServedBy: providers.OllamaID,
+					},
 				},
 			},
 		},
@@ -63,15 +70,23 @@ func TestListModels(t *testing.T) {
                     {
                         "id": "llama-70b",
                         "created": 1234567890,
-                        "object": "model"
+                        "object": "model",
+                        "owned_by": "Meta"
                     }
                 ]
             }`,
 			expectedError: false,
 			expected: providers.ListModelsResponse{
 				Provider: providers.GroqID,
+				Object:   "list",
 				Data: []providers.Model{
-					{ID: "llama-70b"},
+					{
+						ID:       "llama-70b",
+						Created:  1234567890,
+						Object:   "model",
+						OwnedBy:  "Meta",
+						ServedBy: providers.GroqID,
+					},
 				},
 			},
 		},
