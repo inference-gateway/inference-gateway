@@ -35,9 +35,11 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockProviderRegistry, *m
 
 	// Setup Gin router
 	r := gin.New()
+	// r.GET("/llms/:provider/models", router.ListModelsHandler)
+	// r.POST("/llms/:provider/generate", router.GenerateProvidersTokenHandler)
+	r.GET("/v1/models", router.ListModelsOpenAICompatibleHandler)
+	r.POST("/v1/chat/completions", router.ChatCompletionsOpenAICompatibleHandler)
 	r.GET("/health", router.HealthcheckHandler)
-	r.GET("/llms/:provider/models", router.ListModelsHandler)
-	r.POST("/llms/:provider/generate", router.GenerateProvidersTokenHandler)
 
 	return r, mockRegistry, mockClient, mockLogger
 }
@@ -93,7 +95,7 @@ func TestRouterHandlers(t *testing.T) {
 			name:   "generate tokens returns response",
 			method: "POST",
 			url:    "/llms/test-provider/generate",
-			body: providers.GenerateRequest{
+			body: providers.ChatCompletionsRequest{
 				Model: "test-model",
 				Messages: []providers.Message{
 					{Role: "user", Content: "Hello"},
@@ -180,7 +182,7 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 		{
 			name: "missing model",
 			url:  "/llms/test-provider/generate",
-			body: providers.GenerateRequest{
+			body: providers.ChatCompletionsRequest{
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
 			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
@@ -192,7 +194,7 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 		{
 			name: "provider not configured",
 			url:  "/llms/test-provider/generate",
-			body: providers.GenerateRequest{
+			body: providers.ChatCompletionsRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
@@ -211,7 +213,7 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 		{
 			name: "successful non-streaming request",
 			url:  "/llms/test-provider/generate",
-			body: providers.GenerateRequest{
+			body: providers.ChatCompletionsRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
@@ -244,7 +246,7 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 		{
 			name: "generation timeout",
 			url:  "/llms/test-provider/generate",
-			body: providers.GenerateRequest{
+			body: providers.ChatCompletionsRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},

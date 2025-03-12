@@ -10,12 +10,12 @@ import (
 func TestTransformOllama(t *testing.T) {
 	tests := []struct {
 		name     string
-		request  providers.GenerateRequest
+		request  providers.ChatCompletionsRequest
 		expected providers.GenerateRequestOllama
 	}{
 		{
 			name: "basic user message only",
-			request: providers.GenerateRequest{
+			request: providers.ChatCompletionsRequest{
 				Model: "llama2",
 				Messages: []providers.Message{
 					{Role: providers.MessageRoleUser, Content: "Hello"},
@@ -38,7 +38,7 @@ func TestTransformOllama(t *testing.T) {
 		},
 		{
 			name: "with system message",
-			request: providers.GenerateRequest{
+			request: providers.ChatCompletionsRequest{
 				Model: "llama2",
 				Messages: []providers.Message{
 					{Role: providers.MessageRoleSystem, Content: "You are a helpful assistant"},
@@ -66,7 +66,7 @@ func TestTransformOllama(t *testing.T) {
 		},
 		{
 			name: "with tools",
-			request: providers.GenerateRequest{
+			request: providers.ChatCompletionsRequest{
 				Model: "llama2",
 				Messages: []providers.Message{
 					{Role: providers.MessageRoleUser, Content: "Calculate 2+2"},
@@ -127,7 +127,7 @@ func TestTransformOllama(t *testing.T) {
 		},
 		{
 			name: "multiple messages with system",
-			request: providers.GenerateRequest{
+			request: providers.ChatCompletionsRequest{
 				Model: "llama2",
 				Messages: []providers.Message{
 					{Role: providers.MessageRoleSystem, Content: "You are a helpful assistant"},

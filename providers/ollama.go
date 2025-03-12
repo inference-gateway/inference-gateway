@@ -89,7 +89,7 @@ type GenerateRequestOllama struct {
 	Tools     []Tool         `json:"tools,omitempty"`
 }
 
-func (r *GenerateRequest) TransformOllama() GenerateRequestOllama {
+func (r *ChatCompletionsRequest) TransformOllama() GenerateRequestOllama {
 	return GenerateRequestOllama{
 		Model:    r.Model,
 		Messages: r.Messages,

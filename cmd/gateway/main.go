@@ -133,9 +133,9 @@ func main() {
 	}
 	r.Use(oidcAuthenticator.Middleware())
 
-	r.GET("/llms", api.ListAllModelsHandler)                              // Probably going to be deprecated.
-	r.GET("/llms/:provider", api.ListModelsHandler)                       // Probably going to be deprecated.
-	r.POST("/llms/:provider/generate", api.GenerateProvidersTokenHandler) // Probably going to be deprecated.
+	r.GET("/llms", api.ListAllModelsHandler)        // Probably going to be deprecated.
+	r.GET("/llms/:provider", api.ListModelsHandler) // Probably going to be deprecated.
+	// r.POST("/llms/:provider/generate", api.GenerateProvidersTokenHandler) // Probably going to be deprecated.
 	r.GET("/health", api.HealthcheckHandler)
 	r.Any("/proxy/:provider/*path", api.ProxyHandler)
 	v1 := r.Group("/v1")

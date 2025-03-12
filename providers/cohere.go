@@ -81,7 +81,7 @@ type GenerateRequestCohere struct {
 	StrictTools      *bool                  `json:"strict_tools,omitempty"`
 }
 
-func (r *GenerateRequest) TransformCohere() GenerateRequestCohere {
+func (r *ChatCompletionsRequest) TransformCohere() GenerateRequestCohere {
 	return GenerateRequestCohere{
 		Messages:    r.Messages,
 		Model:       r.Model,

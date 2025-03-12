@@ -73,7 +73,7 @@ type GenerateRequestCloudflare struct {
 	} `json:"tools,omitempty"`
 }
 
-func (r *GenerateRequest) TransformCloudflare() GenerateRequestCloudflare {
+func (r *ChatCompletionsRequest) TransformCloudflare() GenerateRequestCloudflare {
 	return GenerateRequestCloudflare{
 		Messages:    r.Messages,
 		Model:       r.Model,

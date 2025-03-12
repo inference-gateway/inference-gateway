@@ -14,12 +14,12 @@ import (
 func TestGenerateRequestTransformGroq(t *testing.T) {
 	tests := []struct {
 		name     string
-		request  providers.GenerateRequest
+		request  providers.ChatCompletionsRequest
 		expected providers.GenerateRequestGroq
 	}{
 		{
 			name: "basic request",
-			request: providers.GenerateRequest{
+			request: providers.ChatCompletionsRequest{
 				Model:    "llama2",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 				Stream:   true,
@@ -33,7 +33,7 @@ func TestGenerateRequestTransformGroq(t *testing.T) {
 		},
 		{
 			name: "request with tools",
-			request: providers.GenerateRequest{
+			request: providers.ChatCompletionsRequest{
 				Model:    "llama2",
 				Messages: []providers.Message{{Role: "user", Content: "Calculate"}},
 				Stream:   false,

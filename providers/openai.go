@@ -32,7 +32,7 @@ type GenerateRequestOpenai struct {
 	Temperature float64   `json:"temperature,omitempty"`
 }
 
-func (r *GenerateRequest) TransformOpenai() GenerateRequestOpenai {
+func (r *ChatCompletionsRequest) TransformOpenai() GenerateRequestOpenai {
 	return GenerateRequestOpenai{
 		Messages:    r.Messages,
 		Model:       r.Model,

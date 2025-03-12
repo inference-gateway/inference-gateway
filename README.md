@@ -93,7 +93,7 @@ graph TD
 Client is sending:
 
 ```bash
-curl -X POST http://localhost:8080/llms/openai/generate
+curl -X POST http://localhost:8080/v1/chat/completions
   -d '{
     "model": "gpt-3.5-turbo",
     "messages": [
@@ -109,18 +109,37 @@ curl -X POST http://localhost:8080/llms/openai/generate
   }'
 ```
 
-Client receives:
+\*\* Internally the request is proxied to OpenAI, the Inference Gateway inferring the provider by the model name.
+
+You can also send the request explicitly using `?provider=openai` or any other supported provider in the URL.
+
+Finally client receives:
 
 ```json
 {
-  "provider": "openai",
-  "response": {
-    "role": "assistant",
-    "model": "gpt-3.5-turbo",
-    "content": "Ahoy, matey! 🏴‍☠️ The seas be wild, the sun be bright, and this here pirate be ready to conquer the day! What be yer business, landlubber? 🦜"
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Ahoy, matey! 🏴‍☠️ The seas be wild, the sun be bright, and this here pirate be ready to conquer the day! What be yer business, landlubber? 🦜",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1741821109,
+  "id": "chatcmpl-dc24995a-7a6e-4d95-9ab3-279ed82080bb",
+  "model": "N/A",
+  "object": "chat.completion",
+  "usage": {
+    "completion_tokens": 0,
+    "prompt_tokens": 0,
+    "total_tokens": 0
   }
 }
 ```
+
+For streaming the tokens simply add to the request body `stream: true`.
 
 ## Supported API's
 

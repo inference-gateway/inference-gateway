@@ -58,7 +58,7 @@ type GenerateRequestAnthropic struct {
 	Messages  []Message `json:"messages"`
 }
 
-func (r *GenerateRequest) TransformAnthropic() GenerateRequestAnthropic {
+func (r *ChatCompletionsRequest) TransformAnthropic() GenerateRequestAnthropic {
 	return GenerateRequestAnthropic{
 		Model:     r.Model,
 		Messages:  r.Messages,

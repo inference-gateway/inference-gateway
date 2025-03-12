@@ -14,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
 	gin "github.com/gin-gonic/gin"
@@ -27,7 +29,7 @@ type Router interface {
 	ProxyHandler(c *gin.Context)
 	ListAllModelsHandler(c *gin.Context)
 	ListModelsHandler(c *gin.Context)
-	GenerateProvidersTokenHandler(c *gin.Context)
+	// GenerateProvidersTokenHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
 
@@ -369,7 +371,161 @@ func (router *RouterImpl) ListModelsOpenAICompatibleHandler(c *gin.Context) {
 // built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
 // architecture.
 func (router *RouterImpl) ChatCompletionsOpenAICompatibleHandler(c *gin.Context) {
+	var req providers.ChatCompletionsRequest
 
+	if err := c.ShouldBindJSON(&req); err != nil {
+		router.logger.Error("failed to decode request", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+		return
+	}
+
+	providerID := c.Query("provider")
+	if providerID == "" {
+		providerID = determineProviderFromModel(req.Model)
+		if providerID == "" {
+			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider."})
+			return
+		}
+	}
+
+	provider, err := router.registry.BuildProvider(providerID, router.client)
+	if err != nil {
+		if strings.Contains(err.Error(), "token not configured") {
+			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", providerID)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+			return
+		}
+		router.logger.Error("provider not found or not supported", err, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
+	defer cancel()
+
+	// Streaming response
+	if req.Stream {
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Transfer-Encoding", "chunked")
+
+		streamCh, err := provider.StreamTokens(ctx, req.Model, req.Messages)
+		if err != nil {
+			router.logger.Error("failed to start streaming", err)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to start streaming"})
+			return
+		}
+
+		c.Stream(func(w io.Writer) bool {
+			select {
+			case resp, ok := <-streamCh:
+				if !ok {
+					if _, err := c.Writer.Write([]byte("data: [DONE]\n\n")); err != nil {
+						router.logger.Error("failed to write [DONE] marker", err)
+					}
+					return false
+				}
+
+				chunk := providers.ChunkResponse{
+					ID:      "chatcmpl-" + uuid.New().String(),
+					Object:  "chat.completion.chunk",
+					Created: time.Now().Unix(),
+					Model:   resp.Response.Model,
+					Choices: []providers.ChunkChoice{
+						{
+							Index: 0,
+							Delta: providers.ChunkDelta{
+								Role:    resp.Response.Role,
+								Content: resp.Response.Content,
+							},
+							FinishReason: nil,
+						},
+					},
+				}
+
+				data, err := json.Marshal(chunk)
+				if err != nil {
+					router.logger.Error("failed to marshal chunk", err)
+					return false
+				}
+
+				if _, err := c.Writer.Write([]byte("data: " + string(data) + "\n\n")); err != nil {
+					router.logger.Error("failed to write chunk", err)
+					return false
+				}
+				c.Writer.Flush()
+				return true
+			case <-ctx.Done():
+				return false
+			}
+		})
+		return
+	}
+
+	// Non-streaming response
+	response, err := provider.GenerateTokens(ctx, req.Model, req.Messages, req.Tools, req.MaxTokens)
+	if err != nil {
+		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
+			router.logger.Error("request timed out", err, "provider", providerID)
+			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
+			return
+		}
+		router.logger.Error("failed to generate tokens", err, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to generate tokens"})
+		return
+	}
+
+	openaiResponse := providers.CompletionResponse{
+		ID:      "chatcmpl-" + uuid.New().String(),
+		Object:  "chat.completion",
+		Created: time.Now().Unix(),
+		Model:   response.Response.Model,
+		Choices: []providers.Choice{
+			{
+				Index: 0,
+				Message: providers.Message{
+					Role:    response.Response.Role,
+					Content: response.Response.Content,
+				},
+				FinishReason: "stop",
+			},
+		},
+		// TODO - need to implement the usage details correctly
+		Usage: providers.Usage{
+			PromptTokens:     0,
+			CompletionTokens: 0,
+			TotalTokens:      0,
+			// Optional fields
+			QueueTime:      0.0,
+			PromptTime:     0.0,
+			CompletionTime: 0.0,
+			TotalTime:      0.0,
+		},
+	}
+
+	c.JSON(http.StatusOK, openaiResponse)
+}
+
+func determineProviderFromModel(model string) string {
+	modelLower := strings.ToLower(model)
+
+	prefixMapping := map[string]string{
+		"gpt-":      providers.OpenaiID,
+		"claude-":   providers.AnthropicID,
+		"llama-":    providers.GroqID,
+		"command-":  providers.CohereID,
+		"deepseek-": providers.GroqID,
+	}
+
+	for prefix, provider := range prefixMapping {
+		if strings.HasPrefix(modelLower, prefix) {
+			return provider
+		}
+	}
+
+	return ""
 }
 
 func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
@@ -463,116 +619,116 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, allModels)
 }
 
-func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
-	var req providers.GenerateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		router.logger.Error("failed to decode request", err)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
-		return
-	}
+// func (router *RouterImpl) GenerateProvidersTokenHandler(c *gin.Context) {
+// 	var req providers.ChatCompletionsRequest
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		router.logger.Error("failed to decode request", err)
+// 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+// 		return
+// 	}
 
-	if req.Model == "" {
-		router.logger.Error("model is required", nil)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Model is required"})
-		return
-	}
+// 	if req.Model == "" {
+// 		router.logger.Error("model is required", nil)
+// 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Model is required"})
+// 		return
+// 	}
 
-	provider, err := router.registry.BuildProvider(c.Param("provider"), router.client)
-	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", c.Param("provider"))
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
-			return
-		}
-		router.logger.Error("provider not found or not supported", err, "provider", c.Param("provider"))
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
-		return
-	}
+// 	provider, err := router.registry.BuildProvider(c.Param("provider"), router.client)
+// 	if err != nil {
+// 		if strings.Contains(err.Error(), "token not configured") {
+// 			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", c.Param("provider"))
+// 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+// 			return
+// 		}
+// 		router.logger.Error("provider not found or not supported", err, "provider", c.Param("provider"))
+// 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+// 		return
+// 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
-	defer cancel()
+// 	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
+// 	defer cancel()
 
-	if req.Stream {
-		c.Header("Content-Type", "text/event-stream")
-		c.Header("Cache-Control", "no-cache")
-		c.Header("Connection", "keep-alive")
-		c.Header("Transfer-Encoding", "chunked")
+// 	if req.Stream {
+// 		c.Header("Content-Type", "text/event-stream")
+// 		c.Header("Cache-Control", "no-cache")
+// 		c.Header("Connection", "keep-alive")
+// 		c.Header("Transfer-Encoding", "chunked")
 
-		streamCh, err := provider.StreamTokens(ctx, req.Model, req.Messages)
-		if err != nil {
-			router.logger.Error("failed to start streaming", err)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to start streaming"})
-			return
-		}
+// 		streamCh, err := provider.StreamTokens(ctx, req.Model, req.Messages)
+// 		if err != nil {
+// 			router.logger.Error("failed to start streaming", err)
+// 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to start streaming"})
+// 			return
+// 		}
 
-		c.Stream(func(w io.Writer) bool {
-			select {
-			case resp, ok := <-streamCh:
-				if !ok {
-					return false
-				}
+// 		c.Stream(func(w io.Writer) bool {
+// 			select {
+// 			case resp, ok := <-streamCh:
+// 				if !ok {
+// 					return false
+// 				}
 
-				jsonData, err := json.Marshal(resp.Response)
-				if err != nil {
-					router.logger.Error("failed to marshal token", err)
-					return false
-				}
+// 				jsonData, err := json.Marshal(resp.Response)
+// 				if err != nil {
+// 					router.logger.Error("failed to marshal token", err)
+// 					return false
+// 				}
 
-				if req.SSEvents {
-					switch resp.EventType {
-					case providers.EventMessageStart:
-						c.SSEvent(string(providers.EventMessageStart), string(providers.EventMessageStartValue))
+// 				if req.SSEvents {
+// 					switch resp.EventType {
+// 					case providers.EventMessageStart:
+// 						c.SSEvent(string(providers.EventMessageStart), string(providers.EventMessageStartValue))
 
-					case providers.EventStreamStart:
-						c.SSEvent(string(providers.EventStreamStart), string(providers.EventStreamStartValue))
+// 					case providers.EventStreamStart:
+// 						c.SSEvent(string(providers.EventStreamStart), string(providers.EventStreamStartValue))
 
-					case providers.EventContentStart:
-						c.SSEvent(string(providers.EventContentStart), string(providers.EventContentStartValue))
+// 					case providers.EventContentStart:
+// 						c.SSEvent(string(providers.EventContentStart), string(providers.EventContentStartValue))
 
-					case providers.EventContentDelta:
-						c.SSEvent(string(providers.EventContentDelta), string(jsonData))
+// 					case providers.EventContentDelta:
+// 						c.SSEvent(string(providers.EventContentDelta), string(jsonData))
 
-					case providers.EventContentEnd:
-						c.SSEvent(string(providers.EventContentEnd), string(providers.EventContentEndValue))
+// 					case providers.EventContentEnd:
+// 						c.SSEvent(string(providers.EventContentEnd), string(providers.EventContentEndValue))
 
-					case providers.EventMessageEnd:
-						c.SSEvent(string(providers.EventMessageEnd), string(providers.EventMessageEndValue))
+// 					case providers.EventMessageEnd:
+// 						c.SSEvent(string(providers.EventMessageEnd), string(providers.EventMessageEndValue))
 
-					case providers.EventStreamEnd:
-						c.SSEvent(string(providers.EventStreamEnd), string(providers.EventStreamEndValue))
+// 					case providers.EventStreamEnd:
+// 						c.SSEvent(string(providers.EventStreamEnd), string(providers.EventStreamEndValue))
 
-					}
-					return true
-				}
+// 					}
+// 					return true
+// 				}
 
-				// Write Raw JSON chunk
-				if _, err := c.Writer.Write(jsonData); err != nil {
-					router.logger.Error("failed to write response chunk", err)
-					return false
-				}
-				if _, err := c.Writer.Write([]byte("\n")); err != nil {
-					router.logger.Error("failed to write newline", err)
-					return false
-				}
-				return true
-			case <-ctx.Done():
-				return false
-			}
-		})
-		return
-	}
+// 				// Write Raw JSON chunk
+// 				if _, err := c.Writer.Write(jsonData); err != nil {
+// 					router.logger.Error("failed to write response chunk", err)
+// 					return false
+// 				}
+// 				if _, err := c.Writer.Write([]byte("\n")); err != nil {
+// 					router.logger.Error("failed to write newline", err)
+// 					return false
+// 				}
+// 				return true
+// 			case <-ctx.Done():
+// 				return false
+// 			}
+// 		})
+// 		return
+// 	}
 
-	response, err := provider.GenerateTokens(ctx, req.Model, req.Messages, req.Tools, req.MaxTokens)
-	if err != nil {
-		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "provider", c.Param("provider"))
-			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
-			return
-		}
-		router.logger.Error("failed to generate tokens", err, "provider", c.Param("provider"))
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to generate tokens"})
-		return
-	}
+// 	response, err := provider.GenerateTokens(ctx, req.Model, req.Messages, req.Tools, req.MaxTokens)
+// 	if err != nil {
+// 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
+// 			router.logger.Error("request timed out", err, "provider", c.Param("provider"))
+// 			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
+// 			return
+// 		}
+// 		router.logger.Error("failed to generate tokens", err, "provider", c.Param("provider"))
+// 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to generate tokens"})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, response)
-}
+// 	c.JSON(http.StatusOK, response)
+// }

@@ -82,13 +82,15 @@ type Tool struct {
 }
 
 // Common response and request types
-type GenerateRequest struct {
-	Messages  []Message `json:"messages"`
-	Model     string    `json:"model"`
-	Stream    bool      `json:"stream"`
-	SSEvents  bool      `json:"ssevents"`
-	Tools     []Tool    `json:"tools"`
-	MaxTokens int       `json:"max_tokens,omitempty"`
+type ChatCompletionsRequest struct {
+	Messages    []Message `json:"messages" binding:"required"`
+	Model       string    `json:"model" binding:"required"`
+	Stream      bool      `json:"stream"`
+	Tools       []Tool    `json:"tools"`
+	MaxTokens   int       `json:"max_tokens,omitempty"`
+	Temperature float64   `json:"temperature"`
+
+	// SSEvents  bool      `json:"ssevents"` // TODO need to deprecate it, will always use SSE even for ollama, it's a good practice
 }
 
 // ToolCall represents a tool invocation by the LLM
@@ -105,6 +107,45 @@ type FunctionToolCall struct {
 	Arguments   json.RawMessage `json:"arguments"`
 }
 
+type CompletionResponse struct {
+	ID      string   `json:"id"`
+	Object  string   `json:"object"`
+	Created int64    `json:"created"`
+	Model   string   `json:"model"`
+	Choices []Choice `json:"choices"`
+	Usage   Usage    `json:"usage"`
+}
+
+// Choice represents a choice in a completion response
+type Choice struct {
+	Index        int     `json:"index"`
+	Message      Message `json:"message"`
+	FinishReason string  `json:"finish_reason"`
+}
+
+// ChunkResponse represents a chunk in a streaming API response
+type ChunkResponse struct {
+	ID      string        `json:"id"`
+	Object  string        `json:"object"`
+	Created int64         `json:"created"`
+	Model   string        `json:"model"`
+	Choices []ChunkChoice `json:"choices"`
+}
+
+// ChunkChoice represents a chunk choice in a streaming API response
+type ChunkChoice struct {
+	Index        int        `json:"index"`
+	Delta        ChunkDelta `json:"delta"`
+	FinishReason *string    `json:"finish_reason"`
+}
+
+// ChunkDelta represents the delta content in a streaming chunk
+type ChunkDelta struct {
+	Role    string `json:"role,omitempty"`
+	Content string `json:"content,omitempty"`
+}
+
+// TODO - deprecate it
 type GenerateResponse struct {
 	Provider  string         `json:"provider"`
 	Response  ResponseTokens `json:"response"`

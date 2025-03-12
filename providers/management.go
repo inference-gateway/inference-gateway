@@ -177,7 +177,7 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 		url = strings.Replace(url, "{model}", model, 1)
 	}
 
-	genRequest := GenerateRequest{
+	genRequest := ChatCompletionsRequest{
 		Model:     model,
 		Messages:  messages,
 		Tools:     tools,
@@ -342,7 +342,7 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 
 	streamCh := make(chan GenerateResponse)
 
-	genRequest := GenerateRequest{
+	genRequest := ChatCompletionsRequest{
 		Model:    model,
 		Messages: messages,
 		Stream:   true,

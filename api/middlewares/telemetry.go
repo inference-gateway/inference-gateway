@@ -49,14 +49,14 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		startTime := time.Now()
 
 		t.logger.Debug("Request URL", "url", c.Request.URL.Path)
-		if !strings.Contains(c.Request.URL.Path, "/generate") {
+		if !strings.Contains(c.Request.URL.Path, "/v1/chat/completions") {
 			c.Next()
 			return
 		}
 
 		t.logger.Debug("Intercepting request for token usage")
 
-		var requestBody providers.GenerateRequest
+		var requestBody providers.ChatCompletionsRequest
 		bodyBytes, _ := io.ReadAll(c.Request.Body)
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		_ = json.Unmarshal(bodyBytes, &requestBody)

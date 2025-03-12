@@ -58,7 +58,7 @@ type GenerateRequestGroq struct {
 	Tools       []Tool  `json:"tools,omitempty"`
 }
 
-func (r *GenerateRequest) TransformGroq() GenerateRequestGroq {
+func (r *ChatCompletionsRequest) TransformGroq() GenerateRequestGroq {
 	return GenerateRequestGroq{
 		Messages:            r.Messages,
 		Model:               r.Model,
