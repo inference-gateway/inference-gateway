@@ -52,18 +52,6 @@ func (mr *MockRouterMockRecorder) ChatCompletionsOpenAICompatibleHandler(c any) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletionsOpenAICompatibleHandler", reflect.TypeOf((*MockRouter)(nil).ChatCompletionsOpenAICompatibleHandler), c)
 }
 
-// GenerateProvidersTokenHandler mocks base method.
-func (m *MockRouter) GenerateProvidersTokenHandler(c *gin.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GenerateProvidersTokenHandler", c)
-}
-
-// GenerateProvidersTokenHandler indicates an expected call of GenerateProvidersTokenHandler.
-func (mr *MockRouterMockRecorder) GenerateProvidersTokenHandler(c any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateProvidersTokenHandler", reflect.TypeOf((*MockRouter)(nil).GenerateProvidersTokenHandler), c)
-}
-
 // HealthcheckHandler mocks base method.
 func (m *MockRouter) HealthcheckHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
