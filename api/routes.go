@@ -250,35 +250,92 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseJSON{Message: "OK"})
 }
 
+// OpenAI Compatible API Handlers
+// It returns a list of models from the provider if the provider is specified
+// If no provider is specified, it returns a list of models from all providers
 func (router *RouterImpl) ListModelsOpenAICompatibleHandler(c *gin.Context) {
-	provider, err := router.registry.BuildProvider(c.Query("provider"), router.client)
-	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", provider.GetName())
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+	providerID := c.Query("provider")
+	if providerID != "" {
+		provider, err := router.registry.BuildProvider(c.Query("provider"), router.client)
+		if err != nil {
+			if strings.Contains(err.Error(), "token not configured") {
+				router.logger.Error("provider requires authentication but no API key was configured", err, "provider", providerID)
+				c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+				return
+			}
+			router.logger.Error("provider not found or not supported", err, "provider", providerID)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
 			return
 		}
-		router.logger.Error("provider not found or not supported", err, "provider", provider.GetName())
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
-		return
-	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
-	defer cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
+		defer cancel()
 
-	response, err := provider.ListModels(ctx)
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "provider", provider.GetName())
-			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
+		response, err := provider.ListModels(ctx)
+		if err != nil {
+			if ctx.Err() == context.DeadlineExceeded {
+				router.logger.Error("request timed out", err, "provider", provider.GetName())
+				c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
+				return
+			}
+			router.logger.Error("failed to list models", err, "provider", provider.GetName())
+			c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to list models"})
 			return
 		}
-		router.logger.Error("failed to list models", err, "provider", provider.GetName())
-		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to list models"})
-		return
-	}
 
-	c.JSON(http.StatusOK, response)
+		c.JSON(http.StatusOK, response)
+	} else {
+		var wg sync.WaitGroup
+		providersCfg := router.cfg.Providers
+
+		ch := make(chan providers.ListModelsResponse, len(providersCfg))
+
+		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
+		defer cancel()
+
+		for providerID := range providersCfg {
+			wg.Add(1)
+			go func(id string) {
+				defer wg.Done()
+
+				provider, err := router.registry.BuildProvider(id, router.client)
+				if err != nil {
+					router.logger.Error("failed to create provider", err, "provider", id)
+					return
+				}
+
+				response, err := provider.ListModels(ctx)
+				if err != nil {
+					if ctx.Err() == context.DeadlineExceeded {
+						router.logger.Error("request timed out", err, "provider", id)
+						return
+					}
+					router.logger.Error("failed to list models", err, "provider", id)
+					return
+				}
+
+				if response.Data == nil {
+					response.Data = make([]providers.Model, 0)
+				}
+				ch <- response
+			}(providerID)
+		}
+
+		wg.Wait()
+		close(ch)
+
+		var allModels []providers.Model
+		for response := range ch {
+			allModels = append(allModels, response.Data...)
+		}
+
+		unifiedResponse := providers.ListModelsResponse{
+			Object: "list",
+			Data:   allModels,
+		}
+
+		c.JSON(http.StatusOK, unifiedResponse)
+	}
 }
 
 func (router *RouterImpl) ChatCompletionsOpenAICompatibleHandler(c *gin.Context) {

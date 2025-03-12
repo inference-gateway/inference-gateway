@@ -115,7 +115,7 @@ type GenerateResponse struct {
 type ListModelsResponse struct {
 	Data     []Model `json:"data"`
 	Object   string  `json:"object"`
-	Provider string  `json:"provider"`
+	Provider string  `json:"provider,omitempty"`
 }
 
 type Message struct {
