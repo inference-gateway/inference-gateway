@@ -362,6 +362,12 @@ func (router *RouterImpl) ListModelsOpenAICompatibleHandler(c *gin.Context) {
 	}
 }
 
+// ChatCompletionsOpenAICompatibleHandler implements an OpenAI-compatible API endpoint
+// that generates text completions in the standard OpenAI format.
+//
+// It returns token completions as chat in the standard OpenAI format, allowing applications
+// built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
+// architecture.
 func (router *RouterImpl) ChatCompletionsOpenAICompatibleHandler(c *gin.Context) {
 
 }

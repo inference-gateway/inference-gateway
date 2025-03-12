@@ -28,21 +28,21 @@ func TestListModels(t *testing.T) {
 			mockResponse: `{
 			"models": [
 				{
-				"name": "llama2",
-				"model": "llama2",
-				"modified_at": "2025-02-06T19:31:24.146864008Z",
-				"size": 2176178913,
-				"digest": "4f2dddddddddddd",
-				"details": {
-					"parent_model": "",
-					"format": "gguf",
-					"family": "phi3",
-					"families": [
-					"phi3"
-					],
-					"parameter_size": "3.8B",
-					"quantization_level": "Q4_0"
-				}
+					"name": "llama2",
+					"model": "llama2",
+					"modified_at": "2025-02-06T19:31:24.146864008Z",
+					"size": 2176178913,
+					"digest": "4f2dddddddddddd",
+					"details": {
+						"parent_model": "",
+						"format": "gguf",
+						"family": "phi3",
+						"families": [
+							"phi3"
+						],
+						"parameter_size": "3.8B",
+						"quantization_level": "Q4_0"
+					}
 				}
 			]
 			}`,
