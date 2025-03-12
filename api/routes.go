@@ -250,9 +250,33 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseJSON{Message: "OK"})
 }
 
-// OpenAI Compatible API Handlers
-// It returns a list of models from the provider if the provider is specified
-// If no provider is specified, it returns a list of models from all providers
+// ListModelsOpenAICompatibleHandler implements an OpenAI-compatible API endpoint
+// that returns model information in the standard OpenAI format.
+//
+// This handler supports the OpenAI GET /v1/models endpoint specification:
+// https://platform.openai.com/docs/api-reference/models/list
+//
+// Parameters:
+//   - provider (query): Optional. When specified, returns models from only that provider.
+//     If not specified, returns models from all configured providers.
+//
+// Response format:
+//
+//	{
+//	  "object": "list",
+//	  "data": [
+//	    {
+//	      "id": "model-id",
+//	      "object": "model",
+//	      "created": 1686935002,
+//	      "owned_by": "provider-name"
+//	    },
+//	    ...
+//	  ]
+//	}
+//
+// This endpoint allows applications built for OpenAI's API to work seamlessly
+// with the Inference Gateway's multi-provider architecture.
 func (router *RouterImpl) ListModelsOpenAICompatibleHandler(c *gin.Context) {
 	providerID := c.Query("provider")
 	if providerID != "" {
