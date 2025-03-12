@@ -18,31 +18,11 @@ type OpenaiPermission struct {
 	AllowFineTuning    bool   `json:"allow_fine_tuning"`
 }
 
-type OpenaiModel struct {
-	ID         string             `json:"id"`
-	Object     string             `json:"object"`
-	Created    int64              `json:"created"`
-	OwnedBy    string             `json:"owned_by"`
-	Permission []OpenaiPermission `json:"permission"`
-	Root       string             `json:"root"`
-	Parent     string             `json:"parent"`
-}
-
-type ListModelsResponseOpenai struct {
-	Object string        `json:"object"`
-	Data   []OpenaiModel `json:"data"`
-}
-
-func (l *ListModelsResponseOpenai) Transform() ListModelsResponse {
-	var models []Model
-	for _, model := range l.Data {
-		models = append(models, Model{
-			Name: model.ID,
-		})
-	}
+func (l *ListModelsResponse) Transform() ListModelsResponse {
 	return ListModelsResponse{
 		Provider: OpenaiID,
-		Models:   models,
+		Object:   l.Object,
+		Data:     l.Data,
 	}
 }
 

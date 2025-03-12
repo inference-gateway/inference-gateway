@@ -95,7 +95,8 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 		p.logger.Error("failed to make request", err, "provider", p.GetName())
 		return ListModelsResponse{
 			Provider: p.GetID(),
-			Models:   make([]Model, 0),
+			Object:   "list",
+			Data:     make([]Model, 0),
 		}, fmt.Errorf("failed to reach provider %s: %w", p.GetName(), err)
 	}
 	defer resp.Body.Close()
@@ -103,7 +104,8 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 	if resp.StatusCode != http.StatusOK {
 		return ListModelsResponse{
 			Provider: p.GetID(),
-			Models:   make([]Model, 0),
+			Object:   "list",
+			Data:     make([]Model, 0),
 		}, fmt.Errorf("failed with status code: %d", resp.StatusCode)
 	}
 
@@ -125,7 +127,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 		}
 		return response.Transform(), nil
 	case OpenaiID:
-		var response ListModelsResponseOpenai
+		var response ListModelsResponse
 		err = json.NewDecoder(resp.Body).Decode(&response)
 		if err != nil {
 			p.logger.Error("failed to decode response", err, "provider", p.GetName())

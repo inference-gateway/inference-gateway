@@ -30,6 +30,9 @@ type Router interface {
 	GenerateProvidersTokenHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
+
+	ListModelsOpenAICompatibleHandler(c *gin.Context)
+	ChatCompletionsOpenAICompatibleHandler(c *gin.Context)
 }
 
 type RouterImpl struct {
@@ -247,6 +250,41 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseJSON{Message: "OK"})
 }
 
+func (router *RouterImpl) ListModelsOpenAICompatibleHandler(c *gin.Context) {
+	provider, err := router.registry.BuildProvider(c.Query("provider"), router.client)
+	if err != nil {
+		if strings.Contains(err.Error(), "token not configured") {
+			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", provider.GetName())
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+			return
+		}
+		router.logger.Error("provider not found or not supported", err, "provider", provider.GetName())
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
+	defer cancel()
+
+	response, err := provider.ListModels(ctx)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			router.logger.Error("request timed out", err, "provider", provider.GetName())
+			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
+			return
+		}
+		router.logger.Error("failed to list models", err, "provider", provider.GetName())
+		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to list models"})
+		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (router *RouterImpl) ChatCompletionsOpenAICompatibleHandler(c *gin.Context) {
+
+}
+
 func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 	provider, err := router.registry.BuildProvider(c.Param("provider"), router.client)
 	if err != nil {
@@ -297,7 +335,7 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 				router.logger.Error("failed to create provider", err)
 				ch <- providers.ListModelsResponse{
 					Provider: id,
-					Models:   make([]providers.Model, 0),
+					Data:     make([]providers.Model, 0),
 				}
 				return
 			}
@@ -308,20 +346,20 @@ func (router *RouterImpl) ListAllModelsHandler(c *gin.Context) {
 					router.logger.Error("request timed out", err, "provider", id)
 					ch <- providers.ListModelsResponse{
 						Provider: id,
-						Models:   make([]providers.Model, 0),
+						Data:     make([]providers.Model, 0),
 					}
 					return
 				}
 				router.logger.Error("failed to list models", err, "provider", id)
 				ch <- providers.ListModelsResponse{
 					Provider: id,
-					Models:   make([]providers.Model, 0),
+					Data:     make([]providers.Model, 0),
 				}
 				return
 			}
 
-			if response.Models == nil {
-				response.Models = make([]providers.Model, 0)
+			if response.Data == nil {
+				response.Data = make([]providers.Model, 0)
 			}
 			ch <- response
 		}(providerID)

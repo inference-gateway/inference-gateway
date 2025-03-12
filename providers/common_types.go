@@ -113,7 +113,8 @@ type GenerateResponse struct {
 }
 
 type ListModelsResponse struct {
-	Models   []Model `json:"models"`
+	Data     []Model `json:"data"`
+	Object   string  `json:"object"`
 	Provider string  `json:"provider"`
 }
 
@@ -126,7 +127,11 @@ type Message struct {
 }
 
 type Model struct {
-	Name string `json:"name"`
+	ID       string `json:"id"`
+	Object   string `json:"object"`
+	Created  int64  `json:"created"`
+	OwnedBy  string `json:"owned_by"`
+	ServedBy string `json:"served_by"`
 }
 
 type ResponseTokens struct {

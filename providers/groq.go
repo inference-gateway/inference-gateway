@@ -25,12 +25,17 @@ func (l *ListModelsResponseGroq) Transform() ListModelsResponse {
 	var models []Model
 	for _, model := range l.Data {
 		models = append(models, Model{
-			Name: model.ID,
+			ID:       model.ID,
+			Object:   model.Object,
+			Created:  model.Created,
+			OwnedBy:  model.OwnedBy,
+			ServedBy: GroqID,
 		})
 	}
 	return ListModelsResponse{
+		Object:   l.Object,
 		Provider: GroqID,
-		Models:   models,
+		Data:     models,
 	}
 }
 

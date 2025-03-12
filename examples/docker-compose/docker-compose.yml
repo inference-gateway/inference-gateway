@@ -86,7 +86,7 @@ services:
       OLLAMA_HOST: 127.0.0.0:8080
       OLLAMA_MAX_LOADED_MODELS: 0
     command: >
-      "ollama serve & sleep 5 && ollama pull deepseek-r1:1.5b"
+      "ollama serve & sleep 5 && ollama pull deepseek-r1:1.5b && chown -R 65534:65534 /.ollama"
     deploy:
       resources:
         limits:

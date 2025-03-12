@@ -49,8 +49,8 @@ func TestListModels(t *testing.T) {
 			expectedError: false,
 			expected: providers.ListModelsResponse{
 				Provider: providers.OllamaID,
-				Models: []providers.Model{
-					{Name: "llama2"},
+				Data: []providers.Model{
+					{ID: "llama2"},
 				},
 			},
 		},
@@ -70,8 +70,8 @@ func TestListModels(t *testing.T) {
 			expectedError: false,
 			expected: providers.ListModelsResponse{
 				Provider: providers.GroqID,
-				Models: []providers.Model{
-					{Name: "llama-70b"},
+				Data: []providers.Model{
+					{ID: "llama-70b"},
 				},
 			},
 		},

@@ -2,6 +2,7 @@ package providers
 
 import (
 	"bufio"
+	"time"
 
 	"github.com/inference-gateway/inference-gateway/logger"
 )
@@ -28,13 +29,26 @@ type ListModelsResponseAnthropic struct {
 func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
 	var models []Model
 	for _, model := range l.Data {
+		t, err := time.Parse(time.RFC3339, model.CreatedAt)
+		var created int64
+		if err != nil {
+			created = 0
+		} else {
+			created = t.Unix()
+		}
+
 		models = append(models, Model{
-			Name: model.ID,
+			ID:       model.ID,
+			Object:   "model",
+			Created:  created,
+			OwnedBy:  AnthropicID,
+			ServedBy: AnthropicID,
 		})
 	}
 	return ListModelsResponse{
+		Object:   "list",
 		Provider: AnthropicID,
-		Models:   models,
+		Data:     models,
 	}
 }
 

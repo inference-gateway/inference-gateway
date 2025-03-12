@@ -25,12 +25,17 @@ func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
 	var models []Model
 	for _, model := range l.Models {
 		models = append(models, Model{
-			Name: model.Name,
+			ID:       model.Name,
+			Object:   "model",
+			Created:  0,
+			OwnedBy:  CohereID,
+			ServedBy: CohereID,
 		})
 	}
 	return ListModelsResponse{
+		Object:   "list",
 		Provider: CohereID,
-		Models:   models,
+		Data:     models,
 	}
 }
 

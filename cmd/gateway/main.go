@@ -133,11 +133,16 @@ func main() {
 	}
 	r.Use(oidcAuthenticator.Middleware())
 
-	r.GET("/llms", api.ListAllModelsHandler)
-	r.GET("/llms/:provider", api.ListModelsHandler)
-	r.POST("/llms/:provider/generate", api.GenerateProvidersTokenHandler)
-	r.Any("/proxy/:provider/*path", api.ProxyHandler)
+	r.GET("/llms", api.ListAllModelsHandler)                              // Probably going to be deprecated.
+	r.GET("/llms/:provider", api.ListModelsHandler)                       // Probably going to be deprecated.
+	r.POST("/llms/:provider/generate", api.GenerateProvidersTokenHandler) // Probably going to be deprecated.
 	r.GET("/health", api.HealthcheckHandler)
+	r.Any("/proxy/:provider/*path", api.ProxyHandler)
+	v1 := r.Group("/v1")
+	{
+		v1.GET("/models", api.ListModelsOpenAICompatibleHandler)
+		v1.POST("/chat/completions", api.ChatCompletionsOpenAICompatibleHandler)
+	}
 	r.NoRoute(api.NotFoundHandler)
 
 	server := &http.Server{

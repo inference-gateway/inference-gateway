@@ -76,16 +76,16 @@ func TestRouterHandlers(t *testing.T) {
 					ListModels(gomock.Any()).
 					Return(providers.ListModelsResponse{
 						Provider: "test-provider",
-						Models: []providers.Model{
-							{Name: "Test Model 1"},
+						Data: []providers.Model{
+							{ID: "Test Model 1"},
 						},
 					}, nil)
 			},
 			expectedCode: http.StatusOK,
 			expectedBody: providers.ListModelsResponse{
 				Provider: "test-provider",
-				Models: []providers.Model{
-					{Name: "Test Model 1"},
+				Data: []providers.Model{
+					{ID: "Test Model 1"},
 				},
 			},
 		},

@@ -31,12 +31,17 @@ func (l *ListModelsResponseOllama) Transform() ListModelsResponse {
 	var models []Model
 	for _, model := range l.Models {
 		models = append(models, Model{
-			Name: model.Name,
+			ID:       model.Name,
+			Object:   "model",
+			Created:  0,
+			OwnedBy:  model.Details.Family,
+			ServedBy: OllamaID,
 		})
 	}
 	return ListModelsResponse{
+		Object:   "list",
 		Provider: OllamaID,
-		Models:   models,
+		Data:     models,
 	}
 }
 

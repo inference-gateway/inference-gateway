@@ -3,15 +3,32 @@ openapi: 3.1.0
 info:
   title: Inference Gateway API
   description: |
-    API for interacting with various language models through the Inference Gateway.
+    The API for interacting with various language models and other AI services.
+    OpenAI, Groq, Ollama, and other providers are supported.
+    OpenAI compatible API for using with existing clients.
+    Unified API for all providers.
   version: 1.0.0
+  license:
+    name: MIT
+    url: https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE
 servers:
   - url: http://localhost:8080
+tags:
+  - name: Models
+    description: List and describe the various models available in the API.
+  - name: Completions
+    description: Given a prompt, the model will return one or more predicted
+      completions, and can also return the probabilities of alternative tokens
+      at each position.
+  - name: Proxy
+    description: Proxy requests to provider endpoints
+  - name: Health
+    description: Health check
 paths:
   /llms:
     get:
+      deprecated: true
       summary: List all language models
-      operationId: listModels
       security:
         - bearerAuth: []
       responses:
@@ -27,6 +44,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
   /llms/{provider}:
     get:
+      deprecated: true
       summary: List all models for a specific provider
       operationId: listModelsByProvider
       parameters:
@@ -50,6 +68,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
   /llms/{provider}/generate:
     post:
+      deprecated: true
       summary: Generate content with a specific provider's LLM
       operationId: generateContent
       parameters:
@@ -96,6 +115,8 @@ paths:
     get:
       summary: Proxy GET request to provider
       operationId: proxyGet
+      tags:
+        - Proxy
       responses:
         "200":
           $ref: "#/components/responses/ProviderResponse"
@@ -110,6 +131,8 @@ paths:
     post:
       summary: Proxy POST request to provider
       operationId: proxyPost
+      tags:
+        - Proxy
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -126,6 +149,8 @@ paths:
     put:
       summary: Proxy PUT request to provider
       operationId: proxyPut
+      tags:
+        - Proxy
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -142,6 +167,8 @@ paths:
     delete:
       summary: Proxy DELETE request to provider
       operationId: proxyDelete
+      tags:
+        - Proxy
       responses:
         "200":
           $ref: "#/components/responses/ProviderResponse"
@@ -156,6 +183,8 @@ paths:
     patch:
       summary: Proxy PATCH request to provider
       operationId: proxyPatch
+      tags:
+        - Proxy
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -171,10 +200,177 @@ paths:
         - bearerAuth: []
   /health:
     get:
+      operationId: healthCheck
       summary: Health check
+      tags:
+        - Health
       responses:
         "200":
           description: Health check successful
+  /v1/models:
+    get:
+      operationId: listModels
+      tags:
+        - Models
+      summary:
+        Lists the currently available models, and provides basic information
+        about each one such as the owner and availability.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Providers"
+          description: Specific provider to query (optional)
+      responses:
+        "200":
+          description: List of available models
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListModelsResponse"
+              examples:
+                allProviders:
+                  summary: Models from all providers
+                  value:
+                    object: "list"
+                    data:
+                      - id: "gpt-4o"
+                        object: "model"
+                        created: 1686935002
+                        owned_by: "openai"
+                      - id: "llama-3.3-70b-versatile"
+                        object: "model"
+                        created: 1723651281
+                        owned_by: "groq"
+                      - id: "claude-3-opus-20240229"
+                        object: "model"
+                        created: 1708905600
+                        owned_by: "anthropic"
+                      - id: "command-r"
+                        object: "model"
+                        created: 1707868800
+                        owned_by: "cohere"
+                      - id: "phi3:3.8b"
+                        object: "model"
+                        created: 1718441600
+                        owned_by: "ollama"
+                singleProvider:
+                  summary: Models from a specific provider
+                  value:
+                    object: "list"
+                    data:
+                      - id: "gpt-4o"
+                        object: "model"
+                        created: 1686935002
+                        owned_by: "openai"
+                      - id: "gpt-4-turbo"
+                        object: "model"
+                        created: 1687882410
+                        owned_by: "openai"
+                      - id: "gpt-3.5-turbo"
+                        object: "model"
+                        created: 1677649963
+                        owned_by: "openai"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /v1/chat/completions:
+    post:
+      summary: Create a chat completion
+      description: Creates a completion for the chat message with the specified provider
+      tags:
+        - Completions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Providers"
+          description: Specific provider to use (default determined by model)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - model
+                - messages
+              properties:
+                model:
+                  type: string
+                  description: Model ID to use
+                messages:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Message"
+                temperature:
+                  type: number
+                  format: float
+                  default: 0.7
+                stream:
+                  type: boolean
+                  default: false
+                tools:
+                  type: array
+                  items:
+                    type: object
+                max_tokens:
+                  type: integer
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  object:
+                    type: string
+                    example: "chat.completion"
+                  created:
+                    type: integer
+                    format: int64
+                  model:
+                    type: string
+                  choices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        index:
+                          type: integer
+                        message:
+                          $ref: "#/components/schemas/Message"
+                        finish_reason:
+                          type: string
+                          enum: [stop, length, tool_calls, content_filter]
+                  usage:
+                    type: object
+                    properties:
+                      prompt_tokens:
+                        type: integer
+                      completion_tokens:
+                        type: integer
+                      total_tokens:
+                        type: integer
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
   requestBodies:
     ProviderRequest:
@@ -202,23 +398,23 @@ components:
                 type: number
                 format: float64
                 default: 0.7
-            examples:
-              - openai:
-                  summary: OpenAI chat completion request
-                  value:
-                    model: "gpt-3.5-turbo"
-                    messages:
-                      - role: "user"
-                        content: "Hello! How can I assist you today?"
-                    temperature: 0.7
-              - anthropic:
-                  summary: Anthropic Claude request
-                  value:
-                    model: "claude-3-opus-20240229"
-                    messages:
-                      - role: "user"
-                        content: "Explain quantum computing"
-                    temperature: 0.5
+          examples:
+            openai:
+              summary: OpenAI chat completion request
+              value:
+                model: "gpt-3.5-turbo"
+                messages:
+                  - role: "user"
+                    content: "Hello! How can I assist you today?"
+                temperature: 0.7
+            anthropic:
+              summary: Anthropic Claude request
+              value:
+                model: "claude-3-opus-20240229"
+                messages:
+                  - role: "user"
+                    content: "Explain quantum computing"
+                temperature: 0.5
   responses:
     BadRequest:
       description: Bad request
@@ -350,36 +546,46 @@ components:
       type: object
       description: Common model information
       properties:
-        name:
+        id:
+          type: string
+        object:
+          type: string
+        created:
+          type: integer
+          format: int64
+        owned_by:
           type: string
     ListModelsResponse:
       type: object
       description: Response structure for listing models
       properties:
-        provider:
-          $ref: "#/components/schemas/Providers"
-        models:
+        object:
+          type: string
+        data:
           type: array
           items:
             $ref: "#/components/schemas/Model"
     Tool:
-      type:
-        type: string
-      name:
-        type: string
-      description:
-        type: string
-      parameters:
-        type: object
-        properties:
-          name:
-            type: string
-          type:
-            type: string
-          default:
-            type: string
-          description:
-            type: string
+      type: object
+      description: Tool definition for API requests
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        parameters:
+          type: object
+          properties:
+            name:
+              type: string
+            type:
+              type: string
+            default:
+              type: string
+            description:
+              type: string
     GenerateRequest:
       type: object
       description: Request structure for token generation
@@ -738,34 +944,6 @@ components:
                             type: integer
                             format: int64
                           owned_by:
-                            type: string
-                          permission:
-                            type: array
-                            items:
-                              type: object
-                              properties:
-                                id:
-                                  type: string
-                                object:
-                                  type: string
-                                created:
-                                  type: integer
-                                  format: int64
-                                allow_create_engine:
-                                  type: boolean
-                                allow_sampling:
-                                  type: boolean
-                                allow_logprobs:
-                                  type: boolean
-                                allow_search_indices:
-                                  type: boolean
-                                allow_view:
-                                  type: boolean
-                                allow_fine_tuning:
-                                  type: boolean
-                          root:
-                            type: string
-                          parent:
                             type: string
             generate:
               endpoint: "/v1/chat/completions"

@@ -2,6 +2,7 @@ package providers
 
 import (
 	"bufio"
+	"time"
 
 	"github.com/inference-gateway/inference-gateway/logger"
 )
@@ -23,13 +24,27 @@ type ListModelsResponseCloudflare struct {
 func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 	var models []Model
 	for _, model := range l.Result {
+		layout := "2006-01-02 15:04:05.000"
+		t, err := time.Parse(layout, model.CreatedAt)
+		var created int64
+		if err != nil {
+			created = 0
+		} else {
+			created = t.Unix()
+		}
+
 		models = append(models, Model{
-			Name: model.Name,
+			ID:       model.Name,
+			Object:   "model",
+			Created:  created,
+			OwnedBy:  CloudflareID,
+			ServedBy: CloudflareID,
 		})
 	}
 	return ListModelsResponse{
+		Object:   "list",
 		Provider: CloudflareID,
-		Models:   models,
+		Data:     models,
 	}
 }
 
