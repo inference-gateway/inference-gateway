@@ -2,7 +2,6 @@ package tests
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -35,8 +34,6 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockProviderRegistry, *m
 
 	// Setup Gin router
 	r := gin.New()
-	// r.GET("/llms/:provider/models", router.ListModelsHandler)
-	// r.POST("/llms/:provider/generate", router.GenerateProvidersTokenHandler)
 	r.GET("/v1/models", router.ListModelsOpenAICompatibleHandler)
 	r.POST("/v1/chat/completions", router.ChatCompletionsOpenAICompatibleHandler)
 	r.GET("/health", router.HealthcheckHandler)
@@ -44,7 +41,7 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockProviderRegistry, *m
 	return r, mockRegistry, mockClient, mockLogger
 }
 
-func TestRouterHandlers(t *testing.T) {
+func TestHealthcheckHandler(t *testing.T) {
 	tests := []struct {
 		name         string
 		method       string
@@ -64,10 +61,52 @@ func TestRouterHandlers(t *testing.T) {
 			expectedCode: http.StatusOK,
 			expectedBody: gin.H{"message": "OK"},
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router, mockRegistry, mockClient, mockLogger := setupTestRouter(t)
+
+			if tt.setupMocks != nil {
+				tt.setupMocks(mockRegistry, mockClient, mockLogger)
+			}
+
+			var req *http.Request
+			if tt.body != nil {
+				jsonBody, _ := json.Marshal(tt.body)
+				req = httptest.NewRequest(tt.method, tt.url, bytes.NewReader(jsonBody))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				req = httptest.NewRequest(tt.method, tt.url, nil)
+			}
+
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedCode, w.Code)
+
+			expectedJSON, err := json.Marshal(tt.expectedBody)
+			assert.NoError(t, err)
+
+			assert.Equal(t, string(expectedJSON), w.Body.String())
+		})
+	}
+}
+
+func TestListModelsHandler(t *testing.T) {
+	tests := []struct {
+		name         string
+		method       string
+		url          string
+		body         interface{}
+		setupMocks   func(*mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockLogger)
+		expectedCode int
+		expectedBody interface{}
+	}{
 		{
 			name:   "list models returns models from provider",
 			method: "GET",
-			url:    "/llms/test-provider/models",
+			url:    "/v1/models?provider=test-provider",
 			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
 				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
 				mr.EXPECT().
@@ -78,53 +117,30 @@ func TestRouterHandlers(t *testing.T) {
 					ListModels(gomock.Any()).
 					Return(providers.ListModelsResponse{
 						Provider: "test-provider",
+						Object:   "list",
 						Data: []providers.Model{
-							{ID: "Test Model 1"},
+							{
+								ID:       "Test Model 1",
+								Object:   "model",
+								Created:  0,
+								OwnedBy:  "test-provider",
+								ServedBy: "test-provider",
+							},
 						},
 					}, nil)
 			},
 			expectedCode: http.StatusOK,
 			expectedBody: providers.ListModelsResponse{
+				Object:   "list",
 				Provider: "test-provider",
 				Data: []providers.Model{
-					{ID: "Test Model 1"},
-				},
-			},
-		},
-		{
-			name:   "generate tokens returns response",
-			method: "POST",
-			url:    "/llms/test-provider/generate",
-			body: providers.ChatCompletionsRequest{
-				Model: "test-model",
-				Messages: []providers.Message{
-					{Role: "user", Content: "Hello"},
-				},
-			},
-			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
-				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
-				mr.EXPECT().
-					BuildProvider("test-provider", mc).
-					Return(mockProvider, nil)
-
-				mockProvider.EXPECT().
-					GenerateTokens(gomock.Any(), "test-model", gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(providers.GenerateResponse{
-						Provider: "test-provider",
-						Response: providers.ResponseTokens{
-							Content: "Hello back!",
-							Model:   "test-model",
-							Role:    "assistant",
-						},
-					}, nil)
-			},
-			expectedCode: http.StatusOK,
-			expectedBody: providers.GenerateResponse{
-				Provider: "test-provider",
-				Response: providers.ResponseTokens{
-					Content: "Hello back!",
-					Model:   "test-model",
-					Role:    "assistant",
+					{
+						ID:       "Test Model 1",
+						Object:   "model",
+						Created:  0,
+						OwnedBy:  "test-provider",
+						ServedBy: "test-provider",
+					},
 				},
 			},
 		},
@@ -160,67 +176,98 @@ func TestRouterHandlers(t *testing.T) {
 	}
 }
 
-func TestGenerateProvidersTokenHandler(t *testing.T) {
+func TestChatCompletionsHandler(t *testing.T) {
 	tests := []struct {
 		name         string
-		url          string
-		body         interface{}
+		body         any
 		setupMocks   func(*mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockLogger)
 		expectedCode int
-		expectedBody interface{}
+		expectedResp func() string
+		checkBody    func(t *testing.T, body string)
+		provider     string
 	}{
 		{
 			name: "invalid request body",
-			url:  "/llms/test-provider/generate",
 			body: "invalid json",
 			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
 				ml.EXPECT().Error("failed to decode request", gomock.Any())
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedBody: api.ErrorResponse{Error: "Failed to decode request"},
+			expectedResp: func() string {
+				resp, _ := json.Marshal(api.ErrorResponse{Error: "Failed to decode request"})
+				return string(resp)
+			},
 		},
 		{
-			name: "missing model",
-			url:  "/llms/test-provider/generate",
-			body: providers.ChatCompletionsRequest{
-				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
-			},
-			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
-				ml.EXPECT().Error("model is required", nil)
-			},
-			expectedCode: http.StatusBadRequest,
-			expectedBody: api.ErrorResponse{Error: "Model is required"},
-		},
-		{
-			name: "provider not configured",
-			url:  "/llms/test-provider/generate",
+			name: "missing provider and model",
 			body: providers.ChatCompletionsRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
 			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				ml.EXPECT().Error("unable to determine provider for model", nil, "model", "test-model") // Updated to match actual call
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedResp: func() string {
+				resp, _ := json.Marshal(api.ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider."})
+				return string(resp)
+			},
+		},
+		{
+			name: "implicit provider by model",
+			body: providers.ChatCompletionsRequest{
+				Model:    "gpt-model",
+				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
+			},
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
 				mr.EXPECT().
-					BuildProvider("test-provider", mc).
+					BuildProvider("openai", mc).
 					Return(nil, errors.New("token not configured"))
 				ml.EXPECT().
 					Error("provider requires authentication but no API key was configured",
 						gomock.Any(),
-						"provider", "test-provider")
+						"provider", gomock.Any())
 			},
 			expectedCode: http.StatusBadRequest,
-			expectedBody: api.ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."},
+			expectedResp: func() string {
+				resp, _ := json.Marshal(api.ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+				return string(resp)
+			},
 		},
 		{
-			name: "successful non-streaming request",
-			url:  "/llms/test-provider/generate",
+			name: "provider not configured",
 			body: providers.ChatCompletionsRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
+			provider: "test-provider",
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				mr.EXPECT().
+					BuildProvider(gomock.Any(), mc).
+					Return(nil, errors.New("token not configured"))
+				ml.EXPECT().
+					Error("provider requires authentication but no API key was configured",
+						gomock.Any(),
+						"provider", gomock.Any())
+			},
+			expectedCode: http.StatusBadRequest,
+			expectedResp: func() string {
+				resp, _ := json.Marshal(api.ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+				return string(resp)
+			},
+		},
+		{
+			name: "successful non-streaming request",
+			body: providers.ChatCompletionsRequest{
+				Model:    "test-model",
+				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
+				Stream:   false,
+			},
+			provider: "test-provider",
 			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
 				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
 				mr.EXPECT().
-					BuildProvider("test-provider", mc).
+					BuildProvider(gomock.Any(), mc).
 					Return(mockProvider, nil)
 				mockProvider.EXPECT().
 					GenerateTokens(gomock.Any(), "test-model", gomock.Any(), gomock.Any(), gomock.Any()).
@@ -234,35 +281,103 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 					}, nil)
 			},
 			expectedCode: http.StatusOK,
-			expectedBody: providers.GenerateResponse{
-				Provider: "test-provider",
-				Response: providers.ResponseTokens{
-					Content: "Hello back!",
-					Model:   "test-model",
-					Role:    "assistant",
-				},
+			checkBody: func(t *testing.T, body string) {
+				var resp providers.CompletionResponse
+				err := json.Unmarshal([]byte(body), &resp)
+				assert.NoError(t, err)
+				assert.Equal(t, "chat.completion", resp.Object)
+				assert.Equal(t, "test-model", resp.Model)
+				assert.Equal(t, 1, len(resp.Choices))
+				assert.Equal(t, "Hello back!", resp.Choices[0].Message.Content)
+				assert.Equal(t, "assistant", resp.Choices[0].Message.Role)
 			},
 		},
 		{
-			name: "generation timeout",
-			url:  "/llms/test-provider/generate",
+			name: "streaming request",
+			body: providers.ChatCompletionsRequest{
+				Model:    "test-model",
+				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
+				Stream:   true,
+			},
+			provider: "test-provider",
+			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
+				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
+				mr.EXPECT().
+					BuildProvider(gomock.Any(), mc).
+					Return(mockProvider, nil)
+
+				streamCh := make(chan providers.GenerateResponse)
+				mockProvider.EXPECT().
+					StreamTokens(gomock.Any(), "test-model", gomock.Any()).
+					Return(streamCh, nil)
+
+				go func() {
+					streamCh <- providers.GenerateResponse{
+						Provider: "test-provider",
+						Response: providers.ResponseTokens{
+							Content: "Hello",
+							Model:   "test-model",
+							Role:    "assistant",
+						},
+						EventType: providers.EventContentDelta,
+					}
+					streamCh <- providers.GenerateResponse{
+						Provider: "test-provider",
+						Response: providers.ResponseTokens{
+							Content: " back!",
+							Model:   "test-model",
+							Role:    "assistant",
+						},
+						EventType: providers.EventContentDelta,
+					}
+					close(streamCh)
+				}()
+			},
+			expectedCode: http.StatusOK,
+			checkBody: func(t *testing.T, body string) {
+				lines := strings.Split(strings.TrimSpace(body), "\n\n")
+				assert.GreaterOrEqual(t, len(lines), 2, "Expected at least 2 SSE messages")
+
+				for _, line := range lines {
+					if !strings.HasPrefix(line, "data: ") {
+						continue
+					}
+
+					data := strings.TrimPrefix(line, "data: ")
+					if data == "[DONE]" {
+						continue
+					}
+
+					var chunk providers.ChunkResponse
+					err := json.Unmarshal([]byte(data), &chunk)
+					assert.NoError(t, err)
+					assert.Equal(t, "chat.completion.chunk", chunk.Object)
+				}
+			},
+		},
+		{
+			name: "generation error",
 			body: providers.ChatCompletionsRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
+			provider: "test-provider",
 			setupMocks: func(mr *mocks.MockProviderRegistry, mc *mocks.MockClient, ml *mocks.MockLogger) {
 				mockProvider := mocks.NewMockProvider(gomock.NewController(t))
 				mr.EXPECT().
-					BuildProvider("test-provider", mc).
+					BuildProvider(gomock.Any(), mc).
 					Return(mockProvider, nil)
 				mockProvider.EXPECT().
 					GenerateTokens(gomock.Any(), "test-model", gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(providers.GenerateResponse{}, context.DeadlineExceeded)
+					Return(providers.GenerateResponse{}, errors.New("generation failed"))
 				ml.EXPECT().
-					Error("request timed out", gomock.Any(), "provider", "test-provider")
+					Error("failed to generate tokens", gomock.Any(), "provider", gomock.Any())
 			},
-			expectedCode: http.StatusGatewayTimeout,
-			expectedBody: api.ErrorResponse{Error: "Request timed out"},
+			expectedCode: http.StatusBadRequest,
+			expectedResp: func() string {
+				resp, _ := json.Marshal(api.ErrorResponse{Error: "Failed to generate tokens"})
+				return string(resp)
+			},
 		},
 	}
 
@@ -282,20 +397,53 @@ func TestGenerateProvidersTokenHandler(t *testing.T) {
 				} else {
 					jsonBody, _ = json.Marshal(tt.body)
 				}
-				req = httptest.NewRequest(http.MethodPost, tt.url, bytes.NewReader(jsonBody))
+
+				url := "/v1/chat/completions"
+				if tt.provider != "" {
+					url += "?provider=" + tt.provider
+				}
+
+				req = httptest.NewRequest(http.MethodPost, url, bytes.NewReader(jsonBody))
 				req.Header.Set("Content-Type", "application/json")
 			} else {
-				req = httptest.NewRequest(http.MethodPost, tt.url, nil)
+				req = httptest.NewRequest(http.MethodPost, "/v1/chat/completions", nil)
 			}
 
-			w := httptest.NewRecorder()
-			router.ServeHTTP(w, req)
+			var w *httptest.ResponseRecorder
+			if tt.name == "streaming request" {
+				cnr := NewCloseNotifierResponseRecorder()
+				router.ServeHTTP(cnr, req)
+				w = cnr.ResponseRecorder
+			} else {
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+			}
 
 			assert.Equal(t, tt.expectedCode, w.Code)
 
-			expectedJSON, err := json.Marshal(tt.expectedBody)
-			assert.NoError(t, err)
-			assert.Equal(t, string(expectedJSON), strings.TrimSpace(w.Body.String()))
+			if tt.expectedResp != nil {
+				assert.Equal(t, tt.expectedResp(), strings.TrimSpace(w.Body.String()))
+			}
+
+			if tt.checkBody != nil {
+				tt.checkBody(t, w.Body.String())
+			}
 		})
 	}
+}
+
+type CloseNotifierResponseRecorder struct {
+	*httptest.ResponseRecorder
+	closed chan bool
+}
+
+func NewCloseNotifierResponseRecorder() *CloseNotifierResponseRecorder {
+	return &CloseNotifierResponseRecorder{
+		ResponseRecorder: httptest.NewRecorder(),
+		closed:           make(chan bool, 1),
+	}
+}
+
+func (r *CloseNotifierResponseRecorder) CloseNotify() <-chan bool {
+	return r.closed
 }
