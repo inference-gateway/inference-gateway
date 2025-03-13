@@ -189,6 +189,34 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+  v1/completions:
+    post:
+      operationId: createCompletion
+      tags:
+        - Completions
+      summary: Creates a completion for the provided prompt and parameters.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Providers"
+          description: Specific provider to use (default determined by model)
+      requestBody:
+        $ref: "#/components/requestBodies/CreateCompletionRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCompletionResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /proxy/{provider}/{path}:
     parameters:
       - name: provider
@@ -343,6 +371,27 @@ components:
                   - role: "user"
                     content: "Explain quantum computing"
                 temperature: 0.5
+    CreateCompletionRequest:
+      required: true
+      description: |
+        ProviderRequest depends on the specific provider and endpoint being called
+        If you decide to use this approach, please follow the provider-specific documentations.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              model:
+                description: ID of the model to use.
+                type: string
+              prompt:
+                description: >
+                  The prompt(s) to generate completions for, encoded as a string,
+                  array of strings, array of tokens, or array of token arrays.
+                nullable: true
+            required:
+              - model
+              - prompt
   responses:
     BadRequest:
       description: Bad request
@@ -586,6 +635,90 @@ components:
           type: string
         response:
           $ref: "#/components/schemas/ResponseTokens"
+    CreateCompletionResponse:
+      type: object
+      description: >
+        Represents a completion response from the API. Note: both the streamed
+        and non-streamed response objects share the same shape (unlike the chat
+        endpoint).
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the completion.
+        choices:
+          type: array
+          description:
+            The list of completion choices the model generated for the input
+            prompt.
+          items:
+            type: object
+            required:
+              - finish_reason
+              - index
+              - logprobs
+              - text
+            properties:
+              finish_reason:
+                type: string
+                description: >
+                  The reason the model stopped generating tokens. This will be
+                  `stop` if the model hit a natural stop point or a provided
+                  stop sequence,
+
+                  `length` if the maximum number of tokens specified in the
+                  request was reached,
+
+                  or `content_filter` if content was omitted due to a flag from
+                  our content filters.
+                enum:
+                  - stop
+                  - length
+                  - content_filter
+              index:
+                type: integer
+              logprobs:
+                type: object
+                nullable: true
+                properties:
+                  text_offset:
+                    type: array
+                    items:
+                      type: integer
+                  token_logprobs:
+                    type: array
+                    items:
+                      type: number
+                  tokens:
+                    type: array
+                    items:
+                      type: string
+                  top_logprobs:
+                    type: array
+                    items:
+                      type: object
+                      additionalProperties:
+                        type: number
+              text:
+                type: string
+        created:
+          type: integer
+          description: The Unix timestamp (in seconds) of when the completion was created.
+        model:
+          type: string
+          description: The model used for completion.
+        object:
+          type: string
+          description: The object type, which is always "text_completion"
+          enum:
+            - text_completion
+        usage:
+          $ref: "#/components/schemas/CompletionUsage"
+      required:
+        - id
+        - object
+        - created
+        - model
+        - choices
     Config:
       x-config:
         sections:
