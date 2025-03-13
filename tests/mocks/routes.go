@@ -64,30 +64,6 @@ func (mr *MockRouterMockRecorder) HealthcheckHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HealthcheckHandler", reflect.TypeOf((*MockRouter)(nil).HealthcheckHandler), c)
 }
 
-// ListAllModelsHandler mocks base method.
-func (m *MockRouter) ListAllModelsHandler(c *gin.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListAllModelsHandler", c)
-}
-
-// ListAllModelsHandler indicates an expected call of ListAllModelsHandler.
-func (mr *MockRouterMockRecorder) ListAllModelsHandler(c any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAllModelsHandler", reflect.TypeOf((*MockRouter)(nil).ListAllModelsHandler), c)
-}
-
-// ListModelsHandler mocks base method.
-func (m *MockRouter) ListModelsHandler(c *gin.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListModelsHandler", c)
-}
-
-// ListModelsHandler indicates an expected call of ListModelsHandler.
-func (mr *MockRouterMockRecorder) ListModelsHandler(c any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModelsHandler", reflect.TypeOf((*MockRouter)(nil).ListModelsHandler), c)
-}
-
 // ListModelsOpenAICompatibleHandler mocks base method.
 func (m *MockRouter) ListModelsOpenAICompatibleHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
