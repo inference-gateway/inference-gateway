@@ -1,13 +1,13 @@
 FROM mcr.microsoft.com/devcontainers/go:1-1.23-bookworm
 
 ENV ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom \
-    TASK_VERSION=v3.39.2 \
-    CTLPTL_VERSION=0.8.34 \
-    K3D_VERSION=v5.7.4 \
-    KUBECTL_VERSION=v1.31.0 \
-    HELM_VERSION=v3.17.1 \
-    GORELEASER_VERSION=v2.7.0 \
-    GOLANG_CI_LINT_VERSION=v1.63.4 \
+    TASK_VERSION=v3.42.1 \
+    CTLPTL_VERSION=0.8.39 \
+    K3D_VERSION=v5.8.3 \
+    KUBECTL_VERSION=v1.32.3 \
+    HELM_VERSION=v3.17.2 \
+    GORELEASER_VERSION=v2.8.0 \
+    GOLANG_CI_LINT_VERSION=v1.64.7 \
     GITHUB_CLI_VERSION=2.68.1
 
 RUN apt-get update && \
