@@ -151,7 +151,7 @@ PROVIDERS=("groq" "cohere" "ollama")
 for PROVIDER in "${PROVIDERS[@]}"; do
   MODEL=${PROVIDER_MODELS[$PROVIDER]}
   echo "Testing $PROVIDER provider with model: $MODEL"
-  curl -s -X POST http://localhost:8080/llms/$PROVIDER/generate -d "{
+  curl -s -X POST http://localhost:8080/v1/chat/completions?provider=$PROVIDER -d "{
     \"model\": \"$MODEL\",
     \"messages\": [
       {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},

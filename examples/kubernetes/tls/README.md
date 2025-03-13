@@ -101,7 +101,7 @@ echo "127.0.0.1 inference-gateway.local" >> /etc/hosts
 7. Test the Inference Gateway with HTTPS:
 
 ```bash
-curl -k https://inference-gateway.local/llms
+curl -X GET -k https://inference-gateway.local/v1/models
 ```
 
 ## Cleanup

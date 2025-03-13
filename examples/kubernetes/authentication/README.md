@@ -103,7 +103,7 @@ task proxy-inference-gateway
 10. First let's try to access an endpoint without the token:
 
 ```bash
-curl -X GET http://localhost:8080/llms
+curl -X GET http://localhost:8080/v1/models
 ```
 
 You should see the response `Authorization header missing`.
@@ -111,15 +111,15 @@ You should see the response `Authorization header missing`.
 11. Let's set the token in the header and try again:
 
 ```bash
-curl -X GET -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/llms
+curl -X GET -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/v1/models
 ```
 
 You should be granted and see the expected response.
 
-12. Interact with the Inference Gateway using the specific provider API(note the prefix is `/llms/{provider}/*`):
+1.  Interact with the Inference Gateway using the specific provider API(note the prefix is `/v1/chat/completions/*`):
 
 ```bash
-curl -X POST -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/llms/groq/openai/v1/chat/completions -d '{"model": "llama-3.2-3b-preview", "messages": [{"role": "user", "content": "Explain the importance of fast language models. Keep it short and concise."}]}' | jq .
+curl -X POST -H "Authorization: Bearer $ACCESS_TOKEN" http://localhost:8080/v1/chat/completions?provider=groq -d '{"model": "llama-3.2-3b-preview", "messages": [{"role": "user", "content": "Explain the importance of fast language models. Keep it short and concise."}]}' | jq .
 ```
 
 ## Notes

@@ -16,14 +16,14 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 
 ### POST Endpoints
 
-| Domain             | Curl Command                                                                                                                                                                                                                                             |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ollama.local       | `curl -X POST http://localhost:8080/llms/ollama/generate -d '{"model":"phi3:3.8b","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'`                 |
-| api.groq.com       | `curl -X POST http://localhost:8080/llms/groq/generate -d '{"model":"llama-3.3-70b-versatile","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'`     |
-| api.openai.com     | `curl -X POST http://localhost:8080/llms/openai/generate -d '{"model":"gpt-4o-mini","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'`               |
-| api.cloudflare.com | `curl -X POST http://localhost:8080/llms/cloudflare/generate -d '{"model":"llama-3.1-8b-instruct","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'` |
-| api.cohere.com     | `curl -X POST http://localhost:8080/llms/cohere/generate -d '{"model":"command-r","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'`                 |
-| api.anthropic.com  | `curl -X POST http://localhost:8080/llms/anthropic/generate -d '{"model":"claude-3-opus-20240229","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Why is the sky blue? keep it short and concise."}]}'` |
+| Domain             | Curl Command                                                                                                                                                                                                               |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ollama.local       | `curl -X POST http://localhost:8080/v1/chat/completions?provider=ollama -d '{"model":"deepseek-r1:1.5b","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`          |
+| api.groq.com       | `curl -X POST http://localhost:8080/v1/chat/completions?provider=groq -d '{"model":"llama-3.3-70b-versatile","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`     |
+| api.openai.com     | `curl -X POST http://localhost:8080/v1/chat/completions?provider=openai -d '{"model":"gpt-4o-mini","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`               |
+| api.cloudflare.com | `curl -X POST http://localhost:8080/v1/chat/completions?provider=cloudflare -d '{"model":"llama-3.1-8b-instruct","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'` |
+| api.cohere.com     | `curl -X POST http://localhost:8080/v1/chat/completions?provider=cohere -d '{"model":"command-r","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                 |
+| api.anthropic.com  | `curl -X POST http://localhost:8080/v1/chat/completions?provider=anthropic -d '{"model":"claude-3-opus-20240229","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'` |
 
 You can set the stream as an optional flag in the request body to enable streaming of tokens. The default value is `false`.
 

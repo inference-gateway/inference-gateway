@@ -57,7 +57,7 @@ You can horizontally scale the Inference Gateway to handle multiple requests fro
 
 graph TD
     %% Client nodes
-    A["👥 Clients / 🤖 Agents"] --> |POST /llms/provider/generate| Auth
+    A["👥 Clients / 🤖 Agents"] --> |POST /v1/chat/completions| Auth
 
     %% Auth node
     Auth["🔒 Optional OIDC"] --> |Auth?| IG1

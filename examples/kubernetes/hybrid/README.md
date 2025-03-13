@@ -39,13 +39,13 @@ task proxy
 6. Check the available Ollama local LLMs:
 
 ```bash
-curl -X GET http://localhost:8080/llms | jq '.[] | select(.provider == "ollama") | .models'
+curl -X GET http://localhost:8080/v1/models?provider=ollama | jq '.'
 ```
 
 7. Send a request to the Inference Gateway:
 
 ```bash
-curl -X POST http://localhost:8080/llms/ollama/generate -d '{"model": "phi3:3.8b", "prompt": "Explain the importance of fast language models. Keep it short and concise."}' | jq .
+curl -X POST http://localhost:8080/v1/chat/completions?provider=ollama -d '{"model": "phi3:3.8b", "prompt": "Explain the importance of fast language models. Keep it short and concise."}' | jq .
 ```
 
 8. Add a cloud provider's LLM to the Inference Gateway, by setting the API Key in the Kubernetes [secret](inference-gateway/secret.yaml):
@@ -78,7 +78,7 @@ task proxy
 12. Send a similar request to the Inference Gateway, but this time using the cloud provider's LLM:
 
 ```bash
-curl -X POST http://localhost:8080/llms/groq/generate -d '{"model": "llama-3.3-70b-versatile", "prompt": "Explain the importance of fast language models. Keep it short and concise."}' | jq .
+curl -X POST http://localhost:8080/v1/chat/completions?provider=groq -d '{"model": "llama-3.3-70b-versatile", "messages": [{"role": "user", "content": "Explain the importance of fast language models. Keep it short and concise."}]}' | jq .
 ```
 
 And that's how you can interact with both local and cloud provider's Large Language Models using the Inference Gateway. All from a similar interface.

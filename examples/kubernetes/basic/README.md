@@ -25,13 +25,13 @@ task proxy
 4. Check the available LLMs:
 
 ```bash
-curl -X GET http://localhost:8080/llms | jq .
+curl -X GET http://localhost:8080/v1/models | jq .
 ```
 
-5. Interact with the Inference Gateway using the specific provider API(note the prefix is `/llms/{provider}/*`):
+1. Interact with the Inference Gateway using the specific provider API(note the prefix is `/v1/chat/completions/*`):
 
 ```bash
-curl -X POST http://localhost:8080/llms/groq/openai/v1/chat/completions -d '{"model": "llama-3.2-3b-preview", "messages": [{"role": "user", "content": "Explain the importance of fast language models. Keep it short and concise."}]}' | jq .
+curl -X POST http://localhost:8080/v1/chat/completions?provider=groq -d '{"model": "llama-3.2-3b-preview", "messages": [{"role": "user", "content": "Explain the importance of fast language models. Keep it short and concise."}]}' | jq .
 ```
 
 \*\* You can refer to the [Taskfile.yaml](./Taskfile.yaml) at any point for detailed information about the tasks used in this example.
