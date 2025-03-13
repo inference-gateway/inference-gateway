@@ -28,8 +28,8 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 You can set the stream as an optional flag in the request body to enable streaming of tokens. The default value is `false`.
 
 ```bash
-curl -X POST http://localhost:8080/llms/ollama/generate -d '{
-  "model": "phi3:3.8b",
+curl -X POST http://localhost:8080/v1/chat/completions?provider=ollama -d '{
+  "model": "deepseek-r1:1.5b",
   "messages": [
     {
       "role": "system",
@@ -37,13 +37,42 @@ curl -X POST http://localhost:8080/llms/ollama/generate -d '{
     },
     {
       "role": "user",
-      "content": "Why is the sky blue? keep it short and concise."
+      "content": "Hi, how are you doing today?"
     }
   ],
   "stream": true,
-  "ssevents": true,
   "max_tokens": 40
 }' | jq .
+```
+
+Response:
+
+```json
+{
+  "id": "chatcmpl-b794ce73-abba-4f0a-8150-e8aadc16bf6a",
+  "object": "chat.completion",
+  "created": 1741879542,
+  "model": "deepseek-r1:1.5b",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "content": "<think>\nOkay, so the user greeted me and said \"Hi, how are you doing today?\" They're just starting to say that. I should respond in a friendly way.\n\nMaybe I can acknowledge their greeting and offer my help with something. Since they mentioned working on math problems or solving puzzles, I'll stick to that.\n\nI want to make sure I'm approaching it the right way. It's not a question yet, but if I see more of them, maybe I can offer more assistance. So responding with an emoji like 😊 would be nice.\n</think>\n\nHello! How are you doing today? 😊",
+        "role": "assistant"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "queue_time": 0,
+    "prompt_tokens": 0,
+    "prompt_time": 0,
+    "completion_tokens": 0,
+    "completion_time": 0,
+    "total_tokens": 0,
+    "total_time": 0
+  }
+}
 ```
 
 ### Tool Calls
@@ -51,7 +80,7 @@ curl -X POST http://localhost:8080/llms/ollama/generate -d '{
 You can provide tools that the LLM can use to perform specific functions. Here are some examples:
 
 ```bash
-curl -X POST http://localhost:8080/llms/groq/generate -d '{
+curl -X POST http://localhost:8080/v1/completions?provider=groq -d '{
   "model": "deepseek-r1-distill-llama-70b",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
@@ -106,7 +135,7 @@ Then the LLM will respond with a function call request as follow:
 So you can response with the function call content as follow:
 
 ```bash
-curl -X POST http://localhost:8080/llms/groq/generate -d '{
+curl -X POST http://localhost:8080/v1/completions?provider=groq -d '{
   "model": "deepseek-r1-distill-llama-70b",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
