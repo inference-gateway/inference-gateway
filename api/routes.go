@@ -375,9 +375,10 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
+	model := req.Model
 	providerID := c.Query("provider")
 	if providerID == "" {
-		providerID = determineProviderFromModel(req.Model)
+		providerID, model = determineProviderAndModelName(model)
 		if providerID == "" {
 			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider."})
@@ -407,7 +408,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		c.Header("Connection", "keep-alive")
 		c.Header("Transfer-Encoding", "chunked")
 
-		streamCh, err := provider.StreamTokens(ctx, req.Model, req.Messages)
+		streamCh, err := provider.StreamTokens(ctx, model, req.Messages)
 		if err != nil {
 			router.logger.Error("failed to start streaming", err)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to start streaming"})
@@ -461,7 +462,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	// Non-streaming response
-	response, err := provider.GenerateTokens(ctx, req.Model, req.Messages, req.Tools, req.MaxTokens)
+	response, err := provider.GenerateTokens(ctx, model, req.Messages, req.Tools, req.MaxTokens)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
 			router.logger.Error("request timed out", err, "provider", providerID)
@@ -504,10 +505,27 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, openaiResponse)
 }
 
-func determineProviderFromModel(model string) string {
+func determineProviderAndModelName(model string) (provider string, modelName string) {
 	modelLower := strings.ToLower(model)
 
-	prefixMapping := map[string]string{
+	// First check for explicit provider prefixes (ollama-, groq-, etc.)
+	providerPrefixMapping := map[string]string{
+		"ollama-":     providers.OllamaID,
+		"groq-":       providers.GroqID,
+		"cloudflare-": providers.CloudflareID,
+		"openai-":     providers.OpenaiID,
+		"anthropic-":  providers.AnthropicID,
+		"cohere-":     providers.CohereID,
+	}
+
+	for prefix, providerID := range providerPrefixMapping {
+		if strings.HasPrefix(modelLower, prefix) {
+			return providerID, strings.TrimPrefix(model, prefix)
+		}
+	}
+
+	// Then check for model-name based prefixes (gpt-, claude-, etc.)
+	modelPrefixMapping := map[string]string{
 		"gpt-":      providers.OpenaiID,
 		"claude-":   providers.AnthropicID,
 		"llama-":    providers.GroqID,
@@ -515,11 +533,11 @@ func determineProviderFromModel(model string) string {
 		"deepseek-": providers.GroqID,
 	}
 
-	for prefix, provider := range prefixMapping {
+	for prefix, providerID := range modelPrefixMapping {
 		if strings.HasPrefix(modelLower, prefix) {
-			return provider
+			return providerID, model // Don't strip prefix for model-based patterns
 		}
 	}
 
-	return ""
+	return "", model // No provider found
 }
