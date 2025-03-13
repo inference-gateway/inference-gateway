@@ -189,7 +189,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
-  v1/completions:
+  /v1/completions:
     post:
       operationId: createCompletion
       tags:
