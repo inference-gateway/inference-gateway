@@ -25,116 +25,6 @@ tags:
   - name: Health
     description: Health check
 paths:
-  /proxy/{provider}/{path}:
-    parameters:
-      - name: provider
-        in: path
-        required: true
-        schema:
-          $ref: "#/components/schemas/Providers"
-      - name: path
-        in: path
-        required: true
-        style: simple
-        explode: false
-        schema:
-          type: string
-        description: The remaining path to proxy to the provider
-    get:
-      summary: Proxy GET request to provider
-      operationId: proxyGet
-      tags:
-        - Proxy
-      responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      security:
-        - bearerAuth: []
-    post:
-      summary: Proxy POST request to provider
-      operationId: proxyPost
-      tags:
-        - Proxy
-      requestBody:
-        $ref: "#/components/requestBodies/ProviderRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      security:
-        - bearerAuth: []
-    put:
-      summary: Proxy PUT request to provider
-      operationId: proxyPut
-      tags:
-        - Proxy
-      requestBody:
-        $ref: "#/components/requestBodies/ProviderRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      security:
-        - bearerAuth: []
-    delete:
-      summary: Proxy DELETE request to provider
-      operationId: proxyDelete
-      tags:
-        - Proxy
-      responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      security:
-        - bearerAuth: []
-    patch:
-      summary: Proxy PATCH request to provider
-      operationId: proxyPatch
-      tags:
-        - Proxy
-      requestBody:
-        $ref: "#/components/requestBodies/ProviderRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/ProviderResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
-      security:
-        - bearerAuth: []
-  /health:
-    get:
-      operationId: healthCheck
-      summary: Health check
-      tags:
-        - Health
-      responses:
-        "200":
-          description: Health check successful
   /v1/models:
     get:
       operationId: listModels
@@ -299,6 +189,116 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+  /proxy/{provider}/{path}:
+    parameters:
+      - name: provider
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/Providers"
+      - name: path
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+        description: The remaining path to proxy to the provider
+    get:
+      summary: Proxy GET request to provider
+      operationId: proxyGet
+      tags:
+        - Proxy
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    post:
+      summary: Proxy POST request to provider
+      operationId: proxyPost
+      tags:
+        - Proxy
+      requestBody:
+        $ref: "#/components/requestBodies/ProviderRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    put:
+      summary: Proxy PUT request to provider
+      operationId: proxyPut
+      tags:
+        - Proxy
+      requestBody:
+        $ref: "#/components/requestBodies/ProviderRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    delete:
+      summary: Proxy DELETE request to provider
+      operationId: proxyDelete
+      tags:
+        - Proxy
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+    patch:
+      summary: Proxy PATCH request to provider
+      operationId: proxyPatch
+      tags:
+        - Proxy
+      requestBody:
+        $ref: "#/components/requestBodies/ProviderRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/ProviderResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+      security:
+        - bearerAuth: []
+  /health:
+    get:
+      operationId: healthCheck
+      summary: Health check
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Health check successful
 components:
   requestBodies:
     ProviderRequest:
