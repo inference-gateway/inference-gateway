@@ -34,8 +34,8 @@ func setupTestRouter(t *testing.T) (*gin.Engine, *mocks.MockProviderRegistry, *m
 
 	// Setup Gin router
 	r := gin.New()
-	r.GET("/v1/models", router.ListModelsOpenAICompatibleHandler)
-	r.POST("/v1/chat/completions", router.ChatCompletionsOpenAICompatibleHandler)
+	r.GET("/v1/models", router.ListModelsHandler)
+	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 	r.GET("/health", router.HealthcheckHandler)
 
 	return r, mockRegistry, mockClient, mockLogger

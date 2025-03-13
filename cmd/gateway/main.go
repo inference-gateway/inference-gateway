@@ -137,8 +137,8 @@ func main() {
 	r.Any("/proxy/:provider/*path", api.ProxyHandler)
 	v1 := r.Group("/v1")
 	{
-		v1.GET("/models", api.ListModelsOpenAICompatibleHandler)
-		v1.POST("/chat/completions", api.ChatCompletionsOpenAICompatibleHandler)
+		v1.GET("/models", api.ListModelsHandler)
+		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 	}
 	r.NoRoute(api.NotFoundHandler)
 

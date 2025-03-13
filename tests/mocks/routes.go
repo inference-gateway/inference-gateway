@@ -40,16 +40,16 @@ func (m *MockRouter) EXPECT() *MockRouterMockRecorder {
 	return m.recorder
 }
 
-// ChatCompletionsOpenAICompatibleHandler mocks base method.
-func (m *MockRouter) ChatCompletionsOpenAICompatibleHandler(c *gin.Context) {
+// ChatCompletionsHandler mocks base method.
+func (m *MockRouter) ChatCompletionsHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ChatCompletionsOpenAICompatibleHandler", c)
+	m.ctrl.Call(m, "ChatCompletionsHandler", c)
 }
 
-// ChatCompletionsOpenAICompatibleHandler indicates an expected call of ChatCompletionsOpenAICompatibleHandler.
-func (mr *MockRouterMockRecorder) ChatCompletionsOpenAICompatibleHandler(c any) *gomock.Call {
+// ChatCompletionsHandler indicates an expected call of ChatCompletionsHandler.
+func (mr *MockRouterMockRecorder) ChatCompletionsHandler(c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletionsOpenAICompatibleHandler", reflect.TypeOf((*MockRouter)(nil).ChatCompletionsOpenAICompatibleHandler), c)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletionsHandler", reflect.TypeOf((*MockRouter)(nil).ChatCompletionsHandler), c)
 }
 
 // HealthcheckHandler mocks base method.
@@ -64,16 +64,16 @@ func (mr *MockRouterMockRecorder) HealthcheckHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HealthcheckHandler", reflect.TypeOf((*MockRouter)(nil).HealthcheckHandler), c)
 }
 
-// ListModelsOpenAICompatibleHandler mocks base method.
-func (m *MockRouter) ListModelsOpenAICompatibleHandler(c *gin.Context) {
+// ListModelsHandler mocks base method.
+func (m *MockRouter) ListModelsHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListModelsOpenAICompatibleHandler", c)
+	m.ctrl.Call(m, "ListModelsHandler", c)
 }
 
-// ListModelsOpenAICompatibleHandler indicates an expected call of ListModelsOpenAICompatibleHandler.
-func (mr *MockRouterMockRecorder) ListModelsOpenAICompatibleHandler(c any) *gomock.Call {
+// ListModelsHandler indicates an expected call of ListModelsHandler.
+func (mr *MockRouterMockRecorder) ListModelsHandler(c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModelsOpenAICompatibleHandler", reflect.TypeOf((*MockRouter)(nil).ListModelsOpenAICompatibleHandler), c)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModelsHandler", reflect.TypeOf((*MockRouter)(nil).ListModelsHandler), c)
 }
 
 // NotFoundHandler mocks base method.

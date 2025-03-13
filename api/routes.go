@@ -26,8 +26,8 @@ import (
 
 //go:generate mockgen -source=routes.go -destination=../tests/mocks/routes.go -package=mocks
 type Router interface {
-	ListModelsOpenAICompatibleHandler(c *gin.Context)
-	ChatCompletionsOpenAICompatibleHandler(c *gin.Context)
+	ListModelsHandler(c *gin.Context)
+	ChatCompletionsHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
@@ -248,7 +248,7 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseJSON{Message: "OK"})
 }
 
-// ListModelsOpenAICompatibleHandler implements an OpenAI-compatible API endpoint
+// ListModelsHandler implements an OpenAI-compatible API endpoint
 // that returns model information in the standard OpenAI format.
 //
 // This handler supports the OpenAI GET /v1/models endpoint specification:
@@ -275,7 +275,7 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 //
 // This endpoint allows applications built for OpenAI's API to work seamlessly
 // with the Inference Gateway's multi-provider architecture.
-func (router *RouterImpl) ListModelsOpenAICompatibleHandler(c *gin.Context) {
+func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 	providerID := c.Query("provider")
 	if providerID != "" {
 		provider, err := router.registry.BuildProvider(c.Query("provider"), router.client)
@@ -360,13 +360,13 @@ func (router *RouterImpl) ListModelsOpenAICompatibleHandler(c *gin.Context) {
 	}
 }
 
-// ChatCompletionsOpenAICompatibleHandler implements an OpenAI-compatible API endpoint
+// ChatCompletionsHandler implements an OpenAI-compatible API endpoint
 // that generates text completions in the standard OpenAI format.
 //
 // It returns token completions as chat in the standard OpenAI format, allowing applications
 // built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
 // architecture.
-func (router *RouterImpl) ChatCompletionsOpenAICompatibleHandler(c *gin.Context) {
+func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	var req providers.ChatCompletionsRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
