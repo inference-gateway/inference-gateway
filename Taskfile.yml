@@ -6,7 +6,7 @@ tasks:
     desc: "Generate the gateway from OpenAPI Spec"
     cmds:
       - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client.go
-      # - go run cmd/generate/main.go -type ProvidersCommonTypes -output providers/common_types.go
+      - go run cmd/generate/main.go -type ProvidersCommonTypes -output providers/common_types.go
       # - go run cmd/generate/main.go -type Providers -output providers
       - go run cmd/generate/main.go -type Config -output config/config.go
       - go run cmd/generate/main.go -type MD -output Configurations.md
