@@ -138,6 +138,7 @@ func main() {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/models", api.ListModelsHandler)
+		v1.POST("/completions", api.CompletionsHandler)
 		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 	}
 	r.NoRoute(api.NotFoundHandler)
