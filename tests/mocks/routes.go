@@ -52,6 +52,18 @@ func (mr *MockRouterMockRecorder) ChatCompletionsHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletionsHandler", reflect.TypeOf((*MockRouter)(nil).ChatCompletionsHandler), c)
 }
 
+// CompletionsHandler mocks base method.
+func (m *MockRouter) CompletionsHandler(c *gin.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CompletionsHandler", c)
+}
+
+// CompletionsHandler indicates an expected call of CompletionsHandler.
+func (mr *MockRouterMockRecorder) CompletionsHandler(c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompletionsHandler", reflect.TypeOf((*MockRouter)(nil).CompletionsHandler), c)
+}
+
 // HealthcheckHandler mocks base method.
 func (m *MockRouter) HealthcheckHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
