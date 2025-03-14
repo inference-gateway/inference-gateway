@@ -371,6 +371,15 @@ components:
                   - role: "user"
                     content: "Explain quantum computing"
                 temperature: 0.5
+    CreateChatCompletionRequest:
+      required: true
+      description: |
+        ProviderRequest depends on the specific provider and endpoint being called
+        If you decide to use this approach, please follow the provider-specific documentations.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CreateChatCompletionRequest"
     CreateCompletionRequest:
       required: true
       description: |
@@ -379,19 +388,7 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              model:
-                description: ID of the model to use.
-                type: string
-              prompt:
-                description: >
-                  The prompt(s) to generate completions for, encoded as a string,
-                  array of strings, array of tokens, or array of token arrays.
-                nullable: true
-            required:
-              - model
-              - prompt
+            $ref: "#/components/schemas/CreateCompletionRequest"
   responses:
     BadRequest:
       description: Bad request
@@ -563,6 +560,49 @@ components:
               type: string
             description:
               type: string
+    ChatCompletionNamedToolChoice:
+      type: object
+      description:
+        Specifies a tool the model should use. Use to force the model to
+        call a specific function.
+      properties:
+        type:
+          type: string
+          enum:
+            - function
+          description: The type of the tool. Currently, only `function` is supported.
+          x-stainless-const: true
+        function:
+          type: object
+          properties:
+            name:
+              type: string
+              description: The name of the function to call.
+          required:
+            - name
+      required:
+        - type
+        - function
+    CompletionUsage:
+      type: object
+      description: Usage statistics for the completion request.
+      properties:
+        completion_tokens:
+          type: integer
+          default: 0
+          description: Number of tokens in the generated completion.
+        prompt_tokens:
+          type: integer
+          default: 0
+          description: Number of tokens in the prompt.
+        total_tokens:
+          type: integer
+          default: 0
+          description: Total number of tokens used in the request (prompt + completion).
+      required:
+        - prompt_tokens
+        - completion_tokens
+        - total_tokens
     GenerateRequest:
       type: object
       description: Request structure for token generation
@@ -602,6 +642,70 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Tool"
+    ChatCompletionRequestMessage:
+      type: object
+      description: Message structure for chat completion requests
+      properties:
+        role:
+          $ref: "#/components/schemas/MessageRole"
+        content:
+          type: string
+      required:
+        - role
+        - content
+    CreateChatCompletionRequest:
+      type: object
+      properties:
+        messages:
+          description: >
+            A list of messages comprising the conversation so far.
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/ChatCompletionRequestMessage"
+        max_completion_tokens:
+          description: >
+            An upper bound for the number of tokens that can be generated
+            for a completion, including visible output tokens and reasoning tokens.
+          type: integer
+          nullable: true
+        stream:
+          description: >
+            If set to true, the model response data will be streamed to the
+            client as it is generated using [server-sent
+            events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).
+          type: boolean
+          nullable: true
+          default: false
+        tools:
+          type: array
+          description: >
+            A list of tools the model may call. Currently, only functions
+            are supported as a tool. Use this to provide a list of functions
+            the model may generate JSON inputs for. A max of 128 functions
+            are supported.
+          items:
+            $ref: "#/components/schemas/Tool"
+        tool_choice:
+          $ref: "#/components/schemas/ChatCompletionNamedToolChoice"
+      required:
+        - model
+        - messages
+    CreateCompletionRequest:
+      type: object
+      properties:
+        model:
+          description: ID of the model to use.
+          type: string
+        prompt:
+          description: >
+            The prompt(s) to generate completions for, encoded as a string,
+            array of strings, array of tokens, or array of token arrays.
+          nullable: true
+      required:
+        - model
+        - prompt
+    # TODO - need to deprecate it
     ResponseTokens:
       type: object
       description: Token response structure
@@ -627,6 +731,7 @@ components:
                     properties:
                       arguments:
                         type: object
+    # TODO - need to deprecate it
     GenerateResponse:
       type: object
       description: Response structure for token generation
@@ -635,6 +740,315 @@ components:
           type: string
         response:
           $ref: "#/components/schemas/ResponseTokens"
+    CreateChatCompletionResponse:
+      type: object
+      description:
+        Represents a chat completion response returned by model, based on
+        the provided input.
+      properties:
+        id:
+          type: string
+          description: A unique identifier for the chat completion.
+        choices:
+          type: array
+          description:
+            A list of chat completion choices. Can be more than one if `n` is
+            greater than 1.
+          items:
+            type: object
+            required:
+              - finish_reason
+              - index
+              - message
+              - logprobs
+            properties:
+              finish_reason:
+                type: string
+                description: >
+                  The reason the model stopped generating tokens. This will be
+                  `stop` if the model hit a natural stop point or a provided
+                  stop sequence,
+
+                  `length` if the maximum number of tokens specified in the
+                  request was reached,
+
+                  `content_filter` if content was omitted due to a flag from our
+                  content filters,
+
+                  `tool_calls` if the model called a tool, or `function_call`
+                  (deprecated) if the model called a function.
+                enum:
+                  - stop
+                  - length
+                  - tool_calls
+                  - content_filter
+                  - function_call
+              index:
+                type: integer
+                description: The index of the choice in the list of choices.
+              message:
+                type: object
+                required:
+                  - role
+                  - content
+                properties:
+                  role:
+                    $ref: "#/components/schemas/MessageRole"
+                  content:
+                    type: string
+        created:
+          type: integer
+          description:
+            The Unix timestamp (in seconds) of when the chat completion was
+            created.
+        model:
+          type: string
+          description: The model used for the chat completion.
+        object:
+          type: string
+          description: The object type, which is always `chat.completion`.
+          enum:
+            - chat.completion
+          x-stainless-const: true
+        usage:
+          $ref: "#/components/schemas/CompletionUsage"
+      required:
+        - choices
+        - created
+        - id
+        - model
+        - object
+    ChatCompletionStreamResponseDelta:
+      type: object
+      description: A chat completion delta generated by streamed model responses.
+      properties:
+        content:
+          type: string
+          description: The contents of the chunk message.
+          nullable: true
+        tool_calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatCompletionMessageToolCallChunk"
+        role:
+          type: string
+          enum:
+            - developer
+            - system
+            - user
+            - assistant
+            - tool
+          description: The role of the author of this message.
+        refusal:
+          type: string
+          description: The refusal message generated by the model.
+          nullable: true
+    ChatCompletionMessageToolCallChunk:
+      type: object
+      properties:
+        index:
+          type: integer
+        id:
+          type: string
+          description: The ID of the tool call.
+        type:
+          type: string
+          enum:
+            - function
+          description: The type of the tool. Currently, only `function` is supported.
+          x-stainless-const: true
+        function:
+          type: object
+          properties:
+            name:
+              type: string
+              description: The name of the function to call.
+            arguments:
+              type: string
+              description:
+                The arguments to call the function with, as generated by the model
+                in JSON format. Note that the model does not always generate
+                valid JSON, and may hallucinate parameters not defined by your
+                function schema. Validate the arguments in your code before
+                calling your function.
+      required:
+        - index
+    ChatCompletionTokenLogprob:
+      type: object
+      properties:
+        token: &a1
+          description: The token.
+          type: string
+        logprob: &a2
+          description:
+            The log probability of this token, if it is within the top 20 most
+            likely tokens. Otherwise, the value `-9999.0` is used to signify
+            that the token is very unlikely.
+          type: number
+        bytes: &a3
+          description:
+            A list of integers representing the UTF-8 bytes representation of
+            the token. Useful in instances where characters are represented by
+            multiple tokens and their byte representations must be combined to
+            generate the correct text representation. Can be `null` if there is
+            no bytes representation for the token.
+          type: array
+          items:
+            type: integer
+          nullable: true
+        top_logprobs:
+          description:
+            List of the most likely tokens and their log probability, at this
+            token position. In rare cases, there may be fewer than the number of
+            requested `top_logprobs` returned.
+          type: array
+          items:
+            type: object
+            properties:
+              token: *a1
+              logprob: *a2
+              bytes: *a3
+            required:
+              - token
+              - logprob
+              - bytes
+      required:
+        - token
+        - logprob
+        - bytes
+        - top_logprobs
+    CreateChatCompletionStreamResponse:
+      type: object
+      description: |
+        Represents a streamed chunk of a chat completion response returned
+        by the model, based on the provided input.
+      properties:
+        id:
+          type: string
+          description:
+            A unique identifier for the chat completion. Each chunk has the
+            same ID.
+        choices:
+          type: array
+          description: >
+            A list of chat completion choices. Can contain more than one
+            elements if `n` is greater than 1. Can also be empty for the
+
+            last chunk if you set `stream_options: {"include_usage": true}`.
+          items:
+            type: object
+            required:
+              - delta
+              - finish_reason
+              - index
+            properties:
+              delta:
+                $ref: "#/components/schemas/ChatCompletionStreamResponseDelta"
+              logprobs:
+                description: Log probability information for the choice.
+                type: object
+                nullable: true
+                properties:
+                  content:
+                    description: A list of message content tokens with log probability information.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChatCompletionTokenLogprob"
+                    nullable: true
+                  refusal:
+                    description: A list of message refusal tokens with log probability information.
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChatCompletionTokenLogprob"
+                    nullable: true
+                required:
+                  - content
+                  - refusal
+              finish_reason:
+                type: string
+                description: >
+                  The reason the model stopped generating tokens. This will be
+                  `stop` if the model hit a natural stop point or a provided
+                  stop sequence,
+
+                  `length` if the maximum number of tokens specified in the
+                  request was reached,
+
+                  `content_filter` if content was omitted due to a flag from our
+                  content filters,
+
+                  `tool_calls` if the model called a tool, or `function_call`
+                  (deprecated) if the model called a function.
+                enum:
+                  - stop
+                  - length
+                  - tool_calls
+                  - content_filter
+                  - function_call
+                nullable: true
+              index:
+                type: integer
+                description: The index of the choice in the list of choices.
+        created:
+          type: integer
+          description:
+            The Unix timestamp (in seconds) of when the chat completion was
+            created. Each chunk has the same timestamp.
+        model:
+          type: string
+          description: The model to generate the completion.
+        service_tier:
+          description: The service tier used for processing the request.
+          type: string
+          enum:
+            - scale
+            - default
+          example: scale
+          nullable: true
+        system_fingerprint:
+          type: string
+          description: >
+            This fingerprint represents the backend configuration that the model
+            runs with.
+
+            Can be used in conjunction with the `seed` request parameter to
+            understand when backend changes have been made that might impact
+            determinism.
+        object:
+          type: string
+          description: The object type, which is always `chat.completion.chunk`.
+          enum:
+            - chat.completion.chunk
+          x-stainless-const: true
+        usage:
+          type: object
+          nullable: true
+          description: >
+            An optional field that will only be present when you set
+            `stream_options: {"include_usage": true}` in your request.
+
+            When present, it contains a null value except for the last chunk
+            which contains the token usage statistics for the entire request.
+          properties:
+            completion_tokens:
+              type: integer
+              description: Number of tokens in the generated completion.
+            prompt_tokens:
+              type: integer
+              description: Number of tokens in the prompt.
+            total_tokens:
+              type: integer
+              description: Total number of tokens used in the request (prompt + completion).
+          required:
+            - prompt_tokens
+            - completion_tokens
+            - total_tokens
+      required:
+        - choices
+        - created
+        - id
+        - model
+        - object
     CreateCompletionResponse:
       type: object
       description: >
