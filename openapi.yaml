@@ -189,34 +189,6 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
-  /v1/completions:
-    post:
-      operationId: createCompletion
-      tags:
-        - Completions
-      summary: Creates a completion for the provided prompt and parameters.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: provider
-          in: query
-          required: false
-          schema:
-            $ref: "#/components/schemas/Providers"
-          description: Specific provider to use (default determined by model)
-      requestBody:
-        $ref: "#/components/requestBodies/CreateCompletionRequest"
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CreateCompletionResponse"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "500":
-          $ref: "#/components/responses/InternalError"
   /proxy/{provider}/{path}:
     parameters:
       - name: provider

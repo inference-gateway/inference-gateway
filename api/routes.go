@@ -27,7 +27,6 @@ import (
 //go:generate mockgen -source=routes.go -destination=../tests/mocks/routes.go -package=mocks
 type Router interface {
 	ListModelsHandler(c *gin.Context)
-	CompletionsHandler(c *gin.Context)
 	ChatCompletionsHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
@@ -504,12 +503,6 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, openaiResponse)
-}
-
-// CompletionsHandler implements an OpenAI-compatible API endpoint
-// that creates a completion for the provided prompt and parameters.
-func (router *RouterImpl) CompletionsHandler(c *gin.Context) {
-
 }
 
 func determineProviderAndModelName(model string) (provider string, modelName string) {
