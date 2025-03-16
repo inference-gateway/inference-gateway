@@ -14,8 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
 	gin "github.com/gin-gonic/gin"
@@ -263,13 +261,14 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 //	{
 //	  "object": "list",
 //	  "data": [
-//	    {
+//	   {
 //	      "id": "model-id",
 //	      "object": "model",
 //	      "created": 1686935002,
-//	      "owned_by": "provider-name"
-//	    },
-//	    ...
+//	      "owned_by": "provider-name",
+//	      "served_by": "provider-name"
+//	   },
+//	   ...
 //	  ]
 //	}
 //
@@ -363,6 +362,31 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 // ChatCompletionsHandler implements an OpenAI-compatible API endpoint
 // that generates text completions in the standard OpenAI format.
 //
+// Regular response format:
+//
+//	{
+//	  "choices": [
+//	    {
+//	      "finish_reason": "stop",
+//	      "message": {
+//	        "content": "<think>\nOkay, so the user just wrote \"Hi\". Well, I received that as an input. My task is to respond appropriately by adding a few more sentences. \n\nHmm, maybe they’re trying to get me in on something or looking for feedback. I can’t guess exactly what might be intended.\n\nI should keep it friendly and casual like the previous response. \"Hello! Seems like you're having a great time.\" That wraps it up nicely and doesn't leave much room for misunderstanding.\n\nLet me make sure that the sentences are simple and concise, which is always better for people.\n</think>\n\nHello! Seems like you're having a great time. How can I help you?",
+//	        "role": "assistant"
+//	      }
+//	    }
+//	  ],
+//	  "created": 1742165657,
+//	  "id": "chatcmpl-118",
+//	  "model": "deepseek-r1:1.5b",
+//	  "object": "chat.completion",
+//	  "usage": {
+//	    "completion_tokens": 139,
+//	    "prompt_tokens": 10,
+//	    "total_tokens": 149
+//	  }
+//	}
+//
+// Streaming response format:
+//
 // It returns token completions as chat in the standard OpenAI format, allowing applications
 // built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
 // architecture.
@@ -401,6 +425,13 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
 	defer cancel()
 
+	requestBody := providers.CreateChatCompletionRequest{
+		Model:     model,
+		Messages:  req.Messages,
+		Tools:     req.Tools,
+		MaxTokens: req.MaxTokens,
+	}
+
 	// Streaming response
 	if req.Stream {
 		c.Header("Content-Type", "text/event-stream")
@@ -408,7 +439,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		c.Header("Connection", "keep-alive")
 		c.Header("Transfer-Encoding", "chunked")
 
-		streamCh, err := provider.StreamTokens(ctx, model, req.Messages)
+		streamCh, err := provider.StreamChatCompletions(ctx, requestBody)
 		if err != nil {
 			router.logger.Error("failed to start streaming", err)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to start streaming"})
@@ -417,7 +448,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 		c.Stream(func(w io.Writer) bool {
 			select {
-			case resp, ok := <-streamCh:
+			case line, ok := <-streamCh:
 				if !ok {
 					if _, err := c.Writer.Write([]byte("data: [DONE]\n\n")); err != nil {
 						router.logger.Error("failed to write [DONE] marker", err)
@@ -425,30 +456,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 					return false
 				}
 
-				chunk := providers.CreateChatCompletionStreamResponse{
-					ID:      "chatcmpl-" + uuid.New().String(),
-					Object:  "chat.completion.chunk",
-					Created: time.Now().Unix(),
-					Model:   resp.Response.Model,
-					Choices: []providers.ChunkChoice{
-						{
-							Index: 0,
-							Delta: providers.Message{
-								Role:    resp.Response.Role,
-								Content: resp.Response.Content,
-							},
-							FinishReason: nil,
-						},
-					},
-				}
-
-				data, err := json.Marshal(chunk)
-				if err != nil {
-					router.logger.Error("failed to marshal chunk", err)
-					return false
-				}
-
-				if _, err := c.Writer.Write([]byte("data: " + string(data) + "\n\n")); err != nil {
+				if _, err := c.Writer.Write([]byte("data: " + string(line) + "\n\n")); err != nil {
 					router.logger.Error("failed to write chunk", err)
 					return false
 				}
@@ -462,7 +470,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	// Non-streaming response
-	response, err := provider.GenerateTokens(ctx, model, req.Messages, req.Tools, req.MaxCompletionTokens)
+	response, err := provider.ChatCompletions(ctx, requestBody)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
 			router.logger.Error("request timed out", err, "provider", providerID)
@@ -474,35 +482,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	openaiResponse := providers.CreateChatCompletionResponse{
-		ID:      "chatcmpl-" + uuid.New().String(),
-		Object:  "chat.completion",
-		Created: time.Now().Unix(),
-		Model:   response.Response.Model,
-		Choices: []providers.ChatCompletionChoice{
-			{
-				Index: 0,
-				Message: providers.Message{
-					Role:    response.Response.Role,
-					Content: response.Response.Content,
-				},
-				FinishReason: "stop",
-			},
-		},
-		// TODO - need to implement the usage details correctly
-		Usage: providers.CompletionUsage{
-			PromptTokens:     0,
-			CompletionTokens: 0,
-			TotalTokens:      0,
-			// Optional fields
-			// QueueTime:      0.0,
-			// PromptTime:     0.0,
-			// CompletionTime: 0.0,
-			// TotalTime:      0.0,
-		},
-	}
-
-	c.JSON(http.StatusOK, openaiResponse)
+	c.JSON(http.StatusOK, response)
 }
 
 func determineProviderAndModelName(model string) (provider string, modelName string) {
@@ -510,12 +490,12 @@ func determineProviderAndModelName(model string) (provider string, modelName str
 
 	// First check for explicit provider prefixes (ollama-, groq-, etc.)
 	providerPrefixMapping := map[string]string{
-		"ollama-":     providers.OllamaID,
-		"groq-":       providers.GroqID,
-		"cloudflare-": providers.CloudflareID,
-		"openai-":     providers.OpenaiID,
-		"anthropic-":  providers.AnthropicID,
-		"cohere-":     providers.CohereID,
+		"ollama/":     providers.OllamaID,
+		"groq/":       providers.GroqID,
+		"cloudflare/": providers.CloudflareID,
+		"openai/":     providers.OpenaiID,
+		"anthropic/":  providers.AnthropicID,
+		"cohere/":     providers.CohereID,
 	}
 
 	for prefix, providerID := range providerPrefixMapping {

@@ -454,17 +454,17 @@ components:
               endpoint: "/chat/completions"
         cohere:
           id: "cohere"
-          url: "https://api.cohere.com/compatibility/v1"
+          url: "https://api.cohere.ai"
           auth_type: "bearer"
           endpoints:
             models:
               name: "list_models"
               method: "GET"
-              endpoint: "/models"
+              endpoint: "/v1/models"
             chat:
               name: "chat_completions"
               method: "POST"
-              endpoint: "/chat/completions"
+              endpoint: "/compatibility/v1/chat/completions"
         groq:
           id: "groq"
           url: "https://api.groq.com/openai/v1"
@@ -493,13 +493,13 @@ components:
               endpoint: "/chat/completions"
         cloudflare:
           id: "cloudflare"
-          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1"
           auth_type: "bearer"
           endpoints:
             models:
               name: "list_models"
               method: "GET"
-              endpoint: "/models"
+              endpoint: "/finetunes/public"
             chat:
               name: "chat_completions"
               method: "POST"
@@ -509,26 +509,35 @@ components:
       description: |
         Provider-specific response format. Examples:
 
-        OpenAI GET /v1/models response:
+        OpenAI GET /v1/models?provider=openai response:
         ```json
         {
+          "provider": "openai",
+          "object": "list",
           "data": [
             {
               "id": "gpt-4",
               "object": "model",
-              "created": 1687882410
+              "created": 1687882410,
+              "owned_by": "openai",
+              "served_by": "openai"
             }
           ]
         }
         ```
 
-        Anthropic GET /v1/models response:
+        Anthropic GET /v1/models?provider=anthropic response:
         ```json
         {
-          "models": [
+          "provider": "anthropic",
+          "object": "list",
+          "data": [
             {
-              "name": "claude-3-opus-20240229",
-              "description": "Most capable model for highly complex tasks"
+              "id": "gpt-4",
+              "object": "model",
+              "created": 1687882410,
+              "owned_by": "openai",
+              "served_by": "openai"
             }
           ]
         }
@@ -693,48 +702,6 @@ components:
         - prompt_tokens
         - completion_tokens
         - total_tokens
-    GenerateRequest:
-      # Deprecated in favore of CreateChatCompletionRequest
-      # TODO - delete this
-      deprecated: true
-      type: object
-      description: Request structure for token generation
-      required:
-        - model
-        - messages
-      properties:
-        model:
-          type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/Message"
-        stream:
-          type: boolean
-          default: false
-          description: Whether to stream tokens as they are generated in raw json
-        ssevents:
-          type: boolean
-          default: false
-          description: |
-            Whether to use Server-Sent Events for token generation.
-            When enabled, the response will be streamed as SSE with the following event types:
-              - message-start: Initial message event with assistant role
-              - stream-start: Stream initialization
-              - content-start: Content beginning
-              - content-delta: Content update with new tokens
-              - content-end: Content completion
-              - message-end: Message completion
-              - stream-end: Stream completion
-
-              **Note:** Depending on the provider, some events may not be present.
-        max_tokens:
-          type: integer
-          description: Maximum number of tokens to generate
-        tools:
-          type: array
-          items:
-            $ref: "#/components/schemas/ChatCompletionTool"
     CreateChatCompletionRequest:
       type: object
       properties:
@@ -748,7 +715,7 @@ components:
           minItems: 1
           items:
             $ref: "#/components/schemas/Message"
-        max_completion_tokens:
+        max_tokens:
           description: >
             An upper bound for the number of tokens that can be generated
             for a completion, including visible output tokens and reasoning tokens.
@@ -806,21 +773,6 @@ components:
         - id
         - type
         - function
-    ResponseTokens:
-      deprecated: true
-      type: object
-      description: Token response structure
-      properties:
-        role:
-          $ref: "#/components/schemas/MessageRole"
-        model:
-          type: string
-        content:
-          type: string
-        tool_calls:
-          type: array
-          items:
-            $ref: "#/components/schemas/ChatCompletionMessageToolCall"
     EventType:
       type: string
       enum:
@@ -831,19 +783,6 @@ components:
         - content-end
         - message-end
         - stream-end
-    GenerateResponse:
-      deprecated: true
-      type: object
-      description: Response structure for token generation
-      properties:
-        provider:
-          type: string
-        response:
-          $ref: "#/components/schemas/ResponseTokens"
-        event_type:
-          $ref: "#/components/schemas/EventType"
-        usage:
-          $ref: "#/components/schemas/CompletionUsage"
     ChatCompletionChoice:
       type: object
       properties:
@@ -1308,7 +1247,7 @@ components:
                 - name: anthropic_api_url
                   env: "ANTHROPIC_API_URL"
                   type: string
-                  default: "https://api.anthropic.com"
+                  default: "https://api.anthropic.com/v1"
                   description: "Anthropic API URL"
                 - name: anthropic_api_key
                   env: "ANTHROPIC_API_KEY"
@@ -1318,7 +1257,7 @@ components:
                 - name: cloudflare_api_url
                   env: "CLOUDFLARE_API_URL"
                   type: string
-                  default: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+                  default: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1"
                   description: "Cloudflare API URL"
                 - name: cloudflare_api_key
                   env: "CLOUDFLARE_API_KEY"
@@ -1328,7 +1267,7 @@ components:
                 - name: cohere_api_url
                   env: "COHERE_API_URL"
                   type: string
-                  default: "https://api.cohere.com"
+                  default: "https://api.cohere.ai"
                   description: "Cohere API URL"
                 - name: cohere_api_key
                   env: "COHERE_API_KEY"
@@ -1338,7 +1277,7 @@ components:
                 - name: groq_api_url
                   env: "GROQ_API_URL"
                   type: string
-                  default: "https://api.groq.com"
+                  default: "https://api.groq.com/openai/v1"
                   description: "Groq API URL"
                 - name: groq_api_key
                   env: "GROQ_API_KEY"
@@ -1348,7 +1287,7 @@ components:
                 - name: ollama_api_url
                   env: "OLLAMA_API_URL"
                   type: string
-                  default: "http://ollama:8080"
+                  default: "http://ollama:8080/v1"
                   description: "Ollama API URL"
                 - name: ollama_api_key
                   env: "OLLAMA_API_KEY"
@@ -1358,7 +1297,7 @@ components:
                 - name: openai_api_url
                   env: "OPENAI_API_URL"
                   type: string
-                  default: "https://api.openai.com"
+                  default: "https://api.openai.com/v1"
                   description: "OpenAI API URL"
                 - name: openai_api_key
                   env: "OPENAI_API_KEY"

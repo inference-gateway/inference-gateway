@@ -47,8 +47,8 @@ func TestLoad(t *testing.T) {
 							"anthropic-version": {"2023-06-01"},
 						},
 						Endpoints: providers.Endpoints{
-							Models: providers.AnthropicListEndpoint,
-							Chat:   providers.AnthropicGenerateEndpoint,
+							Models: providers.AnthropicModelsEndpoint,
+							Chat:   providers.AnthropicChatEndpoint,
 						},
 					},
 					providers.CloudflareID: {
@@ -57,8 +57,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.CloudflareDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.CloudflareListEndpoint,
-							Chat:   providers.CloudflareGenerateEndpoint,
+							Models: providers.CloudflareModelsEndpoint,
+							Chat:   providers.CloudflareChatEndpoint,
 						},
 					},
 					providers.CohereID: {
@@ -67,8 +67,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.CohereDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.CohereListEndpoint,
-							Chat:   providers.CohereGenerateEndpoint,
+							Models: providers.CohereModelsEndpoint,
+							Chat:   providers.CohereChatEndpoint,
 						},
 					},
 					providers.GroqID: {
@@ -77,8 +77,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.GroqDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.GroqListEndpoint,
-							Chat:   providers.GroqGenerateEndpoint,
+							Models: providers.GroqModelsEndpoint,
+							Chat:   providers.GroqChatEndpoint,
 						},
 					},
 					providers.OllamaID: {
@@ -87,8 +87,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.OllamaDefaultBaseURL,
 						AuthType: providers.AuthTypeNone,
 						Endpoints: providers.Endpoints{
-							Models: providers.OllamaListEndpoint,
-							Chat:   providers.OllamaGenerateEndpoint,
+							Models: providers.OllamaModelsEndpoint,
+							Chat:   providers.OllamaChatEndpoint,
 						},
 					},
 					providers.OpenaiID: {
@@ -97,8 +97,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.OpenaiDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.OpenAIListEndpoint,
-							Chat:   providers.OpenAIGenerateEndpoint,
+							Models: providers.OpenaiModelsEndpoint,
+							Chat:   providers.OpenaiChatEndpoint,
 						},
 					},
 				},
@@ -143,8 +143,8 @@ func TestLoad(t *testing.T) {
 						URL:      "http://custom-ollama:8080",
 						AuthType: providers.AuthTypeNone,
 						Endpoints: providers.Endpoints{
-							Models: providers.OllamaListEndpoint,
-							Chat:   providers.OllamaGenerateEndpoint,
+							Models: providers.OllamaModelsEndpoint,
+							Chat:   providers.OllamaChatEndpoint,
 						},
 					},
 					providers.GroqID: {
@@ -154,8 +154,8 @@ func TestLoad(t *testing.T) {
 						Token:    "groq123",
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.GroqListEndpoint,
-							Chat:   providers.GroqGenerateEndpoint,
+							Models: providers.GroqModelsEndpoint,
+							Chat:   providers.GroqChatEndpoint,
 						},
 					},
 					providers.OpenaiID: {
@@ -165,8 +165,8 @@ func TestLoad(t *testing.T) {
 						Token:    "openai123",
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.OpenAIListEndpoint,
-							Chat:   providers.OpenAIGenerateEndpoint,
+							Models: providers.OpenaiModelsEndpoint,
+							Chat:   providers.OpenaiChatEndpoint,
 						},
 					},
 					providers.CloudflareID: {
@@ -175,8 +175,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.CloudflareDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.CloudflareListEndpoint,
-							Chat:   providers.CloudflareGenerateEndpoint,
+							Models: providers.CloudflareModelsEndpoint,
+							Chat:   providers.CloudflareChatEndpoint,
 						},
 					},
 					providers.CohereID: {
@@ -185,8 +185,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.CohereDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.CohereListEndpoint,
-							Chat:   providers.CohereGenerateEndpoint,
+							Models: providers.CohereModelsEndpoint,
+							Chat:   providers.CohereChatEndpoint,
 						},
 					},
 					providers.AnthropicID: {
@@ -198,8 +198,8 @@ func TestLoad(t *testing.T) {
 							"anthropic-version": {"2023-06-01"},
 						},
 						Endpoints: providers.Endpoints{
-							Models: providers.AnthropicListEndpoint,
-							Chat:   providers.AnthropicGenerateEndpoint,
+							Models: providers.AnthropicModelsEndpoint,
+							Chat:   providers.AnthropicChatEndpoint,
 						},
 					},
 				},
@@ -257,8 +257,8 @@ func TestLoad(t *testing.T) {
 						URL:      "http://custom-ollama:8080",
 						AuthType: providers.AuthTypeNone,
 						Endpoints: providers.Endpoints{
-							Models: providers.OllamaListEndpoint,
-							Chat:   providers.OllamaGenerateEndpoint,
+							Models: providers.OllamaModelsEndpoint,
+							Chat:   providers.OllamaChatEndpoint,
 						},
 					},
 					providers.GroqID: {
@@ -267,8 +267,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.GroqDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.GroqListEndpoint,
-							Chat:   providers.GroqGenerateEndpoint,
+							Models: providers.GroqModelsEndpoint,
+							Chat:   providers.GroqChatEndpoint,
 						},
 					},
 					providers.OpenaiID: {
@@ -277,8 +277,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.OpenaiDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.OpenAIListEndpoint,
-							Chat:   providers.OpenAIGenerateEndpoint,
+							Models: providers.OpenaiModelsEndpoint,
+							Chat:   providers.OpenaiChatEndpoint,
 						},
 					},
 					providers.CloudflareID: {
@@ -287,8 +287,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.CloudflareDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.CloudflareListEndpoint,
-							Chat:   providers.CloudflareGenerateEndpoint,
+							Models: providers.CloudflareModelsEndpoint,
+							Chat:   providers.CloudflareChatEndpoint,
 						},
 					},
 					providers.CohereID: {
@@ -297,8 +297,8 @@ func TestLoad(t *testing.T) {
 						URL:      providers.CohereDefaultBaseURL,
 						AuthType: providers.AuthTypeBearer,
 						Endpoints: providers.Endpoints{
-							Models: providers.CohereListEndpoint,
-							Chat:   providers.CohereGenerateEndpoint,
+							Models: providers.CohereModelsEndpoint,
+							Chat:   providers.CohereChatEndpoint,
 						},
 					},
 					providers.AnthropicID: {
@@ -310,8 +310,8 @@ func TestLoad(t *testing.T) {
 							"anthropic-version": {"2023-06-01"},
 						},
 						Endpoints: providers.Endpoints{
-							Models: providers.AnthropicListEndpoint,
-							Chat:   providers.AnthropicGenerateEndpoint,
+							Models: providers.AnthropicModelsEndpoint,
+							Chat:   providers.AnthropicChatEndpoint,
 						},
 					},
 				},

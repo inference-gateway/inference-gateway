@@ -11,11 +11,27 @@ const (
 // The default base URLs of each provider
 const (
 	AnthropicDefaultBaseURL  = "https://api.anthropic.com/v1"
-	CloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
-	CohereDefaultBaseURL     = "https://api.cohere.com/compatibility/v1"
+	CloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1"
+	CohereDefaultBaseURL     = "https://api.cohere.ai"
 	GroqDefaultBaseURL       = "https://api.groq.com/openai/v1"
 	OllamaDefaultBaseURL     = "http://ollama:8080/v1"
 	OpenaiDefaultBaseURL     = "https://api.openai.com/v1"
+)
+
+// The default endpoints of each provider
+const (
+	AnthropicModelsEndpoint  = "/models"
+	AnthropicChatEndpoint    = "/chat/completions"
+	CloudflareModelsEndpoint = "/finetunes/public"
+	CloudflareChatEndpoint   = "/chat/completions"
+	CohereModelsEndpoint     = "/v1/models"
+	CohereChatEndpoint       = "/compatibility/v1/chat/completions"
+	GroqModelsEndpoint       = "/models"
+	GroqChatEndpoint         = "/chat/completions"
+	OllamaModelsEndpoint     = "/models"
+	OllamaChatEndpoint       = "/chat/completions"
+	OpenaiModelsEndpoint     = "/models"
+	OpenaiChatEndpoint       = "/chat/completions"
 )
 
 // The ID's of each provider
@@ -67,6 +83,11 @@ const (
 	FinishReasonToolCalls     FinishReason = "tool_calls"
 	FinishReasonContentFilter FinishReason = "content_filter"
 )
+
+// ListModelsTransformer interface for transforming provider-specific responses
+type ListModelsTransformer interface {
+	Transform() ListModelsResponse
+}
 
 // ChatCompletionChoice represents a ChatCompletionChoice in the API
 type ChatCompletionChoice struct {
@@ -127,11 +148,11 @@ type CompletionUsage struct {
 
 // CreateChatCompletionRequest represents a CreateChatCompletionRequest in the API
 type CreateChatCompletionRequest struct {
-	MaxCompletionTokens int                  `json:"max_completion_tokens,omitempty"`
-	Messages            []Message            `json:"messages,omitempty"`
-	Model               string               `json:"model,omitempty"`
-	Stream              bool                 `json:"stream,omitempty"`
-	Tools               []ChatCompletionTool `json:"tools,omitempty"`
+	MaxTokens int                  `json:"max_tokens,omitempty"`
+	Messages  []Message            `json:"messages,omitempty"`
+	Model     string               `json:"model,omitempty"`
+	Stream    bool                 `json:"stream,omitempty"`
+	Tools     []ChatCompletionTool `json:"tools,omitempty"`
 }
 
 // CreateChatCompletionResponse represents a CreateChatCompletionResponse in the API
@@ -182,24 +203,6 @@ type FunctionParameters struct {
 	Type                 string                 `json:"type,omitempty"`
 }
 
-// GenerateRequest represents a GenerateRequest in the API
-type GenerateRequest struct {
-	MaxTokens int                  `json:"max_tokens,omitempty"`
-	Messages  []Message            `json:"messages,omitempty"`
-	Model     string               `json:"model,omitempty"`
-	Ssevents  bool                 `json:"ssevents,omitempty"`
-	Stream    bool                 `json:"stream,omitempty"`
-	Tools     []ChatCompletionTool `json:"tools,omitempty"`
-}
-
-// GenerateResponse represents a GenerateResponse in the API
-type GenerateResponse struct {
-	EventType EventType       `json:"event_type,omitempty"`
-	Provider  string          `json:"provider,omitempty"`
-	Response  ResponseTokens  `json:"response,omitempty"`
-	Usage     CompletionUsage `json:"usage,omitempty"`
-}
-
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {
 	Data     []Model `json:"data,omitempty"`
@@ -221,14 +224,6 @@ type Model struct {
 	Object   string `json:"object,omitempty"`
 	OwnedBy  string `json:"owned_by,omitempty"`
 	ServedBy string `json:"served_by,omitempty"`
-}
-
-// ResponseTokens represents a ResponseTokens in the API
-type ResponseTokens struct {
-	Content   string                          `json:"content,omitempty"`
-	Model     string                          `json:"model,omitempty"`
-	Role      MessageRole                     `json:"role,omitempty"`
-	ToolCalls []ChatCompletionMessageToolCall `json:"tool_calls,omitempty"`
 }
 
 // Transform converts provider-specific response to common format

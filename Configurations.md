@@ -42,16 +42,16 @@
 ### Providers
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
-| ANTHROPIC_API_URL | `https://api.anthropic.com` | Anthropic API URL |
+| ANTHROPIC_API_URL | `https://api.anthropic.com/v1` | Anthropic API URL |
 | ANTHROPIC_API_KEY | `""` | Anthropic API Key |
-| CLOUDFLARE_API_URL | `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}` | Cloudflare API URL |
+| CLOUDFLARE_API_URL | `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1` | Cloudflare API URL |
 | CLOUDFLARE_API_KEY | `""` | Cloudflare API Key |
-| COHERE_API_URL | `https://api.cohere.com` | Cohere API URL |
+| COHERE_API_URL | `https://api.cohere.ai` | Cohere API URL |
 | COHERE_API_KEY | `""` | Cohere API Key |
-| GROQ_API_URL | `https://api.groq.com` | Groq API URL |
+| GROQ_API_URL | `https://api.groq.com/openai/v1` | Groq API URL |
 | GROQ_API_KEY | `""` | Groq API Key |
-| OLLAMA_API_URL | `http://ollama:8080` | Ollama API URL |
+| OLLAMA_API_URL | `http://ollama:8080/v1` | Ollama API URL |
 | OLLAMA_API_KEY | `""` | Ollama API Key |
-| OPENAI_API_URL | `https://api.openai.com` | OpenAI API URL |
+| OPENAI_API_URL | `https://api.openai.com/v1` | OpenAI API URL |
 | OPENAI_API_KEY | `""` | OpenAI API Key |
 

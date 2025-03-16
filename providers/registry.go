@@ -6,33 +6,6 @@ import (
 	"github.com/inference-gateway/inference-gateway/logger"
 )
 
-// TODO - need to generate this from OpenAPI spec and probably move it to common_types.go
-const (
-	// Ollama endpoints
-	OllamaListEndpoint     = "/models"
-	OllamaGenerateEndpoint = "/chat/completions"
-
-	// OpenAI endpoints
-	OpenAIListEndpoint     = "/models"
-	OpenAIGenerateEndpoint = "/chat/completions"
-
-	// Groq endpoints
-	GroqListEndpoint     = "/models"
-	GroqGenerateEndpoint = "/chat/completions"
-
-	// Cohere endpoints
-	CohereListEndpoint     = "/v1/models"
-	CohereGenerateEndpoint = "/v2/chat"
-
-	// Cloudflare endpoints
-	CloudflareListEndpoint     = "/ai/finetunes/public"
-	CloudflareGenerateEndpoint = "/ai/run/@cf/meta/{model}"
-
-	// Anthropic endpoints
-	AnthropicListEndpoint     = "/models"
-	AnthropicGenerateEndpoint = "/chat/completions"
-)
-
 // Base provider configuration
 type Config struct {
 	ID           string
@@ -100,8 +73,8 @@ var Registry = map[string]Config{
 			"anthropic-version": {"2023-06-01"},
 		},
 		Endpoints: Endpoints{
-			Models: AnthropicListEndpoint,
-			Chat:   AnthropicGenerateEndpoint,
+			Models: AnthropicModelsEndpoint,
+			Chat:   AnthropicChatEndpoint,
 		},
 	},
 	CloudflareID: {
@@ -110,8 +83,8 @@ var Registry = map[string]Config{
 		URL:      CloudflareDefaultBaseURL,
 		AuthType: AuthTypeBearer,
 		Endpoints: Endpoints{
-			Models: CloudflareListEndpoint,
-			Chat:   CloudflareGenerateEndpoint,
+			Models: CloudflareModelsEndpoint,
+			Chat:   CloudflareChatEndpoint,
 		},
 	},
 	CohereID: {
@@ -120,8 +93,8 @@ var Registry = map[string]Config{
 		URL:      CohereDefaultBaseURL,
 		AuthType: AuthTypeBearer,
 		Endpoints: Endpoints{
-			Models: CohereListEndpoint,
-			Chat:   CohereGenerateEndpoint,
+			Models: CohereModelsEndpoint,
+			Chat:   CohereChatEndpoint,
 		},
 	},
 	GroqID: {
@@ -130,8 +103,8 @@ var Registry = map[string]Config{
 		URL:      GroqDefaultBaseURL,
 		AuthType: AuthTypeBearer,
 		Endpoints: Endpoints{
-			Models: GroqListEndpoint,
-			Chat:   GroqGenerateEndpoint,
+			Models: GroqModelsEndpoint,
+			Chat:   GroqChatEndpoint,
 		},
 	},
 	OllamaID: {
@@ -140,8 +113,8 @@ var Registry = map[string]Config{
 		URL:      OllamaDefaultBaseURL,
 		AuthType: AuthTypeNone,
 		Endpoints: Endpoints{
-			Models: OllamaListEndpoint,
-			Chat:   OllamaGenerateEndpoint,
+			Models: OllamaModelsEndpoint,
+			Chat:   OllamaChatEndpoint,
 		},
 	},
 	OpenaiID: {
@@ -150,8 +123,8 @@ var Registry = map[string]Config{
 		URL:      OpenaiDefaultBaseURL,
 		AuthType: AuthTypeBearer,
 		Endpoints: Endpoints{
-			Models: OpenAIListEndpoint,
-			Chat:   OpenAIGenerateEndpoint,
+			Models: OpenaiModelsEndpoint,
+			Chat:   OpenaiChatEndpoint,
 		},
 	},
 }

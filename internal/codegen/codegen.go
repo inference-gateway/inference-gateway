@@ -283,6 +283,14 @@ const (
     {{- end }}
 )
 
+// The default endpoints of each provider
+const (
+	{{- range $name, $config := .Providers }}
+	{{title $name}}ModelsEndpoint = "{{(index $config.Endpoints "models").Endpoint}}"
+	{{title $name}}ChatEndpoint   = "{{(index $config.Endpoints "chat").Endpoint}}"
+	{{- end }}
+)
+
 // The ID's of each provider
 const (
     {{- range $name, $config := .Providers }}
@@ -326,6 +334,11 @@ const (
     FinishReasonToolCalls     FinishReason = "tool_calls"
     FinishReasonContentFilter FinishReason = "content_filter"
 )
+
+// ListModelsTransformer interface for transforming provider-specific responses
+type ListModelsTransformer interface {
+    Transform() ListModelsResponse
+}
 
 {{- range $name, $schema := .Schemas }}
 {{- if eq (len $schema.Enum) 0 }}

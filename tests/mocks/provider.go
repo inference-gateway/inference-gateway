@@ -41,19 +41,19 @@ func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 	return m.recorder
 }
 
-// GenerateTokens mocks base method.
-func (m *MockProvider) GenerateTokens(ctx context.Context, model string, messages []providers.Message, tools []providers.ChatCompletionTool, maxTokens int) (providers.GenerateResponse, error) {
+// ChatCompletions mocks base method.
+func (m *MockProvider) ChatCompletions(ctx context.Context, req providers.CreateChatCompletionRequest) (providers.CreateChatCompletionResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GenerateTokens", ctx, model, messages, tools, maxTokens)
-	ret0, _ := ret[0].(providers.GenerateResponse)
+	ret := m.ctrl.Call(m, "ChatCompletions", ctx, req)
+	ret0, _ := ret[0].(providers.CreateChatCompletionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GenerateTokens indicates an expected call of GenerateTokens.
-func (mr *MockProviderMockRecorder) GenerateTokens(ctx, model, messages, tools, maxTokens any) *gomock.Call {
+// ChatCompletions indicates an expected call of ChatCompletions.
+func (mr *MockProviderMockRecorder) ChatCompletions(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GenerateTokens", reflect.TypeOf((*MockProvider)(nil).GenerateTokens), ctx, model, messages, tools, maxTokens)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletions", reflect.TypeOf((*MockProvider)(nil).ChatCompletions), ctx, req)
 }
 
 // GetAuthType mocks base method.
@@ -155,17 +155,17 @@ func (mr *MockProviderMockRecorder) ListModels(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModels", reflect.TypeOf((*MockProvider)(nil).ListModels), ctx)
 }
 
-// StreamTokens mocks base method.
-func (m *MockProvider) StreamTokens(ctx context.Context, model string, messages []providers.Message) (<-chan providers.GenerateResponse, error) {
+// StreamChatCompletions mocks base method.
+func (m *MockProvider) StreamChatCompletions(ctx context.Context, req providers.CreateChatCompletionRequest) (<-chan []byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StreamTokens", ctx, model, messages)
-	ret0, _ := ret[0].(<-chan providers.GenerateResponse)
+	ret := m.ctrl.Call(m, "StreamChatCompletions", ctx, req)
+	ret0, _ := ret[0].(<-chan []byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// StreamTokens indicates an expected call of StreamTokens.
-func (mr *MockProviderMockRecorder) StreamTokens(ctx, model, messages any) *gomock.Call {
+// StreamChatCompletions indicates an expected call of StreamChatCompletions.
+func (mr *MockProviderMockRecorder) StreamChatCompletions(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamTokens", reflect.TypeOf((*MockProvider)(nil).StreamTokens), ctx, model, messages)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatCompletions", reflect.TypeOf((*MockProvider)(nil).StreamChatCompletions), ctx, req)
 }

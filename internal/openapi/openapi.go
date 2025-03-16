@@ -76,17 +76,11 @@ type OpenAPISchema struct {
 			Config    Config    `yaml:"Config"`
 			Providers Providers `yaml:"Providers"`
 
-			// Existing schema mappings
-			ProviderAuthType   SchemaProperty `yaml:"ProviderAuthType"`
-			MessageRole        SchemaProperty `yaml:"MessageRole"`
-			Message            SchemaProperty `yaml:"Message"`
-			Model              SchemaProperty `yaml:"Model"`
-			ListModelsResponse SchemaProperty `yaml:"ListModelsResponse"`
-			GenerateRequest    SchemaProperty `yaml:"GenerateRequest"`
-			GenerateResponse   SchemaProperty `yaml:"GenerateResponse"`
-			ResponseTokens     SchemaProperty `yaml:"ResponseTokens"`
-
-			// Additional schemas that were missing
+			ProviderAuthType                      SchemaProperty `yaml:"ProviderAuthType"`
+			MessageRole                           SchemaProperty `yaml:"MessageRole"`
+			Message                               SchemaProperty `yaml:"Message"`
+			Model                                 SchemaProperty `yaml:"Model"`
+			ListModelsResponse                    SchemaProperty `yaml:"ListModelsResponse"`
 			Endpoints                             SchemaProperty `yaml:"Endpoints"`
 			Error                                 SchemaProperty `yaml:"Error"`
 			EventType                             SchemaProperty `yaml:"EventType"`
@@ -155,11 +149,6 @@ func (h *ExtraHeader) UnmarshalYAML(value *yaml.Node) error {
 		return fmt.Errorf("unexpected header value type")
 	}
 	return nil
-}
-
-type ProviderEndpoints struct {
-	Models string `yaml:"models"`
-	Chat   string `yaml:"chat"`
 }
 
 type Transform struct {
