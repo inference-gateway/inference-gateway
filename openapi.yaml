@@ -17,11 +17,9 @@ tags:
   - name: Models
     description: List and describe the various models available in the API.
   - name: Completions
-    description: Given a prompt, the model will return one or more predicted
-      completions, and can also return the probabilities of alternative tokens
-      at each position.
+    description: Generate completions from the models.
   - name: Proxy
-    description: Proxy requests to provider endpoints
+    description: Proxy requests to provider endpoints.
   - name: Health
     description: Health check
 paths:
