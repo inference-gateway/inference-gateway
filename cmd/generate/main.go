@@ -73,18 +73,6 @@ func main() {
 			fmt.Printf("Error generating providers common types: %v\n", err)
 			os.Exit(1)
 		}
-	case "Providers":
-		fmt.Printf("Generating Go Providers to directory %s\n", output)
-		if err := codegen.GenerateProviders(output, "openapi.yaml"); err != nil {
-			fmt.Printf("Error generating providers: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("Generating Go Providers registry to directory %s\n", output)
-		err := codegen.GenerateProvidersRegistry("providers/registry.go", "openapi.yaml")
-		if err != nil {
-			fmt.Printf("Error generating providers registry: %v\n", err)
-			os.Exit(1)
-		}
 	case "Config":
 		fmt.Printf("Generating Go Config to %s\n", output)
 		err := codegen.GenerateConfig(output, "openapi.yaml")

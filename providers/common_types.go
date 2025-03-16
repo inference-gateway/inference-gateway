@@ -155,6 +155,12 @@ type CreateChatCompletionStreamResponse struct {
 	Usage             CompletionUsage              `json:"usage,omitempty"`
 }
 
+// Endpoints represents a Endpoints in the API
+type Endpoints struct {
+	Chat   string `json:"chat,omitempty"`
+	Models string `json:"models,omitempty"`
+}
+
 // Error represents a Error in the API
 type Error struct {
 	Error string `json:"error,omitempty"`

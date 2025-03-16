@@ -73,12 +73,8 @@ func populatePropertyNames(properties map[string]Property) {
 type OpenAPISchema struct {
 	Components struct {
 		Schemas struct {
-			Config struct {
-				XConfig ConfigSchema `yaml:"x-config"`
-			} `yaml:"Config"`
-			Providers struct {
-				XProviderConfigs map[string]ProviderConfig `yaml:"x-provider-configs"`
-			} `yaml:"Providers"`
+			Config    Config    `yaml:"Config"`
+			Providers Providers `yaml:"Providers"`
 
 			// Existing schema mappings
 			ProviderAuthType   SchemaProperty `yaml:"ProviderAuthType"`
@@ -91,6 +87,7 @@ type OpenAPISchema struct {
 			ResponseTokens     SchemaProperty `yaml:"ResponseTokens"`
 
 			// Additional schemas that were missing
+			Endpoints                             SchemaProperty `yaml:"Endpoints"`
 			Error                                 SchemaProperty `yaml:"Error"`
 			EventType                             SchemaProperty `yaml:"EventType"`
 			FunctionObject                        SchemaProperty `yaml:"FunctionObject"`
@@ -111,6 +108,14 @@ type OpenAPISchema struct {
 			ChatCompletionMessageToolCallFunction SchemaProperty `yaml:"ChatCompletionMessageToolCallFunction"`
 		}
 	}
+}
+
+type Config struct {
+	XConfig ConfigSchema `yaml:"x-config"`
+}
+
+type Providers struct {
+	XProviderConfigs map[string]ProviderConfig `yaml:"x-provider-configs"`
 }
 
 type ConfigSchema struct {
@@ -153,8 +158,8 @@ func (h *ExtraHeader) UnmarshalYAML(value *yaml.Node) error {
 }
 
 type ProviderEndpoints struct {
-	List     string `yaml:"list"`
-	Generate string `yaml:"generate"`
+	Models string `yaml:"models"`
+	Chat   string `yaml:"chat"`
 }
 
 type Transform struct {
@@ -207,12 +212,9 @@ type SchemaField struct {
 }
 
 type EndpointSchema struct {
-	Endpoint string `yaml:"endpoint"`
+	Name     string `yaml:"name"`
 	Method   string `yaml:"method"`
-	Schema   struct {
-		Request  SchemaProperty `yaml:"request"`
-		Response SchemaProperty `yaml:"response"`
-	} `yaml:"schema"`
+	Endpoint string `yaml:"endpoint"`
 }
 
 type ProviderConfig struct {

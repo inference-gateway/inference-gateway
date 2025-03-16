@@ -68,11 +68,11 @@ func (p *ProviderImpl) GetExtraHeaders() map[string][]string {
 }
 
 func (p *ProviderImpl) EndpointList() string {
-	return p.endpoints.List
+	return p.endpoints.Models
 }
 
 func (p *ProviderImpl) EndpointGenerate() string {
-	return p.endpoints.Generate
+	return p.endpoints.Chat
 }
 
 func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, error) {

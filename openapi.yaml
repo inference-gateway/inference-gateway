@@ -409,6 +409,13 @@ components:
         To enable authentication, set ENABLE_AUTH to true.
         When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
+    Endpoints:
+      type: object
+      properties:
+        models:
+          type: string
+        chat:
+          type: string
     Providers:
       type: string
       enum:
@@ -423,26 +430,80 @@ components:
           id: "ollama"
           url: "http://ollama:8080/v1"
           auth_type: "none"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
         anthropic:
           id: "anthropic"
           url: "https://api.anthropic.com/v1"
           auth_type: "bearer"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
         cohere:
           id: "cohere"
           url: "https://api.cohere.com/compatibility/v1"
           auth_type: "bearer"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
         groq:
           id: "groq"
           url: "https://api.groq.com/openai/v1"
           auth_type: "bearer"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
         openai:
           id: "openai"
           url: "https://api.openai.com/v1"
           auth_type: "bearer"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
         cloudflare:
           id: "cloudflare"
           url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
           auth_type: "bearer"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
     ProviderSpecificResponse:
       type: object
       description: |
@@ -1301,446 +1362,3 @@ components:
                   type: string
                   description: "OpenAI API Key"
                   secret: true
-      x-provider-configs:
-        ollama:
-          id: "ollama"
-          url: "http://ollama:8080"
-          auth_type: "none"
-          endpoints:
-            list:
-              endpoint: "/api/tags"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    models:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          modified_at:
-                            type: string
-                          size:
-                            type: integer
-                          digest:
-                            type: string
-                          details:
-                            type: object
-                            properties:
-                              format:
-                                type: string
-                              family:
-                                type: string
-                              families:
-                                type: array
-                                items:
-                                  type: string
-                              parameter_size:
-                                type: string
-            generate:
-              endpoint: "/api/chat"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    prompt:
-                      type: string
-                    stream:
-                      type: boolean
-                    system:
-                      type: string
-                    temperature:
-                      type: number
-                      format: float64
-                      default: 0.7
-                    tools:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          function:
-                            type: object
-                            properties:
-                              name:
-                                type: string
-                              parameters:
-                                type: object
-                                properties:
-                                  arguments:
-                                    type: object
-                response:
-                  type: object
-                  properties:
-                    provider:
-                      type: string
-                    response:
-                      type: object
-                      properties:
-                        role:
-                          type: string
-                        model:
-                          type: string
-                        content:
-                          type: string
-        openai:
-          id: "openai"
-          url: "https://api.openai.com"
-          auth_type: "bearer"
-          endpoints:
-            list:
-              endpoint: "/v1/models"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    object:
-                      type: string
-                    data:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                          object:
-                            type: string
-                          created:
-                            type: integer
-                            format: int64
-                          owned_by:
-                            type: string
-            generate:
-              endpoint: "/v1/chat/completions"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    messages:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          role:
-                            type: string
-                          content:
-                            type: string
-                    temperature:
-                      type: number
-                      format: float64
-                      default: 0.7
-                response:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    choices:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          message:
-                            type: object
-                            properties:
-                              role:
-                                type: string
-                              content:
-                                type: string
-        groq:
-          id: "groq"
-          url: "https://api.groq.com"
-          auth_type: "bearer"
-          endpoints:
-            list:
-              endpoint: "/openai/v1/models"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    object:
-                      type: string
-                    data:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                          object:
-                            type: string
-                          created:
-                            type: integer
-                            format: int64
-                          owned_by:
-                            type: string
-                          active:
-                            type: boolean
-                          context_window:
-                            type: integer
-                          public_apps:
-                            type: object
-            generate:
-              endpoint: "/openai/v1/chat/completions"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    messages:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          role:
-                            type: string
-                          content:
-                            type: string
-                    temperature:
-                      type: number
-                      format: float64
-                      default: 0.7
-                    tools:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          function:
-                            type: object
-                            properties:
-                              name:
-                                type: string
-                              parameters:
-                                type: object
-                                properties:
-                                  arguments:
-                                    type: object
-                response:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    choices:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          message:
-                            type: object
-                            properties:
-                              role:
-                                type: string
-                              content:
-                                type: string
-        cloudflare:
-          id: "cloudflare"
-          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
-          auth_type: "bearer"
-          endpoints:
-            list:
-              endpoint: "/ai/finetunes/public"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    result:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                          name:
-                            type: string
-                          description:
-                            type: string
-                          created_at:
-                            type: string
-                          modified_at:
-                            type: string
-                          public:
-                            type: integer
-                          model:
-                            type: string
-            generate:
-              endpoint: "/v1/chat/completions"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    prompt:
-                      type: string
-                    model:
-                      type: string
-                    temperature:
-                      type: number
-                      format: float64
-                      default: 0.7
-                response:
-                  type: object
-                  properties:
-                    result:
-                      type: object
-                      properties:
-                        response:
-                          type: string
-        cohere:
-          id: "cohere"
-          url: "https://api.cohere.com"
-          auth_type: "bearer"
-          endpoints:
-            list:
-              endpoint: "/v1/models"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    models:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          name:
-                            type: string
-                          endpoints:
-                            type: array
-                            items:
-                              type: string
-                          finetuned:
-                            type: boolean
-                          context_length:
-                            type: number
-                            format: float64
-                          tokenizer_url:
-                            type: string
-                          default_endpoints:
-                            type: array
-                            items:
-                              type: string
-                    next_page_token:
-                      type: string
-            generate:
-              endpoint: "/v2/chat"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    messages:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          role:
-                            type: string
-                          content:
-                            type: string
-                    temperature:
-                      type: number
-                      format: float64
-                      default: 0.7
-                response:
-                  type: object
-                  properties:
-                    message:
-                      type: object
-                      properties:
-                        role:
-                          type: string
-                        content:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              type:
-                                type: string
-                              text:
-                                type: string
-        anthropic:
-          id: "anthropic"
-          url: "https://api.anthropic.com"
-          auth_type: "xheader"
-          extra_headers:
-            anthropic-version: "2023-06-01"
-          endpoints:
-            list:
-              endpoint: "/v1/models"
-              method: "GET"
-              schema:
-                response:
-                  type: object
-                  properties:
-                    models:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          type:
-                            type: string
-                          id:
-                            type: string
-                          display_name:
-                            type: string
-                          created_at:
-                            type: string
-                    has_more:
-                      type: boolean
-                    first_id:
-                      type: string
-                    last_id:
-                      type: string
-            generate:
-              endpoint: "/v1/messages"
-              method: "POST"
-              schema:
-                request:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    messages:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          role:
-                            type: string
-                          content:
-                            type: string
-                    temperature:
-                      type: number
-                      format: float64
-                      default: 0.7
-                response:
-                  type: object
-                  properties:
-                    model:
-                      type: string
-                    choices:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          message:
-                            type: object
-                            properties:
-                              role:
-                                type: string
-                              content:
-                                type: string

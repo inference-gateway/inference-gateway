@@ -10,33 +10,7 @@ import (
 	"github.com/inference-gateway/inference-gateway/internal/openapi"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v3"
 )
-
-// GenerateProviders generates providers Request Response schemas from an OpenAPI spec
-func GenerateProviders(output string, openapiPath string) error {
-	// Read OpenAPI spec
-	data, err := os.ReadFile(openapiPath)
-	if err != nil {
-		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
-	}
-
-	var schema openapi.OpenAPISchema
-	if err := yaml.Unmarshal(data, &schema); err != nil {
-		return fmt.Errorf("failed to parse OpenAPI spec: %w", err)
-	}
-
-	providers := schema.Components.Schemas.Providers.XProviderConfigs
-
-	// Generate provider files
-	for name, config := range providers {
-		if err := generateProviderFile(output, name, config); err != nil {
-			return fmt.Errorf("failed to generate provider %s: %w", name, err)
-		}
-	}
-
-	return nil
-}
 
 // GenerateConfig generates a configuration file from an OpenAPI spec
 func GenerateConfig(destination string, oas string) error {
@@ -558,105 +532,6 @@ func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Respo
 	cmd := exec.Command("go", "fmt", destination)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to format %s: %w", destination, err)
-	}
-
-	return nil
-}
-
-func generateProviderFile(destination, name string, config openapi.ProviderConfig) error {
-	caser := cases.Title(language.English)
-
-	funcMap := template.FuncMap{
-		"title":        caser.String,
-		"generateType": generateType,
-		"hasPrefix":    strings.HasPrefix,
-	}
-
-	tmpl := template.Must(template.New("provider").
-		Funcs(funcMap).
-		Parse(`package providers
-
-{{- if .Config.ExtraHeaders }}
-// Extra headers for {{title .Name}} provider
-var {{title .Name}}ExtraHeaders = map[string][]string{
-    {{- range $key, $header := .Config.ExtraHeaders}}
-    "{{$key}}": {"{{index $header.Values 0}}"},
-    {{- end}}
-}
-{{end}}
-
-{{- with .Config.Endpoints.list.Schema.Response }}
-type ListModelsResponse{{title $.Name}} struct {
-    {{- if eq .Type "object" }}
-    {{- range $key, $prop := .Properties }}
-	{{- if not (hasPrefix $key "x-") }}
-    {{title $key}} {{generateType $prop}} ` + "`json:\"{{$key}}\"`" + `
-    {{- end }}
-    {{- end }}
-}
-{{end}}
-
-// Transform converts provider-specific response to common format
-func (r *ListModelsResponse{{title $.Name}}) Transform() ListModelsResponse {
-    {{- with .XTransform }}
-    var models []map[string]interface{}
-    {{- range .Mapping.Models.Transform }}
-    for _, model := range r.Models {
-        models = append(models, map[string]interface{}{
-            {{- range . }}
-            "{{.Target}}": {{if .Source}}model.{{.Source}}{{else}}"{{.Constant}}"{{end}},
-            {{- end }}
-        })
-    }
-    return ListModelsResponse{
-        Provider: {{.Mapping.Provider}},
-        Models:   models,
-    }
-    {{- end }}
-}
-{{end}}
-
-{{- with .Config.Endpoints.generate.Schema }}
-{{- if .Request.Properties }}
-type GenerateRequest{{title $.Name}} struct {
-    {{- range $key, $prop := .Request.Properties }}
-    {{title $key}} {{generateType $prop}} ` + "`json:\"{{$key}}\"`" + `
-    {{- end }}
-}
-{{end}}
-
-{{- if .Response.Properties }}
-type GenerateResponse{{title $.Name}} struct {
-    {{- range $key, $prop := .Response.Properties }}
-    {{title $key}} {{generateType $prop}} ` + "`json:\"{{$key}}\"`" + `
-    {{- end }}
-}
-{{end}}
-{{end}}`))
-
-	data := struct {
-		Name   string
-		Config openapi.ProviderConfig
-	}{
-		Name:   name,
-		Config: config,
-	}
-
-	fileName := fmt.Sprintf("%s/%s.go", destination, strings.ToLower(name))
-	f, err := os.Create(fileName)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if err := tmpl.Execute(f, data); err != nil {
-		return err
-	}
-
-	// Run go fmt on the generated file
-	cmd := exec.Command("go", "fmt", fileName)
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to format %s: %w", fileName, err)
 	}
 
 	return nil

@@ -125,7 +125,7 @@ func TestListModels(t *testing.T) {
 					URL:      "http://test.local",
 					AuthType: providers.AuthTypeNone,
 					Endpoints: providers.Endpoints{
-						List: "/models",
+						Models: "/models",
 					},
 				},
 			}
@@ -222,7 +222,7 @@ func BenchmarkListModels(b *testing.B) {
 			AuthType: providers.AuthTypeNone,
 			Token:    "test-token",
 			Endpoints: providers.Endpoints{
-				List: "/models",
+				Models: "/models",
 			},
 		},
 		providers.GroqID: {
@@ -232,7 +232,7 @@ func BenchmarkListModels(b *testing.B) {
 			AuthType: providers.AuthTypeBearer,
 			Token:    "test-token",
 			Endpoints: providers.Endpoints{
-				List: "/models",
+				Models: "/models",
 			},
 		},
 		providers.OpenaiID: {
@@ -242,7 +242,7 @@ func BenchmarkListModels(b *testing.B) {
 			AuthType: providers.AuthTypeBearer,
 			Token:    "test-token",
 			Endpoints: providers.Endpoints{
-				List: "/models",
+				Models: "/models",
 			},
 		},
 		providers.AnthropicID: {
@@ -255,7 +255,7 @@ func BenchmarkListModels(b *testing.B) {
 				"anthropic-version": {"2023-06-01"},
 			},
 			Endpoints: providers.Endpoints{
-				List: "/models",
+				Models: "/models",
 			},
 		},
 		providers.CloudflareID: {
@@ -265,7 +265,7 @@ func BenchmarkListModels(b *testing.B) {
 			AuthType: providers.AuthTypeBearer,
 			Token:    "test-token",
 			Endpoints: providers.Endpoints{
-				List: "/models",
+				Models: "/models",
 			},
 		},
 		providers.CohereID: {
@@ -275,7 +275,7 @@ func BenchmarkListModels(b *testing.B) {
 			AuthType: providers.AuthTypeBearer,
 			Token:    "test-token",
 			Endpoints: providers.Endpoints{
-				List: "/models",
+				Models: "/models",
 			},
 		},
 	}
@@ -394,7 +394,7 @@ func BenchmarkGenerateTokens(b *testing.B) {
 			AuthType: providers.AuthTypeBearer,
 			Token:    "test-token",
 			Endpoints: providers.Endpoints{
-				Generate: providers.GroqGenerateEndpoint,
+				Chat: providers.GroqGenerateEndpoint,
 			},
 		},
 		providers.OpenaiID: {
@@ -404,7 +404,7 @@ func BenchmarkGenerateTokens(b *testing.B) {
 			AuthType: providers.AuthTypeBearer,
 			Token:    "test-token",
 			Endpoints: providers.Endpoints{
-				Generate: providers.OpenAIGenerateEndpoint,
+				Chat: providers.OpenAIGenerateEndpoint,
 			},
 		},
 	}

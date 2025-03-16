@@ -384,8 +384,8 @@ data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"bille
 					Name: "Ollama",
 					URL:  "http://test.local",
 					Endpoints: providers.Endpoints{
-						Generate: "/api/generate",
-						List:     "/api/tags",
+						Models: "/api/tags",
+						Chat:   "/api/generate",
 					},
 					AuthType: providers.AuthTypeNone,
 				}
@@ -395,8 +395,8 @@ data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"bille
 					Name: "Groq",
 					URL:  "http://test.local",
 					Endpoints: providers.Endpoints{
-						Generate: "/api/generate",
-						List:     "/api/tags",
+						Models: "/api/tags",
+						Chat:   "/api/generate",
 					},
 					AuthType: providers.AuthTypeBearer,
 					Token:    "test-token",
@@ -407,8 +407,8 @@ data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"bille
 					Name: "Cohere",
 					URL:  "http://test.local",
 					Endpoints: providers.Endpoints{
-						Generate: "/api/generate",
-						List:     "/api/tags",
+						Models: "/api/tags",
+						Chat:   "/api/generate",
 					},
 					AuthType: providers.AuthTypeBearer,
 					Token:    "test-token",
@@ -419,8 +419,8 @@ data:  {"type":"message-end","delta":{"finish_reason":"COMPLETE","usage":{"bille
 					Name: "Default",
 					URL:  "http://test.local",
 					Endpoints: providers.Endpoints{
-						Generate: "/api/generate",
-						List:     "/api/tags",
+						Models: "/api/tags",
+						Chat:   "/api/generate",
 					},
 					AuthType: providers.AuthTypeNone,
 					Token:    "test-token",
