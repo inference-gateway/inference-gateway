@@ -423,23 +423,23 @@ components:
       x-provider-configs:
         ollama:
           id: "ollama"
-          url: "http://ollama:8080"
+          url: "http://ollama:8080/v1"
           auth_type: "none"
         anthropic:
           id: "anthropic"
-          url: "https://api.anthropic.com"
+          url: "https://api.anthropic.com/v1"
           auth_type: "bearer"
         cohere:
           id: "cohere"
-          url: "https://api.cohere.com"
+          url: "https://api.cohere.com/compatibility/v1"
           auth_type: "bearer"
         groq:
           id: "groq"
-          url: "https://api.groq.com"
+          url: "https://api.groq.com/openai/v1"
           auth_type: "bearer"
         openai:
           id: "openai"
-          url: "https://api.openai.com"
+          url: "https://api.openai.com/v1"
           auth_type: "bearer"
         cloudflare:
           id: "cloudflare"

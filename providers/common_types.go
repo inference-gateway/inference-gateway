@@ -10,12 +10,12 @@ const (
 
 // The default base URLs of each provider
 const (
-	AnthropicDefaultBaseURL  = "https://api.anthropic.com"
+	AnthropicDefaultBaseURL  = "https://api.anthropic.com/v1"
 	CloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
-	CohereDefaultBaseURL     = "https://api.cohere.com"
-	GroqDefaultBaseURL       = "https://api.groq.com"
-	OllamaDefaultBaseURL     = "http://ollama:8080"
-	OpenaiDefaultBaseURL     = "https://api.openai.com"
+	CohereDefaultBaseURL     = "https://api.cohere.com/compatibility/v1"
+	GroqDefaultBaseURL       = "https://api.groq.com/openai/v1"
+	OllamaDefaultBaseURL     = "http://ollama:8080/v1"
+	OpenaiDefaultBaseURL     = "https://api.openai.com/v1"
 )
 
 // The ID's of each provider
