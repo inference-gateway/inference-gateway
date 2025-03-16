@@ -694,6 +694,9 @@ components:
         - completion_tokens
         - total_tokens
     GenerateRequest:
+      # Deprecated in favore of CreateChatCompletionRequest
+      # TODO - delete this
+      deprecated: true
       type: object
       description: Request structure for token generation
       required:
