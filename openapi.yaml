@@ -742,8 +742,8 @@ components:
         - id
         - type
         - function
-    # TODO - need to deprecate it
     ResponseTokens:
+      deprecated: true
       type: object
       description: Token response structure
       properties:
@@ -767,8 +767,8 @@ components:
         - content-end
         - message-end
         - stream-end
-    # TODO - need to deprecate it
     GenerateResponse:
+      deprecated: true
       type: object
       description: Response structure for token generation
       properties:
