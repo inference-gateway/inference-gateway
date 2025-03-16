@@ -27,7 +27,7 @@ type Provider interface {
 
 	// Fetchers
 	ListModels(ctx context.Context) (ListModelsResponse, error)
-	GenerateTokens(ctx context.Context, model string, messages []Message, tools []Tool, maxTokens int) (GenerateResponse, error)
+	GenerateTokens(ctx context.Context, model string, messages []Message, tools []ChatCompletionTool, maxTokens int) (GenerateResponse, error)
 	StreamTokens(ctx context.Context, model string, messages []Message) (<-chan GenerateResponse, error)
 }
 
@@ -161,7 +161,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 	}
 }
 
-func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, messages []Message, tools []Tool, maxTokens int) (GenerateResponse, error) {
+func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, messages []Message, tools []ChatCompletionTool, maxCompletionTokens int) (GenerateResponse, error) {
 	if p == nil {
 		return GenerateResponse{}, errors.New("provider cannot be nil")
 	}
@@ -177,11 +177,11 @@ func (p *ProviderImpl) GenerateTokens(ctx context.Context, model string, message
 		url = strings.Replace(url, "{model}", model, 1)
 	}
 
-	genRequest := ChatCompletionsRequest{
-		Model:     model,
-		Messages:  messages,
-		Tools:     tools,
-		MaxTokens: maxTokens,
+	genRequest := CreateChatCompletionRequest{
+		Model:               model,
+		Messages:            messages,
+		Tools:               tools,
+		MaxCompletionTokens: maxCompletionTokens,
 	}
 
 	switch p.GetID() {
@@ -342,7 +342,7 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 
 	streamCh := make(chan GenerateResponse)
 
-	genRequest := ChatCompletionsRequest{
+	genRequest := CreateChatCompletionRequest{
 		Model:    model,
 		Messages: messages,
 		Stream:   true,
@@ -350,23 +350,12 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 
 	// Transform request based on provider
 	var payloadBytes []byte
+
+	// Handle special cases first, then default to OpenAI format
 	switch p.GetID() {
-	case OllamaID:
-		payload := genRequest.TransformOllama()
-		payloadBytes, err = json.Marshal(payload)
-	case OpenaiID:
-		payload := genRequest.TransformOpenai()
-		payloadBytes, err = json.Marshal(payload)
-	case GroqID:
-		payload := genRequest.TransformGroq()
-		payloadBytes, err = json.Marshal(payload)
 	case CloudflareID:
-		if genRequest.Stream {
-			p.logger.Error("streaming not supported for Cloudflare provider", nil)
-			return nil, fmt.Errorf("streaming is not supported for Cloudflare provider")
-		}
-		payload := genRequest.TransformCloudflare()
-		payloadBytes, err = json.Marshal(payload)
+		p.logger.Error("streaming not supported for Cloudflare provider", nil)
+		return nil, fmt.Errorf("streaming is not supported for Cloudflare provider")
 	case CohereID:
 		payload := genRequest.TransformCohere()
 		payloadBytes, err = json.Marshal(payload)
@@ -374,8 +363,9 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 		payload := genRequest.TransformAnthropic()
 		payloadBytes, err = json.Marshal(payload)
 	default:
-		p.logger.Error("unsupported provider", nil)
-		return nil, fmt.Errorf("unsupported provider")
+		// Default to OpenAI format (works for OpenAI, Groq, Ollama, and others following the spec)
+		payload := genRequest.TransformOpenai()
+		payloadBytes, err = json.Marshal(payload)
 	}
 
 	if err != nil {
@@ -425,77 +415,41 @@ func (p *ProviderImpl) StreamTokens(ctx context.Context, model string, messages 
 				return
 			}
 
-			var chunk interface{}
+			// Process the response based on provider
+			var transformedResponse GenerateResponse
+
+			// Handle special cases first, then default to OpenAI format
 			switch p.GetID() {
-			case OllamaID:
-				var response GenerateResponseOllama
-				if err := json.Unmarshal(event.Data, &response); err != nil {
-					p.logger.Error("failed to unmarshal chunk", err)
-					continue
-				}
-				chunk = response
-			case OpenaiID:
-				var response GenerateResponseOpenai
-				if err := json.Unmarshal(event.Data, &response); err != nil {
-					p.logger.Error("failed to unmarshal chunk", err)
-					continue
-				}
-				chunk = response
-			case GroqID:
-				var response GenerateResponseGroq
-				if err := json.Unmarshal(event.Data, &response); err != nil {
-					p.logger.Error("failed to unmarshal chunk", err)
-					continue
-				}
-				chunk = response
-			case CloudflareID:
-				var response GenerateResponseCloudflare
-				if err := json.Unmarshal(event.Data, &response); err != nil {
-					p.logger.Error("failed to unmarshal chunk", err)
-					continue
-				}
-				chunk = response
 			case CohereID:
 				var response CohereStreamResponse
 				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Error("failed to unmarshal chunk", err)
-					return
+					continue
 				}
-				chunk = response
+				transformedResponse = response.Transform()
 			case AnthropicID:
 				var response GenerateResponseAnthropic
 				if err := json.Unmarshal(event.Data, &response); err != nil {
 					p.logger.Error("failed to unmarshal chunk", err)
 					continue
 				}
-				chunk = response
+				transformedResponse = response.Transform()
 			default:
-				p.logger.Error("unsupported provider for streaming", nil)
-				return
+				// Default OpenAI format (works for OpenAI, Groq, Ollama, and others following the spec)
+				var response CreateChatCompletionStreamResponse
+				if err := json.Unmarshal(event.Data, &response); err != nil {
+					p.logger.Error("failed to unmarshal chunk", err)
+					continue
+				}
+				transformedResponse = response.Transform()
 			}
 
-			// Transform and send chunk
+			// Send the transformed response
 			select {
 			case <-ctx.Done():
 				return
 			default:
-				switch v := chunk.(type) {
-				case GenerateResponseOllama:
-					streamCh <- v.Transform()
-				case GenerateResponseOpenai:
-					streamCh <- v.Transform()
-				case GenerateResponseGroq:
-					streamCh <- v.Transform()
-				case GenerateResponseCloudflare:
-					streamCh <- v.Transform()
-				case CohereStreamResponse:
-					streamCh <- v.Transform()
-				case GenerateResponseAnthropic:
-					streamCh <- v.Transform()
-				default:
-					p.logger.Error("unsupported response type", nil)
-					return
-				}
+				streamCh <- transformedResponse
 			}
 		}
 	}()

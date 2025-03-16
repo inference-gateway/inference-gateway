@@ -89,7 +89,7 @@ type GenerateRequestOllama struct {
 	Tools     []Tool         `json:"tools,omitempty"`
 }
 
-func (r *ChatCompletionsRequest) TransformOllama() GenerateRequestOllama {
+func (r *CreateChatCompletionRequest) TransformOllama() GenerateRequestOllama {
 	return GenerateRequestOllama{
 		Model:    r.Model,
 		Messages: r.Messages,
@@ -99,66 +99,6 @@ func (r *ChatCompletionsRequest) TransformOllama() GenerateRequestOllama {
 		},
 		Tools: r.Tools,
 	}
-}
-
-type GenerateResponseOllama struct {
-	Model              string  `json:"model"`
-	CreatedAt          string  `json:"created_at"`
-	Message            Message `json:"message"`
-	Response           string  `json:"response,omitempty"`
-	Done               bool    `json:"done"`
-	DoneReason         string  `json:"done_reason,omitempty"`
-	Context            []int   `json:"context,omitempty"`
-	TotalDuration      float64 `json:"total_duration,omitempty"`
-	LoadDuration       float64 `json:"load_duration,omitempty"`
-	PromptEvalCount    int64   `json:"prompt_eval_count,omitempty"`
-	PromptEvalDuration float64 `json:"prompt_eval_duration,omitempty"`
-	EvalCount          int64   `json:"eval_count,omitempty"`
-	EvalDuration       float64 `json:"eval_duration,omitempty"`
-}
-
-func (g *GenerateResponseOllama) Transform() GenerateResponse {
-	isStreaming := false
-	if g.Response != "" {
-		isStreaming = true
-	}
-
-	content := g.Message.Content
-	if isStreaming {
-		content = g.Response
-	}
-
-	response := GenerateResponse{
-		Provider: OllamaDisplayName,
-		Response: ResponseTokens{
-			Content:   content,
-			Model:     g.Model,
-			Role:      g.Message.Role,
-			ToolCalls: g.Message.ToolCalls,
-		},
-	}
-
-	if isStreaming {
-		if response.Response.Role == "" {
-			response.Response.Role = MessageRoleAssistant
-		}
-		response.EventType = EventContentDelta
-		if g.Done && g.DoneReason == "stop" {
-			response.EventType = EventStreamEnd
-		}
-	} else {
-		response.Usage = &Usage{
-			PromptTokens:     g.PromptEvalCount,
-			CompletionTokens: g.EvalCount,
-			TotalTokens:      g.PromptEvalCount + g.EvalCount,
-			QueueTime:        0.0,
-			PromptTime:       g.PromptEvalDuration / 1000000.0,
-			CompletionTime:   g.EvalDuration / 1000000.0,
-			TotalTime:        g.TotalDuration / 1000000.0,
-		}
-	}
-
-	return response
 }
 
 type OllamaStreamParser struct {

@@ -32,12 +32,8 @@ type GenerateRequestOpenai struct {
 	Temperature float64   `json:"temperature,omitempty"`
 }
 
-func (r *ChatCompletionsRequest) TransformOpenai() GenerateRequestOpenai {
-	return GenerateRequestOpenai{
-		Messages:    r.Messages,
-		Model:       r.Model,
-		Temperature: 0.7, // Default temperature for now until I add a configuration for this
-	}
+func (r *CreateChatCompletionRequest) TransformOpenai() CreateChatCompletionRequest {
+	return *r
 }
 
 type OpenaiUsageDetails struct {
@@ -46,36 +42,13 @@ type OpenaiUsageDetails struct {
 	RejectedPredictionTokens int `json:"rejected_prediction_tokens"`
 }
 
-type OpenaiUsage struct {
-	PromptTokens     int                `json:"prompt_tokens"`
-	CompletionTokens int                `json:"completion_tokens"`
-	TotalTokens      int                `json:"total_tokens"`
-	TokensDetails    OpenaiUsageDetails `json:"completion_tokens_details"`
-}
-
-type OpenaiChoice struct {
-	Message      Message     `json:"message"`
-	LogProbs     interface{} `json:"logprobs"`
-	FinishReason string      `json:"finish_reason"`
-	Index        int         `json:"index"`
-}
-
-type GenerateResponseOpenai struct {
-	ID      string         `json:"id"`
-	Object  string         `json:"object"`
-	Created int64          `json:"created"`
-	Model   string         `json:"model"`
-	Usage   OpenaiUsage    `json:"usage"`
-	Choices []OpenaiChoice `json:"choices"`
-}
-
 func (g *GenerateResponseOpenai) Transform() GenerateResponse {
 	if len(g.Choices) == 0 {
 		return GenerateResponse{}
 	}
 
 	return GenerateResponse{
-		Provider: OpenaiDisplayName,
+		Provider: OpenaiID,
 		Response: ResponseTokens{
 			Role:    g.Choices[0].Message.Role,
 			Model:   g.Model,

@@ -42,7 +42,7 @@ func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
 }
 
 // GenerateTokens mocks base method.
-func (m *MockProvider) GenerateTokens(ctx context.Context, model string, messages []providers.Message, tools []providers.Tool, maxTokens int) (providers.GenerateResponse, error) {
+func (m *MockProvider) GenerateTokens(ctx context.Context, model string, messages []providers.Message, tools []providers.ChatCompletionTool, maxTokens int) (providers.GenerateResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GenerateTokens", ctx, model, messages, tools, maxTokens)
 	ret0, _ := ret[0].(providers.GenerateResponse)

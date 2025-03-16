@@ -367,7 +367,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 // built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
 // architecture.
 func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
-	var req providers.ChatCompletionsRequest
+	var req providers.CreateChatCompletionRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		router.logger.Error("failed to decode request", err)
@@ -425,7 +425,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 					return false
 				}
 
-				chunk := providers.ChunkResponse{
+				chunk := providers.CreateChatCompletionStreamResponse{
 					ID:      "chatcmpl-" + uuid.New().String(),
 					Object:  "chat.completion.chunk",
 					Created: time.Now().Unix(),
@@ -433,7 +433,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 					Choices: []providers.ChunkChoice{
 						{
 							Index: 0,
-							Delta: providers.ChunkDelta{
+							Delta: providers.Message{
 								Role:    resp.Response.Role,
 								Content: resp.Response.Content,
 							},
@@ -462,7 +462,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	// Non-streaming response
-	response, err := provider.GenerateTokens(ctx, model, req.Messages, req.Tools, req.MaxTokens)
+	response, err := provider.GenerateTokens(ctx, model, req.Messages, req.Tools, req.MaxCompletionTokens)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
 			router.logger.Error("request timed out", err, "provider", providerID)
@@ -474,12 +474,12 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	openaiResponse := providers.CompletionResponse{
+	openaiResponse := providers.CreateChatCompletionResponse{
 		ID:      "chatcmpl-" + uuid.New().String(),
 		Object:  "chat.completion",
 		Created: time.Now().Unix(),
 		Model:   response.Response.Model,
-		Choices: []providers.Choice{
+		Choices: []providers.ChatCompletionChoice{
 			{
 				Index: 0,
 				Message: providers.Message{
@@ -490,15 +490,15 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			},
 		},
 		// TODO - need to implement the usage details correctly
-		Usage: providers.Usage{
+		Usage: providers.CompletionUsage{
 			PromptTokens:     0,
 			CompletionTokens: 0,
 			TotalTokens:      0,
 			// Optional fields
-			QueueTime:      0.0,
-			PromptTime:     0.0,
-			CompletionTime: 0.0,
-			TotalTime:      0.0,
+			// QueueTime:      0.0,
+			// PromptTime:     0.0,
+			// CompletionTime: 0.0,
+			// TotalTime:      0.0,
 		},
 	}
 

@@ -200,7 +200,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		},
 		{
 			name: "missing provider and model",
-			body: providers.ChatCompletionsRequest{
+			body: providers.CreateChatCompletionRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
@@ -215,7 +215,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		},
 		{
 			name: "implicit provider by model",
-			body: providers.ChatCompletionsRequest{
+			body: providers.CreateChatCompletionRequest{
 				Model:    "gpt-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
@@ -236,7 +236,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		},
 		{
 			name: "provider not configured",
-			body: providers.ChatCompletionsRequest{
+			body: providers.CreateChatCompletionRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},
@@ -258,7 +258,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		},
 		{
 			name: "successful non-streaming request",
-			body: providers.ChatCompletionsRequest{
+			body: providers.CreateChatCompletionRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 				Stream:   false,
@@ -282,7 +282,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 			checkBody: func(t *testing.T, body string) {
-				var resp providers.CompletionResponse
+				var resp providers.CreateChatCompletionResponse
 				err := json.Unmarshal([]byte(body), &resp)
 				assert.NoError(t, err)
 				assert.Equal(t, "chat.completion", resp.Object)
@@ -294,7 +294,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		},
 		{
 			name: "streaming request",
-			body: providers.ChatCompletionsRequest{
+			body: providers.CreateChatCompletionRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 				Stream:   true,
@@ -348,7 +348,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 						continue
 					}
 
-					var chunk providers.ChunkResponse
+					var chunk providers.CreateChatCompletionStreamResponse
 					err := json.Unmarshal([]byte(data), &chunk)
 					assert.NoError(t, err)
 					assert.Equal(t, "chat.completion.chunk", chunk.Object)
@@ -357,7 +357,7 @@ func TestChatCompletionsHandler(t *testing.T) {
 		},
 		{
 			name: "generation error",
-			body: providers.ChatCompletionsRequest{
+			body: providers.CreateChatCompletionRequest{
 				Model:    "test-model",
 				Messages: []providers.Message{{Role: "user", Content: "Hello"}},
 			},

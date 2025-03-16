@@ -56,7 +56,7 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 
 		t.logger.Debug("Intercepting request for token usage")
 
-		var requestBody providers.ChatCompletionsRequest
+		var requestBody providers.CreateChatCompletionRequest
 		bodyBytes, _ := io.ReadAll(c.Request.Body)
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		_ = json.Unmarshal(bodyBytes, &requestBody)

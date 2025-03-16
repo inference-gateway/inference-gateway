@@ -73,10 +73,9 @@ type GenerateRequestCloudflare struct {
 	} `json:"tools,omitempty"`
 }
 
-func (r *ChatCompletionsRequest) TransformCloudflare() GenerateRequestCloudflare {
+func (r *CreateChatCompletionRequest) TransformCloudflare() GenerateRequestCloudflare {
 	return GenerateRequestCloudflare{
 		Messages:    r.Messages,
-		Model:       r.Model,
 		Stream:      &r.Stream,
 		Temperature: Float64Ptr(0.7),
 	}

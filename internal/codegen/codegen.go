@@ -269,54 +269,113 @@ func GenerateCommonTypes(destination string, oas string) error {
 	caser := cases.Title(language.English)
 
 	funcMap := template.FuncMap{
-		"title":        caser.String,
+		"title": caser.String,
+		"pascalCase": func(s string) string {
+			// Special case for common acronyms
+			if strings.ToLower(s) == "id" {
+				return "ID"
+			}
+
+			parts := strings.Split(s, "_")
+			for i, part := range parts {
+				parts[i] = cases.Title(language.English).String(strings.ToLower(part))
+			}
+			return strings.Join(parts, "")
+		},
 		"generateType": generateType,
 		"hasPrefix":    strings.HasPrefix,
+		"hasKey": func(m map[string]openapi.SchemaProperty, key string) bool {
+			_, ok := m[key]
+			return ok
+		},
 	}
 
 	tmpl := template.Must(template.New("common").
 		Funcs(funcMap).
 		Parse(`package providers
 
-import "time"
-
 // The authentication type of the specific provider
 const (
-	{{- range $type := .Schemas.AuthType.Enum }}
-	AuthType{{title .}} = "{{.}}"
-	{{- end }}
+    AuthTypeBearer  = "bearer"
+    AuthTypeXheader = "xheader"
+    AuthTypeQuery   = "query"
+    AuthTypeNone    = "none"
 )
 
 // The default base URLs of each provider
 const (
-	{{- range $name, $config := .Providers }}
-	{{title $name}}DefaultBaseURL = "{{$config.URL}}"
-	{{- end }}
+    {{- range $name, $config := .Providers }}
+    {{title $name}}DefaultBaseURL = "{{$config.URL}}"
+    {{- end }}
 )
 
 // The ID's of each provider
 const (
-	{{- range $name, $config := .Providers }}
-	{{title $name}}ID = "{{$config.ID}}"
-	{{- end }}
+    {{- range $name, $config := .Providers }}
+    {{title $name}}ID = "{{$config.ID}}"
+    {{- end }}
 )
 
 // Display names for providers
 const (
-	{{- range $name, $config := .Providers }}  
-	{{title $name}}DisplayName = "{{title $name}}"
-	{{- end }}
+    {{- range $name, $config := .Providers }}  
+    {{title $name}}DisplayName = "{{title $name}}"
+    {{- end }}
 )
 
-// Common response and request types
+// MessageRole represents the role of a message sender
+type MessageRole string
+
+// Message role enum values
+const (
+    MessageRoleSystem    MessageRole = "system"
+    MessageRoleUser      MessageRole = "user"
+    MessageRoleAssistant MessageRole = "assistant"
+    MessageRoleTool      MessageRole = "tool"
+)
+
+// ChatCompletionToolType represents a value type of a Tool in the API
+type ChatCompletionToolType string
+
+// ChatCompletionTool represents tool types in the API, currently only function supported
+const (
+    ChatCompletionToolTypeFunction ChatCompletionToolType = "function"
+)
+
+// FinishReason represents the reason for finishing a chat completion
+type FinishReason string
+
+// Chat completion finish reasons
+const (
+    FinishReasonStop          FinishReason = "stop"
+    FinishReasonLength        FinishReason = "length"
+    FinishReasonToolCalls     FinishReason = "tool_calls"
+    FinishReasonContentFilter FinishReason = "content_filter"
+)
+
 {{- range $name, $schema := .Schemas }}
+{{- if eq (len $schema.Enum) 0 }}
+{{- if ne $name "Config" }}
+{{- if ne $name "Providers" }}
+
+// {{$name}} represents a {{$name}} in the API
 type {{$name}} struct {
-	{{- range $field, $prop := $schema.Properties }}
-	{{title $field}} {{generateType $prop}} ` + "`json:\"{{$field}}\"`" + `
-	{{- end }}
+    {{- range $field, $prop := $schema.Properties }}
+    {{- if not (hasPrefix $field "x-") }}
+    {{pascalCase $field}} {{generateType $prop}} ` + "`json:\"{{$field}}{{if not (eq $field \"id\")}},omitempty{{end}}\"`" + `
+    {{- end }}
+    {{- end }}
+}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+// Transform converts provider-specific response to common format
+func (p *CreateChatCompletionResponse) Transform() CreateChatCompletionResponse {
+	return *p
 }
 
-{{- end }}
 `))
 
 	data := struct {
@@ -333,13 +392,17 @@ type {{$name}} struct {
 	}
 	defer f.Close()
 
+	if len(schema.Components.Schemas.Providers.XProviderConfigs) == 0 {
+		return fmt.Errorf("no provider configurations found in OpenAPI spec")
+	}
+
 	if err := tmpl.Execute(f, data); err != nil {
 		return err
 	}
 
 	cmd := exec.Command("go", "fmt", destination)
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to format %s: %w", destination, err)
+		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
 	}
 
 	return nil
@@ -614,14 +677,44 @@ func generateType(prop openapi.Property) string {
 	// Map basic types
 	switch prop.Type {
 	case "string":
+		if len(prop.Enum) > 0 {
+			if prop.Name != "" {
+				parts := strings.Split(prop.Name, "_")
+				for i, part := range parts {
+					parts[i] = cases.Title(language.English).String(strings.ToLower(part))
+				}
+				return strings.Join(parts, "")
+			}
+		}
 		if prop.Format == "date-time" {
-			return "time.Duration"
+			return "time.Time"
+		}
+		if prop.Format == "binary" {
+			return "[]byte"
 		}
 		return "string"
 	case "number":
-		return "float64"
+		switch prop.Format {
+		case "float32":
+			return "float32"
+		case "double":
+			return "float64"
+		default:
+			return "float64"
+		}
 	case "integer":
-		return "int"
+		switch prop.Format {
+		case "int32":
+			return "int32"
+		case "int64":
+			return "int64"
+		case "uint32":
+			return "uint32"
+		case "uint64":
+			return "uint64"
+		default:
+			return "int"
+		}
 	case "boolean":
 		return "bool"
 	case "object":

@@ -81,7 +81,7 @@ type GenerateRequestCohere struct {
 	StrictTools      *bool                  `json:"strict_tools,omitempty"`
 }
 
-func (r *ChatCompletionsRequest) TransformCohere() GenerateRequestCohere {
+func (r *CreateChatCompletionRequest) TransformCohere() GenerateRequestCohere {
 	return GenerateRequestCohere{
 		Messages:    r.Messages,
 		Model:       r.Model,
@@ -133,14 +133,14 @@ func (g *GenerateResponseCohere) Transform() GenerateResponse {
 			Content: g.Message.Content[0].Text,
 			Role:    "assistant",
 		},
-		Usage: &Usage{
+		Usage: CompletionUsage{
 			PromptTokens:     g.Usage.BilledUnits.InputTokens,
 			CompletionTokens: g.Usage.BilledUnits.OutputTokens,
 			TotalTokens:      g.Usage.BilledUnits.InputTokens + g.Usage.BilledUnits.OutputTokens,
-			QueueTime:        0.0, // Cohere does not provide queue time
-			PromptTime:       0.0, // Cohere does not provide prompt time
-			CompletionTime:   0.0, // Cohere does not provide completion time
-			TotalTime:        0.0, // Cohere does not provide total time
+			// QueueTime:        0.0, // Cohere does not provide queue time
+			// PromptTime:       0.0, // Cohere does not provide prompt time
+			// CompletionTime:   0.0, // Cohere does not provide completion time
+			// TotalTime:        0.0, // Cohere does not provide total time
 		},
 	}
 }

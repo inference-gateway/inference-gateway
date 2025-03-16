@@ -58,12 +58,8 @@ type GenerateRequestAnthropic struct {
 	Messages  []Message `json:"messages"`
 }
 
-func (r *ChatCompletionsRequest) TransformAnthropic() GenerateRequestAnthropic {
-	return GenerateRequestAnthropic{
-		Model:     r.Model,
-		Messages:  r.Messages,
-		MaxTokens: IntPtr(1024), // TODO - make it possible to pass this in the request, depending on the provider
-	}
+func (r *CreateChatCompletionRequest) TransformAnthropic() CreateChatCompletionRequest {
+	return *r
 }
 
 type AnthropicContent struct {
@@ -95,7 +91,7 @@ func (g *GenerateResponseAnthropic) Transform() GenerateResponse {
 	return GenerateResponse{
 		Provider: AnthropicDisplayName,
 		Response: ResponseTokens{
-			Role:    g.Role,
+			Role:    MessageRole(g.Role),
 			Content: g.Content[0].Text,
 			Model:   g.Model,
 		},

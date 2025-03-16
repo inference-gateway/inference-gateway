@@ -352,15 +352,6 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/CreateChatCompletionRequest"
-    CreateCompletionRequest:
-      required: true
-      description: |
-        ProviderRequest depends on the specific provider and endpoint being called
-        If you decide to use this approach, please follow the provider-specific documentations.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/CreateCompletionRequest"
   responses:
     BadRequest:
       description: Bad request
@@ -429,6 +420,31 @@ components:
         - cloudflare
         - cohere
         - anthropic
+      x-provider-configs:
+        ollama:
+          id: "ollama"
+          url: "http://ollama:8080"
+          auth_type: "none"
+        anthropic:
+          id: "anthropic"
+          url: "https://api.anthropic.com"
+          auth_type: "bearer"
+        cohere:
+          id: "cohere"
+          url: "https://api.cohere.com"
+          auth_type: "bearer"
+        groq:
+          id: "groq"
+          url: "https://api.groq.com"
+          auth_type: "bearer"
+        openai:
+          id: "openai"
+          url: "https://api.openai.com"
+          auth_type: "bearer"
+        cloudflare:
+          id: "cloudflare"
+          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}"
+          auth_type: "bearer"
     ProviderSpecificResponse:
       type: object
       description: |
@@ -488,6 +504,13 @@ components:
           $ref: "#/components/schemas/MessageRole"
         content:
           type: string
+        tool_calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChatCompletionMessageToolCall"
+      required:
+        - role
+        - content
     Model:
       type: object
       description: Common model information
@@ -501,59 +524,95 @@ components:
           format: int64
         owned_by:
           type: string
+        served_by:
+          type: string
     ListModelsResponse:
       type: object
       description: Response structure for listing models
       properties:
+        provider:
+          type: string
         object:
           type: string
         data:
           type: array
           items:
             $ref: "#/components/schemas/Model"
-    Tool:
+    FunctionObject:
       type: object
-      description: Tool definition for API requests
       properties:
-        type:
-          type: string
-        name:
-          type: string
         description:
           type: string
+          description:
+            A description of what the function does, used by the model to
+            choose when and how to call the function.
+        name:
+          type: string
+          description:
+            The name of the function to be called. Must be a-z, A-Z, 0-9, or
+            contain underscores and dashes, with a maximum length of 64.
         parameters:
-          type: object
-          properties:
-            name:
-              type: string
-            type:
-              type: string
-            default:
-              type: string
-            description:
-              type: string
-    ChatCompletionNamedToolChoice:
+          $ref: "#/components/schemas/FunctionParameters"
+        strict:
+          type: boolean
+          nullable: true
+          default: false
+          description:
+            Whether to enable strict schema adherence when generating the
+            function call. If set to true, the model will follow the exact
+            schema defined in the `parameters` field. Only a subset of JSON
+            Schema is supported when `strict` is `true`. Learn more about
+            Structured Outputs in the [function calling
+            guide](docs/guides/function-calling).
+      required:
+        - name
+    ChatCompletionTool:
       type: object
-      description:
-        Specifies a tool the model should use. Use to force the model to
-        call a specific function.
+      properties:
+        type:
+          $ref: "#/components/schemas/ChatCompletionToolType"
+        function:
+          $ref: "#/components/schemas/FunctionObject"
+      required:
+        - type
+        - function
+    FunctionParameters:
+      type: object
+      description: >-
+        The parameters the functions accepts, described as a JSON Schema object.
+        See the [guide](/docs/guides/function-calling) for examples, and the
+        [JSON Schema
+        reference](https://json-schema.org/understanding-json-schema/) for
+        documentation about the format. 
+
+
+        Omitting `parameters` defines a function with an empty parameter list.
       properties:
         type:
           type: string
-          enum:
-            - function
-          description: The type of the tool. Currently, only `function` is supported.
-          x-stainless-const: true
-        function:
+          description: The type of the parameters. Currently, only `object` is supported.
+        properties:
           type: object
-          properties:
-            name:
-              type: string
-              description: The name of the function to call.
-          required:
-            - name
-      required:
-        - type
+          description: The properties of the parameters.
+          additionalProperties:
+            type: object
+            description: The schema for the parameter.
+            additionalProperties: true
+        required:
+          type: array
+          items:
+            type: string
+          description: The required properties of the parameters.
+          nullable: true
+        additionalProperties:
+          type: boolean
+          default: false
+          description: Whether additional properties are allowed.
+      additionalProperties: true
+    ChatCompletionToolType:
+      type: string
+      description: The type of the tool. Currently, only `function` is supported.
+      enum:
         - function
     CompletionUsage:
       type: object
@@ -613,28 +672,20 @@ components:
         tools:
           type: array
           items:
-            $ref: "#/components/schemas/Tool"
-    ChatCompletionRequestMessage:
-      type: object
-      description: Message structure for chat completion requests
-      properties:
-        role:
-          $ref: "#/components/schemas/MessageRole"
-        content:
-          type: string
-      required:
-        - role
-        - content
+            $ref: "#/components/schemas/ChatCompletionTool"
     CreateChatCompletionRequest:
       type: object
       properties:
+        model:
+          type: string
+          description: Model ID to use
         messages:
           description: >
             A list of messages comprising the conversation so far.
           type: array
           minItems: 1
           items:
-            $ref: "#/components/schemas/ChatCompletionRequestMessage"
+            $ref: "#/components/schemas/Message"
         max_completion_tokens:
           description: >
             An upper bound for the number of tokens that can be generated
@@ -657,33 +708,49 @@ components:
             the model may generate JSON inputs for. A max of 128 functions
             are supported.
           items:
-            $ref: "#/components/schemas/Tool"
-        tool_choice:
-          $ref: "#/components/schemas/ChatCompletionNamedToolChoice"
+            $ref: "#/components/schemas/ChatCompletionTool"
       required:
         - model
         - messages
-    CreateCompletionRequest:
+    ChatCompletionMessageToolCallFunction:
+      type: object
+      description: The function that the model called.
+      properties:
+        name:
+          type: string
+          description: The name of the function to call.
+        arguments:
+          type: string
+          description:
+            The arguments to call the function with, as generated by the model
+            in JSON format. Note that the model does not always generate
+            valid JSON, and may hallucinate parameters not defined by your
+            function schema. Validate the arguments in your code before
+            calling your function.
+      required:
+        - name
+        - arguments
+    ChatCompletionMessageToolCall:
       type: object
       properties:
-        model:
-          description: ID of the model to use.
+        id:
           type: string
-        prompt:
-          description: >
-            The prompt(s) to generate completions for, encoded as a string,
-            array of strings, array of tokens, or array of token arrays.
-          nullable: true
+          description: The ID of the tool call.
+        type:
+          $ref: "#/components/schemas/ChatCompletionToolType"
+        function:
+          $ref: "#/components/schemas/ChatCompletionMessageToolCallFunction"
       required:
-        - model
-        - prompt
+        - id
+        - type
+        - function
     # TODO - need to deprecate it
     ResponseTokens:
       type: object
       description: Token response structure
       properties:
         role:
-          type: string
+          $ref: "#/components/schemas/MessageRole"
         model:
           type: string
         content:
@@ -691,18 +758,17 @@ components:
         tool_calls:
           type: array
           items:
-            type: object
-            properties:
-              function:
-                type: object
-                properties:
-                  name:
-                    type: string
-                  parameters:
-                    type: object
-                    properties:
-                      arguments:
-                        type: object
+            $ref: "#/components/schemas/ChatCompletionMessageToolCall"
+    EventType:
+      type: string
+      enum:
+        - message-start
+        - stream-start
+        - content-start
+        - content-delta
+        - content-end
+        - message-end
+        - stream-end
     # TODO - need to deprecate it
     GenerateResponse:
       type: object
@@ -712,6 +778,77 @@ components:
           type: string
         response:
           $ref: "#/components/schemas/ResponseTokens"
+        event_type:
+          $ref: "#/components/schemas/EventType"
+        usage:
+          $ref: "#/components/schemas/CompletionUsage"
+    ChatCompletionChoice:
+      type: object
+      properties:
+        finish_reason:
+          type: string
+          description: >
+            The reason the model stopped generating tokens. This will be
+            `stop` if the model hit a natural stop point or a provided
+            stop sequence,
+
+            `length` if the maximum number of tokens specified in the
+            request was reached,
+
+            `content_filter` if content was omitted due to a flag from our
+            content filters,
+
+            `tool_calls` if the model called a tool.
+          enum:
+            - stop
+            - length
+            - tool_calls
+            - content_filter
+            - function_call
+        index:
+          type: integer
+          description: The index of the choice in the list of choices.
+        message:
+          $ref: "#/components/schemas/Message"
+      required:
+        - finish_reason
+        - index
+        - message
+        - logprobs
+    ChatCompletionStreamChoice:
+      type: object
+      required:
+        - delta
+        - finish_reason
+        - index
+      properties:
+        delta:
+          $ref: "#/components/schemas/ChatCompletionStreamResponseDelta"
+        logprobs:
+          description: Log probability information for the choice.
+          type: object
+          nullable: true
+          properties:
+            content:
+              description: A list of message content tokens with log probability information.
+              type: array
+              items:
+                $ref: "#/components/schemas/ChatCompletionTokenLogprob"
+              nullable: true
+            refusal:
+              description: A list of message refusal tokens with log probability information.
+              type: array
+              items:
+                $ref: "#/components/schemas/ChatCompletionTokenLogprob"
+              nullable: true
+          required:
+            - content
+            - refusal
+        finish_reason:
+          $ref: "#/components/schemas/FinishReason"
+        index:
+          type: integer
+          description: The index of the choice in the list of choices.
     CreateChatCompletionResponse:
       type: object
       description:
@@ -727,47 +864,7 @@ components:
             A list of chat completion choices. Can be more than one if `n` is
             greater than 1.
           items:
-            type: object
-            required:
-              - finish_reason
-              - index
-              - message
-              - logprobs
-            properties:
-              finish_reason:
-                type: string
-                description: >
-                  The reason the model stopped generating tokens. This will be
-                  `stop` if the model hit a natural stop point or a provided
-                  stop sequence,
-
-                  `length` if the maximum number of tokens specified in the
-                  request was reached,
-
-                  `content_filter` if content was omitted due to a flag from our
-                  content filters,
-
-                  `tool_calls` if the model called a tool, or `function_call`
-                  (deprecated) if the model called a function.
-                enum:
-                  - stop
-                  - length
-                  - tool_calls
-                  - content_filter
-                  - function_call
-              index:
-                type: integer
-                description: The index of the choice in the list of choices.
-              message:
-                type: object
-                required:
-                  - role
-                  - content
-                properties:
-                  role:
-                    $ref: "#/components/schemas/MessageRole"
-                  content:
-                    type: string
+            $ref: "#/components/schemas/ChatCompletionChoice"
         created:
           type: integer
           description:
@@ -779,8 +876,6 @@ components:
         object:
           type: string
           description: The object type, which is always `chat.completion`.
-          enum:
-            - chat.completion
           x-stainless-const: true
         usage:
           $ref: "#/components/schemas/CompletionUsage"
@@ -803,14 +898,7 @@ components:
           items:
             $ref: "#/components/schemas/ChatCompletionMessageToolCallChunk"
         role:
-          type: string
-          enum:
-            - developer
-            - system
-            - user
-            - assistant
-            - tool
-          description: The role of the author of this message.
+          $ref: "#/components/schemas/MessageRole"
         refusal:
           type: string
           description: The refusal message generated by the model.
@@ -825,10 +913,7 @@ components:
           description: The ID of the tool call.
         type:
           type: string
-          enum:
-            - function
           description: The type of the tool. Currently, only `function` is supported.
-          x-stainless-const: true
         function:
           type: object
           properties:
@@ -889,6 +974,27 @@ components:
         - logprob
         - bytes
         - top_logprobs
+    FinishReason:
+      type: string
+      description: >
+        The reason the model stopped generating tokens. This will be
+        `stop` if the model hit a natural stop point or a provided
+        stop sequence,
+
+        `length` if the maximum number of tokens specified in the
+        request was reached,
+
+        `content_filter` if content was omitted due to a flag from our
+        content filters,
+
+        `tool_calls` if the model called a tool.
+      enum:
+        - stop
+        - length
+        - tool_calls
+        - content_filter
+        - function_call
+      nullable: true
     CreateChatCompletionStreamResponse:
       type: object
       description: |
@@ -908,59 +1014,7 @@ components:
 
             last chunk if you set `stream_options: {"include_usage": true}`.
           items:
-            type: object
-            required:
-              - delta
-              - finish_reason
-              - index
-            properties:
-              delta:
-                $ref: "#/components/schemas/ChatCompletionStreamResponseDelta"
-              logprobs:
-                description: Log probability information for the choice.
-                type: object
-                nullable: true
-                properties:
-                  content:
-                    description: A list of message content tokens with log probability information.
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ChatCompletionTokenLogprob"
-                    nullable: true
-                  refusal:
-                    description: A list of message refusal tokens with log probability information.
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/ChatCompletionTokenLogprob"
-                    nullable: true
-                required:
-                  - content
-                  - refusal
-              finish_reason:
-                type: string
-                description: >
-                  The reason the model stopped generating tokens. This will be
-                  `stop` if the model hit a natural stop point or a provided
-                  stop sequence,
-
-                  `length` if the maximum number of tokens specified in the
-                  request was reached,
-
-                  `content_filter` if content was omitted due to a flag from our
-                  content filters,
-
-                  `tool_calls` if the model called a tool, or `function_call`
-                  (deprecated) if the model called a function.
-                enum:
-                  - stop
-                  - length
-                  - tool_calls
-                  - content_filter
-                  - function_call
-                nullable: true
-              index:
-                type: integer
-                description: The index of the choice in the list of choices.
+            $ref: "#/components/schemas/ChatCompletionStreamChoice"
         created:
           type: integer
           description:
@@ -969,14 +1023,6 @@ components:
         model:
           type: string
           description: The model to generate the completion.
-        service_tier:
-          description: The service tier used for processing the request.
-          type: string
-          enum:
-            - scale
-            - default
-          example: scale
-          nullable: true
         system_fingerprint:
           type: string
           description: >
@@ -989,28 +1035,8 @@ components:
         object:
           type: string
           description: The object type, which is always `chat.completion.chunk`.
-          enum:
-            - chat.completion.chunk
-          x-stainless-const: true
         usage:
-          type: object
-          nullable: true
-          description: >
-            An optional field that will only be present when you set
-            `stream_options: {"include_usage": true}` in your request.
-
-            When present, it contains a null value except for the last chunk
-            which contains the token usage statistics for the entire request.
-          properties:
-            completion_tokens:
-              type: integer
-              description: Number of tokens in the generated completion.
-            prompt_tokens:
-              type: integer
-              description: Number of tokens in the prompt.
-            total_tokens:
-              type: integer
-              description: Total number of tokens used in the request (prompt + completion).
+          $ref: "#/components/schemas/CompletionUsage"
           required:
             - prompt_tokens
             - completion_tokens
