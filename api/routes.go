@@ -515,9 +515,9 @@ func determineProviderAndModelName(model string) (provider string, modelName str
 
 	for prefix, providerID := range modelPrefixMapping {
 		if strings.HasPrefix(modelLower, prefix) {
-			return providerID, model // Don't strip prefix for model-based patterns
+			return providerID, model
 		}
 	}
 
-	return "", model // No provider found
+	return "", model
 }
