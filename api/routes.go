@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"time"
 
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
@@ -121,8 +120,12 @@ func handleStreamingRequest(c *gin.Context, provider providers.Provider, router 
 		c.Header(k, v)
 	}
 
-	providerURL := provider.GetURL()
-	fullURL := providerURL + strings.TrimPrefix(c.Request.URL.Path, "/proxy/"+c.Param("provider"))
+	fullURL, err := constructProviderURL(provider, c.Param("path"))
+	if err != nil {
+		router.logger.Error("failed to construct provider URL", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
+		return
+	}
 
 	// Read request body with a 10MB size limit for now, to prevent abuse
 	// Will make it configurable later perhaps as a middleware
@@ -139,7 +142,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.Provider, router 
 	}
 
 	ctx := c.Request.Context()
-	upstreamReq, err := http.NewRequestWithContext(ctx, c.Request.Method, fullURL, bytes.NewReader(body))
+	upstreamReq, err := http.NewRequestWithContext(ctx, c.Request.Method, fullURL.String(), bytes.NewReader(body))
 	if err != nil {
 		router.logger.Error("failed to create upstream request", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
@@ -169,7 +172,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.Provider, router 
 		if err != nil {
 			if err != io.EOF {
 				router.logger.Error("failed to read stream", err,
-					"url", fullURL,
+					"url", fullURL.String(),
 					"method", c.Request.Method)
 			}
 			return false
@@ -199,8 +202,13 @@ func handleStreamingRequest(c *gin.Context, provider providers.Provider, router 
 }
 
 func handleProxyRequest(c *gin.Context, provider providers.Provider, router *RouterImpl) {
-	remote, _ := url.Parse(provider.GetURL() + c.Request.URL.Path)
-	proxy := httputil.NewSingleHostReverseProxy(remote)
+	fullURL, err := constructProviderURL(provider, c.Param("path"))
+	if err != nil {
+		router.logger.Error("failed to construct provider URL", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
+		return
+	}
+	proxy := httputil.NewSingleHostReverseProxy(fullURL)
 
 	c.Request.Header.Set("Content-Type", "application/json")
 	c.Request.Header.Set("Accept", "application/json")
@@ -219,10 +227,10 @@ func handleProxyRequest(c *gin.Context, provider providers.Provider, router *Rou
 
 	proxy.Director = func(req *http.Request) {
 		req.Header = c.Request.Header
-		req.Host = remote.Host
-		req.URL.Host = remote.Host
-		req.URL.Scheme = remote.Scheme
-		req.URL.Path = c.Param("path")
+		req.Host = fullURL.Host
+		req.URL.Host = fullURL.Host
+		req.URL.Scheme = fullURL.Scheme
+		req.URL.Path = fullURL.Path
 
 		if router.cfg.Environment == "development" {
 			reqModifier := proxymodifier.NewDevRequestModifier(router.logger)
@@ -239,6 +247,23 @@ func handleProxyRequest(c *gin.Context, provider providers.Provider, router *Rou
 	}
 
 	proxy.ServeHTTP(c.Writer, c.Request)
+}
+
+// constructProviderURL builds the provider URL consistently to avoid path duplication.
+// It ensures that the path from the provider URL is handled correctly with the path parameter.
+func constructProviderURL(provider providers.Provider, pathParam string) (*url.URL, error) {
+	providerURL, err := url.Parse(provider.GetURL())
+	if err != nil {
+		return nil, err
+	}
+
+	url := &url.URL{
+		Scheme: providerURL.Scheme,
+		Host:   providerURL.Host,
+		Path:   strings.TrimSuffix(providerURL.Path, "/") + "/" + strings.TrimPrefix(pathParam, "/"),
+	}
+
+	return url, nil
 }
 
 func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
@@ -289,7 +314,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout)
 		defer cancel()
 
 		response, err := provider.ListModels(ctx)
@@ -311,7 +336,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 		ch := make(chan providers.ListModelsResponse, len(providersCfg))
 
-		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
+		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout)
 		defer cancel()
 
 		for providerID := range providersCfg {
@@ -392,7 +417,6 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 // architecture.
 func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	var req providers.CreateChatCompletionRequest
-
 	if err := c.ShouldBindJSON(&req); err != nil {
 		router.logger.Error("failed to decode request", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
@@ -409,6 +433,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			return
 		}
 	}
+	req.Model = model
 
 	provider, err := router.registry.BuildProvider(providerID, router.client)
 	if err != nil {
@@ -422,15 +447,10 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
-	defer cancel()
+	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
 
-	requestBody := providers.CreateChatCompletionRequest{
-		Model:     model,
-		Messages:  req.Messages,
-		Tools:     req.Tools,
-		MaxTokens: req.MaxTokens,
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout)
+	defer cancel()
 
 	// Streaming response
 	if req.Stream {
@@ -439,7 +459,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		c.Header("Connection", "keep-alive")
 		c.Header("Transfer-Encoding", "chunked")
 
-		streamCh, err := provider.StreamChatCompletions(ctx, requestBody)
+		streamCh, err := provider.StreamChatCompletions(ctx, req)
 		if err != nil {
 			router.logger.Error("failed to start streaming", err)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to start streaming"})
@@ -470,7 +490,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	// Non-streaming response
-	response, err := provider.ChatCompletions(ctx, requestBody)
+	response, err := provider.ChatCompletions(ctx, req)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
 			router.logger.Error("request timed out", err, "provider", providerID)

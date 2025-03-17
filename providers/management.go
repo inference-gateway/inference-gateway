@@ -1,12 +1,12 @@
 package providers
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 
 	l "github.com/inference-gateway/inference-gateway/logger"
 )
@@ -73,17 +73,7 @@ func (p *ProviderImpl) EndpointChat() string {
 
 // ListModels fetches the list of models available from the provider and returns them in OpenAI compatible format
 func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, error) {
-	baseURL := p.GetURL() + p.EndpointModels()
-
-	p.logger.Debug("Fetching models", "provider", p.GetName(), "url", baseURL)
-
-	parsedURL, err := url.Parse(baseURL)
-	if err != nil {
-		p.logger.Error("Failed to parse URL", err, "provider", p.GetName(), "url", baseURL)
-		return ListModelsResponse{}, err
-	}
-
-	url := "/proxy/" + p.GetID() + parsedURL.Path
+	url := "/proxy/" + p.GetID() + p.EndpointModels()
 
 	response, err := p.client.Get(url)
 	if err != nil {
@@ -146,18 +136,9 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 	return transformer.Transform(), nil
 }
 
+// ChatCompletions generates chat completions from the provider
 func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (CreateChatCompletionResponse, error) {
-	baseURL := p.GetURL() + p.EndpointChat()
-
-	p.logger.Debug("Generating chat completion", "provider", p.GetName(), "url", baseURL, "model", req.Model)
-
-	parsedURL, err := url.Parse(baseURL)
-	if err != nil {
-		p.logger.Error("Failed to parse URL", err, "provider", p.GetName(), "url", baseURL)
-		return CreateChatCompletionResponse{}, err
-	}
-
-	proxyURL := "/proxy/" + p.GetID() + parsedURL.Path
+	proxyURL := "/proxy/" + p.GetID() + p.EndpointChat()
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
@@ -195,6 +176,78 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatComple
 	return resp, nil
 }
 
+// StreamChatCompletions generates chat completions from the provider using streaming
 func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (<-chan []byte, error) {
-	return nil, nil
+	proxyURL := "/proxy/" + p.GetID() + p.EndpointChat()
+
+	reqBody, err := json.Marshal(req)
+	if err != nil {
+		p.logger.Error("Failed to marshal request", err, "provider", p.GetName())
+		return nil, err
+	}
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyURL, bytes.NewBuffer(reqBody))
+	if err != nil {
+		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", proxyURL)
+		return nil, err
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Accept", "text/event-stream")
+
+	response, err := p.client.Do(httpReq)
+	if err != nil {
+		p.logger.Error("Failed to send request", err, "provider", p.GetName(), "url", proxyURL)
+		return nil, err
+	}
+
+	if response.StatusCode != http.StatusOK {
+		response.Body.Close()
+		err := fmt.Errorf("HTTP error: %d - Error generating streaming chat completion", response.StatusCode)
+		p.logger.Error("Non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode)
+		return nil, err
+	}
+
+	stream := make(chan []byte, 100)
+	go func() {
+		defer response.Body.Close()
+		defer close(stream)
+
+		reader := bufio.NewReader(response.Body)
+
+		for {
+			line, err := reader.ReadBytes('\n')
+			if err != nil {
+				if err.Error() != "EOF" {
+					p.logger.Error("Error reading stream", err, "provider", p.GetName())
+				} else {
+					p.logger.Debug("Stream ended gracefully", "provider", p.GetName())
+				}
+				return
+			}
+
+			line = bytes.TrimSpace(line)
+			if len(line) == 0 {
+				continue
+			}
+
+			if bytes.HasPrefix(line, []byte("data: ")) {
+				line = bytes.TrimPrefix(line, []byte("data: "))
+
+				if bytes.Equal(line, []byte("[DONE]")) {
+					p.logger.Debug("Stream completed", "provider", p.GetName())
+					return
+				}
+
+				select {
+				case stream <- line:
+				case <-ctx.Done():
+					p.logger.Debug("Stream context canceled", "provider", p.GetName())
+					return
+				}
+			}
+		}
+	}()
+
+	return stream, nil
 }

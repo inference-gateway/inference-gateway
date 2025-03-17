@@ -80,12 +80,12 @@ func (c *ClientImpl) Do(req *http.Request) (*http.Response, error) {
 }
 
 func (c *ClientImpl) Get(url string) (*http.Response, error) {
-	fullURL := c.scheme + "://" + c.hostname + ":" + c.port + url
+	fullURL := c.scheme + "://" + c.hostname + ":" + c.port + "/" + strings.TrimPrefix(url, "/")
 	return c.client.Get(fullURL)
 }
 
 func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Response, error) {
-	fullURL := c.scheme + "://" + c.hostname + ":" + c.port + url
+	fullURL := c.scheme + "://" + c.hostname + ":" + c.port + "/" + strings.TrimPrefix(url, "/")
 	req, err := http.NewRequest("POST", fullURL, nil)
 	if err != nil {
 		return nil, err

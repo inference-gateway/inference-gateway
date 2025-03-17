@@ -59,6 +59,7 @@ services:
       "ollama serve"
     environment:
       OLLAMA_HOST: 0.0.0.0:8080
+      OLLAMA_DEBUG: 1
       HOME: /
     volumes:
       - type: volume
