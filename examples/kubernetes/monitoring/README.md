@@ -21,31 +21,6 @@ This setup includes:
 
 ## Implementation Steps
 
-Optionally deploy ollama for local LLMs:
-
-```bash
-kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply --server-side -f -
-kubectl apply -f ollama/
-kubectl rollout status -n ollama deployment/ollama
-```
-
-Configure the Inference Gateway to use the local ollama service:
-
-```yaml
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: inference-gateway
-  namespace: inference-gateway
-  labels:
-    app: inference-gateway
-data:
-  ...
-    OLLAMA_API_URL: "http://ollama.ollama:11434" # <-- Change to http://ollama.ollama:11434
-  ...
-```
-
 1. Create the local cluster:
 
 ```bash
@@ -78,7 +53,30 @@ helm upgrade --install \
   --wait
 ```
 
-2. Enable telemetry in the Inference Gateway [configmap.yaml](inference-gateway/configmap.yaml):
+Optionally configure and deploy ollama for local LLMs:
+
+```yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app: inference-gateway
+data:
+  ...
+    OLLAMA_API_URL: "http://ollama.ollama:11434/v1" # <-- Changed to http://ollama.ollama:11434/v1
+  ...
+```
+
+```bash
+kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply --server-side -f -
+kubectl apply -f ollama/
+kubectl rollout status -n ollama deployment/ollama
+```
+
+1. Enable telemetry in the Inference Gateway [configmap.yaml](inference-gateway/configmap.yaml):
 
 ```yaml
 ---
