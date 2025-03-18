@@ -119,17 +119,36 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		var completionTokens int64
 		var totalTokens int64
 		if requestBody.Stream {
-			var chatCompletionStreamResponse providers.CreateChatCompletionStreamResponse
-			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionStreamResponse); err != nil {
-				t.logger.Debug("telemetry middleware - failed to unmarshal response", "error",
-					err.Error(),
-					"response", w.body.String(),
-				)
-			}
+			responseStr := w.body.String()
+			chunks := strings.Split(responseStr, "\n")
 
-			promptTokens = chatCompletionStreamResponse.Usage.PromptTokens
-			completionTokens = chatCompletionStreamResponse.Usage.CompletionTokens
-			totalTokens = chatCompletionStreamResponse.Usage.TotalTokens
+			var chatCompletionStreamResponse providers.CreateChatCompletionStreamResponse
+			for _, chunk := range chunks {
+				if chunk == "" {
+					continue
+				}
+
+				if chunk == "[DONE]" {
+					break
+				}
+
+				if strings.HasPrefix(chunk, "data: ") {
+					chunk = strings.TrimPrefix(chunk, "data: ")
+					if err := json.Unmarshal([]byte(chunk), &chatCompletionStreamResponse); err != nil {
+						t.logger.Debug("telemetry middleware - failed to unmarshal response", "error",
+							err.Error(),
+							"response", w.body.String(),
+						)
+					}
+
+					if chatCompletionStreamResponse.Usage.PromptTokens > 0 {
+						promptTokens = chatCompletionStreamResponse.Usage.PromptTokens
+						completionTokens = chatCompletionStreamResponse.Usage.CompletionTokens
+						totalTokens = chatCompletionStreamResponse.Usage.TotalTokens
+						break
+					}
+				}
+			}
 		} else {
 			var chatCompletionResponse providers.CreateChatCompletionResponse
 			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionResponse); err != nil {
