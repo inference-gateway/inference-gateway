@@ -103,6 +103,11 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 
 		c.Next()
 
+		if provider == "unknown" {
+			t.logger.Debug("Unknown provider", "model", model)
+			return
+		}
+
 		// Post middleware begins
 		statusCode := c.Writer.Status()
 		duration := float64(time.Since(startTime).Milliseconds())
