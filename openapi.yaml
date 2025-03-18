@@ -576,6 +576,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ChatCompletionMessageToolCall"
+        tool_call_id:
+          type: string
+        reasoning:
+          type: string
       required:
         - role
         - content
