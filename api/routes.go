@@ -395,7 +395,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 //	    {
 //	      "finish_reason": "stop",
 //	      "message": {
-//	        "content": "<think>\nOkay, so the user just wrote \"Hi\". Well, I received that as an input. My task is to respond appropriately by adding a few more sentences. \n\nHmm, maybe they’re trying to get me in on something or looking for feedback. I can’t guess exactly what might be intended.\n\nI should keep it friendly and casual like the previous response. \"Hello! Seems like you're having a great time.\" That wraps it up nicely and doesn't leave much room for misunderstanding.\n\nLet me make sure that the sentences are simple and concise, which is always better for people.\n</think>\n\nHello! Seems like you're having a great time. How can I help you?",
+//	        "content": "Hello, how can I help you today?",
 //	        "role": "assistant"
 //	      }
 //	    }
@@ -412,6 +412,28 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 //	}
 //
 // Streaming response format:
+//
+//	{
+//	  "choices": [
+//	    {
+//	      "index": 0,
+//	      "finish_reason": "stop",
+//	      "delta": {
+//	        "content": "Hello",
+//	        "role": "assistant"
+//	      }
+//	    }
+//	  ],
+//	  "created": 1742165657,
+//	  "id": "chatcmpl-118",
+//	  "model": "deepseek-r1:1.5b",
+//	  "object": "chat.completion.chunk",
+//	  "usage": {
+//	    "completion_tokens": 139,
+//	    "prompt_tokens": 10,
+//	    "total_tokens": 149
+//	  }
+//	}
 //
 // It returns token completions as chat in the standard OpenAI format, allowing applications
 // built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
