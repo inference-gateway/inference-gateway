@@ -16,7 +16,10 @@ import (
 // OpenTelemetry defines the operations for telemetry
 type OpenTelemetry interface {
 	Init(config config.Config) error
+	// Application level metrics
 	RecordTokenUsage(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64)
+
+	// TODO - implement the usage of this metric probably possible to get a similar metrics from the general infrastructure request response metrics
 	RecordLatency(ctx context.Context, provider, model string, queueTime, promptTime, completionTime, totalTime float64)
 	RecordRequestCount(ctx context.Context, provider, requestType string)
 	RecordResponseStatus(ctx context.Context, provider, requestType, requestPath string, statusCode int)
@@ -32,12 +35,12 @@ type OpenTelemetryImpl struct {
 	promptTokensCounter     metric.Int64Counter
 	completionTokensCounter metric.Int64Counter
 	totalTokensCounter      metric.Int64Counter
-	queueTimeHistogram      metric.Float64Histogram
-	promptTimeHistogram     metric.Float64Histogram
-	completionTimeHistogram metric.Float64Histogram
-	totalTimeHistogram      metric.Float64Histogram
 
-	// New metrics
+	// TODO - Implement them
+	queueTimeHistogram       metric.Float64Histogram
+	promptTimeHistogram      metric.Float64Histogram
+	completionTimeHistogram  metric.Float64Histogram
+	totalTimeHistogram       metric.Float64Histogram
 	requestCounter           metric.Int64Counter
 	responseStatusCounter    metric.Int64Counter
 	requestDurationHistogram metric.Float64Histogram
@@ -98,31 +101,31 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 	o.totalTokensCounter, err3 = o.meter.Int64Counter("llm_usage_total_tokens",
 		metric.WithDescription("Total number of tokens used"))
 
-	o.queueTimeHistogram, err4 = o.meter.Float64Histogram("llm_latency_queue_time",
-		metric.WithDescription("Time spent in queue before processing"),
-		metric.WithUnit("ms"))
+	// o.queueTimeHistogram, err4 = o.meter.Float64Histogram("llm_latency_queue_time",
+	// 	metric.WithDescription("Time spent in queue before processing"),
+	// 	metric.WithUnit("ms"))
 
-	o.promptTimeHistogram, err5 = o.meter.Float64Histogram("llm_latency_prompt_time",
-		metric.WithDescription("Time spent processing the prompt"),
-		metric.WithUnit("ms"))
+	// o.promptTimeHistogram, err5 = o.meter.Float64Histogram("llm_latency_prompt_time",
+	// 	metric.WithDescription("Time spent processing the prompt"),
+	// 	metric.WithUnit("ms"))
 
-	o.completionTimeHistogram, err6 = o.meter.Float64Histogram("llm_latency_completion_time",
-		metric.WithDescription("Time spent generating the completion"),
-		metric.WithUnit("ms"))
+	// o.completionTimeHistogram, err6 = o.meter.Float64Histogram("llm_latency_completion_time",
+	// 	metric.WithDescription("Time spent generating the completion"),
+	// 	metric.WithUnit("ms"))
 
-	o.totalTimeHistogram, err7 = o.meter.Float64Histogram("llm_latency_total_time",
-		metric.WithDescription("Total time from request to response"),
-		metric.WithUnit("ms"))
+	// o.totalTimeHistogram, err7 = o.meter.Float64Histogram("llm_latency_total_time",
+	// 	metric.WithDescription("Total time from request to response"),
+	// 	metric.WithUnit("ms"))
 
-	o.requestCounter, err8 = o.meter.Int64Counter("llm_requests_total",
-		metric.WithDescription("Total number of requests processed"))
+	// o.requestCounter, err8 = o.meter.Int64Counter("llm_requests_total",
+	// 	metric.WithDescription("Total number of requests processed"))
 
-	o.responseStatusCounter, err9 = o.meter.Int64Counter("llm_responses_total",
-		metric.WithDescription("Total number of responses by status code"))
+	// o.responseStatusCounter, err9 = o.meter.Int64Counter("llm_responses_total",
+	// 	metric.WithDescription("Total number of responses by status code"))
 
-	o.requestDurationHistogram, err10 = o.meter.Float64Histogram("llm_request_duration",
-		metric.WithDescription("End-to-end request duration"),
-		metric.WithUnit("ms"))
+	// o.requestDurationHistogram, err10 = o.meter.Float64Histogram("llm_request_duration",
+	// 	metric.WithDescription("End-to-end request duration"),
+	// 	metric.WithUnit("ms"))
 
 	// Check for errors
 	for _, err := range []error{err1, err2, err3, err4, err5, err6, err7, err8, err9, err10} {

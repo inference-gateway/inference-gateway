@@ -179,28 +179,5 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			completionTokens,
 			totalTokens,
 		)
-
-		// queueTime := usage["queue_time"].(float64)
-		// promptTime := usage["prompt_time"].(float64)
-		// compTime := usage["completion_time"].(float64)
-		// totalTime := usage["total_time"].(float64)
-
-		// t.logger.Debug("Tokens Latency",
-		// 	"queueTime", queueTime,
-		// 	"promptTime", promptTime,
-		// 	"compTime", compTime,
-		// 	"totalTime", totalTime,
-		// )
-
-		// t.telemetry.RecordLatency(
-		// 	c.Request.Context(),
-		// 	provider,
-		// 	model,
-		// 	queueTime,
-		// 	promptTime,
-		// 	compTime,
-		// 	totalTime,
-		// )
-
 	}
 }
