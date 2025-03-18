@@ -180,6 +180,11 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatComple
 func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (<-chan []byte, error) {
 	proxyURL := "/proxy/" + p.GetID() + p.EndpointChat()
 
+	// Ollama doesn't include it by default, so we enforce it here
+	req.StreamOptions.IncludeUsage = true
+
+	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", proxyURL, "request", req)
+
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		p.logger.Error("Failed to marshal request", err, "provider", p.GetName())

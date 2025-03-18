@@ -628,14 +628,10 @@ func generateTag(field string, prop openapi.Property, requiredFields []string) t
 		}
 	}
 
-	if prop.Default == nil && !isRequired {
+	if !isRequired {
 		jsonTag += `,omitempty`
 	}
 	jsonTag += `"`
-
-	if prop.Default != nil {
-		jsonTag += fmt.Sprintf(` default:"%v"`, prop.Default)
-	}
 
 	tags = append(tags, jsonTag)
 

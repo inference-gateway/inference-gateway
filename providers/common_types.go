@@ -125,6 +125,11 @@ type ChatCompletionStreamChoice struct {
 	Logprobs     struct{}                          `json:"logprobs,omitempty"`
 }
 
+// ChatCompletionStreamOptions represents a ChatCompletionStreamOptions in the API
+type ChatCompletionStreamOptions struct {
+	IncludeUsage bool `json:"include_usage,omitempty"`
+}
+
 // ChatCompletionStreamResponseDelta represents a ChatCompletionStreamResponseDelta in the API
 type ChatCompletionStreamResponseDelta struct {
 	Content   string                               `json:"content,omitempty"`
@@ -141,18 +146,19 @@ type ChatCompletionTool struct {
 
 // CompletionUsage represents a CompletionUsage in the API
 type CompletionUsage struct {
-	CompletionTokens int64 `json:"completion_tokens" default:"0"`
-	PromptTokens     int64 `json:"prompt_tokens" default:"0"`
-	TotalTokens      int64 `json:"total_tokens" default:"0"`
+	CompletionTokens int64 `json:"completion_tokens"`
+	PromptTokens     int64 `json:"prompt_tokens"`
+	TotalTokens      int64 `json:"total_tokens"`
 }
 
 // CreateChatCompletionRequest represents a CreateChatCompletionRequest in the API
 type CreateChatCompletionRequest struct {
-	MaxTokens int                  `json:"max_tokens,omitempty"`
-	Messages  []Message            `json:"messages"`
-	Model     string               `json:"model"`
-	Stream    bool                 `json:"stream" default:"false"`
-	Tools     []ChatCompletionTool `json:"tools,omitempty"`
+	MaxTokens     int                         `json:"max_tokens,omitempty"`
+	Messages      []Message                   `json:"messages"`
+	Model         string                      `json:"model"`
+	Stream        bool                        `json:"stream,omitempty"`
+	StreamOptions ChatCompletionStreamOptions `json:"stream_options,omitempty"`
+	Tools         []ChatCompletionTool        `json:"tools,omitempty"`
 }
 
 // CreateChatCompletionResponse represents a CreateChatCompletionResponse in the API
@@ -192,12 +198,12 @@ type FunctionObject struct {
 	Description string             `json:"description,omitempty"`
 	Name        string             `json:"name"`
 	Parameters  FunctionParameters `json:"parameters,omitempty"`
-	Strict      bool               `json:"strict" default:"false"`
+	Strict      bool               `json:"strict,omitempty"`
 }
 
 // FunctionParameters represents a FunctionParameters in the API
 type FunctionParameters struct {
-	Additionalproperties bool                   `json:"additionalProperties" default:"false"`
+	Additionalproperties bool                   `json:"additionalProperties,omitempty"`
 	Properties           map[string]interface{} `json:"properties,omitempty"`
 	Required             []string               `json:"required,omitempty"`
 	Type                 string                 `json:"type,omitempty"`
@@ -205,7 +211,7 @@ type FunctionParameters struct {
 
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {
-	Data     []Model `json:"data" default:"[]"`
+	Data     []Model `json:"data,omitempty"`
 	Object   string  `json:"object,omitempty"`
 	Provider string  `json:"provider,omitempty"`
 }

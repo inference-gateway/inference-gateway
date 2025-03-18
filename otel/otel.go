@@ -117,15 +117,15 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 	// 	metric.WithDescription("Total time from request to response"),
 	// 	metric.WithUnit("ms"))
 
-	// o.requestCounter, err8 = o.meter.Int64Counter("llm_requests_total",
-	// 	metric.WithDescription("Total number of requests processed"))
+	o.requestCounter, err8 = o.meter.Int64Counter("llm_requests_total",
+		metric.WithDescription("Total number of requests processed"))
 
-	// o.responseStatusCounter, err9 = o.meter.Int64Counter("llm_responses_total",
-	// 	metric.WithDescription("Total number of responses by status code"))
+	o.responseStatusCounter, err9 = o.meter.Int64Counter("llm_responses_total",
+		metric.WithDescription("Total number of responses by status code"))
 
-	// o.requestDurationHistogram, err10 = o.meter.Float64Histogram("llm_request_duration",
-	// 	metric.WithDescription("End-to-end request duration"),
-	// 	metric.WithUnit("ms"))
+	o.requestDurationHistogram, err10 = o.meter.Float64Histogram("llm_request_duration",
+		metric.WithDescription("End-to-end request duration"),
+		metric.WithUnit("ms"))
 
 	// Check for errors
 	for _, err := range []error{err1, err2, err3, err4, err5, err6, err7, err8, err9, err10} {

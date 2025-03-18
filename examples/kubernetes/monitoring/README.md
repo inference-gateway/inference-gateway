@@ -155,7 +155,8 @@ for PROVIDER in "${PROVIDERS[@]}"; do
       {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},
       {\"role\": \"user\", \"content\": \"Why is the sky blue? Keep it short and concise.\"}
     ],
-    \"stream\": true
+    \"stream\": true,
+    \"max_tokens\": 50
   }"
   echo -e "\n------------------------------------\n"
   sleep 2

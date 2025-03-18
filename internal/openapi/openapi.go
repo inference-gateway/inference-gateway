@@ -95,6 +95,7 @@ type OpenAPISchema struct {
 			CreateChatCompletionRequest           SchemaProperty `yaml:"CreateChatCompletionRequest"`
 			CreateCompletionRequest               SchemaProperty `yaml:"CreateCompletionRequest"`
 			CreateChatCompletionResponse          SchemaProperty `yaml:"CreateChatCompletionResponse"`
+			ChatCompletionStreamOptions           SchemaProperty `yaml:"ChatCompletionStreamOptions"`
 			CreateChatCompletionStreamResponse    SchemaProperty `yaml:"CreateChatCompletionStreamResponse"`
 			ChatCompletionStreamResponseDelta     SchemaProperty `yaml:"ChatCompletionStreamResponseDelta"`
 			ChatCompletionMessageToolCallChunk    SchemaProperty `yaml:"ChatCompletionMessageToolCallChunk"`
@@ -181,7 +182,6 @@ type Property struct {
 	Enum        []string            `yaml:"enum,omitempty"`
 	Properties  map[string]Property `yaml:"properties,omitempty"`
 	Items       *Property           `yaml:"items,omitempty"`
-	Default     any                 `json:"default,omitempty" yaml:"default,omitempty"`
 }
 
 // Structures for OpenAPI schema parsing
