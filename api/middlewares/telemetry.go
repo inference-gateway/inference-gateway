@@ -122,10 +122,6 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 				promptTokens := int64(usage["prompt_tokens"].(float64))
 				completionTokens := int64(usage["completion_tokens"].(float64))
 				totalTokens := int64(usage["total_tokens"].(float64))
-				// queueTime := usage["queue_time"].(float64)
-				// promptTime := usage["prompt_time"].(float64)
-				// compTime := usage["completion_time"].(float64)
-				// totalTime := usage["total_time"].(float64)
 
 				t.logger.Debug("Tokens usage",
 					"provider", provider,
@@ -135,13 +131,6 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 					"totalTokens", totalTokens,
 				)
 
-				// t.logger.Debug("Tokens Latency",
-				// 	"queueTime", queueTime,
-				// 	"promptTime", promptTime,
-				// 	"compTime", compTime,
-				// 	"totalTime", totalTime,
-				// )
-
 				t.telemetry.RecordTokenUsage(
 					c.Request.Context(),
 					provider,
@@ -150,6 +139,18 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 					completionTokens,
 					totalTokens,
 				)
+
+				// queueTime := usage["queue_time"].(float64)
+				// promptTime := usage["prompt_time"].(float64)
+				// compTime := usage["completion_time"].(float64)
+				// totalTime := usage["total_time"].(float64)
+
+				// t.logger.Debug("Tokens Latency",
+				// 	"queueTime", queueTime,
+				// 	"promptTime", promptTime,
+				// 	"compTime", compTime,
+				// 	"totalTime", totalTime,
+				// )
 
 				// t.telemetry.RecordLatency(
 				// 	c.Request.Context(),
