@@ -141,9 +141,9 @@ type ChatCompletionTool struct {
 
 // CompletionUsage represents a CompletionUsage in the API
 type CompletionUsage struct {
-	CompletionTokens int `json:"completion_tokens,default=0"`
-	PromptTokens     int `json:"prompt_tokens,default=0"`
-	TotalTokens      int `json:"total_tokens,default=0"`
+	CompletionTokens int `json:"completion_tokens" default:"0"`
+	PromptTokens     int `json:"prompt_tokens" default:"0"`
+	TotalTokens      int `json:"total_tokens" default:"0"`
 }
 
 // CreateChatCompletionRequest represents a CreateChatCompletionRequest in the API
@@ -151,7 +151,7 @@ type CreateChatCompletionRequest struct {
 	MaxTokens int                  `json:"max_tokens,omitempty"`
 	Messages  []Message            `json:"messages"`
 	Model     string               `json:"model"`
-	Stream    bool                 `json:"stream,default=false"`
+	Stream    bool                 `json:"stream" default:"false"`
 	Tools     []ChatCompletionTool `json:"tools,omitempty"`
 }
 
@@ -192,12 +192,12 @@ type FunctionObject struct {
 	Description string             `json:"description,omitempty"`
 	Name        string             `json:"name"`
 	Parameters  FunctionParameters `json:"parameters,omitempty"`
-	Strict      bool               `json:"strict,default=false"`
+	Strict      bool               `json:"strict" default:"false"`
 }
 
 // FunctionParameters represents a FunctionParameters in the API
 type FunctionParameters struct {
-	Additionalproperties bool                   `json:"additionalProperties,default=false"`
+	Additionalproperties bool                   `json:"additionalProperties" default:"false"`
 	Properties           map[string]interface{} `json:"properties,omitempty"`
 	Required             []string               `json:"required,omitempty"`
 	Type                 string                 `json:"type,omitempty"`
@@ -205,7 +205,7 @@ type FunctionParameters struct {
 
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {
-	Data     []Model `json:"data,default=[]"`
+	Data     []Model `json:"data" default:"[]"`
 	Object   string  `json:"object,omitempty"`
 	Provider string  `json:"provider,omitempty"`
 }
