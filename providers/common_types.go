@@ -141,9 +141,9 @@ type ChatCompletionTool struct {
 
 // CompletionUsage represents a CompletionUsage in the API
 type CompletionUsage struct {
-	CompletionTokens int `json:"completion_tokens" default:"0"`
-	PromptTokens     int `json:"prompt_tokens" default:"0"`
-	TotalTokens      int `json:"total_tokens" default:"0"`
+	CompletionTokens int64 `json:"completion_tokens" default:"0"`
+	PromptTokens     int64 `json:"prompt_tokens" default:"0"`
+	TotalTokens      int64 `json:"total_tokens" default:"0"`
 }
 
 // CreateChatCompletionRequest represents a CreateChatCompletionRequest in the API

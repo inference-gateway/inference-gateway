@@ -690,14 +690,17 @@ components:
         completion_tokens:
           type: integer
           default: 0
+          format: int64
           description: Number of tokens in the generated completion.
         prompt_tokens:
           type: integer
           default: 0
+          format: int64
           description: Number of tokens in the prompt.
         total_tokens:
           type: integer
           default: 0
+          format: int64
           description: Total number of tokens used in the request (prompt + completion).
       required:
         - prompt_tokens

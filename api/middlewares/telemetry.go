@@ -115,53 +115,73 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		t.telemetry.RecordResponseStatus(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, statusCode)
 		t.telemetry.RecordRequestDuration(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, duration)
 
-		var responseData map[string]any
-		if err := json.Unmarshal(w.body.Bytes(), &responseData); err == nil {
-			if usage, ok := responseData["usage"].(map[string]any); ok {
-
-				promptTokens := int64(usage["prompt_tokens"].(float64))
-				completionTokens := int64(usage["completion_tokens"].(float64))
-				totalTokens := int64(usage["total_tokens"].(float64))
-
-				t.logger.Debug("Tokens usage",
-					"provider", provider,
-					"model", model,
-					"promptTokens", promptTokens,
-					"completionTokens", completionTokens,
-					"totalTokens", totalTokens,
+		var promptTokens int64
+		var completionTokens int64
+		var totalTokens int64
+		if requestBody.Stream {
+			var chatCompletionStreamResponse providers.CreateChatCompletionStreamResponse
+			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionStreamResponse); err != nil {
+				t.logger.Debug("telemetry middleware - failed to unmarshal response", "error",
+					err.Error(),
+					"response", w.body.String(),
 				)
-
-				t.telemetry.RecordTokenUsage(
-					c.Request.Context(),
-					provider,
-					model,
-					promptTokens,
-					completionTokens,
-					totalTokens,
-				)
-
-				// queueTime := usage["queue_time"].(float64)
-				// promptTime := usage["prompt_time"].(float64)
-				// compTime := usage["completion_time"].(float64)
-				// totalTime := usage["total_time"].(float64)
-
-				// t.logger.Debug("Tokens Latency",
-				// 	"queueTime", queueTime,
-				// 	"promptTime", promptTime,
-				// 	"compTime", compTime,
-				// 	"totalTime", totalTime,
-				// )
-
-				// t.telemetry.RecordLatency(
-				// 	c.Request.Context(),
-				// 	provider,
-				// 	model,
-				// 	queueTime,
-				// 	promptTime,
-				// 	compTime,
-				// 	totalTime,
-				// )
 			}
+
+			promptTokens = chatCompletionStreamResponse.Usage.PromptTokens
+			completionTokens = chatCompletionStreamResponse.Usage.CompletionTokens
+			totalTokens = chatCompletionStreamResponse.Usage.TotalTokens
+		} else {
+			var chatCompletionResponse providers.CreateChatCompletionResponse
+			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionResponse); err != nil {
+				t.logger.Debug("telemetry middleware - failed to unmarshal response", "error",
+					err.Error(),
+					"response", w.body.String(),
+				)
+			}
+
+			promptTokens = chatCompletionResponse.Usage.PromptTokens
+			completionTokens = chatCompletionResponse.Usage.CompletionTokens
+			totalTokens = chatCompletionResponse.Usage.TotalTokens
 		}
+
+		t.logger.Debug("Tokens usage",
+			"provider", provider,
+			"model", model,
+			"promptTokens", promptTokens,
+			"completionTokens", completionTokens,
+			"totalTokens", totalTokens,
+		)
+
+		t.telemetry.RecordTokenUsage(
+			c.Request.Context(),
+			provider,
+			model,
+			promptTokens,
+			completionTokens,
+			totalTokens,
+		)
+
+		// queueTime := usage["queue_time"].(float64)
+		// promptTime := usage["prompt_time"].(float64)
+		// compTime := usage["completion_time"].(float64)
+		// totalTime := usage["total_time"].(float64)
+
+		// t.logger.Debug("Tokens Latency",
+		// 	"queueTime", queueTime,
+		// 	"promptTime", promptTime,
+		// 	"compTime", compTime,
+		// 	"totalTime", totalTime,
+		// )
+
+		// t.telemetry.RecordLatency(
+		// 	c.Request.Context(),
+		// 	provider,
+		// 	model,
+		// 	queueTime,
+		// 	promptTime,
+		// 	compTime,
+		// 	totalTime,
+		// )
+
 	}
 }
