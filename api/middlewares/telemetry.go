@@ -64,16 +64,35 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 
 		provider := "unknown"
 		switch {
-		case strings.Contains(c.Request.URL.Path, "/openai/"):
+		case strings.HasPrefix(model, "openai/"):
 			provider = "openai"
-		case strings.Contains(c.Request.URL.Path, "/anthropic/"):
+		case strings.HasPrefix(model, "anthropic/"):
 			provider = "anthropic"
-		case strings.Contains(c.Request.URL.Path, "/groq/"):
+		case strings.HasPrefix(model, "groq/"):
 			provider = "groq"
-		case strings.Contains(c.Request.URL.Path, "/cohere/"):
+		case strings.HasPrefix(model, "cohere/"):
 			provider = "cohere"
-		case strings.Contains(c.Request.URL.Path, "/ollama/"):
+		case strings.HasPrefix(model, "ollama/"):
 			provider = "ollama"
+		case strings.HasPrefix(model, "cloudflare/"):
+			provider = "cloudflare"
+		}
+
+		if provider == "unknown" {
+			switch {
+			case strings.Contains(c.Request.URL.RawQuery, "openai"):
+				provider = "openai"
+			case strings.Contains(c.Request.URL.RawQuery, "anthropic"):
+				provider = "anthropic"
+			case strings.Contains(c.Request.URL.RawQuery, "groq"):
+				provider = "groq"
+			case strings.Contains(c.Request.URL.RawQuery, "cohere"):
+				provider = "cohere"
+			case strings.Contains(c.Request.URL.RawQuery, "ollama"):
+				provider = "ollama"
+			case strings.Contains(c.Request.URL.RawQuery, "cloudflare"):
+				provider = "cloudflare"
+			}
 		}
 
 		w := &responseBodyWriter{

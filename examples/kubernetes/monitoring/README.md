@@ -66,7 +66,7 @@ metadata:
     app: inference-gateway
 data:
   ...
-    OLLAMA_API_URL: "http://ollama.ollama:11434/v1" # <-- Changed to http://ollama.ollama:11434/v1
+    OLLAMA_API_URL: "http://ollama.ollama:8080/v1" # <-- Changed to http://ollama.ollama:8080/v1
   ...
 ```
 
@@ -154,8 +154,9 @@ for PROVIDER in "${PROVIDERS[@]}"; do
     \"messages\": [
       {\"role\": \"system\", \"content\": \"You are a helpful assistant.\"},
       {\"role\": \"user\", \"content\": \"Why is the sky blue? Keep it short and concise.\"}
-    ]
-  }" | jq '.'
+    ],
+    \"stream\": true
+  }"
   echo -e "\n------------------------------------\n"
   sleep 2
 done

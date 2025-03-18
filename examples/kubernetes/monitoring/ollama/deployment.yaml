@@ -21,7 +21,10 @@ spec:
         - name: ollama-model
           image: ollama/ollama:0.5.13
           ports:
-            - containerPort: 11434
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: ollama
           resources:
             limits:
               cpu: 3000m
@@ -39,6 +42,9 @@ spec:
           args:
             - -c
             - "ollama pull tinyllama && tail -f /dev/null"
+          envFrom:
+            - configMapRef:
+                name: ollama
           resources:
             limits:
               cpu: 1000m

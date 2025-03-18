@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
@@ -336,7 +337,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 		ch := make(chan providers.ListModelsResponse, len(providersCfg))
 
-		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
 		defer cancel()
 
 		for providerID := range providersCfg {

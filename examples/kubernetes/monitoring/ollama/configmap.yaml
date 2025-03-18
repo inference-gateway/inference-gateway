@@ -1,0 +1,24 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ollama
+  namespace: ollama
+  labels:
+    app: ollama
+data:
+  OLLAMA_HOST: "0.0.0.0:8080" # IP Address for the ollama server (default 127.0.0.1:11434)
+  # OLLAMA_DEBUG: "0"                      # Show additional debug information (e.g. OLLAMA_DEBUG=1)
+  # OLLAMA_KEEP_ALIVE: 5m                  # The duration that models stay loaded in memory (default "5m")
+  # OLLAMA_MAX_LOADED_MODELS: "1"          # Maximum number of loaded models per GPU
+  # OLLAMA_MAX_QUEUE: "1"                  # Maximum number of queued requests
+  # OLLAMA_MODELS: /root/.ollama/models    # The path to the models directory
+  # OLLAMA_NUM_PARALLEL: "1"               # Maximum number of parallel requests
+  # OLLAMA_NOPRUNE: "1"                    # Do not prune model blobs on startup
+  # OLLAMA_ORIGINS: localhost              # A comma separated list of allowed origins
+  # OLLAMA_SCHED_SPREAD: "1"               # Always schedule model across all GPUs
+  # OLLAMA_FLASH_ATTENTION: "1"            # Enabled flash attention
+  # OLLAMA_KV_CACHE_TYPE: f16              # Quantization type for the K/V cache (default: f16)
+  # OLLAMA_LLM_LIBRARY: ""                 # Set LLM library to bypass autodetection
+  # OLLAMA_GPU_OVERHEAD: ""                # Reserve a portion of VRAM per GPU (bytes)
+  # OLLAMA_LOAD_TIMEOUT: 5m                # How long to allow model loads to stall before giving up (default "5m")
