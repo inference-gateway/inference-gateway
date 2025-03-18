@@ -606,6 +606,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Model"
+          default: []
     FunctionObject:
       type: object
       properties:

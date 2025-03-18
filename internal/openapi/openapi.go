@@ -181,6 +181,7 @@ type Property struct {
 	Enum        []string            `yaml:"enum,omitempty"`
 	Properties  map[string]Property `yaml:"properties,omitempty"`
 	Items       *Property           `yaml:"items,omitempty"`
+	Default     any                 `json:"default,omitempty" yaml:"default,omitempty"`
 }
 
 // Structures for OpenAPI schema parsing

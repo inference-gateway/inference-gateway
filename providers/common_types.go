@@ -91,37 +91,37 @@ type ListModelsTransformer interface {
 
 // ChatCompletionChoice represents a ChatCompletionChoice in the API
 type ChatCompletionChoice struct {
-	FinishReason FinishReason `json:"finish_reason,omitempty"`
-	Index        int          `json:"index,omitempty"`
-	Message      Message      `json:"message,omitempty"`
+	FinishReason FinishReason `json:"finish_reason"`
+	Index        int          `json:"index"`
+	Message      Message      `json:"message"`
 }
 
 // ChatCompletionMessageToolCall represents a ChatCompletionMessageToolCall in the API
 type ChatCompletionMessageToolCall struct {
-	Function ChatCompletionMessageToolCallFunction `json:"function,omitempty"`
+	Function ChatCompletionMessageToolCallFunction `json:"function"`
 	ID       string                                `json:"id"`
-	Type     ChatCompletionToolType                `json:"type,omitempty"`
+	Type     ChatCompletionToolType                `json:"type"`
 }
 
 // ChatCompletionMessageToolCallChunk represents a ChatCompletionMessageToolCallChunk in the API
 type ChatCompletionMessageToolCallChunk struct {
 	Function struct{} `json:"function,omitempty"`
-	ID       string   `json:"id"`
-	Index    int      `json:"index,omitempty"`
+	ID       string   `json:"id,omitempty"`
+	Index    int      `json:"index"`
 	Type     string   `json:"type,omitempty"`
 }
 
 // ChatCompletionMessageToolCallFunction represents a ChatCompletionMessageToolCallFunction in the API
 type ChatCompletionMessageToolCallFunction struct {
-	Arguments string `json:"arguments,omitempty"`
-	Name      string `json:"name,omitempty"`
+	Arguments string `json:"arguments"`
+	Name      string `json:"name"`
 }
 
 // ChatCompletionStreamChoice represents a ChatCompletionStreamChoice in the API
 type ChatCompletionStreamChoice struct {
-	Delta        ChatCompletionStreamResponseDelta `json:"delta,omitempty"`
-	FinishReason FinishReason                      `json:"finish_reason,omitempty"`
-	Index        int                               `json:"index,omitempty"`
+	Delta        ChatCompletionStreamResponseDelta `json:"delta"`
+	FinishReason FinishReason                      `json:"finish_reason"`
+	Index        int                               `json:"index"`
 	Logprobs     struct{}                          `json:"logprobs,omitempty"`
 }
 
@@ -135,43 +135,43 @@ type ChatCompletionStreamResponseDelta struct {
 
 // ChatCompletionTool represents a ChatCompletionTool in the API
 type ChatCompletionTool struct {
-	Function FunctionObject         `json:"function,omitempty"`
-	Type     ChatCompletionToolType `json:"type,omitempty"`
+	Function FunctionObject         `json:"function"`
+	Type     ChatCompletionToolType `json:"type"`
 }
 
 // CompletionUsage represents a CompletionUsage in the API
 type CompletionUsage struct {
-	CompletionTokens int `json:"completion_tokens,omitempty"`
-	PromptTokens     int `json:"prompt_tokens,omitempty"`
-	TotalTokens      int `json:"total_tokens,omitempty"`
+	CompletionTokens int `json:"completion_tokens,default=0"`
+	PromptTokens     int `json:"prompt_tokens,default=0"`
+	TotalTokens      int `json:"total_tokens,default=0"`
 }
 
 // CreateChatCompletionRequest represents a CreateChatCompletionRequest in the API
 type CreateChatCompletionRequest struct {
 	MaxTokens int                  `json:"max_tokens,omitempty"`
-	Messages  []Message            `json:"messages,omitempty"`
-	Model     string               `json:"model,omitempty"`
-	Stream    bool                 `json:"stream,omitempty"`
+	Messages  []Message            `json:"messages"`
+	Model     string               `json:"model"`
+	Stream    bool                 `json:"stream,default=false"`
 	Tools     []ChatCompletionTool `json:"tools,omitempty"`
 }
 
 // CreateChatCompletionResponse represents a CreateChatCompletionResponse in the API
 type CreateChatCompletionResponse struct {
-	Choices []ChatCompletionChoice `json:"choices,omitempty"`
-	Created int                    `json:"created,omitempty"`
+	Choices []ChatCompletionChoice `json:"choices"`
+	Created int                    `json:"created"`
 	ID      string                 `json:"id"`
-	Model   string                 `json:"model,omitempty"`
-	Object  string                 `json:"object,omitempty"`
+	Model   string                 `json:"model"`
+	Object  string                 `json:"object"`
 	Usage   CompletionUsage        `json:"usage,omitempty"`
 }
 
 // CreateChatCompletionStreamResponse represents a CreateChatCompletionStreamResponse in the API
 type CreateChatCompletionStreamResponse struct {
-	Choices           []ChatCompletionStreamChoice `json:"choices,omitempty"`
-	Created           int                          `json:"created,omitempty"`
+	Choices           []ChatCompletionStreamChoice `json:"choices"`
+	Created           int                          `json:"created"`
 	ID                string                       `json:"id"`
-	Model             string                       `json:"model,omitempty"`
-	Object            string                       `json:"object,omitempty"`
+	Model             string                       `json:"model"`
+	Object            string                       `json:"object"`
 	SystemFingerprint string                       `json:"system_fingerprint,omitempty"`
 	Usage             CompletionUsage              `json:"usage,omitempty"`
 }
@@ -190,14 +190,14 @@ type Error struct {
 // FunctionObject represents a FunctionObject in the API
 type FunctionObject struct {
 	Description string             `json:"description,omitempty"`
-	Name        string             `json:"name,omitempty"`
+	Name        string             `json:"name"`
 	Parameters  FunctionParameters `json:"parameters,omitempty"`
-	Strict      bool               `json:"strict,omitempty"`
+	Strict      bool               `json:"strict,default=false"`
 }
 
 // FunctionParameters represents a FunctionParameters in the API
 type FunctionParameters struct {
-	Additionalproperties bool                   `json:"additionalProperties,omitempty"`
+	Additionalproperties bool                   `json:"additionalProperties,default=false"`
 	Properties           map[string]interface{} `json:"properties,omitempty"`
 	Required             []string               `json:"required,omitempty"`
 	Type                 string                 `json:"type,omitempty"`
@@ -205,22 +205,22 @@ type FunctionParameters struct {
 
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {
-	Data     []Model `json:"data,omitempty"`
+	Data     []Model `json:"data,default=[]"`
 	Object   string  `json:"object,omitempty"`
 	Provider string  `json:"provider,omitempty"`
 }
 
 // Message represents a Message in the API
 type Message struct {
-	Content   string                          `json:"content,omitempty"`
-	Role      MessageRole                     `json:"role,omitempty"`
+	Content   string                          `json:"content"`
+	Role      MessageRole                     `json:"role"`
 	ToolCalls []ChatCompletionMessageToolCall `json:"tool_calls,omitempty"`
 }
 
 // Model represents a Model in the API
 type Model struct {
 	Created  int64  `json:"created,omitempty"`
-	ID       string `json:"id"`
+	ID       string `json:"id,omitempty"`
 	Object   string `json:"object,omitempty"`
 	OwnedBy  string `json:"owned_by,omitempty"`
 	ServedBy string `json:"served_by,omitempty"`

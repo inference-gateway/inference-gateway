@@ -257,6 +257,7 @@ func GenerateCommonTypes(destination string, oas string) error {
 			return strings.Join(parts, "")
 		},
 		"generateType": generateType,
+		"generateTag":  generateTag,
 		"hasPrefix":    strings.HasPrefix,
 		"hasKey": func(m map[string]openapi.SchemaProperty, key string) bool {
 			_, ok := m[key]
@@ -349,7 +350,7 @@ type ListModelsTransformer interface {
 type {{$name}} struct {
     {{- range $field, $prop := $schema.Properties }}
     {{- if not (hasPrefix $field "x-") }}
-    {{pascalCase $field}} {{generateType $prop}} ` + "`json:\"{{$field}}{{if not (eq $field \"id\")}},omitempty{{end}}\"`" + `
+    {{pascalCase $field}} {{generateType $prop}} {{generateTag $field $prop $schema.Required}}
     {{- end }}
     {{- end }}
 }
@@ -613,4 +614,31 @@ func generateType(prop openapi.Property) string {
 	default:
 		return "interface{}"
 	}
+}
+
+func generateTag(field string, prop openapi.Property, requiredFields []string) template.HTML {
+	var tags []string
+
+	jsonTag := fmt.Sprintf(`json:"%s`, field)
+	isRequired := false
+	for _, rf := range requiredFields {
+		if rf == field {
+			isRequired = true
+			break
+		}
+	}
+
+	if prop.Default == nil && !isRequired {
+		jsonTag += `,omitempty`
+	} else if prop.Default != nil {
+		jsonTag += fmt.Sprintf(`,default=%v`, prop.Default)
+	}
+	jsonTag += `"`
+	tags = append(tags, jsonTag)
+
+	if len(tags) > 0 {
+		return template.HTML("`" + strings.Join(tags, " ") + "`")
+	}
+
+	return template.HTML("")
 }
