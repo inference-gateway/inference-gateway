@@ -143,9 +143,10 @@ declare -A PROVIDER_MODELS
 PROVIDER_MODELS=(
   ["groq"]="llama-3.3-70b-versatile"
   ["cohere"]="command-r"
+  ["cloudflare"]="@cf/meta/llama-3.1-8b-instruct"
   ["ollama"]="tinyllama:latest"
 )
-PROVIDERS=("groq" "cohere" "ollama")
+PROVIDERS=("groq" "cohere" "cloudflare" "ollama")
 for PROVIDER in "${PROVIDERS[@]}"; do
   MODEL=${PROVIDER_MODELS[$PROVIDER]}
   echo "Testing $PROVIDER provider with model: $MODEL"
@@ -163,9 +164,9 @@ for PROVIDER in "${PROVIDERS[@]}"; do
 done
 ```
 
-7. View the metrics in the Grafana dashboard.
+1. View the metrics in the Grafana dashboard.
 
-8. When you're done, clean up the resources:
+2. When you're done, clean up the resources:
 
 ```bash
 ctlptl delete -f Cluster.yaml --cascade=true

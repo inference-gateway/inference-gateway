@@ -44,7 +44,7 @@
 |---------------------|---------------|-------------|
 | ANTHROPIC_API_URL | `https://api.anthropic.com/v1` | Anthropic API URL |
 | ANTHROPIC_API_KEY | `""` | Anthropic API Key |
-| CLOUDFLARE_API_URL | `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1` | Cloudflare API URL |
+| CLOUDFLARE_API_URL | `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai` | Cloudflare API URL |
 | CLOUDFLARE_API_KEY | `""` | Cloudflare API Key |
 | COHERE_API_URL | `https://api.cohere.ai` | Cohere API URL |
 | COHERE_API_KEY | `""` | Cohere API Key |

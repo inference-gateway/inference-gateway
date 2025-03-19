@@ -141,7 +141,7 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 						)
 					}
 
-					if chatCompletionStreamResponse.Usage.PromptTokens > 0 {
+					if chatCompletionStreamResponse.Usage != nil {
 						promptTokens = chatCompletionStreamResponse.Usage.PromptTokens
 						completionTokens = chatCompletionStreamResponse.Usage.CompletionTokens
 						totalTokens = chatCompletionStreamResponse.Usage.TotalTokens
@@ -158,9 +158,11 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 				)
 			}
 
-			promptTokens = chatCompletionResponse.Usage.PromptTokens
-			completionTokens = chatCompletionResponse.Usage.CompletionTokens
-			totalTokens = chatCompletionResponse.Usage.TotalTokens
+			if chatCompletionResponse.Usage != nil {
+				promptTokens = chatCompletionResponse.Usage.PromptTokens
+				completionTokens = chatCompletionResponse.Usage.CompletionTokens
+				totalTokens = chatCompletionResponse.Usage.TotalTokens
+			}
 		}
 
 		t.logger.Debug("Tokens usage",

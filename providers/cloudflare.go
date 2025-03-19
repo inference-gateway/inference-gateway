@@ -13,23 +13,27 @@ type ModelCloudflare struct {
 }
 
 type ListModelsResponseCloudflare struct {
-	Success bool              `json:"success,omitempty"`
-	Result  []ModelCloudflare `json:"result,omitempty"`
+	Success bool               `json:"success,omitempty"`
+	Result  []*ModelCloudflare `json:"result,omitempty"`
 }
 
 func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 	models := make([]*Model, len(l.Result))
 	for i, model := range l.Result {
-		models[i].ID = model.Name
-		models[i].Object = "model"
+		created := time.Now().Unix()
 		if model.CreatedAt != "" {
 			createdAt, err := time.Parse("2006-01-02 15:04:05.999", model.CreatedAt)
 			if err == nil {
-				models[i].Created = createdAt.Unix()
+				created = createdAt.Unix()
 			}
 		}
-		models[i].OwnedBy = CloudflareID
-		models[i].ServedBy = CloudflareID
+		models[i] = &Model{
+			ID:       model.Name,
+			Object:   "model",
+			Created:  created,
+			OwnedBy:  CloudflareID,
+			ServedBy: CloudflareID,
+		}
 	}
 
 	return ListModelsResponse{

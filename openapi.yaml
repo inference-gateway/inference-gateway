@@ -493,7 +493,7 @@ components:
               endpoint: "/chat/completions"
         cloudflare:
           id: "cloudflare"
-          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1"
+          url: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai"
           auth_type: "bearer"
           endpoints:
             models:
@@ -503,7 +503,7 @@ components:
             chat:
               name: "chat_completions"
               method: "POST"
-              endpoint: "/chat/completions"
+              endpoint: "/v1/chat/completions"
     ProviderSpecificResponse:
       type: object
       description: |
@@ -1282,7 +1282,7 @@ components:
                 - name: cloudflare_api_url
                   env: "CLOUDFLARE_API_URL"
                   type: string
-                  default: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1"
+                  default: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai"
                   description: "Cloudflare API URL"
                 - name: cloudflare_api_key
                   env: "CLOUDFLARE_API_KEY"

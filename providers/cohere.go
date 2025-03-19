@@ -21,11 +21,13 @@ func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
 	models := make([]*Model, len(l.Models))
 	created := time.Now().Unix()
 	for i, model := range l.Models {
-		models[i].ID = model.Name
-		models[i].Object = "model"
-		models[i].Created = created // Cohere does not provide creation time
-		models[i].OwnedBy = CohereID
-		models[i].ServedBy = CohereID
+		models[i] = &Model{
+			ID:       model.Name,
+			Object:   "model",
+			Created:  created, // Cohere does not provide creation time
+			OwnedBy:  CohereID,
+			ServedBy: CohereID,
+		}
 	}
 
 	return ListModelsResponse{

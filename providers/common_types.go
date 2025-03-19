@@ -11,7 +11,7 @@ const (
 // The default base URLs of each provider
 const (
 	AnthropicDefaultBaseURL  = "https://api.anthropic.com/v1"
-	CloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai/v1"
+	CloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai"
 	CohereDefaultBaseURL     = "https://api.cohere.ai"
 	GroqDefaultBaseURL       = "https://api.groq.com/openai/v1"
 	OllamaDefaultBaseURL     = "http://ollama:8080/v1"
@@ -23,7 +23,7 @@ const (
 	AnthropicModelsEndpoint  = "/models"
 	AnthropicChatEndpoint    = "/chat/completions"
 	CloudflareModelsEndpoint = "/finetunes/public"
-	CloudflareChatEndpoint   = "/chat/completions"
+	CloudflareChatEndpoint   = "/v1/chat/completions"
 	CohereModelsEndpoint     = "/v1/models"
 	CohereChatEndpoint       = "/compatibility/v1/chat/completions"
 	GroqModelsEndpoint       = "/models"
