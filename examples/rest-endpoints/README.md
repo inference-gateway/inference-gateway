@@ -40,7 +40,6 @@ curl -X POST http://localhost:8080/v1/chat/completions?provider=ollama -d '{
       "content": "Hi, how are you doing today?"
     }
   ],
-  "stream": true,
   "max_tokens": 40
 }' | jq .
 ```
@@ -49,7 +48,7 @@ Response:
 
 ```json
 {
-  "id": "chatcmpl-b794ce73-abba-4f0a-8150-e8aadc16bf6a",
+  "id": "chatcmpl-753",
   "object": "chat.completion",
   "created": 1741879542,
   "model": "deepseek-r1:1.5b",
@@ -60,13 +59,13 @@ Response:
         "content": "<think>\nOkay, so the user greeted me and said \"Hi, how are you doing today?\" They're just starting to say that. I should respond in a friendly way.\n\nMaybe I can acknowledge their greeting and offer my help with something. Since they mentioned working on math problems or solving puzzles, I'll stick to that.\n\nI want to make sure I'm approaching it the right way. It's not a question yet, but if I see more of them, maybe I can offer more assistance. So responding with an emoji like 😊 would be nice.\n</think>\n\nHello! How are you doing today? 😊",
         "role": "assistant"
       },
-      "finish_reason": "stop"
+      "finish_reason": "length"
     }
   ],
   "usage": {
-    "prompt_tokens": 0,
-    "completion_tokens": 0,
-    "total_tokens": 0
+    "prompt_tokens": 40,
+    "completion_tokens": 40,
+    "total_tokens": 80
   }
 }
 ```
