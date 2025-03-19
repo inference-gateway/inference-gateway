@@ -180,11 +180,9 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatComple
 func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (<-chan []byte, error) {
 	proxyURL := "/proxy/" + p.GetID() + p.EndpointChat()
 
-	// Special case - Ollama doesn't include it by default, so we enforce it here
-	if p.GetID() == OllamaID {
-		req.StreamOptions = &ChatCompletionStreamOptions{
-			IncludeUsage: true,
-		}
+	// Enforce usage tracking for streaming completions
+	req.StreamOptions = &ChatCompletionStreamOptions{
+		IncludeUsage: true,
 	}
 
 	// Special case - cohere doesn't like stream_options, so we don't

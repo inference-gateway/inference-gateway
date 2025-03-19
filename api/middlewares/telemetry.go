@@ -48,13 +48,10 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTime := time.Now()
 
-		t.logger.Debug("Request URL", "url", c.Request.URL.Path)
 		if !strings.Contains(c.Request.URL.Path, "/v1/chat/completions") {
 			c.Next()
 			return
 		}
-
-		t.logger.Debug("Intercepting request for token usage")
 
 		var requestBody providers.CreateChatCompletionRequest
 		bodyBytes, _ := io.ReadAll(c.Request.Body)
@@ -120,7 +117,11 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		var totalTokens int64
 		if requestBody.Stream {
 			responseStr := w.body.String()
-			chunks := strings.Split(responseStr, "\n")
+			chunks := strings.Split(responseStr, "\n\n")
+			// We only care about the chunk before the last one which is [DONE]
+			if len(chunks) > 4 {
+				chunks = chunks[len(chunks)-4:]
+			}
 
 			var chatCompletionStreamResponse providers.CreateChatCompletionStreamResponse
 			for _, chunk := range chunks {
@@ -128,17 +129,16 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 					continue
 				}
 
-				if chunk == "[DONE]" {
-					break
-				}
-
 				if strings.HasPrefix(chunk, "data: ") {
 					chunk = strings.TrimPrefix(chunk, "data: ")
+
+					if chunk == "[DONE]" {
+						break
+					}
+
 					if err := json.Unmarshal([]byte(chunk), &chatCompletionStreamResponse); err != nil {
-						t.logger.Debug("telemetry middleware - failed to unmarshal response", "error",
-							err.Error(),
-							"response", w.body.String(),
-						)
+						t.logger.Error("telemetry middleware - failed to unmarshal response", err)
+						break
 					}
 
 					if chatCompletionStreamResponse.Usage != nil {
@@ -152,10 +152,7 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		} else {
 			var chatCompletionResponse providers.CreateChatCompletionResponse
 			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionResponse); err != nil {
-				t.logger.Debug("telemetry middleware - failed to unmarshal response", "error",
-					err.Error(),
-					"response", w.body.String(),
-				)
+				t.logger.Error("telemetry middleware - failed to unmarshal response", err)
 			}
 
 			if chatCompletionResponse.Usage != nil {
@@ -165,13 +162,13 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			}
 		}
 
-		t.logger.Debug("Tokens usage",
-			"provider", provider,
-			"model", model,
-			"promptTokens", promptTokens,
-			"completionTokens", completionTokens,
-			"totalTokens", totalTokens,
-		)
+		// t.logger.Debug("Tokens usage",
+		// 	"provider", provider,
+		// 	"model", model,
+		// 	"promptTokens", promptTokens,
+		// 	"completionTokens", completionTokens,
+		// 	"totalTokens", totalTokens,
+		// )
 
 		t.telemetry.RecordTokenUsage(
 			c.Request.Context(),
