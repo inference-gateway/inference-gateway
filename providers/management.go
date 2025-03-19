@@ -180,8 +180,18 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatComple
 func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (<-chan []byte, error) {
 	proxyURL := "/proxy/" + p.GetID() + p.EndpointChat()
 
-	// Ollama doesn't include it by default, so we enforce it here
-	req.StreamOptions.IncludeUsage = true
+	// Special case - Ollama doesn't include it by default, so we enforce it here
+	if p.GetID() == OllamaID {
+		req.StreamOptions = &ChatCompletionStreamOptions{
+			IncludeUsage: true,
+		}
+	}
+
+	// Special case - cohere doesn't like stream_options, so we don't
+	// include it - probably they haven't implemented it yet in their OpenAI "compatible" API
+	if p.GetID() == CohereID {
+		req.StreamOptions = nil
+	}
 
 	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", proxyURL, "request", req)
 

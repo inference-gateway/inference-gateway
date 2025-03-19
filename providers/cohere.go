@@ -13,12 +13,12 @@ type ModelCohere struct {
 }
 
 type ListModelsResponseCohere struct {
-	NextPageToken string        `json:"next_page_token,omitempty"`
-	Models        []ModelCohere `json:"models,omitempty"`
+	NextPageToken string         `json:"next_page_token,omitempty"`
+	Models        []*ModelCohere `json:"models,omitempty"`
 }
 
 func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
-	models := make([]Model, len(l.Models))
+	models := make([]*Model, len(l.Models))
 	created := time.Now().Unix()
 	for i, model := range l.Models {
 		models[i].ID = model.Name

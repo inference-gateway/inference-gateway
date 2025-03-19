@@ -18,7 +18,7 @@ type ListModelsResponseCloudflare struct {
 }
 
 func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
-	models := make([]Model, len(l.Result))
+	models := make([]*Model, len(l.Result))
 	for i, model := range l.Result {
 		models[i].ID = model.Name
 		models[i].Object = "model"

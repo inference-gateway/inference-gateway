@@ -362,7 +362,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 				}
 
 				if response.Data == nil {
-					response.Data = make([]providers.Model, 0)
+					response.Data = make([]*providers.Model, 0)
 				}
 				ch <- response
 			}(providerID)
@@ -371,7 +371,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 		wg.Wait()
 		close(ch)
 
-		var allModels []providers.Model
+		var allModels []*providers.Model
 		for response := range ch {
 			allModels = append(allModels, response.Data...)
 		}

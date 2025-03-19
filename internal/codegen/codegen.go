@@ -555,7 +555,7 @@ func generateType(prop openapi.Property) string {
 	// Handle references first
 	if prop.Ref != "" {
 		parts := strings.Split(prop.Ref, "/")
-		return parts[len(parts)-1]
+		return "*" + parts[len(parts)-1]
 	}
 
 	// Handle arrays
