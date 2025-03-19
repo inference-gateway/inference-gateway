@@ -499,7 +499,7 @@ components:
             models:
               name: "list_models"
               method: "GET"
-              endpoint: "/finetunes/public"
+              endpoint: "/finetunes/public?limit=1000"
             chat:
               name: "chat_completions"
               method: "POST"

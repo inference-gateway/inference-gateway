@@ -121,7 +121,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.Provider, router 
 		c.Header(k, v)
 	}
 
-	fullURL, err := constructProviderURL(provider, c.Param("path"))
+	fullURL, err := constructProviderURL(provider, c.Param("path"), c.Request.URL.RawQuery)
 	if err != nil {
 		router.logger.Error("failed to construct provider URL", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
@@ -203,7 +203,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.Provider, router 
 }
 
 func handleProxyRequest(c *gin.Context, provider providers.Provider, router *RouterImpl) {
-	fullURL, err := constructProviderURL(provider, c.Param("path"))
+	fullURL, err := constructProviderURL(provider, c.Param("path"), c.Request.URL.RawQuery)
 	if err != nil {
 		router.logger.Error("failed to construct provider URL", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
@@ -232,6 +232,7 @@ func handleProxyRequest(c *gin.Context, provider providers.Provider, router *Rou
 		req.URL.Host = fullURL.Host
 		req.URL.Scheme = fullURL.Scheme
 		req.URL.Path = fullURL.Path
+		req.URL.RawQuery = fullURL.RawQuery
 
 		if router.cfg.Environment == "development" {
 			reqModifier := proxymodifier.NewDevRequestModifier(router.logger)
@@ -252,16 +253,17 @@ func handleProxyRequest(c *gin.Context, provider providers.Provider, router *Rou
 
 // constructProviderURL builds the provider URL consistently to avoid path duplication.
 // It ensures that the path from the provider URL is handled correctly with the path parameter.
-func constructProviderURL(provider providers.Provider, pathParam string) (*url.URL, error) {
+func constructProviderURL(provider providers.Provider, pathParam, rawQuery string) (*url.URL, error) {
 	providerURL, err := url.Parse(provider.GetURL())
 	if err != nil {
 		return nil, err
 	}
 
 	url := &url.URL{
-		Scheme: providerURL.Scheme,
-		Host:   providerURL.Host,
-		Path:   strings.TrimSuffix(providerURL.Path, "/") + "/" + strings.TrimPrefix(pathParam, "/"),
+		Scheme:   providerURL.Scheme,
+		Host:     providerURL.Host,
+		Path:     strings.TrimSuffix(providerURL.Path, "/") + "/" + strings.TrimPrefix(pathParam, "/"),
+		RawQuery: rawQuery,
 	}
 
 	return url, nil

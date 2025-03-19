@@ -22,7 +22,7 @@ const (
 const (
 	AnthropicModelsEndpoint  = "/models"
 	AnthropicChatEndpoint    = "/chat/completions"
-	CloudflareModelsEndpoint = "/finetunes/public"
+	CloudflareModelsEndpoint = "/finetunes/public?limit=1000"
 	CloudflareChatEndpoint   = "/v1/chat/completions"
 	CohereModelsEndpoint     = "/v1/models"
 	CohereChatEndpoint       = "/compatibility/v1/chat/completions"
