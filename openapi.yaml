@@ -114,73 +114,17 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - model
-                - messages
-              properties:
-                model:
-                  type: string
-                  description: Model ID to use
-                messages:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Message"
-                temperature:
-                  type: number
-                  format: float
-                  default: 0.7
-                stream:
-                  type: boolean
-                  default: false
-                tools:
-                  type: array
-                  items:
-                    type: object
-                max_tokens:
-                  type: integer
+              $ref: "#/components/requestBodies/CreateChatCompletionRequest"
       responses:
         "200":
           description: Successful response
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  id:
-                    type: string
-                  object:
-                    type: string
-                    example: "chat.completion"
-                  created:
-                    type: integer
-                    format: int64
-                  model:
-                    type: string
-                  choices:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        index:
-                          type: integer
-                        message:
-                          $ref: "#/components/schemas/Message"
-                        finish_reason:
-                          type: string
-                          enum: [stop, length, tool_calls, content_filter]
-                  usage:
-                    type: object
-                    properties:
-                      prompt_tokens:
-                        type: integer
-                      completion_tokens:
-                        type: integer
-                      total_tokens:
-                        type: integer
+                $ref: "#/components/schemas/CreateChatCompletionResponse"
             text/event-stream:
               schema:
-                type: string
+                $ref: "#/components/schemas/SSEvent"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -409,6 +353,24 @@ components:
         To enable authentication, set ENABLE_AUTH to true.
         When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
+    SSEvent:
+      type: object
+      properties:
+        event:
+          type: string
+          enum:
+            - message-start
+            - stream-start
+            - content-start
+            - content-delta
+            - content-end
+            - message-end
+            - stream-end
+        data:
+          type: string
+          format: byte
+        retry:
+          type: integer
     Endpoints:
       type: object
       properties:
