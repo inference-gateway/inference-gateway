@@ -278,3 +278,161 @@ func TestDifferentAuthTypes(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkChatCompletions(b *testing.B) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{
+            "id": "test-completion-id",
+            "object": "chat.completion",
+            "created": 1677858242,
+            "model": "gpt-3.5-turbo",
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "This is a test response for benchmarking."
+                    },
+                    "finish_reason": "stop",
+                    "index": 0
+                }
+            ]
+        }`))
+	}))
+	defer server.Close()
+
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+	mockClient := mocks.NewMockClient(ctrl)
+
+	mockClient.EXPECT().
+		Do(gomock.Any()).
+		DoAndReturn(func(req *http.Request) (*http.Response, error) {
+			return http.DefaultClient.Post(server.URL+"/proxy/openai/chat/completions", "application/json", nil)
+		}).
+		AnyTimes()
+
+	log, _ := logger.NewLogger("test")
+	config := &providers.Config{
+		ID:       providers.OpenaiID,
+		Name:     providers.OpenaiDisplayName,
+		URL:      server.URL,
+		Token:    "test-token",
+		AuthType: providers.AuthTypeBearer,
+		Endpoints: providers.Endpoints{
+			Chat: providers.OpenaiChatEndpoint,
+		},
+	}
+
+	registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{
+		providers.OpenaiID: config,
+	}, log)
+
+	provider, _ := registry.BuildProvider(providers.OpenaiID, mockClient)
+
+	roleUser := providers.MessageRoleUser
+	req := providers.CreateChatCompletionRequest{
+		Model: "gpt-3.5-turbo",
+		Messages: []*providers.Message{
+			{
+				Role:    &roleUser,
+				Content: "Hello, how are you?",
+			},
+		},
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = provider.ChatCompletions(context.Background(), req)
+	}
+}
+
+func BenchmarkListModels(b *testing.B) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{
+			"object": "list",
+            "data": [
+                {
+                    "id": "gpt-3.5-turbo",
+                    "object": "model",
+                    "created": 1677610602,
+                    "owned_by": "openai"
+                },
+                {
+                    "id": "gpt-4",
+                    "object": "model",
+                    "created": 1677649963,
+                    "owned_by": "openai"
+                }
+            ]
+        }`))
+	}))
+	defer server.Close()
+
+	ctrl := gomock.NewController(b)
+	defer ctrl.Finish()
+	mockClient := mocks.NewMockClient(ctrl)
+
+	mockClient.EXPECT().
+		Get(gomock.Any()).
+		DoAndReturn(func(url string) (*http.Response, error) {
+			return http.DefaultClient.Get(server.URL + "/proxy/openai/models")
+		}).
+		AnyTimes()
+
+	log, _ := logger.NewLogger("test")
+	config := &providers.Config{
+		ID:       providers.OpenaiID,
+		Name:     providers.OpenaiDisplayName,
+		URL:      server.URL,
+		Token:    "test-token",
+		AuthType: providers.AuthTypeBearer,
+		Endpoints: providers.Endpoints{
+			Models: providers.OpenaiModelsEndpoint,
+		},
+	}
+
+	registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{
+		providers.OpenaiID: config,
+	}, log)
+
+	provider, _ := registry.BuildProvider(providers.OpenaiID, mockClient)
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, _ = provider.ListModels(context.Background())
+	}
+}
+
+func BenchmarkProviderTransformations(b *testing.B) {
+	ollamaData := &providers.ListModelsResponseOllama{
+		Data: []*providers.Model{
+			{ID: "gpt-3.5-turbo"},
+			{ID: "gpt-4"},
+		},
+	}
+
+	openaiData := &providers.ListModelsResponseOpenai{
+		Data: []*providers.Model{
+			{ID: "gpt-4"},
+			{ID: "gpt-3.5-turbo"},
+		},
+	}
+
+	b.Run("OllamaTransform", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = ollamaData.Transform()
+		}
+	})
+
+	b.Run("OpenAITransform", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = openaiData.Transform()
+		}
+	})
+}
