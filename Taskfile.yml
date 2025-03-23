@@ -50,7 +50,7 @@ tasks:
   openapi-lint:
     desc: "Lint OpenAPI spec"
     cmds:
-      - spectral lint openapi.yaml
+      - spectral lint --verbose openapi.yaml
 
   test:
     desc: "Run tests"

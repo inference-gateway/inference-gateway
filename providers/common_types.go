@@ -205,10 +205,9 @@ type FunctionObject struct {
 
 // FunctionParameters represents a FunctionParameters in the API
 type FunctionParameters struct {
-	Additionalproperties bool                   `json:"additionalProperties,omitempty"`
-	Properties           map[string]interface{} `json:"properties,omitempty"`
-	Required             []string               `json:"required,omitempty"`
-	Type                 string                 `json:"type,omitempty"`
+	Properties map[string]interface{} `json:"properties,omitempty"`
+	Required   []string               `json:"required,omitempty"`
+	Type       string                 `json:"type,omitempty"`
 }
 
 // ListModelsResponse represents a ListModelsResponse in the API

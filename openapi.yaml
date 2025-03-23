@@ -507,7 +507,6 @@ components:
           ]
         }
         ```
-      additionalProperties: true
     ProviderAuthType:
       type: string
       description: Authentication type for providers
@@ -655,20 +654,11 @@ components:
         properties:
           type: object
           description: The properties of the parameters.
-          additionalProperties:
-            type: object
-            description: The schema for the parameter.
-            additionalProperties: true
         required:
           type: array
           items:
             type: string
           description: The required properties of the parameters.
-        additionalProperties:
-          type: boolean
-          default: false
-          description: Whether additional properties are allowed.
-      additionalProperties: true
     ChatCompletionToolType:
       type: string
       description: The type of the tool. Currently, only `function` is supported.
