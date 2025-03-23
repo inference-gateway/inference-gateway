@@ -31,6 +31,9 @@ paths:
       operationId: listModels
       tags:
         - Models
+      description: |
+        Lists the currently available models, and provides basic information
+        about each one such as the owner and availability.
       summary:
         Lists the currently available models, and provides basic information
         about each one such as the owner and availability.
@@ -102,8 +105,10 @@ paths:
       operationId: createChatCompletion
       tags:
         - Completions
+      description: |
+        Generates a chat completion based on the provided input.
+        The completion can be streamed to the client as it is generated.
       summary: Create a chat completion
-      description: Creates a completion for the chat message with the specified provider
       security:
         - bearerAuth: []
       parameters:
@@ -147,10 +152,14 @@ paths:
           type: string
         description: The remaining path to proxy to the provider
     get:
-      summary: Proxy GET request to provider
       operationId: proxyGet
       tags:
         - Proxy
+      description: |
+        Proxy GET request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy GET request to provider
       responses:
         "200":
           $ref: "#/components/responses/ProviderResponse"
@@ -163,10 +172,14 @@ paths:
       security:
         - bearerAuth: []
     post:
-      summary: Proxy POST request to provider
       operationId: proxyPost
       tags:
         - Proxy
+      description: |
+        Proxy POST request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy POST request to provider
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -181,10 +194,14 @@ paths:
       security:
         - bearerAuth: []
     put:
-      summary: Proxy PUT request to provider
       operationId: proxyPut
       tags:
         - Proxy
+      description: |
+        Proxy PUT request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy PUT request to provider
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -199,10 +216,14 @@ paths:
       security:
         - bearerAuth: []
     delete:
-      summary: Proxy DELETE request to provider
       operationId: proxyDelete
       tags:
         - Proxy
+      description: |
+        Proxy DELETE request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy DELETE request to provider
       responses:
         "200":
           $ref: "#/components/responses/ProviderResponse"
@@ -215,10 +236,14 @@ paths:
       security:
         - bearerAuth: []
     patch:
-      summary: Proxy PATCH request to provider
       operationId: proxyPatch
       tags:
         - Proxy
+      description: |
+        Proxy PATCH request to provider
+        The request body depends on the specific provider and endpoint being called.
+        If you decide to use this approach, please follow the provider-specific documentations.
+      summary: Proxy PATCH request to provider
       requestBody:
         $ref: "#/components/requestBodies/ProviderRequest"
       responses:
@@ -235,9 +260,12 @@ paths:
   /health:
     get:
       operationId: healthCheck
-      summary: Health check
       tags:
         - Health
+      description: |
+        Health check endpoint
+        Returns a 200 status code if the service is healthy
+      summary: Health check
       responses:
         "200":
           description: Health check successful
