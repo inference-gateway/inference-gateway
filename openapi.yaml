@@ -755,16 +755,6 @@ components:
         - id
         - type
         - function
-    EventType:
-      type: string
-      enum:
-        - message-start
-        - stream-start
-        - content-start
-        - content-delta
-        - content-end
-        - message-end
-        - stream-end
     ChatCompletionChoice:
       type: object
       properties:

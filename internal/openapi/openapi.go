@@ -83,7 +83,6 @@ type OpenAPISchema struct {
 			ListModelsResponse                    SchemaProperty `yaml:"ListModelsResponse"`
 			Endpoints                             SchemaProperty `yaml:"Endpoints"`
 			Error                                 SchemaProperty `yaml:"Error"`
-			EventType                             SchemaProperty `yaml:"EventType"`
 			FunctionObject                        SchemaProperty `yaml:"FunctionObject"`
 			FunctionParameters                    SchemaProperty `yaml:"FunctionParameters"`
 			FinishReason                          SchemaProperty `yaml:"FinishReason"`
