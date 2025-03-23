@@ -381,31 +381,6 @@ components:
         To enable authentication, set ENABLE_AUTH to true.
         When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
-    SSEvent:
-      type: object
-      properties:
-        event:
-          type: string
-          enum:
-            - message-start
-            - stream-start
-            - content-start
-            - content-delta
-            - content-end
-            - message-end
-            - stream-end
-        data:
-          type: string
-          format: byte
-        retry:
-          type: integer
-    Endpoints:
-      type: object
-      properties:
-        models:
-          type: string
-        chat:
-          type: string
     Provider:
       type: string
       enum:
@@ -541,6 +516,31 @@ components:
         - xheader
         - query
         - none
+    SSEvent:
+      type: object
+      properties:
+        event:
+          type: string
+          enum:
+            - message-start
+            - stream-start
+            - content-start
+            - content-delta
+            - content-end
+            - message-end
+            - stream-end
+        data:
+          type: string
+          format: byte
+        retry:
+          type: integer
+    Endpoints:
+      type: object
+      properties:
+        models:
+          type: string
+        chat:
+          type: string
     Error:
       type: object
       properties:
