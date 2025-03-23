@@ -7,6 +7,9 @@ info:
     OpenAI, Groq, Ollama, and other providers are supported.
     OpenAI compatible API for using with existing clients.
     Unified API for all providers.
+  contact:
+    name: Inference Gateway
+    url: https://inference-gateway.github.io/docs/
   version: 1.0.0
   license:
     name: MIT
@@ -96,10 +99,11 @@ paths:
           $ref: "#/components/responses/InternalError"
   /v1/chat/completions:
     post:
-      summary: Create a chat completion
-      description: Creates a completion for the chat message with the specified provider
+      operationId: createChatCompletion
       tags:
         - Completions
+      summary: Create a chat completion
+      description: Creates a completion for the chat message with the specified provider
       security:
         - bearerAuth: []
       parameters:
