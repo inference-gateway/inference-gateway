@@ -33,7 +33,6 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4.3.0
         with:
-          cache: "npm"
           node-version: 22
 
       - name: Install Spectral
