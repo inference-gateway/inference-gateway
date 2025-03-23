@@ -28,6 +28,17 @@ jobs:
       - name: Install Mockgen
         run: go install go.uber.org/mock/mockgen@v0.5.0
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli
+
+      - name: Validate OpenAPI with Spectral
+        run: spectral lint openapi.yaml
+
       - name: Install dependencies
         run: go mod tidy
 

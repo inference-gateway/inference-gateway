@@ -8,7 +8,8 @@ ENV ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom \
     HELM_VERSION=v3.17.2 \
     GORELEASER_VERSION=v2.8.0 \
     GOLANG_CI_LINT_VERSION=v1.64.7 \
-    GITHUB_CLI_VERSION=2.68.1
+    GITHUB_CLI_VERSION=2.68.1 \
+    NODE_VERSION=lts
 
 RUN apt-get update && \
     # Determine architecture
@@ -20,6 +21,9 @@ RUN apt-get update && \
     echo "Installing depenenices for ${architecture}" && \
     # Install networking utilities
     apt-get install -y iputils-ping dnsutils && \
+    # Install Node.js for Spectral
+    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
+    apt-get install -y nodejs && \
     # Install powerlevel10k theme
     git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k && \
     # Install Task
@@ -42,6 +46,8 @@ RUN apt-get update && \
     tar -xzf /tmp/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}.tar.gz -C /tmp && \
     chmod +x /tmp/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}/bin/gh && \
     mv /tmp/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}/bin/gh /usr/local/bin/gh && \
+    # Install Spectral for OpenAPI linting
+    npm install -g @stoplight/spectral-cli && \
     # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
