@@ -18,6 +18,7 @@ type ListModelsResponseCohere struct {
 }
 
 func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
+	provider := CohereID
 	models := make([]*Model, len(l.Models))
 	created := time.Now().Unix()
 	for i, model := range l.Models {
@@ -25,13 +26,13 @@ func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
 			ID:       model.Name,
 			Object:   "model",
 			Created:  created, // Cohere does not provide creation time
-			OwnedBy:  CohereID,
-			ServedBy: CohereID,
+			OwnedBy:  string(provider),
+			ServedBy: &provider,
 		}
 	}
 
 	return ListModelsResponse{
-		Provider: CohereID,
+		Provider: &provider,
 		Object:   "list",
 		Data:     models,
 	}

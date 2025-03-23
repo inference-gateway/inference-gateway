@@ -54,7 +54,7 @@ func GenerateConfigurationsMD(filePath string, oas string) error {
 		Providers map[string]openapi.ProviderConfig
 	}{
 		Sections:  schema.Components.Schemas.Config.XConfig.Sections,
-		Providers: schema.Components.Schemas.Providers.XProviderConfigs,
+		Providers: schema.Components.Schemas.Provider.XProviderConfigs,
 	}
 
 	// Execute template

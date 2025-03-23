@@ -6,14 +6,15 @@ type ListModelsResponseOllama struct {
 }
 
 func (l *ListModelsResponseOllama) Transform() ListModelsResponse {
+	provider := OllamaID
 	models := make([]*Model, len(l.Data))
 	for i, model := range l.Data {
-		model.ServedBy = OllamaID
+		model.ServedBy = &provider
 		models[i] = model
 	}
 
 	return ListModelsResponse{
-		Provider: OllamaID,
+		Provider: &provider,
 		Object:   l.Object,
 		Data:     models,
 	}

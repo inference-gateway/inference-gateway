@@ -8,7 +8,7 @@ import (
 
 // Base provider configuration
 type Config struct {
-	ID           string
+	ID           Provider
 	Name         string
 	URL          string
 	Token        string
@@ -19,27 +19,27 @@ type Config struct {
 
 //go:generate mockgen -source=registry.go -destination=../tests/mocks/provider_registry.go -package=mocks
 type ProviderRegistry interface {
-	GetProviders() map[string]*Config
-	BuildProvider(providerID string, client Client) (Provider, error)
+	GetProviders() map[Provider]*Config
+	BuildProvider(providerID Provider, client Client) (IProvider, error)
 }
 
 type ProviderRegistryImpl struct {
-	cfg    map[string]*Config
+	cfg    map[Provider]*Config
 	logger logger.Logger
 }
 
-func NewProviderRegistry(cfg map[string]*Config, logger logger.Logger) ProviderRegistry {
+func NewProviderRegistry(cfg map[Provider]*Config, logger logger.Logger) ProviderRegistry {
 	return &ProviderRegistryImpl{
 		cfg:    cfg,
 		logger: logger,
 	}
 }
 
-func (p *ProviderRegistryImpl) GetProviders() map[string]*Config {
+func (p *ProviderRegistryImpl) GetProviders() map[Provider]*Config {
 	return p.cfg
 }
 
-func (p *ProviderRegistryImpl) BuildProvider(providerID string, client Client) (Provider, error) {
+func (p *ProviderRegistryImpl) BuildProvider(providerID Provider, client Client) (IProvider, error) {
 	provider, ok := p.cfg[providerID]
 	if !ok {
 		return nil, fmt.Errorf("provider %s not found", providerID)
@@ -50,7 +50,7 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID string, client Client) (
 	}
 
 	return &ProviderImpl{
-		id:           provider.ID,
+		id:           &provider.ID,
 		name:         provider.Name,
 		url:          provider.URL,
 		token:        provider.Token,
@@ -63,7 +63,7 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID string, client Client) (
 }
 
 // The registry of all providers
-var Registry = map[string]Config{
+var Registry = map[Provider]Config{
 	AnthropicID: {
 		ID:       AnthropicID,
 		Name:     AnthropicDisplayName,

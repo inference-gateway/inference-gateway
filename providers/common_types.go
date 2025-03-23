@@ -34,14 +34,16 @@ const (
 	OpenaiChatEndpoint       = "/chat/completions"
 )
 
+type Provider string
+
 // The ID's of each provider
 const (
-	AnthropicID  = "anthropic"
-	CloudflareID = "cloudflare"
-	CohereID     = "cohere"
-	GroqID       = "groq"
-	OllamaID     = "ollama"
-	OpenaiID     = "openai"
+	AnthropicID  Provider = "anthropic"
+	CloudflareID Provider = "cloudflare"
+	CohereID     Provider = "cohere"
+	GroqID       Provider = "groq"
+	OllamaID     Provider = "ollama"
+	OpenaiID     Provider = "openai"
 )
 
 // Display names for providers
@@ -211,9 +213,9 @@ type FunctionParameters struct {
 
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {
-	Data     []*Model `json:"data,omitempty"`
-	Object   string   `json:"object,omitempty"`
-	Provider string   `json:"provider,omitempty"`
+	Data     []*Model  `json:"data,omitempty"`
+	Object   string    `json:"object,omitempty"`
+	Provider *Provider `json:"provider,omitempty"`
 }
 
 // Message represents a Message in the API
@@ -227,11 +229,11 @@ type Message struct {
 
 // Model represents a Model in the API
 type Model struct {
-	Created  int64  `json:"created,omitempty"`
-	ID       string `json:"id,omitempty"`
-	Object   string `json:"object,omitempty"`
-	OwnedBy  string `json:"owned_by,omitempty"`
-	ServedBy string `json:"served_by,omitempty"`
+	Created  int64     `json:"created,omitempty"`
+	ID       string    `json:"id,omitempty"`
+	Object   string    `json:"object,omitempty"`
+	OwnedBy  string    `json:"owned_by,omitempty"`
+	ServedBy *Provider `json:"served_by,omitempty"`
 }
 
 // Transform converts provider-specific response to common format

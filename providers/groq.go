@@ -6,14 +6,15 @@ type ListModelsResponseGroq struct {
 }
 
 func (l *ListModelsResponseGroq) Transform() ListModelsResponse {
+	provider := GroqID
 	models := make([]*Model, len(l.Data))
 	for i, model := range l.Data {
-		model.ServedBy = GroqID
+		model.ServedBy = &provider
 		models[i] = model
 	}
 
 	return ListModelsResponse{
-		Provider: GroqID,
+		Provider: &provider,
 		Object:   l.Object,
 		Data:     models,
 	}

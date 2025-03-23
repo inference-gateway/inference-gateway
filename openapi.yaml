@@ -38,7 +38,7 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/Providers"
+            $ref: "#/components/schemas/Provider"
           description: Specific provider to query (optional)
       responses:
         "200":
@@ -107,14 +107,10 @@ paths:
           in: query
           required: false
           schema:
-            $ref: "#/components/schemas/Providers"
+            $ref: "#/components/schemas/Provider"
           description: Specific provider to use (default determined by model)
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/requestBodies/CreateChatCompletionRequest"
+        $ref: "#/components/requestBodies/CreateChatCompletionRequest"
       responses:
         "200":
           description: Successful response
@@ -137,7 +133,7 @@ paths:
         in: path
         required: true
         schema:
-          $ref: "#/components/schemas/Providers"
+          $ref: "#/components/schemas/Provider"
       - name: path
         in: path
         required: true
@@ -266,7 +262,7 @@ components:
                       type: string
               temperature:
                 type: number
-                format: float64
+                format: float
                 default: 0.7
           examples:
             openai:
@@ -378,7 +374,7 @@ components:
           type: string
         chat:
           type: string
-    Providers:
+    Provider:
       type: string
       enum:
         - ollama
@@ -559,13 +555,13 @@ components:
         owned_by:
           type: string
         served_by:
-          type: string
+          $ref: "#/components/schemas/Provider"
     ListModelsResponse:
       type: object
       description: Response structure for listing models
       properties:
         provider:
-          type: string
+          $ref: "#/components/schemas/Provider"
         object:
           type: string
         data:

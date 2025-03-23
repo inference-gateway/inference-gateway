@@ -18,6 +18,7 @@ type ListModelsResponseCloudflare struct {
 }
 
 func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
+	provider := CloudflareID
 	models := make([]*Model, len(l.Result))
 	for i, model := range l.Result {
 		created := time.Now().Unix()
@@ -31,13 +32,13 @@ func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 			ID:       model.Name,
 			Object:   "model",
 			Created:  created,
-			OwnedBy:  CloudflareID,
-			ServedBy: CloudflareID,
+			OwnedBy:  string(provider),
+			ServedBy: &provider,
 		}
 	}
 
 	return ListModelsResponse{
-		Provider: CloudflareID,
+		Provider: &provider,
 		Object:   "list",
 		Data:     models,
 	}

@@ -19,7 +19,7 @@ func TestProviderRegistry(t *testing.T) {
 	log, err := logger.NewLogger("test")
 	assert.NoError(t, err)
 
-	cfg := map[string]*providers.Config{
+	cfg := map[providers.Provider]*providers.Config{
 		providers.OpenaiID: {
 			ID:       providers.OpenaiID,
 			Name:     providers.OpenaiDisplayName,
@@ -56,7 +56,7 @@ func TestProviderRegistry(t *testing.T) {
 
 	openaiProvider, err := registry.BuildProvider(providers.OpenaiID, mockClient)
 	require.NoError(t, err)
-	assert.Equal(t, providers.OpenaiID, openaiProvider.GetID())
+	assert.Equal(t, providers.OpenaiID, *openaiProvider.GetID())
 	assert.Equal(t, providers.OpenaiDisplayName, openaiProvider.GetName())
 	assert.Equal(t, providers.OpenaiDefaultBaseURL, openaiProvider.GetURL())
 	assert.Equal(t, "test-token", openaiProvider.GetToken())
@@ -122,7 +122,7 @@ func TestProviderChatCompletions(t *testing.T) {
 		},
 	}
 
-	registry := providers.NewProviderRegistry(map[string]*providers.Config{
+	registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{
 		providers.OpenaiID: config,
 	}, log)
 
@@ -200,7 +200,7 @@ func TestProviderListModels(t *testing.T) {
 		},
 	}
 
-	registry := providers.NewProviderRegistry(map[string]*providers.Config{
+	registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{
 		providers.OpenaiID: config,
 	}, log)
 
@@ -220,8 +220,8 @@ func TestDifferentAuthTypes(t *testing.T) {
 	assert.NoError(t, err)
 
 	testCases := []struct {
+		providerId   providers.Provider
 		name         string
-		providerId   string
 		authType     string
 		token        string
 		extraHeaders map[string][]string
@@ -250,7 +250,7 @@ func TestDifferentAuthTypes(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := map[string]*providers.Config{
+			cfg := map[providers.Provider]*providers.Config{
 				tc.providerId: {
 					ID:           tc.providerId,
 					Name:         "Test Provider",

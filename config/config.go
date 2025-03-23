@@ -22,7 +22,7 @@ type Config struct {
 	Server *ServerConfig `env:", prefix=SERVER_" description:"Server configuration"`
 
 	// Providers map
-	Providers map[string]*providers.Config
+	Providers map[providers.Provider]*providers.Config
 }
 
 // OIDC configuration
@@ -54,19 +54,19 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 
 	// Initialize Providers map if nil
 	if cfg.Providers == nil {
-		cfg.Providers = make(map[string]*providers.Config)
+		cfg.Providers = make(map[providers.Provider]*providers.Config)
 	}
 
 	// Set defaults for each provider
 	for id, defaults := range providers.Registry {
 		if _, exists := cfg.Providers[id]; !exists {
 			providerCfg := defaults
-			url, ok := lookuper.Lookup(strings.ToUpper(id) + "_API_URL")
+			url, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_URL")
 			if ok {
 				providerCfg.URL = url
 			}
 
-			token, ok := lookuper.Lookup(strings.ToUpper(id) + "_API_KEY")
+			token, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_KEY")
 			if !ok {
 				println("Warn: provider " + id + " is not configured")
 			}

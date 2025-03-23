@@ -19,6 +19,7 @@ type ListModelsResponseAnthropic struct {
 }
 
 func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
+	provider := AnthropicID
 	var models []*Model
 	for _, model := range l.Data {
 		t, err := time.Parse(time.RFC3339, model.CreatedAt)
@@ -33,13 +34,13 @@ func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
 			ID:       model.ID,
 			Object:   "model",
 			Created:  created,
-			OwnedBy:  AnthropicID,
-			ServedBy: AnthropicID,
+			OwnedBy:  string(provider),
+			ServedBy: &provider,
 		})
 	}
 	return ListModelsResponse{
 		Object:   "list",
-		Provider: AnthropicID,
+		Provider: &provider,
 		Data:     models,
 	}
 }

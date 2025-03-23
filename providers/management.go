@@ -12,9 +12,9 @@ import (
 )
 
 //go:generate mockgen -source=management.go -destination=../tests/mocks/provider.go -package=mocks
-type Provider interface {
+type IProvider interface {
 	// Getters
-	GetID() string
+	GetID() *Provider
 	GetName() string
 	GetURL() string
 	GetToken() string
@@ -28,7 +28,7 @@ type Provider interface {
 }
 
 type ProviderImpl struct {
-	id           string
+	id           *Provider
 	name         string
 	url          string
 	token        string
@@ -39,7 +39,7 @@ type ProviderImpl struct {
 	logger       l.Logger
 }
 
-func (p *ProviderImpl) GetID() string {
+func (p *ProviderImpl) GetID() *Provider {
 	return p.id
 }
 
@@ -73,7 +73,11 @@ func (p *ProviderImpl) EndpointChat() string {
 
 // ListModels fetches the list of models available from the provider and returns them in OpenAI compatible format
 func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, error) {
-	url := "/proxy/" + p.GetID() + p.EndpointModels()
+	providerID := ""
+	if p.GetID() != nil {
+		providerID = string(*p.GetID())
+	}
+	url := "/proxy/" + providerID + p.EndpointModels()
 
 	response, err := p.client.Get(url)
 	if err != nil {
@@ -88,7 +92,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 	}
 
 	var transformer ListModelsTransformer
-	switch p.GetID() {
+	switch *p.GetID() {
 	case OllamaID:
 		var resp ListModelsResponseOllama
 		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
@@ -138,7 +142,11 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 
 // ChatCompletions generates chat completions from the provider
 func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (CreateChatCompletionResponse, error) {
-	proxyURL := "/proxy/" + p.GetID() + p.EndpointChat()
+	providerID := ""
+	if p.GetID() != nil {
+		providerID = string(*p.GetID())
+	}
+	url := "/proxy/" + providerID + p.EndpointChat()
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
@@ -146,9 +154,9 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatComple
 		return CreateChatCompletionResponse{}, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyURL, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
-		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", proxyURL)
+		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
 		return CreateChatCompletionResponse{}, err
 	}
 
@@ -156,7 +164,7 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatComple
 
 	response, err := p.client.Do(httpReq)
 	if err != nil {
-		p.logger.Error("Failed to send request", err, "provider", p.GetName(), "url", proxyURL)
+		p.logger.Error("Failed to send request", err, "provider", p.GetName(), "url", url)
 		return CreateChatCompletionResponse{}, err
 	}
 	defer response.Body.Close()
@@ -178,7 +186,11 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatComple
 
 // StreamChatCompletions generates chat completions from the provider using streaming
 func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (<-chan []byte, error) {
-	proxyURL := "/proxy/" + p.GetID() + p.EndpointChat()
+	providerID := ""
+	if p.GetID() != nil {
+		providerID = string(*p.GetID())
+	}
+	url := "/proxy/" + providerID + p.EndpointChat()
 
 	// Enforce usage tracking for streaming completions
 	req.StreamOptions = &ChatCompletionStreamOptions{
@@ -187,11 +199,11 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChat
 
 	// Special case - cohere doesn't like stream_options, so we don't
 	// include it - probably they haven't implemented it yet in their OpenAI "compatible" API
-	if p.GetID() == CohereID {
+	if *p.GetID() == CohereID {
 		req.StreamOptions = nil
 	}
 
-	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", proxyURL, "request", req)
+	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", url, "request", req)
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
@@ -199,9 +211,9 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChat
 		return nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, proxyURL, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
-		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", proxyURL)
+		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
 		return nil, err
 	}
 
@@ -210,7 +222,7 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChat
 
 	response, err := p.client.Do(httpReq)
 	if err != nil {
-		p.logger.Error("Failed to send request", err, "provider", p.GetName(), "url", proxyURL)
+		p.logger.Error("Failed to send request", err, "provider", p.GetName(), "url", url)
 		return nil, err
 	}
 

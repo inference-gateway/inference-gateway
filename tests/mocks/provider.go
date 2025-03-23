@@ -17,32 +17,32 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-// MockProvider is a mock of Provider interface.
-type MockProvider struct {
+// MockIProvider is a mock of IProvider interface.
+type MockIProvider struct {
 	ctrl     *gomock.Controller
-	recorder *MockProviderMockRecorder
+	recorder *MockIProviderMockRecorder
 	isgomock struct{}
 }
 
-// MockProviderMockRecorder is the mock recorder for MockProvider.
-type MockProviderMockRecorder struct {
-	mock *MockProvider
+// MockIProviderMockRecorder is the mock recorder for MockIProvider.
+type MockIProviderMockRecorder struct {
+	mock *MockIProvider
 }
 
-// NewMockProvider creates a new mock instance.
-func NewMockProvider(ctrl *gomock.Controller) *MockProvider {
-	mock := &MockProvider{ctrl: ctrl}
-	mock.recorder = &MockProviderMockRecorder{mock}
+// NewMockIProvider creates a new mock instance.
+func NewMockIProvider(ctrl *gomock.Controller) *MockIProvider {
+	mock := &MockIProvider{ctrl: ctrl}
+	mock.recorder = &MockIProviderMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockProvider) EXPECT() *MockProviderMockRecorder {
+func (m *MockIProvider) EXPECT() *MockIProviderMockRecorder {
 	return m.recorder
 }
 
 // ChatCompletions mocks base method.
-func (m *MockProvider) ChatCompletions(ctx context.Context, req providers.CreateChatCompletionRequest) (providers.CreateChatCompletionResponse, error) {
+func (m *MockIProvider) ChatCompletions(ctx context.Context, req providers.CreateChatCompletionRequest) (providers.CreateChatCompletionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ChatCompletions", ctx, req)
 	ret0, _ := ret[0].(providers.CreateChatCompletionResponse)
@@ -51,13 +51,13 @@ func (m *MockProvider) ChatCompletions(ctx context.Context, req providers.Create
 }
 
 // ChatCompletions indicates an expected call of ChatCompletions.
-func (mr *MockProviderMockRecorder) ChatCompletions(ctx, req any) *gomock.Call {
+func (mr *MockIProviderMockRecorder) ChatCompletions(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletions", reflect.TypeOf((*MockProvider)(nil).ChatCompletions), ctx, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletions", reflect.TypeOf((*MockIProvider)(nil).ChatCompletions), ctx, req)
 }
 
 // GetAuthType mocks base method.
-func (m *MockProvider) GetAuthType() string {
+func (m *MockIProvider) GetAuthType() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAuthType")
 	ret0, _ := ret[0].(string)
@@ -65,13 +65,13 @@ func (m *MockProvider) GetAuthType() string {
 }
 
 // GetAuthType indicates an expected call of GetAuthType.
-func (mr *MockProviderMockRecorder) GetAuthType() *gomock.Call {
+func (mr *MockIProviderMockRecorder) GetAuthType() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthType", reflect.TypeOf((*MockProvider)(nil).GetAuthType))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthType", reflect.TypeOf((*MockIProvider)(nil).GetAuthType))
 }
 
 // GetExtraHeaders mocks base method.
-func (m *MockProvider) GetExtraHeaders() map[string][]string {
+func (m *MockIProvider) GetExtraHeaders() map[string][]string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetExtraHeaders")
 	ret0, _ := ret[0].(map[string][]string)
@@ -79,27 +79,27 @@ func (m *MockProvider) GetExtraHeaders() map[string][]string {
 }
 
 // GetExtraHeaders indicates an expected call of GetExtraHeaders.
-func (mr *MockProviderMockRecorder) GetExtraHeaders() *gomock.Call {
+func (mr *MockIProviderMockRecorder) GetExtraHeaders() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExtraHeaders", reflect.TypeOf((*MockProvider)(nil).GetExtraHeaders))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExtraHeaders", reflect.TypeOf((*MockIProvider)(nil).GetExtraHeaders))
 }
 
 // GetID mocks base method.
-func (m *MockProvider) GetID() string {
+func (m *MockIProvider) GetID() *providers.Provider {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetID")
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*providers.Provider)
 	return ret0
 }
 
 // GetID indicates an expected call of GetID.
-func (mr *MockProviderMockRecorder) GetID() *gomock.Call {
+func (mr *MockIProviderMockRecorder) GetID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetID", reflect.TypeOf((*MockProvider)(nil).GetID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetID", reflect.TypeOf((*MockIProvider)(nil).GetID))
 }
 
 // GetName mocks base method.
-func (m *MockProvider) GetName() string {
+func (m *MockIProvider) GetName() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetName")
 	ret0, _ := ret[0].(string)
@@ -107,13 +107,13 @@ func (m *MockProvider) GetName() string {
 }
 
 // GetName indicates an expected call of GetName.
-func (mr *MockProviderMockRecorder) GetName() *gomock.Call {
+func (mr *MockIProviderMockRecorder) GetName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockProvider)(nil).GetName))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockIProvider)(nil).GetName))
 }
 
 // GetToken mocks base method.
-func (m *MockProvider) GetToken() string {
+func (m *MockIProvider) GetToken() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetToken")
 	ret0, _ := ret[0].(string)
@@ -121,13 +121,13 @@ func (m *MockProvider) GetToken() string {
 }
 
 // GetToken indicates an expected call of GetToken.
-func (mr *MockProviderMockRecorder) GetToken() *gomock.Call {
+func (mr *MockIProviderMockRecorder) GetToken() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*MockProvider)(nil).GetToken))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToken", reflect.TypeOf((*MockIProvider)(nil).GetToken))
 }
 
 // GetURL mocks base method.
-func (m *MockProvider) GetURL() string {
+func (m *MockIProvider) GetURL() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetURL")
 	ret0, _ := ret[0].(string)
@@ -135,13 +135,13 @@ func (m *MockProvider) GetURL() string {
 }
 
 // GetURL indicates an expected call of GetURL.
-func (mr *MockProviderMockRecorder) GetURL() *gomock.Call {
+func (mr *MockIProviderMockRecorder) GetURL() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetURL", reflect.TypeOf((*MockProvider)(nil).GetURL))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetURL", reflect.TypeOf((*MockIProvider)(nil).GetURL))
 }
 
 // ListModels mocks base method.
-func (m *MockProvider) ListModels(ctx context.Context) (providers.ListModelsResponse, error) {
+func (m *MockIProvider) ListModels(ctx context.Context) (providers.ListModelsResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListModels", ctx)
 	ret0, _ := ret[0].(providers.ListModelsResponse)
@@ -150,13 +150,13 @@ func (m *MockProvider) ListModels(ctx context.Context) (providers.ListModelsResp
 }
 
 // ListModels indicates an expected call of ListModels.
-func (mr *MockProviderMockRecorder) ListModels(ctx any) *gomock.Call {
+func (mr *MockIProviderMockRecorder) ListModels(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModels", reflect.TypeOf((*MockProvider)(nil).ListModels), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModels", reflect.TypeOf((*MockIProvider)(nil).ListModels), ctx)
 }
 
 // StreamChatCompletions mocks base method.
-func (m *MockProvider) StreamChatCompletions(ctx context.Context, req providers.CreateChatCompletionRequest) (<-chan []byte, error) {
+func (m *MockIProvider) StreamChatCompletions(ctx context.Context, req providers.CreateChatCompletionRequest) (<-chan []byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "StreamChatCompletions", ctx, req)
 	ret0, _ := ret[0].(<-chan []byte)
@@ -165,7 +165,7 @@ func (m *MockProvider) StreamChatCompletions(ctx context.Context, req providers.
 }
 
 // StreamChatCompletions indicates an expected call of StreamChatCompletions.
-func (mr *MockProviderMockRecorder) StreamChatCompletions(ctx, req any) *gomock.Call {
+func (mr *MockIProviderMockRecorder) StreamChatCompletions(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatCompletions", reflect.TypeOf((*MockProvider)(nil).StreamChatCompletions), ctx, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatCompletions", reflect.TypeOf((*MockIProvider)(nil).StreamChatCompletions), ctx, req)
 }

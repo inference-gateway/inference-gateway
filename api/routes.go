@@ -61,7 +61,7 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 }
 
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
-	p := c.Param("provider")
+	p := providers.Provider(c.Param("provider"))
 	provider, err := router.registry.BuildProvider(p, router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
@@ -111,7 +111,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	handleProxyRequest(c, provider, router)
 }
 
-func handleStreamingRequest(c *gin.Context, provider providers.Provider, router *RouterImpl) {
+func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router *RouterImpl) {
 	for k, v := range map[string]string{
 		"Content-Type":      "text/event-stream",
 		"Cache-Control":     "no-cache",
@@ -202,7 +202,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.Provider, router 
 	})
 }
 
-func handleProxyRequest(c *gin.Context, provider providers.Provider, router *RouterImpl) {
+func handleProxyRequest(c *gin.Context, provider providers.IProvider, router *RouterImpl) {
 	fullURL, err := constructProviderURL(provider, c.Param("path"), c.Request.URL.RawQuery)
 	if err != nil {
 		router.logger.Error("failed to construct provider URL", err)
@@ -253,7 +253,7 @@ func handleProxyRequest(c *gin.Context, provider providers.Provider, router *Rou
 
 // constructProviderURL builds the provider URL consistently to avoid path duplication.
 // It ensures that the path from the provider URL is handled correctly with the path parameter.
-func constructProviderURL(provider providers.Provider, pathParam, rawQuery string) (*url.URL, error) {
+func constructProviderURL(provider providers.IProvider, pathParam, rawQuery string) (*url.URL, error) {
 	providerURL, err := url.Parse(provider.GetURL())
 	if err != nil {
 		return nil, err
@@ -303,9 +303,9 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 // This endpoint allows applications built for OpenAI's API to work seamlessly
 // with the Inference Gateway's multi-provider architecture.
 func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
-	providerID := c.Query("provider")
+	providerID := providers.Provider(c.Query("provider"))
 	if providerID != "" {
-		provider, err := router.registry.BuildProvider(c.Query("provider"), router.client)
+		provider, err := router.registry.BuildProvider(providerID, router.client)
 		if err != nil {
 			if strings.Contains(err.Error(), "token not configured") {
 				router.logger.Error("provider requires authentication but no API key was configured", err, "provider", providerID)
@@ -344,7 +344,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 		for providerID := range providersCfg {
 			wg.Add(1)
-			go func(id string) {
+			go func(id providers.Provider) {
 				defer wg.Done()
 
 				provider, err := router.registry.BuildProvider(id, router.client)
@@ -449,14 +449,16 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	model := req.Model
-	providerID := c.Query("provider")
+	providerID := providers.Provider(c.Query("provider"))
 	if providerID == "" {
-		providerID, model = determineProviderAndModelName(model)
-		if providerID == "" {
+		var providerPtr *providers.Provider
+		providerPtr, model = determineProviderAndModelName(model)
+		if providerPtr == nil {
 			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider."})
 			return
 		}
+		providerID = *providerPtr
 	}
 	req.Model = model
 
@@ -530,11 +532,11 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func determineProviderAndModelName(model string) (provider string, modelName string) {
+func determineProviderAndModelName(model string) (provider *providers.Provider, modelName string) {
 	modelLower := strings.ToLower(model)
 
 	// First check for explicit provider prefixes (ollama-, groq-, etc.)
-	providerPrefixMapping := map[string]string{
+	providerPrefixMapping := map[string]providers.Provider{
 		"ollama/":     providers.OllamaID,
 		"groq/":       providers.GroqID,
 		"cloudflare/": providers.CloudflareID,
@@ -545,12 +547,12 @@ func determineProviderAndModelName(model string) (provider string, modelName str
 
 	for prefix, providerID := range providerPrefixMapping {
 		if strings.HasPrefix(modelLower, prefix) {
-			return providerID, strings.TrimPrefix(model, prefix)
+			return &providerID, strings.TrimPrefix(model, prefix)
 		}
 	}
 
 	// Then check for model-name based prefixes (gpt-, claude-, etc.)
-	modelPrefixMapping := map[string]string{
+	modelPrefixMapping := map[string]providers.Provider{
 		"gpt-":      providers.OpenaiID,
 		"claude-":   providers.AnthropicID,
 		"llama-":    providers.GroqID,
@@ -560,9 +562,9 @@ func determineProviderAndModelName(model string) (provider string, modelName str
 
 	for prefix, providerID := range modelPrefixMapping {
 		if strings.HasPrefix(modelLower, prefix) {
-			return providerID, model
+			return &providerID, model
 		}
 	}
 
-	return "", model
+	return nil, model
 }

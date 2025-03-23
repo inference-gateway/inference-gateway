@@ -37,7 +37,7 @@ func TestLoad(t *testing.T) {
 					WriteTimeout: 30 * time.Second,
 					IdleTimeout:  120 * time.Second,
 				},
-				Providers: map[string]*providers.Config{
+				Providers: map[providers.Provider]*providers.Config{
 					providers.AnthropicID: {
 						ID:       providers.AnthropicID,
 						Name:     providers.AnthropicDisplayName,
@@ -136,7 +136,7 @@ func TestLoad(t *testing.T) {
 					WriteTimeout: 60 * time.Second,
 					IdleTimeout:  180 * time.Second,
 				},
-				Providers: map[string]*providers.Config{
+				Providers: map[providers.Provider]*providers.Config{
 					providers.OllamaID: {
 						ID:       providers.OllamaID,
 						Name:     providers.OllamaDisplayName,
@@ -250,7 +250,7 @@ func TestLoad(t *testing.T) {
 					WriteTimeout: 30 * time.Second,
 					IdleTimeout:  120 * time.Second,
 				},
-				Providers: map[string]*providers.Config{
+				Providers: map[providers.Provider]*providers.Config{
 					providers.OllamaID: {
 						ID:       providers.OllamaID,
 						Name:     providers.OllamaDisplayName,

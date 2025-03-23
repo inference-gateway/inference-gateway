@@ -6,14 +6,15 @@ type ListModelsResponseOpenai struct {
 }
 
 func (l *ListModelsResponseOpenai) Transform() ListModelsResponse {
+	provider := OpenaiID
 	models := make([]*Model, len(l.Data))
 	for i, model := range l.Data {
-		model.ServedBy = OpenaiID
+		model.ServedBy = &provider
 		models[i] = model
 	}
 
 	return ListModelsResponse{
-		Provider: OpenaiID,
+		Provider: &provider,
 		Object:   l.Object,
 		Data:     l.Data,
 	}

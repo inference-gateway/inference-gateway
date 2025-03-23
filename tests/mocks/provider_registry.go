@@ -41,10 +41,10 @@ func (m *MockProviderRegistry) EXPECT() *MockProviderRegistryMockRecorder {
 }
 
 // BuildProvider mocks base method.
-func (m *MockProviderRegistry) BuildProvider(providerID string, client providers.Client) (providers.Provider, error) {
+func (m *MockProviderRegistry) BuildProvider(providerID providers.Provider, client providers.Client) (providers.IProvider, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildProvider", providerID, client)
-	ret0, _ := ret[0].(providers.Provider)
+	ret0, _ := ret[0].(providers.IProvider)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -56,10 +56,10 @@ func (mr *MockProviderRegistryMockRecorder) BuildProvider(providerID, client any
 }
 
 // GetProviders mocks base method.
-func (m *MockProviderRegistry) GetProviders() map[string]*providers.Config {
+func (m *MockProviderRegistry) GetProviders() map[providers.Provider]*providers.Config {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProviders")
-	ret0, _ := ret[0].(map[string]*providers.Config)
+	ret0, _ := ret[0].(map[providers.Provider]*providers.Config)
 	return ret0
 }
 
