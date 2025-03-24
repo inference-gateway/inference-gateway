@@ -224,11 +224,12 @@ type ListModelsResponse struct {
 
 // Message represents a Message in the API
 type Message struct {
-	Content    string                           `json:"content"`
-	Reasoning  string                           `json:"reasoning,omitempty"`
-	Role       *MessageRole                     `json:"role"`
-	ToolCallId string                           `json:"tool_call_id,omitempty"`
-	ToolCalls  []*ChatCompletionMessageToolCall `json:"tool_calls,omitempty"`
+	Content          string                           `json:"content"`
+	Reasoning        string                           `json:"reasoning,omitempty"`
+	ReasoningContent string                           `json:"reasoning_content,omitempty"`
+	Role             *MessageRole                     `json:"role"`
+	ToolCallId       string                           `json:"tool_call_id,omitempty"`
+	ToolCalls        []*ChatCompletionMessageToolCall `json:"tool_calls,omitempty"`
 }
 
 // Model represents a Model in the API

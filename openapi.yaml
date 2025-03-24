@@ -583,6 +583,8 @@ components:
           type: string
         reasoning:
           type: string
+        reasoning_content:
+          type: string
       required:
         - role
         - content
