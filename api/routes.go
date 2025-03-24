@@ -543,6 +543,7 @@ func determineProviderAndModelName(model string) (provider *providers.Provider, 
 		"openai/":     providers.OpenaiID,
 		"anthropic/":  providers.AnthropicID,
 		"cohere/":     providers.CohereID,
+		"deepseek/":   providers.DeepseekID,
 	}
 
 	for prefix, providerID := range providerPrefixMapping {

@@ -71,7 +71,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 				println("Warn: provider " + id + " is not configured")
 			}
 			providerCfg.Token = token
-			cfg.Providers[id] = &providerCfg
+			cfg.Providers[id] = providerCfg
 		}
 	}
 
