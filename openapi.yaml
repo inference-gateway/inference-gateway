@@ -1219,7 +1219,7 @@ components:
                   default: "https://generativelanguage.googleapis.com/v1"
                   description: "google API URL"
                 - name: google_api_key
-                  env: "GOOGLEAPI_KEY"
+                  env: "GOOGLE_API_KEY"
                   type: string
                   description: "Google API Key"
                   secret: true
