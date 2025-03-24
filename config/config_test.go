@@ -101,6 +101,16 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.OpenaiChatEndpoint,
 						},
 					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.GoogleModelsEndpoint,
+							Chat:   providers.GoogleChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -200,6 +210,16 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.AnthropicModelsEndpoint,
 							Chat:   providers.AnthropicChatEndpoint,
+						},
+					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.GoogleModelsEndpoint,
+							Chat:   providers.GoogleChatEndpoint,
 						},
 					},
 				},
@@ -312,6 +332,16 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.AnthropicModelsEndpoint,
 							Chat:   providers.AnthropicChatEndpoint,
+						},
+					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.GoogleModelsEndpoint,
+							Chat:   providers.GoogleChatEndpoint,
 						},
 					},
 				},
