@@ -149,6 +149,7 @@ For streaming the tokens simply add to the request body `stream: true`.
 - [Cloudflare](https://www.cloudflare.com/)
 - [Cohere](https://docs.cohere.com/docs/the-cohere-platform)
 - [Anthropic](https://docs.anthropic.com/en/api/getting-started)
+- [Google](https://ai.google.dev/)
 
 ## Configuration
 
