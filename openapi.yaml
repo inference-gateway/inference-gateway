@@ -390,6 +390,7 @@ components:
         - cloudflare
         - cohere
         - anthropic
+        - google
       x-provider-configs:
         ollama:
           id: "ollama"
@@ -469,6 +470,19 @@ components:
               name: "chat_completions"
               method: "POST"
               endpoint: "/v1/chat/completions"
+        google:
+          id: "google"
+          url: "https://generativelanguage.googleapis.com/v1"
+          auth_type: "bearer"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
     ProviderSpecificResponse:
       type: object
       description: |
@@ -1198,4 +1212,14 @@ components:
                   env: "OPENAI_API_KEY"
                   type: string
                   description: "OpenAI API Key"
+                  secret: true
+                - name: google_api_url
+                  env: "GOOGLE_API_URL"
+                  type: string
+                  default: "https://generativelanguage.googleapis.com/v1"
+                  description: "google API URL"
+                - name: google_api_key
+                  env: "GOOGLEAPI_KEY"
+                  type: string
+                  description: "Google API Key"
                   secret: true
