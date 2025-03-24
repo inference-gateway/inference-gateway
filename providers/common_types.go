@@ -13,7 +13,7 @@ const (
 	AnthropicDefaultBaseURL  = "https://api.anthropic.com/v1"
 	CloudflareDefaultBaseURL = "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai"
 	CohereDefaultBaseURL     = "https://api.cohere.ai"
-	GoogleDefaultBaseURL     = "https://generativelanguage.googleapis.com/v1"
+	GoogleDefaultBaseURL     = "https://generativelanguage.googleapis.com/v1beta/openai"
 	GroqDefaultBaseURL       = "https://api.groq.com/openai/v1"
 	OllamaDefaultBaseURL     = "http://ollama:8080/v1"
 	OpenaiDefaultBaseURL     = "https://api.openai.com/v1"
