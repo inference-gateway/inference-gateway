@@ -29,6 +29,10 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 
 You can set the stream as an optional flag in the request body to enable streaming of tokens. The default value is `false`.
 
+**Note:** Google API requires https for using the streaming API. You can generate a self-signed certificate and use it to enable https.
+
+**Note:** Google API doesn't provide tool_call_id, so you can't use the tool calls feature with Google API properly yet - it's still in beta.
+
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions?provider=ollama -d '{
   "model": "deepseek-r1:1.5b",
