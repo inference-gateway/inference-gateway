@@ -54,4 +54,6 @@
 | OLLAMA_API_KEY | `""` | Ollama API Key |
 | OPENAI_API_URL | `https://api.openai.com/v1` | OpenAI API URL |
 | OPENAI_API_KEY | `""` | OpenAI API Key |
+| DEEPSEEK_API_URL | `https://api.deepseek.com` | DeepSeek API URL |
+| DEEPSEEK_API_KEY | `""` | DeepSeek API Key |
 
