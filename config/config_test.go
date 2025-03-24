@@ -101,6 +101,16 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.OpenaiChatEndpoint,
 						},
 					},
+					providers.DeepseekID: {
+						ID:       providers.DeepseekID,
+						Name:     providers.DeepseekDisplayName,
+						URL:      providers.DeepseekDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.DeepseekModelsEndpoint,
+							Chat:   providers.DeepseekChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -200,6 +210,16 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.AnthropicModelsEndpoint,
 							Chat:   providers.AnthropicChatEndpoint,
+						},
+					},
+					providers.DeepseekID: {
+						ID:       providers.DeepseekID,
+						Name:     providers.DeepseekDisplayName,
+						URL:      providers.DeepseekDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.DeepseekModelsEndpoint,
+							Chat:   providers.DeepseekChatEndpoint,
 						},
 					},
 				},
@@ -312,6 +332,16 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.AnthropicModelsEndpoint,
 							Chat:   providers.AnthropicChatEndpoint,
+						},
+					},
+					providers.DeepseekID: {
+						ID:       providers.DeepseekID,
+						Name:     providers.DeepseekDisplayName,
+						URL:      providers.DeepseekDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.DeepseekModelsEndpoint,
+							Chat:   providers.DeepseekChatEndpoint,
 						},
 					},
 				},
