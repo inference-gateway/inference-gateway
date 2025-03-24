@@ -63,7 +63,7 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID Provider, client Client)
 }
 
 // The registry of all providers
-var Registry = map[Provider]Config{
+var Registry = map[Provider]*Config{
 	AnthropicID: {
 		ID:       AnthropicID,
 		Name:     AnthropicDisplayName,
@@ -125,6 +125,16 @@ var Registry = map[Provider]Config{
 		Endpoints: Endpoints{
 			Models: OpenaiModelsEndpoint,
 			Chat:   OpenaiChatEndpoint,
+		},
+	},
+	GoogleID: {
+		ID:       GoogleID,
+		Name:     GoogleDisplayName,
+		URL:      GoogleDefaultBaseURL,
+		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			Models: GoogleModelsEndpoint,
+			Chat:   GoogleChatEndpoint,
 		},
 	},
 }

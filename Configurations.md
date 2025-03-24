@@ -54,4 +54,6 @@
 | OLLAMA_API_KEY | `""` | Ollama API Key |
 | OPENAI_API_URL | `https://api.openai.com/v1` | OpenAI API URL |
 | OPENAI_API_KEY | `""` | OpenAI API Key |
+| GOOGLE_API_URL | `https://generativelanguage.googleapis.com/v1` | google API URL |
+| GOOGLEAPI_KEY | `""` | Google API Key |
 
