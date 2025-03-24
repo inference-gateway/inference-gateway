@@ -472,7 +472,7 @@ components:
               endpoint: "/v1/chat/completions"
         google:
           id: "google"
-          url: "https://generativelanguage.googleapis.com/v1"
+          url: "https://generativelanguage.googleapis.com/v1beta/openai"
           auth_type: "bearer"
           endpoints:
             models:
@@ -1216,7 +1216,7 @@ components:
                 - name: google_api_url
                   env: "GOOGLE_API_URL"
                   type: string
-                  default: "https://generativelanguage.googleapis.com/v1"
+                  default: "https://generativelanguage.googleapis.com/v1beta/openai"
                   description: "google API URL"
                 - name: google_api_key
                   env: "GOOGLE_API_KEY"
