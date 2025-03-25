@@ -76,6 +76,7 @@ graph TD
     P --> G["⚡ Cloudflare"]
     P --> H1["💬 Cohere"]
     P --> H2["🧠 Anthropic"]
+    P --> H3["🐋 DeepSeek"]
 
     %% Define styles
     classDef client fill:#9370DB,stroke:#333,stroke-width:1px,color:white;
@@ -149,6 +150,7 @@ For streaming the tokens simply add to the request body `stream: true`.
 - [Cloudflare](https://www.cloudflare.com/)
 - [Cohere](https://docs.cohere.com/docs/the-cohere-platform)
 - [Anthropic](https://docs.anthropic.com/en/api/getting-started)
+- [DeepSeek](https://api-docs.deepseek.com/)
 
 ## Configuration
 
