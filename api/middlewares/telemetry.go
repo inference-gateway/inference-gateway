@@ -73,6 +73,8 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			provider = "ollama"
 		case strings.HasPrefix(model, "cloudflare/"):
 			provider = "cloudflare"
+		case strings.HasPrefix(model, "deepseek/"):
+			provider = "deepseek"
 		}
 
 		if provider == "unknown" {
@@ -89,6 +91,8 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 				provider = "ollama"
 			case strings.Contains(c.Request.URL.RawQuery, "cloudflare"):
 				provider = "cloudflare"
+			case strings.Contains(c.Request.URL.RawQuery, "deepseek"):
+				provider = "deepseek"
 			}
 		}
 
