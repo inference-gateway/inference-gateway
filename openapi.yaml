@@ -16,6 +16,14 @@ info:
     url: https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE
 servers:
   - url: http://localhost:8080
+    description: Default server without version prefix for healthcheck and proxy and points
+    x-server-tags: ["Health", "Proxy"]
+  - url: http://localhost:8080/v1
+    description: Default server with version prefix for listing models and chat completions
+    x-server-tags: ["Models", "Completions"]
+  - url: https://api.inference-gateway.local/v1
+    description: Local server with version prefix for listing models and chat completions
+    x-server-tags: ["Models", "Completions"]
 tags:
   - name: Models
     description: List and describe the various models available in the API.
@@ -26,7 +34,7 @@ tags:
   - name: Health
     description: Health check
 paths:
-  /v1/models:
+  /models:
     get:
       operationId: listModels
       tags:
@@ -100,7 +108,7 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
-  /v1/chat/completions:
+  /chat/completions:
     post:
       operationId: createChatCompletion
       tags:
