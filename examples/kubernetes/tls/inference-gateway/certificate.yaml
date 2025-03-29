@@ -9,7 +9,7 @@ spec:
   issuerRef:
     name: selfsigned-issuer
     kind: ClusterIssuer
-  commonName: inference-gateway.local
+  commonName: api.inference-gateway.local
   dnsNames:
-    - inference-gateway.local
+    - api.inference-gateway.local
     - inference-gateway.inference-gateway.svc.cluster.local

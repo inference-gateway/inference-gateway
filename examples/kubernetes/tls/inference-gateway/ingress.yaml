@@ -10,10 +10,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - inference-gateway.local
+        - api.inference-gateway.local
       secretName: inference-gateway-tls
   rules:
-    - host: inference-gateway.local
+    - host: api.inference-gateway.local
       http:
         paths:
           - path: /

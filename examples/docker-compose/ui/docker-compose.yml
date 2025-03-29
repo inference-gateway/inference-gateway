@@ -1,0 +1,33 @@
+---
+services:
+  ui:
+    image: ghcr.io/inference-gateway/ui:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.frontend
+    depends_on:
+      - inference-gateway
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+    restart: unless-stopped
+
+  inference-gateway:
+    image: ghcr.io/inference-gateway/inference-gateway:latest
+    env_file:
+      - .env.backend
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 100M
+    restart: unless-stopped

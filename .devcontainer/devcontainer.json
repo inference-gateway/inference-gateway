@@ -38,14 +38,12 @@
     }
   },
   "mounts": [
-    "source=${localWorkspaceFolder}/.devcontainer/setup-git.sh,target=/home/vscode/setup-git.sh,type=bind,consistency=cached",
     "source=${localWorkspaceFolder}/.devcontainer/.zshrc,target=/home/vscode/.zshrc,type=bind,consistency=cached",
     "source=${localWorkspaceFolder}/.devcontainer/launch.json,target=/workspaces/inference-gateway/.vscode/launch.json,type=bind,consistency=cached"
   ],
-  "postCreateCommand": "/home/vscode/setup-git.sh",
   "remoteEnv": {
     "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
   },
-  "forwardPorts": [8080],
-  "runArgs": ["--add-host=inference-gateway.local:127.0.0.1"]
+  "forwardPorts": [8080, 3000],
+  "runArgs": ["--add-host=api.inference-gateway.local:127.0.0.1"]
 }

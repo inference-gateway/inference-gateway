@@ -90,10 +90,10 @@ kubectl create namespace inference-gateway --dry-run=client -o yaml | kubectl ap
 kubectl apply -f inference-gateway/
 ```
 
-6. Update your local `/etc/hosts` file to map inference-gateway.local to `127.0.0.1`:
+6. Update your local `/etc/hosts` file to map api.inference-gateway.local to `127.0.0.1`:
 
 ```bash
-echo "127.0.0.1 inference-gateway.local" >> /etc/hosts
+echo "127.0.0.1 api.inference-gateway.local" >> /etc/hosts
 ```
 
 \*\* Note: if you're using the devcontainer (which is also recommended) - you already have this entry in the /etc/hosts file.
@@ -101,7 +101,7 @@ echo "127.0.0.1 inference-gateway.local" >> /etc/hosts
 7. Test the Inference Gateway with HTTPS:
 
 ```bash
-curl -X GET -k https://inference-gateway.local/v1/models
+curl -X GET -k https://api.inference-gateway.local/v1/models
 ```
 
 ## Cleanup

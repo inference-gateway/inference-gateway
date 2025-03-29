@@ -1,48 +1,66 @@
-# Example using docker-compose
+# Examples using Docker Compose
+
+This directory contains examples that demonstrate how to use the Inference Gateway with Docker Compose.
 
 ## Prerequisites
 
 - Docker
 - Docker Compose
 
-## Quick Guide
+## Available Examples
 
-Copy `.env.example` to `.env` and adjust the values (`.env` is added to gitignore and will not be tracked).
+- [Basic](basic/README.md) - Simple setup with a single model provider
+- [Hybrid](hybrid/README.md) - Configuration with multiple model providers (cloud and local)
+- [Authentication](authentication/README.md) - Adding authentication to your gateway
+- [Monitoring](monitoring/README.md) - Setting up monitoring for your gateway
+- [UI](ui/README.md) - Setting up a user interface for the gateway
 
-1. Bring the environment up:
+## Quick Start
+
+Each example directory contains:
+
+- A README with specific instructions
+- A `docker-compose.yml` file
+- An `.env.example` file
+
+To run any example:
+
+1. Navigate to the example directory:
+
+```bash
+cd examples/docker-compose/[example-name]
+```
+
+2. Copy the environment file and customize as needed:
+
+```bash
+cp .env.example .env
+```
+
+3. Start the services:
 
 ```bash
 docker compose up -d
 ```
 
-2. List the available models of a specific API, for example Groq:
+4. Follow the specific instructions in the example's README for testing and usage
 
-```bash
-curl -X GET http://localhost:8080/v1/models?provider=groq | jq '.'
-```
+## Environment Variables
 
-Or the local models:
+Common environment variables used across examples:
 
-```bash
-curl -X GET http://localhost:8080/v1/models?provider=ollama | jq '.'
-```
+| Variable             | Description                    | Default |
+| -------------------- | ------------------------------ | ------- |
+| `SERVER_PORT`        | Port the gateway listens on    | `8080`  |
+| `LOG_LEVEL`          | Logging level                  | `info`  |
+| `PROVIDER_*_API_KEY` | API key for specific providers | -       |
 
-3. Use a specific API models, for example Groq:
+## Additional Resources
 
-```bash
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "model": "llama-3.3-70b-versatile",
-    "messages": [
-      {
-        "role": "system",
-        "content": "You are a helpful assistant."
-      },
-      {
-        "role": "user",
-        "content": "Explain the importance of fast language models. Keep it short and concise."
-      }
-    ]
-  }' | jq '.'
-```
+- [Main Documentation](../../README.md)
+- [Kubernetes Examples](../kubernetes/README.md)
+- [Configuration Guide](../../Configurations.md)
+
+## Support
+
+If you encounter any issues with these examples, please [open an issue](https://github.com/inference-gateway/inference-gateway/issues/new) on GitHub.
