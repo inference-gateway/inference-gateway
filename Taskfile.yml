@@ -27,7 +27,7 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/basic/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/hybrid/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/tools/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/ui/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/docker-compose/ui/.env.backend.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go generate ./providers/... ./api/... ./otel/...
 

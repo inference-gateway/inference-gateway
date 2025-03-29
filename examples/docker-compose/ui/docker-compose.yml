@@ -16,6 +16,7 @@ services:
         reservations:
           cpus: "0.25"
           memory: 256M
+    pull_policy: always
     restart: unless-stopped
 
   inference-gateway:
@@ -30,4 +31,5 @@ services:
         reservations:
           cpus: "0.1"
           memory: 100M
+    pull_policy: always
     restart: unless-stopped
