@@ -210,8 +210,8 @@ func TestProviderListModels(t *testing.T) {
 	resp, err := provider.ListModels(context.Background())
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(resp.Data))
-	assert.Equal(t, "gpt-3.5-turbo", resp.Data[0].ID)
-	assert.Equal(t, "gpt-4", resp.Data[1].ID)
+	assert.Equal(t, "openai/gpt-3.5-turbo", resp.Data[0].ID)
+	assert.Equal(t, "openai/gpt-4", resp.Data[1].ID)
 }
 
 // TestDifferentAuthTypes tests that different auth types are properly handled
