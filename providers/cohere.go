@@ -23,7 +23,7 @@ func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
 	created := time.Now().Unix()
 	for i, model := range l.Models {
 		models[i] = &Model{
-			ID:       model.Name,
+			ID:       string(provider) + "/" + model.Name,
 			Object:   "model",
 			Created:  created, // Cohere does not provide creation time
 			OwnedBy:  string(provider),

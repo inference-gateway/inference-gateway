@@ -10,6 +10,7 @@ func (l *ListModelsResponseOllama) Transform() ListModelsResponse {
 	models := make([]*Model, len(l.Data))
 	for i, model := range l.Data {
 		model.ServedBy = &provider
+		model.ID = string(provider) + "/" + model.ID
 		models[i] = model
 	}
 

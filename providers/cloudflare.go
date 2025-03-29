@@ -29,7 +29,7 @@ func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 			}
 		}
 		models[i] = &Model{
-			ID:       model.Name,
+			ID:       string(provider) + "/" + model.Name,
 			Object:   "model",
 			Created:  created,
 			OwnedBy:  string(provider),

@@ -31,7 +31,7 @@ func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
 		}
 
 		models = append(models, &Model{
-			ID:       model.ID,
+			ID:       string(provider) + "/" + model.ID,
 			Object:   "model",
 			Created:  created,
 			OwnedBy:  string(provider),
