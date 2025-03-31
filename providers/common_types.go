@@ -139,10 +139,11 @@ type ChatCompletionStreamOptions struct {
 
 // ChatCompletionStreamResponseDelta represents a ChatCompletionStreamResponseDelta in the API
 type ChatCompletionStreamResponseDelta struct {
-	Content   string                                `json:"content,omitempty"`
-	Refusal   string                                `json:"refusal,omitempty"`
-	Role      *MessageRole                          `json:"role,omitempty"`
-	ToolCalls []*ChatCompletionMessageToolCallChunk `json:"tool_calls,omitempty"`
+	Content          string                                `json:"content,omitempty"`
+	ReasoningContent string                                `json:"reasoning_content,omitempty"`
+	Refusal          string                                `json:"refusal,omitempty"`
+	Role             *MessageRole                          `json:"role,omitempty"`
+	ToolCalls        []*ChatCompletionMessageToolCallChunk `json:"tool_calls,omitempty"`
 }
 
 // ChatCompletionTool represents a ChatCompletionTool in the API

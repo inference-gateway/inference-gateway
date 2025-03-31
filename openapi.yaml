@@ -904,6 +904,9 @@ components:
         content:
           type: string
           description: The contents of the chunk message.
+        reasoning_content:
+          type: string
+          description: The reasoning content of the chunk message.
         tool_calls:
           type: array
           items:
