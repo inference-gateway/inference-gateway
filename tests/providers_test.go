@@ -381,8 +381,8 @@ func BenchmarkListModels(b *testing.B) {
 	mockClient := mocks.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
-		Get(gomock.Any()).
-		DoAndReturn(func(url string) (*http.Response, error) {
+		Do(gomock.Any()).
+		DoAndReturn(func(req *http.Request) (*http.Response, error) {
 			return http.DefaultClient.Get(server.URL + "/proxy/openai/models")
 		}).
 		AnyTimes()
