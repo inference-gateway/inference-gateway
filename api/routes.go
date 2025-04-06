@@ -317,7 +317,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout)
+		ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout)
 		defer cancel()
 
 		response, err := provider.ListModels(ctx)
@@ -339,7 +339,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 		ch := make(chan providers.ListModelsResponse, len(providersCfg))
 
-		ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout*time.Millisecond)
+		ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout*time.Millisecond)
 		defer cancel()
 
 		for providerID := range providersCfg {
@@ -476,7 +476,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
 
-	ctx, cancel := context.WithTimeout(context.Background(), router.cfg.Server.ReadTimeout)
+	ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout)
 	defer cancel()
 
 	// Streaming response

@@ -1,30 +1,66 @@
-# UI Docker Compose Example
+# Authentication Docker Compose Example
 
-This example demonstrates how to set up and use the [Inference Gateway UI](https://github.com/inference-gateway/ui) with Docker Compose.
+This example demonstrates how to set up and use the Inference Gateway UI with Authentication enabled using Docker Compose.
 
 ## Prerequisites
 
-- [Docker](https://www.docker.com/get-started) installed
-- [Docker Compose](https://docs.docker.com/compose/install/) installed
+- Docker Engine 24.0+
+- Docker Compose 2.20+
+- Valid OAuth credentials from your provider(s)
 
-## Getting Started
+## Setup Steps
 
-1. Copy the `.env.backend.example` file to `.env.backend` and update the environment variables as needed. This file contains configuration settings for the backend service.
+1. Copy environment templates:
 
-   ```sh
-   cp .env.backend.example .env.backend
-   ```
+```bash
+cp .env.backend.example .env.backend
+cp .env.frontend.example .env.frontend
+```
 
-2. Copy the `.env.frontend.example` file to `.env.frontend` and update the environment variables as needed. This file contains configuration settings for the frontend service.
+2. Configure backend environment (.env.backend):
 
-   ```sh
-   cp .env.frontend.example .env.frontend
-   ```
+```ini
+AUTH_ENABLED=true
+SECURE_COOKIES=false # Set to true if you are using HTTPS for production
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secure-random-salt
+NEXTAUTH_TRUST_HOST=true
 
-3. Start the application using Docker Compose:
+# Keycloak Configuration
+KEYCLOAK_ID=app-client
+KEYCLOAK_SECRET=very-secret
+KEYCLOAK_ISSUER=http://localhost:8080/realms/app-realm
+```
 
-   ```sh
-   docker-compose up
-   ```
+3. Configure frontend environment (.env.frontend):
 
-4. Open your web browser and navigate to `http://localhost:3000` to see the UI in action.
+```ini
+AUTH_ENABLED="true"
+```
+
+4. Start the services:
+
+```bash
+docker compose -f examples/docker-compose/authentication/docker-compose.yaml up -d
+```
+
+## Accessing the Application
+
+- UI: http://localhost:3000
+
+## Configuration Notes
+
+- Add additional OAuth providers by following the NextAuth.js documentation
+- For production deployments:
+  - Set `NEXTAUTH_URL` to your public domain
+  - Enable HTTPS
+  - Use proper secret management
+  - Configure session storage
+
+## Troubleshooting
+
+View container logs:
+
+```bash
+docker compose -f examples/docker-compose/authentication/docker-compose.yaml logs -f
+```

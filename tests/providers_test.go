@@ -153,6 +153,7 @@ func TestProviderChatCompletions(t *testing.T) {
 func TestProviderListModels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/proxy/openai/models", r.URL.Path)
+		assert.Equal(t, "GET", r.Method)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -181,8 +182,10 @@ func TestProviderListModels(t *testing.T) {
 	mockClient := mocks.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
-		Get(gomock.Any()).
-		DoAndReturn(func(url string) (*http.Response, error) {
+		Do(gomock.Any()).
+		DoAndReturn(func(req *http.Request) (*http.Response, error) {
+			assert.Equal(t, "GET", req.Method)
+			assert.Contains(t, req.URL.String(), "/models")
 			return http.DefaultClient.Get(server.URL + "/proxy/openai/models")
 		})
 

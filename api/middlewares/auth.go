@@ -12,6 +12,13 @@ import (
 	oauth2 "golang.org/x/oauth2"
 )
 
+type contextKey string
+
+const (
+	AuthTokenContextKey contextKey = "authToken"
+	IDTokenContextKey   contextKey = "idToken"
+)
+
 type OIDCAuthenticator interface {
 	Middleware() gin.HandlerFunc
 }
@@ -77,7 +84,8 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("idToken", idToken)
+		c.Set(string(AuthTokenContextKey), token)
+		c.Set(string(IDTokenContextKey), idToken)
 
 		c.Next()
 	}

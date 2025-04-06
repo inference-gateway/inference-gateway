@@ -1,0 +1,57 @@
+{
+  "realm": "app-realm",
+  "enabled": true,
+  "registrationAllowed": false,
+  "displayName": "Example Keycloak Sign-In",
+  "displayNameHtml": "<h1 style=\"font-size: 40pt; font-weight: 400;\">Keycloak Sign-In</h1>",
+  "clients": [
+    {
+      "clientId": "app-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "clientAuthenticatorType": "client-secret",
+      "secret": "very-secret",
+      "protocolMappers": [
+        {
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "app-client",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "add.to.id.token": "true",
+            "add.to.access.token": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "user",
+      "firstName": "Example",
+      "lastName": "User",
+      "email": "example@keycloak.org",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "account": ["manage-account"]
+      },
+      "realmRoles": []
+    }
+  ]
+}

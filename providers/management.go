@@ -23,8 +23,8 @@ type IProvider interface {
 
 	// Fetchers
 	ListModels(ctx context.Context) (ListModelsResponse, error)
-	ChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (CreateChatCompletionResponse, error)
-	StreamChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (<-chan []byte, error)
+	ChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (CreateChatCompletionResponse, error)
+	StreamChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (<-chan []byte, error)
 }
 
 type ProviderImpl struct {
@@ -79,7 +79,17 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 	}
 	url := "/proxy/" + providerID + p.EndpointModels()
 
-	response, err := p.client.Get(url)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
+		return ListModelsResponse{}, err
+	}
+
+	if authToken := ctx.Value("authToken"); authToken != nil {
+		req.Header.Set("Authorization", "Bearer "+authToken.(string))
+	}
+
+	response, err := p.client.Do(req)
 	if err != nil {
 		p.logger.Error("Failed to list models", err, "provider", p.GetName(), "url", url)
 		return ListModelsResponse{}, err
@@ -148,28 +158,32 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 }
 
 // ChatCompletions generates chat completions from the provider
-func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (CreateChatCompletionResponse, error) {
+func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (CreateChatCompletionResponse, error) {
 	providerID := ""
 	if p.GetID() != nil {
 		providerID = string(*p.GetID())
 	}
 	url := "/proxy/" + providerID + p.EndpointChat()
 
-	reqBody, err := json.Marshal(req)
+	reqBody, err := json.Marshal(clientReq)
 	if err != nil {
 		p.logger.Error("Failed to marshal request", err, "provider", p.GetName())
 		return CreateChatCompletionResponse{}, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
 		return CreateChatCompletionResponse{}, err
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
+	if authToken := ctx.Value("authToken"); authToken != nil {
+		req.Header.Set("Authorization", "Bearer "+authToken.(string))
+	}
 
-	response, err := p.client.Do(httpReq)
+	req.Header.Set("Content-Type", "application/json")
+
+	response, err := p.client.Do(req)
 	if err != nil {
 		p.logger.Error("Failed to send request", err, "provider", p.GetName(), "url", url)
 		return CreateChatCompletionResponse{}, err
@@ -192,7 +206,7 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, req CreateChatComple
 }
 
 // StreamChatCompletions generates chat completions from the provider using streaming
-func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChatCompletionRequest) (<-chan []byte, error) {
+func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (<-chan []byte, error) {
 	providerID := ""
 	if p.GetID() != nil {
 		providerID = string(*p.GetID())
@@ -200,34 +214,38 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, req CreateChat
 	url := "/proxy/" + providerID + p.EndpointChat()
 
 	// Enforce usage tracking for streaming completions
-	req.StreamOptions = &ChatCompletionStreamOptions{
+	clientReq.StreamOptions = &ChatCompletionStreamOptions{
 		IncludeUsage: true,
 	}
 
 	// Special case - cohere doesn't like stream_options, so we don't
 	// include it - probably they haven't implemented it yet in their OpenAI "compatible" API
 	if *p.GetID() == CohereID {
-		req.StreamOptions = nil
+		clientReq.StreamOptions = nil
 	}
 
-	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", url, "request", req)
+	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", url, "request", clientReq)
 
-	reqBody, err := json.Marshal(req)
+	reqBody, err := json.Marshal(clientReq)
 	if err != nil {
 		p.logger.Error("Failed to marshal request", err, "provider", p.GetName())
 		return nil, err
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
 		return nil, err
 	}
 
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "text/event-stream")
+	if authToken := ctx.Value("authToken"); authToken != nil {
+		req.Header.Set("Authorization", "Bearer "+authToken.(string))
+	}
 
-	response, err := p.client.Do(httpReq)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+
+	response, err := p.client.Do(req)
 	if err != nil {
 		p.logger.Error("Failed to send request", err, "provider", p.GetName(), "url", url)
 		return nil, err
