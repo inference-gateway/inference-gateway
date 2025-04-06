@@ -21,27 +21,30 @@ cp .env.frontend.example .env.frontend
 
 ```ini
 AUTH_ENABLED=true
-SECURE_COOKIES=false # Set to true if you are using HTTPS for production
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secure-random-salt
-NEXTAUTH_TRUST_HOST=true
-
-# Keycloak Configuration
-KEYCLOAK_ID=app-client
-KEYCLOAK_SECRET=very-secret
-KEYCLOAK_ISSUER=http://localhost:8080/realms/app-realm
+OIDC_ISSUER_URL=http://localhost:8080/realms/app-realm
+OIDC_CLIENT_ID=app-client
+OIDC_CLIENT_SECRET=very-secret
 ```
 
 3. Configure frontend environment (.env.frontend):
 
 ```ini
 AUTH_ENABLED="true"
+SECURE_COOKIES=false # Set to true if you are using HTTPS for production
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=very-secret
+NEXTAUTH_TRUST_HOST=true
+
+# Keycloak Configuration
+KEYCLOAK_ISSUER=http://localhost:8080/realms/app-realm
+KEYCLOAK_ID=app-client
+KEYCLOAK_SECRET=very-secret
 ```
 
-4. Start the services:
+1. Start the services:
 
 ```bash
-docker compose -f examples/docker-compose/authentication/docker-compose.yaml up -d
+docker compose -f docker-compose.yaml up
 ```
 
 ## Accessing the Application

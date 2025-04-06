@@ -42,18 +42,18 @@ func (m *MockIProvider) EXPECT() *MockIProviderMockRecorder {
 }
 
 // ChatCompletions mocks base method.
-func (m *MockIProvider) ChatCompletions(ctx context.Context, req providers.CreateChatCompletionRequest) (providers.CreateChatCompletionResponse, error) {
+func (m *MockIProvider) ChatCompletions(ctx context.Context, clientReq providers.CreateChatCompletionRequest) (providers.CreateChatCompletionResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChatCompletions", ctx, req)
+	ret := m.ctrl.Call(m, "ChatCompletions", ctx, clientReq)
 	ret0, _ := ret[0].(providers.CreateChatCompletionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ChatCompletions indicates an expected call of ChatCompletions.
-func (mr *MockIProviderMockRecorder) ChatCompletions(ctx, req any) *gomock.Call {
+func (mr *MockIProviderMockRecorder) ChatCompletions(ctx, clientReq any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletions", reflect.TypeOf((*MockIProvider)(nil).ChatCompletions), ctx, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletions", reflect.TypeOf((*MockIProvider)(nil).ChatCompletions), ctx, clientReq)
 }
 
 // GetAuthType mocks base method.
@@ -156,16 +156,16 @@ func (mr *MockIProviderMockRecorder) ListModels(ctx any) *gomock.Call {
 }
 
 // StreamChatCompletions mocks base method.
-func (m *MockIProvider) StreamChatCompletions(ctx context.Context, req providers.CreateChatCompletionRequest) (<-chan []byte, error) {
+func (m *MockIProvider) StreamChatCompletions(ctx context.Context, clientReq providers.CreateChatCompletionRequest) (<-chan []byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StreamChatCompletions", ctx, req)
+	ret := m.ctrl.Call(m, "StreamChatCompletions", ctx, clientReq)
 	ret0, _ := ret[0].(<-chan []byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // StreamChatCompletions indicates an expected call of StreamChatCompletions.
-func (mr *MockIProviderMockRecorder) StreamChatCompletions(ctx, req any) *gomock.Call {
+func (mr *MockIProviderMockRecorder) StreamChatCompletions(ctx, clientReq any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatCompletions", reflect.TypeOf((*MockIProvider)(nil).StreamChatCompletions), ctx, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatCompletions", reflect.TypeOf((*MockIProvider)(nil).StreamChatCompletions), ctx, clientReq)
 }
