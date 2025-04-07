@@ -10,11 +10,42 @@ image:
   tag: ""
 
 # Dependency configurations
-certManager:
+cert-manager:
   enabled: false
 
 keycloak:
   enabled: false
+
+kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorNamespaceSelector:
+        matchLabels:
+          monitoring: "true"
+
+grafana-operator:
+  grafana-operator:
+    watchNamespaces: ["monitoring"]
+
+monitoring:
+  enabled: false
+  metricsPort: 9464
+  prometheus:
+    enabled: false
+  grafana:
+    enabled: false
+
+ingress-nginx:
+  enabled: false
+  controller:
+    replicaCount: 1
+    service:
+      type: LoadBalancer
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
 
 # TODO - implement the helm chart for the UI
 # ui:
@@ -69,27 +100,6 @@ service:
   type: ClusterIP
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8080
-
-# Monitoring configuration
-kube-prometheus-stack:
-  prometheus:
-    prometheusSpec:
-      serviceMonitorSelectorNilUsesHelmValues: false
-      serviceMonitorNamespaceSelector:
-        matchLabels:
-          monitoring: "true"
-
-grafana-operator:
-  grafana-operator:
-    watchNamespaces: ["monitoring"]
-
-monitoring:
-  enabled: false
-  metricsPort: 9464
-  prometheus:
-    enabled: false
-  grafana:
-    enabled: false
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:

@@ -87,7 +87,8 @@ tasks:
           --set monitoring.prometheus.enabled=true \
           --set monitoring.grafana.enabled=true \
           --set keycloak.enabled=true \
-          --set certManager.enabled=true \
+          --set cert-manager.enabled=true \
+          --set ingress-nginx.enabled=true \
           --set ingress.enabled=true \
           --set autoscaling.enabled=true \
           charts/inference-gateway
