@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" (include "inference-gateway.fullname" .) }}
+  labels: {{ include "inference-gateway.labels" . | toYaml | nindent 4 }}
+data:
+  {{- if .Values.Config }}
+  {{- range $key, $value := .Values.Config }}
+  {{ $key }}: {{ $value | toYaml | nindent 4 }}
+  {{- end }}
+  {{- end }}

@@ -89,6 +89,12 @@ jobs:
 
           echo "new_release_version=$VERSION" >> $GITHUB_OUTPUT
 
+          # Update Chart.yaml version
+          sed -i "s/^version: .*/version: $VERSION/" charts/inference-gateway/Chart.yaml
+          git add charts/inference-gateway/Chart.yaml
+          git commit -m "chore: update helm chart version to $VERSION [skip ci]"
+          git push
+
           # Run actual release
           if semantic-release; then
             echo "Successfully released version $VERSION"
@@ -201,6 +207,48 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
           category: trivy
+
+  publish_helm_chart:
+    name: Publish Helm Chart
+    needs:
+      - github_release
+    if: needs.github_release.outputs.new_release_published == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.github_release.outputs.new_release_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.14.0
+
+      - name: Configure Helm
+        run: |
+          helm repo add inference-gateway https://ghcr.io/${{ github.repository }}
+          helm plugin install https://github.com/chartmuseum/helm-push.git
+
+      - name: Package Helm chart
+        run: |
+          cd charts/inference-gateway
+          helm dependency update
+          helm package . --version ${{ env.VERSION }} --app-version ${{ env.VERSION }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Helm chart
+        run: |
+          cd charts/inference-gateway
+          helm push inference-gateway-${{ env.VERSION }}.tgz oci://ghcr.io/${{ github.repository }}
 
   sign_containers:
     name: Sign Container Images

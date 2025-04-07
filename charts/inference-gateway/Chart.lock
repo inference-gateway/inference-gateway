@@ -1,0 +1,15 @@
+dependencies:
+- name: cert-manager
+  repository: https://charts.jetstack.io
+  version: v1.17.1
+- name: keycloak
+  repository: https://codecentric.github.io/helm-charts
+  version: 7.0.1
+- name: kube-prometheus-stack
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 69.6.1
+- name: grafana-operator
+  repository: https://grafana.github.io/helm-charts
+  version: v5.16.0
+digest: sha256:368f0ad23e01ff1f687df2f098deca617569a9a85f2b5beb282cb6666a059f4a
+generated: "2025-04-07T13:13:48.163992418Z"

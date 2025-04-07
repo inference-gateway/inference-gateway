@@ -1,0 +1,17 @@
+{{- if .Values.monitoring.grafana.enabled }}
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: grafana
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "inference-gateway.labels" . | nindent 4 }}
+    dashboards: "grafana"
+spec:
+  config:
+    security:
+      admin_user: admin
+      admin_password: admin
+    server:
+      root_url: "%(protocol)s://localhost:3000/"
+{{- end }}
