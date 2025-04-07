@@ -89,4 +89,5 @@ tasks:
           --set keycloak.enabled=true \
           --set certManager.enabled=true \
           --set ingress.enabled=true \
+          --set autoscaling.enabled=true \
           charts/inference-gateway
