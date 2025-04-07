@@ -70,7 +70,8 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8080
 
-kubePrometheusStack:
+# Monitoring configuration
+kube-prometheus-stack:
   prometheus:
     prometheusSpec:
       serviceMonitorSelectorNilUsesHelmValues: false
@@ -78,10 +79,10 @@ kubePrometheusStack:
         matchLabels:
           monitoring: "true"
 
-grafanaOperator:
-  watchNamespaces: ["monitoring"]
+grafana-operator:
+  grafana-operator:
+    watchNamespaces: ["monitoring"]
 
-# Monitoring configuration
 monitoring:
   enabled: false
   metricsPort: 9464
