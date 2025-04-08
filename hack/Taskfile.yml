@@ -71,7 +71,6 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --values ../charts/inference-gateway/values.yaml \
-          --set fullnameOverride=ig \
           inference-gateway ../charts/inference-gateway
 
   clean-services:
