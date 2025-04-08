@@ -175,6 +175,13 @@ spec:
                 name: inference-gateway
             - secretRef:
                 name: inference-gateway
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
 ---
 # Source: inference-gateway/templates/hpa.yaml
 apiVersion: autoscaling/v2
