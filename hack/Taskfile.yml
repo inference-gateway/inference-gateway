@@ -34,6 +34,7 @@ tasks:
           --create-namespace \
           --namespace cert-manager \
           --version 1.17.1 \
+          --set installCRDs=true \
           cert-manager jetstack/cert-manager
       - |
         helm upgrade --install \
