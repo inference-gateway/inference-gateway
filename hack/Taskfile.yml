@@ -60,8 +60,6 @@ tasks:
           --create-namespace \
           --namespace idp \
           --version 7.0.1 \
-          --set auth.adminUser=admin \
-          --set auth.adminPassword=admin \
           keycloakx codecentric/keycloakx
 
   test-helm-deploy:
