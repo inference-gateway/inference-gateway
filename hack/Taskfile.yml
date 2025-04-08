@@ -26,7 +26,7 @@ tasks:
       - |
         helm upgrade --install \
           --create-namespace \
-          --namespace ingress-nginx \
+          --namespace kube-system \
           --version 4.12.1 \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
@@ -40,6 +40,13 @@ tasks:
           --create-namespace \
           --namespace observability \
           --version 70.4.2 \
+          --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+          --set-string prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
+          --set prometheus.enabled=false \
+          --set alertmanager.enabled=false \
+          --set kubeStateMetrics.enabled=false \
+          --set nodeExporter.enabled=false \
+          --set grafana.enabled=false \
           kube-prometheus-stack prometheus-community/kube-prometheus-stack
       - |
         helm upgrade --install \
@@ -52,6 +59,8 @@ tasks:
           --create-namespace \
           --namespace idp \
           --version 7.0.1 \
+          --set auth.adminUser=admin \
+          --set auth.adminPassword=admin \
           keycloakx codecentric/keycloakx
 
   test-helm-deploy:
