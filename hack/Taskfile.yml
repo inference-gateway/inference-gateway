@@ -22,6 +22,7 @@ tasks:
       - helm repo add grafana https://grafana.github.io/helm-charts
       - helm repo add codecentric https://codecentric.github.io/helm-charts
       - helm repo add jetstack https://charts.jetstack.io
+      - helm repo add bitnami https://charts.bitnami.com/bitnami
       - |
         helm upgrade --install \
           --create-namespace \
@@ -58,7 +59,34 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace idp \
+          --version 16.6.2 \
+          --set global.postgresql.auth.username=dbusername \
+          --set global.postgresql.auth.password=dbpassword \
+          --set global.postgresql.auth.database=keycloak \
+          keycloak-db bitnami/postgresql \
+          --wait
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace idp \
           --version 7.0.1 \
+          --set command[0]="/opt/keycloak/bin/kc.sh" \
+          --set args[0]="--verbose" \
+          --set args[1]="start" \
+          --set args[2]="--http-port=8080" \
+          --set args[3]="--hostname-strict=false" \
+          --set args[4]="--spi-events-listener-jboss-logging-success-level=info" \
+          --set args[5]="--spi-events-listener-jboss-logging-error-level=warn" \
+          --set args[6]="--cache=local" \
+          --set dbchecker.enabled=true \
+          --set database.vendor=postgres \
+          --set database.hostname=keycloak-db-postgresql \
+          --set database.port=5432 \
+          --set database.username=dbusername \
+          --set database.password=dbpassword \
+          --set database.database=keycloak \
+          --set secrets.admin-creds.user=admin \
+          --set secrets.admin-creds.password=secret \
           keycloakx codecentric/keycloakx
 
   test-helm-deploy:
