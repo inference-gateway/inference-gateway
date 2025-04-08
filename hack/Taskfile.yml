@@ -99,6 +99,8 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --values ../charts/inference-gateway/values.yaml \
+          --set autoscaling.enabled=true \
+          --set ingress.enabled=true \
           inference-gateway ../charts/inference-gateway
 
   clean-services:
