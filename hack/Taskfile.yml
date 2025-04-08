@@ -11,38 +11,66 @@ tasks:
         helm template --debug --dry-run \
           ../charts/inference-gateway \
           --values ../charts/inference-gateway/values.yaml \
-          --set monitoring.prometheus.enabled=true \
-          --set monitoring.grafana.enabled=true \
-          --set keycloak.enabled=true \
-          --set cert-manager.enabled=true \
-          --set ingress-nginx.enabled=true \
-          --set ingress.enabled=true \
+          --set fullnameOverride=ig \
           --set autoscaling.enabled=true
+
+  test-deploy-infrastructure:
+    desc: "Deploy the infrastructure"
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      - helm repo add grafana https://grafana.github.io/helm-charts
+      - helm repo add codecentric https://codecentric.github.io/helm-charts
+      - helm repo add jetstack https://charts.jetstack.io
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace ingress-nginx \
+          --version 4.12.1 \
+          ingress-nginx ingress-nginx/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace cert-manager \
+          --version 1.17.1 \
+          cert-manager jetstack/cert-manager
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace observability \
+          --version 70.4.2 \
+          kube-prometheus-stack prometheus-community/kube-prometheus-stack
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace observability \
+          --version 5.17.0 \
+          grafana-operator grafana/grafana-operator
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace idp \
+          --version 7.0.1 \
+          keycloakx codecentric/keycloakx
 
   test-helm-deploy:
     desc: "deploy the helm chart to a local cluster"
     cmds:
-      - |
-        ctlptl apply -f Cluster.yaml
+      - task: test-deploy-infrastructure
       - helm dependency update ../charts/inference-gateway
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
           --values ../charts/inference-gateway/values.yaml \
-          --set monitoring.prometheus.enabled=true \
-          --set monitoring.grafana.enabled=true \
-          --set keycloak.enabled=true \
-          --set cert-manager.enabled=true \
-          --set ingress-nginx.enabled=true \
-          --set ingress.enabled=true \
-          --set autoscaling.enabled=true \
+          --set fullnameOverride=ig \
           inference-gateway ../charts/inference-gateway
 
   clean-services:
     desc: "Clean up the services"
     cmds:
-      - helm uninstall inference-gateway --namespace inference-gateway
+      - helm uninstall inference-gateway
 
   clean:
     desc: "Clean the gateway"

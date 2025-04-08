@@ -5,29 +5,3 @@ description: A Helm chart for Kubernetes inference gateway with optional depende
 type: application
 version: 0.1.0
 appVersion: "0.4.1"
-
-dependencies:
-  - name: cert-manager
-    version: "~1.17.0"
-    repository: "https://charts.jetstack.io"
-    condition: cert-manager.enabled
-  - name: keycloak
-    version: "~7.0.1"
-    repository: "https://codecentric.github.io/helm-charts"
-    condition: keycloak.enabled
-  - name: kube-prometheus-stack
-    version: "~69.6.0"
-    repository: "https://prometheus-community.github.io/helm-charts"
-    condition: monitoring.prometheus.enabled
-  - name: grafana-operator
-    version: "~5.17.0"
-    repository: "https://grafana.github.io/helm-charts"
-    condition: monitoring.grafana.enabled
-  - name: ingress-nginx
-    version: "~4.12.1"
-    repository: "https://kubernetes.github.io/ingress-nginx"
-    condition: ingress-nginx.enabled
-  # - name: inference-gateway-ui
-  #   version: ~0.1.0
-  #   repository: https://github.com/inference-gateway/ui/releases/download/charts
-  #   condition: ui.enabled
