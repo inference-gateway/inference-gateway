@@ -1,0 +1,50 @@
+---
+version: "3"
+
+tasks:
+  test-helm:
+    desc: "Run helm tests"
+    cmds:
+      - helm dependency update ../charts/inference-gateway
+      - helm lint ../charts/inference-gateway
+      - |
+        helm template --debug --dry-run \
+          ../charts/inference-gateway \
+          --values ../charts/inference-gateway/values.yaml \
+          --set monitoring.prometheus.enabled=true \
+          --set monitoring.grafana.enabled=true \
+          --set keycloak.enabled=true \
+          --set cert-manager.enabled=true \
+          --set ingress-nginx.enabled=true \
+          --set ingress.enabled=true \
+          --set autoscaling.enabled=true
+
+  test-helm-deploy:
+    desc: "deploy the helm chart to a local cluster"
+    cmds:
+      - |
+        ctlptl apply -f Cluster.yaml
+      - helm dependency update ../charts/inference-gateway
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace inference-gateway \
+          --values ../charts/inference-gateway/values.yaml \
+          --set monitoring.prometheus.enabled=true \
+          --set monitoring.grafana.enabled=true \
+          --set keycloak.enabled=true \
+          --set cert-manager.enabled=true \
+          --set ingress-nginx.enabled=true \
+          --set ingress.enabled=true \
+          --set autoscaling.enabled=true \
+          inference-gateway ../charts/inference-gateway
+
+  clean-services:
+    desc: "Clean up the services"
+    cmds:
+      - helm uninstall inference-gateway --namespace inference-gateway
+
+  clean:
+    desc: "Clean the gateway"
+    cmds:
+      - ctlptl delete -f Cluster.yaml

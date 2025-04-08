@@ -75,20 +75,3 @@ tasks:
     desc: "Run a dry-run of the release"
     cmds:
       - goreleaser release --config .goreleaser.yaml --clean --snapshot --verbose
-
-  test-helm:
-    desc: "Run helm tests"
-    cmds:
-      - helm dependency update charts/inference-gateway
-      - helm lint charts/inference-gateway
-      - |
-        helm template --debug --dry-run \
-          --values charts/inference-gateway/values.yaml \
-          --set monitoring.prometheus.enabled=true \
-          --set monitoring.grafana.enabled=true \
-          --set keycloak.enabled=true \
-          --set cert-manager.enabled=true \
-          --set ingress-nginx.enabled=true \
-          --set ingress.enabled=true \
-          --set autoscaling.enabled=true \
-          charts/inference-gateway
