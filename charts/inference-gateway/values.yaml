@@ -70,15 +70,17 @@ service:
 ingress:
   enabled: false
   className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: "selfsigned-issuer"
   hosts:
     - host: api.inference-gateway.local
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
-    - secretName: api-inference-gateway-tls
-      hosts:
+    - hosts:
         - api.inference-gateway.local
+      secretName: api-inference-gateway-tls
 
 resources:
   limits:

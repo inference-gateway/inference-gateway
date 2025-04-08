@@ -37,6 +37,15 @@ tasks:
           --set crds.enabled=true \
           cert-manager jetstack/cert-manager
       - |
+        kubectl apply -f - <<EOF
+        apiVersion: cert-manager.io/v1
+        kind: ClusterIssuer
+        metadata:
+          name: selfsigned-issuer
+        spec:
+          selfSigned: {}
+        EOF
+      - |
         helm upgrade --install \
           --create-namespace \
           --namespace observability \
@@ -92,7 +101,6 @@ tasks:
   test-helm-deploy:
     desc: "deploy the helm chart to a local cluster"
     cmds:
-      - task: test-deploy-infrastructure
       - helm dependency update ../charts/inference-gateway
       - |
         helm upgrade --install \
