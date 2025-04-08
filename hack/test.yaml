@@ -7,7 +7,7 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: ig
+  name: release-name-inference-gateway
   labels:
     helm.sh/chart: inference-gateway-0.1.0
     app.kubernetes.io/name: inference-gateway
@@ -71,7 +71,7 @@ data:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: ig
+  name: release-name-inference-gateway
   labels:
     helm.sh/chart: inference-gateway-0.1.0
     app.kubernetes.io/name: inference-gateway
@@ -90,7 +90,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: ig
+  name: release-name-inference-gateway
   labels:
     helm.sh/chart: inference-gateway-0.1.0
     app.kubernetes.io/name: inference-gateway
@@ -100,17 +100,17 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: ig
+  name: release-name-inference-gateway
 subjects:
   - kind: ServiceAccount
-    name: ig
+    name: release-name-inference-gateway
     namespace: default
 ---
 # Source: inference-gateway/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: ig
+  name: release-name-inference-gateway
   labels:
     helm.sh/chart: inference-gateway-0.1.0
     app.kubernetes.io/name: inference-gateway
@@ -132,7 +132,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ig
+  name: release-name-inference-gateway
   labels:
     helm.sh/chart: inference-gateway-0.1.0
     app.kubernetes.io/name: inference-gateway
@@ -153,7 +153,7 @@ spec:
         app.kubernetes.io/version: "0.4.1"
         app.kubernetes.io/managed-by: Helm
     spec:
-      serviceAccountName: ig
+      serviceAccountName: release-name-inference-gateway
       containers:
         - name: inference-gateway
           image: "ghcr.io/inference-gateway/inference-gateway:v0.4.1"
@@ -180,7 +180,7 @@ spec:
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: ig
+  name: release-name-inference-gateway
   labels:
     helm.sh/chart: inference-gateway-0.1.0
     app.kubernetes.io/name: inference-gateway
@@ -191,7 +191,7 @@ spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: ig
+    name: release-name-inference-gateway
   minReplicas: 1
   maxReplicas: 10
   metrics:
@@ -213,7 +213,7 @@ spec:
           name: requests_per_second
           selector:
             matchLabels:
-              app: ig
+              app: release-name-inference-gateway
         target:
           type: AverageValue
           averageValue: 100
