@@ -218,6 +218,7 @@ tasks:
                         port:
                           number: 8543
         EOF
+      - task: import-realm
 
   test-helm-deploy:
     desc: "deploy the helm chart to a local cluster"
@@ -246,3 +247,81 @@ tasks:
     desc: "Forward local ports to Keycloak service"
     cmds:
       - kubectl port-forward -n idp svc/keycloak-service 8180:8180 9000:9000
+
+  import-realm:
+    desc: "Import Keycloak realm using CRD"
+    cmds:
+      - |
+        kubectl -n idp apply -f - <<EOF
+        apiVersion: k8s.keycloak.org/v2alpha1
+        kind: KeycloakRealmImport
+        metadata:
+          name: inference-gateway-realm
+          namespace: idp
+          labels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
+            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/component: identity-provider
+            app.kubernetes.io/part-of: inference-gateway
+        spec:
+          keycloakCRName: keycloak
+          realm:
+            {
+              "realm": "inference-gateway-realm",
+              "enabled": true,
+              "registrationAllowed": false,
+              "displayName": "Example Keycloak Sign-In",
+              "displayNameHtml": "<h1 style=\"font-size: 40pt; font-weight: 400;\">Keycloak Sign-In</h1>",
+              "clients": [
+                {
+                  "clientId": "inference-gateway-client",
+                  "enabled": true,
+                  "protocol": "openid-connect",
+                  "standardFlowEnabled": true,
+                  "implicitFlowEnabled": false,
+                  "directAccessGrantsEnabled": true,
+                  "serviceAccountsEnabled": false,
+                  "publicClient": false,
+                  "redirectUris": ["http://www.inference-gateway.local:3000/*"],
+                  "webOrigins": ["http://www.inference-gateway.local:3000"],
+                  "clientAuthenticatorType": "client-secret",
+                  "secret": "very-secret",
+                  "protocolMappers": [
+                    {
+                      "name": "audience-mapper",
+                      "protocol": "openid-connect",
+                      "protocolMapper": "oidc-audience-mapper",
+                      "config": {
+                        "included.client.audience": "inference-gateway-client",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "add.to.id.token": "true",
+                        "add.to.access.token": "true"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "users": [
+                {
+                  "username": "user",
+                  "firstName": "Example",
+                  "lastName": "User",
+                  "email": "example@keycloak.org",
+                  "enabled": true,
+                  "credentials": [
+                    {
+                      "type": "password",
+                      "value": "password",
+                      "temporary": false
+                    }
+                  ],
+                  "clientRoles": {
+                    "account": ["manage-account"]
+                  },
+                  "realmRoles": []
+                }
+              ]
+            }
+        EOF
