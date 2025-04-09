@@ -74,29 +74,150 @@ tasks:
           --set global.postgresql.auth.database=keycloak \
           keycloak-db bitnami/postgresql \
           --wait
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/kubernetes.yml
       - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace idp \
-          --version 7.0.1 \
-          --set command[0]="/opt/keycloak/bin/kc.sh" \
-          --set args[0]="--verbose" \
-          --set args[1]="start" \
-          --set args[2]="--http-port=8080" \
-          --set args[3]="--hostname-strict=false" \
-          --set args[4]="--spi-events-listener-jboss-logging-success-level=info" \
-          --set args[5]="--spi-events-listener-jboss-logging-error-level=warn" \
-          --set args[6]="--cache=local" \
-          --set dbchecker.enabled=true \
-          --set database.vendor=postgres \
-          --set database.hostname=keycloak-db-postgresql \
-          --set database.port=5432 \
-          --set database.username=dbusername \
-          --set database.password=dbpassword \
-          --set database.database=keycloak \
-          --set secrets.admin-creds.user=admin \
-          --set secrets.admin-creds.password=secret \
-          keycloakx codecentric/keycloakx
+        kubectl apply -f - <<EOF
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: keycloak-cert
+          namespace: idp
+        spec:
+          secretName: keycloak-tls
+          issuerRef:
+            name: selfsigned-issuer
+            kind: ClusterIssuer
+          commonName: keycloak.inference-gateway.local
+          dnsNames:
+          - keycloak.inference-gateway.local
+          subject:
+            organizations:
+            - Inference Gateway
+            organizationalUnits:
+            - IT
+            countries:
+            - US
+            localities:
+            - San Francisco
+            provinces:
+            - California
+        EOF
+      - |
+        kubectl -n idp apply -f - <<EOF
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: keycloak-db-postgresql
+          labels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
+            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/component: identity-provider
+            app.kubernetes.io/part-of: inference-gateway
+        type: Opaque
+        stringData:
+          username: dbusername
+          password: dbpassword
+        EOF
+      - |
+        kubectl -n idp apply -f - <<EOF
+        apiVersion: k8s.keycloak.org/v2alpha1
+        kind: Keycloak
+        metadata:
+          name: keycloak
+          labels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
+            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/component: identity-provider
+            app.kubernetes.io/part-of: inference-gateway
+        spec:
+          instances: 2
+          startOptimized: false
+          ingress:
+            enabled: false
+          db:
+            vendor: postgres
+            host: keycloak-db-postgresql
+            usernameSecret:
+              name: keycloak-db-postgresql
+              key: username
+            passwordSecret:
+              name: keycloak-db-postgresql
+              key: password
+            database: keycloak
+          http:
+            httpEnabled: true
+            httpPort: 8180
+            httpsPort: 8543
+            tlsSecret: keycloak-tls
+          httpManagement:
+            port: 9000
+          hostname:
+            hostname: keycloak.inference-gateway.local
+            strict: true
+          # features:
+          #   disabled:
+          #     - admin
+          #     - step-up-authentication
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          scheduling:
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                        - keycloak
+                    topologyKey: kubernetes.io/hostname
+        EOF
+      - |
+        kubectl -n idp apply -f - <<EOF
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: keycloak
+          namespace: idp
+          labels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
+            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/component: identity-provider
+            app.kubernetes.io/part-of: inference-gateway
+          annotations:
+            # cert-manager.io/cluster-issuer: "selfsigned-issuer"
+            nginx.ingress.kubernetes.io/rewrite-target: /
+            nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        spec:
+          ingressClassName: nginx
+          tls:
+          - hosts:
+            - keycloak.inference-gateway.local
+            secretName: keycloak-tls
+          rules:
+            - host: keycloak.inference-gateway.local
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: keycloak-service
+                        port:
+                          number: 8543
+        EOF
 
   test-helm-deploy:
     desc: "deploy the helm chart to a local cluster"
@@ -120,3 +241,8 @@ tasks:
     desc: "Clean the gateway"
     cmds:
       - ctlptl delete -f Cluster.yaml
+
+  port-forward-keycloak:
+    desc: "Forward local ports to Keycloak service"
+    cmds:
+      - kubectl port-forward -n idp svc/keycloak-service 8180:8180 9000:9000
