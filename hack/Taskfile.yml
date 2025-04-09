@@ -197,7 +197,6 @@ tasks:
             app.kubernetes.io/component: identity-provider
             app.kubernetes.io/part-of: inference-gateway
           annotations:
-            # cert-manager.io/cluster-issuer: "selfsigned-issuer"
             nginx.ingress.kubernetes.io/rewrite-target: /
             nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         spec:
@@ -231,7 +230,35 @@ tasks:
           --values ../charts/inference-gateway/values.yaml \
           --set autoscaling.enabled=true \
           --set ingress.enabled=true \
+          --set envFrom.configMapRef=inference-gateway \
+          --set envFrom.secretRef=inference-gateway \
           inference-gateway ../charts/inference-gateway
+      - |
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: inference-gateway-client-secret
+          namespace: inference-gateway
+        type: Opaque
+        stringData:
+          OIDC_CLIENT_ID: inference-gateway-client
+          OIDC_CLIENT_SECRET: very-secret
+        EOF
+      - |
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: inference-gateway
+          namespace: inference-gateway
+        data:
+          ENABLE_AUTH: "true"
+          OIDC_ISSUER_URL: https://keycloak.inference-gateway.local/auth/realms/inference-gateway-realm
+        EOF
+      - |
+        kubectl -n inference-gateway rollout restart deployment inference-gateway
+        kubectl -n inference-gateway rollout status deployment inference-gateway
 
   clean-services:
     desc: "Clean up the services"
