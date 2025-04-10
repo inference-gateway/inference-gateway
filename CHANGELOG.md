@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.6](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.5...v0.5.0-rc.6) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Add permissions for contents and packages in artifacts workflow ([9540ea3](https://github.com/inference-gateway/inference-gateway/commit/9540ea31ff239d34cf452fd2132703f63d860af0))
+
 ## [0.5.0-rc.5](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.4...v0.5.0-rc.5) (2025-04-10)
 
 ### 👷 CI
