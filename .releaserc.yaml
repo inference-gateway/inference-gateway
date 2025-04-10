@@ -45,7 +45,9 @@ plugins:
 
   - - "@semantic-release/exec"
     - verifyConditions: "go mod tidy"
-      prepareCmd: 'sed -i ''s/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/'' config/meta.go'
+      prepareCmd: |
+        sed -i 's/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/' config/meta.go
+        sed -i 's/^version: .*/version: ${nextRelease.version}/' charts/inference-gateway/Chart.yaml
 
   - - "@semantic-release/github"
     - assets:
