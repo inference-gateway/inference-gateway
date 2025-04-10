@@ -228,7 +228,8 @@ tasks:
       - | # Trust the self-signed certificate
         kubectl create configmap keycloak-ca \
           -n inference-gateway \
-          --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)"
+          --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)" \
+          --dry-run=client -o yaml | kubectl apply --server-side -f -
       - |
         helm upgrade --install \
           --create-namespace \
