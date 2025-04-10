@@ -7,6 +7,12 @@ on:
       - published
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  security-events: write
+
 jobs:
   upload_artifacts:
     name: Upload Artifacts
@@ -65,6 +71,7 @@ jobs:
 
       - name: Upload Artifacts to Release
         env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           VERSION: ${{ github.event.release.tag_name }}
         run: |
           # Find all archives created by GoReleaser
