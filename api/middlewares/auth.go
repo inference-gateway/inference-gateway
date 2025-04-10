@@ -68,6 +68,11 @@ func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
 // Middleware implementation of the OIDCAuthenticator interface
 func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if c.Request.URL.Path == "/health" {
+			c.Next()
+			return
+		}
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
