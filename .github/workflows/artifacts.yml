@@ -17,9 +17,7 @@ jobs:
   upload_artifacts:
     name: Upload Artifacts
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: write
+    permissions: write-all
     steps:
       - uses: actions/create-github-app-token@v1.12.0
         id: app-token
