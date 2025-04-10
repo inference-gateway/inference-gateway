@@ -45,7 +45,7 @@ plugins:
 
   - - "@semantic-release/exec"
     - verifyConditions: "go mod tidy"
-      prepareCmd: 'sed -i ''s/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/'' config/version.go'
+      prepareCmd: 'sed -i ''s/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/'' config/meta.go'
 
   - - "@semantic-release/github"
     - assets:
@@ -57,7 +57,7 @@ plugins:
   - - "@semantic-release/git"
     - assets:
         - CHANGELOG.md
-        - config/version.go
+        - config/meta.go
       message: "chore(release): 🔖 ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
 
 repositoryUrl: "https://github.com/inference-gateway/inference-gateway"
