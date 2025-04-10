@@ -20,6 +20,7 @@ plugins:
         - { type: "style", release: "patch" }
         - { type: "test", release: "patch" }
         - { type: "build", release: "patch" }
+        - { type: "security", release: "patch" }
         - { type: "chore", release: "patch", scope: "!release" }
 
   - - "@semantic-release/release-notes-generator"
@@ -37,6 +38,7 @@ plugins:
           - { type: "style", section: "🎨 Miscellaneous" }
           - { type: "test", section: "✅ Miscellaneous" }
           - { type: "build", section: "🔨 Miscellaneous" }
+          - { type: "security", section: "🔒 Security" }
 
   - - "@semantic-release/changelog"
     - changelogFile: CHANGELOG.md
