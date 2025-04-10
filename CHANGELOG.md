@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.14](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.13...v0.5.0-rc.14) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Restore id-token permission in GitHub Actions workflow - need it for signing the container images ([6b9507f](https://github.com/inference-gateway/inference-gateway/commit/6b9507f598c44c1b5fc017e52edfd6e50e511b04))
+* Update Helm chart push destination to use repository owner instead of repository ([39e47a6](https://github.com/inference-gateway/inference-gateway/commit/39e47a69234bd603bfa34f8e024fcc9dbf4728b1))
+
 ## [0.5.0-rc.13](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.12...v0.5.0-rc.13) (2025-04-10)
 
 ### ♻️ Improvements
