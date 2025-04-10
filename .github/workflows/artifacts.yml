@@ -163,10 +163,6 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - scan_containers
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
     steps:
       - uses: actions/create-github-app-token@v1.12.0
         id: app-token
