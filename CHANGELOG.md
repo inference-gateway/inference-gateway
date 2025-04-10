@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.10](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.9...v0.5.0-rc.10) (2025-04-10)
+
+### 🔒 Security
+
+* Remove unnecessary permissions from upload_artifacts job ([e3d0eb0](https://github.com/inference-gateway/inference-gateway/commit/e3d0eb07fec14117ec50ce3a8b1d91daa44230c0))
+
 ## [0.5.0-rc.9](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.8...v0.5.0-rc.9) (2025-04-10)
 
 ### ♻️ Improvements
