@@ -164,17 +164,6 @@ jobs:
         with:
           version: v3.14.0
 
-      - name: Configure Helm
-        run: |
-          helm repo add inference-gateway https://ghcr.io/${{ github.repository }}
-          helm plugin install https://github.com/chartmuseum/helm-push.git
-
-      - name: Package Helm chart
-        run: |
-          cd charts/inference-gateway
-          helm dependency update
-          helm package . --version ${{ env.VERSION }} --app-version ${{ env.VERSION }}
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -182,7 +171,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Helm chart
+      - name: Package and Push Helm chart
         run: |
           cd charts/inference-gateway
-          helm push inference-gateway-${{ env.VERSION }}.tgz oci://ghcr.io/${{ github.repository }}
+          helm dependency update
+          helm package . --version ${{ env.VERSION }} --app-version ${{ env.VERSION }}
+          helm push inference-gateway-${{ env.VERSION }}.tgz oci://ghcr.io/${{ github.repository }}/charts
