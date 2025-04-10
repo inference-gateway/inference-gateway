@@ -12,13 +12,35 @@ jobs:
     name: Upload Artifacts
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/create-github-app-token@v1.12.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.BOT_GH_APP_ID }}
+          private-key: ${{ secrets.BOT_GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            inference-gateway
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git config --global commit.gpgsign false
+          git config --global commit.signoff true
+
       - name: Checkout code
         uses: actions/checkout@v4.2.2
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: false
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Go
         uses: actions/setup-go@v5.3.0
@@ -34,18 +56,15 @@ jobs:
         uses: docker/login-action@v3.3.0
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]
+          password: ${{ steps.app-token.outputs.token }}
 
       - name: Run GoReleaser
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           goreleaser release --clean --skip=announce,publish
 
       - name: Upload Artifacts to Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.release.tag_name }}
         run: |
           # Find all archives created by GoReleaser
@@ -80,18 +99,41 @@ jobs:
       - upload_artifacts
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/create-github-app-token@v1.12.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.BOT_GH_APP_ID }}
+          private-key: ${{ secrets.BOT_GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            inference-gateway
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git config --global commit.gpgsign false
+          git config --global commit.signoff true
+
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
         with:
           ref: ${{ github.ref }}
           persist-credentials: false
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3.3.0
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]
+          password: ${{ steps.app-token.outputs.token }}
 
       - name: Run Vulnerability Scanning
         uses: aquasecurity/trivy-action@0.29.0
@@ -119,6 +161,28 @@ jobs:
       packages: write
       id-token: write
     steps:
+      - uses: actions/create-github-app-token@v1.12.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.BOT_GH_APP_ID }}
+          private-key: ${{ secrets.BOT_GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            inference-gateway
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git config --global commit.gpgsign false
+          git config --global commit.signoff true
+
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.8.1
         with:
@@ -128,8 +192,8 @@ jobs:
         uses: docker/login-action@v3.4.0
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]
+          password: ${{ steps.app-token.outputs.token }}
 
       - name: Extract metadata from previous job
         id: meta
@@ -154,10 +218,35 @@ jobs:
     env:
       VERSION: ${{ github.event.release.tag_name }}
     steps:
+      - uses: actions/create-github-app-token@v1.12.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.BOT_GH_APP_ID }}
+          private-key: ${{ secrets.BOT_GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            inference-gateway
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git config --global commit.gpgsign false
+          git config --global commit.signoff true
+
       - name: Checkout code
         uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
+          ref: ${{ github.ref }}
+          persist-credentials: false
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.0
@@ -168,8 +257,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]
+          password: ${{ steps.app-token.outputs.token }}
 
       - name: Package and Push Helm chart
         run: |
