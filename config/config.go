@@ -13,7 +13,6 @@ import (
 // Config holds the configuration for the Inference Gateway
 type Config struct {
 	// General settings
-	ApplicationName string `env:"APPLICATION_NAME, default=inference-gateway" description:"The name of the application"`
 	Environment     string `env:"ENVIRONMENT, default=production" description:"The environment"`
 	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
 	EnableAuth      bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`

@@ -3,7 +3,6 @@
 ### General settings
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
-| APPLICATION_NAME | `inference-gateway` | The name of the application |
 | ENVIRONMENT | `production` | The environment |
 | ENABLE_TELEMETRY | `false` | Enable telemetry |
 | ENABLE_AUTH | `false` | Enable authentication |

@@ -8,7 +8,6 @@ metadata:
     app: inference-gateway
 data:
   # General settings
-  APPLICATION_NAME: "inference-gateway"
   ENVIRONMENT: "production"
   ENABLE_TELEMETRY: "false"
   ENABLE_AUTH: "false"
