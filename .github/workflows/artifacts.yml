@@ -56,20 +56,20 @@ jobs:
               continue
             fi
             
-            echo "Uploading $file to release v${{ env.VERSION }}"
-            gh release upload v${{ env.VERSION }} "$file" --clobber
+            echo "Uploading $file to release ${{ env.VERSION }}"
+            gh release upload ${{ env.VERSION }} "$file" --clobber
           done
 
           # Upload checksums file if it exists
           if [ -f "dist/checksums.txt" ]; then
-            gh release upload v${{ env.VERSION }} "dist/checksums.txt" --clobber
+            gh release upload ${{ env.VERSION }} "dist/checksums.txt" --clobber
           fi
 
       - name: Push container images
         env:
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          docker push ghcr.io/${{ github.repository }}:v${{ env.VERSION }}
+          docker push ghcr.io/${{ github.repository }}:${{ env.VERSION }}
           if [[ ! "${{ env.VERSION }}" =~ -rc ]]; then
             docker push ghcr.io/${{ github.repository }}:latest
           fi
@@ -96,7 +96,7 @@ jobs:
       - name: Run Vulnerability Scanning
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: "ghcr.io/${{ github.repository }}:v${{ github.event.release.tag_name }}"
+          image-ref: "ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}"
           exit-code: "0"
           format: "sarif"
           output: "trivy-results.sarif"
