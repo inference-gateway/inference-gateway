@@ -89,10 +89,10 @@ jobs:
           echo "new_release_version=$VERSION" >> $GITHUB_OUTPUT
 
           # Update Chart.yaml version
-          sed -i "s/^version: .*/version: $VERSION/" charts/inference-gateway/Chart.yaml
-          git add charts/inference-gateway/Chart.yaml
-          git commit -m "chore: update helm chart version to $VERSION [skip ci]"
-          git push
+          # sed -i "s/^version: .*/version: $VERSION/" charts/inference-gateway/Chart.yaml
+          # git add charts/inference-gateway/Chart.yaml
+          # git commit -m "chore: update helm chart version to $VERSION [skip ci]"
+          # git push
 
           # Run actual release
           if semantic-release; then
