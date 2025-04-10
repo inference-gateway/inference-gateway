@@ -57,7 +57,7 @@ plugins:
   - - "@semantic-release/git"
     - assets:
         - CHANGELOG.md
-        - config/config.go
+        - config/version.go
       message: "chore(release): 🔖 ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
 
 repositoryUrl: "https://github.com/inference-gateway/inference-gateway"
