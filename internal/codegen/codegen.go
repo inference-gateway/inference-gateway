@@ -46,6 +46,8 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
+const VERSION = "0.1.0"
+
 // Config holds the configuration for the Inference Gateway
 type Config struct {
 	{{- range $section := .Sections }}
@@ -129,9 +131,10 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 // The string representation of Config
 func (cfg *Config) String() string {
     return fmt.Sprintf(
-        "Config{ApplicationName:%s, Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
+        "Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
             "OIDC:%+v, Server:%+v, Providers:%+v}",
         cfg.ApplicationName,
+        VERSION,
         cfg.Environment,
         cfg.EnableTelemetry,
         cfg.EnableAuth,

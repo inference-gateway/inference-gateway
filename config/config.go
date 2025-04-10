@@ -79,16 +79,18 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	return *cfg, nil
 }
 
-// String returns a string representation of the config with sensitive fields redacted
-func (c Config) String() string {
+// The string representation of Config
+func (cfg *Config) String() string {
 	return fmt.Sprintf(
-		"Config{ApplicationName:%s, Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
-			"OIDC:%+v, Server:%+v, Providers:[REDACTED]}",
-		c.ApplicationName,
-		c.Environment,
-		c.EnableTelemetry,
-		c.EnableAuth,
-		c.OIDC,
-		c.Server,
+		"Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
+			"OIDC:%+v, Server:%+v, Providers:%+v}",
+		cfg.ApplicationName,
+		VERSION,
+		cfg.Environment,
+		cfg.EnableTelemetry,
+		cfg.EnableAuth,
+		cfg.OIDC,
+		cfg.Server,
+		cfg.Providers,
 	)
 }
