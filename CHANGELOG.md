@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.1...v0.5.0-rc.2) (2025-04-10)
+
+### ✨ Features
+
+* Add application version parameter to configuration ([c8d7057](https://github.com/inference-gateway/inference-gateway/commit/c8d7057b1e8883d19ddb312e23edc692818fb710))
+
+### ♻️ Improvements
+
+* Add String method to Config for improved string representation ([1d4dfda](https://github.com/inference-gateway/inference-gateway/commit/1d4dfdad0d360707522d25b6ecaeba6c38ee761a))
+* Define application name and version constants; update String method to use constants ([60ffca5](https://github.com/inference-gateway/inference-gateway/commit/60ffca5b0399bfd306b257e54d8b689548b74a9c))
+* Remove hardcoded application name from tests and update OpenTelemetry initialization to use constants ([0ade1c5](https://github.com/inference-gateway/inference-gateway/commit/0ade1c59fdcfc96309170513e9ee0f330aa78426))
+* Remove VERSION constant and update String method to use APPLICATION_NAME constant ([3a225d4](https://github.com/inference-gateway/inference-gateway/commit/3a225d481f52dca961bbef9f57e183a377437d11))
+* Run task generate - remove APPLICATION_NAME from configuration files and update related examples ([d061a84](https://github.com/inference-gateway/inference-gateway/commit/d061a8486d53496171afc567e63ff1acf06b32f5))
+
+### 🐛 Bug Fixes
+
+* Comment out temporarily Helm chart version update commands in release workflow ([79f99c0](https://github.com/inference-gateway/inference-gateway/commit/79f99c08f8e8f24a71526cf58993311a2a1e13f9))
+* Correct indentation for prepareCmd in semantic-release configuration ([c2d4003](https://github.com/inference-gateway/inference-gateway/commit/c2d40036b16174be1cf08641d0953d14ca43f98f))
+* Migrate the configuration of the linter to the latest ([1e838ed](https://github.com/inference-gateway/inference-gateway/commit/1e838ed3957be585df3a8b2aa05a011d59df3fd2))
+* Update prepareCmd to reference meta.go instead of version.go in semantic-release configuration ([3dc5b7b](https://github.com/inference-gateway/inference-gateway/commit/3dc5b7bfd49f3d69343b029fc979ec99296ba51e))
+* Update prepareCmd to set Helm chart version in Chart.yaml during release process ([82d222d](https://github.com/inference-gateway/inference-gateway/commit/82d222d157408760a449d875366a743ae40579a0))
+* Update release assets to include version.go instead of config.go ([af509c6](https://github.com/inference-gateway/inference-gateway/commit/af509c66a1ecbec98e0afc82561715853396c218))
+
+### 🔧 Miscellaneous
+
+* Add debug logging for loaded configuration in debug and development environments ([36a22df](https://github.com/inference-gateway/inference-gateway/commit/36a22dfb328ccdd5df03c6a9be40c7293fd89339))
+* update helm chart version to 0.5.0-rc.2 [skip ci] ([c34087b](https://github.com/inference-gateway/inference-gateway/commit/c34087b96e4cbbadcb7a9fd1a242ff1a46c14bed))
+* Update Keycloak CA configmap creation to use server-side apply with dry-run so it could be executed and produce the same result in idempotent way ([9fa238e](https://github.com/inference-gateway/inference-gateway/commit/9fa238e918212f13d3c1c70978ba142978eed9a9))
+
+### ✅ Miscellaneous
+
+* Update image tag for inference-gateway deployment to 0.5.0-rc.1 ([0e7a88b](https://github.com/inference-gateway/inference-gateway/commit/0e7a88b52730244d7f23bee19cebbe762bec394d))
+
+### 🔨 Miscellaneous
+
+* Add semantic-release dry run to Taskfile for release process ([abf5ed8](https://github.com/inference-gateway/inference-gateway/commit/abf5ed8b7b040ddabec58cb27d3eafd371cb6569))
+
 ## [0.5.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.4.1...v0.5.0-rc.1) (2025-04-10)
 
 ### ✨ Features
