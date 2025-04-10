@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -76,4 +77,18 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	}
 
 	return *cfg, nil
+}
+
+// String returns a string representation of the config with sensitive fields redacted
+func (c Config) String() string {
+	return fmt.Sprintf(
+		"Config{ApplicationName:%s, Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
+			"OIDC:%+v, Server:%+v, Providers:[REDACTED]}",
+		c.ApplicationName,
+		c.Environment,
+		c.EnableTelemetry,
+		c.EnableAuth,
+		c.OIDC,
+		c.Server,
+	)
 }
