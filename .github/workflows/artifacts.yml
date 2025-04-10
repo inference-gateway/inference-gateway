@@ -173,4 +173,4 @@ jobs:
           cd charts/inference-gateway
           helm dependency update
           helm package . --version ${{ env.VERSION }} --app-version ${{ env.VERSION }}
-          helm push inference-gateway-${{ env.VERSION }}.tgz oci://ghcr.io/${{ github.repository }}/charts
+          helm push inference-gateway-${{ env.VERSION }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
