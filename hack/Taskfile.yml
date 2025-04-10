@@ -91,7 +91,8 @@ tasks:
             kind: ClusterIssuer
           commonName: keycloak.inference-gateway.local
           dnsNames:
-          - keycloak.inference-gateway.local
+            - keycloak.inference-gateway.local
+            - keycloak-service.idp.svc.cluster.local
           subject:
             organizations:
             - Inference Gateway
@@ -254,7 +255,7 @@ tasks:
           namespace: inference-gateway
         data:
           ENABLE_AUTH: "true"
-          OIDC_ISSUER_URL: https://keycloak.inference-gateway.local/auth/realms/inference-gateway-realm
+          OIDC_ISSUER_URL: https://keycloak-service.idp.svc.cluster.local:8543/realms/inference-gateway-realm
         EOF
       - |
         kubectl -n inference-gateway rollout restart deployment inference-gateway
@@ -269,11 +270,6 @@ tasks:
     desc: "Clean the gateway"
     cmds:
       - ctlptl delete -f Cluster.yaml
-
-  port-forward-keycloak:
-    desc: "Forward local ports to Keycloak service"
-    cmds:
-      - kubectl port-forward -n idp svc/keycloak-service 8180:8180 9000:9000
 
   import-realm:
     desc: "Import Keycloak realm using CRD"
