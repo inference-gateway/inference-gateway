@@ -11,7 +11,7 @@ permissions:
   contents: write
   packages: write
   security-events: write
-  # id-token: write
+  id-token: write
 
 jobs:
   upload_artifacts:
