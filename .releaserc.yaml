@@ -60,6 +60,7 @@ plugins:
     - assets:
         - CHANGELOG.md
         - config/meta.go
+        - charts/inference-gateway/Chart.yaml
       message: "chore(release): 🔖 ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
 
 repositoryUrl: "https://github.com/inference-gateway/inference-gateway"
