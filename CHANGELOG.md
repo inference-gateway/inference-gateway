@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.4](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.3...v0.5.0-rc.4) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Refactor Helm chart packaging and pushing steps in CI workflow ([ce21611](https://github.com/inference-gateway/inference-gateway/commit/ce216118fd4ef1d76b6507cd3b07d02d0388b34c))
+* Update release upload commands to remove redundant 'v' prefix for version ([255852e](https://github.com/inference-gateway/inference-gateway/commit/255852ea12c86bf6e82ef4d624218be159fd1871))
+
 ## [0.5.0-rc.3](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.2...v0.5.0-rc.3) (2025-04-10)
 
 ### ✨ Features
