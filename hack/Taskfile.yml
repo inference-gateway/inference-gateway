@@ -234,6 +234,7 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --values ../charts/inference-gateway/values.yaml \
+          --set image.tag=0.5.0-rc.1 \
           --set autoscaling.enabled=true \
           --set ingress.enabled=true \
           --set envFrom.configMapRef=inference-gateway \
