@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.12](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.11...v0.5.0-rc.12) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Try with the standard GITHUB access token ([fc3e555](https://github.com/inference-gateway/inference-gateway/commit/fc3e55578b0fcd9afecd1c6fc5eceff2b64f876f))
+* Update appVersion in Chart.yaml during release preparation ([84f6ac6](https://github.com/inference-gateway/inference-gateway/commit/84f6ac6997b223cab7773dd604ab8e6b99ea56aa))
+
 ## [0.5.0-rc.11](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.10...v0.5.0-rc.11) (2025-04-10)
 
 ### 🔒 Security
