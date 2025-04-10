@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.13](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.12...v0.5.0-rc.13) (2025-04-10)
+
+### ♻️ Improvements
+
+* Cleanup - Simplify GitHub Actions workflow by removing GitHub App token steps and using GITHUB_TOKEN ([23d7cf6](https://github.com/inference-gateway/inference-gateway/commit/23d7cf689b86113b7cd48d2e00bf4e60ff9a73f9))
+
+### 🐛 Bug Fixes
+
+* Update permissions to allow write access for contents in GitHub Actions workflow to allow it to upload security scans ([9ffd72c](https://github.com/inference-gateway/inference-gateway/commit/9ffd72cca49c60350705ea6196b2cc5884adbc2d))
+
 ## [0.5.0-rc.12](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.11...v0.5.0-rc.12) (2025-04-10)
 
 ### 🐛 Bug Fixes
