@@ -45,7 +45,7 @@ plugins:
 
   - - "@semantic-release/exec"
     - verifyConditions: "go mod tidy"
-    - prepareCmd: 'sed -i ''s/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/'' config/version.go'
+      prepareCmd: 'sed -i ''s/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/'' config/version.go'
 
   - - "@semantic-release/github"
     - assets:
