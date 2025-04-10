@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.4.1...v0.5.0-rc.1) (2025-04-10)
+
+### ✨ Features
+
+* Add inference-gateway Helm chart with dependencies and monitoring support ([ebd9942](https://github.com/inference-gateway/inference-gateway/commit/ebd9942db53ea434067262ef6baf8a10acf9e23a))
+* Add ingress-nginx dependency and update configurations in values.yaml, Chart.yaml, and Chart.lock default to false ([3a92e81](https://github.com/inference-gateway/inference-gateway/commit/3a92e81fe95607328a10dfc9929be24402355b0d))
+
+### ♻️ Improvements
+
+* Enable autoscaling for inference-gateway with updated max replicas ([69af532](https://github.com/inference-gateway/inference-gateway/commit/69af532f7d2c70d28e561b18b0699dc7e6ab63b9))
+* Keep it simple - refactor code structure for improved readability and maintainability ([912361e](https://github.com/inference-gateway/inference-gateway/commit/912361e5fb8290c3825ae95c041da57ff6efb39a))
+
+### 🐛 Bug Fixes
+
+* Add missing installCRDs flag for cert-manager installation ([2211a0b](https://github.com/inference-gateway/inference-gateway/commit/2211a0b2ff07e6d27bd15fff0e78cb1ed561fdc5))
+* Correct image tag formatting in deployment.yaml ([dd5b0b9](https://github.com/inference-gateway/inference-gateway/commit/dd5b0b9f059dac11eb9d6fa1041b4458b33013c5))
+* Correct kube-prometheus-stack and grafana-operator configuration in values.yaml - this is how to update dependencies values ([0788cc2](https://github.com/inference-gateway/inference-gateway/commit/0788cc2c2abada7f00534a862117cd12224d320a))
+* Remove default admin credentials for keycloakx installation ([b4fec38](https://github.com/inference-gateway/inference-gateway/commit/b4fec38662b6734de01e934ad6c27942b6c41251))
+* Remove default fullnameOverride value in values.yaml ([11eec4f](https://github.com/inference-gateway/inference-gateway/commit/11eec4ff82b9a0b98d289b388c88b9303b5bb501))
+* Remove fullnameOverride setting for inference-gateway installation ([318c89b](https://github.com/inference-gateway/inference-gateway/commit/318c89be51990f6d866e2acd7f773289e8440cdb))
+* Update cert-manager installation flag from installCRDs to crds.enabled ([77d53fe](https://github.com/inference-gateway/inference-gateway/commit/77d53fe48f5175532e826f8313491f5ef5c04025))
+* Update liveness and readiness probe paths to /health ([f063e3c](https://github.com/inference-gateway/inference-gateway/commit/f063e3c678af95b2c5e5844f981ff34ff2feaad6))
+* Update liveness and readiness probe paths to /health and change ingress-nginx namespace to kube-system ([250153f](https://github.com/inference-gateway/inference-gateway/commit/250153fcc0ac2ef86d65e06e4116bbc9701b65c0))
+
+### 🔧 Miscellaneous
+
+* Add Bitnami PostgreSQL and update Keycloak configuration in Taskfile ([f39d232](https://github.com/inference-gateway/inference-gateway/commit/f39d23246c4d29aa9dc8269b94d870227ec0fbbd))
+* Add import-realm task to Taskfile for Keycloak realm configuration ([f36fa18](https://github.com/inference-gateway/inference-gateway/commit/f36fa1846828e9a690205000bf00886a675d6faa))
+* Add Keycloak resources and update ingress configuration in Taskfile ([abfc2e6](https://github.com/inference-gateway/inference-gateway/commit/abfc2e6054b78ff884dc1ec4c70252bf875a1737))
+* Add more metadata to chart ([e838572](https://github.com/inference-gateway/inference-gateway/commit/e838572807eadc3475bfafc835a48f84eb7a24fd))
+* Add new line at the end of the file ([c21fb92](https://github.com/inference-gateway/inference-gateway/commit/c21fb92073ca5f89118d1c14e5199f736638ac70))
+* Add port configurations for loadbalancer in Cluster.yaml ([7845fae](https://github.com/inference-gateway/inference-gateway/commit/7845fae72a3e7db219d36680403e27fc4a4f7ea1))
+* Add resource requests and limits for inference-gateway deployment ([fed2977](https://github.com/inference-gateway/inference-gateway/commit/fed2977975d0f2e668b561b6e3a8875b881565fd))
+* Add self-signed certificate issuer and update ingress annotations for inference-gateway ([3bf0f8c](https://github.com/inference-gateway/inference-gateway/commit/3bf0f8c67161de14f8a9eeaf763846c7b7e85507))
+* Hack refactor helm chart, fix the Configmap generation, add good defaults ([308bb0c](https://github.com/inference-gateway/inference-gateway/commit/308bb0c9894f9afd77e9fd69a14110722f52ff2c))
+* Remove obsolete test.yaml file from hack directory ([4fdf981](https://github.com/inference-gateway/inference-gateway/commit/4fdf981e1a46e801a1cda42225faf877ccbd4a59))
+* Remove persist-credentials option from GitHub checkout action ([45ad2f4](https://github.com/inference-gateway/inference-gateway/commit/45ad2f4738fd247cc7607c33c5ee7fd106ff460c))
+* Update appPort and runArgs in devcontainer configuration ([c521601](https://github.com/inference-gateway/inference-gateway/commit/c521601e8511dcc88976a8bae48263e0ae139d75))
+* Update grafana-operator version to v5.17.0 in Chart.yaml and Chart.lock ([29bcf76](https://github.com/inference-gateway/inference-gateway/commit/29bcf768732addc7e1ede610d98f29c5c1590a35))
+* update helm chart version to 0.5.0-rc.1 [skip ci] ([0c834bf](https://github.com/inference-gateway/inference-gateway/commit/0c834bffe37c0e9b3ff1493c3a29d70e55cea26b))
+* Update inference-gateway deployment with secrets and config map ([56ee561](https://github.com/inference-gateway/inference-gateway/commit/56ee561dd6ad9b71d81d4069c8b29336d99763ae))
+* Update ingress host and TLS configuration for inference-gateway ([d6cfa25](https://github.com/inference-gateway/inference-gateway/commit/d6cfa250062f0ecf85c69b30a74db6e2f16e3ba8))
+* Update Keycloak hostname and enhance helm deployment with CA trust configuration ([a7d4fa2](https://github.com/inference-gateway/inference-gateway/commit/a7d4fa2f779b75a2e5f29948ce8e28626b2340d1))
+* Update Keycloak service references and remove obsolete port-forward task ([34758ee](https://github.com/inference-gateway/inference-gateway/commit/34758ee1948da1ab73cf76940f4c5f5945a04d64))
+* Update resource names to use release-name-inference-gateway instead of ig ([ffc1b82](https://github.com/inference-gateway/inference-gateway/commit/ffc1b82942d05bf2ef9528f9aacaa599583db57b))
+* Update resource requests and limits for inference-gateway ([35ebb55](https://github.com/inference-gateway/inference-gateway/commit/35ebb559b215314273fbe3b078045008d476faf2))
+
 ## [0.4.1](https://github.com/inference-gateway/inference-gateway/compare/v0.4.0...v0.4.1) (2025-04-06)
 
 ### 🐛 Bug Fixes
