@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.11](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.10...v0.5.0-rc.11) (2025-04-10)
+
+### 🔒 Security
+
+* Comment out unnecessary permissions in artifacts workflow ([c34db50](https://github.com/inference-gateway/inference-gateway/commit/c34db5008e53f0572347029b99c27251a72783d2))
+
 ## [0.5.0-rc.10](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.9...v0.5.0-rc.10) (2025-04-10)
 
 ### 🔒 Security
