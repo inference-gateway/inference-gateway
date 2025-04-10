@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.3](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.2...v0.5.0-rc.3) (2025-04-10)
+
+### ✨ Features
+
+* Enhance release workflow with GitHub App token management and artifact uploads ([1dcb38d](https://github.com/inference-gateway/inference-gateway/commit/1dcb38d75859f24a54c113bf1bf9481d2de319eb))
+
+### 🐛 Bug Fixes
+
+* Include Chart.yaml in assets for semantic-release ([9a7a16a](https://github.com/inference-gateway/inference-gateway/commit/9a7a16a04ea82e4d28a2b19f771d7d095c064d41))
+
 ## [0.5.0-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.1...v0.5.0-rc.2) (2025-04-10)
 
 ### ✨ Features
