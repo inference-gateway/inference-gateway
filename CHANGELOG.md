@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.9](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.8...v0.5.0-rc.9) (2025-04-10)
+
+### ♻️ Improvements
+
+* Debug if it's a local issue or configuration issue ([5e87d94](https://github.com/inference-gateway/inference-gateway/commit/5e87d945221c860b0ef45c135d38e76403c6cdd0))
+
 ## [0.5.0-rc.8](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.7...v0.5.0-rc.8) (2025-04-10)
 
 ### ♻️ Improvements
