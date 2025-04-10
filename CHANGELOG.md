@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.5](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.4...v0.5.0-rc.5) (2025-04-10)
+
+### 👷 CI
+
+* **release:** Integrate GitHub App token management for artifact uploads and container scans ([30a5a0d](https://github.com/inference-gateway/inference-gateway/commit/30a5a0d38ae77034e418417d48cfd00edcd3d8de))
+
 ## [0.5.0-rc.4](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.3...v0.5.0-rc.4) (2025-04-10)
 
 ### 🐛 Bug Fixes
