@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.7](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.6...v0.5.0-rc.7) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Remove redundant permissions from sign_containers job in artifacts workflow ([ecff024](https://github.com/inference-gateway/inference-gateway/commit/ecff024e5eebecb55ec95479489688d8c7530708))
+* Remove unnecessary environment variables and options from GitHub Actions jobs ([a16f4a7](https://github.com/inference-gateway/inference-gateway/commit/a16f4a7f6667c29dd9f819412cd21e22f53d80b5))
+
 ## [0.5.0-rc.6](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.5...v0.5.0-rc.6) (2025-04-10)
 
 ### 🐛 Bug Fixes
