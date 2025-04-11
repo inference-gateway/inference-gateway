@@ -69,10 +69,11 @@ jobs:
 
       - name: Push container images
         env:
-          VERSION: ${{ github.event.release.tag_name }}
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          docker push ghcr.io/${{ github.repository }}:${{ env.VERSION }}
-          if [[ ! "${{ env.VERSION }}" =~ -rc ]]; then
+          VERSION=${TAG#v}
+          docker push ghcr.io/${{ github.repository }}:${VERSION}
+          if [[ ! "${{ env.TAG }}" =~ -rc ]]; then
             docker push ghcr.io/${{ github.repository }}:latest
           fi
 
