@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.23](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.22...v0.5.0-rc.23) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Add TAG environment variable to sign container images job ([c82b6c8](https://github.com/inference-gateway/inference-gateway/commit/c82b6c85f430bd814986c132540b2f57057a9465))
+
 ## [0.5.0-rc.22](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.21...v0.5.0-rc.22) (2025-04-11)
 
 ### 🐛 Bug Fixes
