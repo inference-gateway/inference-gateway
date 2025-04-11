@@ -140,10 +140,7 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
             type=sha,format=long
-            type=raw,value=latest,enable=${{ !contains(github.ref, '-rc') }}
 
       - name: Sign container image
         run: |
