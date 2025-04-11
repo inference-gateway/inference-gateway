@@ -2,6 +2,17 @@
 
 This example demonstrates the simplest deployment of the Inference Gateway using Helm.
 
+## Table of Contents
+
+- [Basic Deployment Example](#basic-deployment-example)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Configuration](#configuration)
+    - [Gateway Settings](#gateway-settings)
+  - [Cleanup](#cleanup)
+
 ## Architecture
 
 - **Gateway**: Inference Gateway deployed via helm chart

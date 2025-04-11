@@ -6,6 +6,18 @@ This example demonstrates an agent-based deployment pattern with the Inference G
 - Helm chart for gateway deployment
 - Test deployment for agent monitoring
 
+## Table of Contents
+
+- [Agent Example](#agent-example)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Configuration](#configuration)
+    - [Agent Settings](#agent-settings)
+    - [Test Deployment](#test-deployment)
+  - [Cleanup](#cleanup)
+
 ## Architecture
 
 - **Gateway**: Inference Gateway deployed via helm chart
