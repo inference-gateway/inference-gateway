@@ -376,6 +376,13 @@ tasks:
           -d "username=user" \
           -d "password=password" | jq -r .access_token
 
+  print-access-token-payload:
+    desc: "Print the decoded access token payload"
+    cmds:
+      - |
+        ACCESS_TOKEN=$(task fetch-access-token)
+        echo $ACCESS_TOKEN | tr '.' '\n' | sed -n 2p | base64 -d | jq .
+
   fetch-models:
     desc: "List all LLMs from the Inference-Gateway"
     cmds:
