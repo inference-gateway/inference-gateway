@@ -37,9 +37,7 @@ func main() {
 	}
 
 	// Log config in debug mode
-	if cfg.Environment == "debug" || cfg.Environment == "development" {
-		logger.Debug("Loaded config", "config", cfg.String())
-	}
+	logger.Debug("Loaded config", "config", cfg.String())
 
 	// Initialize OpenTelemetry Prometheus exporter Server
 	var telemetryImpl otel.OpenTelemetry
