@@ -2,6 +2,249 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.24](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.23...v0.5.0-rc.24) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Add labels to GitHub release configuration ([f4fe902](https://github.com/inference-gateway/inference-gateway/commit/f4fe902e0d791f80642ed5db8441b765bc2eddbe))
+
+## [0.5.0-rc.23](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.22...v0.5.0-rc.23) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Add TAG environment variable to sign container images job ([c82b6c8](https://github.com/inference-gateway/inference-gateway/commit/c82b6c85f430bd814986c132540b2f57057a9465))
+
+## [0.5.0-rc.22](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.21...v0.5.0-rc.22) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Signing container digest - pull the image and sign it ([aacccb9](https://github.com/inference-gateway/inference-gateway/commit/aacccb9d638b1b051ce032a40485eeeb0defa1fc))
+
+## [0.5.0-rc.21](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.20...v0.5.0-rc.21) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Remove unnecessary image tag patterns in container signing step ([5c06cdd](https://github.com/inference-gateway/inference-gateway/commit/5c06cdde60ea271d929ea718ebcbd5e0069467d4))
+
+## [0.5.0-rc.20](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.19...v0.5.0-rc.20) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Update image reference in vulnerability scanning to use env.VERSION ([2eb446f](https://github.com/inference-gateway/inference-gateway/commit/2eb446f68515bbb6c699d2889fe022523b208124))
+
+### 🔧 Miscellaneous
+
+* Update inference-gateway chart reference to version 0.5.0-rc.19 ([1ee2b69](https://github.com/inference-gateway/inference-gateway/commit/1ee2b694bed29c16c3db80eabb4016c185b07ec4))
+
+## [0.5.0-rc.19](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.18...v0.5.0-rc.19) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Update vulnerability scanning image reference to use VERSION environment variable ([7b3d70d](https://github.com/inference-gateway/inference-gateway/commit/7b3d70d413a2b45bb0872111fb7db8278aea4692))
+
+## [0.5.0-rc.18](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.17...v0.5.0-rc.18) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Update environment variable usage for container image tagging in artifacts.yml ([35764d3](https://github.com/inference-gateway/inference-gateway/commit/35764d30b05c38eded533d9332624b6c5b731a14))
+* Update image reference format for vulnerability scanning in artifacts.yml ([2b2572c](https://github.com/inference-gateway/inference-gateway/commit/2b2572c8983fd497ab5d8067568f67ac7d0d53dc))
+
+## [0.5.0-rc.17](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.16...v0.5.0-rc.17) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Update environment variable for container image tagging in artifacts.yml ([1614673](https://github.com/inference-gateway/inference-gateway/commit/1614673df67694119a95ee1ab9f06683dbd671d9))
+
+## [0.5.0-rc.16](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.15...v0.5.0-rc.16) (2025-04-11)
+
+### ♻️ Improvements
+
+* Update Docker image tag to use version instead of tag ([1854d7f](https://github.com/inference-gateway/inference-gateway/commit/1854d7f0c8c1710bbd3b717856d1c0f34c8b8ae2))
+
+## [0.5.0-rc.15](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.14...v0.5.0-rc.15) (2025-04-11)
+
+### ♻️ Improvements
+
+* Remove redundant if check ([17eba04](https://github.com/inference-gateway/inference-gateway/commit/17eba04bf56361b00098dd78071841344d8f9f83))
+* Update Helm chart image tag and add environment variable for development ([d3c5e65](https://github.com/inference-gateway/inference-gateway/commit/d3c5e65088d51fb72043040e214be32c6b501c3e))
+
+### 🐛 Bug Fixes
+
+* Correct image tag formatting in deployment.yaml ([98b687c](https://github.com/inference-gateway/inference-gateway/commit/98b687ce90481cb5b336e393f58aeebe235a9e5d))
+* Update image tag in Docker configuration to use version instead of tag ([7950c24](https://github.com/inference-gateway/inference-gateway/commit/7950c24152c11fda665ec74e754be6a686294716))
+
+### 🔧 Miscellaneous
+
+* Move repositoryUrl and tagFormat to the correct position in .releaserc.yaml ([dc97d0f](https://github.com/inference-gateway/inference-gateway/commit/dc97d0f1e8fb1130f42fc033371b7d5ee29783f7))
+
+## [0.5.0-rc.14](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.13...v0.5.0-rc.14) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Restore id-token permission in GitHub Actions workflow - need it for signing the container images ([6b9507f](https://github.com/inference-gateway/inference-gateway/commit/6b9507f598c44c1b5fc017e52edfd6e50e511b04))
+* Update Helm chart push destination to use repository owner instead of repository ([39e47a6](https://github.com/inference-gateway/inference-gateway/commit/39e47a69234bd603bfa34f8e024fcc9dbf4728b1))
+
+## [0.5.0-rc.13](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.12...v0.5.0-rc.13) (2025-04-10)
+
+### ♻️ Improvements
+
+* Cleanup - Simplify GitHub Actions workflow by removing GitHub App token steps and using GITHUB_TOKEN ([23d7cf6](https://github.com/inference-gateway/inference-gateway/commit/23d7cf689b86113b7cd48d2e00bf4e60ff9a73f9))
+
+### 🐛 Bug Fixes
+
+* Update permissions to allow write access for contents in GitHub Actions workflow to allow it to upload security scans ([9ffd72c](https://github.com/inference-gateway/inference-gateway/commit/9ffd72cca49c60350705ea6196b2cc5884adbc2d))
+
+## [0.5.0-rc.12](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.11...v0.5.0-rc.12) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Try with the standard GITHUB access token ([fc3e555](https://github.com/inference-gateway/inference-gateway/commit/fc3e55578b0fcd9afecd1c6fc5eceff2b64f876f))
+* Update appVersion in Chart.yaml during release preparation ([84f6ac6](https://github.com/inference-gateway/inference-gateway/commit/84f6ac6997b223cab7773dd604ab8e6b99ea56aa))
+
+## [0.5.0-rc.11](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.10...v0.5.0-rc.11) (2025-04-10)
+
+### 🔒 Security
+
+* Comment out unnecessary permissions in artifacts workflow ([c34db50](https://github.com/inference-gateway/inference-gateway/commit/c34db5008e53f0572347029b99c27251a72783d2))
+
+## [0.5.0-rc.10](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.9...v0.5.0-rc.10) (2025-04-10)
+
+### 🔒 Security
+
+* Remove unnecessary permissions from upload_artifacts job ([e3d0eb0](https://github.com/inference-gateway/inference-gateway/commit/e3d0eb07fec14117ec50ce3a8b1d91daa44230c0))
+
+## [0.5.0-rc.9](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.8...v0.5.0-rc.9) (2025-04-10)
+
+### ♻️ Improvements
+
+* Debug if it's a local issue or configuration issue ([5e87d94](https://github.com/inference-gateway/inference-gateway/commit/5e87d945221c860b0ef45c135d38e76403c6cdd0))
+
+## [0.5.0-rc.8](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.7...v0.5.0-rc.8) (2025-04-10)
+
+### ♻️ Improvements
+
+* Try something ([3fa7dfb](https://github.com/inference-gateway/inference-gateway/commit/3fa7dfbefd69d0e108b5538b387909f3d3e7048d))
+
+## [0.5.0-rc.7](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.6...v0.5.0-rc.7) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Remove redundant permissions from sign_containers job in artifacts workflow ([ecff024](https://github.com/inference-gateway/inference-gateway/commit/ecff024e5eebecb55ec95479489688d8c7530708))
+* Remove unnecessary environment variables and options from GitHub Actions jobs ([a16f4a7](https://github.com/inference-gateway/inference-gateway/commit/a16f4a7f6667c29dd9f819412cd21e22f53d80b5))
+
+## [0.5.0-rc.6](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.5...v0.5.0-rc.6) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Add permissions for contents and packages in artifacts workflow ([9540ea3](https://github.com/inference-gateway/inference-gateway/commit/9540ea31ff239d34cf452fd2132703f63d860af0))
+
+## [0.5.0-rc.5](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.4...v0.5.0-rc.5) (2025-04-10)
+
+### 👷 CI
+
+* **release:** Integrate GitHub App token management for artifact uploads and container scans ([30a5a0d](https://github.com/inference-gateway/inference-gateway/commit/30a5a0d38ae77034e418417d48cfd00edcd3d8de))
+
+## [0.5.0-rc.4](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.3...v0.5.0-rc.4) (2025-04-10)
+
+### 🐛 Bug Fixes
+
+* Refactor Helm chart packaging and pushing steps in CI workflow ([ce21611](https://github.com/inference-gateway/inference-gateway/commit/ce216118fd4ef1d76b6507cd3b07d02d0388b34c))
+* Update release upload commands to remove redundant 'v' prefix for version ([255852e](https://github.com/inference-gateway/inference-gateway/commit/255852ea12c86bf6e82ef4d624218be159fd1871))
+
+## [0.5.0-rc.3](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.2...v0.5.0-rc.3) (2025-04-10)
+
+### ✨ Features
+
+* Enhance release workflow with GitHub App token management and artifact uploads ([1dcb38d](https://github.com/inference-gateway/inference-gateway/commit/1dcb38d75859f24a54c113bf1bf9481d2de319eb))
+
+### 🐛 Bug Fixes
+
+* Include Chart.yaml in assets for semantic-release ([9a7a16a](https://github.com/inference-gateway/inference-gateway/commit/9a7a16a04ea82e4d28a2b19f771d7d095c064d41))
+
+## [0.5.0-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.1...v0.5.0-rc.2) (2025-04-10)
+
+### ✨ Features
+
+* Add application version parameter to configuration ([c8d7057](https://github.com/inference-gateway/inference-gateway/commit/c8d7057b1e8883d19ddb312e23edc692818fb710))
+
+### ♻️ Improvements
+
+* Add String method to Config for improved string representation ([1d4dfda](https://github.com/inference-gateway/inference-gateway/commit/1d4dfdad0d360707522d25b6ecaeba6c38ee761a))
+* Define application name and version constants; update String method to use constants ([60ffca5](https://github.com/inference-gateway/inference-gateway/commit/60ffca5b0399bfd306b257e54d8b689548b74a9c))
+* Remove hardcoded application name from tests and update OpenTelemetry initialization to use constants ([0ade1c5](https://github.com/inference-gateway/inference-gateway/commit/0ade1c59fdcfc96309170513e9ee0f330aa78426))
+* Remove VERSION constant and update String method to use APPLICATION_NAME constant ([3a225d4](https://github.com/inference-gateway/inference-gateway/commit/3a225d481f52dca961bbef9f57e183a377437d11))
+* Run task generate - remove APPLICATION_NAME from configuration files and update related examples ([d061a84](https://github.com/inference-gateway/inference-gateway/commit/d061a8486d53496171afc567e63ff1acf06b32f5))
+
+### 🐛 Bug Fixes
+
+* Comment out temporarily Helm chart version update commands in release workflow ([79f99c0](https://github.com/inference-gateway/inference-gateway/commit/79f99c08f8e8f24a71526cf58993311a2a1e13f9))
+* Correct indentation for prepareCmd in semantic-release configuration ([c2d4003](https://github.com/inference-gateway/inference-gateway/commit/c2d40036b16174be1cf08641d0953d14ca43f98f))
+* Migrate the configuration of the linter to the latest ([1e838ed](https://github.com/inference-gateway/inference-gateway/commit/1e838ed3957be585df3a8b2aa05a011d59df3fd2))
+* Update prepareCmd to reference meta.go instead of version.go in semantic-release configuration ([3dc5b7b](https://github.com/inference-gateway/inference-gateway/commit/3dc5b7bfd49f3d69343b029fc979ec99296ba51e))
+* Update prepareCmd to set Helm chart version in Chart.yaml during release process ([82d222d](https://github.com/inference-gateway/inference-gateway/commit/82d222d157408760a449d875366a743ae40579a0))
+* Update release assets to include version.go instead of config.go ([af509c6](https://github.com/inference-gateway/inference-gateway/commit/af509c66a1ecbec98e0afc82561715853396c218))
+
+### 🔧 Miscellaneous
+
+* Add debug logging for loaded configuration in debug and development environments ([36a22df](https://github.com/inference-gateway/inference-gateway/commit/36a22dfb328ccdd5df03c6a9be40c7293fd89339))
+* update helm chart version to 0.5.0-rc.2 [skip ci] ([c34087b](https://github.com/inference-gateway/inference-gateway/commit/c34087b96e4cbbadcb7a9fd1a242ff1a46c14bed))
+* Update Keycloak CA configmap creation to use server-side apply with dry-run so it could be executed and produce the same result in idempotent way ([9fa238e](https://github.com/inference-gateway/inference-gateway/commit/9fa238e918212f13d3c1c70978ba142978eed9a9))
+
+### ✅ Miscellaneous
+
+* Update image tag for inference-gateway deployment to 0.5.0-rc.1 ([0e7a88b](https://github.com/inference-gateway/inference-gateway/commit/0e7a88b52730244d7f23bee19cebbe762bec394d))
+
+### 🔨 Miscellaneous
+
+* Add semantic-release dry run to Taskfile for release process ([abf5ed8](https://github.com/inference-gateway/inference-gateway/commit/abf5ed8b7b040ddabec58cb27d3eafd371cb6569))
+
+## [0.5.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.4.1...v0.5.0-rc.1) (2025-04-10)
+
+### ✨ Features
+
+* Add inference-gateway Helm chart with dependencies and monitoring support ([ebd9942](https://github.com/inference-gateway/inference-gateway/commit/ebd9942db53ea434067262ef6baf8a10acf9e23a))
+* Add ingress-nginx dependency and update configurations in values.yaml, Chart.yaml, and Chart.lock default to false ([3a92e81](https://github.com/inference-gateway/inference-gateway/commit/3a92e81fe95607328a10dfc9929be24402355b0d))
+
+### ♻️ Improvements
+
+* Enable autoscaling for inference-gateway with updated max replicas ([69af532](https://github.com/inference-gateway/inference-gateway/commit/69af532f7d2c70d28e561b18b0699dc7e6ab63b9))
+* Keep it simple - refactor code structure for improved readability and maintainability ([912361e](https://github.com/inference-gateway/inference-gateway/commit/912361e5fb8290c3825ae95c041da57ff6efb39a))
+
+### 🐛 Bug Fixes
+
+* Add missing installCRDs flag for cert-manager installation ([2211a0b](https://github.com/inference-gateway/inference-gateway/commit/2211a0b2ff07e6d27bd15fff0e78cb1ed561fdc5))
+* Correct image tag formatting in deployment.yaml ([dd5b0b9](https://github.com/inference-gateway/inference-gateway/commit/dd5b0b9f059dac11eb9d6fa1041b4458b33013c5))
+* Correct kube-prometheus-stack and grafana-operator configuration in values.yaml - this is how to update dependencies values ([0788cc2](https://github.com/inference-gateway/inference-gateway/commit/0788cc2c2abada7f00534a862117cd12224d320a))
+* Remove default admin credentials for keycloakx installation ([b4fec38](https://github.com/inference-gateway/inference-gateway/commit/b4fec38662b6734de01e934ad6c27942b6c41251))
+* Remove default fullnameOverride value in values.yaml ([11eec4f](https://github.com/inference-gateway/inference-gateway/commit/11eec4ff82b9a0b98d289b388c88b9303b5bb501))
+* Remove fullnameOverride setting for inference-gateway installation ([318c89b](https://github.com/inference-gateway/inference-gateway/commit/318c89be51990f6d866e2acd7f773289e8440cdb))
+* Update cert-manager installation flag from installCRDs to crds.enabled ([77d53fe](https://github.com/inference-gateway/inference-gateway/commit/77d53fe48f5175532e826f8313491f5ef5c04025))
+* Update liveness and readiness probe paths to /health ([f063e3c](https://github.com/inference-gateway/inference-gateway/commit/f063e3c678af95b2c5e5844f981ff34ff2feaad6))
+* Update liveness and readiness probe paths to /health and change ingress-nginx namespace to kube-system ([250153f](https://github.com/inference-gateway/inference-gateway/commit/250153fcc0ac2ef86d65e06e4116bbc9701b65c0))
+
+### 🔧 Miscellaneous
+
+* Add Bitnami PostgreSQL and update Keycloak configuration in Taskfile ([f39d232](https://github.com/inference-gateway/inference-gateway/commit/f39d23246c4d29aa9dc8269b94d870227ec0fbbd))
+* Add import-realm task to Taskfile for Keycloak realm configuration ([f36fa18](https://github.com/inference-gateway/inference-gateway/commit/f36fa1846828e9a690205000bf00886a675d6faa))
+* Add Keycloak resources and update ingress configuration in Taskfile ([abfc2e6](https://github.com/inference-gateway/inference-gateway/commit/abfc2e6054b78ff884dc1ec4c70252bf875a1737))
+* Add more metadata to chart ([e838572](https://github.com/inference-gateway/inference-gateway/commit/e838572807eadc3475bfafc835a48f84eb7a24fd))
+* Add new line at the end of the file ([c21fb92](https://github.com/inference-gateway/inference-gateway/commit/c21fb92073ca5f89118d1c14e5199f736638ac70))
+* Add port configurations for loadbalancer in Cluster.yaml ([7845fae](https://github.com/inference-gateway/inference-gateway/commit/7845fae72a3e7db219d36680403e27fc4a4f7ea1))
+* Add resource requests and limits for inference-gateway deployment ([fed2977](https://github.com/inference-gateway/inference-gateway/commit/fed2977975d0f2e668b561b6e3a8875b881565fd))
+* Add self-signed certificate issuer and update ingress annotations for inference-gateway ([3bf0f8c](https://github.com/inference-gateway/inference-gateway/commit/3bf0f8c67161de14f8a9eeaf763846c7b7e85507))
+* Hack refactor helm chart, fix the Configmap generation, add good defaults ([308bb0c](https://github.com/inference-gateway/inference-gateway/commit/308bb0c9894f9afd77e9fd69a14110722f52ff2c))
+* Remove obsolete test.yaml file from hack directory ([4fdf981](https://github.com/inference-gateway/inference-gateway/commit/4fdf981e1a46e801a1cda42225faf877ccbd4a59))
+* Remove persist-credentials option from GitHub checkout action ([45ad2f4](https://github.com/inference-gateway/inference-gateway/commit/45ad2f4738fd247cc7607c33c5ee7fd106ff460c))
+* Update appPort and runArgs in devcontainer configuration ([c521601](https://github.com/inference-gateway/inference-gateway/commit/c521601e8511dcc88976a8bae48263e0ae139d75))
+* Update grafana-operator version to v5.17.0 in Chart.yaml and Chart.lock ([29bcf76](https://github.com/inference-gateway/inference-gateway/commit/29bcf768732addc7e1ede610d98f29c5c1590a35))
+* update helm chart version to 0.5.0-rc.1 [skip ci] ([0c834bf](https://github.com/inference-gateway/inference-gateway/commit/0c834bffe37c0e9b3ff1493c3a29d70e55cea26b))
+* Update inference-gateway deployment with secrets and config map ([56ee561](https://github.com/inference-gateway/inference-gateway/commit/56ee561dd6ad9b71d81d4069c8b29336d99763ae))
+* Update ingress host and TLS configuration for inference-gateway ([d6cfa25](https://github.com/inference-gateway/inference-gateway/commit/d6cfa250062f0ecf85c69b30a74db6e2f16e3ba8))
+* Update Keycloak hostname and enhance helm deployment with CA trust configuration ([a7d4fa2](https://github.com/inference-gateway/inference-gateway/commit/a7d4fa2f779b75a2e5f29948ce8e28626b2340d1))
+* Update Keycloak service references and remove obsolete port-forward task ([34758ee](https://github.com/inference-gateway/inference-gateway/commit/34758ee1948da1ab73cf76940f4c5f5945a04d64))
+* Update resource names to use release-name-inference-gateway instead of ig ([ffc1b82](https://github.com/inference-gateway/inference-gateway/commit/ffc1b82942d05bf2ef9528f9aacaa599583db57b))
+* Update resource requests and limits for inference-gateway ([35ebb55](https://github.com/inference-gateway/inference-gateway/commit/35ebb559b215314273fbe3b078045008d476faf2))
+
 ## [0.4.1](https://github.com/inference-gateway/inference-gateway/compare/v0.4.0...v0.4.1) (2025-04-06)
 
 ### 🐛 Bug Fixes

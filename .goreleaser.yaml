@@ -39,7 +39,7 @@ dockers:
     use: buildx
     dockerfile: Dockerfile.goreleaser
     image_templates:
-      - "ghcr.io/inference-gateway/inference-gateway:{{ .Tag }}"
+      - "ghcr.io/inference-gateway/inference-gateway:{{ .Version }}"
       - "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/arm64"
@@ -54,7 +54,7 @@ dockers:
     use: buildx
     dockerfile: Dockerfile.goreleaser
     image_templates:
-      - "ghcr.io/inference-gateway/inference-gateway:{{ .Tag }}"
+      - "ghcr.io/inference-gateway/inference-gateway:{{ .Version }}"
       - "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:latest{{ end }}"
     build_flag_templates:
       - "--platform=linux/amd64"

@@ -36,6 +36,9 @@ func main() {
 		return
 	}
 
+	// Log config in debug mode
+	logger.Debug("Loaded config", "config", cfg.String())
+
 	// Initialize OpenTelemetry Prometheus exporter Server
 	var telemetryImpl otel.OpenTelemetry
 	if cfg.EnableTelemetry {

@@ -38,6 +38,7 @@ func GenerateConfig(destination string, oas string) error {
 	
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -123,7 +124,25 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	}
 
 	return *cfg, nil
-}`))
+}
+
+// The string representation of Config
+func (cfg *Config) String() string {
+    return fmt.Sprintf(
+        "Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
+            "OIDC:%+v, Server:%+v, Providers:%+v}",
+        APPLICATION_NAME,
+        VERSION,
+        cfg.Environment,
+        cfg.EnableTelemetry,
+        cfg.EnableAuth,
+        cfg.OIDC,
+        cfg.Server,
+        cfg.Providers,
+    )
+}
+
+`))
 
 	data := struct {
 		Sections  []map[string]openapi.Section

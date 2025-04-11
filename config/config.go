@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 // Config holds the configuration for the Inference Gateway
 type Config struct {
 	// General settings
-	ApplicationName string `env:"APPLICATION_NAME, default=inference-gateway" description:"The name of the application"`
 	Environment     string `env:"ENVIRONMENT, default=production" description:"The environment"`
 	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
 	EnableAuth      bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
@@ -76,4 +76,20 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	}
 
 	return *cfg, nil
+}
+
+// The string representation of Config
+func (cfg *Config) String() string {
+	return fmt.Sprintf(
+		"Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
+			"OIDC:%+v, Server:%+v, Providers:%+v}",
+		APPLICATION_NAME,
+		VERSION,
+		cfg.Environment,
+		cfg.EnableTelemetry,
+		cfg.EnableAuth,
+		cfg.OIDC,
+		cfg.Server,
+		cfg.Providers,
+	)
 }
