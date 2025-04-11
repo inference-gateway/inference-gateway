@@ -157,7 +157,7 @@ tasks:
           httpManagement:
             port: 9000
           hostname:
-            hostname: keycloak-service.idp.svc.cluster.local
+            hostname: keycloak.inference-gateway.local
             strict: true
           # features:
           #   disabled:
@@ -231,6 +231,29 @@ tasks:
           --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)" \
           --dry-run=client -o yaml | kubectl apply --server-side -f -
       - |
+        # HACK: because we don't host the keycloak somewhere else deployed - it's on the same cluster, 
+        # we'll rewrite and resolve to the ingress instead of letting it connect via the internal dns,
+        # Reason is - 
+        # keycloak supports only 1 issuer(iss), in production you most likely deploy keycloak somewhere 
+        # else and the endpoint will be publicly available, so there should be no issues, the hack is only for
+        # this local setup - to make the keycloak.inference-gateway.local available from within the cluster as well
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: coredns-custom
+          namespace: kube-system
+        data:
+          keycloak.inference-gateway.server: |
+            keycloak.inference-gateway.local {
+                log
+                rewrite name keycloak.inference-gateway.local host.k3d.internal
+                forward . 127.0.0.1
+            }
+        EOF
+        kubectl -n kube-system rollout restart deployment coredns
+        kubectl -n kube-system rollout status deployment coredns
+      - |
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
@@ -268,7 +291,7 @@ tasks:
         data:
           ENVIRONMENT: "development"
           ENABLE_AUTH: "true"
-          OIDC_ISSUER_URL: https://keycloak-service.idp.svc.cluster.local:8543/realms/inference-gateway-realm
+          OIDC_ISSUER_URL: https://keycloak.inference-gateway.local/realms/inference-gateway-realm
           SSL_CERT_FILE: /usr/local/share/ca-certificates/keycloak-ca.crt
         EOF
       - |
