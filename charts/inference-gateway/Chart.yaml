@@ -1,8 +1,8 @@
 apiVersion: v2
 name: inference-gateway
 type: application
-version: 0.5.0-rc.18
-appVersion: 0.5.0-rc.18
+version: 0.5.0-rc.19
+appVersion: 0.5.0-rc.19
 description: A Helm chart for Kubernetes inference gateway with optional dependencies
 keywords:
   - inference-gateway
