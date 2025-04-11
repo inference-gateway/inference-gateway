@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.15](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.14...v0.5.0-rc.15) (2025-04-11)
+
+### ♻️ Improvements
+
+* Remove redundant if check ([17eba04](https://github.com/inference-gateway/inference-gateway/commit/17eba04bf56361b00098dd78071841344d8f9f83))
+* Update Helm chart image tag and add environment variable for development ([d3c5e65](https://github.com/inference-gateway/inference-gateway/commit/d3c5e65088d51fb72043040e214be32c6b501c3e))
+
+### 🐛 Bug Fixes
+
+* Correct image tag formatting in deployment.yaml ([98b687c](https://github.com/inference-gateway/inference-gateway/commit/98b687ce90481cb5b336e393f58aeebe235a9e5d))
+* Update image tag in Docker configuration to use version instead of tag ([7950c24](https://github.com/inference-gateway/inference-gateway/commit/7950c24152c11fda665ec74e754be6a686294716))
+
+### 🔧 Miscellaneous
+
+* Move repositoryUrl and tagFormat to the correct position in .releaserc.yaml ([dc97d0f](https://github.com/inference-gateway/inference-gateway/commit/dc97d0f1e8fb1130f42fc033371b7d5ee29783f7))
+
 ## [0.5.0-rc.14](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.13...v0.5.0-rc.14) (2025-04-10)
 
 ### 🐛 Bug Fixes
