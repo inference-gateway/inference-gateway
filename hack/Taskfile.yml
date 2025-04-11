@@ -245,7 +245,7 @@ tasks:
           --set volumeMounts[0].mountPath=/usr/local/share/ca-certificates/keycloak-ca.crt \
           --set volumeMounts[0].subPath=ca.crt \
           --set volumeMounts[0].readOnly=true \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0-rc.19
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0-rc.24
       - |
         kubectl apply -f - <<EOF
         apiVersion: v1
@@ -362,3 +362,23 @@ tasks:
               ]
             }
         EOF
+
+  fetch-access-token:
+    desc: "Fetch the access token"
+    cmds:
+      - |
+        curl -k -s -X POST \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          "https://keycloak.inference-gateway.local/realms/inference-gateway-realm/protocol/openid-connect/token" \
+          -d "grant_type=password" \
+          -d "client_id=inference-gateway-client" \
+          -d "client_secret=very-secret" \
+          -d "username=user" \
+          -d "password=password" | jq -r .access_token
+
+  fetch-models:
+    desc: "List all LLMs from the Inference-Gateway"
+    cmds:
+      - |
+        ACCESS_TOKEN=$(task fetch-access-token)
+        curl -k -X GET -H "Authorization: Bearer $ACCESS_TOKEN" https://api.inference-gateway.local/v1/models
