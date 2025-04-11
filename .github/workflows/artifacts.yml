@@ -121,6 +121,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - scan_containers
+    env:
+      TAG: ${{ github.event.release.tag_name }}
     steps:
       - name: Install cosign
         uses: sigstore/cosign-installer@v3.8.1
