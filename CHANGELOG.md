@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.22](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.21...v0.5.0-rc.22) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Signing container digest - pull the image and sign it ([aacccb9](https://github.com/inference-gateway/inference-gateway/commit/aacccb9d638b1b051ce032a40485eeeb0defa1fc))
+
 ## [0.5.0-rc.21](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.20...v0.5.0-rc.21) (2025-04-11)
 
 ### 🐛 Bug Fixes
