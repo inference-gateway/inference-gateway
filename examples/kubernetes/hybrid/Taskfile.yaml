@@ -12,9 +12,11 @@ tasks:
           --create-namespace \
           --namespace kube-system \
           --version 4.12.1 \
+          --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - kubectl create namespace ollama -o yaml --dry-run=client | kubectl apply -f -
       - kubectl apply -f ollama/
+      - kubectl -n ollama rollout status deployment ollama
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with hybrid providers"
@@ -23,7 +25,11 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
+          --set ingress.enabled=true \
+          --set ingress.tls.enabled=false \
+          --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
+          --wait \
+          inference-gateway ../../../charts/inference-gateway/
 
   clean:
     desc: "Clean up the cluster"

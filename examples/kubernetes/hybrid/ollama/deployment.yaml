@@ -43,7 +43,7 @@ spec:
             - bash
           args:
             - -c
-            - "ollama pull phi3:3.8b && tail -f /dev/null"
+            - "ollama pull deepseek-r1:1.5b && tail -f /dev/null"
           env:
             - name: OLLAMA_HOST
               value: "127.0.0.1:8080"
