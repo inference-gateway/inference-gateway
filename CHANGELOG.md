@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.21](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.20...v0.5.0-rc.21) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Remove unnecessary image tag patterns in container signing step ([5c06cdd](https://github.com/inference-gateway/inference-gateway/commit/5c06cdde60ea271d929ea718ebcbd5e0069467d4))
+
 ## [0.5.0-rc.20](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.19...v0.5.0-rc.20) (2025-04-11)
 
 ### 🐛 Bug Fixes
