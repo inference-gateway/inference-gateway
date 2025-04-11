@@ -29,7 +29,7 @@ tasks:
           --set ingress.tls.enabled=false \
           --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
           --wait \
-          inference-gateway ../../../charts/inference-gateway/
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:
     desc: "Clean up the cluster"
