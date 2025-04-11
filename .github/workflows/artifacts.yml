@@ -82,6 +82,8 @@ jobs:
     needs:
       - upload_artifacts
     runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ github.event.release.tag_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
@@ -98,7 +100,7 @@ jobs:
       - name: Run Vulnerability Scanning
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: "ghcr.io/${{ github.repository }}:${{ github.event.release.tag_name }}"
+          image-ref: "ghcr.io/${{ github.repository }}:${VERSION}"
           exit-code: "0"
           format: "sarif"
           output: "trivy-results.sarif"
@@ -150,7 +152,7 @@ jobs:
     name: Publish Helm Chart
     runs-on: ubuntu-24.04
     env:
-      VERSION: ${{ github.event.release.tag_name }}
+      TAG: ${{ github.event.release.tag_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.2.2
@@ -171,7 +173,8 @@ jobs:
 
       - name: Package and Push Helm chart
         run: |
+          VERSION=${TAG#v}
           cd charts/inference-gateway
           helm dependency update
-          helm package . --version ${{ env.VERSION }} --app-version ${{ env.VERSION }}
-          helm push inference-gateway-${{ env.VERSION }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+          helm package . --version ${VERSION} --app-version ${VERSION}
+          helm push inference-gateway-${VERSION}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
