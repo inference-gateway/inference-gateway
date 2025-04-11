@@ -13,6 +13,7 @@ tasks:
           --namespace kube-system \
           --version 4.12.1 \
           ingress-nginx ingress-nginx/ingress-nginx
+      - kubectl create namespace ollama -o yaml --dry-run=client | kubectl apply -f -
       - kubectl apply -f ollama/
 
   deploy-inference-gateway:

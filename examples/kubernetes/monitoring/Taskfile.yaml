@@ -20,7 +20,6 @@ tasks:
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with monitoring"
     cmds:
-      - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
       - |
         helm upgrade --install \
           --create-namespace \
