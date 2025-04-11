@@ -1,0 +1,33 @@
+---
+version: "3"
+
+tasks:
+  deploy-infrastructure:
+    desc: "Deploy monitoring infrastructure"
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace kube-system \
+          --version 4.12.1 \
+          ingress-nginx ingress-nginx/ingress-nginx
+      - kubectl apply -f prometheus/
+      - kubectl apply -f grafana/
+
+  deploy-inference-gateway:
+    desc: "Deploy inference-gateway with monitoring"
+    cmds:
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace inference-gateway \
+          --set monitoring.enabled=true \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
+
+  clean:
+    desc: "Clean up the cluster"
+    cmds:
+      - ctlptl delete -f Cluster.yaml

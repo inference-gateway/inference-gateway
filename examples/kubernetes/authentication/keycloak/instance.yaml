@@ -1,0 +1,42 @@
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+  namespace: idp
+spec:
+  instances: 2
+  startOptimized: false
+  ingress:
+    enabled: false
+  db:
+    vendor: postgres
+    host: keycloak-db-postgresql
+    usernameSecret:
+      name: keycloak-db-postgresql
+      key: username
+    passwordSecret:
+      name: keycloak-db-postgresql
+      key: password
+    database: keycloak
+  http:
+    httpEnabled: true
+    httpPort: 8180
+    httpsPort: 8543
+    tlsSecret: keycloak-tls
+  httpManagement:
+    port: 9000
+  hostname:
+    hostname: keycloak.inference-gateway.local
+    strict: true
+  features:
+    disabled:
+      - admin
+      - step-up-authentication
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2000m"
+      memory: "2Gi"

@@ -6,11 +6,8 @@ on:
 
 permissions:
   contents: write
-  id-token: write
-  packages: write
   issues: write
   pull-requests: write
-  security-events: write
 
 jobs:
   github_release:
@@ -20,27 +17,40 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
     steps:
+      - uses: actions/create-github-app-token@v1.12.0
+        id: app-token
+        with:
+          app-id: ${{ secrets.BOT_GH_APP_ID }}
+          private-key: ${{ secrets.BOT_GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            inference-gateway
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git config --global commit.gpgsign false
+          git config --global commit.signoff true
+
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.2.2
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: false
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4.2.0
         with:
-          node-version: "22"
-
-      - name: Configure Git signing
-        run: |
-          echo "${{ secrets.BOT_GPG_PRIVATE_KEY }}" | gpg --import
-          git config --global user.signingkey ${{ secrets.BOT_GPG_KEY_ID }}
-          git config --global commit.gpgsign true
-          git config --global commit.signoff true
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email ${{ vars.BOT_EMAIL }}
+          node-version: "lts/*"
 
       - name: Install semantic release and plugins
         run: |
@@ -56,11 +66,11 @@ jobs:
         id: semantic
         env:
           CI: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GIT_AUTHOR_NAME: "GitHub Actions Bot"
-          GIT_AUTHOR_EMAIL: ${{ vars.BOT_EMAIL }}
+          GIT_AUTHOR_EMAIL: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com
           GIT_COMMITTER_NAME: "GitHub Actions Bot"
-          GIT_COMMITTER_EMAIL: ${{ vars.BOT_EMAIL }}
+          GIT_COMMITTER_EMAIL: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com
         run: |
           # Create first release if not exists using gh cli - Initial Release Version 0.1.0
           # This is an HACK because semantic release doesn't support versions under 1.0.0
@@ -96,143 +106,4 @@ jobs:
           else
             echo "Release failed"
             exit 1
-          fi
-
-  upload_artifacts:
-    name: Upload Artifacts
-    runs-on: ubuntu-24.04
-    needs:
-      - github_release
-    if: needs.github_release.outputs.new_release_published == 'true'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4.2.2
-        with:
-          ref: ${{ github.ref }}
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: false
-
-      - name: Set up Go
-        uses: actions/setup-go@v5.3.0
-        with:
-          go-version: "1.23"
-          cache: true
-
-      - name: Install GoReleaser
-        run: |
-          curl -sSL https://github.com/goreleaser/goreleaser/releases/download/v2.7.0/goreleaser_Linux_x86_64.tar.gz | tar -xzv -C /usr/local/bin goreleaser
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3.3.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run GoReleaser
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          goreleaser release --clean --skip=announce,publish
-
-      - name: Upload Artifacts to Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ needs.github_release.outputs.new_release_version }}
-        run: |
-          # Find all archives created by GoReleaser
-          for file in dist/inference-gateway_*; do
-            # Skip directories
-            if [ -d "$file" ]; then
-              echo "Skipping directory: $file"
-              continue
-            fi
-            
-            echo "Uploading $file to release v${VERSION}"
-            gh release upload v${VERSION} "$file" --clobber
-          done
-
-          # Upload checksums file if it exists
-          if [ -f "dist/checksums.txt" ]; then
-            gh release upload v${VERSION} "dist/checksums.txt" --clobber
-          fi
-
-      - name: Push container images
-        run: |
-          docker push ghcr.io/${{ github.repository }}:v${{ needs.github_release.outputs.new_release_version }}
-          if [[ ! "${{ needs.github_release.outputs.new_release_version }}" =~ -rc ]]; then
-            docker push ghcr.io/${{ github.repository }}:latest
-          fi
-
-  scan_containers:
-    name: Scan Container Images
-    needs:
-      - github_release
-      - upload_artifacts
-    if: needs.github_release.outputs.new_release_published == 'true'
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4.2.2
-        with:
-          ref: ${{ github.ref }}
-          persist-credentials: false
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3.3.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run Vulnerability Scanning
-        uses: aquasecurity/trivy-action@0.29.0
-        with:
-          image-ref: "ghcr.io/${{ github.repository }}:v${{ needs.github_release.outputs.new_release_version }}"
-          exit-code: "0"
-          format: "sarif"
-          output: "trivy-results.sarif"
-          vuln-type: "os,library"
-          severity: "CRITICAL,HIGH"
-
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-results.sarif
-          category: trivy
-
-  sign_containers:
-    name: Sign Container Images
-    needs:
-      - github_release
-      - upload_artifacts
-    if: needs.github_release.outputs.new_release_published == 'true'
-    runs-on: ubuntu-24.04
-    env:
-      CONTAINER_REGISTRY: ghcr.io
-      VERSION: ${{ needs.github_release.outputs.new_release_version }}
-    steps:
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3.8.1
-        with:
-          cosign-release: "v2.4.3"
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Sign container images
-        run: |
-          docker pull ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:v${{ env.VERSION }}
-          VERSION_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:v${{ env.VERSION }})
-          cosign sign --yes $VERSION_DIGEST
-
-          if [[ ! "${{ needs.github_release.outputs.new_release_version }}" =~ -rc ]]; then
-            docker pull ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:latest
-            LATEST_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:latest)
-            cosign sign --yes $LATEST_DIGEST
           fi

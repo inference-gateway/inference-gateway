@@ -21,7 +21,6 @@ func TestLoad(t *testing.T) {
 			name: "Success_Defaults",
 			env:  map[string]string{},
 			expectedCfg: config.Config{
-				ApplicationName: "inference-gateway",
 				EnableTelemetry: false,
 				Environment:     "production",
 				EnableAuth:      false,
@@ -117,7 +116,6 @@ func TestLoad(t *testing.T) {
 		{
 			name: "Success_AllEnvVariablesSet",
 			env: map[string]string{
-				"APPLICATION_NAME":     "test-app",
 				"ENABLE_TELEMETRY":     "true",
 				"ENVIRONMENT":          "development",
 				"SERVER_HOST":          "localhost",
@@ -130,7 +128,6 @@ func TestLoad(t *testing.T) {
 				"OPENAI_API_KEY":       "openai123",
 			},
 			expectedCfg: config.Config{
-				ApplicationName: "test-app",
 				EnableTelemetry: true,
 				Environment:     "development",
 				EnableAuth:      false,
@@ -254,7 +251,6 @@ func TestLoad(t *testing.T) {
 				"OLLAMA_API_URL":   "http://custom-ollama:8080",
 			},
 			expectedCfg: config.Config{
-				ApplicationName: "inference-gateway",
 				EnableTelemetry: true,
 				Environment:     "development",
 				EnableAuth:      false,

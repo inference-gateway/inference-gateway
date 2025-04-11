@@ -6,15 +6,16 @@ k3d:
   v1alpha5Simple:
     agents: 1
     image: docker.io/rancher/k3s:v1.32.0-k3s1
+    ports:
+      - port: 80:80
+        nodeFilters:
+          - loadbalancer
+      - port: 443:443
+        nodeFilters:
+          - loadbalancer
     options:
       k3s:
         extraArgs:
           - arg: --disable=traefik
             nodeFilters:
               - server:0
-    # Simulate a multi-node cluster with NFS, in production you would use a real NFS server for ollama LLMs
-    volumes:
-      - volume: nfs:/nfs
-        nodeFilters:
-          - server:0
-          - agent:*

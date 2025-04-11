@@ -2,6 +2,10 @@
 branches:
   - { name: main, prerelease: false, channel: latest }
   - { name: "rc/*", prerelease: rc, channel: rc }
+
+repositoryUrl: "https://github.com/inference-gateway/inference-gateway"
+tagFormat: "v${version}"
+
 verifyConditions:
   - "@semantic-release/github"
   - "@semantic-release/git"
@@ -20,6 +24,7 @@ plugins:
         - { type: "style", release: "patch" }
         - { type: "test", release: "patch" }
         - { type: "build", release: "patch" }
+        - { type: "security", release: "patch" }
         - { type: "chore", release: "patch", scope: "!release" }
 
   - - "@semantic-release/release-notes-generator"
@@ -37,6 +42,7 @@ plugins:
           - { type: "style", section: "🎨 Miscellaneous" }
           - { type: "test", section: "✅ Miscellaneous" }
           - { type: "build", section: "🔨 Miscellaneous" }
+          - { type: "security", section: "🔒 Security" }
 
   - - "@semantic-release/changelog"
     - changelogFile: CHANGELOG.md
@@ -45,6 +51,10 @@ plugins:
 
   - - "@semantic-release/exec"
     - verifyConditions: "go mod tidy"
+      prepareCmd: |
+        sed -i 's/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/' config/meta.go
+        sed -i 's/^version: .*/version: ${nextRelease.version}/' charts/inference-gateway/Chart.yaml
+        sed -i 's/^appVersion: .*/appVersion: ${nextRelease.version}/' charts/inference-gateway/Chart.yaml
 
   - - "@semantic-release/github"
     - assets:
@@ -52,11 +62,13 @@ plugins:
       releasedLabels: ["released"]
       releaseNameTemplate: "🚀 Version ${nextRelease.version}"
       successCommentCondition: "false"
+      labels:
+        - "release"
+        - "<%= nextRelease.channel === 'rc' ? 'rc' : '' %>"
 
   - - "@semantic-release/git"
     - assets:
         - CHANGELOG.md
+        - config/meta.go
+        - charts/inference-gateway/Chart.yaml
       message: "chore(release): 🔖 ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-
-repositoryUrl: "https://github.com/inference-gateway/inference-gateway"
-tagFormat: "v${version}"

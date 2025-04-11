@@ -1,0 +1,185 @@
+---
+name: Artifacts
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+  security-events: write
+  id-token: write
+
+jobs:
+  upload_artifacts:
+    name: Upload Artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5.3.0
+        with:
+          go-version: "1.23"
+          cache: true
+
+      - name: Install GoReleaser
+        run: |
+          curl -sSL https://github.com/goreleaser/goreleaser/releases/download/v2.7.0/goreleaser_Linux_x86_64.tar.gz | tar -xzv -C /usr/local/bin goreleaser
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run GoReleaser
+        run: |
+          goreleaser release --clean --skip=announce,publish
+
+      - name: Upload Artifacts to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          # Find all archives created by GoReleaser
+          for file in dist/inference-gateway_*; do
+            # Skip directories
+            if [ -d "$file" ]; then
+              echo "Skipping directory: $file"
+              continue
+            fi
+            
+            echo "Uploading $file to release ${{ env.VERSION }}"
+            gh release upload ${{ env.VERSION }} "$file" --clobber
+          done
+
+          # Upload checksums file if it exists
+          if [ -f "dist/checksums.txt" ]; then
+            gh release upload ${{ env.VERSION }} "dist/checksums.txt" --clobber
+          fi
+
+      - name: Push container images
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION=${TAG#v}
+          docker push ghcr.io/${{ github.repository }}:${VERSION}
+          if [[ ! "${{ env.TAG }}" =~ -rc ]]; then
+            docker push ghcr.io/${{ github.repository }}:latest
+          fi
+
+  scan_containers:
+    name: Scan Container Images
+    needs:
+      - upload_artifacts
+    runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3.3.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set VERSION
+        run: echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+
+      - name: Run Vulnerability Scanning
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: "ghcr.io/${{ github.repository }}:${{ env.VERSION }}"
+          exit-code: "0"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+
+  sign_containers:
+    name: Sign Container Images
+    runs-on: ubuntu-24.04
+    needs:
+      - scan_containers
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3.8.1
+        with:
+          cosign-release: "v2.4.3"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set VERSION
+        run: echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+
+      - name: Sign container images
+        env:
+          CONTAINER_REGISTRY: ghcr.io
+        run: |
+          docker pull ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ env.VERSION }}
+          VERSION_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ env.VERSION }})
+          cosign sign --yes $VERSION_DIGEST
+
+          if [[ ! "$TAG" =~ -rc ]]; then
+            docker pull ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:latest
+            LATEST_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:latest)
+            cosign sign --yes $LATEST_DIGEST
+          fi
+
+  publish_helm_chart:
+    name: Publish Helm Chart
+    runs-on: ubuntu-24.04
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.3.0
+        with:
+          version: v3.14.0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Package and Push Helm chart
+        run: |
+          VERSION=${TAG#v}
+          cd charts/inference-gateway
+          helm dependency update
+          helm package . --version ${VERSION} --app-version ${VERSION}
+          helm push inference-gateway-${VERSION}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts

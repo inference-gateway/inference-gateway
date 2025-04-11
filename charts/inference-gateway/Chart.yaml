@@ -1,0 +1,23 @@
+apiVersion: v2
+name: inference-gateway
+type: application
+version: 0.5.0-rc.24
+appVersion: 0.5.0-rc.24
+description: A Helm chart for Kubernetes inference gateway with optional dependencies
+keywords:
+  - inference-gateway
+  - llms
+  - gateway
+  - inference
+  - proxy-server
+  - proxy
+  - open-source
+  - openai-compatible
+  - openai
+  - vendor-agnostic
+home: https://github.com/inference-gateway/inference-gateway
+sources:
+  - https://docs.inference-gateway.com
+maintainers:
+  - name: edenreich
+    email: eden.reich@gmail.com

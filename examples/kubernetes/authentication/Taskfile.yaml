@@ -1,66 +1,65 @@
+---
 version: "3"
 
-dotenv: [".env"]
-
 tasks:
-  deploy-inference-gateway:
-    desc: Deploy the Inference Gateway
-    cmds:
-      - kubectl apply -f inference-gateway/namespace.yaml
-      - kubectl apply -f inference-gateway/serviceaccount.yaml
-      - kubectl apply -f inference-gateway/
-      - kubectl -n inference-gateway rollout status deployment/inference-gateway
-
-  deploy-keycloak:
-    desc: Deploy Keycloak
-    cmds:
-      - kubectl apply -f keycloak/namespace.yaml
-      - kubectl apply -f keycloak/
-      - kubectl -n keycloak rollout status deployment/keycloak
-
-  undeploy-inference-gateway:
-    desc: Undeploy the Inference Gateway
-    cmds:
-      - kubectl delete -f inference-gateway/namespace.yaml
-
-  undeploy-keycloak:
-    desc: Undeploy Keycloak
-    cmds:
-      - kubectl delete -f keycloak/namespace.yaml
-
-  restart-inference-gateway:
-    desc: Restart the Inference Gateway
-    cmds:
-      - kubectl -n inference-gateway rollout restart deployment/inference-gateway
-      - kubectl -n inference-gateway rollout status deployment/inference-gateway
-
-  restart-keycloak:
-    desc: Restart Keycloak
-    cmds:
-      - kubectl -n keycloak rollout restart deployment/keycloak
-      - kubectl -n keycloak rollout status deployment/keycloak
-
-  proxy-inference-gateway:
-    desc: Proxy the Inference Gateway to a local port
-    cmds:
-      - kubectl -n inference-gateway port-forward svc/inference-gateway 8080:8080
-
-  proxy-keycloak:
-    desc: Proxy Keycloak to a local port
-    cmds:
-      - kubectl -n keycloak port-forward svc/keycloak 8080:8080
-
-  cluster-create:
-    desc: Create a local Kubernetes cluster
+  deploy-infrastructure:
+    desc: "Deploy authentication infrastructure"
     cmds:
       - ctlptl apply -f Cluster.yaml
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - helm repo add jetstack https://charts.jetstack.io
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace kube-system \
+          --version 4.12.1 \
+          --wait \
+          ingress-nginx ingress-nginx/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace cert-manager \
+          --version 1.17.1 \
+          --set crds.enabled=true \
+          --wait \
+          cert-manager jetstack/cert-manager
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace idp \
+          --version 16.6.2 \
+          --set global.postgresql.auth.username=dbusername \
+          --set global.postgresql.auth.password=dbpassword \
+          --set global.postgresql.auth.database=keycloak \
+          --set primary.resources.requests.cpu=100m \
+          --set primary.resources.requests.memory=256Mi \
+          --set primary.resources.limits.cpu=500m \
+          --set primary.resources.limits.memory=512Mi \
+          --set readReplicas.resources.requests.cpu=100m \
+          --set readReplicas.resources.requests.memory=256Mi \
+          --set readReplicas.resources.limits.cpu=500m \
+          --set readReplicas.resources.limits.memory=512Mi \
+          --wait \
+          keycloak-db bitnami/postgresql
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/kubernetes.yml
+      - kubectl apply -f cert-manager/
+      - kubectl apply --server-side -f keycloak/
 
-  cluster-delete:
-    desc: Delete a local Kubernetes cluster
+  deploy-inference-gateway:
+    desc: "Deploy inference-gateway with authentication"
     cmds:
-      - ctlptl delete -f Cluster.yaml --cascade=true
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace inference-gateway \
+          --set ingress.enabled=true \
+          --set envFrom.configMapRef=inference-gateway \
+          --set envFrom.secretRef=inference-gateway \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:
-    desc: Clean the project
+    desc: "Clean up the cluster"
     cmds:
-      - task: cluster-delete
+      - ctlptl delete -f Cluster.yaml

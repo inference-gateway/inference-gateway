@@ -1,39 +1,59 @@
-# Basic Kubernetes Example
+# Basic Deployment Example
 
-In this basic example, we will deploy the Inference Gateway.
+This example demonstrates the simplest deployment of the Inference Gateway using Helm.
 
-Feel free to explore the [ConfigMap](inference-gateway/configmap.yaml) and [Secret](inference-gateway/secret.yaml) configurations of the Inference Gateway to set up your desired providers.
+## Table of Contents
 
-1. Create the local cluster:
+- [Basic Deployment Example](#basic-deployment-example)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Configuration](#configuration)
+    - [Gateway Settings](#gateway-settings)
+  - [Cleanup](#cleanup)
+
+## Architecture
+
+- **Gateway**: Inference Gateway deployed via helm chart
+- **Ingress**: Basic ingress configuration
+
+## Prerequisites
+
+- [Task](https://taskfile.dev/installation/)
+- kubectl
+- helm
+- ctlptl (for cluster management)
+
+## Quick Start
+
+1. Deploy infrastructure:
 
 ```bash
-task cluster-create
+task deploy-infrastructure
 ```
 
-2. Deploy the Inference Gateway onto Kubernetes:
+2. Deploy Inference Gateway:
 
 ```bash
-task deploy
+task deploy-inference-gateway
 ```
 
-3. Proxy the Inference Gateway, to access it locally:
+3. Test the gateway:
 
 ```bash
-task proxy
+curl http://api.inference-gateway.local/v1/models
 ```
 
-4. Check the available LLMs:
+## Configuration
+
+### Gateway Settings
+
+- Configured via helm values in Taskfile.yaml
+- No additional components required
+
+## Cleanup
 
 ```bash
-curl -X GET http://localhost:8080/v1/models | jq .
+task clean
 ```
-
-1. Interact with the Inference Gateway using the specific provider API(note the prefix is `/v1/chat/completions/*`):
-
-```bash
-curl -X POST http://localhost:8080/v1/chat/completions?provider=groq -d '{"model": "llama-3.2-3b-preview", "messages": [{"role": "user", "content": "Explain the importance of fast language models. Keep it short and concise."}]}' | jq .
-```
-
-\*\* You can refer to the [Taskfile.yaml](./Taskfile.yaml) at any point for detailed information about the tasks used in this example.
-
-\*\* If the response is cut off mid-stream while the token is still being transmitted, it may be caused by the inference gateway's read timeout. Consider increasing or adjusting the timeout value and redeploying the gateway.

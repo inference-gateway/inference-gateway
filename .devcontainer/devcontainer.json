@@ -44,6 +44,9 @@
   "remoteEnv": {
     "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
   },
-  "forwardPorts": [8080, 3000],
-  "runArgs": ["--add-host=api.inference-gateway.local:127.0.0.1"]
+  "appPort": ["8080:8080", "3000:3000", "443:443", "80:80"],
+  "runArgs": [
+    "--add-host=api.inference-gateway.local:127.0.0.1",
+    "--add-host=keycloak.inference-gateway.local:127.0.0.1"
+  ]
 }

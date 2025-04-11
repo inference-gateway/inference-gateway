@@ -1,5 +1,8 @@
 package kubegen
 
+// Package kubegen provides functionality for generating Helm templates for Kubernetes
+// ConfigMaps and Secrets from OpenAPI specifications.
+
 import (
 	"fmt"
 	"os"
@@ -9,21 +12,20 @@ import (
 	"github.com/inference-gateway/inference-gateway/internal/openapi"
 )
 
-func GenerateSecret(filePath string, oas string) error {
-	// Read OpenAPI spec
+// GenerateHelmSecret generates a Helm template for a Kubernetes Secret from an OpenAPI spec.
+// The generated template uses Helm values (.Values.secrets) for configuration.
+func GenerateHelmSecret(filePath string, oas string) error {
 	schema, err := openapi.Read(oas)
 	if err != nil {
 		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
 	}
 
-	tmpl := `---
-apiVersion: v1
+	tmpl := `apiVersion: v1
 kind: Secret
 metadata:
-  name: inference-gateway
-  namespace: inference-gateway
+  name: {{ "{{" }} .Values.envFrom.secretRef {{ "}}" }}
   labels:
-    app: inference-gateway
+    {{ "{{-" }} include "inference-gateway.labels" . | nindent 4 {{ "}}" }}
 stringData:
   {{- range $section := .Sections }}
   {{- range $name, $section := $section }}
@@ -31,30 +33,27 @@ stringData:
   # {{ $section.Title }}
   {{- range $setting := $section.Settings }}
   {{- if $setting.Secret }}
-  {{ $setting.Env }}: "{{ if $setting.Default }}{{ $setting.Default }}{{ end }}"
+  {{ $setting.Env }}: ""
   {{- end }}
   {{- end }}
-  {{- end }}
-  {{- end }}
+  {{- end -}}
+  {{- end -}}
   {{- end }}
 `
 
-	// Create template with functions
-	t, err := template.New("configmap").Funcs(template.FuncMap{
+	t, err := template.New("helm-secret").Funcs(template.FuncMap{
 		"upper": strings.ToUpper,
 	}).Parse(tmpl)
 	if err != nil {
 		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	// Create file with proper indentation
 	f, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer f.Close()
 
-	// Prepare template data
 	data := struct {
 		Sections  []map[string]openapi.Section
 		Providers map[string]openapi.ProviderConfig
@@ -63,7 +62,6 @@ stringData:
 		Providers: schema.Components.Schemas.Provider.XProviderConfigs,
 	}
 
-	// Execute template
 	if err := t.Execute(f, data); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)
 	}
@@ -71,50 +69,46 @@ stringData:
 	return nil
 }
 
-func GenerateConfigMap(filePath string, oas string) error {
-	// Read OpenAPI spec
+func GenerateHelmConfigMap(filePath string, oas string) error {
 	schema, err := openapi.Read(oas)
 	if err != nil {
 		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
 	}
 
-	tmpl := `---
-apiVersion: v1
+	tmpl := `apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: inference-gateway
-  namespace: inference-gateway
+  name: {{ "{{" }} .Values.envFrom.configMapRef {{ "}}" }}
   labels:
-    app: inference-gateway
+    {{ "{{-" }} include "inference-gateway.labels" . | nindent 4 {{ "}}" }}
 data:
   {{- range $section := .Sections }}
   {{- range $name, $section := $section }}
   # {{ $section.Title }}
   {{- range $setting := $section.Settings }}
   {{- if not $setting.Secret }}
-  {{ $setting.Env }}: "{{ if $setting.Default }}{{ $setting.Default }}{{ end }}"
+  {{ printf "{{- if .Values.config.%s }}" $setting.Env }}
+  {{ $setting.Env }}: {{ printf "{{ .Values.config.%s | quote }}" $setting.Env }}
+  {{ "{{- end }}" }}
   {{- end }}
   {{- end }}
-  {{- end }}
+  {{- end -}}
   {{- end }}
 `
 
-	// Create template with functions
-	t, err := template.New("configmap").Funcs(template.FuncMap{
+	t, err := template.New("helm-configmap").Funcs(template.FuncMap{
 		"upper": strings.ToUpper,
 	}).Parse(tmpl)
 	if err != nil {
 		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	// Create file with proper indentation
 	f, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer f.Close()
 
-	// Prepare template data
 	data := struct {
 		Sections  []map[string]openapi.Section
 		Providers map[string]openapi.ProviderConfig
@@ -123,7 +117,6 @@ data:
 		Providers: schema.Components.Schemas.Provider.XProviderConfigs,
 	}
 
-	// Execute template
 	if err := t.Execute(f, data); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)
 	}

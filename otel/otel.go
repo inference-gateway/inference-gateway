@@ -46,7 +46,7 @@ type OpenTelemetryImpl struct {
 	requestDurationHistogram metric.Float64Histogram
 }
 
-func (o *OpenTelemetryImpl) Init(config config.Config) error {
+func (o *OpenTelemetryImpl) Init(cfg config.Config) error {
 	// Create a Prometheus exporter
 	exporter, err := prometheus.New()
 	if err != nil {
@@ -56,9 +56,9 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 	// Create resource with service information
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
-		semconv.ServiceName(config.ApplicationName),
-		semconv.ServiceVersion("1.0.0"),
-		semconv.DeploymentEnvironmentName(config.Environment),
+		semconv.ServiceName(config.APPLICATION_NAME),
+		semconv.ServiceVersion(config.VERSION),
+		semconv.DeploymentEnvironmentName(cfg.Environment),
 	)
 
 	// Define histogram boundaries for metrics
@@ -87,7 +87,7 @@ func (o *OpenTelemetryImpl) Init(config config.Config) error {
 	otel.SetMeterProvider(o.meterProvider)
 
 	// Create meter
-	o.meter = o.meterProvider.Meter(config.ApplicationName)
+	o.meter = o.meterProvider.Meter(config.APPLICATION_NAME)
 
 	// Initialize metrics
 	var err1, err2, err3, err4, err5, err6, err7, err8, err9, err10 error

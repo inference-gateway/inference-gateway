@@ -1,0 +1,599 @@
+---
+version: "3"
+
+tasks:
+  test-helm:
+    desc: "Run helm tests"
+    cmds:
+      - helm dependency update ../charts/inference-gateway
+      - helm lint ../charts/inference-gateway
+      - |
+        helm template --debug --dry-run \
+          ../charts/inference-gateway \
+          --values ../charts/inference-gateway/values.yaml \
+          --set autoscaling.enabled=true \
+          --set ingress.enabled=true \
+          --set ingress.hosts[0].host=api2.inference-gateway.local \
+          --set ingress.hosts[0].paths[0].path=/ \
+          --set ingress.hosts[0].paths[0].pathType=ImplementationSpecific \
+          --set ingress.tls.enabled=true \
+          --set ingress.tls.hosts[0]=api2.inference-gateway.local \
+          --set ingress.tls.secretName=api2-inference-gateway-local-tls
+
+  deploy-infrastructure:
+    desc: "Deploy the infrastructure"
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      - helm repo add grafana https://grafana.github.io/helm-charts
+      - helm repo add codecentric https://codecentric.github.io/helm-charts
+      - helm repo add jetstack https://charts.jetstack.io
+      - helm repo add bitnami https://charts.bitnami.com/bitnami
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace kube-system \
+          --version 4.12.1 \
+          ingress-nginx ingress-nginx/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace cert-manager \
+          --version 1.17.1 \
+          --set crds.enabled=true \
+          cert-manager jetstack/cert-manager
+      - |
+        kubectl apply -f - <<EOF
+        apiVersion: cert-manager.io/v1
+        kind: ClusterIssuer
+        metadata:
+          name: selfsigned-issuer
+        spec:
+          selfSigned: {}
+        EOF
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace observability \
+          --version 70.4.2 \
+          --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+          --set-string prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
+          --set prometheus.enabled=false \
+          --set alertmanager.enabled=false \
+          --set kubeStateMetrics.enabled=false \
+          --set nodeExporter.enabled=false \
+          --set grafana.enabled=false \
+          kube-prometheus-stack prometheus-community/kube-prometheus-stack
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace observability \
+          --version 5.17.0 \
+          grafana-operator grafana/grafana-operator
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace idp \
+          --version 16.6.2 \
+          --set global.postgresql.auth.username=dbusername \
+          --set global.postgresql.auth.password=dbpassword \
+          --set global.postgresql.auth.database=keycloak \
+          keycloak-db bitnami/postgresql \
+          --wait
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/kubernetes.yml
+      - |
+        kubectl apply -f - <<EOF
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        metadata:
+          name: keycloak-cert
+          namespace: idp
+        spec:
+          secretName: keycloak-tls
+          issuerRef:
+            name: selfsigned-issuer
+            kind: ClusterIssuer
+          commonName: keycloak.inference-gateway.local
+          dnsNames:
+            - keycloak.inference-gateway.local
+            - keycloak-service.idp.svc.cluster.local
+          subject:
+            organizations:
+            - Inference Gateway
+            organizationalUnits:
+            - IT
+            countries:
+            - US
+            localities:
+            - San Francisco
+            provinces:
+            - California
+        EOF
+      - |
+        kubectl -n idp apply -f - <<EOF
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: keycloak-db-postgresql
+          labels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
+            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/component: identity-provider
+            app.kubernetes.io/part-of: inference-gateway
+        type: Opaque
+        stringData:
+          username: dbusername
+          password: dbpassword
+        EOF
+      - |
+        kubectl -n idp apply -f - <<EOF
+        apiVersion: k8s.keycloak.org/v2alpha1
+        kind: Keycloak
+        metadata:
+          name: keycloak
+          labels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
+            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/component: identity-provider
+            app.kubernetes.io/part-of: inference-gateway
+        spec:
+          instances: 2
+          startOptimized: false
+          ingress:
+            enabled: false
+          db:
+            vendor: postgres
+            host: keycloak-db-postgresql
+            usernameSecret:
+              name: keycloak-db-postgresql
+              key: username
+            passwordSecret:
+              name: keycloak-db-postgresql
+              key: password
+            database: keycloak
+          http:
+            httpEnabled: true
+            httpPort: 8180
+            httpsPort: 8543
+            tlsSecret: keycloak-tls
+          httpManagement:
+            port: 9000
+          hostname:
+            hostname: keycloak.inference-gateway.local
+            strict: true
+          features:
+            disabled:
+              - admin
+              - step-up-authentication
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          scheduling:
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchExpressions:
+                      - key: app.kubernetes.io/name
+                        operator: In
+                        values:
+                        - keycloak
+                    topologyKey: kubernetes.io/hostname
+        EOF
+      - |
+        kubectl -n idp apply -f - <<EOF
+        apiVersion: networking.k8s.io/v1
+        kind: Ingress
+        metadata:
+          name: keycloak
+          namespace: idp
+          labels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
+            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/component: identity-provider
+            app.kubernetes.io/part-of: inference-gateway
+          annotations:
+            nginx.ingress.kubernetes.io/rewrite-target: /
+            nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        spec:
+          ingressClassName: nginx
+          tls:
+          - hosts:
+            - keycloak.inference-gateway.local
+            secretName: keycloak-tls
+          rules:
+            - host: keycloak.inference-gateway.local
+              http:
+                paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                      service:
+                        name: keycloak-service
+                        port:
+                          number: 8543
+        EOF
+      - task: import-realm
+
+  deploy-inference-gateway:
+    desc: "deploy the helm chart to a local cluster"
+    cmds:
+      - helm dependency update ../charts/inference-gateway
+      - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
+      - | # Trust the self-signed certificate
+        kubectl create configmap keycloak-ca \
+          -n inference-gateway \
+          --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)" \
+          --dry-run=client -o yaml | kubectl apply --server-side -f -
+      - |
+        # HACK: because the keycloak is deployed on the same cluster and not somewhere else, 
+        # we'll rewrite and resolve to the ingress instead of letting it connect via the internal dns,
+        # Reason is - 
+        # keycloak supports only 1 issuer(iss), in production you most likely deploy keycloak somewhere 
+        # else and the endpoint will be publicly available, so there should be no issues, the hack is only for
+        # this local setup - to make the keycloak.inference-gateway.local available also from within the cluster
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: coredns-custom
+          namespace: kube-system
+        data:
+          keycloak.inference-gateway.server: |
+            keycloak.inference-gateway.local {
+                log
+                rewrite name keycloak.inference-gateway.local host.k3d.internal
+                forward . 127.0.0.1
+            }
+        EOF
+        kubectl -n kube-system rollout restart deployment coredns
+        kubectl -n kube-system rollout status deployment coredns
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace inference-gateway \
+          --values ../charts/inference-gateway/values.yaml \
+          --set autoscaling.enabled=true \
+          --set ingress.enabled=true \
+          --set envFrom.configMapRef=inference-gateway \
+          --set envFrom.secretRef=inference-gateway \
+          --set volumes[0].name=keycloak-ca \
+          --set volumes[0].configMap.name=keycloak-ca \
+          --set volumeMounts[0].name=keycloak-ca \
+          --set volumeMounts[0].mountPath=/usr/local/share/ca-certificates/keycloak-ca.crt \
+          --set volumeMounts[0].subPath=ca.crt \
+          --set volumeMounts[0].readOnly=true \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0-rc.24
+      - |
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: inference-gateway-client-secret
+          namespace: inference-gateway
+        type: Opaque
+        stringData:
+          # OpenID Connect
+          OIDC_CLIENT_ID: inference-gateway-client
+          OIDC_CLIENT_SECRET: very-secret
+          # Providers
+          ANTHROPIC_API_KEY: ""
+          CLOUDFLARE_API_KEY: ""
+          COHERE_API_KEY: ""
+          GROQ_API_KEY: ""
+          OLLAMA_API_KEY: ""
+          OPENAI_API_KEY: ""
+          DEEPSEEK_API_KEY: ""
+        EOF
+      - |
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: inference-gateway
+          namespace: inference-gateway
+        data:
+          # General settings
+          ENVIRONMENT: "development"
+          ENABLE_AUTH: "true"
+          # OpenID Connect
+          OIDC_ISSUER_URL: https://keycloak.inference-gateway.local/realms/inference-gateway-realm
+          SSL_CERT_FILE: /usr/local/share/ca-certificates/keycloak-ca.crt
+          # Server settings
+          SERVER_HOST: "0.0.0.0"
+          SERVER_PORT: "8080"
+          SERVER_READ_TIMEOUT: "30s"
+          SERVER_WRITE_TIMEOUT: "30s"
+          SERVER_IDLE_TIMEOUT: "120s"
+          SERVER_TLS_CERT_PATH: ""
+          SERVER_TLS_KEY_PATH: ""
+          # Client settings
+          CLIENT_TIMEOUT: "30s"
+          CLIENT_MAX_IDLE_CONNS: "20"
+          CLIENT_MAX_IDLE_CONNS_PER_HOST: "20"
+          CLIENT_IDLE_CONN_TIMEOUT: "30s"
+          CLIENT_TLS_MIN_VERSION: "TLS12"
+          # Providers
+          ANTHROPIC_API_URL: "https://api.anthropic.com/v1"
+          CLOUDFLARE_API_URL: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai"
+          COHERE_API_URL: "https://api.cohere.ai"
+          GROQ_API_URL: "https://api.groq.com/openai/v1"
+          OLLAMA_API_URL: "http://ollama.ollama.svc.cluster.local:8080/v1"
+          OPENAI_API_URL: "https://api.openai.com/v1"
+          DEEPSEEK_API_URL: "https://api.deepseek.com"
+        EOF
+      - |
+        kubectl -n inference-gateway rollout restart deployment inference-gateway
+        kubectl -n inference-gateway rollout status deployment inference-gateway
+
+  clean:
+    desc: "Clean the gateway"
+    cmds:
+      - ctlptl delete -f Cluster.yaml
+
+  import-realm:
+    desc: "Import Keycloak realm using CRD"
+    cmds:
+      - |
+        kubectl -n idp apply -f - <<EOF
+        apiVersion: k8s.keycloak.org/v2alpha1
+        kind: KeycloakRealmImport
+        metadata:
+          name: inference-gateway-realm
+          namespace: idp
+          labels:
+            app.kubernetes.io/name: keycloak
+            app.kubernetes.io/instance: keycloak
+            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/component: identity-provider
+            app.kubernetes.io/part-of: inference-gateway
+        spec:
+          keycloakCRName: keycloak
+          realm:
+            {
+              "realm": "inference-gateway-realm",
+              "enabled": true,
+              "registrationAllowed": false,
+              "displayName": "Example Keycloak Sign-In",
+              "displayNameHtml": "<h1 style=\"font-size: 40pt; font-weight: 400;\">Keycloak Sign-In</h1>",
+              "clients": [
+                {
+                  "clientId": "inference-gateway-client",
+                  "enabled": true,
+                  "protocol": "openid-connect",
+                  "standardFlowEnabled": true,
+                  "implicitFlowEnabled": false,
+                  "directAccessGrantsEnabled": true,
+                  "serviceAccountsEnabled": false,
+                  "publicClient": false,
+                  "redirectUris": ["http://www.inference-gateway.local:3000/*"],
+                  "webOrigins": ["http://www.inference-gateway.local:3000"],
+                  "clientAuthenticatorType": "client-secret",
+                  "secret": "very-secret",
+                  "protocolMappers": [
+                    {
+                      "name": "audience-mapper",
+                      "protocol": "openid-connect",
+                      "protocolMapper": "oidc-audience-mapper",
+                      "config": {
+                        "included.client.audience": "inference-gateway-client",
+                        "id.token.claim": "true",
+                        "access.token.claim": "true",
+                        "add.to.id.token": "true",
+                        "add.to.access.token": "true"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "users": [
+                {
+                  "username": "user",
+                  "firstName": "Example",
+                  "lastName": "User",
+                  "email": "example@keycloak.org",
+                  "enabled": true,
+                  "credentials": [
+                    {
+                      "type": "password",
+                      "value": "password",
+                      "temporary": false
+                    }
+                  ],
+                  "clientRoles": {
+                    "account": ["manage-account"]
+                  },
+                  "realmRoles": []
+                }
+              ]
+            }
+        EOF
+
+  fetch-access-token:
+    desc: "Fetch the access token"
+    cmds:
+      - |
+        curl -k -s -X POST \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          "https://keycloak.inference-gateway.local/realms/inference-gateway-realm/protocol/openid-connect/token" \
+          -d "grant_type=password" \
+          -d "client_id=inference-gateway-client" \
+          -d "client_secret=very-secret" \
+          -d "username=user" \
+          -d "password=password" | jq -r .access_token
+
+  print-access-token-payload:
+    desc: "Print the decoded access token payload"
+    cmds:
+      - |
+        ACCESS_TOKEN=$(task fetch-access-token)
+        echo $ACCESS_TOKEN | tr '.' '\n' | sed -n 2p | base64 -d | jq .
+
+  fetch-models:
+    desc: "List all LLMs from the Inference-Gateway"
+    cmds:
+      - |
+        ACCESS_TOKEN=$(task fetch-access-token)
+        curl -k -X GET -H "Authorization: Bearer $ACCESS_TOKEN" https://api.inference-gateway.local/v1/models
+
+  generate-completions:
+    desc: "Generate completions using Ollama provider"
+    cmds:
+      - |
+        ACCESS_TOKEN=$(task fetch-access-token)
+        echo "Enter your prompt (type your text and press Enter):"
+        read USER_PROMPT
+
+        echo "\nSending request to Inference Gateway...\n"
+
+        # Create properly escaped JSON payload
+        JSON_PAYLOAD=$(jq -n \
+          --arg model "ollama/deepseek-r1:1.5b" \
+          --arg system_content "You are a helpful assistant." \
+          --arg user_content "$USER_PROMPT" \
+          '{
+            model: $model,
+            messages: [
+              {
+                role: "system",
+                content: $system_content
+              },
+              {
+                role: "user",
+                content: $user_content
+              }
+            ]
+          }')
+
+        curl -k -s -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $ACCESS_TOKEN" \
+          https://api.inference-gateway.local/v1/chat/completions \
+          -d "$JSON_PAYLOAD" | jq '.'
+
+  deploy-ollama-deepseek-r1:
+    desc: "Deploy DeepSeek R1 using ollama"
+    cmds:
+      - |
+        echo "Creating ollama namespace if it doesn't exist..."
+        kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply -f -
+
+        echo "Creating configuration for ollama..."
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: ollama
+          namespace: ollama
+          labels:
+            app: ollama
+        data:
+          OLLAMA_HOST: "0.0.0.0:8080"
+          OLLAMA_MODELS: /root/.ollama/models
+        EOF
+
+        echo "Creating service account for ollama..."
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: ollama
+          namespace: ollama
+          labels:
+            app: ollama
+        EOF
+
+        echo "Creating service for ollama..."
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: ollama
+          namespace: ollama
+          labels:
+            app: ollama
+        spec:
+          selector:
+            app: ollama
+          ports:
+            - protocol: TCP
+              port: 8080
+              targetPort: 8080
+        EOF
+
+        echo "Deploying ollama with deepseek-r1:1.5b model..."
+        kubectl apply -f - <<EOF
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: ollama
+          namespace: ollama
+          labels:
+            app: ollama
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: ollama
+          template:
+            metadata:
+              labels:
+                app: ollama
+            spec:
+              serviceAccountName: ollama
+              containers:
+                - name: ollama
+                  image: ollama/ollama:latest
+                  ports:
+                    - containerPort: 8080
+                  envFrom:
+                    - configMapRef:
+                        name: ollama
+                  resources:
+                    limits:
+                      cpu: 4000m
+                      memory: 8000Mi
+                    requests:
+                      cpu: 2000m
+                      memory: 4000Mi
+                  volumeMounts:
+                    - name: ollama-models-store
+                      mountPath: /root/.ollama/models
+                - name: ollama-model-puller
+                  image: ollama/ollama:latest
+                  command:
+                    - bash
+                  args:
+                    - -c
+                    - "ollama pull deepseek-r1:1.5b && tail -f /dev/null"
+                  env:
+                    - name: OLLAMA_HOST
+                      value: "127.0.0.1:8080"
+                  resources:
+                    limits:
+                      cpu: 1000m
+                      memory: 1000Mi
+                    requests:
+                      cpu: 200m
+                      memory: 200Mi
+              volumes:
+                - name: ollama-models-store
+                  emptyDir: {}
+        EOF
+
+        echo "Waiting for ollama deployment to be ready..."
+        kubectl -n ollama rollout status deployment/ollama
+        echo "DeepSeek R1 model has been deployed successfully with Ollama!"
+        echo "You can now use it with: ollama/deepseek-r1:1.5b"

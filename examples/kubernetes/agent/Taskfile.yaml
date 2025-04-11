@@ -1,0 +1,45 @@
+---
+version: "3"
+
+tasks:
+  deploy-infrastructure:
+    desc: "Deploy cluster and registry"
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace kube-system \
+          --version 4.12.1 \
+          --wait \
+          ingress-nginx ingress-nginx/ingress-nginx
+      - kubectl apply -f logs-analyzer/namespace.yaml
+
+  build-logs-analyzer:
+    desc: "Build and push logs analyzer image"
+    cmds:
+      - docker build -t localhost:5000/dummyrepo/logs-analyzer:latest ./logs-analyzer
+      - docker push localhost:5000/dummyrepo/logs-analyzer:latest
+
+  deploy-agent:
+    desc: "Deploy logs analyzer and test deployment"
+    cmds:
+      - kubectl apply -f logs-analyzer/
+      - kubectl apply -f failing-deployment/
+
+  deploy-inference-gateway:
+    desc: "Deploy inference-gateway with monitoring"
+    cmds:
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace inference-gateway \
+          --set envFrom.secretRef=inference-gateway \
+          --wait \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
+
+  clean:
+    desc: "Clean up the cluster"
+    cmds:
+      - ctlptl delete -f Cluster.yaml

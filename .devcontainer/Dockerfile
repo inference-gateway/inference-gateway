@@ -9,7 +9,8 @@ ENV ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom \
     GORELEASER_VERSION=v2.8.0 \
     GOLANG_CI_LINT_VERSION=v1.64.7 \
     GITHUB_CLI_VERSION=2.68.1 \
-    NODE_VERSION=lts
+    NODE_VERSION=lts \
+    SEMANTIC_RELEASE_VERSION=v24.2.3
 
 RUN apt-get update && \
     # Determine architecture
@@ -48,6 +49,14 @@ RUN apt-get update && \
     mv /tmp/gh_${GITHUB_CLI_VERSION}_linux_${architecture_pretty}/bin/gh /usr/local/bin/gh && \
     # Install Spectral for OpenAPI linting
     npm install -g @stoplight/spectral-cli && \
+    # Install semantic-release and plugins
+    npm install -g semantic-release@${SEMANTIC_RELEASE_VERSION} \
+                   @semantic-release/changelog \
+                   @semantic-release/git \
+                   @semantic-release/github \
+                   @semantic-release/exec \
+                   conventional-changelog-cli \
+                   conventional-changelog-conventionalcommits && \
     # Clean up
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

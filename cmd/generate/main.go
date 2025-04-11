@@ -38,18 +38,18 @@ func main() {
 			fmt.Printf("Error generating env example: %v\n", err)
 			os.Exit(1)
 		}
-	case "ConfigMap":
-		fmt.Printf("Generating Kubernetes ConfigMap to %s\n", output)
-		err := kubegen.GenerateConfigMap(output, "openapi.yaml")
+	case "HelmConfigMap":
+		fmt.Printf("Generating Helm ConfigMap template to %s\n", output)
+		err := kubegen.GenerateHelmConfigMap(output, "openapi.yaml")
 		if err != nil {
-			fmt.Printf("Error generating config map: %v\n", err)
+			fmt.Printf("Error generating Helm config map: %v\n", err)
 			os.Exit(1)
 		}
-	case "Secret":
-		fmt.Printf("Generating Kubernetes Secret to %s\n", output)
-		err := kubegen.GenerateSecret(output, "openapi.yaml")
+	case "HelmSecret":
+		fmt.Printf("Generating Helm Secret template to %s\n", output)
+		err := kubegen.GenerateHelmSecret(output, "openapi.yaml")
 		if err != nil {
-			fmt.Printf("Error generating secret: %v\n", err)
+			fmt.Printf("Error generating Helm secret: %v\n", err)
 			os.Exit(1)
 		}
 	case "MD":
