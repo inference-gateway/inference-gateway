@@ -12,9 +12,3 @@ k3d:
           - arg: --disable=traefik
             nodeFilters:
               - server:0
-    # Simulate a multi-node cluster with NFS, in production you would use a real NFS server for ollama LLMs
-    volumes:
-      - volume: nfs:/nfs
-        nodeFilters:
-          - server:0
-          - agent:*
