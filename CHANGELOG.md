@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.16](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.15...v0.5.0-rc.16) (2025-04-11)
+
+### ♻️ Improvements
+
+* Update Docker image tag to use version instead of tag ([1854d7f](https://github.com/inference-gateway/inference-gateway/commit/1854d7f0c8c1710bbd3b717856d1c0f34c8b8ae2))
+
 ## [0.5.0-rc.15](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.14...v0.5.0-rc.15) (2025-04-11)
 
 ### ♻️ Improvements
