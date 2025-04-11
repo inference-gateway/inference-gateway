@@ -412,3 +412,173 @@ tasks:
       - |
         ACCESS_TOKEN=$(task fetch-access-token)
         curl -k -X GET -H "Authorization: Bearer $ACCESS_TOKEN" https://api.inference-gateway.local/v1/models
+
+  generate-completions:
+    desc: "Generate completions using Ollama provider"
+    cmds:
+      - |
+        ACCESS_TOKEN=$(task fetch-access-token)
+        echo "Enter your prompt (type your text and press Enter):"
+        read USER_PROMPT
+
+        echo "\nSending request to Inference Gateway...\n"
+
+        # Create properly escaped JSON payload
+        JSON_PAYLOAD=$(jq -n \
+          --arg model "ollama/deepseek-r1:1.5b" \
+          --arg system_content "You are a helpful assistant." \
+          --arg user_content "$USER_PROMPT" \
+          '{
+            model: $model,
+            messages: [
+              {
+                role: "system",
+                content: $system_content
+              },
+              {
+                role: "user",
+                content: $user_content
+              }
+            ]
+          }')
+
+        curl -k -s -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $ACCESS_TOKEN" \
+          https://api.inference-gateway.local/v1/chat/completions \
+          -d "$JSON_PAYLOAD" | jq '.'
+
+  deploy-ollama-deepseek-r1:
+    desc: "Deploy DeepSeek R1 using ollama"
+    cmds:
+      - |
+        echo "Creating ollama namespace if it doesn't exist..."
+        kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply -f -
+
+        echo "Creating configuration for ollama..."
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: ollama
+          namespace: ollama
+          labels:
+            app: ollama
+        data:
+          OLLAMA_HOST: "0.0.0.0:8080"
+          OLLAMA_MODELS: /root/.ollama/models
+        EOF
+
+        echo "Creating service account for ollama..."
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ServiceAccount
+        metadata:
+          name: ollama
+          namespace: ollama
+          labels:
+            app: ollama
+        EOF
+
+        echo "Creating service for ollama..."
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: ollama
+          namespace: ollama
+          labels:
+            app: ollama
+        spec:
+          selector:
+            app: ollama
+          ports:
+            - protocol: TCP
+              port: 8080
+              targetPort: 8080
+        EOF
+
+        echo "Deploying ollama with deepseek-r1:1.5b model..."
+        kubectl apply -f - <<EOF
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          name: ollama
+          namespace: ollama
+          labels:
+            app: ollama
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: ollama
+          template:
+            metadata:
+              labels:
+                app: ollama
+            spec:
+              serviceAccountName: ollama
+              containers:
+                - name: ollama
+                  image: ollama/ollama:latest
+                  ports:
+                    - containerPort: 8080
+                  envFrom:
+                    - configMapRef:
+                        name: ollama
+                  resources:
+                    limits:
+                      cpu: 4000m
+                      memory: 8000Mi
+                    requests:
+                      cpu: 2000m
+                      memory: 4000Mi
+                  volumeMounts:
+                    - name: ollama-models-store
+                      mountPath: /root/.ollama/models
+                - name: ollama-model-puller
+                  image: ollama/ollama:latest
+                  command:
+                    - bash
+                  args:
+                    - -c
+                    - "ollama pull deepseek-r1:1.5b && tail -f /dev/null"
+                  env:
+                    - name: OLLAMA_HOST
+                      value: "127.0.0.1:8080"
+                  resources:
+                    limits:
+                      cpu: 1000m
+                      memory: 1000Mi
+                    requests:
+                      cpu: 200m
+                      memory: 200Mi
+              volumes:
+                - name: ollama-models-store
+                  emptyDir: {}
+        EOF
+
+        echo "Waiting for ollama deployment to be ready..."
+        kubectl -n ollama rollout status deployment/ollama
+
+        echo "Updating inference-gateway ConfigMap to use ollama service..."
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: inference-gateway
+          namespace: inference-gateway
+        data:
+          ENVIRONMENT: "development"
+          ENABLE_AUTH: "true"
+          OIDC_ISSUER_URL: https://keycloak.inference-gateway.local/realms/inference-gateway-realm
+          SSL_CERT_FILE: /usr/local/share/ca-certificates/keycloak-ca.crt
+          OLLAMA_API_URL: "http://ollama.ollama.svc.cluster.local:8080/v1"
+        EOF
+
+        echo "Restarting inference-gateway to apply new configuration..."
+        kubectl -n inference-gateway rollout restart deployment inference-gateway
+        kubectl -n inference-gateway rollout status deployment inference-gateway
+
+        echo "DeepSeek R1 model has been deployed successfully with Ollama!"
+        echo "You can now use it with: ollama/deepseek-r1:1.5b"
