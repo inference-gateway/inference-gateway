@@ -13,7 +13,16 @@ tasks:
           --create-namespace \
           --namespace kube-system \
           --version 4.12.1 \
+          --wait \
           ingress-nginx ingress-nginx/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace cert-manager \
+          --version 1.17.1 \
+          --set crds.enabled=true \
+          --wait \
+          cert-manager jetstack/cert-manager
       - kubectl apply -f cert-manager/
 
   deploy-inference-gateway:
@@ -24,9 +33,15 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --set ingress.enabled=true \
-          --set ingress.tls[0].hosts[0]="api.inference-gateway.local" \
-          --set ingress.tls[0].secretName="api-inference-gateway-tls" \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
+          --set ingress.annotations."cert-manager\.io/cluster-issuer"=selfsigned-issuer \
+          --set ingress.hosts[0].host=api.inference-gateway.local \
+          --set ingress.hosts[0].paths[0].path=/ \
+          --set ingress.hosts[0].paths[0].pathType=ImplementationSpecific \
+          --set ingress.tls.enabled=true \
+          --set ingress.tls.hosts[0]=api.inference-gateway.local \
+          --set ingress.tls.secretName=api-inference-gateway-local-tls \
+          --wait \
+          inference-gateway ../../../charts/inference-gateway
 
   clean:
     desc: "Clean up the cluster"

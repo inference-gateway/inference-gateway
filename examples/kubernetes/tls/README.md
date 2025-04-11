@@ -36,7 +36,7 @@ task deploy-inference-gateway
 3. Test secure endpoint:
 
 ```bash
-curl -k https://api.inference-gateway.local
+curl -k https://api.inference-gateway.local/v1/models
 ```
 
 ## Configuration
