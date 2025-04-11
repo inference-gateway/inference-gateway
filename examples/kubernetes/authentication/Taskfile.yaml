@@ -13,6 +13,7 @@ tasks:
           --create-namespace \
           --namespace kube-system \
           --version 4.12.1 \
+          --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
         helm upgrade --install \
@@ -20,8 +21,31 @@ tasks:
           --namespace cert-manager \
           --version 1.17.1 \
           --set crds.enabled=true \
+          --wait \
           cert-manager jetstack/cert-manager
-      - kubectl apply -f keycloak/
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace idp \
+          --version 16.6.2 \
+          --set global.postgresql.auth.username=dbusername \
+          --set global.postgresql.auth.password=dbpassword \
+          --set global.postgresql.auth.database=keycloak \
+          --set primary.resources.requests.cpu=100m \
+          --set primary.resources.requests.memory=256Mi \
+          --set primary.resources.limits.cpu=500m \
+          --set primary.resources.limits.memory=512Mi \
+          --set readReplicas.resources.requests.cpu=100m \
+          --set readReplicas.resources.requests.memory=256Mi \
+          --set readReplicas.resources.limits.cpu=500m \
+          --set readReplicas.resources.limits.memory=512Mi \
+          --wait \
+          keycloak-db bitnami/postgresql
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/kubernetes.yml
+      - kubectl apply -f cert-manager/
+      - kubectl apply --server-side -f keycloak/
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with authentication"
@@ -33,6 +57,7 @@ tasks:
           --set ingress.enabled=true \
           --set envFrom.configMapRef=inference-gateway \
           --set envFrom.secretRef=inference-gateway \
+          --
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:

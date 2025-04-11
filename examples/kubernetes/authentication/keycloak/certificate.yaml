@@ -1,0 +1,26 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: keycloak-cert
+  namespace: idp
+spec:
+  secretName: keycloak-tls
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+  commonName: keycloak.inference-gateway.local
+  dnsNames:
+    - keycloak.inference-gateway.local
+    - keycloak-service.idp.svc.cluster.local
+  subject:
+    organizations:
+      - Inference Gateway
+    organizationalUnits:
+      - IT
+    countries:
+      - US
+    localities:
+      - San Francisco
+    provinces:
+      - California
