@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.18](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.17...v0.5.0-rc.18) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Update environment variable usage for container image tagging in artifacts.yml ([35764d3](https://github.com/inference-gateway/inference-gateway/commit/35764d30b05c38eded533d9332624b6c5b731a14))
+* Update image reference format for vulnerability scanning in artifacts.yml ([2b2572c](https://github.com/inference-gateway/inference-gateway/commit/2b2572c8983fd497ab5d8067568f67ac7d0d53dc))
+
 ## [0.5.0-rc.17](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.16...v0.5.0-rc.17) (2025-04-11)
 
 ### 🐛 Bug Fixes
