@@ -235,7 +235,6 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --values ../charts/inference-gateway/values.yaml \
-          --set image.tag=0.5.0-rc.1 \
           --set autoscaling.enabled=true \
           --set ingress.enabled=true \
           --set envFrom.configMapRef=inference-gateway \
@@ -246,7 +245,7 @@ tasks:
           --set volumeMounts[0].mountPath=/usr/local/share/ca-certificates/keycloak-ca.crt \
           --set volumeMounts[0].subPath=ca.crt \
           --set volumeMounts[0].readOnly=true \
-          inference-gateway ../charts/inference-gateway
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:v0.5.0-rc.14
       - |
         kubectl apply -f - <<EOF
         apiVersion: v1
@@ -267,6 +266,7 @@ tasks:
           name: inference-gateway
           namespace: inference-gateway
         data:
+          ENVIRONMENT: "development"
           ENABLE_AUTH: "true"
           OIDC_ISSUER_URL: https://keycloak-service.idp.svc.cluster.local:8543/realms/inference-gateway-realm
           SSL_CERT_FILE: /usr/local/share/ca-certificates/keycloak-ca.crt
