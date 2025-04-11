@@ -41,7 +41,7 @@ tasks:
           --set ingress.tls.hosts[0]=api.inference-gateway.local \
           --set ingress.tls.secretName=api-inference-gateway-local-tls \
           --wait \
-          inference-gateway ../../../charts/inference-gateway
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:
     desc: "Clean up the cluster"

@@ -1,5 +1,17 @@
 # TLS Example
 
+## Table of Contents
+
+- [TLS Example](#tls-example)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Configuration](#configuration)
+    - [Certificate Setup](#certificate-setup)
+    - [Gateway TLS](#gateway-tls)
+  - [Cleanup](#cleanup)
+
 This example demonstrates secure TLS communication with the Inference Gateway using:
 
 - Cert-manager for certificate management
