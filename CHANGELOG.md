@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.20](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.19...v0.5.0-rc.20) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Update image reference in vulnerability scanning to use env.VERSION ([2eb446f](https://github.com/inference-gateway/inference-gateway/commit/2eb446f68515bbb6c699d2889fe022523b208124))
+
+### 🔧 Miscellaneous
+
+* Update inference-gateway chart reference to version 0.5.0-rc.19 ([1ee2b69](https://github.com/inference-gateway/inference-gateway/commit/1ee2b694bed29c16c3db80eabb4016c185b07ec4))
+
 ## [0.5.0-rc.19](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.18...v0.5.0-rc.19) (2025-04-11)
 
 ### 🐛 Bug Fixes
