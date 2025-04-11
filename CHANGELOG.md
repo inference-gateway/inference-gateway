@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0-rc.24](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.23...v0.5.0-rc.24) (2025-04-11)
+
+### 🐛 Bug Fixes
+
+* Add labels to GitHub release configuration ([f4fe902](https://github.com/inference-gateway/inference-gateway/commit/f4fe902e0d791f80642ed5db8441b765bc2eddbe))
+
 ## [0.5.0-rc.23](https://github.com/inference-gateway/inference-gateway/compare/v0.5.0-rc.22...v0.5.0-rc.23) (2025-04-11)
 
 ### 🐛 Bug Fixes
