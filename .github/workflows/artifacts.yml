@@ -97,10 +97,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set VERSION
+        run: echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+
       - name: Run Vulnerability Scanning
         uses: aquasecurity/trivy-action@0.29.0
         with:
-          image-ref: "ghcr.io/${{ github.repository }}:${TAG#v}"
+          image-ref: "ghcr.io/${{ github.repository }}:${VERSION}"
           exit-code: "0"
           format: "sarif"
           output: "trivy-results.sarif"
