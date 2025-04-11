@@ -57,7 +57,6 @@ tasks:
           --set ingress.enabled=true \
           --set envFrom.configMapRef=inference-gateway \
           --set envFrom.secretRef=inference-gateway \
-          --
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:
