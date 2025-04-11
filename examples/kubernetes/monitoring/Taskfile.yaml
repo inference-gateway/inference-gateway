@@ -3,37 +3,29 @@ version: "3"
 
 tasks:
   deploy-infrastructure:
-    desc: "Deploy authentication infrastructure"
+    desc: "Deploy monitoring infrastructure"
     cmds:
       - ctlptl apply -f Cluster.yaml
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-      - helm repo add jetstack https://charts.jetstack.io
+      - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
           --version 4.12.1 \
           ingress-nginx ingress-nginx/ingress-nginx
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace cert-manager \
-          --version 1.17.1 \
-          --set crds.enabled=true \
-          cert-manager jetstack/cert-manager
-      - kubectl apply -f keycloak/
+      - kubectl apply -f prometheus/
+      - kubectl apply -f grafana/
 
   deploy-inference-gateway:
-    desc: "Deploy inference-gateway with authentication"
+    desc: "Deploy inference-gateway with monitoring"
     cmds:
       - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
-          --set ingress.enabled=true \
-          --set envFrom.configMapRef=inference-gateway \
-          --set envFrom.secretRef=inference-gateway \
+          --set monitoring.enabled=true \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:

@@ -1,39 +1,48 @@
-# Basic Kubernetes Example
+# Basic Deployment Example
 
-In this basic example, we will deploy the Inference Gateway.
+This example demonstrates the simplest deployment of the Inference Gateway using Helm.
 
-Feel free to explore the [ConfigMap](inference-gateway/configmap.yaml) and [Secret](inference-gateway/secret.yaml) configurations of the Inference Gateway to set up your desired providers.
+## Architecture
 
-1. Create the local cluster:
+- **Gateway**: Inference Gateway deployed via helm chart
+- **Ingress**: Basic ingress configuration
 
-```bash
-task cluster-create
-```
+## Prerequisites
 
-2. Deploy the Inference Gateway onto Kubernetes:
+- [Task](https://taskfile.dev/installation/)
+- kubectl
+- helm
+- ctlptl (for cluster management)
 
-```bash
-task deploy
-```
+## Quick Start
 
-3. Proxy the Inference Gateway, to access it locally:
-
-```bash
-task proxy
-```
-
-4. Check the available LLMs:
+1. Deploy infrastructure:
 
 ```bash
-curl -X GET http://localhost:8080/v1/models | jq .
+task deploy-infrastructure
 ```
 
-1. Interact with the Inference Gateway using the specific provider API(note the prefix is `/v1/chat/completions/*`):
+2. Deploy Inference Gateway:
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions?provider=groq -d '{"model": "llama-3.2-3b-preview", "messages": [{"role": "user", "content": "Explain the importance of fast language models. Keep it short and concise."}]}' | jq .
+task deploy-inference-gateway
 ```
 
-\*\* You can refer to the [Taskfile.yaml](./Taskfile.yaml) at any point for detailed information about the tasks used in this example.
+3. Test the gateway:
 
-\*\* If the response is cut off mid-stream while the token is still being transmitted, it may be caused by the inference gateway's read timeout. Consider increasing or adjusting the timeout value and redeploying the gateway.
+```bash
+curl http://api.inference-gateway.local/v1/models
+```
+
+## Configuration
+
+### Gateway Settings
+
+- Configured via helm values in Taskfile.yaml
+- No additional components required
+
+## Cleanup
+
+```bash
+task clean
+```

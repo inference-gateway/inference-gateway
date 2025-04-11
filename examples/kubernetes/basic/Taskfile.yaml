@@ -1,42 +1,32 @@
+---
 version: "3"
 
-dotenv: [".env"]
-
 tasks:
-  deploy:
-    desc: Deploy the Inference Gateway
-    cmds:
-      - kubectl apply -f inference-gateway/namespace.yaml
-      - kubectl apply -f inference-gateway/
-      - kubectl -n inference-gateway rollout status deployment/inference-gateway
-
-  undeploy:
-    desc: Undeploy the Inference Gateway
-    cmds:
-      - kubectl delete -f inference-gateway/namespace.yaml
-
-  restart:
-    desc: Restart the Inference Gateway
-    cmds:
-      - kubectl -n inference-gateway rollout restart deployment/inference-gateway
-      - kubectl -n inference-gateway rollout status deployment/inference-gateway
-
-  proxy:
-    desc: Proxy the Inference Gateway to a local port
-    cmds:
-      - kubectl -n inference-gateway port-forward svc/inference-gateway 8080:8080
-
-  cluster-create:
-    desc: Create a local Kubernetes cluster
+  deploy-infrastructure:
+    desc: "Deploy basic infrastructure"
     cmds:
       - ctlptl apply -f Cluster.yaml
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace kube-system \
+          --version 4.12.1 \
+          ingress-nginx ingress-nginx/ingress-nginx
 
-  cluster-delete:
-    desc: Delete a local Kubernetes cluster
+  deploy-inference-gateway:
+    desc: "Deploy inference-gateway with helm"
     cmds:
-      - ctlptl delete -f Cluster.yaml
+      - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace inference-gateway \
+          --set ingress.enabled=true \
+          --set ingress.tls.enabled=false \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:
-    desc: Clean the project
+    desc: "Clean up the cluster"
     cmds:
-      - task cluster-delete
+      - ctlptl delete -f Cluster.yaml

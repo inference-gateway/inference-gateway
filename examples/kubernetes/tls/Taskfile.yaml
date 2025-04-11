@@ -3,7 +3,7 @@ version: "3"
 
 tasks:
   deploy-infrastructure:
-    desc: "Deploy authentication infrastructure"
+    desc: "Deploy TLS infrastructure"
     cmds:
       - ctlptl apply -f Cluster.yaml
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -14,17 +14,10 @@ tasks:
           --namespace kube-system \
           --version 4.12.1 \
           ingress-nginx ingress-nginx/ingress-nginx
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace cert-manager \
-          --version 1.17.1 \
-          --set crds.enabled=true \
-          cert-manager jetstack/cert-manager
-      - kubectl apply -f keycloak/
+      - kubectl apply -f cert-manager/
 
   deploy-inference-gateway:
-    desc: "Deploy inference-gateway with authentication"
+    desc: "Deploy inference-gateway with TLS"
     cmds:
       - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
       - |
@@ -32,8 +25,8 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --set ingress.enabled=true \
-          --set envFrom.configMapRef=inference-gateway \
-          --set envFrom.secretRef=inference-gateway \
+          --set ingress.tls[0].hosts[0]="api.inference-gateway.local" \
+          --set ingress.tls[0].secretName="api-inference-gateway-tls" \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:

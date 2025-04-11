@@ -13,7 +13,7 @@ tasks:
           --values ../charts/inference-gateway/values.yaml \
           --set autoscaling.enabled=true
 
-  test-deploy-infrastructure:
+  deploy-infrastructure:
     desc: "Deploy the infrastructure"
     cmds:
       - ctlptl apply -f Cluster.yaml
@@ -220,7 +220,7 @@ tasks:
         EOF
       - task: import-realm
 
-  test-helm-deploy:
+  deploy-inference-gateway:
     desc: "deploy the helm chart to a local cluster"
     cmds:
       - helm dependency update ../charts/inference-gateway

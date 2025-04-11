@@ -26,7 +26,7 @@ This document explains how to use the Taskfile.yml in the hack directory to mana
 ### Cluster Management
 
 ```bash
-task test-deploy-infrastructure
+task deploy-infrastructure
 ```
 
 Creates local k3d cluster with:
@@ -56,7 +56,7 @@ task test-helm
 ### Deployment
 
 ```bash
-task test-helm-deploy
+task deploy-inference-gateway
 ```
 
 Deploys inference-gateway with:
@@ -96,8 +96,8 @@ Deploys Ollama with deepseek-r1 model
 
 ## Typical Workflow
 
-1. Start cluster: `task test-deploy-infrastructure`
-2. Deploy gateway: `task test-helm-deploy`
+1. Start cluster: `task deploy-infrastructure`
+2. Deploy gateway: `task deploy-inference-gateway`
 3. Test auth: `task fetch-access-token`
 4. Test LLM: `task generate-completions`
 

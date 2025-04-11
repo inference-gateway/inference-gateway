@@ -78,9 +78,13 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
   tls:
-    - hosts:
-        - api.inference-gateway.local
-      secretName: api-inference-gateway-tls
+    enabled: true
+    # Hosts can be specified as either:
+    # hosts: api.inference-gateway.local  # Single host
+    # or
+    hosts:
+      - api.inference-gateway.local # Multiple hosts as array
+    secretName: api-inference-gateway-tls
 
 resources:
   limits:

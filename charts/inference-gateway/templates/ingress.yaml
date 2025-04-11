@@ -13,15 +13,17 @@ spec:
   {{- with .Values.ingress.className }}
   ingressClassName: {{ . }}
   {{- end }}
-  {{- if .Values.ingress.tls }}
+  {{- if and .Values.ingress.tls .Values.ingress.tls.enabled }}
   tls:
-    {{- range .Values.ingress.tls }}
+    {{- $hosts := .Values.ingress.tls.hosts }}
+    {{- if not (kindIs "slice" $hosts) }}
+      {{- $hosts = list $hosts }}
+    {{- end }}
     - hosts:
-        {{- range .hosts }}
+        {{- range $hosts }}
         - {{ . | quote }}
         {{- end }}
-      secretName: {{ .secretName }}
-    {{- end }}
+      secretName: {{ .Values.ingress.tls.secretName | quote }}
   {{- end }}
   rules:
     {{- range .Values.ingress.hosts }}

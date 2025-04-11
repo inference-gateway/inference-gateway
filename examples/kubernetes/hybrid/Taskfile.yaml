@@ -1,68 +1,31 @@
+---
 version: "3"
 
-dotenv: [".env"]
-
 tasks:
-  deploy-inference-gateway:
-    desc: Deploy the Inference Gateway
-    cmds:
-      - kubectl apply -f inference-gateway/namespace.yaml
-      - kubectl apply -f inference-gateway/serviceaccount.yaml
-      - kubectl apply -f inference-gateway/
-      - kubectl -n inference-gateway rollout status deployment/inference-gateway
-
-  deploy-ollama:
-    desc: Deploy the Ollama service
-    cmds:
-      - kubectl apply -f ollama/namespace.yaml
-      - kubectl apply -f ollama/serviceaccount.yaml
-      - kubectl apply -f ollama/
-      - kubectl -n ollama rollout status deployment/ollama
-
-  deploy:
-    desc: Deploy the Inference Gateway and Ollama service
-    cmds:
-      - task: deploy-inference-gateway
-      - task: deploy-ollama
-
-  undeploy-inference-gateway:
-    desc: Undeploy the Inference Gateway
-    cmds:
-      - kubectl delete -f inference-gateway/namespace.yaml
-
-  undeploy-ollama:
-    desc: Undeploy the Ollama service
-    cmds:
-      - kubectl delete -f ollama/namespace.yaml
-
-  undeploy:
-    desc: Undeploy the Inference Gateway and Ollama service
-    cmds:
-      - task: undeploy-inference-gateway
-      - task: undeploy-ollama
-
-  restart-inference-gateway:
-    desc: Restart the Inference Gateway
-    cmds:
-      - kubectl -n inference-gateway rollout restart deployment/inference-gateway
-      - kubectl -n inference-gateway rollout status deployment/inference-gateway
-
-  proxy:
-    desc: Proxy the Inference Gateway to a local port
-    cmds:
-      - kubectl -n inference-gateway port-forward svc/inference-gateway 8080:8080
-
-  cluster-create:
-    desc: Create a local Kubernetes cluster
+  deploy-infrastructure:
+    desc: "Deploy hybrid infrastructure"
     cmds:
       - ctlptl apply -f Cluster.yaml
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace kube-system \
+          --version 4.12.1 \
+          ingress-nginx ingress-nginx/ingress-nginx
+      - kubectl apply -f ollama/
 
-  cluster-delete:
-    desc: Delete a local Kubernetes cluster
+  deploy-inference-gateway:
+    desc: "Deploy inference-gateway with hybrid providers"
     cmds:
-      - ctlptl delete -f Cluster.yaml --cascade=true
+      - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace inference-gateway \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 
   clean:
-    desc: Clean the project
+    desc: "Clean up the cluster"
     cmds:
-      - task cluster-delete
+      - ctlptl delete -f Cluster.yaml
