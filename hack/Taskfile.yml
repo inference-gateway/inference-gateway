@@ -245,7 +245,7 @@ tasks:
           --set volumeMounts[0].mountPath=/usr/local/share/ca-certificates/keycloak-ca.crt \
           --set volumeMounts[0].subPath=ca.crt \
           --set volumeMounts[0].readOnly=true \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:v0.5.0-rc.14
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0-rc.19
       - |
         kubectl apply -f - <<EOF
         apiVersion: v1
