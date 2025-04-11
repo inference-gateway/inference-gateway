@@ -18,32 +18,31 @@ import (
 	rest "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	homedir "k8s.io/client-go/util/homedir"
-	yaml "sigs.k8s.io/yaml"
 )
 
-const systemPrompt = `
-# System Instructions
-You are an AI assistant specialized in site reliability engineering.
-Your task is to analyze the following error log and provide a detailed summary of the issue along with potential solutions.
+const systemPrompt = `You are a Kubernetes reliability engineer. Analyze this error log and:
+1. Identify the root cause
+2. Suggest solutions
+3. Provide prevention tips
+Keep response under 500 characters.
 
-# Error Log
-%s
+Error Log:
+%s`
 
-# Instructions
-1. Identify the root cause of the error.
-2. Suggest potential solutions to resolve the issue.
-3. Provide any additional recommendations to prevent similar issues in the future.
-
-# Output
-- The length of the answer should be max 1000 characters.
-- Provide a concise summary of the issue.
-- List potential solutions with examples.
-- Mention the Pod, Namespace, and any other relevant information.
-`
-
-const userPrompt = `What's wrong with the following error log?`
+// Common error patterns to detect
+var errorPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`(?i)error`),
+	regexp.MustCompile(`(?i)exception`),
+	regexp.MustCompile(`(?i)fail`),
+	regexp.MustCompile(`(?i)panic`),
+	regexp.MustCompile(`(?i)timeout`),
+	regexp.MustCompile(`(?i)denied`),
+	regexp.MustCompile(`(?i)oom`),
+	regexp.MustCompile(`(?i)crash`),
+}
 
 func main() {
+	// Get Kubernetes config - works both in-cluster and locally
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
@@ -58,102 +57,88 @@ func main() {
 		log.Fatalf("Error creating Kubernetes client: %v", err)
 	}
 
-	provider := sdk.ProviderGroq       // Using Groq API for analysis, but you can also use local Ollama provider if needed
-	model := "llama-3.3-70b-versatile" // Using the Llama model for analysis
-	apiClient := sdk.NewClient("http://inference-gateway.inference-gateway:8080")
+	// Initialize inference gateway client with proper options
+	apiClient := sdk.NewClient(&sdk.ClientOptions{
+		BaseURL: "http://inference-gateway.inference-gateway:8080/v1",
+	})
+
+	log.Println("Starting AI-powered Kubernetes log analyzer agent...")
 
 	for {
-		var errorLogs []string
 		namespaces, err := clientset.CoreV1().Namespaces().List(context.Background(), metav1.ListOptions{})
 		if err != nil {
-			log.Fatalf("Error listing namespaces: %v", err)
+			log.Printf("Error listing namespaces: %v", err)
+			continue
 		}
 
 		for _, ns := range namespaces.Items {
 			pods, err := clientset.CoreV1().Pods(ns.Name).List(context.Background(), metav1.ListOptions{})
 			if err != nil {
-				log.Fatalf("Error listing pods in namespace %s: %v", ns.Name, err)
+				log.Printf("Error listing pods in namespace %s: %v", ns.Name, err)
+				continue
 			}
 
 			for _, pod := range pods.Items {
-				// Ignore logs from the logs-analyzer pod itself, otherwise there is an infinite logs accumulation loop, because the response from the LLM might contain the word error
-				if pod.Namespace == "logs-analyzer" && strings.Contains(pod.Name, "logs-analyzer") {
+				// Skip our own pod to avoid recursion
+				if strings.Contains(pod.Name, "logs-analyzer") {
 					continue
 				}
 
-				// Only analyze running pods and user space errors
-				if pod.Status.Phase != v1.PodRunning && pod.Status.Phase != v1.PodFailed && pod.Status.Phase != v1.PodSucceeded {
+				// Only analyze running/failed pods
+				if pod.Status.Phase != v1.PodRunning && pod.Status.Phase != v1.PodFailed {
 					continue
 				}
 
 				req := clientset.CoreV1().Pods(ns.Name).GetLogs(pod.Name, &v1.PodLogOptions{})
 				logs, err := req.Stream(context.Background())
 				if err != nil {
-					log.Printf("Error getting logs from pod %s in namespace %s: %v", pod.Name, ns.Name, err)
+					log.Printf("Error getting logs from pod %s/%s: %v", ns.Name, pod.Name, err)
 					continue
 				}
 
 				buf := new(strings.Builder)
 				_, err = io.Copy(buf, logs)
+				logs.Close()
 				if err != nil {
-					log.Fatalf("Error reading logs: %v", err)
+					log.Printf("Error reading logs: %v", err)
+					continue
 				}
-				// Check for any line that contains the word "error" in the logs case-insensitively
-				// Use regular expression to match lines containing the word "error" (case-insensitively)
-				re := regexp.MustCompile(`(?i)error`)
+
+				// Check for error patterns in logs
 				for _, line := range strings.Split(buf.String(), "\n") {
-					if re.MatchString(line) {
-						podSpec, err := yaml.Marshal(pod.Spec)
-						if err != nil {
-							log.Fatalf("Error marshalling pod spec: %v", err)
+					for _, pattern := range errorPatterns {
+						if pattern.MatchString(line) {
+							ctx := context.Background()
+							response, err := apiClient.GenerateContent(
+								ctx,
+								sdk.Groq,
+								"llama-3.3-70b-versatile",
+								[]sdk.Message{
+									{
+										Role:    sdk.System,
+										Content: fmt.Sprintf(systemPrompt, line),
+									},
+									{
+										Role:    sdk.User,
+										Content: "Analyze this error",
+									},
+								},
+							)
+							if err != nil {
+								log.Printf("Error analyzing log: %v", err)
+								continue
+							}
+
+							log.Printf("Found error in %s/%s:\nError: %s\nAnalysis: %s",
+								ns.Name, pod.Name, line, response.Choices[0].Message.Content)
+							break
 						}
-						errorLog := fmt.Sprintf("Error: %s\nNamespace: %s\nPod: %s\nSpec: %s", line, ns.Name, pod.Name, string(podSpec))
-						errorLogs = append(errorLogs, errorLog)
 					}
 				}
-				logs.Close()
 			}
 		}
 
-		// Add some safety cost and compute guards - limit the number of error logs to analyze, take the latest ones.
-		maxErrorLogs := 10
-		if len(errorLogs) > maxErrorLogs {
-			errorLogs = errorLogs[len(errorLogs)-maxErrorLogs:]
-		}
-
-		fmt.Printf("Analyzing %d error logs...\n", len(errorLogs))
-		for _, errorLog := range errorLogs {
-			fmt.Println(errorLog)
-		}
-
-		for _, errorLog := range errorLogs {
-			// Add some safety cost and compute guards - truncate the error log to max 100 characters.
-			if len(errorLog) > 100 {
-				errorLog = errorLog[:100]
-			}
-
-			response, err := apiClient.GenerateContent(
-				provider,
-				model,
-				[]sdk.Message{
-					{
-						Role:    sdk.RoleSystem,
-						Content: fmt.Sprintf(systemPrompt, errorLog),
-					},
-					{
-						Role:    sdk.RoleUser,
-						Content: userPrompt,
-					},
-				},
-			)
-			if err != nil {
-				log.Printf("Error analyzing log: %v", err)
-				continue
-			}
-			fmt.Printf("Analysis result: %s\n", response.Response.Content)
-		}
-
-		// Sleep for 1min before analyzing logs again
-		time.Sleep(1 * time.Minute)
+		// Sleep before next scan
+		time.Sleep(30 * time.Second)
 	}
 }

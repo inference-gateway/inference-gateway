@@ -21,22 +21,57 @@ This example demonstrates an agent-based deployment pattern with the Inference G
 
 ## Quick Start
 
-1. Deploy infrastructure:
+1. First deploy the cluster and registry:
 
 ```bash
 task deploy-infrastructure
 ```
 
-2. Deploy Inference Gateway:
+2. Build and push logs analyzer image (after registry is ready):
+
+```bash
+task build-logs-analyzer
+```
+
+3. Deploy Inference Gateway:
 
 ```bash
 task deploy-inference-gateway
 ```
 
-3. Monitor agent logs:
+4. Configure the API for the provider used in this example - Groq:
 
 ```bash
-kubectl logs -f deployment/logs-analyzer -n agent-monitoring
+kubectl -n inference-gateway apply --server-side -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+type: Opaque
+stringData:
+  GROQ_API_KEY: ""
+EOF
+```
+
+Replace `GROQ_API_KEY` with your actual API key and apply it.
+And restart the gateway to apply the changes:
+
+```bash
+kubectl -n inference-gateway rollout restart deployment inference-gateway
+kubectl -n inference-gateway rollout status deployment inference-gateway
+```
+
+5. Deploy the logs analyzer and test deployment:
+
+```bash
+task deploy-agent
+```
+
+6. Monitor agent logs:
+
+```bash
+kubectl logs -f deployment/logs-analyzer -n logs-analyzer
 ```
 
 ## Configuration
@@ -45,6 +80,12 @@ kubectl logs -f deployment/logs-analyzer -n agent-monitoring
 
 - Edit YAMLs in `logs-analyzer/` directory
 - Configure log collection patterns as needed
+- Rebuild and redeploy after changes:
+
+```bash
+task build-logs-analyzer
+task deploy-agent
+```
 
 ### Test Deployment
 

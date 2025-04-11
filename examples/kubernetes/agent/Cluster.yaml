@@ -3,6 +3,7 @@ apiVersion: ctlptl.dev/v1alpha1
 kind: Registry
 name: local-registry
 port: 5000
+image: registry:2
 ---
 apiVersion: ctlptl.dev/v1alpha1
 kind: Cluster
@@ -18,9 +19,3 @@ k3d:
           - arg: --disable=traefik
             nodeFilters:
               - server:0
-    # Simulate a multi-node cluster with NFS, in production you would use a real NFS server for ollama LLMs
-    volumes:
-      - volume: nfs:/nfs
-        nodeFilters:
-          - server:0
-          - agent:*
