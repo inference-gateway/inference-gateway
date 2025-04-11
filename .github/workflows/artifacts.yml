@@ -134,19 +134,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata from previous job
-        id: meta
-        uses: docker/metadata-action@v5.7.0
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=sha,format=long
+      - name: Set VERSION
+        run: echo "VERSION=${TAG#v}" >> $GITHUB_ENV
 
-      - name: Sign container image
+      - name: Sign container images
+        env:
+          CONTAINER_REGISTRY: ghcr.io
         run: |
-          for tag in $(echo "${{ steps.meta.outputs.tags }}" | tr '\n' ' '); do
-            cosign sign --yes $tag
-          done
+          docker pull ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ env.VERSION }}
+          VERSION_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ env.VERSION }})
+          cosign sign --yes $VERSION_DIGEST
+
+          if [[ ! "$TAG" =~ -rc ]]; then
+            docker pull ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:latest
+            LATEST_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:latest)
+            cosign sign --yes $LATEST_DIGEST
+          fi
 
   publish_helm_chart:
     name: Publish Helm Chart
