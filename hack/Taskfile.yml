@@ -231,12 +231,12 @@ tasks:
           --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)" \
           --dry-run=client -o yaml | kubectl apply --server-side -f -
       - |
-        # HACK: because we don't host the keycloak somewhere else deployed - it's on the same cluster, 
+        # HACK: because the keycloak is deployed on the same cluster and not somewhere else, 
         # we'll rewrite and resolve to the ingress instead of letting it connect via the internal dns,
         # Reason is - 
         # keycloak supports only 1 issuer(iss), in production you most likely deploy keycloak somewhere 
         # else and the endpoint will be publicly available, so there should be no issues, the hack is only for
-        # this local setup - to make the keycloak.inference-gateway.local available from within the cluster as well
+        # this local setup - to make the keycloak.inference-gateway.local available also from within the cluster
         kubectl apply -f - <<EOF
         apiVersion: v1
         kind: ConfigMap
