@@ -1,5 +1,17 @@
 # Hybrid Deployment Example
 
+## Table of Contents
+
+- [Hybrid Deployment Example](#hybrid-deployment-example)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Configuration](#configuration)
+    - [Local Provider](#local-provider)
+    - [Cloud Providers](#cloud-providers)
+  - [Cleanup](#cleanup)
+
 This example demonstrates a hybrid deployment of the Inference Gateway using:
 
 - Local Ollama provider
@@ -50,8 +62,22 @@ curl -X POST http://api.inference-gateway.local/v1/chat/completions \
 
 ### Cloud Providers
 
-- Configure via environment variables in Secret
-- Set API keys for desired providers
+Set envFrom.secretRef in the `inference-gateway` deployment to reference a secret for configuring API keys for cloud providers.
+
+- Example secret creation:
+
+```bash
+kubectl -n inference-gateway create secret generic inference-gateway \
+  --from-literal=GROQ_API_KEY=your_api_key \
+  --from-literal=ANTHROPIC_API_KEY=another_value
+```
+
+And restart the gateway to apply the changes:
+
+```bash
+kubectl -n inference-gateway rollout restart deployment inference-gateway
+kubectl -n inference-gateway rollout status deployment inference-gateway
+```
 
 ## Cleanup
 
