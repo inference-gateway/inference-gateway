@@ -331,11 +331,6 @@ tasks:
         kubectl -n inference-gateway rollout restart deployment inference-gateway
         kubectl -n inference-gateway rollout status deployment inference-gateway
 
-  clean-services:
-    desc: "Clean up the services"
-    cmds:
-      - helm uninstall inference-gateway
-
   clean:
     desc: "Clean the gateway"
     cmds:
