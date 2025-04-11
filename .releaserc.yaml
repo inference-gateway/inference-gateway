@@ -62,6 +62,9 @@ plugins:
       releasedLabels: ["released"]
       releaseNameTemplate: "🚀 Version ${nextRelease.version}"
       successCommentCondition: "false"
+      labels:
+        - "release"
+        - "<%= nextRelease.channel === 'rc' ? 'rc' : '' %>"
 
   - - "@semantic-release/git"
     - assets:
