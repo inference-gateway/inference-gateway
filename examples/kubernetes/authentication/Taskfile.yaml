@@ -46,18 +46,87 @@ tasks:
       - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/kubernetes.yml
       - kubectl apply -f cert-manager/
       - kubectl apply --server-side -f keycloak/
+      - |
+        # HACK: because the keycloak is deployed on the same cluster and not somewhere else, 
+        # we'll rewrite and resolve to the ingress instead of letting it connect via the internal dns,
+        # Reason is - 
+        # keycloak supports only 1 issuer(iss), in production you most likely deploy keycloak somewhere 
+        # else and the endpoint will be publicly available, so there should be no issues, the hack is only for
+        # this local setup - to make the keycloak.inference-gateway.local available also from within the cluster
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: coredns-custom
+          namespace: kube-system
+        data:
+          keycloak.inference-gateway.server: |
+            keycloak.inference-gateway.local {
+                log
+                rewrite name keycloak.inference-gateway.local host.k3d.internal
+                forward . 127.0.0.1
+            }
+        EOF
+        kubectl -n kube-system rollout restart deployment coredns
+        kubectl -n kube-system rollout status deployment coredns
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with authentication"
     cmds:
+      - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
+      - | # Trust the self-signed certificate so inference-gateway can connect to keycloak via TLS
+        kubectl create configmap keycloak-ca \
+          -n inference-gateway \
+          --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)" \
+          --dry-run=client -o yaml | kubectl apply --server-side -f -
+      - | # Create the secret with the keycloak client credentials
+        kubectl create secret generic inference-gateway \
+          -n inference-gateway \
+          --from-literal=client_id=inference-gateway-client \
+          --from-literal=client_secret=very-secret \
+          --dry-run=client -o yaml | kubectl apply -f -
+      - | # Create the configmap, enabling auth with the keycloak issuer url
+        kubectl create configmap inference-gateway \
+          -n inference-gateway \
+          --from-literal=ENABLE_AUTH=true \
+          --from-literal=OIDC_ISSUER_URL=https://keycloak.inference-gateway.local/realms/inference-gateway-realm \
+          --dry-run=client -o yaml | kubectl apply -f -
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
           --set ingress.enabled=true \
+          --set ingress.tls.enabled=true \
           --set envFrom.configMapRef=inference-gateway \
           --set envFrom.secretRef=inference-gateway \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
+          --set extraEnv[0].name=SSL_CERT_FILE \
+          --set extraEnv[0].value=/usr/local/share/ca-certificates/keycloak-ca.crt \
+          --set volumes[0].name=keycloak-ca \
+          --set volumes[0].configMap.name=keycloak-ca \
+          --set volumeMounts[0].name=keycloak-ca \
+          --set volumeMounts[0].mountPath=/usr/local/share/ca-certificates/keycloak-ca.crt \
+          --set volumeMounts[0].subPath=ca.crt \
+          --set volumeMounts[0].readOnly=true \
+          --wait \
+          inference-gateway ../../../charts/inference-gateway
+
+  keycloak-admin-password:
+    desc: "Get Keycloak admin password"
+    cmds:
+      - kubectl -n idp get secret keycloak-initial-admin -o jsonpath="{.data.password}" | base64 --decode
+
+  fetch-access-token:
+    desc: "Fetch the access token"
+    cmds:
+      - |
+        curl -k -s -X POST \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          "https://keycloak.inference-gateway.local/realms/inference-gateway-realm/protocol/openid-connect/token" \
+          -d "grant_type=password" \
+          -d "client_id=inference-gateway-client" \
+          -d "client_secret=very-secret" \
+          -d "username=user" \
+          -d "password=password" | jq -r .access_token
 
   clean:
     desc: "Clean up the cluster"

@@ -1,0 +1,62 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: import-inference-gateway-realm
+  namespace: idp
+spec:
+  keycloakCRName: keycloak
+  realm:
+    {
+      "realm": "inference-gateway-realm",
+      "enabled": true,
+      "registrationAllowed": false,
+      "displayName": "Example Keycloak Sign-In",
+      "displayNameHtml": '<h1 style="font-size: 40pt; font-weight: 400;">Keycloak Sign-In</h1>',
+      "clients":
+        [
+          {
+            "clientId": "inference-gateway-client",
+            "enabled": true,
+            "protocol": "openid-connect",
+            "standardFlowEnabled": true,
+            "implicitFlowEnabled": false,
+            "directAccessGrantsEnabled": true,
+            "serviceAccountsEnabled": false,
+            "publicClient": false,
+            "redirectUris": [],
+            "webOrigins": [],
+            "clientAuthenticatorType": "client-secret",
+            "secret": "very-secret",
+            "protocolMappers":
+              [
+                {
+                  "name": "audience-mapper",
+                  "protocol": "openid-connect",
+                  "protocolMapper": "oidc-audience-mapper",
+                  "config":
+                    {
+                      "included.client.audience": "inference-gateway-client",
+                      "id.token.claim": "true",
+                      "access.token.claim": "true",
+                      "add.to.id.token": "true",
+                      "add.to.access.token": "true",
+                    },
+                },
+              ],
+          },
+        ],
+      "users":
+        [
+          {
+            "username": "user",
+            "firstName": "Example",
+            "lastName": "User",
+            "email": "example@keycloak.org",
+            "enabled": true,
+            "credentials":
+              [{ "type": "password", "value": "password", "temporary": false }],
+            "clientRoles": { "account": ["manage-account"] },
+            "realmRoles": [],
+          },
+        ],
+    }

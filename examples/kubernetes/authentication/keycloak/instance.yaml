@@ -29,10 +29,10 @@ spec:
   hostname:
     hostname: keycloak.inference-gateway.local
     strict: true
-  features:
-    disabled:
-      - admin
-      - step-up-authentication
+  # features:
+  #   disabled:
+  #     - admin
+  #     - step-up-authentication
   resources:
     requests:
       cpu: "500m"

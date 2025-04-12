@@ -18,7 +18,13 @@ tasks:
           --set ingress.hosts[0].paths[0].pathType=ImplementationSpecific \
           --set ingress.tls.enabled=true \
           --set ingress.tls.hosts[0]=api2.inference-gateway.local \
-          --set ingress.tls.secretName=api2-inference-gateway-local-tls
+          --set ingress.tls.secretName=api2-inference-gateway-local-tls \
+          --set envFrom.configMapRef=inference-gateway2 \
+          --set envFrom.secretRef=inference-gateway2 \
+          --set extraEnv[0].name=SSL_CERT_FILE \
+          --set extraEnv[0].value=/usr/local/share/ca-certificates/keycloak-ca.crt \
+          --set extraEnv[1].name=TEST \
+          --set extraEnv[1].value=TESTING
 
   deploy-infrastructure:
     desc: "Deploy the infrastructure"

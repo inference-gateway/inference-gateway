@@ -131,6 +131,11 @@ tolerations: []
 
 affinity: {}
 
+# Extra environment variables to add to the deployment
+extraEnv: []
+# - name: EXAMPLE_VAR
+#   value: "example-value"
+
 config:
   # General settings
   APPLICATION_NAME: "inference-gateway"
