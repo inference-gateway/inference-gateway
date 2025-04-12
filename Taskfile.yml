@@ -35,7 +35,7 @@ tasks:
   run:
     desc: "Run the gateway"
     cmds:
-      - ENVIRONMENT=production go run cmd/gateway/main.go
+      - go run cmd/gateway/main.go
 
   lint:
     desc: "Run Go static analysis and linting"

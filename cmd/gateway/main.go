@@ -128,6 +128,11 @@ func main() {
 	client := providers.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
 	providerRegistry := providers.NewProviderRegistry(cfg.Providers, logger)
 
+	// Set GIN mode based on environment
+	if cfg.Environment != "development" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	api := api.NewRouter(cfg, logger, providerRegistry, client)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
