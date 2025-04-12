@@ -1,5 +1,17 @@
 # Authentication Example
 
+## Table of Contents
+
+- [Authentication Example](#authentication-example)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Configuration](#configuration)
+    - [Keycloak Setup](#keycloak-setup)
+    - [Gateway Auth](#gateway-auth)
+  - [Cleanup](#cleanup)
+
 This example demonstrates Keycloak authentication integration with the Inference Gateway using:
 
 - Keycloak for identity management
