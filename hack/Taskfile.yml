@@ -24,7 +24,8 @@ tasks:
           --set extraEnv[0].name=SSL_CERT_FILE \
           --set extraEnv[0].value=/usr/local/share/ca-certificates/keycloak-ca.crt \
           --set extraEnv[1].name=TEST \
-          --set extraEnv[1].value=TESTING
+          --set extraEnv[1].value=TESTING \
+          --set monitoring.enabled=true
 
   deploy-infrastructure:
     desc: "Deploy the infrastructure"

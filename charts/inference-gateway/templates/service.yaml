@@ -4,6 +4,12 @@ metadata:
   name: {{ include "inference-gateway.fullname" . }}
   labels:
     {{- include "inference-gateway.labels" . | nindent 4 }}
+  {{- if .Values.monitoring.enabled }}
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: {{ .Values.monitoring.metricsPort }}
+    prometheus.io/path: "/metrics"
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -11,5 +17,11 @@ spec:
       targetPort: http
       protocol: TCP
       name: http
+    {{- if .Values.monitoring.enabled }}
+    - port: {{ .Values.monitoring.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+    {{- end }}
   selector:
     {{- include "inference-gateway.selectorLabels" . | nindent 4 }}
