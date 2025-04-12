@@ -37,8 +37,10 @@ task deploy-inference-gateway
 3. Access Grafana dashboards:
 
 ```bash
-kubectl port-forward svc/grafana-service 3000:3000 -n monitoring
+kubectl -n monitoring port-forward svc/grafana-service 3000:3000
 ```
+
+Or use the deployed ingress, add `grafana.inference-gateway.local` DNS to your /etc/hosts and open: http://grafana.inference-gateway.local
 
 ## Configuration
 

@@ -6,6 +6,10 @@ k3d:
   v1alpha5Simple:
     agents: 3
     image: docker.io/rancher/k3s:v1.32.0-k3s1
+    ports:
+      - port: 80:80
+        nodeFilters:
+          - server:0
     options:
       k3s:
         extraArgs:

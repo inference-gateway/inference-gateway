@@ -47,6 +47,7 @@
   "appPort": ["8080:8080", "3000:3000", "443:443", "80:80"],
   "runArgs": [
     "--add-host=api.inference-gateway.local:127.0.0.1",
-    "--add-host=keycloak.inference-gateway.local:127.0.0.1"
+    "--add-host=keycloak.inference-gateway.local:127.0.0.1",
+    "--add-host=grafana.inference-gateway.local:127.0.0.1"
   ]
 }
