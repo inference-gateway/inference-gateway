@@ -23,7 +23,6 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --set ingress.enabled=true \
-          --set ingress.tls.enabled=false \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
 

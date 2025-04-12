@@ -26,7 +26,6 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --set ingress.enabled=true \
-          --set ingress.tls.enabled=false \
           --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
