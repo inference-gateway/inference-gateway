@@ -156,7 +156,7 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
   tls:
-    enabled: true
+    enabled: false
     # Hosts can be specified as either:
     # hosts: api.inference-gateway.local  # Single host
     # or
