@@ -1,5 +1,16 @@
 # Monitoring Example
 
+## Table of Contents
+- [Monitoring Example](#monitoring-example)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Configuration](#configuration)
+    - [Monitoring Setup](#monitoring-setup)
+    - [Gateway Monitoring](#gateway-monitoring)
+  - [Cleanup](#cleanup)
+
 This example demonstrates monitoring integration with the Inference Gateway using:
 
 - Prometheus for metrics collection

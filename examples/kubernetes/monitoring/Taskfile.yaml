@@ -49,7 +49,6 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
-          --set config.ENVIRONMENT=development \
           --set config.ENABLE_TELEMETRY=true \
           --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
           --set monitoring.enabled=true \
@@ -60,7 +59,7 @@ tasks:
           --set autoscaling.targetCPUUtilizationPercentage=80 \
           --set autoscaling.targetMemoryUtilizationPercentage=80 \
           --wait \
-          inference-gateway ../../../charts/inference-gateway
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
       - kubectl label namespace inference-gateway monitoring="true" --overwrite
 
   deploy-ollama:
