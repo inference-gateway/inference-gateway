@@ -79,18 +79,39 @@ tasks:
           -n inference-gateway \
           --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)" \
           --dry-run=client -o yaml | kubectl apply --server-side -f -
-      - | # Create the secret with the keycloak client credentials
-        kubectl create secret generic inference-gateway \
-          -n inference-gateway \
-          --from-literal=client_id=inference-gateway-client \
-          --from-literal=client_secret=very-secret \
-          --dry-run=client -o yaml | kubectl apply -f -
-      - | # Create the configmap, enabling auth with the keycloak issuer url
-        kubectl create configmap inference-gateway \
-          -n inference-gateway \
-          --from-literal=ENABLE_AUTH=true \
-          --from-literal=OIDC_ISSUER_URL=https://keycloak.inference-gateway.local/realms/inference-gateway-realm \
-          --dry-run=client -o yaml | kubectl apply -f -
+      - | # Create the configmap with authentication enabled and the keycloak issuer URL
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          annotations:
+            meta.helm.sh/release-name: inference-gateway
+            meta.helm.sh/release-namespace: inference-gateway
+          labels:
+            app.kubernetes.io/managed-by: Helm
+          name: inference-gateway
+          namespace: inference-gateway
+        data:
+          ENABLE_AUTH: "true"
+          OIDC_ISSUER_URL: https://keycloak.inference-gateway.local/realms/inference-gateway-realm
+        EOF
+      - | # Create the secret with the keycloak client credentials, you would probably want to deploy it with external-secrets or something similar
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          annotations:
+            meta.helm.sh/release-name: inference-gateway
+            meta.helm.sh/release-namespace: inference-gateway
+          labels:
+            app.kubernetes.io/managed-by: Helm
+          name: inference-gateway
+          namespace: inference-gateway
+        stringData:
+          OIDC_CLIENT_ID: inference-gateway-client
+          OIDC_CLIENT_SECRET: very-secret
+        type: Opaque
+        EOF
       - |
         helm upgrade --install \
           --create-namespace \

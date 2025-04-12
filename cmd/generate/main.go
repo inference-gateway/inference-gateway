@@ -80,6 +80,13 @@ func main() {
 			fmt.Printf("Error generating config: %v\n", err)
 			os.Exit(1)
 		}
+	case "HelmValues":
+		fmt.Printf("Generating Helm values.yaml to %s\n", output)
+		err := kubegen.GenerateHelmValues(output, "openapi.yaml")
+		if err != nil {
+			fmt.Printf("Error generating Helm values: %v\n", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Println("Invalid type specified")
 		os.Exit(1)

@@ -1,81 +1,9 @@
+{{- if .Values.envFrom.configMapRef }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.envFrom.configMapRef }}
   labels:
     {{- include "inference-gateway.labels" . | nindent 4 }}
-data:
-  # General settings
-  {{- if .Values.config.ENVIRONMENT }}
-  ENVIRONMENT: {{ .Values.config.ENVIRONMENT | quote }}
-  {{- end }}
-  {{- if .Values.config.ENABLE_TELEMETRY }}
-  ENABLE_TELEMETRY: {{ .Values.config.ENABLE_TELEMETRY | quote }}
-  {{- end }}
-  {{- if .Values.config.ENABLE_AUTH }}
-  ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
-  {{- end }}
-  # OpenID Connect
-  {{- if .Values.config.OIDC_ISSUER_URL }}
-  OIDC_ISSUER_URL: {{ .Values.config.OIDC_ISSUER_URL | quote }}
-  {{- end }}
-  # Server settings
-  {{- if .Values.config.SERVER_HOST }}
-  SERVER_HOST: {{ .Values.config.SERVER_HOST | quote }}
-  {{- end }}
-  {{- if .Values.config.SERVER_PORT }}
-  SERVER_PORT: {{ .Values.config.SERVER_PORT | quote }}
-  {{- end }}
-  {{- if .Values.config.SERVER_READ_TIMEOUT }}
-  SERVER_READ_TIMEOUT: {{ .Values.config.SERVER_READ_TIMEOUT | quote }}
-  {{- end }}
-  {{- if .Values.config.SERVER_WRITE_TIMEOUT }}
-  SERVER_WRITE_TIMEOUT: {{ .Values.config.SERVER_WRITE_TIMEOUT | quote }}
-  {{- end }}
-  {{- if .Values.config.SERVER_IDLE_TIMEOUT }}
-  SERVER_IDLE_TIMEOUT: {{ .Values.config.SERVER_IDLE_TIMEOUT | quote }}
-  {{- end }}
-  {{- if .Values.config.SERVER_TLS_CERT_PATH }}
-  SERVER_TLS_CERT_PATH: {{ .Values.config.SERVER_TLS_CERT_PATH | quote }}
-  {{- end }}
-  {{- if .Values.config.SERVER_TLS_KEY_PATH }}
-  SERVER_TLS_KEY_PATH: {{ .Values.config.SERVER_TLS_KEY_PATH | quote }}
-  {{- end }}
-  # Client settings
-  {{- if .Values.config.CLIENT_TIMEOUT }}
-  CLIENT_TIMEOUT: {{ .Values.config.CLIENT_TIMEOUT | quote }}
-  {{- end }}
-  {{- if .Values.config.CLIENT_MAX_IDLE_CONNS }}
-  CLIENT_MAX_IDLE_CONNS: {{ .Values.config.CLIENT_MAX_IDLE_CONNS | quote }}
-  {{- end }}
-  {{- if .Values.config.CLIENT_MAX_IDLE_CONNS_PER_HOST }}
-  CLIENT_MAX_IDLE_CONNS_PER_HOST: {{ .Values.config.CLIENT_MAX_IDLE_CONNS_PER_HOST | quote }}
-  {{- end }}
-  {{- if .Values.config.CLIENT_IDLE_CONN_TIMEOUT }}
-  CLIENT_IDLE_CONN_TIMEOUT: {{ .Values.config.CLIENT_IDLE_CONN_TIMEOUT | quote }}
-  {{- end }}
-  {{- if .Values.config.CLIENT_TLS_MIN_VERSION }}
-  CLIENT_TLS_MIN_VERSION: {{ .Values.config.CLIENT_TLS_MIN_VERSION | quote }}
-  {{- end }}
-  # Providers
-  {{- if .Values.config.ANTHROPIC_API_URL }}
-  ANTHROPIC_API_URL: {{ .Values.config.ANTHROPIC_API_URL | quote }}
-  {{- end }}
-  {{- if .Values.config.CLOUDFLARE_API_URL }}
-  CLOUDFLARE_API_URL: {{ .Values.config.CLOUDFLARE_API_URL | quote }}
-  {{- end }}
-  {{- if .Values.config.COHERE_API_URL }}
-  COHERE_API_URL: {{ .Values.config.COHERE_API_URL | quote }}
-  {{- end }}
-  {{- if .Values.config.GROQ_API_URL }}
-  GROQ_API_URL: {{ .Values.config.GROQ_API_URL | quote }}
-  {{- end }}
-  {{- if .Values.config.OLLAMA_API_URL }}
-  OLLAMA_API_URL: {{ .Values.config.OLLAMA_API_URL | quote }}
-  {{- end }}
-  {{- if .Values.config.OPENAI_API_URL }}
-  OPENAI_API_URL: {{ .Values.config.OPENAI_API_URL | quote }}
-  {{- end }}
-  {{- if .Values.config.DEEPSEEK_API_URL }}
-  DEEPSEEK_API_URL: {{ .Values.config.DEEPSEEK_API_URL | quote }}
-  {{- end }}
+data: {}
+{{- end }}

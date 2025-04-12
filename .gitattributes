@@ -9,3 +9,4 @@ Configurations.md linguist-generated=true
 examples/docker-compose/**/.env.example linguist-generated=true
 charts/inference-gateway/templates/configmap.yaml linguist-generated=true
 charts/inference-gateway/templates/secret.yaml linguist-generated=true
+charts/inference-gateway/values.yaml linguist-generated=true

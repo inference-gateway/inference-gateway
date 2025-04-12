@@ -14,8 +14,19 @@ spec:
   template:
     metadata:
       annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-defaults.yaml") . | sha256sum }}
         {{- if .Values.envFrom.configMapRef }}
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config-overrides: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if eq .Values.envFrom.configMapRef (include "inference-gateway.fullname" .) }}
+        checksum/manual-config: {{ printf "%s" (lookup "v1" "ConfigMap" .Release.Namespace (include "inference-gateway.fullname" .)).data | sha256sum }}
+        {{- end }}
+        checksum/secrets-defaults: {{ include (print $.Template.BasePath "/secrets-defaults.yaml") . | sha256sum }}
+        {{- if .Values.envFrom.secretRef }}
+        checksum/secrets-overrides: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- if eq .Values.envFrom.secretRef (include "inference-gateway.fullname" .) }}
+        checksum/manual-secret: {{ printf "%s" (lookup "v1" "Secret" .Release.Namespace (include "inference-gateway.fullname" .)).data | sha256sum }}
         {{- end }}
         {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -60,8 +71,9 @@ spec:
           readinessProbe:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- if or .Values.envFrom.configMapRef .Values.envFrom.secretRef }}
           envFrom:
+            - configMapRef:
+                name: {{ include "inference-gateway.fullname" . }}-defaults
             {{- if .Values.envFrom.configMapRef }}
             - configMapRef:
                 name: {{ .Values.envFrom.configMapRef }}
@@ -70,7 +82,6 @@ spec:
             - secretRef:
                 name: {{ .Values.envFrom.secretRef }}
             {{- end }}
-          {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

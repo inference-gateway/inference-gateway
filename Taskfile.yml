@@ -12,8 +12,9 @@ tasks:
       # - go run cmd/generate/main.go -type Providers -output providers
       - go run cmd/generate/main.go -type Config -output config/config.go
       - go run cmd/generate/main.go -type MD -output Configurations.md
-      - go run cmd/generate/main.go -type HelmSecret -output charts/inference-gateway/templates/secret.yaml
-      - go run cmd/generate/main.go -type HelmConfigMap -output charts/inference-gateway/templates/configmap.yaml
+      - go run cmd/generate/main.go -type HelmSecret -output charts/inference-gateway/templates/secrets-defaults.yaml
+      - go run cmd/generate/main.go -type HelmConfigMap -output charts/inference-gateway/templates/configmap-defaults.yaml
+      - go run cmd/generate/main.go -type HelmValues -output charts/inference-gateway/values.yaml
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/basic/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/hybrid/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/tools/.env.example

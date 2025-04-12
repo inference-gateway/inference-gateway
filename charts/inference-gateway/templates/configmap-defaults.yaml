@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "inference-gateway.fullname" . }}-defaults
+  labels:
+    {{- include "inference-gateway.labels" . | nindent 4 }}
+data:
+  # General settings
+  ENVIRONMENT: {{ .Values.config.ENVIRONMENT | quote }}
+  ENABLE_TELEMETRY: {{ .Values.config.ENABLE_TELEMETRY | quote }}
+  ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
+  # OpenID Connect
+  OIDC_ISSUER_URL: {{ .Values.config.OIDC_ISSUER_URL | quote }}
+  # Server settings
+  SERVER_HOST: {{ .Values.config.SERVER_HOST | quote }}
+  SERVER_PORT: {{ .Values.config.SERVER_PORT | quote }}
+  SERVER_READ_TIMEOUT: {{ .Values.config.SERVER_READ_TIMEOUT | quote }}
+  SERVER_WRITE_TIMEOUT: {{ .Values.config.SERVER_WRITE_TIMEOUT | quote }}
+  SERVER_IDLE_TIMEOUT: {{ .Values.config.SERVER_IDLE_TIMEOUT | quote }}
+  SERVER_TLS_CERT_PATH: {{ .Values.config.SERVER_TLS_CERT_PATH | quote }}
+  SERVER_TLS_KEY_PATH: {{ .Values.config.SERVER_TLS_KEY_PATH | quote }}
+  # Client settings
+  CLIENT_TIMEOUT: {{ .Values.config.CLIENT_TIMEOUT | quote }}
+  CLIENT_MAX_IDLE_CONNS: {{ .Values.config.CLIENT_MAX_IDLE_CONNS | quote }}
+  CLIENT_MAX_IDLE_CONNS_PER_HOST: {{ .Values.config.CLIENT_MAX_IDLE_CONNS_PER_HOST | quote }}
+  CLIENT_IDLE_CONN_TIMEOUT: {{ .Values.config.CLIENT_IDLE_CONN_TIMEOUT | quote }}
+  CLIENT_TLS_MIN_VERSION: {{ .Values.config.CLIENT_TLS_MIN_VERSION | quote }}
+  # Providers
+  ANTHROPIC_API_URL: {{ .Values.config.ANTHROPIC_API_URL | quote }}
+  CLOUDFLARE_API_URL: {{ .Values.config.CLOUDFLARE_API_URL | quote }}
+  COHERE_API_URL: {{ .Values.config.COHERE_API_URL | quote }}
+  GROQ_API_URL: {{ .Values.config.GROQ_API_URL | quote }}
+  OLLAMA_API_URL: {{ .Values.config.OLLAMA_API_URL | quote }}
+  OPENAI_API_URL: {{ .Values.config.OPENAI_API_URL | quote }}
+  DEEPSEEK_API_URL: {{ .Values.config.DEEPSEEK_API_URL | quote }}
