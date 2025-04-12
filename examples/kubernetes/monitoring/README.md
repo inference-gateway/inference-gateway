@@ -42,6 +42,16 @@ kubectl -n monitoring port-forward svc/grafana-service 3000:3000
 
 Or use the deployed ingress, add `grafana.inference-gateway.local` DNS to your /etc/hosts and open: http://grafana.inference-gateway.local
 
+4. Deploy Ollama and generate some requests responses to simulate the monitoring:
+
+```
+task deploy-ollama
+```
+
+```
+task simulate-requests
+```
+
 ## Configuration
 
 ### Monitoring Setup

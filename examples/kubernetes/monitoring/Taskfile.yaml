@@ -44,9 +44,31 @@ tasks:
           --namespace inference-gateway \
           --set config.ENVIRONMENT=development \
           --set config.ENABLE_TELEMETRY=true \
+          --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
           --set monitoring.enabled=true \
+          --set ingress.enabled=true \
           --wait \
           inference-gateway ../../../charts/inference-gateway
+
+  deploy-ollama:
+    desc: "Deploy ollama as a provider"
+    cmds:
+      - kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply -f -
+      - |
+        kubectl apply -f ollama/
+      - kubectl -n ollama rollout status deployment ollama
+
+  simulate-requests:
+    desc: "Generate test requests to simulate monitoring"
+    cmds:
+      - |
+        kubectl run -i --rm --restart=Never --image=curlimages/curl curl-test -- \
+          sh -c 'for i in $(seq 1 20); do \
+            curl -s -X POST http://inference-gateway.inference-gateway:8080/v1/chat/completions \
+              -H "Content-Type: application/json" \
+              -d '\''{"model":"ollama/tinyllama:latest","messages":[{"role":"user","content":"Hello!"}]}'\''; \
+            sleep 1; \
+          done'
 
   clean:
     desc: "Clean up the cluster"
