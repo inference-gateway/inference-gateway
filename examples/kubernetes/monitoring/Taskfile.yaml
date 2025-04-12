@@ -23,6 +23,12 @@ tasks:
           --version 70.4.2 \
           --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
           --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+          --set-string prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
+          --set prometheus.enabled=false \
+          --set alertmanager.enabled=false \
+          --set kubeStateMetrics.enabled=false \
+          --set nodeExporter.enabled=false \
+          --set grafana.enabled=false \
           --wait \
           prometheus-operator prometheus-community/kube-prometheus-stack
       - |
@@ -32,6 +38,7 @@ tasks:
           --version 5.17.1 \
           --wait \
           grafana-operator grafana/grafana-operator
+      - kubectl label namespace monitoring monitoring="true" --overwrite
       - kubectl apply -f prometheus/
       - kubectl apply -f grafana/
 
@@ -54,6 +61,7 @@ tasks:
           --set autoscaling.targetMemoryUtilizationPercentage=80 \
           --wait \
           inference-gateway ../../../charts/inference-gateway
+      - kubectl label namespace inference-gateway monitoring="true" --overwrite
 
   deploy-ollama:
     desc: "Deploy ollama as a provider"

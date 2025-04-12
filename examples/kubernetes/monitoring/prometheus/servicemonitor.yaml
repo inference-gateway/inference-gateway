@@ -9,7 +9,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: inference-gateway
+      app.kubernetes.io/name: inference-gateway
   namespaceSelector:
     matchNames:
       - inference-gateway
