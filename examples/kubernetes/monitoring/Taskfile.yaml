@@ -36,7 +36,7 @@ tasks:
       - kubectl apply -f grafana/
 
   deploy-inference-gateway:
-    desc: "Deploy inference-gateway with monitoring enabled"
+    desc: "Deploy inference-gateway with monitoring and autoscaling enabled"
     cmds:
       - |
         helm upgrade --install \
@@ -47,6 +47,11 @@ tasks:
           --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
           --set monitoring.enabled=true \
           --set ingress.enabled=true \
+          --set autoscaling.enabled=true \
+          --set autoscaling.minReplicas=2 \
+          --set autoscaling.maxReplicas=10 \
+          --set autoscaling.targetCPUUtilizationPercentage=80 \
+          --set autoscaling.targetMemoryUtilizationPercentage=80 \
           --wait \
           inference-gateway ../../../charts/inference-gateway
 
@@ -62,13 +67,12 @@ tasks:
     desc: "Generate test requests to simulate monitoring"
     cmds:
       - |
-        kubectl run -i --rm --restart=Never --image=curlimages/curl curl-test -- \
-          sh -c 'for i in $(seq 1 20); do \
-            curl -s -X POST http://inference-gateway.inference-gateway:8080/v1/chat/completions \
-              -H "Content-Type: application/json" \
-              -d '\''{"model":"ollama/tinyllama:latest","messages":[{"role":"user","content":"Hello!"}]}'\''; \
-            sleep 1; \
-          done'
+        for i in $(seq 1 20); do
+          curl -s -X POST http://api.inference-gateway.local/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -d '{"model":"ollama/tinyllama:latest","messages":[{"role":"user","content":"Hello!"}]}'
+          sleep 1
+        done
 
   clean:
     desc: "Clean up the cluster"
