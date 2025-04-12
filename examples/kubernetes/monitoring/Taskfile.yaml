@@ -8,24 +8,42 @@ tasks:
       - ctlptl apply -f Cluster.yaml
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+      - helm repo add grafana https://grafana.github.io/helm-charts
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
           --version 4.12.1 \
+          --wait \
           ingress-nginx ingress-nginx/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace monitoring \
+          --version 70.4.2 \
+          --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+          --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+          --wait \
+          prometheus-operator prometheus-community/kube-prometheus-stack
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace monitoring \
+          --version 5.17.1 \
+          --wait \
+          grafana-operator grafana/grafana-operator
       - kubectl apply -f prometheus/
       - kubectl apply -f grafana/
 
   deploy-inference-gateway:
-    desc: "Deploy inference-gateway with monitoring"
+    desc: "Deploy inference-gateway with monitoring enabled"
     cmds:
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
           --set monitoring.enabled=true \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:latest
+          inference-gateway ../../../chart/inference-gateway \
 
   clean:
     desc: "Clean up the cluster"
