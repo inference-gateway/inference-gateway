@@ -7,7 +7,7 @@ metadata:
   {{- if .Values.monitoring.enabled }}
   annotations:
     prometheus.io/scrape: "true"
-    prometheus.io/port: {{ .Values.monitoring.metricsPort }}
+    prometheus.io/port: {{ .Values.monitoring.metricsPort | quote }}
     prometheus.io/path: "/metrics"
   {{- end }}
 spec:

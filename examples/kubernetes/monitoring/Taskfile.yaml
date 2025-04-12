@@ -44,7 +44,7 @@ tasks:
           --namespace inference-gateway \
           --set monitoring.enabled=true \
           --wait \
-          inference-gateway ../../../charts/inference-gateway \
+          inference-gateway ../../../charts/inference-gateway
 
   clean:
     desc: "Clean up the cluster"
