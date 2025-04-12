@@ -42,6 +42,8 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
+          --set config.ENVIRONMENT=development \
+          --set config.ENABLE_TELEMETRY=true \
           --set monitoring.enabled=true \
           --wait \
           inference-gateway ../../../charts/inference-gateway
