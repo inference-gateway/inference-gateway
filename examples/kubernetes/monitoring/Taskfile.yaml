@@ -70,7 +70,9 @@ tasks:
         for i in $(seq 1 20); do
           curl -s -X POST http://api.inference-gateway.local/v1/chat/completions \
             -H "Content-Type: application/json" \
-            -d '{"model":"ollama/tinyllama:latest","messages":[{"role":"user","content":"Hello!"}]}'
+            -d '{"model":"ollama/deepseek-r1:1.5b","messages":[{"role":"user","content":"Say hello"}]}' \
+            --max-time 10
+          echo
           sleep 1
         done
 
