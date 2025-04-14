@@ -1,7 +1,7 @@
 ---
 services:
   inference-gateway:
-    build: ghcr.io/inference-gateway/inference-gateway:latest
+    image: ghcr.io/inference-gateway/inference-gateway:latest
     ports:
       - 8080:8080
     env_file:
