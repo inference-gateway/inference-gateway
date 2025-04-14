@@ -378,6 +378,10 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 			allModels = append(allModels, response.Data...)
 		}
 
+		if allModels == nil {
+			allModels = make([]*providers.Model, 0)
+		}
+
 		unifiedResponse := providers.ListModelsResponse{
 			Object: "list",
 			Data:   allModels,

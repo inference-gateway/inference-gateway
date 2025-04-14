@@ -624,6 +624,9 @@ components:
           items:
             $ref: "#/components/schemas/Model"
           default: []
+      required:
+        - object
+        - data
     FunctionObject:
       type: object
       properties:

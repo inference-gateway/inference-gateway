@@ -218,8 +218,8 @@ type FunctionParameters struct {
 
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {
-	Data     []*Model  `json:"data,omitempty"`
-	Object   string    `json:"object,omitempty"`
+	Data     []*Model  `json:"data"`
+	Object   string    `json:"object"`
 	Provider *Provider `json:"provider,omitempty"`
 }
 
