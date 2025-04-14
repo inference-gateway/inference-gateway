@@ -25,14 +25,10 @@ cp .env.example .env
 2. Edit the `.env` file to configure your model provider:
 
 ```
-# Server Configuration
-SERVER_PORT=8080
-LOG_LEVEL=info
-
-# Choose your provider and configure API key
-PROVIDER_NAME=openai  # Options: openai, anthropic, groq, cloudflare, cohere, deepseek, etc.
-PROVIDER_API_KEY=your_api_key_here
+OPENAI_API_KEY=your_api_key_here
 ```
+
+Or any other provider you want to use.
 
 3. Start the Inference Gateway:
 
@@ -79,27 +75,9 @@ You can configure additional options in the `.env` file:
 - `SERVER_PORT` - The port the gateway listens on
 - `LOG_LEVEL` - Logging level (debug, info, warn, error)
 - `ENABLE_TELEMETRY` - Enable/disable telemetry (true/false)
-- `PROVIDER_API_URL` - Custom API URL for the provider (if needed)
-- `PROVIDER_API_KEY` - API key for the provider
-
-## Docker Compose Configuration
-
-The `docker-compose.yml` file includes:
-
-```yaml
-version: "3"
-
-services:
-  inference-gateway:
-    image: ghcr.io/inference-gateway/inference-gateway:latest
-    ports:
-      - "${SERVER_PORT:-8080}:8080"
-    environment:
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - PROVIDER_NAME=${PROVIDER_NAME}
-      - PROVIDER_API_KEY=${PROVIDER_API_KEY}
-    restart: unless-stopped
-```
+- `ENABLE_AUTH` - Enable/disable authentication (true/false)
+- `*_API_URL` - Custom API URL for the provider (if needed)
+- `*_API_KEY` - API key for the provider
 
 ## Additional Resources
 
