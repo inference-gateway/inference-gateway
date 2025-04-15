@@ -1,0 +1,130 @@
+version: '3'
+
+tasks:
+  deploy-infrastructure:
+    desc: Deploy infrastructure components (k3d cluster, NGINX ingress, cert-manager)
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - helm repo add jetstack https://charts.jetstack.io
+      - helm repo update
+      - helm upgrade --install --create-namespace --namespace kube-system --version 4.12.1 --wait ingress-nginx ingress-nginx/ingress-nginx
+      - helm upgrade --install --create-namespace --namespace cert-manager --version 1.17.1 --set crds.enabled=true --wait cert-manager jetstack/cert-manager
+      - |
+        kubectl apply -f - <<EOF
+        apiVersion: cert-manager.io/v1
+        kind: ClusterIssuer
+        metadata:
+          name: selfsigned-issuer
+        spec:
+          selfSigned: {}
+        EOF
+      - echo "🚀 Infrastructure deployed successfully!"
+
+  setup-secrets:
+    desc: Set up the necessary secrets for the Inference Gateway
+    cmds:
+      - kubectl create namespace inference-gateway --dry-run=client -o yaml | kubectl apply -f -
+      - |
+        # Read the secret
+        read -p "Please add your API key for DeepSeek: " DEEPSEEK_API_KEY
+        # Create the secret
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: inference-gateway
+          namespace: inference-gateway
+          annotations:
+            meta.helm.sh/release-name: inference-gateway-ui
+            meta.helm.sh/release-namespace: inference-gateway
+          labels:
+            app.kubernetes.io/managed-by: Helm
+        type: Opaque
+        stringData:
+          DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+        EOF
+      - echo "🔑 Secrets configured successfully!"
+    
+  deploy:
+    desc: Deploy the Inference Gateway UI with the Gateway backend
+    cmds:
+      - |
+        helm upgrade --install inference-gateway-ui \
+          oci://ghcr.io/inference-gateway/charts/inference-gateway-ui \
+          --version 0.5.0 \
+          --create-namespace \
+          --namespace inference-gateway \
+          --set replicaCount=1 \
+          --set gateway.enabled=true \
+          --set gateway.envFrom.secretRef=inference-gateway \
+          --set gateway.envFrom.configMapRef=inference-gateway \
+          --set-string "env[0].name=NODE_ENV" \
+          --set-string "env[0].value=production" \
+          --set-string "env[1].name=NEXT_TELEMETRY_DISABLED" \
+          --set-string "env[1].value=1" \
+          --set-string "env[2].name=INFERENCE_GATEWAY_URL" \
+          --set-string "env[2].value=http://inference-gateway:8080/v1" \
+          --set resources.limits.cpu=500m \
+          --set resources.limits.memory=512Mi \
+          --set resources.requests.cpu=100m \
+          --set resources.requests.memory=128Mi
+      - echo "📊 Inference Gateway UI deployed successfully!"
+
+  deploy-with-ingress:
+    desc: Deploy the Inference Gateway UI with the Gateway backend and ingress
+    cmds:
+      - |
+        helm upgrade --install inference-gateway-ui \
+          oci://ghcr.io/inference-gateway/charts/inference-gateway-ui \
+          --version 0.5.0 \
+          --create-namespace \
+          --namespace inference-gateway \
+          --set replicaCount=1 \
+          --set gateway.enabled=true \
+          --set gateway.envFrom.secretRef=inference-gateway \
+          --set gateway.envFrom.configMapRef=inference-gateway \
+          --set-string "env[0].name=NODE_ENV" \
+          --set-string "env[0].value=production" \
+          --set-string "env[1].name=NEXT_TELEMETRY_DISABLED" \
+          --set-string "env[1].value=1" \
+          --set-string "env[2].name=INFERENCE_GATEWAY_URL" \
+          --set-string "env[2].value=http://inference-gateway:8080/v1" \
+          --set resources.limits.cpu=500m \
+          --set resources.limits.memory=512Mi \
+          --set resources.requests.cpu=100m \
+          --set resources.requests.memory=128Mi \
+          --set ingress.enabled=true \
+          --set ingress.className=nginx \
+          --set "ingress.hosts[0].host=ui.inference-gateway.local" \
+          --set "ingress.hosts[0].paths[0].path=/" \
+          --set "ingress.hosts[0].paths[0].pathType=Prefix" \
+          --set "ingress.tls[0].secretName=inference-gateway-ui-tls" \
+          --set "ingress.tls[0].hosts[0]=ui.inference-gateway.local"
+      - echo "📊 Inference Gateway UI deployed with ingress successfully!"
+      - echo "Add 'ui.inference-gateway.local' to your /etc/hosts file pointing to 127.0.0.1"
+
+  port-forward:
+    desc: Set up port forwarding to access the UI
+    cmds:
+      - kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:80
+  
+  delete:
+    desc: Remove the Inference Gateway UI deployment
+    cmds:
+      - helm uninstall inference-gateway-ui -n inference-gateway
+      - kubectl delete namespace inference-gateway
+      - echo "🧹 Inference Gateway UI deployment removed!"
+
+  delete-cluster:
+    desc: Delete the k3d cluster completely
+    cmds:
+      - ctlptl delete -f Cluster.yaml
+      - echo "🧹 k3d cluster deleted!"
+
+  status:
+    desc: Check the status of the deployment
+    cmds:
+      - kubectl get pods -n inference-gateway
+      - kubectl get svc -n inference-gateway
+      - kubectl get ingress -n inference-gateway

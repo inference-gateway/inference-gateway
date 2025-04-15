@@ -48,6 +48,7 @@
   "runArgs": [
     "--add-host=api.inference-gateway.local:127.0.0.1",
     "--add-host=keycloak.inference-gateway.local:127.0.0.1",
-    "--add-host=grafana.inference-gateway.local:127.0.0.1"
+    "--add-host=grafana.inference-gateway.local:127.0.0.1",
+    "--add-host=ui.inference-gateway.local:127.0.0.1"
   ]
 }
