@@ -1,0 +1,44 @@
+---
+services:
+  inference-gateway:
+    image: ghcr.io/inference-gateway/inference-gateway:latest
+    env_file:
+      - .env
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 100M
+    pull_policy: always
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+
+  agent:
+    image: alpine:latest
+    environment:
+      INFERENCE_GATEWAY_URL: http://inference-gateway:8080/v1
+      MODEL: groq/deepseek-r1-distill-llama-70b
+    depends_on:
+      - inference-gateway
+    deploy:
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 100M
+    volumes:
+      - ./mocks:/app/mocks
+      - ./agent.sh:/app/agent.sh
+    working_dir: /app
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl jq && \
+        while true; do /app/agent.sh; sleep 10; done

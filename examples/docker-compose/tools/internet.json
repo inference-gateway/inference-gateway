@@ -1,0 +1,223 @@
+{
+  "weather": {
+    "locations": {
+      "San Francisco, CA": {
+        "temperature": 18,
+        "condition": "Foggy",
+        "humidity": 76,
+        "wind_speed": 12,
+        "wind_direction": "W",
+        "pressure": 1012,
+        "uv_index": 3,
+        "visibility": 5,
+        "forecast": [
+          {"day": "2025-04-16", "condition": "Partly Cloudy", "high": 20, "low": 13},
+          {"day": "2025-04-17", "condition": "Sunny", "high": 22, "low": 14},
+          {"day": "2025-04-18", "condition": "Sunny", "high": 23, "low": 15}
+        ]
+      },
+      "New York, NY": {
+        "temperature": 15,
+        "condition": "Rainy",
+        "humidity": 85,
+        "wind_speed": 18,
+        "wind_direction": "NE",
+        "pressure": 1008,
+        "uv_index": 1,
+        "visibility": 3,
+        "forecast": [
+          {"day": "2025-04-16", "condition": "Showers", "high": 16, "low": 10},
+          {"day": "2025-04-17", "condition": "Overcast", "high": 18, "low": 11},
+          {"day": "2025-04-18", "condition": "Partly Cloudy", "high": 20, "low": 12}
+        ]
+      },
+      "Tokyo, Japan": {
+        "temperature": 21,
+        "condition": "Clear",
+        "humidity": 65,
+        "wind_speed": 8,
+        "wind_direction": "SE",
+        "pressure": 1015,
+        "uv_index": 6,
+        "visibility": 10,
+        "forecast": [
+          {"day": "2025-04-16", "condition": "Sunny", "high": 23, "low": 16},
+          {"day": "2025-04-17", "condition": "Partly Cloudy", "high": 22, "low": 17},
+          {"day": "2025-04-18", "condition": "Cloudy", "high": 20, "low": 15}
+        ]
+      },
+      "London, UK": {
+        "temperature": 12,
+        "condition": "Drizzle",
+        "humidity": 80,
+        "wind_speed": 15,
+        "wind_direction": "SW",
+        "pressure": 1005,
+        "uv_index": 2,
+        "visibility": 6,
+        "forecast": [
+          {"day": "2025-04-16", "condition": "Light Rain", "high": 14, "low": 9},
+          {"day": "2025-04-17", "condition": "Overcast", "high": 13, "low": 8},
+          {"day": "2025-04-18", "condition": "Partly Cloudy", "high": 15, "low": 9}
+        ]
+      }
+    }
+  },
+  "search": {
+    "queries": {
+      "AI news": [
+        {
+          "title": "New EU AI Regulation Framework Takes Effect",
+          "snippet": "The European Union's comprehensive AI regulation framework has officially come into effect today, mandating strict requirements for high-risk AI systems and establishing new compliance standards for tech companies.",
+          "url": "https://example.com/eu-ai-regulation-2025",
+          "published_date": "2025-04-14T08:15:00Z"
+        },
+        {
+          "title": "OpenAI Releases GPT-6 With Advanced Reasoning Capabilities",
+          "snippet": "OpenAI has announced the release of GPT-6, featuring unprecedented reasoning capabilities and significant improvements in mathematical problem-solving and code generation. Early benchmarks show a 40% improvement over previous models.",
+          "url": "https://example.com/openai-gpt6-release",
+          "published_date": "2025-04-12T15:30:00Z"
+        },
+        {
+          "title": "Google's DeepMind Achieves Breakthrough in Protein Folding",
+          "snippet": "Google DeepMind has announced a major breakthrough in protein structure prediction, potentially accelerating drug discovery and treatments for diseases like cancer and Alzheimer's.",
+          "url": "https://example.com/deepmind-protein-breakthrough",
+          "published_date": "2025-04-10T11:45:00Z"
+        }
+      ],
+      "climate change": [
+        {
+          "title": "Global CO2 Emissions Show First Sustained Decline in Decades",
+          "snippet": "New data from the International Energy Agency indicates that global carbon emissions have begun a sustained decline for the first time without being tied to an economic downturn, suggesting climate policies may be taking effect.",
+          "url": "https://example.com/emissions-decline-2025",
+          "published_date": "2025-04-13T09:20:00Z"
+        },
+        {
+          "title": "Antarctic Ice Sheet Loss Accelerating Faster Than Predicted",
+          "snippet": "Satellite data reveals Antarctic ice sheets are melting at rates 25% faster than worst-case scenarios projected in 2020, raising concerns about potential sea level rise in coastal regions worldwide.",
+          "url": "https://example.com/antarctic-ice-melting",
+          "published_date": "2025-04-08T14:10:00Z"
+        }
+      ],
+      "renewable energy": [
+        {
+          "title": "Revolutionary Solar Panel Design Achieves 35% Efficiency",
+          "snippet": "Scientists at MIT have developed a new solar panel design that achieves 35% efficiency, nearly double the typical commercial panels, potentially transforming the economics of solar energy adoption worldwide.",
+          "url": "https://example.com/solar-efficiency-breakthrough",
+          "published_date": "2025-04-14T16:05:00Z"
+        },
+        {
+          "title": "Offshore Wind Capacity Surpasses 300 GW Globally",
+          "snippet": "Global offshore wind energy capacity has exceeded 300 gigawatts for the first time, with significant growth in floating turbine installations that can operate in deeper waters and more challenging conditions.",
+          "url": "https://example.com/offshore-wind-milestone",
+          "published_date": "2025-04-11T10:30:00Z"
+        }
+      ]
+    }
+  },
+  "translation": {
+    "pairs": {
+      "Hello, how are you?": {
+        "es": "Hola, ¿cómo estás?",
+        "fr": "Bonjour, comment allez-vous?",
+        "de": "Hallo, wie geht es dir?",
+        "ja": "こんにちは、お元気ですか？",
+        "zh": "你好，你好吗？"
+      },
+      "Where is the nearest restaurant?": {
+        "es": "¿Dónde está el restaurante más cercano?",
+        "fr": "Où est le restaurant le plus proche?",
+        "de": "Wo ist das nächste Restaurant?",
+        "ja": "最寄りのレストランはどこですか？",
+        "zh": "最近的餐厅在哪里？"
+      },
+      "What time is it?": {
+        "es": "¿Qué hora es?",
+        "fr": "Quelle heure est-il?",
+        "de": "Wie spät ist es?",
+        "ja": "何時ですか？",
+        "zh": "现在几点？"
+      }
+    }
+  },
+  "stock_prices": {
+    "symbols": {
+      "AAPL": {
+        "company": "Apple Inc.",
+        "price": 215.68,
+        "change": 3.42,
+        "change_percent": 1.61,
+        "market_cap": "3.36T",
+        "volume": 48726500,
+        "52_week_high": 225.98,
+        "52_week_low": 168.54
+      },
+      "MSFT": {
+        "company": "Microsoft Corporation",
+        "price": 428.25,
+        "change": 5.78,
+        "change_percent": 1.37,
+        "market_cap": "3.18T",
+        "volume": 22145300,
+        "52_week_high": 430.82,
+        "52_week_low": 305.26
+      },
+      "NVDA": {
+        "company": "NVIDIA Corporation",
+        "price": 978.42,
+        "change": 24.35,
+        "change_percent": 2.55,
+        "market_cap": "2.41T",
+        "volume": 38659200,
+        "52_week_high": 989.75,
+        "52_week_low": 442.11
+      }
+    }
+  },
+  "flight_status": {
+    "flights": {
+      "UA123": {
+        "airline": "United Airlines",
+        "departure": {
+          "airport": "SFO",
+          "city": "San Francisco",
+          "scheduled": "2025-04-15T08:30:00Z",
+          "actual": "2025-04-15T08:45:00Z",
+          "terminal": "3",
+          "gate": "F12"
+        },
+        "arrival": {
+          "airport": "JFK",
+          "city": "New York",
+          "scheduled": "2025-04-15T17:15:00Z",
+          "estimated": "2025-04-15T17:30:00Z",
+          "terminal": "B",
+          "gate": "22"
+        },
+        "status": "In Air",
+        "delay_minutes": 15
+      },
+      "BA456": {
+        "airline": "British Airways",
+        "departure": {
+          "airport": "LHR",
+          "city": "London",
+          "scheduled": "2025-04-15T13:20:00Z",
+          "actual": "2025-04-15T13:20:00Z",
+          "terminal": "5",
+          "gate": "A10"
+        },
+        "arrival": {
+          "airport": "NRT",
+          "city": "Tokyo",
+          "scheduled": "2025-04-16T08:45:00Z",
+          "estimated": "2025-04-16T08:45:00Z",
+          "terminal": "3",
+          "gate": "45"
+        },
+        "status": "On Time",
+        "delay_minutes": 0
+      }
+    }
+  }
+}
