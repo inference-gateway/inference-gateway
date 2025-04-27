@@ -162,7 +162,6 @@ func (cfg *Config) String() string {
 		return err
 	}
 
-	// Format generated code
 	cmd := exec.Command("go", "fmt", destination)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to format %s: %w", destination, err)
@@ -183,7 +182,6 @@ func GenerateCommonTypes(destination string, oas string) error {
 	funcMap := template.FuncMap{
 		"title": caser.String,
 		"pascalCase": func(s string) string {
-			// Special case for common acronyms
 			if strings.ToLower(s) == "id" {
 				return "ID"
 			}
@@ -224,10 +222,10 @@ const (
 
 // The default endpoints of each provider
 const (
-	{{- range $name, $config := .Providers }}
-	{{title $name}}ModelsEndpoint = "{{(index $config.Endpoints "models").Endpoint}}"
-	{{title $name}}ChatEndpoint   = "{{(index $config.Endpoints "chat").Endpoint}}"
-	{{- end }}
+    {{- range $name, $config := .Providers }}
+    {{title $name}}ModelsEndpoint = "{{(index $config.Endpoints "models").Endpoint}}"
+    {{title $name}}ChatEndpoint   = "{{(index $config.Endpoints "chat").Endpoint}}"
+    {{- end }}
 )
 
 type Provider string
@@ -287,6 +285,9 @@ type ListModelsTransformer interface {
 {{- if ne $name "Providers" }}
 
 // {{$name}} represents a {{$name}} in the API
+{{- if $schema.AdditionalProperties }}
+type {{$name}} map[string]interface{}
+{{- else }}
 type {{$name}} struct {
     {{- range $field, $prop := $schema.Properties }}
     {{- if not (hasPrefix $field "x-") }}
@@ -298,10 +299,11 @@ type {{$name}} struct {
 {{- end }}
 {{- end }}
 {{- end }}
+{{- end }}
 
 // Transform converts provider-specific response to common format
 func (p *CreateChatCompletionResponse) Transform() CreateChatCompletionResponse {
-	return *p
+    return *p
 }
 
 `))
@@ -501,6 +503,11 @@ func generateType(prop openapi.Property) string {
 	// Handle arrays
 	if prop.Type == "array" && prop.Items != nil {
 		return "[]" + generateType(*prop.Items)
+	}
+
+	// Handle additionalProperties (maps)
+	if prop.AdditionalProperties != nil && *prop.AdditionalProperties {
+		return "map[string]interface{}"
 	}
 
 	// Map basic types

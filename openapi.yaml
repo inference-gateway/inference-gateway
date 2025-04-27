@@ -674,18 +674,7 @@ components:
         documentation about the format. 
 
         Omitting `parameters` defines a function with an empty parameter list.
-      properties:
-        type:
-          type: string
-          description: The type of the parameters. Currently, only `object` is supported.
-        properties:
-          type: object
-          description: The properties of the parameters.
-        required:
-          type: array
-          items:
-            type: string
-          description: The required properties of the parameters.
+      additionalProperties: true
     ChatCompletionToolType:
       type: string
       description: The type of the tool. Currently, only `function` is supported.

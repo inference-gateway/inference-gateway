@@ -173,24 +173,25 @@ type TransformRef struct {
 }
 
 type Property struct {
-	Name        string              `yaml:"name,omitempty"`
-	Type        string              `yaml:"type"`
-	Format      string              `yaml:"format,omitempty"`
-	Description string              `yaml:"description,omitempty"`
-	Ref         string              `yaml:"$ref,omitempty"`
-	Enum        []string            `yaml:"enum,omitempty"`
-	Properties  map[string]Property `yaml:"properties,omitempty"`
-	Items       *Property           `yaml:"items,omitempty"`
+	Name                 string              `yaml:"name,omitempty"`
+	Type                 string              `yaml:"type"`
+	Format               string              `yaml:"format,omitempty"`
+	Description          string              `yaml:"description,omitempty"`
+	Ref                  string              `yaml:"$ref,omitempty"`
+	Enum                 []string            `yaml:"enum,omitempty"`
+	Properties           map[string]Property `yaml:"properties,omitempty"`
+	Items                *Property           `yaml:"items,omitempty"`
+	AdditionalProperties *bool               `yaml:"additionalProperties,omitempty"`
 }
 
-// Structures for OpenAPI schema parsing
 type SchemaProperty struct {
-	Type        string              `yaml:"type"`
-	Description string              `yaml:"description"`
-	Properties  map[string]Property `yaml:"properties"`
-	Required    []string            `yaml:"required,omitempty"`
-	Items       *Property           `yaml:"items,omitempty"`
-	Enum        []string            `yaml:"enum,omitempty"`
+	Type                 string              `yaml:"type"`
+	Description          string              `yaml:"description"`
+	Properties           map[string]Property `yaml:"properties"`
+	Required             []string            `yaml:"required,omitempty"`
+	Items                *Property           `yaml:"items,omitempty"`
+	Enum                 []string            `yaml:"enum,omitempty"`
+	AdditionalProperties *bool               `yaml:"additionalProperties,omitempty"`
 }
 
 type SchemaField struct {
