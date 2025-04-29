@@ -67,43 +67,51 @@ paths:
                   value:
                     object: "list"
                     data:
-                      - id: "gpt-4o"
+                      - id: "openai/gpt-4o"
                         object: "model"
                         created: 1686935002
                         owned_by: "openai"
-                      - id: "llama-3.3-70b-versatile"
+                        served_by: "openai"
+                      - id: "openai/llama-3.3-70b-versatile"
                         object: "model"
                         created: 1723651281
                         owned_by: "groq"
-                      - id: "claude-3-opus-20240229"
+                        served_by: "groq"
+                      - id: "cohere/claude-3-opus-20240229"
                         object: "model"
                         created: 1708905600
                         owned_by: "anthropic"
-                      - id: "command-r"
+                        served_by: "anthropic"
+                      - id: "cohere/command-r"
                         object: "model"
                         created: 1707868800
                         owned_by: "cohere"
-                      - id: "phi3:3.8b"
+                        served_by: "cohere"
+                      - id: "ollama/phi3:3.8b"
                         object: "model"
                         created: 1718441600
                         owned_by: "ollama"
+                        served_by: "ollama"
                 singleProvider:
                   summary: Models from a specific provider
                   value:
                     object: "list"
                     data:
-                      - id: "gpt-4o"
+                      - id: "openai/gpt-4o"
                         object: "model"
                         created: 1686935002
                         owned_by: "openai"
-                      - id: "gpt-4-turbo"
+                        served_by: "openai"
+                      - id: "openai/gpt-4-turbo"
                         object: "model"
                         created: 1687882410
                         owned_by: "openai"
-                      - id: "gpt-3.5-turbo"
+                        served_by: "openai"
+                      - id: "openai/gpt-3.5-turbo"
                         object: "model"
                         created: 1677649963
                         owned_by: "openai"
+                        served_by: "openai"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "500":
