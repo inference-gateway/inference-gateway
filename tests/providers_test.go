@@ -132,9 +132,9 @@ func TestProviderChatCompletions(t *testing.T) {
 	roleUser := providers.MessageRoleUser
 	req := providers.CreateChatCompletionRequest{
 		Model: "gpt-3.5-turbo",
-		Messages: []*providers.Message{
+		Messages: []providers.Message{
 			{
-				Role:    &roleUser,
+				Role:    roleUser,
 				Content: "Hello, how are you?",
 			},
 		},
@@ -160,16 +160,18 @@ func TestProviderListModels(t *testing.T) {
 		_, err := w.Write([]byte(`{
             "data": [
                 {
-                    "id": "gpt-3.5-turbo",
+                    "id": "openai/gpt-3.5-turbo",
                     "object": "model",
                     "created": 1677610602,
-                    "owned_by": "openai"
+                    "owned_by": "openai",
+                    "served_by": "openai"
                 },
                 {
-                    "id": "gpt-4",
+                    "id": "openai/gpt-4",
                     "object": "model",
                     "created": 1677649963,
-                    "owned_by": "openai"
+                    "owned_by": "openai",
+                    "served_by": "openai"
                 }
             ]
         }`))
@@ -337,9 +339,9 @@ func BenchmarkChatCompletions(b *testing.B) {
 	roleUser := providers.MessageRoleUser
 	req := providers.CreateChatCompletionRequest{
 		Model: "gpt-3.5-turbo",
-		Messages: []*providers.Message{
+		Messages: []providers.Message{
 			{
-				Role:    &roleUser,
+				Role:    roleUser,
 				Content: "Hello, how are you?",
 			},
 		},
@@ -414,14 +416,14 @@ func BenchmarkListModels(b *testing.B) {
 
 func BenchmarkProviderTransformations(b *testing.B) {
 	ollamaData := &providers.ListModelsResponseOllama{
-		Data: []*providers.Model{
+		Data: []providers.Model{
 			{ID: "gpt-3.5-turbo"},
 			{ID: "gpt-4"},
 		},
 	}
 
 	openaiData := &providers.ListModelsResponseOpenai{
-		Data: []*providers.Model{
+		Data: []providers.Model{
 			{ID: "gpt-4"},
 			{ID: "gpt-3.5-turbo"},
 		},

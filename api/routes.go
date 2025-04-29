@@ -364,7 +364,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 				}
 
 				if response.Data == nil {
-					response.Data = make([]*providers.Model, 0)
+					response.Data = make([]providers.Model, 0)
 				}
 				ch <- response
 			}(providerID)
@@ -373,13 +373,13 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 		wg.Wait()
 		close(ch)
 
-		var allModels []*providers.Model
+		var allModels []providers.Model
 		for response := range ch {
 			allModels = append(allModels, response.Data...)
 		}
 
 		if allModels == nil {
-			allModels = make([]*providers.Model, 0)
+			allModels = make([]providers.Model, 0)
 		}
 
 		unifiedResponse := providers.ListModelsResponse{
@@ -446,6 +446,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 // architecture.
 func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	var req providers.CreateChatCompletionRequest
+
 	if err := c.ShouldBindJSON(&req); err != nil {
 		router.logger.Error("failed to decode request", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
@@ -484,7 +485,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	defer cancel()
 
 	// Streaming response
-	if req.Stream {
+	if req.Stream != nil && *req.Stream {
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
 		c.Header("Connection", "keep-alive")

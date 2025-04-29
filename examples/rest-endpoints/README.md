@@ -30,8 +30,8 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 You can set the stream as an optional flag in the request body to enable streaming of tokens. The default value is `false`.
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions?provider=ollama -d '{
-  "model": "deepseek-r1:1.5b",
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/deepseek-r1-distill-llama-70b",
   "messages": [
     {
       "role": "system",
@@ -41,8 +41,7 @@ curl -X POST http://localhost:8080/v1/chat/completions?provider=ollama -d '{
       "role": "user",
       "content": "Hi, how are you doing today?"
     }
-  ],
-  "max_tokens": 40
+  ]
 }' | jq .
 ```
 
@@ -77,8 +76,8 @@ Response:
 You can provide tools that the LLM can use to perform specific functions. Here are some examples:
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions?provider=groq -d '{
-  "model": "deepseek-r1-distill-llama-70b",
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/deepseek-r1-distill-llama-70b",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "What is the current weather in Toronto?"}
@@ -145,8 +144,8 @@ Then the LLM will respond with a function call request as follow:
 So you can response with the function call content as follow:
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions?provider=groq -d '{
-  "model": "deepseek-r1-distill-llama-70b",
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/deepseek-r1-distill-llama-70b",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "What is the current weather in Toronto?"},

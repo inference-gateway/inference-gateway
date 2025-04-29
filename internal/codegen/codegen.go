@@ -199,6 +199,14 @@ func GenerateCommonTypes(destination string, oas string) error {
 			_, ok := m[key]
 			return ok
 		},
+		"isRequired": func(field string, requiredFields []string) bool {
+			for _, rf := range requiredFields {
+				if rf == field {
+					return true
+				}
+			}
+			return false
+		},
 	}
 
 	tmpl := template.Must(template.New("common").
@@ -291,7 +299,7 @@ type {{$name}} map[string]interface{}
 type {{$name}} struct {
     {{- range $field, $prop := $schema.Properties }}
     {{- if not (hasPrefix $field "x-") }}
-    {{pascalCase $field}} {{generateType $prop}} {{generateTag $field $prop $schema.Required}}
+    {{pascalCase $field}} {{if not (isRequired $field $schema.Required)}}*{{end}}{{generateType $prop}} {{generateTag $field $prop $schema.Required}}
     {{- end }}
     {{- end }}
 }
@@ -484,7 +492,6 @@ func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Respo
 		return fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	// Format generated code
 	cmd := exec.Command("go", "fmt", destination)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to format %s: %w", destination, err)
@@ -494,23 +501,19 @@ func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Respo
 }
 
 func generateType(prop openapi.Property) string {
-	// Handle references first
 	if prop.Ref != "" {
 		parts := strings.Split(prop.Ref, "/")
-		return "*" + parts[len(parts)-1]
+		return parts[len(parts)-1]
 	}
 
-	// Handle arrays
 	if prop.Type == "array" && prop.Items != nil {
 		return "[]" + generateType(*prop.Items)
 	}
 
-	// Handle additionalProperties (maps)
 	if prop.AdditionalProperties != nil && *prop.AdditionalProperties {
 		return "map[string]interface{}"
 	}
 
-	// Map basic types
 	switch prop.Type {
 	case "string":
 		if len(prop.Enum) > 0 {

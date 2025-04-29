@@ -119,10 +119,10 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		var promptTokens int64
 		var completionTokens int64
 		var totalTokens int64
-		if requestBody.Stream {
+		if requestBody.Stream != nil && *requestBody.Stream {
 			responseStr := w.body.String()
 			chunks := strings.Split(responseStr, "\n\n")
-			// We only care about the chunk before the last one which is [DONE]
+
 			if len(chunks) > 4 {
 				chunks = chunks[len(chunks)-4:]
 			}

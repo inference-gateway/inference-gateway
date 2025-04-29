@@ -19,7 +19,7 @@ type ListModelsResponseCloudflare struct {
 
 func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 	provider := CloudflareID
-	models := make([]*Model, len(l.Result))
+	models := make([]Model, len(l.Result))
 	for i, model := range l.Result {
 		created := time.Now().Unix()
 		if model.CreatedAt != "" {
@@ -28,12 +28,12 @@ func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 				created = createdAt.Unix()
 			}
 		}
-		models[i] = &Model{
+		models[i] = Model{
 			ID:       string(provider) + "/" + model.Name,
 			Object:   "model",
 			Created:  created,
 			OwnedBy:  string(provider),
-			ServedBy: &provider,
+			ServedBy: provider,
 		}
 	}
 

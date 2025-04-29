@@ -165,6 +165,14 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq CreateChat
 	}
 	url := "/proxy/" + providerID + p.EndpointChat()
 
+	// Special case - groq provide the reasoning as a raw <think /> tags, I want the default to be "parsed"
+	if *p.GetID() == GroqID {
+		if clientReq.ReasoningFormat == nil {
+			format := "parsed"
+			clientReq.ReasoningFormat = &format
+		}
+	}
+
 	reqBody, err := json.Marshal(clientReq)
 	if err != nil {
 		p.logger.Error("Failed to marshal request", err, "provider", p.GetName())
@@ -222,6 +230,14 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 	// include it - probably they haven't implemented it yet in their OpenAI "compatible" API
 	if *p.GetID() == CohereID {
 		clientReq.StreamOptions = nil
+	}
+
+	// Special case - groq provide the reasoning as a raw <think /> tags, I want the default to be "parsed"
+	if *p.GetID() == GroqID {
+		if clientReq.ReasoningFormat == nil {
+			format := "parsed"
+			clientReq.ReasoningFormat = &format
+		}
 	}
 
 	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", url, "request", clientReq)
