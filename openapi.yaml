@@ -1108,6 +1108,15 @@ components:
                   type: bool
                   default: "false"
                   description: "Enable authentication"
+                - name: enable_mcp
+                  env: "ENABLE_MCP"
+                  type: bool
+                  default: "false"
+                  description: "Enable MCP"
+                - name: mcp_servers
+                  env: "MCP_SERVERS"
+                  type: string
+                  description: "List of MCP servers"
           - oidc:
               title: "OpenID Connect"
               settings:

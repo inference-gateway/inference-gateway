@@ -1,0 +1,37 @@
+version: "3"
+
+services:
+  inference-gateway:
+    image: inferencegw/inference-gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG_LEVEL=info
+      - ENABLE_MCP=true
+      - MCP_SERVERS=http://mcp-weather-server:3000,http://mcp-filesystem-server:3000
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    depends_on:
+      - mcp-weather-server
+      - mcp-filesystem-server
+
+  mcp-weather-server:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./weather-server:/app
+    command: >
+      sh -c "npm install @modelcontextprotocol/server && 
+             npx -y @modelcontextprotocol/server-weather"
+    ports:
+      - "3000:3000"
+
+  mcp-filesystem-server:
+    image: node:18
+    working_dir: /app
+    volumes:
+      - ./filesystem-server:/app
+    command: >
+      sh -c "npm install @modelcontextprotocol/server && 
+             npx -y @modelcontextprotocol/server-fs"
+    ports:
+      - "3001:3000"

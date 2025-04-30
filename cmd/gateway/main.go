@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -110,8 +111,29 @@ func main() {
 	// Initialize OIDC authenticator middleware
 	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(logger, cfg)
 	if err != nil {
-		logger.Error("Failed to initialize OIDC authenticator: %v", err)
+		logger.Error("Failed to initialize OIDC authenticator", err)
 		return
+	}
+
+	// Initialize MCP middleware if enabled
+	var mcpMiddleware *middlewares.MCPMiddleware
+	if cfg.EnableMcp {
+		serverURLsStr := os.Getenv("MCP_SERVERS")
+		if serverURLsStr != "" {
+			serverURLs := strings.Split(serverURLsStr, ",")
+			for i := range serverURLs {
+				serverURLs[i] = strings.TrimSpace(serverURLs[i])
+			}
+
+			mcpMiddleware, err = middlewares.NewMCPMiddleware(serverURLs, logger)
+			if err != nil {
+				logger.Error("Failed to initialize MCP middleware", err)
+			} else {
+				logger.Info("MCP middleware initialized successfully", "servers", len(serverURLs))
+			}
+		} else {
+			logger.Error("MCP_SERVERS environment variable is empty", nil)
+		}
 	}
 
 	scheme := "http"
@@ -140,6 +162,12 @@ func main() {
 		r.Use(telemetry.Middleware())
 	}
 	r.Use(oidcAuthenticator.Middleware())
+
+	// Add MCP middleware if enabled
+	if cfg.EnableMcp {
+		r.Use(mcpMiddleware.Middleware())
+		logger.Info("MCP middleware added to request pipeline")
+	}
 
 	r.GET("/health", api.HealthcheckHandler)
 	r.Any("/proxy/:provider/*path", api.ProxyHandler)

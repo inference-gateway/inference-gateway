@@ -16,6 +16,8 @@ type Config struct {
 	Environment     string `env:"ENVIRONMENT, default=production" description:"The environment"`
 	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
 	EnableAuth      bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
+	EnableMcp       bool   `env:"ENABLE_MCP, default=false" description:"Enable MCP"`
+	McpServers      string `env:"MCP_SERVERS" description:"List of MCP servers"`
 	// OIDC settings
 	OIDC *OIDC `env:", prefix=OIDC_" description:"OIDC configuration"`
 	// Server settings
@@ -81,13 +83,14 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 // The string representation of Config
 func (cfg *Config) String() string {
 	return fmt.Sprintf(
-		"Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
+		"Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, EnableMcp:%t "+
 			"OIDC:%+v, Server:%+v, Providers:%+v}",
 		APPLICATION_NAME,
 		VERSION,
 		cfg.Environment,
 		cfg.EnableTelemetry,
 		cfg.EnableAuth,
+		cfg.EnableMcp,
 		cfg.OIDC,
 		cfg.Server,
 		cfg.Providers,
