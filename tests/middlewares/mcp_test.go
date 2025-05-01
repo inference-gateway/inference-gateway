@@ -166,7 +166,7 @@ func TestMCPMiddleware(t *testing.T) {
 			requestBody:              `{"model": "gpt-4", "messages": [{"role": "user", "content": "Call a tool"}]}`,
 			mcpEnabled:               true,
 			expectedStatus:           http.StatusOK,
-			expectedResponseContains: `"response":"{\"result\":\"Tool executed successfully\"}"`,
+			expectedResponseContains: `"content":"Tool 'test_tool' result:`,
 			expectedToolCalls:        true,
 		},
 		{
@@ -202,7 +202,7 @@ func TestMCPMiddleware(t *testing.T) {
 			requestBody:              `{"model": "gpt-4", "messages": [{"role": "user", "content": "Call a tool"}]}`,
 			mcpEnabled:               true,
 			expectedStatus:           http.StatusOK,
-			expectedResponseContains: `"response":"Error executing tool: tool execution failed"`,
+			expectedResponseContains: `"content":"Error executing tool: tool execution failed"`,
 			expectedToolCalls:        true,
 		},
 		{
@@ -229,7 +229,7 @@ func TestMCPMiddleware(t *testing.T) {
 			requestBody:              `{"model": "gpt-4", "messages": [{"role": "user", "content": "Call a tool"}]}`,
 			mcpEnabled:               true,
 			expectedStatus:           http.StatusOK,
-			expectedResponseContains: `"response":"Error: Tool 'unknown_tool' not found in any MCP server"`,
+			expectedResponseContains: `"content":"Error: Tool 'unknown_tool' not found in any MCP server"`,
 			expectedToolCalls:        true,
 		},
 		{
@@ -861,9 +861,15 @@ func TestProcessToolCalls(t *testing.T) {
 				message, ok := firstChoice["message"].(map[string]interface{})
 				assert.True(t, ok)
 
+				// Check that we have content in the message (where tool results are now placed)
+				content, ok := message["content"].(string)
+				assert.True(t, ok, "Message should contain content with tool results")
+				assert.NotEmpty(t, content, "Message content should not be empty")
+
 				toolCalls, ok := message["tool_calls"].([]interface{})
 				assert.True(t, ok)
 
+				// Only check that the tool calls structure is preserved
 				for _, tc := range toolCalls {
 					toolCall, ok := tc.(map[string]interface{})
 					assert.True(t, ok)
@@ -871,7 +877,10 @@ func TestProcessToolCalls(t *testing.T) {
 					function, ok := toolCall["function"].(map[string]interface{})
 					assert.True(t, ok)
 
-					assert.Contains(t, function, "response")
+					// No longer checking for response in function object
+					// Instead, we verify the function has the basic properties
+					assert.Contains(t, function, "name")
+					assert.Contains(t, function, "arguments")
 				}
 			}
 
