@@ -11,6 +11,9 @@ type MCPClientInterface interface {
 	// Initialize establishes connection with MCP servers and performs handshake
 	Initialize(ctx context.Context) error
 
+	// IsInitialized returns whether the client has been successfully initialized
+	IsInitialized() bool
+
 	// DiscoverCapabilities retrieves capabilities from all configured MCP servers
 	DiscoverCapabilities(ctx context.Context) ([]map[string]interface{}, error)
 
@@ -19,9 +22,6 @@ type MCPClientInterface interface {
 
 	// StreamChatWithTools sends a chat request with tool capabilities and streams the response
 	StreamChatWithTools(ctx context.Context, messages []map[string]interface{}, serverURL string, callback func(chunk map[string]interface{}) error) error
-
-	// IsInitialized returns whether the client has been successfully initialized
-	IsInitialized() bool
 
 	// GetServerCapabilities returns the server capabilities map
 	GetServerCapabilities() map[string]map[string]interface{}
