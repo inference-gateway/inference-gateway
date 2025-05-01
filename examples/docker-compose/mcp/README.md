@@ -53,8 +53,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
       "role": "user",
       "content": "Hi, whats the current time?"
     }
-  ],
-  "stream": true
+  ]
 }'
 ```
 

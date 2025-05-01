@@ -182,6 +182,11 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 		ctx = sseContext[0]
 	}
 
+	var messageContent string
+	if content, ok := message["content"].(string); ok {
+		messageContent = content
+	}
+
 	totalTools := len(toolCalls)
 	for i, tc := range toolCalls {
 		toolCall, ok := tc.(map[string]interface{})
@@ -217,14 +222,24 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 		serverURL, ok := m.ToolServerMap[name]
 		if !ok {
 			m.Logger.Error("No server URL found for tool", nil, "tool", name)
-			toolCalls[i].(map[string]interface{})["function"].(map[string]interface{})["response"] = fmt.Sprintf("Error: Tool '%s' not found in any MCP server", name)
+			errorMsg := fmt.Sprintf("Error: Tool '%s' not found in any MCP server", name)
+
+			if messageContent != "" {
+				messageContent += "\n\n"
+			}
+			messageContent += errorMsg
 			continue
 		}
 
 		result, err := m.MCPClient.ExecuteTool(context.Background(), name, arguments, serverURL)
 		if err != nil {
 			m.Logger.Error("Failed to execute MCP tool", err, "tool", name)
-			toolCalls[i].(map[string]interface{})["function"].(map[string]interface{})["response"] = fmt.Sprintf("Error executing tool: %v", err)
+			errorMsg := fmt.Sprintf("Error executing tool: %v", err)
+
+			if messageContent != "" {
+				messageContent += "\n\n"
+			}
+			messageContent += errorMsg
 
 			if ctx != nil {
 				ctx.SSEvent("tool_call_error", map[string]interface{}{
@@ -235,8 +250,24 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 				ctx.Writer.Flush()
 			}
 		} else {
-			resultBytes, _ := json.Marshal(result)
-			toolCalls[i].(map[string]interface{})["function"].(map[string]interface{})["response"] = string(resultBytes)
+			var toolResult string
+			if content, ok := result["content"].([]interface{}); ok && len(content) > 0 {
+				for _, item := range content {
+					if contentMap, ok := item.(map[string]interface{}); ok {
+						if text, ok := contentMap["text"].(string); ok {
+							if toolResult != "" {
+								toolResult += "\n"
+							}
+							toolResult += text
+						}
+					}
+				}
+			}
+
+			if messageContent != "" {
+				messageContent += "\n\n"
+			}
+			messageContent += fmt.Sprintf("Tool '%s' result: %s", name, toolResult)
 
 			if ctx != nil {
 				ctx.SSEvent("tool_call_success", map[string]interface{}{
@@ -248,6 +279,8 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 			}
 		}
 	}
+
+	message["content"] = messageContent
 
 	if ctx != nil {
 		ctx.SSEvent("tool_calls_complete", map[string]interface{}{

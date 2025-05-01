@@ -32,6 +32,8 @@ func main() {
 		userAgent := ginCtx.GetHeader("User-Agent")
 		log.Printf("Request from User-Agent: %s", userAgent)
 
+		log.Printf("Received request with args: %+v", args)
+
 		format := args.Format
 		if format == "" {
 			format = time.RFC3339
