@@ -6,14 +6,16 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
-      LOG_LEVEL: info
+      LOG_LEVEL: debug
       ENABLE_MCP: true
-      MCP_SERVERS: http://mcp-fetch-server:3000,http://mcp-filesystem-server:3000
-      GROQ_API_KEY: ${GROQ_API_KEY}
+      MCP_SERVERS: http://mcp-time-server:8081/mcp
+
     depends_on:
-      - mcp-fetch-server
-      - mcp-filesystem-server
+      mcp-time-server:
+        condition: service_healthy
     networks:
       - mcp-network
 
@@ -28,42 +30,26 @@ services:
     environment:
       LOG_LEVEL: debug
       HOST: 0.0.0.0
+      MCP_SERVER_URL: http://mcp-time-server:8081/mcp
     networks:
       - mcp-network
+    depends_on:
+      mcp-time-server:
+        condition: service_healthy
 
-  mcp-fetch-server:
-    image: python:3.11
+  mcp-time-server:
+    image: golang:1.23-alpine
     working_dir: /app
-    command: >
-      sh -c "pip install mcp-server-fetch && LOG_LEVEL=debug python -m mcp_server_fetch --"
-    ports:
-      - "3001:3000"
-    environment:
-      LOG_LEVEL: debug
-      PYTHONUNBUFFERED: 1
     volumes:
-      - ./fetch-server-logs:/app/logs
-    networks:
-      - mcp-network
+      - ./time-server:/app
+    command: >
+      sh -c "apk add --no-cache curl && go run main.go"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
-
-  mcp-filesystem-server:
-    image: node:lts
-    working_dir: /app
-    volumes:
-      - ./filesystem-server:/app
-    command: >
-      sh -c "npx -y @modelcontextprotocol/server-filesystem /app"
-    ports:
-      - "3002:3000"
-    environment:
-      LOG_LEVEL: debug
-      HOST: 0.0.0.0
     networks:
       - mcp-network
 

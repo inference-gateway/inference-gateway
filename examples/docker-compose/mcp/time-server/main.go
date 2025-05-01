@@ -1,0 +1,70 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/gin-gonic/gin"
+	mcp_golang "github.com/metoro-io/mcp-golang"
+	"github.com/metoro-io/mcp-golang/transport/http"
+)
+
+// TimeArgs defines the arguments for the time tool
+type TimeArgs struct {
+	Format string `json:"format,omitempty" jsonschema:"description=The time format to use"`
+}
+
+func main() {
+	// Create a Gin transport
+	transport := http.NewGinTransport()
+
+	// Create a new server with the transport
+	server := mcp_golang.NewServer(transport, mcp_golang.WithName("mcp-time-server"), mcp_golang.WithVersion("0.0.1"))
+
+	// Register a simple tool
+	err := server.RegisterTool("time", "Returns the current time in the specified format", func(ctx context.Context, args TimeArgs) (*mcp_golang.ToolResponse, error) {
+		ginCtx, ok := ctx.Value("ginContext").(*gin.Context)
+		if !ok {
+			return nil, fmt.Errorf("ginContext not found in context")
+		}
+		userAgent := ginCtx.GetHeader("User-Agent")
+		log.Printf("Request from User-Agent: %s", userAgent)
+
+		format := args.Format
+		if format == "" {
+			format = time.RFC3339
+		}
+
+		currentTime := time.Now().Format(format)
+		log.Printf("Returning time: %s", currentTime)
+
+		// Create a more detailed response that will be easy for the LLM to understand
+		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(fmt.Sprintf("The current time is: %s", currentTime))), nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	go server.Serve()
+
+	// Create a Gin router
+	r := gin.Default()
+
+	// Add the MCP endpoint
+	r.POST("/mcp", transport.Handler())
+
+	// Add a health check endpoint
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "ok",
+		})
+	})
+
+	// Start the server
+	log.Println("Starting Gin server on :8081...")
+	if err := r.Run(":8081"); err != nil {
+		log.Fatalf("Server error: %v", err)
+	}
+}

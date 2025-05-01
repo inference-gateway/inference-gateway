@@ -14,8 +14,7 @@ The Model Context Protocol is an open standard for implementing function calling
 ## Components
 
 - **Inference Gateway**: The main service that proxies requests to LLM providers
-- **MCP Weather Server**: A simple MCP server that provides weather data tools
-- **MCP Filesystem Server**: A server that provides filesystem operation tools
+- **MCP Time Server**: A simple MCP server that provides time data tools
 
 ## Setup Instructions
 
@@ -43,19 +42,25 @@ docker-compose up
 Once the services are running, you can make requests to the Inference Gateway using the MCP middleware:
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "groq/deepseek-coder-v2.5-instruct-70b",
-    "messages": [
-      {"role": "user", "content": "What's the weather like in San Francisco? Also, can you list the files available to you?"}
-    ]
-  }'
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "deepseek/deepseek-chat",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Hi, whats the current time?"
+    }
+  ],
+  "stream": true
+}'
 ```
 
 The Inference Gateway will:
 
-1. Discover the tools available from both MCP servers (weather and filesystem)
+1. Discover the tools available from both MCP servers (time)
 2. Inject these tools into the LLM request
 3. Process any tool calls made by the LLM
 4. Return the complete response with tool results
@@ -75,34 +80,6 @@ You can add more MCP-compliant servers to the setup by:
 2. Ensuring the server implements the MCP specification
 3. Verifying the server has proper CORS settings for web clients
 4. Updating the docker-compose.yml to include your new MCP server
-
-## Example Tool Usage
-
-### Weather Tools
-
-```bash
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "groq/deepseek-coder-v2.5-instruct-70b",
-    "messages": [
-      {"role": "user", "content": "What's the weather like in Tokyo right now?"}
-    ]
-  }'
-```
-
-### Filesystem Tools
-
-```bash
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "groq/deepseek-coder-v2.5-instruct-70b",
-    "messages": [
-      {"role": "user", "content": "List all files in the current directory and create a new text file called hello.txt"}
-    ]
-  }'
-```
 
 ## Learn More
 
