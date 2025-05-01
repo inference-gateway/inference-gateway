@@ -313,7 +313,9 @@ func TestMCPMiddlewareEnhanceRequest(t *testing.T) {
 
 			bodyBytes, _ := io.ReadAll(req.Body)
 			var modifiedBody map[string]interface{}
-			json.Unmarshal(bodyBytes, &modifiedBody)
+			if err := json.Unmarshal(bodyBytes, &modifiedBody); err != nil {
+				t.Fatalf("failed to unmarshal body: %v", err)
+			}
 
 			tools, ok := modifiedBody["tools"].([]interface{})
 			assert.True(t, ok)

@@ -53,7 +53,9 @@ func TestMCPClientDiscoverCapabilities(t *testing.T) {
 				},
 			},
 		}
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -92,7 +94,9 @@ func TestMCPClientExecuteTool(t *testing.T) {
 		assert.Equal(t, http.MethodPost, r.Method)
 
 		var requestBody map[string]interface{}
-		json.NewDecoder(r.Body).Decode(&requestBody)
+		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
 
 		assert.Equal(t, "getWeather", requestBody["name"])
 		params := requestBody["params"].(map[string]interface{})
@@ -105,7 +109,9 @@ func TestMCPClientExecuteTool(t *testing.T) {
 			"conditions":  "Sunny",
 			"humidity":    45,
 		}
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -137,7 +143,9 @@ func TestMCPClientExecuteToolError(t *testing.T) {
 		response := map[string]interface{}{
 			"error": "Internal server error",
 		}
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 

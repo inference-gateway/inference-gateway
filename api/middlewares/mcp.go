@@ -80,7 +80,10 @@ func (m *MCPMiddleware) Middleware() gin.HandlerFunc {
 						modifiedBody, err := json.Marshal(processedResponse)
 						if err == nil {
 							c.Writer.Header().Set("Content-Length", fmt.Sprintf("%d", len(modifiedBody)))
-							c.Writer.Write(modifiedBody)
+							_, writeErr := c.Writer.Write(modifiedBody)
+							if writeErr != nil {
+								m.Logger.Error("Failed to write response body", writeErr)
+							}
 							return
 						}
 					}
