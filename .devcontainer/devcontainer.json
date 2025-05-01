@@ -35,12 +35,22 @@
         "githubPullRequests.experimental.chat": true,
         "githubPullRequests.experimental.notificationsView": true,
         "mcp": {
-          "inputs": [],
           "servers": {
             "fetch": {
               "command": "docker",
-              "args": ["run", "-i", "--rm", "mcp/fetch"],
-              "env": {}
+              "args": ["run", "-i", "--rm", "mcp/fetch"]
+            },
+            "Context7": {
+              "command": "docker",
+              "args": [
+                "run",
+                "-i",
+                "--rm",
+                "node:lts",
+                "npx",
+                "-y",
+                "@upstash/context7-mcp@latest"
+              ]
             }
           }
         }
