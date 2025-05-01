@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,11 @@ func NewMCPMiddleware(serverURLs []string, logger logger.Logger) (*MCPMiddleware
 
 	client := NewMCPClient(serverURLs, "", true, logger)
 
+	if err := client.Initialize(context.Background()); err != nil {
+		logger.Error("Failed to initialize MCP client", err)
+		return nil, fmt.Errorf("failed to initialize MCP client: %w", err)
+	}
+
 	return &MCPMiddleware{
 		MCPClient:     client,
 		Logger:        logger,
@@ -43,12 +49,20 @@ func NewMCPMiddleware(serverURLs []string, logger logger.Logger) (*MCPMiddleware
 }
 
 // Middleware returns a HTTP middleware handler for MCP integration
+// It captures the request and response, modifies them as needed, and handles tool calls
+// It also sets the context to indicate that MCP is being used
+// If MCP is not enabled, it simply calls the next handler in the chain
+// If there is no tool call, it proceeds with the original response
+// If it didn't find any tool calls, it returns the original response
+// It informs the client if there is a tool call in progress via notification or SSE
 func (m *MCPMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if !m.Enabled {
 			c.Next()
 			return
 		}
+
+		wantsSSE := strings.Contains(c.GetHeader("Accept"), "text/event-stream")
 
 		err := m.EnhanceRequest(c.Request)
 		if err != nil {
@@ -63,7 +77,13 @@ func (m *MCPMiddleware) Middleware() gin.HandlerFunc {
 		ctx := context.WithValue(c.Request.Context(), usingMCPKey, true)
 		c.Request = c.Request.WithContext(ctx)
 
-		blw := &bodyLogWriter{ResponseWriter: c.Writer, body: bytes.NewBufferString(""), middleware: m}
+		blw := &bodyLogWriter{
+			ResponseWriter: c.Writer,
+			body:           bytes.NewBufferString(""),
+			middleware:     m,
+			wantsSSE:       wantsSSE,
+			context:        c,
+		}
 		c.Writer = blw
 
 		c.Next()
@@ -75,8 +95,19 @@ func (m *MCPMiddleware) Middleware() gin.HandlerFunc {
 
 				var response map[string]interface{}
 				if err := json.Unmarshal(body, &response); err == nil {
-					processedResponse, err := m.processToolCalls(response)
+					processedResponse, err := m.ProcessToolCalls(response, c)
 					if err == nil {
+						if !reflect.DeepEqual(response, processedResponse) && wantsSSE {
+							c.Header("Content-Type", "text/event-stream")
+							c.Header("Cache-Control", "no-cache")
+							c.Header("Connection", "keep-alive")
+							c.Header("Transfer-Encoding", "chunked")
+
+							c.SSEvent("tool_call_complete", map[string]interface{}{
+								"status": "complete",
+							})
+						}
+
 						modifiedBody, err := json.Marshal(processedResponse)
 						if err == nil {
 							c.Writer.Header().Set("Content-Length", fmt.Sprintf("%d", len(modifiedBody)))
@@ -98,6 +129,8 @@ type bodyLogWriter struct {
 	gin.ResponseWriter
 	body       *bytes.Buffer
 	middleware *MCPMiddleware
+	wantsSSE   bool
+	context    *gin.Context
 }
 
 // Write captures the response being written
@@ -113,44 +146,49 @@ func (w *bodyLogWriter) WriteString(s string) (int, error) {
 }
 
 // ProcessToolCalls is the public version of processToolCalls for testing purposes
-func (m *MCPMiddleware) ProcessToolCalls(response map[string]interface{}) (map[string]interface{}, error) {
-	return m.processToolCalls(response)
+func (m *MCPMiddleware) ProcessToolCalls(response map[string]interface{}, sseContext ...*gin.Context) (map[string]interface{}, error) {
+	return m.processToolCalls(response, sseContext...)
+}
+
+// ExtractToolsFromAllCapabilities is the public version of extractToolsFromAllCapabilities for testing purposes
+func (m *MCPMiddleware) ExtractToolsFromAllCapabilities(allCapabilities []map[string]interface{}) ([]map[string]interface{}, error) {
+	return m.extractToolsFromAllCapabilities(allCapabilities)
 }
 
 // processToolCalls handles any tool calls in the response through MCP
-func (m *MCPMiddleware) processToolCalls(response map[string]interface{}) (map[string]interface{}, error) {
-	// Extract choices from the response
+func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseContext ...*gin.Context) (map[string]interface{}, error) {
 	choices, ok := response["choices"].([]interface{})
 	if !ok || len(choices) == 0 {
 		return response, nil
 	}
 
-	// Get the first choice (we only handle the first one for now)
 	firstChoice, ok := choices[0].(map[string]interface{})
 	if !ok {
 		return response, nil
 	}
 
-	// Get the message
 	message, ok := firstChoice["message"].(map[string]interface{})
 	if !ok {
 		return response, nil
 	}
 
-	// Check for tool calls
 	toolCalls, ok := message["tool_calls"].([]interface{})
 	if !ok || len(toolCalls) == 0 {
 		return response, nil
 	}
 
-	// Process each tool call
+	var ctx *gin.Context
+	if len(sseContext) > 0 && sseContext[0] != nil {
+		ctx = sseContext[0]
+	}
+
+	totalTools := len(toolCalls)
 	for i, tc := range toolCalls {
 		toolCall, ok := tc.(map[string]interface{})
 		if !ok {
 			continue
 		}
 
-		// Get the function
 		function, ok := toolCall["function"].(map[string]interface{})
 		if !ok {
 			continue
@@ -166,7 +204,16 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}) (map[s
 			continue
 		}
 
-		// Get the server URL for this tool
+		if ctx != nil {
+			ctx.SSEvent("tool_call_progress", map[string]interface{}{
+				"status":    "in_progress",
+				"tool_name": name,
+				"progress":  float64(i) / float64(totalTools),
+				"message":   fmt.Sprintf("Executing tool %s", name),
+			})
+			ctx.Writer.Flush()
+		}
+
 		serverURL, ok := m.ToolServerMap[name]
 		if !ok {
 			m.Logger.Error("No server URL found for tool", nil, "tool", name)
@@ -174,18 +221,40 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}) (map[s
 			continue
 		}
 
-		// Execute the tool through MCP
 		result, err := m.MCPClient.ExecuteTool(context.Background(), name, arguments, serverURL)
 		if err != nil {
 			m.Logger.Error("Failed to execute MCP tool", err, "tool", name)
-
-			// Add an error result
 			toolCalls[i].(map[string]interface{})["function"].(map[string]interface{})["response"] = fmt.Sprintf("Error executing tool: %v", err)
+
+			if ctx != nil {
+				ctx.SSEvent("tool_call_error", map[string]interface{}{
+					"status":    "error",
+					"tool_name": name,
+					"message":   fmt.Sprintf("Error executing tool %s: %v", name, err),
+				})
+				ctx.Writer.Flush()
+			}
 		} else {
-			// Add the successful result
 			resultBytes, _ := json.Marshal(result)
 			toolCalls[i].(map[string]interface{})["function"].(map[string]interface{})["response"] = string(resultBytes)
+
+			if ctx != nil {
+				ctx.SSEvent("tool_call_success", map[string]interface{}{
+					"status":    "success",
+					"tool_name": name,
+					"progress":  float64(i+1) / float64(totalTools),
+				})
+				ctx.Writer.Flush()
+			}
 		}
+	}
+
+	if ctx != nil {
+		ctx.SSEvent("tool_calls_complete", map[string]interface{}{
+			"status":  "complete",
+			"message": "All tool calls completed",
+		})
+		ctx.Writer.Flush()
 	}
 
 	return response, nil
@@ -197,21 +266,18 @@ func (m *MCPMiddleware) EnhanceRequest(r *http.Request) error {
 		return nil
 	}
 
-	// Discover MCP server capabilities
 	allCapabilities, err := m.MCPClient.DiscoverCapabilities(r.Context())
 	if err != nil {
 		m.Logger.Error("Failed to discover MCP capabilities", err)
 		return err
 	}
 
-	// Extract and combine tools from all servers
 	tools, err := m.extractToolsFromAllCapabilities(allCapabilities)
 	if err != nil {
 		m.Logger.Error("Failed to extract tools from capabilities", err)
 		return err
 	}
 
-	// Read and modify the request body
 	var requestBody map[string]interface{}
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -223,20 +289,16 @@ func (m *MCPMiddleware) EnhanceRequest(r *http.Request) error {
 	}
 	r.Body.Close()
 
-	// Add the tools to the request
 	requestBody["tools"] = tools
 
-	// Create a new request body with the modified content
 	modifiedBody, err := json.Marshal(requestBody)
 	if err != nil {
 		return err
 	}
 
-	// Replace the request body
 	r.Body = io.NopCloser(bytes.NewReader(modifiedBody))
 	r.ContentLength = int64(len(modifiedBody))
 
-	// Ensure proper Content-Type
 	r.Header.Set("Content-Type", "application/json")
 
 	return nil
@@ -246,7 +308,6 @@ func (m *MCPMiddleware) EnhanceRequest(r *http.Request) error {
 func (m *MCPMiddleware) extractToolsFromAllCapabilities(allCapabilities []map[string]interface{}) ([]map[string]interface{}, error) {
 	tools := []map[string]interface{}{}
 
-	// Clear the tool-server map before populating it
 	m.ToolServerMap = make(map[string]string)
 
 	for _, capabilities := range allCapabilities {
@@ -256,8 +317,17 @@ func (m *MCPMiddleware) extractToolsFromAllCapabilities(allCapabilities []map[st
 			continue
 		}
 
-		toolsList, ok := capabilities["tools"].([]interface{})
-		if !ok {
+		var toolsList []interface{}
+
+		if tools, ok := capabilities["tools"].([]interface{}); ok {
+			toolsList = tools
+		} else if resources, ok := capabilities["resources"].(map[string]interface{}); ok {
+			if tools, ok := resources["tools"].([]interface{}); ok {
+				toolsList = tools
+			}
+		}
+
+		if len(toolsList) == 0 {
 			m.Logger.Error("No tools found in MCP capabilities", nil, "server", serverURL)
 			continue
 		}
@@ -273,10 +343,8 @@ func (m *MCPMiddleware) extractToolsFromAllCapabilities(allCapabilities []map[st
 				continue
 			}
 
-			// Store the tool -> server mapping
 			m.ToolServerMap[name] = serverURL
 
-			// Convert to the format expected by LLMs
 			formattedTool := map[string]interface{}{
 				"type": "function",
 				"function": map[string]interface{}{

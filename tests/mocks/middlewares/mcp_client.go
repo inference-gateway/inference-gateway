@@ -69,3 +69,59 @@ func (mr *MockMCPClientInterfaceMockRecorder) ExecuteTool(ctx, toolName, params,
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteTool", reflect.TypeOf((*MockMCPClientInterface)(nil).ExecuteTool), ctx, toolName, params, serverURL)
 }
+
+// GetServerCapabilities mocks base method.
+func (m *MockMCPClientInterface) GetServerCapabilities() map[string]map[string]any {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetServerCapabilities")
+	ret0, _ := ret[0].(map[string]map[string]any)
+	return ret0
+}
+
+// GetServerCapabilities indicates an expected call of GetServerCapabilities.
+func (mr *MockMCPClientInterfaceMockRecorder) GetServerCapabilities() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerCapabilities", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerCapabilities))
+}
+
+// Initialize mocks base method.
+func (m *MockMCPClientInterface) Initialize(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Initialize", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Initialize indicates an expected call of Initialize.
+func (mr *MockMCPClientInterfaceMockRecorder) Initialize(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialize", reflect.TypeOf((*MockMCPClientInterface)(nil).Initialize), ctx)
+}
+
+// IsInitialized mocks base method.
+func (m *MockMCPClientInterface) IsInitialized() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsInitialized")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsInitialized indicates an expected call of IsInitialized.
+func (mr *MockMCPClientInterfaceMockRecorder) IsInitialized() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsInitialized", reflect.TypeOf((*MockMCPClientInterface)(nil).IsInitialized))
+}
+
+// StreamChatWithTools mocks base method.
+func (m *MockMCPClientInterface) StreamChatWithTools(ctx context.Context, messages []map[string]any, serverURL string, callback func(map[string]any) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StreamChatWithTools", ctx, messages, serverURL, callback)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StreamChatWithTools indicates an expected call of StreamChatWithTools.
+func (mr *MockMCPClientInterfaceMockRecorder) StreamChatWithTools(ctx, messages, serverURL, callback any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatWithTools", reflect.TypeOf((*MockMCPClientInterface)(nil).StreamChatWithTools), ctx, messages, serverURL, callback)
+}
