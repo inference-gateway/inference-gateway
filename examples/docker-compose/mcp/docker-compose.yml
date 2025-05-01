@@ -1,37 +1,72 @@
-version: "3"
-
+---
 services:
   inference-gateway:
-    image: inferencegw/inference-gateway:latest
+    build:
+      context: ../../../
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     environment:
-      - LOG_LEVEL=info
-      - ENABLE_MCP=true
-      - MCP_SERVERS=http://mcp-weather-server:3000,http://mcp-filesystem-server:3000
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      LOG_LEVEL: info
+      ENABLE_MCP: true
+      MCP_SERVERS: http://mcp-fetch-server:3000,http://mcp-filesystem-server:3000
+      GROQ_API_KEY: ${GROQ_API_KEY}
     depends_on:
-      - mcp-weather-server
+      - mcp-fetch-server
       - mcp-filesystem-server
+    networks:
+      - mcp-network
 
-  mcp-weather-server:
-    image: node:18
+  mcp-inspector:
+    image: node:lts
     working_dir: /app
-    volumes:
-      - ./weather-server:/app
     command: >
-      sh -c "npm install @modelcontextprotocol/server && 
-             npx -y @modelcontextprotocol/server-weather"
+      sh -c "npx -y @modelcontextprotocol/inspector"
     ports:
-      - "3000:3000"
+      - "6274:6274"
+      - "6277:6277"
+    environment:
+      LOG_LEVEL: debug
+      HOST: 0.0.0.0
+    networks:
+      - mcp-network
+
+  mcp-fetch-server:
+    image: python:3.11
+    working_dir: /app
+    command: >
+      sh -c "pip install mcp-server-fetch && LOG_LEVEL=debug python -m mcp_server_fetch --"
+    ports:
+      - "3001:3000"
+    environment:
+      LOG_LEVEL: debug
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ./fetch-server-logs:/app/logs
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
   mcp-filesystem-server:
-    image: node:18
+    image: node:lts
     working_dir: /app
     volumes:
       - ./filesystem-server:/app
     command: >
-      sh -c "npm install @modelcontextprotocol/server && 
-             npx -y @modelcontextprotocol/server-fs"
+      sh -c "npx -y @modelcontextprotocol/server-filesystem /app"
     ports:
-      - "3001:3000"
+      - "3002:3000"
+    environment:
+      LOG_LEVEL: debug
+      HOST: 0.0.0.0
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    driver: bridge

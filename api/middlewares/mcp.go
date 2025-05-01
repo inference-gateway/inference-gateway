@@ -20,10 +20,9 @@ const usingMCPKey mcpContextKey = "using_mcp"
 
 // MCPMiddleware adds Model Context Protocol capabilities to LLM requests
 type MCPMiddleware struct {
-	MCPClient *MCPClient
-	Logger    logger.Logger
-	Enabled   bool
-	// Map to store tool -> serverURL mapping
+	MCPClient     MCPClientInterface
+	Logger        logger.Logger
+	Enabled       bool
 	ToolServerMap map[string]string
 }
 
@@ -51,19 +50,6 @@ func (m *MCPMiddleware) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Check if the request is specifying MCP integration
-		useMCP := false
-		provider := c.Query("provider")
-		if provider == "mcp" {
-			useMCP = true
-		}
-
-		if !useMCP {
-			c.Next()
-			return
-		}
-
-		// Enhance the request with MCP capabilities
 		err := m.EnhanceRequest(c.Request)
 		if err != nil {
 			m.Logger.Error("Failed to enhance request with MCP capabilities", err)
@@ -74,32 +60,25 @@ func (m *MCPMiddleware) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Create a context with MCP flag
 		ctx := context.WithValue(c.Request.Context(), usingMCPKey, true)
 		c.Request = c.Request.WithContext(ctx)
 
-		// We need to process the response after it's generated
 		blw := &bodyLogWriter{ResponseWriter: c.Writer, body: bytes.NewBufferString(""), middleware: m}
 		c.Writer = blw
 
 		c.Next()
 
-		// Process the response after handlers have executed
 		if blw.body.Len() > 0 {
 			contentType := blw.Header().Get("Content-Type")
 			if strings.Contains(contentType, "application/json") {
 				body := blw.body.Bytes()
 
-				// Parse response and check if it contains tool calls
 				var response map[string]interface{}
 				if err := json.Unmarshal(body, &response); err == nil {
-					// Process the response if it contains tool calls
 					processedResponse, err := m.processToolCalls(response)
 					if err == nil {
-						// Marshal the processed response
 						modifiedBody, err := json.Marshal(processedResponse)
 						if err == nil {
-							// Replace the response
 							c.Writer.Header().Set("Content-Length", fmt.Sprintf("%d", len(modifiedBody)))
 							c.Writer.Write(modifiedBody)
 							return
@@ -128,6 +107,11 @@ func (w *bodyLogWriter) Write(b []byte) (int, error) {
 func (w *bodyLogWriter) WriteString(s string) (int, error) {
 	w.body.WriteString(s)
 	return w.ResponseWriter.WriteString(s)
+}
+
+// ProcessToolCalls is the public version of processToolCalls for testing purposes
+func (m *MCPMiddleware) ProcessToolCalls(response map[string]interface{}) (map[string]interface{}, error) {
+	return m.processToolCalls(response)
 }
 
 // processToolCalls handles any tool calls in the response through MCP
