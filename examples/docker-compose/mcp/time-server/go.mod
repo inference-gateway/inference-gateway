@@ -1,4 +1,4 @@
-module github.com/inference-gateway/inference-gateway/examples/docker-compose/mcp
+module github.com/inference-gateway/inference-gateway/examples/docker-compose/mcp/time-server
 
 go 1.23.8
 

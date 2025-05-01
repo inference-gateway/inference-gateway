@@ -11,10 +11,12 @@ services:
     environment:
       LOG_LEVEL: debug
       ENABLE_MCP: true
-      MCP_SERVERS: http://mcp-time-server:8081/mcp
+      MCP_SERVERS: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp
 
     depends_on:
       mcp-time-server:
+        condition: service_healthy
+      mcp-search-server:
         condition: service_healthy
     networks:
       - mcp-network
@@ -30,11 +32,13 @@ services:
     environment:
       LOG_LEVEL: debug
       HOST: 0.0.0.0
-      MCP_SERVER_URL: http://mcp-time-server:8081/mcp
+      MCP_SERVER_URL: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp
     networks:
       - mcp-network
     depends_on:
       mcp-time-server:
+        condition: service_healthy
+      mcp-search-server:
         condition: service_healthy
 
   mcp-time-server:
@@ -46,6 +50,22 @@ services:
       sh -c "apk add --no-cache curl && go run main.go"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - mcp-network
+
+  mcp-search-server:
+    image: golang:1.23-alpine
+    working_dir: /app
+    volumes:
+      - ./search-server:/app
+    command: >
+      sh -c "apk add --no-cache curl && go run main.go"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
       interval: 30s
       timeout: 10s
       retries: 3

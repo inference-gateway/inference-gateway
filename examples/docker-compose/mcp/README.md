@@ -15,6 +15,7 @@ The Model Context Protocol is an open standard for implementing function calling
 
 - **Inference Gateway**: The main service that proxies requests to LLM providers
 - **MCP Time Server**: A simple MCP server that provides time data tools
+- **MCP Search Server**: A simple MCP server that provides web search functionality
 
 ## Setup Instructions
 
@@ -41,6 +42,8 @@ docker-compose up
 
 Once the services are running, you can make requests to the Inference Gateway using the MCP middleware:
 
+### Example 1: Time Tool
+
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
   "model": "deepseek/deepseek-chat",
@@ -57,9 +60,27 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 }'
 ```
 
+### Example 2: Search Tool
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "deepseek/deepseek-chat",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Find me information about the Model Context Protocol."
+    }
+  ]
+}'
+```
+
 The Inference Gateway will:
 
-1. Discover the tools available from both MCP servers (time)
+1. Discover the tools available from both MCP servers (time and search)
 2. Inject these tools into the LLM request
 3. Process any tool calls made by the LLM
 4. Return the complete response with tool results
