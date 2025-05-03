@@ -1,6 +1,7 @@
 package middlewares_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -22,25 +23,29 @@ func init() {
 	gin.SetMode(gin.TestMode)
 }
 
-// setupGinContext creates a new Gin context for testing with optional request body
-func setupGinContext(t *testing.T, method, path, body string, headers map[string]string) (*gin.Context, *httptest.ResponseRecorder) {
+// Helper function to setup streaming context for tests
+func setupStreamingContext(t *testing.T) (*gin.Context, *httptest.ResponseRecorder) {
+	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	ctx, _ := gin.CreateTestContext(w)
 
-	var req *http.Request
-	if body != "" {
-		req, _ = http.NewRequest(method, path, strings.NewReader(body))
-	} else {
-		req, _ = http.NewRequest(method, path, nil)
-	}
-
+	req, _ := http.NewRequest("POST", "/test", nil)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
 
-	for key, value := range headers {
-		req.Header.Set(key, value)
-	}
+	// Add streaming flag to context
+	streamingRequestKey := middlewares.GetStreamingRequestKey()
+	reqCtx := context.WithValue(req.Context(), streamingRequestKey, true)
+	req = req.WithContext(reqCtx)
 
 	ctx.Request = req
+
+	// Set up response headers for SSE
+	ctx.Header("Content-Type", "text/event-stream")
+	ctx.Header("Cache-Control", "no-cache")
+	ctx.Header("Connection", "keep-alive")
+	ctx.Header("Transfer-Encoding", "chunked")
+
 	return ctx, w
 }
 
@@ -825,9 +830,7 @@ func TestProcessToolCalls(t *testing.T) {
 			var recorder *httptest.ResponseRecorder
 
 			if tt.setupSSE {
-				sseContext, recorder = setupGinContext(t, "POST", "/test", "", map[string]string{
-					"Accept": "text/event-stream",
-				})
+				sseContext, recorder = setupStreamingContext(t)
 			}
 
 			originalResponse := deepCopy(tt.response)
@@ -861,7 +864,6 @@ func TestProcessToolCalls(t *testing.T) {
 				message, ok := firstChoice["message"].(map[string]interface{})
 				assert.True(t, ok)
 
-				// Check that we have content in the message (where tool results are now placed)
 				content, ok := message["content"].(string)
 				assert.True(t, ok, "Message should contain content with tool results")
 				assert.NotEmpty(t, content, "Message content should not be empty")
@@ -869,7 +871,6 @@ func TestProcessToolCalls(t *testing.T) {
 				toolCalls, ok := message["tool_calls"].([]interface{})
 				assert.True(t, ok)
 
-				// Only check that the tool calls structure is preserved
 				for _, tc := range toolCalls {
 					toolCall, ok := tc.(map[string]interface{})
 					assert.True(t, ok)
@@ -877,8 +878,6 @@ func TestProcessToolCalls(t *testing.T) {
 					function, ok := toolCall["function"].(map[string]interface{})
 					assert.True(t, ok)
 
-					// No longer checking for response in function object
-					// Instead, we verify the function has the basic properties
 					assert.Contains(t, function, "name")
 					assert.Contains(t, function, "arguments")
 				}
@@ -886,8 +885,8 @@ func TestProcessToolCalls(t *testing.T) {
 
 			if tt.setupSSE {
 				responseBody := recorder.Body.String()
-				assert.Contains(t, responseBody, "event:tool_call_progress")
-				assert.Contains(t, responseBody, "event:tool_calls_complete")
+				assert.Contains(t, responseBody, "event:tool_call_progress", "Response should contain SSE tool_call_progress event")
+				assert.Contains(t, responseBody, "event:tool_calls_complete", "Response should contain SSE tool_calls_complete event")
 			}
 		})
 	}

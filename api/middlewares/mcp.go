@@ -18,6 +18,13 @@ import (
 type mcpContextKey string
 
 const usingMCPKey mcpContextKey = "using_mcp"
+const streamingRequestKey mcpContextKey = "streaming_request"
+
+// GetStreamingRequestKey returns the key used to store streaming flag in the request context
+// Used for testing purposes
+func GetStreamingRequestKey() mcpContextKey {
+	return streamingRequestKey
+}
 
 // MCPMiddleware adds Model Context Protocol capabilities to LLM requests
 type MCPMiddleware struct {
@@ -64,6 +71,10 @@ func (m *MCPMiddleware) Middleware() gin.HandlerFunc {
 
 		wantsSSE := strings.Contains(c.GetHeader("Accept"), "text/event-stream")
 
+		ctx := context.WithValue(c.Request.Context(), usingMCPKey, true)
+		ctx = context.WithValue(ctx, streamingRequestKey, wantsSSE)
+		c.Request = c.Request.WithContext(ctx)
+
 		err := m.EnhanceRequest(c.Request)
 		if err != nil {
 			m.Logger.Error("Failed to enhance request with MCP capabilities", err)
@@ -73,9 +84,6 @@ func (m *MCPMiddleware) Middleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
-		ctx := context.WithValue(c.Request.Context(), usingMCPKey, true)
-		c.Request = c.Request.WithContext(ctx)
 
 		blw := &bodyLogWriter{
 			ResponseWriter: c.Writer,
@@ -178,8 +186,13 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 	}
 
 	var ctx *gin.Context
+	isStreamingRequest := false
+
 	if len(sseContext) > 0 && sseContext[0] != nil {
 		ctx = sseContext[0]
+		if val, exists := ctx.Request.Context().Value(streamingRequestKey).(bool); exists {
+			isStreamingRequest = val
+		}
 	}
 
 	var messageContent string
@@ -209,7 +222,8 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 			continue
 		}
 
-		if ctx != nil {
+		// Only send SSE events if this is a streaming request
+		if ctx != nil && isStreamingRequest {
 			ctx.SSEvent("tool_call_progress", map[string]interface{}{
 				"status":    "in_progress",
 				"tool_name": name,
@@ -241,7 +255,8 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 			}
 			messageContent += errorMsg
 
-			if ctx != nil {
+			// Only send SSE events if this is a streaming request
+			if ctx != nil && isStreamingRequest {
 				ctx.SSEvent("tool_call_error", map[string]interface{}{
 					"status":    "error",
 					"tool_name": name,
@@ -269,7 +284,8 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 			}
 			messageContent += fmt.Sprintf("Tool '%s' result: %s", name, toolResult)
 
-			if ctx != nil {
+			// Only send SSE events if this is a streaming request
+			if ctx != nil && isStreamingRequest {
 				ctx.SSEvent("tool_call_success", map[string]interface{}{
 					"status":    "success",
 					"tool_name": name,
@@ -282,7 +298,8 @@ func (m *MCPMiddleware) processToolCalls(response map[string]interface{}, sseCon
 
 	message["content"] = messageContent
 
-	if ctx != nil {
+	// Only send SSE events if this is a streaming request
+	if ctx != nil && isStreamingRequest {
 		ctx.SSEvent("tool_calls_complete", map[string]interface{}{
 			"status":  "complete",
 			"message": "All tool calls completed",
