@@ -11,6 +11,50 @@ import (
 	"github.com/inference-gateway/inference-gateway/logger"
 )
 
+// MCPToolDefinition represents a tool definition discovered from an MCP server
+type MCPToolDefinition struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	Parameters  MCPToolParameters `json:"parameters"`
+}
+
+// MCPToolParameters defines the parameter schema for an MCP tool
+type MCPToolParameters struct {
+	Type       string                 `json:"type"`
+	Properties map[string]interface{} `json:"properties"`
+}
+
+// MCPToolContent represents content returned by a tool execution
+type MCPToolContent struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+// MCPToolResult represents the result of a tool execution
+type MCPToolResult struct {
+	Content []MCPToolContent `json:"content"`
+}
+
+// MCPToolResponse represents a tool response to be added to messages
+type MCPToolResponse struct {
+	Role       string `json:"role"`
+	ToolCallID string `json:"tool_call_id"`
+	Content    string `json:"content"`
+}
+
+// MCPToolFunction represents the function part of a tool call
+type MCPToolFunction struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
+}
+
+// MCPToolCall represents a tool call from the LLM
+type MCPToolCall struct {
+	ID       string          `json:"id"`
+	Type     string          `json:"type"`
+	Function MCPToolFunction `json:"function"`
+}
+
 // MCPClientInterface defines the interface for MCP client implementations
 //
 //go:generate mockgen -source=client.go -destination=../tests/mocks/mcp_client.go -package=mocks

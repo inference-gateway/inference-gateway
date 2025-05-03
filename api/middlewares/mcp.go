@@ -1,8 +1,11 @@
 package middlewares
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -58,23 +61,287 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	// If it didn't find any tool calls, it returns the original response
 	// It informs the client if there is a tool call in progress via notification or SSE
 	return func(c *gin.Context) {
+		c.Set("use_mcp", true)
 
-		wantsSSE := strings.Contains(c.GetHeader("Accept"), "text/event-stream")
+		m.logger.Debug("MCP Processing request for MCP enhancement")
+		var requestBody map[string]interface{}
+		if err := c.ShouldBindJSON(&requestBody); err != nil {
+			m.logger.Debug("Could not parse request body for MCP enhancement", "error", err.Error())
+			c.Next()
+			return
+		}
 
-		// processs request
+		m.logger.Debug("MCP Checking if request is a streaming request")
+		wantsSSE := strings.Contains(c.GetHeader("Accept"), "text/event-stream") && requestBody["stream"] == true
+		m.logger.Debug("MCP Request is a streaming request:", wantsSSE)
+
+		m.logger.Debug("MCP Checking if request contains messages")
+		_, hasMessages := requestBody["messages"].([]interface{})
+		if !hasMessages {
+			m.logger.Debug("MCP No messages found in request, continuing without MCP enhancement")
+			c.Next()
+			return
+		}
+
+		m.logger.Debug("MCP Discovering MCP capabilities")
+		ctx := c.Request.Context()
+		capabilities, err := m.client.DiscoverCapabilities(ctx)
+		if err != nil {
+			m.logger.Error("Failed to discover MCP capabilities", err)
+			c.Next()
+			return
+		}
+
+		m.logger.Debug("MCP Extracting tools from capabilities")
+		var toolsToAdd []mcp.MCPToolDefinition
+		for _, capabilitySet := range capabilities {
+			if tools, ok := capabilitySet["tools"].([]interface{}); ok {
+				for _, tool := range tools {
+					if toolMap, ok := tool.(map[string]interface{}); ok {
+						toolDef := mcp.MCPToolDefinition{
+							Parameters: mcp.MCPToolParameters{
+								Type:       "object",
+								Properties: make(map[string]interface{}),
+							},
+						}
+
+						if name, ok := toolMap["name"].(string); ok {
+							toolDef.Name = name
+						}
+
+						if desc, ok := toolMap["description"].(string); ok {
+							toolDef.Description = desc
+						}
+
+						if params, ok := toolMap["parameters"].(map[string]interface{}); ok {
+							if paramType, typeOk := params["type"].(string); typeOk {
+								toolDef.Parameters.Type = paramType
+							}
+							if props, propsOk := params["properties"].(map[string]interface{}); propsOk {
+								toolDef.Parameters.Properties = props
+							}
+						}
+
+						toolsToAdd = append(toolsToAdd, toolDef)
+					}
+				}
+			}
+		}
+
+		if len(toolsToAdd) > 0 {
+			toolMaps := make([]map[string]interface{}, 0, len(toolsToAdd))
+			for _, tool := range toolsToAdd {
+				toolMap := map[string]interface{}{
+					"name": tool.Name,
+					"parameters": map[string]interface{}{
+						"type":       tool.Parameters.Type,
+						"properties": tool.Parameters.Properties,
+					},
+				}
+
+				if tool.Description != "" {
+					toolMap["description"] = tool.Description
+				}
+
+				toolMaps = append(toolMaps, toolMap)
+			}
+
+			requestBody["tools"] = toolMaps
+			c.Set("original_request", requestBody)
+
+			c.Request.Body = createReadCloser(requestBody)
+			c.Request.ContentLength = int64(len(fmt.Sprintf("%v", requestBody)))
+		}
 
 		c.Next()
 
-		// process response
 		if wantsSSE {
-			// process streaming response
+			m.processStreamResponse(c)
 		} else {
-			// process non-streaming response
+			m.processNonStreamResponse(c)
 		}
 	}
 }
 
-// NoopMCPMiddlewareImpl is a no-operation implementation of MCPMiddleware
+// createReadCloser creates a ReadCloser from a map to rebuild the request body
+func createReadCloser(body map[string]interface{}) io.ReadCloser {
+	jsonBody, _ := json.Marshal(body)
+	return io.NopCloser(bytes.NewReader(jsonBody))
+}
+
+// processStreamResponse handles streaming responses and intercepts tool calls
+func (m *MCPMiddlewareImpl) processStreamResponse(c *gin.Context) {
+	// Implementation for streaming responses would be more complex
+	// It would need to intercept the SSE stream, check for tool calls,
+	// and handle them appropriately
+	// This would typically involve modifying the response writer
+	m.logger.Debug("MCP streaming response processing not fully implemented yet")
+}
+
+// processNonStreamResponse handles non-streaming responses and intercepts tool calls
+func (m *MCPMiddlewareImpl) processNonStreamResponse(c *gin.Context) {
+	// Check if we have a response body to process
+	responseData, exists := c.Get("response_data")
+	if !exists {
+		return
+	}
+
+	response, ok := responseData.(map[string]interface{})
+	if !ok {
+		m.logger.Debug("Could not parse response data for MCP processing")
+		return
+	}
+
+	// Check for tool calls in the response
+	choices, hasChoices := response["choices"].([]interface{})
+	if !hasChoices || len(choices) == 0 {
+		return
+	}
+
+	// Process each choice for tool calls
+	toolResponses := make([]interface{}, 0)
+	toolCallFound := false
+
+	for _, choice := range choices {
+		choiceMap, ok := choice.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		message, hasMessage := choiceMap["message"].(map[string]interface{})
+		if !hasMessage {
+			continue
+		}
+
+		toolCalls, hasToolCalls := message["tool_calls"].([]interface{})
+		if !hasToolCalls || len(toolCalls) == 0 {
+			continue
+		}
+
+		// We have tool calls, process them
+		toolCallFound = true
+		for _, toolCall := range toolCalls {
+			var mcpToolCall mcp.MCPToolCall
+
+			toolCallMap, ok := toolCall.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			// Extract ID
+			if id, ok := toolCallMap["id"].(string); ok {
+				mcpToolCall.ID = id
+			} else {
+				continue
+			}
+
+			// Extract Type
+			if typeVal, ok := toolCallMap["type"].(string); ok {
+				mcpToolCall.Type = typeVal
+			} else {
+				mcpToolCall.Type = "function"
+			}
+
+			// Extract Function details
+			functionMap, hasFunction := toolCallMap["function"].(map[string]interface{})
+			if !hasFunction {
+				continue
+			}
+
+			if name, ok := functionMap["name"].(string); ok {
+				mcpToolCall.Function.Name = name
+			} else {
+				continue
+			}
+
+			if args, ok := functionMap["arguments"].(string); ok {
+				mcpToolCall.Function.Arguments = args
+			} else {
+				continue
+			}
+
+			// Parse arguments
+			var params interface{}
+			if err := json.Unmarshal([]byte(mcpToolCall.Function.Arguments), &params); err != nil {
+				m.logger.Error("Failed to parse tool call arguments", err)
+				continue
+			}
+
+			// Find appropriate MCP server for this tool
+			var serverURL string
+			for url, capabilities := range m.client.GetServerCapabilities() {
+				if tools, ok := capabilities["tools"].([]interface{}); ok {
+					for _, tool := range tools {
+						if toolMap, ok := tool.(map[string]interface{}); ok {
+							if name, ok := toolMap["name"].(string); ok && name == mcpToolCall.Function.Name {
+								serverURL = url
+								break
+							}
+						}
+					}
+				}
+				if serverURL != "" {
+					break
+				}
+			}
+
+			if serverURL == "" {
+				m.logger.Error("Failed to execute tool", fmt.Errorf("no MCP server found for tool: %s", mcpToolCall.Function.Name))
+				continue
+			}
+
+			// Execute the tool
+			result, err := m.client.ExecuteTool(c.Request.Context(), mcpToolCall.Function.Name, params, serverURL)
+			if err != nil {
+				m.logger.Error("Failed to execute tool", err, "tool", mcpToolCall.Function.Name)
+				continue
+			}
+
+			// Process the tool result to extract content
+			var contentStr string
+
+			if contentArray, ok := result["content"].([]interface{}); ok && len(contentArray) > 0 {
+				// Handle case where content is an array of objects
+				contents := make([]string, 0, len(contentArray))
+				for _, item := range contentArray {
+					if contentItem, ok := item.(map[string]interface{}); ok {
+						if text, ok := contentItem["text"].(string); ok {
+							contents = append(contents, text)
+						} else if itemType, typeOk := contentItem["type"].(string); typeOk && itemType == "text" {
+							if text, ok := contentItem["text"].(string); ok {
+								contents = append(contents, text)
+							}
+						}
+					}
+				}
+				contentStr = strings.Join(contents, "\n")
+			} else {
+				// Fall back to string conversion of the entire result
+				contentStr = fmt.Sprintf("%v", result)
+			}
+
+			// Add tool result to the response
+			toolResponseMap := map[string]interface{}{
+				"role":         "tool",
+				"tool_call_id": mcpToolCall.ID,
+				"content":      contentStr,
+			}
+
+			// Append tool response to toolResponses
+			toolResponses = append(toolResponses, toolResponseMap)
+		}
+	}
+
+	// Only add messages if we have tool responses and if tool calls were found
+	if toolCallFound {
+		response["messages"] = toolResponses
+	}
+
+	// Update the response in the context
+	c.Set("response_data", response)
+}
+
+// Middleware returns a HTTP middleware handler (no-op implementation)
 func (m *NoopMCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
