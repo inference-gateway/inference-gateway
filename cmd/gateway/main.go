@@ -15,6 +15,7 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
+	"github.com/inference-gateway/inference-gateway/mcp"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -116,24 +117,11 @@ func main() {
 	}
 
 	// Initialize MCP middleware if enabled
-	var mcpMiddleware *middlewares.MCPMiddleware
-	if cfg.EnableMcp {
-		serverURLsStr := os.Getenv("MCP_SERVERS")
-		if serverURLsStr != "" {
-			serverURLs := strings.Split(serverURLsStr, ",")
-			for i := range serverURLs {
-				serverURLs[i] = strings.TrimSpace(serverURLs[i])
-			}
-
-			mcpMiddleware, err = middlewares.NewMCPMiddleware(serverURLs, logger)
-			if err != nil {
-				logger.Error("Failed to initialize MCP middleware", err)
-			} else {
-				logger.Info("MCP middleware initialized successfully", "servers", len(serverURLs))
-			}
-		} else {
-			logger.Error("MCP_SERVERS environment variable is empty", nil)
-		}
+	mcpClient := mcp.NewMCPClient(strings.Split(cfg.McpServers, ","), logger)
+	mcpMiddleware, err := middlewares.NewMCPMiddleware(mcpClient, logger, cfg)
+	if err != nil {
+		logger.Error("Failed to initialize MCP middleware", err)
+		return
 	}
 
 	scheme := "http"

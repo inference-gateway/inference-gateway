@@ -1,4 +1,4 @@
-package middlewares
+package mcp
 
 import (
 	"context"
@@ -11,6 +11,29 @@ import (
 	"github.com/inference-gateway/inference-gateway/logger"
 )
 
+// MCPClientInterface defines the interface for MCP client implementations
+//
+//go:generate mockgen -source=client.go -destination=../tests/mocks/mcp_client.go -package=mocks
+type MCPClientInterface interface {
+	// InitializeAll establishes connection with MCP servers and performs handshake
+	InitializeAll(ctx context.Context) error
+
+	// IsInitialized returns whether the client has been successfully initialized
+	IsInitialized() bool
+
+	// DiscoverCapabilities retrieves capabilities from all configured MCP servers
+	DiscoverCapabilities(ctx context.Context) ([]map[string]interface{}, error)
+
+	// ExecuteTool invokes a tool on the appropriate MCP server
+	ExecuteTool(ctx context.Context, toolName string, params interface{}, serverURL string) (map[string]interface{}, error)
+
+	// StreamChatWithTools sends a chat request with tool capabilities and streams the response
+	StreamChatWithTools(ctx context.Context, messages []map[string]interface{}, serverURL string, callback func(chunk map[string]interface{}) error) error
+
+	// GetServerCapabilities returns the server capabilities map
+	GetServerCapabilities() map[string]map[string]interface{}
+}
+
 // MCPClient provides methods to interact with MCP servers
 type MCPClient struct {
 	ServerURLs         []string
@@ -18,19 +41,17 @@ type MCPClient struct {
 	Logger             logger.Logger
 	ServerCapabilities map[string]map[string]interface{}
 	Initialized        bool
-	AuthToken          string
 }
 
 // NewMCPClient is a variable holding the function to create a new MCP client
 // This allows for overriding in tests
-var NewMCPClient = func(serverURLs []string, authToken string, enableSSE bool, logger logger.Logger) MCPClientInterface {
+func NewMCPClient(serverURLs []string, logger logger.Logger) MCPClientInterface {
 	return &MCPClient{
 		ServerURLs:         serverURLs,
 		Clients:            make(map[string]*mcp.Client),
 		Logger:             logger,
 		ServerCapabilities: make(map[string]map[string]interface{}),
 		Initialized:        false,
-		AuthToken:          authToken,
 	}
 }
 
@@ -41,9 +62,14 @@ func (c *MCPClient) createTransport(serverURL string) (transport.Transport, erro
 	return transportHttp, nil
 }
 
-// Initialize follows the MCP initialization handshake with all configured servers
-func (c *MCPClient) Initialize(ctx context.Context) error {
+// InitializeAll follows the MCP initialization handshake with all configured servers
+// and provides detailed debug information about server capabilities
+func (c *MCPClient) InitializeAll(ctx context.Context) error {
+	c.Logger.Info("Starting initialization with MCP servers", "count", len(c.ServerURLs))
+
 	for _, serverURL := range c.ServerURLs {
+		c.Logger.Debug("Attempting to initialize MCP server", "server", serverURL)
+
 		transport, err := c.createTransport(serverURL)
 		if err != nil {
 			c.Logger.Error("Failed to create transport", err, "server", serverURL)
@@ -59,22 +85,49 @@ func (c *MCPClient) Initialize(ctx context.Context) error {
 		}
 
 		c.Clients[serverURL] = client
+		c.Logger.Debug("Successfully connected to MCP server", "server", serverURL)
 
 		capabilities := map[string]interface{}{}
-
 		capabilities["_server_url"] = serverURL
 
 		if initResponse != nil {
 			capabilities["initialized"] = true
+
+			c.Logger.Debug("MCP server initialization response",
+				"server", serverURL,
+				"version", initResponse.ServerInfo.Version,
+				"name", initResponse.ServerInfo.Name)
+
+			if initResponse.ServerInfo.Version != "" {
+				capabilities["version"] = initResponse.ServerInfo.Version
+				c.Logger.Info("MCP server version", "server", serverURL, "version", initResponse.ServerInfo.Version)
+			}
+
+			if initResponse.ServerInfo.Name != "" {
+				capabilities["name"] = initResponse.ServerInfo.Name
+				c.Logger.Info("MCP server name", "server", serverURL, "name", initResponse.ServerInfo.Name)
+			}
+
+			if len(initResponse.Meta) > 0 {
+				c.Logger.Debug("MCP server metadata received", "server", serverURL, "count", len(initResponse.Meta))
+				capabilities["metadata"] = initResponse.Meta
+
+				for key, value := range initResponse.Meta {
+					c.Logger.Debug("MCP server metadata entry", "server", serverURL, "key", key, "value", value)
+				}
+			}
 		}
 
 		c.ServerCapabilities[serverURL] = capabilities
+		c.Logger.Info("Server capabilities registered", "server", serverURL)
 	}
 
 	if len(c.Clients) == 0 {
+		c.Logger.Error("Failed to initialize any MCP servers", fmt.Errorf("no servers initialized"), "attempted", len(c.ServerURLs))
 		return fmt.Errorf("failed to initialize any MCP servers")
 	}
 
+	c.Logger.Info("MCP client initialization complete", "successful_connections", len(c.Clients))
 	c.Initialized = true
 	return nil
 }
@@ -82,9 +135,7 @@ func (c *MCPClient) Initialize(ctx context.Context) error {
 // DiscoverCapabilities queries MCP servers to discover their capabilities
 func (c *MCPClient) DiscoverCapabilities(ctx context.Context) ([]map[string]interface{}, error) {
 	if !c.Initialized {
-		if err := c.Initialize(ctx); err != nil {
-			return nil, err
-		}
+		return nil, fmt.Errorf("MCP client not initialized properly")
 	}
 
 	var allCapabilities []map[string]interface{}

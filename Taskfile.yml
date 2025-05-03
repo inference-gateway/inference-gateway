@@ -21,7 +21,7 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/ui/.env.backend.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
-      - go generate ./providers/... ./api/... ./otel/...
+      - go generate ./providers/... ./api/... ./otel/... ./mcp/... ./logger/...
 
   tidy:
     desc: "Tidy the gateway"
