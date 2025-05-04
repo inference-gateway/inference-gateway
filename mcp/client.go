@@ -18,14 +18,8 @@ type MCPClientInterface interface {
 	// IsInitialized returns whether the client has been successfully initialized
 	IsInitialized() bool
 
-	// DiscoverCapabilities retrieves capabilities from all configured MCP servers
-	DiscoverCapabilities(ctx context.Context) ([]MCPCapability, error)
-
 	// ExecuteTool invokes a tool on the appropriate MCP server
-	ExecuteTool(ctx context.Context, toolName string, params MCPToolParams, serverURL string) (MCPToolResult, error)
-
-	// StreamChatWithTools sends a chat request with tool capabilities and streams the response
-	StreamChatWithTools(ctx context.Context, messages []PromptMessage, serverURL string) error
+	ExecuteTool(ctx context.Context, request Request, serverURL string) (CallToolResult, error)
 
 	// GetServerCapabilities returns the server capabilities map
 	GetServerCapabilities() map[string]ServerCapabilities
@@ -36,7 +30,7 @@ type MCPClient struct {
 	ServerURLs         []string
 	Clients            map[string]*mcp.Client
 	Logger             logger.Logger
-	ServerCapabilities map[string]map[string]interface{}
+	ServerCapabilities map[string]ServerCapabilities
 	Initialized        bool
 }
 
@@ -47,7 +41,27 @@ func NewMCPClient(serverURLs []string, logger logger.Logger) MCPClientInterface 
 		ServerURLs:         serverURLs,
 		Clients:            make(map[string]*mcp.Client),
 		Logger:             logger,
-		ServerCapabilities: make(map[string]map[string]interface{}),
+		ServerCapabilities: make(map[string]ServerCapabilities),
 		Initialized:        false,
 	}
+}
+
+// ExecuteTool implements MCPClientInterface.
+func (m *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL string) (CallToolResult, error) {
+	panic("unimplemented")
+}
+
+// GetServerCapabilities implements MCPClientInterface.
+func (m *MCPClient) GetServerCapabilities() map[string]ServerCapabilities {
+	panic("unimplemented")
+}
+
+// InitializeAll implements MCPClientInterface.
+func (m *MCPClient) InitializeAll(ctx context.Context) error {
+	panic("unimplemented")
+}
+
+// IsInitialized implements MCPClientInterface.
+func (m *MCPClient) IsInitialized() bool {
+	panic("unimplemented")
 }
