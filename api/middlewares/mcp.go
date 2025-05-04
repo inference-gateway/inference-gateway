@@ -104,35 +104,63 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		m.logger.Debug("MCP Extracting tools from capabilities")
 		var toolsToAdd []mcp.MCPToolDefinition
 		for _, capabilitySet := range capabilities {
+			// Handle different types of tool arrays
+			var toolsArray []interface{}
+
+			// Try to extract tools based on different possible types
 			if tools, ok := capabilitySet["tools"].([]interface{}); ok {
-				for _, tool := range tools {
-					if toolMap, ok := tool.(map[string]interface{}); ok {
-						toolDef := mcp.MCPToolDefinition{
-							Parameters: mcp.MCPToolParameters{
-								Type:       "object",
-								Properties: make(map[string]interface{}),
-							},
-						}
-
-						if name, ok := toolMap["name"].(string); ok {
-							toolDef.Name = name
-						}
-
-						if desc, ok := toolMap["description"].(string); ok {
-							toolDef.Description = desc
-						}
-
-						if params, ok := toolMap["parameters"].(map[string]interface{}); ok {
-							if paramType, typeOk := params["type"].(string); typeOk {
-								toolDef.Parameters.Type = paramType
-							}
-							if props, propsOk := params["properties"].(map[string]interface{}); propsOk {
-								toolDef.Parameters.Properties = props
-							}
-						}
-
-						toolsToAdd = append(toolsToAdd, toolDef)
+				toolsArray = tools
+			} else if tools, ok := capabilitySet["tools"].([]providers.ChatCompletionTool); ok {
+				// Convert from []providers.ChatCompletionTool to []interface{}
+				toolsArray = make([]interface{}, len(tools))
+				for i, tool := range tools {
+					toolMap := map[string]interface{}{
+						"name":        tool.Function.Name,
+						"description": tool.Function.Description,
+						"parameters":  tool.Function.Parameters,
 					}
+					toolsArray[i] = toolMap
+				}
+			} else if toolsRaw, ok := capabilitySet["tools"]; ok {
+				// Try to convert unknown type to []interface{} using JSON marshalling/unmarshalling
+				if toolsBytes, err := json.Marshal(toolsRaw); err == nil {
+					if err = json.Unmarshal(toolsBytes, &toolsArray); err != nil {
+						m.logger.Debug("Could not unmarshal tools", "error", err.Error())
+					}
+				}
+			}
+
+			if len(toolsArray) == 0 {
+				continue
+			}
+
+			for _, tool := range toolsArray {
+				if toolMap, ok := tool.(map[string]interface{}); ok {
+					toolDef := mcp.MCPToolDefinition{
+						Parameters: mcp.MCPToolParameters{
+							Type:       "object",
+							Properties: make(map[string]interface{}),
+						},
+					}
+
+					if name, ok := toolMap["name"].(string); ok {
+						toolDef.Name = name
+					}
+
+					if desc, ok := toolMap["description"].(string); ok {
+						toolDef.Description = desc
+					}
+
+					if params, ok := toolMap["parameters"].(map[string]interface{}); ok {
+						if paramType, typeOk := params["type"].(string); typeOk {
+							toolDef.Parameters.Type = paramType
+						}
+						if props, propsOk := params["properties"].(map[string]interface{}); propsOk {
+							toolDef.Parameters.Properties = props
+						}
+					}
+
+					toolsToAdd = append(toolsToAdd, toolDef)
 				}
 			}
 		}

@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	mcp "github.com/inference-gateway/inference-gateway/mcp"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,10 +42,10 @@ func (m *MockMCPClientInterface) EXPECT() *MockMCPClientInterfaceMockRecorder {
 }
 
 // DiscoverCapabilities mocks base method.
-func (m *MockMCPClientInterface) DiscoverCapabilities(ctx context.Context) ([]map[string]any, error) {
+func (m *MockMCPClientInterface) DiscoverCapabilities(ctx context.Context) ([]mcp.MCPCapability, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DiscoverCapabilities", ctx)
-	ret0, _ := ret[0].([]map[string]any)
+	ret0, _ := ret[0].([]mcp.MCPCapability)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -56,10 +57,10 @@ func (mr *MockMCPClientInterfaceMockRecorder) DiscoverCapabilities(ctx any) *gom
 }
 
 // ExecuteTool mocks base method.
-func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, toolName string, params any, serverURL string) (map[string]any, error) {
+func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, toolName string, params mcp.MCPToolParams, serverURL string) (mcp.MCPToolResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteTool", ctx, toolName, params, serverURL)
-	ret0, _ := ret[0].(map[string]any)
+	ret0, _ := ret[0].(mcp.MCPToolResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -71,10 +72,10 @@ func (mr *MockMCPClientInterfaceMockRecorder) ExecuteTool(ctx, toolName, params,
 }
 
 // GetServerCapabilities mocks base method.
-func (m *MockMCPClientInterface) GetServerCapabilities() map[string]map[string]any {
+func (m *MockMCPClientInterface) GetServerCapabilities() map[string]mcp.ServerCapabilities {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetServerCapabilities")
-	ret0, _ := ret[0].(map[string]map[string]any)
+	ret0, _ := ret[0].(map[string]mcp.ServerCapabilities)
 	return ret0
 }
 
@@ -113,15 +114,15 @@ func (mr *MockMCPClientInterfaceMockRecorder) IsInitialized() *gomock.Call {
 }
 
 // StreamChatWithTools mocks base method.
-func (m *MockMCPClientInterface) StreamChatWithTools(ctx context.Context, messages []map[string]any, serverURL string, callback func(map[string]any) error) error {
+func (m *MockMCPClientInterface) StreamChatWithTools(ctx context.Context, messages []mcp.PromptMessage, serverURL string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StreamChatWithTools", ctx, messages, serverURL, callback)
+	ret := m.ctrl.Call(m, "StreamChatWithTools", ctx, messages, serverURL)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // StreamChatWithTools indicates an expected call of StreamChatWithTools.
-func (mr *MockMCPClientInterfaceMockRecorder) StreamChatWithTools(ctx, messages, serverURL, callback any) *gomock.Call {
+func (mr *MockMCPClientInterfaceMockRecorder) StreamChatWithTools(ctx, messages, serverURL any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatWithTools", reflect.TypeOf((*MockMCPClientInterface)(nil).StreamChatWithTools), ctx, messages, serverURL, callback)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatWithTools", reflect.TypeOf((*MockMCPClientInterface)(nil).StreamChatWithTools), ctx, messages, serverURL)
 }
