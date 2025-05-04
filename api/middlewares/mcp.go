@@ -12,7 +12,11 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/mcp"
+	"github.com/inference-gateway/inference-gateway/providers"
 )
+
+// ChatCompletionsPath is the specific API path for chat completions
+const ChatCompletionsPath = "/v1/chat/completions"
 
 // MCPMiddleware is an interface for middleware that integrates with the Model Context Protocol (MCP)
 type MCPMiddleware interface {
@@ -61,10 +65,16 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	// If it didn't find any tool calls, it returns the original response
 	// It informs the client if there is a tool call in progress via notification or SSE
 	return func(c *gin.Context) {
+		// Only process requests to the chat completions endpoint
+		if c.Request.URL.Path != ChatCompletionsPath {
+			c.Next()
+			return
+		}
+
 		c.Set("use_mcp", true)
 
 		m.logger.Debug("MCP Processing request for MCP enhancement")
-		var requestBody map[string]interface{}
+		var requestBody providers.CreateChatCompletionRequest
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
 			m.logger.Debug("Could not parse request body for MCP enhancement", "error", err.Error())
 			c.Next()
@@ -72,12 +82,11 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		m.logger.Debug("MCP Checking if request is a streaming request")
-		wantsSSE := strings.Contains(c.GetHeader("Accept"), "text/event-stream") && requestBody["stream"] == true
+		wantsSSE := strings.Contains(c.GetHeader("Accept"), "text/event-stream") && requestBody.Stream != nil && *requestBody.Stream
 		m.logger.Debug("MCP Request is a streaming request:", wantsSSE)
 
 		m.logger.Debug("MCP Checking if request contains messages")
-		_, hasMessages := requestBody["messages"].([]interface{})
-		if !hasMessages {
+		if len(requestBody.Messages) == 0 {
 			m.logger.Debug("MCP No messages found in request, continuing without MCP enhancement")
 			c.Next()
 			return
@@ -129,28 +138,36 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		if len(toolsToAdd) > 0 {
-			toolMaps := make([]map[string]interface{}, 0, len(toolsToAdd))
+			// Create ChatCompletionTool slice from MCP tools
+			tools := make([]providers.ChatCompletionTool, 0, len(toolsToAdd))
 			for _, tool := range toolsToAdd {
-				toolMap := map[string]interface{}{
-					"name": tool.Name,
-					"parameters": map[string]interface{}{
-						"type":       tool.Parameters.Type,
-						"properties": tool.Parameters.Properties,
+				chatTool := providers.ChatCompletionTool{
+					Type: providers.ChatCompletionToolTypeFunction,
+					Function: providers.FunctionObject{
+						Name: tool.Name,
+						Parameters: &providers.FunctionParameters{
+							"type":       tool.Parameters.Type,
+							"properties": tool.Parameters.Properties,
+						},
 					},
 				}
 
 				if tool.Description != "" {
-					toolMap["description"] = tool.Description
+					chatTool.Function.Description = &tool.Description
 				}
 
-				toolMaps = append(toolMaps, toolMap)
+				tools = append(tools, chatTool)
 			}
 
-			requestBody["tools"] = toolMaps
-			c.Set("original_request", requestBody)
+			// Store the original request for later use
+			originalRequestBody := requestBody
 
+			// Update the request with the tools
+			requestBody.Tools = &tools
+			c.Set("original_request", originalRequestBody)
+
+			// Convert to JSON and recreate the body reader
 			c.Request.Body = createReadCloser(requestBody)
-			c.Request.ContentLength = int64(len(fmt.Sprintf("%v", requestBody)))
 		}
 
 		c.Next()
@@ -163,14 +180,14 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	}
 }
 
-// createReadCloser creates a ReadCloser from a map to rebuild the request body
-func createReadCloser(body map[string]interface{}) io.ReadCloser {
+// createReadCloser creates a ReadCloser from a struct to rebuild the request body
+func createReadCloser(body interface{}) io.ReadCloser {
 	jsonBody, _ := json.Marshal(body)
 	return io.NopCloser(bytes.NewReader(jsonBody))
 }
 
 // processStreamResponse handles streaming responses and intercepts tool calls
-func (m *MCPMiddlewareImpl) processStreamResponse(c *gin.Context) {
+func (m *MCPMiddlewareImpl) processStreamResponse(_ *gin.Context) {
 	// Implementation for streaming responses would be more complex
 	// It would need to intercept the SSE stream, check for tool calls,
 	// and handle them appropriately
