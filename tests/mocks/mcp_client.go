@@ -41,34 +41,19 @@ func (m *MockMCPClientInterface) EXPECT() *MockMCPClientInterfaceMockRecorder {
 	return m.recorder
 }
 
-// DiscoverCapabilities mocks base method.
-func (m *MockMCPClientInterface) DiscoverCapabilities(ctx context.Context) ([]mcp.MCPCapability, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DiscoverCapabilities", ctx)
-	ret0, _ := ret[0].([]mcp.MCPCapability)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DiscoverCapabilities indicates an expected call of DiscoverCapabilities.
-func (mr *MockMCPClientInterfaceMockRecorder) DiscoverCapabilities(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DiscoverCapabilities", reflect.TypeOf((*MockMCPClientInterface)(nil).DiscoverCapabilities), ctx)
-}
-
 // ExecuteTool mocks base method.
-func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, toolName string, params mcp.MCPToolParams, serverURL string) (mcp.MCPToolResult, error) {
+func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, request mcp.Request, serverURL string) (mcp.CallToolResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExecuteTool", ctx, toolName, params, serverURL)
-	ret0, _ := ret[0].(mcp.MCPToolResult)
+	ret := m.ctrl.Call(m, "ExecuteTool", ctx, request, serverURL)
+	ret0, _ := ret[0].(mcp.CallToolResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ExecuteTool indicates an expected call of ExecuteTool.
-func (mr *MockMCPClientInterfaceMockRecorder) ExecuteTool(ctx, toolName, params, serverURL any) *gomock.Call {
+func (mr *MockMCPClientInterfaceMockRecorder) ExecuteTool(ctx, request, serverURL any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteTool", reflect.TypeOf((*MockMCPClientInterface)(nil).ExecuteTool), ctx, toolName, params, serverURL)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteTool", reflect.TypeOf((*MockMCPClientInterface)(nil).ExecuteTool), ctx, request, serverURL)
 }
 
 // GetServerCapabilities mocks base method.
@@ -111,18 +96,4 @@ func (m *MockMCPClientInterface) IsInitialized() bool {
 func (mr *MockMCPClientInterfaceMockRecorder) IsInitialized() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsInitialized", reflect.TypeOf((*MockMCPClientInterface)(nil).IsInitialized))
-}
-
-// StreamChatWithTools mocks base method.
-func (m *MockMCPClientInterface) StreamChatWithTools(ctx context.Context, messages []mcp.PromptMessage, serverURL string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StreamChatWithTools", ctx, messages, serverURL)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// StreamChatWithTools indicates an expected call of StreamChatWithTools.
-func (mr *MockMCPClientInterfaceMockRecorder) StreamChatWithTools(ctx, messages, serverURL any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatWithTools", reflect.TypeOf((*MockMCPClientInterface)(nil).StreamChatWithTools), ctx, messages, serverURL)
 }
