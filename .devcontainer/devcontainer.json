@@ -33,7 +33,27 @@
         "git.enableCommitSigning": true,
         "dev.containers.copyGitConfig": true,
         "githubPullRequests.experimental.chat": true,
-        "githubPullRequests.experimental.notificationsView": true
+        "githubPullRequests.experimental.notificationsView": true,
+        "mcp": {
+          "servers": {
+            "fetch": {
+              "command": "docker",
+              "args": ["run", "-i", "--rm", "mcp/fetch"]
+            },
+            "Context7": {
+              "command": "docker",
+              "args": [
+                "run",
+                "-i",
+                "--rm",
+                "node:lts",
+                "npx",
+                "-y",
+                "@upstash/context7-mcp@latest"
+              ]
+            }
+          }
+        }
       }
     }
   },

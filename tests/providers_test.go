@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
@@ -13,6 +14,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+func init() {
+	gin.SetMode(gin.TestMode)
+}
 
 // TestProviderRegistry tests the provider registry functionality
 func TestProviderRegistry(t *testing.T) {

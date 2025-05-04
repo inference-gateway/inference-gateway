@@ -6,6 +6,8 @@
 | ENVIRONMENT | `production` | The environment |
 | ENABLE_TELEMETRY | `false` | Enable telemetry |
 | ENABLE_AUTH | `false` | Enable authentication |
+| ENABLE_MCP | `false` | Enable MCP |
+| MCP_SERVERS | `""` | List of MCP servers |
 
 
 ### OpenID Connect

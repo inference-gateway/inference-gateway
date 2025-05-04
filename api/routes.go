@@ -522,6 +522,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	// Non-streaming response
+	c.Header("Content-Type", "application/json")
 	response, err := provider.ChatCompletions(ctx, req)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {

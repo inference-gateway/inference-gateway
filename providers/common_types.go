@@ -1,3 +1,4 @@
+// Code generated from OpenAPI schema. DO NOT EDIT.
 package providers
 
 // The authentication type of the specific provider

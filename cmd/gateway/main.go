@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
+	"github.com/inference-gateway/inference-gateway/mcp"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -110,7 +112,15 @@ func main() {
 	// Initialize OIDC authenticator middleware
 	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(logger, cfg)
 	if err != nil {
-		logger.Error("Failed to initialize OIDC authenticator: %v", err)
+		logger.Error("Failed to initialize OIDC authenticator", err)
+		return
+	}
+
+	// Initialize MCP middleware if enabled
+	mcpClient := mcp.NewMCPClient(strings.Split(cfg.McpServers, ","), logger)
+	mcpMiddleware, err := middlewares.NewMCPMiddleware(mcpClient, logger, cfg)
+	if err != nil {
+		logger.Error("Failed to initialize MCP middleware", err)
 		return
 	}
 
@@ -140,6 +150,12 @@ func main() {
 		r.Use(telemetry.Middleware())
 	}
 	r.Use(oidcAuthenticator.Middleware())
+
+	// Add MCP middleware if enabled
+	if cfg.EnableMcp {
+		r.Use(mcpMiddleware.Middleware())
+		logger.Info("MCP middleware added to request pipeline")
+	}
 
 	r.GET("/health", api.HealthcheckHandler)
 	r.Any("/proxy/:provider/*path", api.ProxyHandler)
