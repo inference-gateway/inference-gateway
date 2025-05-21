@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.2-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.6.2-rc.1...v0.6.2-rc.2) (2025-05-21)
+
+### 🐛 Bug Fixes
+
+* Enhance Docker setup with multi-architecture support and manifest inspection ([2d8b04e](https://github.com/inference-gateway/inference-gateway/commit/2d8b04e1b33521659a87258165297b516b418696))
+
+## [0.6.2-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.6.1...v0.6.2-rc.1) (2025-05-21)
+
+### ♻️ Improvements
+
+* Update Docker Buildx setup and streamline GoReleaser configuration for multi-architecture support ([3585c8a](https://github.com/inference-gateway/inference-gateway/commit/3585c8a087faa069b629a1f158b695dc362f60f4))
+
+### 📚 Documentation
+
+* **examples:** Update model reference in README and ensure port mapping in docker-compose ([dd93a75](https://github.com/inference-gateway/inference-gateway/commit/dd93a755b1317e08bfb3e739c09a63389ad4df28))
+
+### 🔧 Miscellaneous
+
+* Refactor devcontainer setup by removing unnecessary files and updating zsh configuration ([eb07cd5](https://github.com/inference-gateway/inference-gateway/commit/eb07cd541e15e6b48e62476cab700057c9c84418))
+* Update Copilot instructions to emphasize linting and testing before commits ([66c3a16](https://github.com/inference-gateway/inference-gateway/commit/66c3a16936a5e5b6e57f8dd8965fc0d925cd8e9c))
+
 ## [0.6.1](https://github.com/inference-gateway/inference-gateway/compare/v0.6.0...v0.6.1) (2025-04-30)
 
 ### 🐛 Bug Fixes

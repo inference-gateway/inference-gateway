@@ -74,6 +74,8 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
         run: |
           echo "Container images have been built and pushed by GoReleaser with multi-architecture support"
+          VERSION=${TAG#v}
+          docker manifest inspect ghcr.io/${{ github.repository }}:${VERSION} || echo "Warning: Manifest not found"
 
   scan_containers:
     name: Scan Container Images
