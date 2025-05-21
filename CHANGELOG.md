@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.2-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.6.2-rc.1...v0.6.2-rc.2) (2025-05-21)
+
+### 🐛 Bug Fixes
+
+* Enhance Docker setup with multi-architecture support and manifest inspection ([2d8b04e](https://github.com/inference-gateway/inference-gateway/commit/2d8b04e1b33521659a87258165297b516b418696))
+
 ## [0.6.2-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.6.1...v0.6.2-rc.1) (2025-05-21)
 
 ### ♻️ Improvements
