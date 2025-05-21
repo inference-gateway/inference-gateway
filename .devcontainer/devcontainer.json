@@ -33,14 +33,16 @@
         "git.enableCommitSigning": true,
         "dev.containers.copyGitConfig": true,
         "githubPullRequests.experimental.chat": true,
-        "githubPullRequests.experimental.notificationsView": true
+        "githubPullRequests.experimental.notificationsView": true,
+        "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+        "github.copilot.chat.commitMessageGeneration.instructions": [
+          {
+            "text": "Always use conventional commit message format."
+          }
+        ]
       }
     }
   },
-  "mounts": [
-    "source=${localWorkspaceFolder}/.devcontainer/.zshrc,target=/home/vscode/.zshrc,type=bind,consistency=cached",
-    "source=${localWorkspaceFolder}/.devcontainer/launch.json,target=/workspaces/inference-gateway/.vscode/launch.json,type=bind,consistency=cached"
-  ],
   "remoteEnv": {
     "GITHUB_TOKEN": "${localEnv:GITHUB_TOKEN}"
   },

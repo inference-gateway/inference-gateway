@@ -1,7 +1,6 @@
 FROM mcr.microsoft.com/devcontainers/go:1-1.23-bookworm
 
-ENV ZSH_CUSTOM=/home/vscode/.oh-my-zsh/custom \
-    TASK_VERSION=v3.42.1 \
+ENV TASK_VERSION=v3.42.1 \
     CTLPTL_VERSION=0.8.39 \
     K3D_VERSION=v5.8.3 \
     KUBECTL_VERSION=v1.32.3 \
@@ -25,8 +24,6 @@ RUN apt-get update && \
     # Install Node.js for Spectral
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x | bash - && \
     apt-get install -y nodejs && \
-    # Install powerlevel10k theme
-    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM}/themes/powerlevel10k && \
     # Install Task
     curl -s https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin ${TASK_VERSION} && \
     # Install ctlptl
@@ -64,3 +61,18 @@ RUN apt-get update && \
 USER vscode
 
 RUN go install go.uber.org/mock/mockgen@v0.5.0
+
+# Use Powerlevel10k theme
+RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /home/vscode/.powerlevel10k
+RUN echo 'source /home/vscode/.powerlevel10k/powerlevel10k.zsh-theme' >> /home/vscode/.zshrc
+RUN echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >> /home/vscode/.zshrc
+
+
+# Shell completion
+RUN echo "source <(gh completion -s zsh)" >> /home/vscode/.zshrc && \
+    echo "source <(kubectl completion zsh)" >> /home/vscode/.zshrc && \
+    echo "source <(helm completion zsh)" >> /home/vscode/.zshrc && \
+    echo "source <(k3d completion zsh)" >> /home/vscode/.zshrc && \
+    echo "source <(ctlptl completion zsh)" >> /home/vscode/.zshrc && \
+    echo "source <(task --completion zsh)" >> /home/vscode/.zshrc && \
+    echo "source <(goreleaser completion zsh)" >> /home/vscode/.zshrc
