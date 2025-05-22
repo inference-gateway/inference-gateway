@@ -79,3 +79,5 @@ curl -k -v -H "Authorization: Bearer $(task fetch-access-token)" https://api.inf
 ```bash
 task clean
 ```
+
+**Note**: The example uses a self-signed certificate for Keycloak. In production, use a trusted CA certificate.
