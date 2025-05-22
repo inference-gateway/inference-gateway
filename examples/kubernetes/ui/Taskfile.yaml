@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 tasks:
   deploy-infrastructure:
@@ -45,14 +45,14 @@ tasks:
           DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
         EOF
       - echo "🔑 Secrets configured successfully!"
-    
+
   deploy:
     desc: Deploy the Inference Gateway UI with the Gateway backend
     cmds:
       - |
         helm upgrade --install inference-gateway-ui \
           oci://ghcr.io/inference-gateway/charts/inference-gateway-ui \
-          --version 0.5.0 \
+          --version 0.7.1 \
           --create-namespace \
           --namespace inference-gateway \
           --set replicaCount=1 \
@@ -77,7 +77,7 @@ tasks:
       - |
         helm upgrade --install inference-gateway-ui \
           oci://ghcr.io/inference-gateway/charts/inference-gateway-ui \
-          --version 0.5.0 \
+          --version 0.7.1 \
           --create-namespace \
           --namespace inference-gateway \
           --set replicaCount=1 \
@@ -108,7 +108,7 @@ tasks:
     desc: Set up port forwarding to access the UI
     cmds:
       - kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:80
-  
+
   delete:
     desc: Remove the Inference Gateway UI deployment
     cmds:
