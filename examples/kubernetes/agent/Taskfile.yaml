@@ -44,7 +44,7 @@ tasks:
           --set config.ENVIRONMENT=development \
           --set envFrom.secretRef=inference-gateway \
           --wait \
-          --version 0.6.2 \
+          --version 0.6.3 \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
 
   clean:

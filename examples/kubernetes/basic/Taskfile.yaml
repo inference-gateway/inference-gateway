@@ -23,7 +23,7 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --set ingress.enabled=true \
-          --version 0.6.2 \
+          --version 0.6.3 \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
 

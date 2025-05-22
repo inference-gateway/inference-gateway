@@ -58,7 +58,7 @@ tasks:
           --set autoscaling.maxReplicas=10 \
           --set autoscaling.targetCPUUtilizationPercentage=80 \
           --set autoscaling.targetMemoryUtilizationPercentage=80 \
-          --version 0.6.2 \
+          --version 0.6.3 \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
       - kubectl label namespace inference-gateway monitoring="true" --overwrite

@@ -130,7 +130,8 @@ tasks:
           --set volumeMounts[0].subPath=ca.crt \
           --set volumeMounts[0].readOnly=true \
           --wait \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0
+          --version 0.6.3 \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
 
   keycloak-admin-password:
     desc: "Get Keycloak admin password"
