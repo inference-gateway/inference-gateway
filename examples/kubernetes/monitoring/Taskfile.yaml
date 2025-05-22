@@ -13,14 +13,15 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.1 \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace monitoring \
-          --version 70.4.2 \
+          --version 72.6.2 \
           --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
           --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
           --set-string prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
@@ -35,7 +36,7 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace monitoring \
-          --version 5.17.1 \
+          --version 5.18.0 \
           --wait \
           grafana-operator grafana/grafana-operator
       - kubectl label namespace monitoring monitoring="true" --overwrite
