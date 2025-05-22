@@ -11,7 +11,7 @@ This example demonstrates how to deploy the Inference Gateway with a user interf
   - [Quick Start Using Task](#quick-start-using-task)
   - [Manual Deployment Steps](#manual-deployment-steps)
     - [1. Create a Local Kubernetes Cluster with k3d](#1-create-a-local-kubernetes-cluster-with-k3d)
-    - [2. Deploy the UI with Gateway](#2-deploy-the-ui-with-gateway)
+    - [2. Deploy the UI Configurations and Gateway Configurations](#2-deploy-the-ui-configurations-and-gateway-configurations)
   - [Accessing the UI](#accessing-the-ui)
   - [Configuration](#configuration)
   - [Clean Up](#clean-up)
@@ -42,6 +42,9 @@ task deploy-infrastructure
 
 # Set up secrets for providers (needed for Provider integration, in this case we will use DeepSeek)
 task setup-secrets
+
+# Configure the Inference Gateway and the UI
+task setup-configmap
 
 # Deploy UI with Gateway
 task deploy
@@ -75,7 +78,8 @@ helm repo update
 helm upgrade --install \
   --create-namespace \
   --namespace kube-system \
-  --version 4.12.1 \
+  --set controller.progressDeadlineSeconds=500 \
+  --version 4.12.2 \
   --wait \
   ingress-nginx ingress-nginx/ingress-nginx
 ```
@@ -88,7 +92,7 @@ helm repo update
 helm upgrade --install \
   --create-namespace \
   --namespace cert-manager \
-  --version 1.17.1 \
+  --version 1.17.2 \
   --set crds.enabled=true \
   --wait \
   cert-manager jetstack/cert-manager
@@ -107,34 +111,14 @@ spec:
 EOF
 ```
 
-### 2. Deploy the UI with Gateway
-
-Deploy a secret for the provider (choose from many providers available in the docs):
-
-```bash
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: inference-gateway
-  namespace: inference-gateway
-  annotations:
-    meta.helm.sh/release-name: inference-gateway-ui
-    meta.helm.sh/release-namespace: inference-gateway
-  labels:
-    app.kubernetes.io/managed-by: Helm
-type: Opaque
-stringData:
-  DEEPSEEK_API_KEY: your-secret-key
-EOF
-```
+### 2. Deploy the UI Configurations and Gateway Configurations
 
 Deploy UI with Gateway:
 
 ```bash
 helm upgrade --install inference-gateway-ui \
   oci://ghcr.io/inference-gateway/charts/inference-gateway-ui \
-  --version 0.5.0 \
+  --version 0.7.1 \
   --create-namespace \
   --namespace inference-gateway \
   --set replicaCount=1 \
@@ -160,11 +144,75 @@ helm upgrade --install inference-gateway-ui \
   --set "ingress.tls[0].hosts[0]=ui.inference-gateway.local"
 ```
 
+Configure(as an example, let's disable authentication and set the DeepSeek API key in the UI):
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  annotations:
+    meta.helm.sh/release-name: inference-gateway-ui
+    meta.helm.sh/release-namespace: inference-gateway
+  labels:
+    app.kubernetes.io/managed-by: Helm
+type: Opaque
+stringData:
+  DEEPSEEK_API_KEY: your-secret-key
+EOF
+```
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inference-gateway-ui
+  namespace: inference-gateway
+  annotations:
+    meta.helm.sh/release-name: inference-gateway-ui
+    meta.helm.sh/release-namespace: inference-gateway
+  labels:
+    app.kubernetes.io/managed-by: Helm
+data:
+  ENABLE_AUTH: "false"
+EOF
+```
+
+```bash
+kubectl apply --server-side -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  annotations:
+    meta.helm.sh/release-name: inference-gateway-ui
+    meta.helm.sh/release-namespace: inference-gateway
+  labels:
+    app.kubernetes.io/managed-by: Helm
+data:
+  ENABLE_AUTH: "false"
+EOF
+```
+
+And of course we need to restart, in order for the configuration to take effect:
+
+```bash
+kubectl -n inference-gateway rollout restart deployment inference-gateway
+kubectl -n inference-gateway rollout restart deployment inference-gateway-ui
+kubectl -n inference-gateway rollout status deployment inference-gateway
+kubectl -n inference-gateway rollout status deployment inference-gateway-ui
+```
+
 ## Accessing the UI
 
 For port-forwarding access:
+
 ```bash
-kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:80
+kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:3000 --address 0.0.0.0
 ```
 
 Access the UI at:
@@ -194,6 +242,7 @@ ctlptl delete -f Cluster.yaml
 ```
 
 Or, just run:
+
 ```bash
 task delete-cluster
 ```
