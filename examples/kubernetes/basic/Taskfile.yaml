@@ -11,7 +11,8 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.1 \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
 
