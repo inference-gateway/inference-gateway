@@ -15,6 +15,7 @@ tasks:
           --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
+      - echo "🚀 Basic infrastructure deployed successfully!"
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with helm"
@@ -27,8 +28,10 @@ tasks:
           --version 0.6.3 \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - echo "🚪 Inference Gateway deployed successfully!"
 
   clean:
     desc: "Clean up the cluster"
     cmds:
       - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"

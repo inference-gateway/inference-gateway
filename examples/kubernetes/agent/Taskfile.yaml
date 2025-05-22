@@ -15,24 +15,28 @@ tasks:
           --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
+      - echo "🚀 Infrastructure with registry deployed successfully!"
 
   build-logs-analyzer-agent:
     desc: "Build and push logs analyzer image"
     cmds:
       - docker build -t localhost:5000/dummyrepo/logs-analyzer:latest ./logs-analyzer
       - docker push localhost:5000/dummyrepo/logs-analyzer:latest
+      - echo "🏗️ Logs analyzer image built and pushed successfully!"
 
   deploy-logs-analyzer-agent:
     desc: "Deploy logs analyzer and test deployment"
     cmds:
       - kubectl apply -f logs-analyzer/
       - kubectl apply -f failing-deployment/
+      - echo "🔍 Logs analyzer and test deployment deployed successfully!"
 
   delete-logs-analyzer-agent:
     desc: "Delete logs analyzer and test deployment"
     cmds:
       - kubectl delete -f logs-analyzer/
       - kubectl delete -f failing-deployment/
+      - echo "🧹 Logs analyzer and test deployment deleted successfully!"
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with monitoring"
@@ -46,8 +50,10 @@ tasks:
           --wait \
           --version 0.6.3 \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - echo "🚪 Inference Gateway deployed successfully!"
 
   clean:
     desc: "Clean up the cluster"
     cmds:
       - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"

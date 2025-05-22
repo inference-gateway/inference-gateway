@@ -9,6 +9,7 @@ tasks:
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
       - helm repo add grafana https://grafana.github.io/helm-charts
+      - echo "🚀 Starting monitoring infrastructure deployment..."
       - |
         helm upgrade --install \
           --create-namespace \
@@ -42,6 +43,7 @@ tasks:
       - kubectl label namespace monitoring monitoring="true" --overwrite
       - kubectl apply -f prometheus/
       - kubectl apply -f grafana/
+      - echo "📊 Monitoring infrastructure deployed successfully!"
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with monitoring and autoscaling enabled"
@@ -63,6 +65,7 @@ tasks:
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
       - kubectl label namespace inference-gateway monitoring="true" --overwrite
+      - echo "📈 Inference Gateway with monitoring and autoscaling deployed successfully!"
 
   deploy-ollama:
     desc: "Deploy ollama as a provider"
@@ -71,6 +74,7 @@ tasks:
       - |
         kubectl apply -f ollama/
       - kubectl -n ollama rollout status deployment ollama
+      - echo "🤖 Ollama provider deployed successfully!"
 
   simulate-requests:
     desc: "Generate test requests to simulate monitoring"
@@ -84,8 +88,10 @@ tasks:
           echo
           sleep 1
         done
+      - echo "🧪 Test requests completed successfully!"
 
   clean:
     desc: "Clean up the cluster"
     cmds:
       - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"

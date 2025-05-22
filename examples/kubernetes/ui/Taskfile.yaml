@@ -157,6 +157,7 @@ tasks:
     desc: Set up port forwarding to access the UI
     cmds:
       - kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:3000 --address 0.0.0.0
+      - echo "🔌 Port forwarding set up successfully! UI available at http://localhost:3000"
 
   delete:
     desc: Remove the Inference Gateway UI deployment
@@ -182,3 +183,4 @@ tasks:
       - kubectl get pods -n inference-gateway
       - kubectl get svc -n inference-gateway
       - kubectl get ingress -n inference-gateway
+      - echo "📊 Deployment status checked!"

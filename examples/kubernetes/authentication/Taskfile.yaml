@@ -9,6 +9,7 @@ tasks:
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add jetstack https://charts.jetstack.io
       - helm repo add bitnami https://charts.bitnami.com/bitnami
+      - echo "🚀 Starting authentication infrastructure deployment..."
       - |
         helm upgrade --install \
           --create-namespace \
@@ -71,6 +72,7 @@ tasks:
         EOF
         kubectl -n kube-system rollout restart deployment coredns
         kubectl -n kube-system rollout status deployment coredns
+      - echo "🔐 Authentication infrastructure deployed successfully!"
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with authentication"
@@ -133,11 +135,13 @@ tasks:
           --wait \
           --version 0.6.3 \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - echo "🔒 Inference Gateway with authentication enabled, deployed successfully!"
 
   keycloak-admin-password:
     desc: "Get Keycloak admin password"
     cmds:
       - kubectl -n idp get secret keycloak-initial-admin -o jsonpath="{.data.password}" | base64 --decode
+      - echo "🔑 Retrieved Keycloak admin password!"
 
   fetch-access-token:
     desc: "Fetch the access token"
@@ -151,8 +155,10 @@ tasks:
           -d "client_secret=very-secret" \
           -d "username=user" \
           -d "password=password" | jq -r .access_token
+      - echo "🔑 Access token fetched successfully!"
 
   clean:
     desc: "Clean up the cluster"
     cmds:
       - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"
