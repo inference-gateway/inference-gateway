@@ -530,7 +530,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			return
 		}
 		router.logger.Error("failed to generate tokens", err, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to generate tokens"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Failed to generate tokens: %s", err)})
 		return
 	}
 

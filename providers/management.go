@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	l "github.com/inference-gateway/inference-gateway/logger"
@@ -96,7 +97,15 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 	}
 
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("HTTP error: %d - Error fetching models", response.StatusCode)
+		bodyBytes, readErr := io.ReadAll(response.Body)
+		if readErr != nil {
+			p.logger.Error("Failed to read error response body", readErr, "provider", p.GetName())
+			err := fmt.Errorf("HTTP error: %d - Error fetching models", response.StatusCode)
+			return ListModelsResponse{}, err
+		}
+
+		errorMsg := string(bodyBytes)
+		err := fmt.Errorf("HTTP error: %d - Error fetching models: %s", response.StatusCode, errorMsg)
 		p.logger.Error("Non-200 status code when listing models", err, "provider", p.GetName(), "statusCode", response.StatusCode)
 		return ListModelsResponse{}, err
 	}
@@ -165,14 +174,6 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq CreateChat
 	}
 	url := "/proxy/" + providerID + p.EndpointChat()
 
-	// Special case - groq provide the reasoning as a raw <think /> tags, I want the default to be "parsed"
-	if *p.GetID() == GroqID {
-		if clientReq.ReasoningFormat == nil {
-			format := "parsed"
-			clientReq.ReasoningFormat = &format
-		}
-	}
-
 	reqBody, err := json.Marshal(clientReq)
 	if err != nil {
 		p.logger.Error("Failed to marshal request", err, "provider", p.GetName())
@@ -199,7 +200,15 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq CreateChat
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		err := fmt.Errorf("HTTP error: %d - Error generating chat completion", response.StatusCode)
+		bodyBytes, readErr := io.ReadAll(response.Body)
+		if readErr != nil {
+			p.logger.Error("Failed to read error response body", readErr, "provider", p.GetName())
+			err := fmt.Errorf("HTTP error: %d - Error generating chat completion", response.StatusCode)
+			return CreateChatCompletionResponse{}, err
+		}
+
+		errorMsg := string(bodyBytes)
+		err := fmt.Errorf("HTTP error: %d - Error generating chat completion: %s", response.StatusCode, errorMsg)
 		p.logger.Error("Non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode)
 		return CreateChatCompletionResponse{}, err
 	}
@@ -232,14 +241,6 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 		clientReq.StreamOptions = nil
 	}
 
-	// Special case - groq provide the reasoning as a raw <think /> tags, I want the default to be "parsed"
-	if *p.GetID() == GroqID {
-		if clientReq.ReasoningFormat == nil {
-			format := "parsed"
-			clientReq.ReasoningFormat = &format
-		}
-	}
-
 	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", url, "request", clientReq)
 
 	reqBody, err := json.Marshal(clientReq)
@@ -268,8 +269,17 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 	}
 
 	if response.StatusCode != http.StatusOK {
+		bodyBytes, readErr := io.ReadAll(response.Body)
 		response.Body.Close()
-		err := fmt.Errorf("HTTP error: %d - Error generating streaming chat completion", response.StatusCode)
+
+		if readErr != nil {
+			p.logger.Error("Failed to read error response body", readErr, "provider", p.GetName())
+			err := fmt.Errorf("HTTP error: %d - Error generating streaming chat completion", response.StatusCode)
+			return nil, err
+		}
+
+		errorMsg := string(bodyBytes)
+		err := fmt.Errorf("HTTP error: %d - Error generating streaming chat completion: %s", response.StatusCode, errorMsg)
 		p.logger.Error("Non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode)
 		return nil, err
 	}
