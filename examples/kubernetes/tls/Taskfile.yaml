@@ -12,14 +12,15 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.1 \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace cert-manager \
-          --version 1.17.1 \
+          --version 1.17.2 \
           --set crds.enabled=true \
           --wait \
           cert-manager jetstack/cert-manager
