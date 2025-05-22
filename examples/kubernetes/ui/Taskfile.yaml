@@ -171,6 +171,11 @@ tasks:
       - ctlptl delete -f Cluster.yaml
       - echo "🧹 k3d cluster deleted!"
 
+  clean:
+    desc: Clean up the cluster
+    cmds:
+      - task: delete-cluster
+
   status:
     desc: Check the status of the deployment
     cmds:
