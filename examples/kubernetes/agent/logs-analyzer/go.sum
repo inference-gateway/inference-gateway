@@ -34,8 +34,8 @@ github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db h1:097atOisP2aRj7vFgY
 github.com/google/pprof v0.0.0-20241029153458-d1b30febd7db/go.mod h1:vavhavw2zAxS5dIdcRluK6cSGGPlZynqzFM8NdvU144=
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/inference-gateway/sdk v1.7.0 h1:PbDwBUHAm0ZdxW47q9PwwQW5azPcoMPdBrlYVcUL588=
-github.com/inference-gateway/sdk v1.7.0/go.mod h1:6w2xtu4rDzmg9MrL/3tFuIKF1XondqdIWls8lRUiHpo=
+github.com/inference-gateway/sdk v1.7.1 h1:2riVUnU6uFSJn4nDhO4xZVTVWZpuWMueknUfusOB+Us=
+github.com/inference-gateway/sdk v1.7.1/go.mod h1:6w2xtu4rDzmg9MrL/3tFuIKF1XondqdIWls8lRUiHpo=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
 github.com/josharian/intern v1.0.0/go.mod h1:5DoeVV0s6jJacbCEi61lwdGj/aVlrQvzHFFd8Hwg//Y=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=

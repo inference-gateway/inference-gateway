@@ -15,7 +15,6 @@ tasks:
           --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
-      - kubectl apply -f logs-analyzer/namespace.yaml
 
   build-logs-analyzer-agent:
     desc: "Build and push logs analyzer image"
@@ -42,6 +41,7 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
+          --set config.ENVIRONMENT=development \
           --set envFrom.secretRef=inference-gateway \
           --wait \
           --version 0.6.2 \
