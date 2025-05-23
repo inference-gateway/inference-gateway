@@ -58,14 +58,7 @@ func NewMCPMiddleware(client mcp.MCPClientInterface, logger logger.Logger, cfg c
 
 // Middleware returns a HTTP middleware handler for MCP integration
 func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
-	// It captures the request and response, modifies them as needed, and handles tool calls
-	// It also sets the context to indicate that MCP is being used
-	// If MCP is not enabled, it simply calls the next handler in the chain
-	// If there is no tool call, it proceeds with the original response
-	// If it didn't find any tool calls, it returns the original response
-	// It informs the client if there is a tool call in progress via notification or SSE
 	return func(c *gin.Context) {
-		// Only process requests to the chat completions endpoint
 		if c.Request.URL.Path != ChatCompletionsPath {
 			c.Next()
 			return
@@ -73,60 +66,39 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		c.Set("use_mcp", true)
 
-		m.logger.Debug("MCP Processing request for MCP enhancement")
+		m.logger.Debug("MCP: Processing request for tool enhancement")
 		var requestBody providers.CreateChatCompletionRequest
 		if err := c.ShouldBindJSON(&requestBody); err != nil {
-			m.logger.Debug("Could not parse request body for MCP enhancement", "error", err.Error())
+			m.logger.Debug("MCP: Could not parse request body", "error", err.Error())
 			c.Next()
 			return
 		}
 
-		m.logger.Debug("MCP Checking if request is a streaming request")
-		wantsSSE := strings.Contains(c.GetHeader("Accept"), "text/event-stream") && requestBody.Stream != nil && *requestBody.Stream
-		m.logger.Debug("MCP Request is a streaming request:", wantsSSE)
+		if requestBody.Stream != nil && *requestBody.Stream {
+			m.logger.Debug("MCP: Streaming request detected, skipping MCP processing")
+			c.Next()
+			return
+		}
 
-		m.logger.Debug("MCP Checking if request contains messages")
 		if len(requestBody.Messages) == 0 {
-			m.logger.Debug("MCP No messages found in request, continuing without MCP enhancement")
+			m.logger.Debug("MCP: No messages found in request")
 			c.Next()
 			return
 		}
 
-		m.logger.Debug("MCP Discovering MCP capabilities")
-		ctx := c.Request.Context()
-		capabilities, err := m.client.DiscoverCapabilities(ctx)
-		if err != nil {
-			m.logger.Error("Failed to discover MCP capabilities", err)
-			c.Next()
-			return
-		}
+		m.logger.Debug("MCP: Discovering available tools")
+		capabilities := m.client.GetServerCapabilities()
 
-		m.logger.Debug("MCP Extracting tools from capabilities")
 		var toolsToAdd []mcp.MCPToolDefinition
-		for _, capabilitySet := range capabilities {
-			// Handle different types of tool arrays
+		for serverURL, capabilitySet := range capabilities {
+			toolsData := capabilitySet.Tools
 			var toolsArray []interface{}
 
-			// Try to extract tools based on different possible types
-			if tools, ok := capabilitySet["tools"].([]interface{}); ok {
+			if tools, ok := toolsData["tools"].([]interface{}); ok {
 				toolsArray = tools
-			} else if tools, ok := capabilitySet["tools"].([]providers.ChatCompletionTool); ok {
-				// Convert from []providers.ChatCompletionTool to []interface{}
-				toolsArray = make([]interface{}, len(tools))
-				for i, tool := range tools {
-					toolMap := map[string]interface{}{
-						"name":        tool.Function.Name,
-						"description": tool.Function.Description,
-						"parameters":  tool.Function.Parameters,
-					}
-					toolsArray[i] = toolMap
-				}
-			} else if toolsRaw, ok := capabilitySet["tools"]; ok {
-				// Try to convert unknown type to []interface{} using JSON marshalling/unmarshalling
-				if toolsBytes, err := json.Marshal(toolsRaw); err == nil {
-					if err = json.Unmarshal(toolsBytes, &toolsArray); err != nil {
-						m.logger.Debug("Could not unmarshal tools", "error", err.Error())
-					}
+			} else if toolsBytes, err := json.Marshal(toolsData["tools"]); err == nil {
+				if err = json.Unmarshal(toolsBytes, &toolsArray); err != nil {
+					m.logger.Debug("MCP: Could not unmarshal tools", "error", err.Error())
 				}
 			}
 
@@ -141,6 +113,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 							Type:       "object",
 							Properties: make(map[string]interface{}),
 						},
+						ServerURL: serverURL,
 					}
 
 					if name, ok := toolMap["name"].(string); ok {
@@ -166,8 +139,9 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		if len(toolsToAdd) > 0 {
-			// Create ChatCompletionTool slice from MCP tools
 			tools := make([]providers.ChatCompletionTool, 0, len(toolsToAdd))
+			toolDefinitions := make(map[string]mcp.MCPToolDefinition)
+
 			for _, tool := range toolsToAdd {
 				chatTool := providers.ChatCompletionTool{
 					Type: providers.ChatCompletionToolTypeFunction,
@@ -185,65 +159,57 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 				}
 
 				tools = append(tools, chatTool)
+				toolDefinitions[tool.Name] = tool
 			}
 
-			// Store the original request for later use
-			originalRequestBody := requestBody
+			m.logger.Debug("MCP: Adding tools to request", "toolCount", len(tools))
 
-			// Update the request with the tools
+			c.Set("mcp_tool_definitions", toolDefinitions)
+			c.Set("original_request", requestBody)
+
 			requestBody.Tools = &tools
-			c.Set("original_request", originalRequestBody)
 
-			// Convert to JSON and recreate the body reader
 			c.Request.Body = createReadCloser(requestBody)
 		}
 
 		c.Next()
 
-		if wantsSSE {
-			m.processStreamResponse(c)
-		} else {
-			m.processNonStreamResponse(c)
-		}
+		m.processToolCalls(c)
 	}
 }
 
-// createReadCloser creates a ReadCloser from a struct to rebuild the request body
-func createReadCloser(body interface{}) io.ReadCloser {
-	jsonBody, _ := json.Marshal(body)
-	return io.NopCloser(bytes.NewReader(jsonBody))
-}
-
-// processStreamResponse handles streaming responses and intercepts tool calls
-func (m *MCPMiddlewareImpl) processStreamResponse(_ *gin.Context) {
-	// Implementation for streaming responses would be more complex
-	// It would need to intercept the SSE stream, check for tool calls,
-	// and handle them appropriately
-	// This would typically involve modifying the response writer
-	m.logger.Debug("MCP streaming response processing not fully implemented yet")
-}
-
-// processNonStreamResponse handles non-streaming responses and intercepts tool calls
-func (m *MCPMiddlewareImpl) processNonStreamResponse(c *gin.Context) {
-	// Check if we have a response body to process
+// processToolCalls handles response and intercepts tool calls
+func (m *MCPMiddlewareImpl) processToolCalls(c *gin.Context) {
 	responseData, exists := c.Get("response_data")
 	if !exists {
+		m.logger.Debug("MCP: No response data found")
 		return
 	}
 
 	response, ok := responseData.(map[string]interface{})
 	if !ok {
-		m.logger.Debug("Could not parse response data for MCP processing")
+		m.logger.Debug("MCP: Could not parse response data")
 		return
 	}
 
-	// Check for tool calls in the response
 	choices, hasChoices := response["choices"].([]interface{})
 	if !hasChoices || len(choices) == 0 {
+		m.logger.Debug("MCP: No choices found in response")
 		return
 	}
 
-	// Process each choice for tool calls
+	toolDefs, hasDefs := c.Get("mcp_tool_definitions")
+	if !hasDefs {
+		m.logger.Debug("MCP: No tool definitions found")
+		return
+	}
+
+	toolDefinitions, ok := toolDefs.(map[string]mcp.MCPToolDefinition)
+	if !ok {
+		m.logger.Debug("MCP: Could not parse tool definitions")
+		return
+	}
+
 	toolResponses := make([]interface{}, 0)
 	toolCallFound := false
 
@@ -263,7 +229,6 @@ func (m *MCPMiddlewareImpl) processNonStreamResponse(c *gin.Context) {
 			continue
 		}
 
-		// We have tool calls, process them
 		toolCallFound = true
 		for _, toolCall := range toolCalls {
 			var mcpToolCall mcp.MCPToolCall
@@ -273,21 +238,18 @@ func (m *MCPMiddlewareImpl) processNonStreamResponse(c *gin.Context) {
 				continue
 			}
 
-			// Extract ID
 			if id, ok := toolCallMap["id"].(string); ok {
 				mcpToolCall.ID = id
 			} else {
 				continue
 			}
 
-			// Extract Type
 			if typeVal, ok := toolCallMap["type"].(string); ok {
 				mcpToolCall.Type = typeVal
 			} else {
 				mcpToolCall.Type = "function"
 			}
 
-			// Extract Function details
 			functionMap, hasFunction := toolCallMap["function"].(map[string]interface{})
 			if !hasFunction {
 				continue
@@ -305,49 +267,38 @@ func (m *MCPMiddlewareImpl) processNonStreamResponse(c *gin.Context) {
 				continue
 			}
 
-			// Parse arguments
 			var params interface{}
 			if err := json.Unmarshal([]byte(mcpToolCall.Function.Arguments), &params); err != nil {
-				m.logger.Error("Failed to parse tool call arguments", err)
+				m.logger.Error("MCP: Failed to parse tool call arguments", err)
 				continue
 			}
 
-			// Find appropriate MCP server for this tool
-			var serverURL string
-			for url, capabilities := range m.client.GetServerCapabilities() {
-				if tools, ok := capabilities["tools"].([]interface{}); ok {
-					for _, tool := range tools {
-						if toolMap, ok := tool.(map[string]interface{}); ok {
-							if name, ok := toolMap["name"].(string); ok && name == mcpToolCall.Function.Name {
-								serverURL = url
-								break
-							}
-						}
-					}
-				}
-				if serverURL != "" {
-					break
-				}
-			}
-
-			if serverURL == "" {
-				m.logger.Error("Failed to execute tool", fmt.Errorf("no MCP server found for tool: %s", mcpToolCall.Function.Name))
+			toolDef, found := toolDefinitions[mcpToolCall.Function.Name]
+			if !found {
+				m.logger.Error("MCP: No server URL found for tool", nil, "tool", mcpToolCall.Function.Name)
 				continue
 			}
 
-			// Execute the tool
-			result, err := m.client.ExecuteTool(c.Request.Context(), mcpToolCall.Function.Name, params, serverURL)
+			m.logger.Debug("MCP: Executing tool call", "tool", mcpToolCall.Function.Name, "server", toolDef.ServerURL)
+			mcpRequest := mcp.Request{
+				Method: "tools/call",
+				Params: map[string]interface{}{
+					"name":      mcpToolCall.Function.Name,
+					"arguments": params,
+				},
+			}
+
+			result, err := m.client.ExecuteTool(c.Request.Context(), mcpRequest, toolDef.ServerURL)
 			if err != nil {
-				m.logger.Error("Failed to execute tool", err, "tool", mcpToolCall.Function.Name)
+				m.logger.Error("MCP: Failed to execute tool", err, "tool", mcpToolCall.Function.Name)
 				continue
 			}
 
-			// Process the tool result to extract content
 			var contentStr string
+			contents := make([]string, 0)
 
-			if contentArray, ok := result["content"].([]interface{}); ok && len(contentArray) > 0 {
-				// Handle case where content is an array of objects
-				contents := make([]string, 0, len(contentArray))
+			contentArray := result.Content
+			if len(contentArray) > 0 {
 				for _, item := range contentArray {
 					if contentItem, ok := item.(map[string]interface{}); ok {
 						if text, ok := contentItem["text"].(string); ok {
@@ -359,30 +310,33 @@ func (m *MCPMiddlewareImpl) processNonStreamResponse(c *gin.Context) {
 						}
 					}
 				}
-				contentStr = strings.Join(contents, "\n")
+
+				if len(contents) > 0 {
+					contentStr = strings.Join(contents, "\n")
+				} else {
+					contentBytes, _ := json.Marshal(contentArray)
+					contentStr = string(contentBytes)
+				}
 			} else {
-				// Fall back to string conversion of the entire result
-				contentStr = fmt.Sprintf("%v", result)
+				contentBytes, _ := json.Marshal(result)
+				contentStr = string(contentBytes)
 			}
 
-			// Add tool result to the response
 			toolResponseMap := map[string]interface{}{
 				"role":         "tool",
 				"tool_call_id": mcpToolCall.ID,
 				"content":      contentStr,
 			}
 
-			// Append tool response to toolResponses
 			toolResponses = append(toolResponses, toolResponseMap)
 		}
 	}
 
-	// Only add messages if we have tool responses and if tool calls were found
-	if toolCallFound {
+	if toolCallFound && len(toolResponses) > 0 {
+		m.logger.Debug("MCP: Adding tool responses to response", "count", len(toolResponses))
 		response["messages"] = toolResponses
 	}
 
-	// Update the response in the context
 	c.Set("response_data", response)
 }
 
@@ -391,4 +345,10 @@ func (m *NoopMCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 	}
+}
+
+// createReadCloser creates a ReadCloser from a struct to rebuild the request body
+func createReadCloser(body interface{}) io.ReadCloser {
+	jsonBody, _ := json.Marshal(body)
+	return io.NopCloser(bytes.NewReader(jsonBody))
 }

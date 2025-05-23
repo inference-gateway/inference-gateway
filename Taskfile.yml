@@ -8,8 +8,7 @@ tasks:
       - curl -o mcp/mcp-schema.json https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/refs/heads/main/schema/draft/schema.json
       - |
         echo "Converting JSON schema to YAML format"
-        npm install --no-save js-yaml
-        node -e "
+        NODE_PATH=/usr/lib/node_modules node -e "
           const fs = require('fs');
           const yaml = require('js-yaml');
           const json = JSON.parse(fs.readFileSync('mcp/mcp-schema.json', 'utf8'));
