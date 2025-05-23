@@ -514,15 +514,17 @@ func GenerateMCPTypes(destination string, schemaPath string) error {
 	}
 
 	var schema map[string]interface{}
-	if strings.HasSuffix(schemaPath, ".json") {
+
+	switch {
+	case strings.HasSuffix(schemaPath, ".json"):
 		if err := json.Unmarshal(data, &schema); err != nil {
 			return fmt.Errorf("failed to parse JSON schema: %w", err)
 		}
-	} else if strings.HasSuffix(schemaPath, ".yaml") || strings.HasSuffix(schemaPath, ".yml") {
+	case strings.HasSuffix(schemaPath, ".yaml"), strings.HasSuffix(schemaPath, ".yml"):
 		if err := yaml.Unmarshal(data, &schema); err != nil {
 			return fmt.Errorf("failed to parse YAML schema: %w", err)
 		}
-	} else {
+	default:
 		return fmt.Errorf("unsupported schema format: must be .json, .yaml, or .yml")
 	}
 
