@@ -11,12 +11,25 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.1 \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
+      - echo "🚀 Hybrid infrastructure deployed successfully!"
+
+  deploy-ollama:
+    desc: "Deploy deepseek-r1:1.5b with Ollama"
+    cmds:
       - kubectl create namespace ollama -o yaml --dry-run=client | kubectl apply -f -
       - kubectl apply -f ollama/
       - kubectl -n ollama rollout status deployment ollama
+      - echo "🤖 Ollama with deepseek model deployed successfully!"
+
+  watch-ollama-download:
+    desc: "Watch download progress"
+    cmds:
+      - kubectl -n ollama logs deployments/ollama -c ollama-model-puller -f
+      - echo "👀 Watching Ollama model download progress..."
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with hybrid providers"
@@ -27,10 +40,14 @@ tasks:
           --namespace inference-gateway \
           --set ingress.enabled=true \
           --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
+          --set envFrom.secretRef=inference-gateway \
+          --version 0.6.3 \
           --wait \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - echo "🚪 Inference Gateway with hybrid providers deployed successfully!"
 
   clean:
     desc: "Clean up the cluster"
     cmds:
       - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"

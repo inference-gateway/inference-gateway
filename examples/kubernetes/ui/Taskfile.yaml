@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 tasks:
   deploy-infrastructure:
@@ -8,8 +8,22 @@ tasks:
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add jetstack https://charts.jetstack.io
       - helm repo update
-      - helm upgrade --install --create-namespace --namespace kube-system --version 4.12.1 --wait ingress-nginx ingress-nginx/ingress-nginx
-      - helm upgrade --install --create-namespace --namespace cert-manager --version 1.17.1 --set crds.enabled=true --wait cert-manager jetstack/cert-manager
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace kube-system \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
+          --wait \
+          ingress-nginx ingress-nginx/ingress-nginx
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace cert-manager \
+          --version 1.17.2 \
+          --set crds.enabled=true \
+          --wait \
+          cert-manager jetstack/cert-manager
       - |
         kubectl apply -f - <<EOF
         apiVersion: cert-manager.io/v1
@@ -24,7 +38,7 @@ tasks:
   setup-secrets:
     desc: Set up the necessary secrets for the Inference Gateway
     cmds:
-      - kubectl create namespace inference-gateway --dry-run=client -o yaml | kubectl apply -f -
+      - kubectl create namespace inference-gateway --dry-run=client -o yaml | kubectl apply --server-side -f -
       - |
         # Read the secret
         read -p "Please add your API key for DeepSeek: " DEEPSEEK_API_KEY
@@ -45,14 +59,49 @@ tasks:
           DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
         EOF
       - echo "🔑 Secrets configured successfully!"
-    
+
+  setup-configmap:
+    desc: Set up the necessary configmap for the Inference Gateway
+    cmds:
+      - |
+        kubectl apply --server-side -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: inference-gateway
+          namespace: inference-gateway
+          annotations:
+            meta.helm.sh/release-name: inference-gateway-ui
+            meta.helm.sh/release-namespace: inference-gateway
+          labels:
+            app.kubernetes.io/managed-by: Helm
+        data:
+          ENABLE_AUTH: "false"
+        EOF
+      - |
+        kubectl apply --server-side -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: inference-gateway-ui
+          namespace: inference-gateway
+          annotations:
+            meta.helm.sh/release-name: inference-gateway-ui
+            meta.helm.sh/release-namespace: inference-gateway
+          labels:
+            app.kubernetes.io/managed-by: Helm
+        data:
+          ENABLE_AUTH: "false"
+        EOF
+      - echo "🗂️ ConfigMap configured successfully!"
+
   deploy:
     desc: Deploy the Inference Gateway UI with the Gateway backend
     cmds:
       - |
         helm upgrade --install inference-gateway-ui \
           oci://ghcr.io/inference-gateway/charts/inference-gateway-ui \
-          --version 0.5.0 \
+          --version 0.7.1 \
           --create-namespace \
           --namespace inference-gateway \
           --set replicaCount=1 \
@@ -77,7 +126,7 @@ tasks:
       - |
         helm upgrade --install inference-gateway-ui \
           oci://ghcr.io/inference-gateway/charts/inference-gateway-ui \
-          --version 0.5.0 \
+          --version 0.7.1 \
           --create-namespace \
           --namespace inference-gateway \
           --set replicaCount=1 \
@@ -107,8 +156,9 @@ tasks:
   port-forward:
     desc: Set up port forwarding to access the UI
     cmds:
-      - kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:80
-  
+      - kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:3000 --address 0.0.0.0
+      - echo "🔌 Port forwarding set up successfully! UI available at http://localhost:3000"
+
   delete:
     desc: Remove the Inference Gateway UI deployment
     cmds:
@@ -122,9 +172,15 @@ tasks:
       - ctlptl delete -f Cluster.yaml
       - echo "🧹 k3d cluster deleted!"
 
+  clean:
+    desc: Clean up the cluster
+    cmds:
+      - task: delete-cluster
+
   status:
     desc: Check the status of the deployment
     cmds:
       - kubectl get pods -n inference-gateway
       - kubectl get svc -n inference-gateway
       - kubectl get ingress -n inference-gateway
+      - echo "📊 Deployment status checked!"

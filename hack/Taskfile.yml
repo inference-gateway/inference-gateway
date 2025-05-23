@@ -2,6 +2,16 @@
 version: "3"
 
 tasks:
+  cluster-create:
+    desc: "Create a local cluster"
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+
+  cluster-delete:
+    desc: "Delete the local cluster"
+    cmds:
+      - ctlptl delete -f Cluster.yaml
+
   test-helm:
     desc: "Run helm tests"
     cmds:
@@ -30,7 +40,7 @@ tasks:
   deploy-infrastructure:
     desc: "Deploy the infrastructure"
     cmds:
-      - ctlptl apply -f Cluster.yaml
+      - task: cluster-create
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
       - helm repo add grafana https://grafana.github.io/helm-charts
@@ -41,13 +51,14 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.1 \
+          --version 4.12.2 \
+          --set controller.progressDeadlineSeconds=600 \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace cert-manager \
-          --version 1.17.1 \
+          --version 1.17.2 \
           --set crds.enabled=true \
           cert-manager jetstack/cert-manager
       - |
@@ -63,7 +74,7 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace observability \
-          --version 70.4.2 \
+          --version 72.6.1 \
           --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
           --set-string prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
           --set prometheus.enabled=false \
@@ -82,15 +93,15 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace idp \
-          --version 16.6.2 \
+          --version 16.7.4 \
           --set global.postgresql.auth.username=dbusername \
           --set global.postgresql.auth.password=dbpassword \
           --set global.postgresql.auth.database=keycloak \
           keycloak-db bitnami/postgresql \
           --wait
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/kubernetes.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/kubernetes.yml
       - |
         kubectl apply -f - <<EOF
         apiVersion: cert-manager.io/v1
@@ -128,7 +139,7 @@ tasks:
           labels:
             app.kubernetes.io/name: keycloak
             app.kubernetes.io/instance: keycloak
-            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/version: "26.2.4"
             app.kubernetes.io/component: identity-provider
             app.kubernetes.io/part-of: inference-gateway
         type: Opaque
@@ -145,7 +156,7 @@ tasks:
           labels:
             app.kubernetes.io/name: keycloak
             app.kubernetes.io/instance: keycloak
-            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/version: "26.2.4"
             app.kubernetes.io/component: identity-provider
             app.kubernetes.io/part-of: inference-gateway
         spec:
@@ -208,7 +219,7 @@ tasks:
           labels:
             app.kubernetes.io/name: keycloak
             app.kubernetes.io/instance: keycloak
-            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/version: "26.2.4"
             app.kubernetes.io/component: identity-provider
             app.kubernetes.io/part-of: inference-gateway
           annotations:
@@ -282,7 +293,8 @@ tasks:
           --set volumeMounts[0].mountPath=/usr/local/share/ca-certificates/keycloak-ca.crt \
           --set volumeMounts[0].subPath=ca.crt \
           --set volumeMounts[0].readOnly=true \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0-rc.24
+          --version 0.6.2 \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
       - |
         kubectl apply -f - <<EOF
         apiVersion: v1
@@ -363,7 +375,7 @@ tasks:
           labels:
             app.kubernetes.io/name: keycloak
             app.kubernetes.io/instance: keycloak
-            app.kubernetes.io/version: "26.1.4"
+            app.kubernetes.io/version: "26.2.4"
             app.kubernetes.io/component: identity-provider
             app.kubernetes.io/part-of: inference-gateway
         spec:

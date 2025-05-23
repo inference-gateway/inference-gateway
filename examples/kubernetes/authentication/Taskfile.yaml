@@ -9,18 +9,20 @@ tasks:
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add jetstack https://charts.jetstack.io
       - helm repo add bitnami https://charts.bitnami.com/bitnami
+      - echo "🚀 Starting authentication infrastructure deployment..."
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.1 \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace cert-manager \
-          --version 1.17.1 \
+          --version 1.17.2 \
           --set crds.enabled=true \
           --wait \
           cert-manager jetstack/cert-manager
@@ -42,9 +44,9 @@ tasks:
           --set readReplicas.resources.limits.memory=512Mi \
           --wait \
           keycloak-db bitnami/postgresql
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.1.4/kubernetes/kubernetes.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/kubernetes.yml
       - kubectl apply -f cert-manager/
       - kubectl apply --server-side -f keycloak/
       - |
@@ -70,17 +72,18 @@ tasks:
         EOF
         kubectl -n kube-system rollout restart deployment coredns
         kubectl -n kube-system rollout status deployment coredns
+      - echo "🔐 Authentication infrastructure deployed successfully!"
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with authentication"
     cmds:
       - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
-      - | # Trust the self-signed certificate so inference-gateway can connect to keycloak via TLS
+      - |
         kubectl create configmap keycloak-ca \
           -n inference-gateway \
           --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)" \
           --dry-run=client -o yaml | kubectl apply --server-side -f -
-      - | # Create the configmap with authentication enabled and the keycloak issuer URL
+      - |
         kubectl apply -f - <<EOF
         apiVersion: v1
         kind: ConfigMap
@@ -96,7 +99,7 @@ tasks:
           ENABLE_AUTH: "true"
           OIDC_ISSUER_URL: https://keycloak.inference-gateway.local/realms/inference-gateway-realm
         EOF
-      - | # Create the secret with the keycloak client credentials, you would probably want to deploy it with external-secrets or something similar
+      - |
         kubectl apply -f - <<EOF
         apiVersion: v1
         kind: Secret
@@ -130,12 +133,15 @@ tasks:
           --set volumeMounts[0].subPath=ca.crt \
           --set volumeMounts[0].readOnly=true \
           --wait \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0
+          --version 0.6.3 \
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - echo "🔒 Inference Gateway with authentication enabled, deployed successfully!"
 
   keycloak-admin-password:
     desc: "Get Keycloak admin password"
     cmds:
       - kubectl -n idp get secret keycloak-initial-admin -o jsonpath="{.data.password}" | base64 --decode
+      - echo "🔑 Retrieved Keycloak admin password!"
 
   fetch-access-token:
     desc: "Fetch the access token"
@@ -149,8 +155,10 @@ tasks:
           -d "client_secret=very-secret" \
           -d "username=user" \
           -d "password=password" | jq -r .access_token
+      - echo "🔑 Access token fetched successfully!"
 
   clean:
     desc: "Clean up the cluster"
     cmds:
       - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"

@@ -39,19 +39,13 @@ This example demonstrates an agent-based deployment pattern with the Inference G
 task deploy-infrastructure
 ```
 
-2. Build and push logs analyzer image (after registry is ready):
-
-```bash
-task build-logs-analyzer
-```
-
-3. Deploy Inference Gateway:
+2. Deploy Inference Gateway:
 
 ```bash
 task deploy-inference-gateway
 ```
 
-4. Configure the API for the provider used in this example - Groq:
+3. Configure the API for the provider used in this example - Groq:
 
 ```bash
 kubectl -n inference-gateway apply --server-side -f - <<EOF
@@ -74,10 +68,16 @@ kubectl -n inference-gateway rollout restart deployment inference-gateway
 kubectl -n inference-gateway rollout status deployment inference-gateway
 ```
 
+4. Build and push logs analyzer image (after registry is ready):
+
+```bash
+task build-logs-analyzer-agent
+```
+
 5. Deploy the logs analyzer and test deployment:
 
 ```bash
-task deploy-agent
+task deploy-logs-analyzer-agent
 ```
 
 6. Monitor agent logs:

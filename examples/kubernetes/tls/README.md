@@ -1,5 +1,11 @@
 # TLS Example
 
+This example demonstrates secure TLS communication with the Inference Gateway using:
+
+- Cert-manager for certificate management
+- Helm chart for gateway deployment with TLS enabled
+- Automatic certificate issuance
+
 ## Table of Contents
 
 - [TLS Example](#tls-example)
@@ -11,12 +17,6 @@
     - [Certificate Setup](#certificate-setup)
     - [Gateway TLS](#gateway-tls)
   - [Cleanup](#cleanup)
-
-This example demonstrates secure TLS communication with the Inference Gateway using:
-
-- Cert-manager for certificate management
-- Helm chart for gateway deployment with TLS enabled
-- Automatic certificate issuance
 
 ## Architecture
 

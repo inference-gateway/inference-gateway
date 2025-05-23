@@ -33,29 +33,14 @@ builds:
       - -s -w -X main.version={{ .Version }} -X main.commit={{ .Commit }} -X main.date={{ .CommitDate }} -X main.builtBy=goreleaser -X main.treeState={{ .IsGitDirty }}
 
 dockers:
-  - id: inference-gateway-arm64
-    goarm: "7"
-    skip_push: false
-    use: buildx
-    dockerfile: Dockerfile.goreleaser
-    image_templates:
-      - "ghcr.io/inference-gateway/inference-gateway:{{ .Version }}"
-      - "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:latest{{ end }}"
-    build_flag_templates:
-      - "--platform=linux/arm64"
-      - "--pull"
-      - "--label=org.opencontainers.image.created={{ .Date }}"
-      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
-      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
-      - "--label=org.opencontainers.image.version={{ .Version }}"
   - id: inference-gateway-amd64
+    goos: linux
+    goarch: amd64
     goamd64: "v1"
-    skip_push: false
     use: buildx
     dockerfile: Dockerfile.goreleaser
     image_templates:
-      - "ghcr.io/inference-gateway/inference-gateway:{{ .Version }}"
-      - "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:latest{{ end }}"
+      - "ghcr.io/inference-gateway/inference-gateway:{{ .Version }}-amd64"
     build_flag_templates:
       - "--platform=linux/amd64"
       - "--pull"
@@ -63,6 +48,33 @@ dockers:
       - "--label=org.opencontainers.image.title={{ .ProjectName }}"
       - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
       - "--label=org.opencontainers.image.version={{ .Version }}"
+
+  - id: inference-gateway-arm64
+    goos: linux
+    goarch: arm64
+    goarm: "7"
+    use: buildx
+    dockerfile: Dockerfile.goreleaser
+    image_templates:
+      - "ghcr.io/inference-gateway/inference-gateway:{{ .Version }}-arm64"
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{ .Date }}"
+      - "--label=org.opencontainers.image.title={{ .ProjectName }}"
+      - "--label=org.opencontainers.image.revision={{ .FullCommit }}"
+      - "--label=org.opencontainers.image.version={{ .Version }}"
+
+docker_manifests:
+  - name_template: ghcr.io/inference-gateway/inference-gateway:{{ .Version }}
+    image_templates:
+      - ghcr.io/inference-gateway/inference-gateway:{{ .Version }}-amd64
+      - ghcr.io/inference-gateway/inference-gateway:{{ .Version }}-arm64
+
+  - name_template: "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:latest{{ end }}"
+    image_templates:
+      - "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:{{ .Version }}-amd64{{ end }}"
+      - "{{ if not (contains .Tag `rc`) }}ghcr.io/inference-gateway/inference-gateway:{{ .Version }}-arm64{{ end }}"
 
 archives:
   - formats:
@@ -73,6 +85,10 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
 
 checksum:
   name_template: "checksums.txt"

@@ -11,9 +11,11 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.1 \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
+      - echo "🚀 Basic infrastructure deployed successfully!"
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with helm"
@@ -23,10 +25,13 @@ tasks:
           --create-namespace \
           --namespace inference-gateway \
           --set ingress.enabled=true \
+          --version 0.6.3 \
           --wait \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - echo "🚪 Inference Gateway deployed successfully!"
 
   clean:
     desc: "Clean up the cluster"
     cmds:
       - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"

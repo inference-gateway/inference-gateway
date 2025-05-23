@@ -19,6 +19,9 @@ spec:
             limits:
               memory: 10Mi
               cpu: 10m
+            requests:
+              memory: 10Mi
+              cpu: 10m
           ports:
             - containerPort: 8080
           command:

@@ -19,7 +19,7 @@ spec:
       serviceAccountName: ollama
       containers:
         - name: ollama-model
-          image: ollama/ollama:0.5.4
+          image: ollama/ollama:0.7.0
           ports:
             - containerPort: 11434
           resources:
@@ -38,7 +38,7 @@ spec:
             - name: ollama-models-store
               mountPath: /root/.ollama/models
         - name: ollama-model-puller
-          image: ollama/ollama:0.5.4
+          image: ollama/ollama:0.7.0
           command:
             - bash
           args:

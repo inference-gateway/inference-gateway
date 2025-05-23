@@ -35,6 +35,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - 🔧 **Tool-use Support**: Enable function calling capabilities across supported providers with a unified API.
 - 🌐 **MCP Support**: Integrate with Model Context Protocol servers so clients don't need to pass tools directly.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
+- 🖥️ **Web Interface**: Access through a modern web UI for easy interaction and management.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
 - ☸️ **Kubernetes Support**: Ready for deployment in Kubernetes environments.
 - 📊 **OpenTelemetry**: Monitor and analyze performance.
@@ -59,6 +60,7 @@ You can horizontally scale the Inference Gateway to handle multiple requests fro
 graph TD
     %% Client nodes
     A["👥 Clients / 🤖 Agents"] --> |POST /v1/chat/completions| Auth
+    UI["💻 Web UI"] --> |API requests| Auth
 
     %% Auth node
     Auth["🔒 Optional OIDC"] --> |Auth?| IG1
@@ -88,11 +90,11 @@ graph TD
     classDef auth fill:#F5A800,stroke:#333,stroke-width:1px,color:black;
     classDef gateway fill:#326CE5,stroke:#fff,stroke-width:1px,color:white;
     classDef provider fill:#32CD32,stroke:#333,stroke-width:1px,color:white;
-    classDef mcp fill:#4B88A2,stroke:#333,stroke-width:1px,color:white;
-    classDef direct fill:#5D8AA8,stroke:#333,stroke-width:1px,color:white;
+    classDef ui fill:#FF6B6B,stroke:#333,stroke-width:1px,color:white;
 
     %% Apply styles
     class A client;
+    class UI ui;
     class Auth auth;
     class IG1,IG2,IG3,P gateway;
     class C,D,E,G,H1,H2,H3 provider;

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -109,25 +110,45 @@ func main() {
 					for _, pattern := range errorPatterns {
 						if pattern.MatchString(line) {
 							ctx := context.Background()
+
+							// Prepare request for logging
+							messages := []sdk.Message{
+								{
+									Role:    sdk.System,
+									Content: fmt.Sprintf(systemPrompt, line),
+								},
+								{
+									Role:    sdk.User,
+									Content: "Analyze this error",
+								},
+							}
+
+							// Log the request
+							requestJSON, _ := json.MarshalIndent(map[string]interface{}{
+								"provider": sdk.Groq,
+								"model":    "llama-3.3-70b-versatile",
+								"messages": messages,
+							}, "", "  ")
+							log.Printf("Sending request to inference gateway for %s/%s:\n%s",
+								ns.Name, pod.Name, string(requestJSON))
+
+							// Call the API
 							response, err := apiClient.GenerateContent(
 								ctx,
 								sdk.Groq,
 								"llama-3.3-70b-versatile",
-								[]sdk.Message{
-									{
-										Role:    sdk.System,
-										Content: fmt.Sprintf(systemPrompt, line),
-									},
-									{
-										Role:    sdk.User,
-										Content: "Analyze this error",
-									},
-								},
+								messages,
 							)
+
 							if err != nil {
 								log.Printf("Error analyzing log: %v", err)
+								time.Sleep(30 * time.Second)
 								continue
 							}
+
+							// Log the response
+							responseJSON, _ := json.MarshalIndent(response, "", "  ")
+							log.Printf("Received response from inference gateway:\n%s", string(responseJSON))
 
 							log.Printf("Found error in %s/%s:\nError: %s\nAnalysis: %s",
 								ns.Name, pod.Name, line, response.Choices[0].Message.Content)

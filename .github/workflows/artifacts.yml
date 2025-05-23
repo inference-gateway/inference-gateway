@@ -30,6 +30,11 @@ jobs:
           go-version: "1.23"
           cache: true
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          version: latest
+
       - name: Install GoReleaser
         run: |
           curl -sSL https://github.com/goreleaser/goreleaser/releases/download/v2.7.0/goreleaser_Linux_x86_64.tar.gz | tar -xzv -C /usr/local/bin goreleaser
@@ -43,16 +48,14 @@ jobs:
 
       - name: Run GoReleaser
         run: |
-          goreleaser release --clean --skip=announce,publish
+          goreleaser release --clean
 
       - name: Upload Artifacts to Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ github.event.release.tag_name }}
         run: |
-          # Find all archives created by GoReleaser
           for file in dist/inference-gateway_*; do
-            # Skip directories
             if [ -d "$file" ]; then
               echo "Skipping directory: $file"
               continue
@@ -62,7 +65,6 @@ jobs:
             gh release upload ${{ env.VERSION }} "$file" --clobber
           done
 
-          # Upload checksums file if it exists
           if [ -f "dist/checksums.txt" ]; then
             gh release upload ${{ env.VERSION }} "dist/checksums.txt" --clobber
           fi
@@ -71,11 +73,9 @@ jobs:
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
+          echo "Container images have been built and pushed by GoReleaser with multi-architecture support"
           VERSION=${TAG#v}
-          docker push ghcr.io/${{ github.repository }}:${VERSION}
-          if [[ ! "${{ env.TAG }}" =~ -rc ]]; then
-            docker push ghcr.io/${{ github.repository }}:latest
-          fi
+          docker manifest inspect ghcr.io/${{ github.repository }}:${VERSION} || echo "Warning: Manifest not found"
 
   scan_containers:
     name: Scan Container Images

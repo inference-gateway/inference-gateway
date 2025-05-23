@@ -8,22 +8,25 @@ tasks:
       - ctlptl apply -f Cluster.yaml
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add jetstack https://charts.jetstack.io
+      - echo "🚀 Starting TLS infrastructure deployment..."
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.1 \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace cert-manager \
-          --version 1.17.1 \
+          --version 1.17.2 \
           --set crds.enabled=true \
           --wait \
           cert-manager jetstack/cert-manager
       - kubectl apply -f cert-manager/
+      - echo "🔒 TLS infrastructure deployed successfully!"
 
   deploy-inference-gateway:
     desc: "Deploy inference-gateway with TLS"
@@ -40,10 +43,13 @@ tasks:
           --set ingress.tls.enabled=true \
           --set ingress.tls.hosts[0]=api.inference-gateway.local \
           --set ingress.tls.secretName=api-inference-gateway-local-tls \
+          --version 0.6.3 \
           --wait \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway:0.5.0
+          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - echo "🔐 Inference Gateway with TLS deployed successfully!"
 
   clean:
     desc: "Clean up the cluster"
     cmds:
       - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"
