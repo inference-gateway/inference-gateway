@@ -24,16 +24,16 @@ type LoggerZapImpl struct {
 
 // NoOpLogger is a logger implementation that discards all logs
 // This is useful for testing to prevent logs from cluttering test output
-type NoOpLogger struct{}
+type NoopLogger struct{}
 
-func (l *NoOpLogger) Info(message string, fields ...interface{})             {}
-func (l *NoOpLogger) Debug(message string, fields ...interface{})            {}
-func (l *NoOpLogger) Error(message string, err error, fields ...interface{}) {}
-func (l *NoOpLogger) Fatal(message string, err error, fields ...interface{}) {}
+func (l *NoopLogger) Info(message string, fields ...interface{})             {}
+func (l *NoopLogger) Debug(message string, fields ...interface{})            {}
+func (l *NoopLogger) Error(message string, err error, fields ...interface{}) {}
+func (l *NoopLogger) Fatal(message string, err error, fields ...interface{}) {}
 
-// NewNoOpLogger returns a logger that discards all logs
-func NewNoOpLogger() Logger {
-	return &NoOpLogger{}
+// NewNoopLogger returns a logger that discards all logs
+func NewNoopLogger() Logger {
+	return &NoopLogger{}
 }
 
 // isTestMode checks if the code is running as part of tests
@@ -49,7 +49,7 @@ func isTestMode() bool {
 // NewLogger initializes a logger
 func NewLogger(env string) (Logger, error) {
 	if isTestMode() {
-		return NewNoOpLogger(), nil
+		return NewNoopLogger(), nil
 	}
 
 	var cfg zap.Config

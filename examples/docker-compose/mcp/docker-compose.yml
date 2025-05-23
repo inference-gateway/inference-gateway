@@ -9,10 +9,9 @@ services:
     env_file:
       - .env
     environment:
-      LOG_LEVEL: debug
+      ENVIRONMENT: development
       ENABLE_MCP: true
       MCP_SERVERS: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp
-
     depends_on:
       mcp-time-server:
         condition: service_healthy

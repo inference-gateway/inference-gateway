@@ -117,11 +117,23 @@ func main() {
 	}
 
 	// Initialize MCP middleware if enabled
-	mcpClient := mcp.NewMCPClient(strings.Split(cfg.McpServers, ","), logger)
-	mcpMiddleware, err := middlewares.NewMCPMiddleware(mcpClient, logger, cfg)
-	if err != nil {
-		logger.Error("Failed to initialize MCP middleware", err)
-		return
+	var mcpClient mcp.MCPClientInterface
+	var mcpMiddleware middlewares.MCPMiddleware
+	if cfg.EnableMcp && cfg.McpServers != "" {
+		mcpClient = mcp.NewMCPClient(strings.Split(cfg.McpServers, ","), logger)
+		initErr := mcpClient.InitializeAll(context.Background())
+		if initErr != nil {
+			logger.Error("Failed to initialize MCP client", initErr)
+			return
+		}
+
+		mcpMiddleware, err = middlewares.NewMCPMiddleware(mcpClient, logger, cfg)
+		if err != nil {
+			logger.Error("Failed to initialize MCP middleware", err)
+			return
+		}
+	} else {
+		mcpMiddleware, _ = middlewares.NewMCPMiddleware(nil, logger, cfg)
 	}
 
 	scheme := "http"

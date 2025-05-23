@@ -5,7 +5,7 @@ go 1.23.4
 require (
 	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/gin-gonic/gin v1.10.0
-	github.com/metoro-io/mcp-golang v0.11.0
+	github.com/metoro-io/mcp-golang v0.13.0
 	github.com/prometheus/client_golang v1.21.0
 	github.com/sethvargo/go-envconfig v1.1.0
 	github.com/stretchr/testify v1.10.0

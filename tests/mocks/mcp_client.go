@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	providers "github.com/inference-gateway/inference-gateway/providers"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -41,6 +42,20 @@ func (m *MockMCPClientInterface) EXPECT() *MockMCPClientInterfaceMockRecorder {
 	return m.recorder
 }
 
+// ConvertMCPToolsToChatCompletionTools mocks base method.
+func (m *MockMCPClientInterface) ConvertMCPToolsToChatCompletionTools(arg0 []mcp.Tool) []providers.ChatCompletionTool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConvertMCPToolsToChatCompletionTools", arg0)
+	ret0, _ := ret[0].([]providers.ChatCompletionTool)
+	return ret0
+}
+
+// ConvertMCPToolsToChatCompletionTools indicates an expected call of ConvertMCPToolsToChatCompletionTools.
+func (mr *MockMCPClientInterfaceMockRecorder) ConvertMCPToolsToChatCompletionTools(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConvertMCPToolsToChatCompletionTools", reflect.TypeOf((*MockMCPClientInterface)(nil).ConvertMCPToolsToChatCompletionTools), arg0)
+}
+
 // ExecuteTool mocks base method.
 func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, request mcp.Request, serverURL string) (mcp.CallToolResult, error) {
 	m.ctrl.T.Helper()
@@ -56,6 +71,20 @@ func (mr *MockMCPClientInterfaceMockRecorder) ExecuteTool(ctx, request, serverUR
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteTool", reflect.TypeOf((*MockMCPClientInterface)(nil).ExecuteTool), ctx, request, serverURL)
 }
 
+// GetAllChatCompletionTools mocks base method.
+func (m *MockMCPClientInterface) GetAllChatCompletionTools() []providers.ChatCompletionTool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllChatCompletionTools")
+	ret0, _ := ret[0].([]providers.ChatCompletionTool)
+	return ret0
+}
+
+// GetAllChatCompletionTools indicates an expected call of GetAllChatCompletionTools.
+func (mr *MockMCPClientInterfaceMockRecorder) GetAllChatCompletionTools() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllChatCompletionTools", reflect.TypeOf((*MockMCPClientInterface)(nil).GetAllChatCompletionTools))
+}
+
 // GetServerCapabilities mocks base method.
 func (m *MockMCPClientInterface) GetServerCapabilities() map[string]mcp.ServerCapabilities {
 	m.ctrl.T.Helper()
@@ -68,6 +97,35 @@ func (m *MockMCPClientInterface) GetServerCapabilities() map[string]mcp.ServerCa
 func (mr *MockMCPClientInterfaceMockRecorder) GetServerCapabilities() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerCapabilities", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerCapabilities))
+}
+
+// GetServerTools mocks base method.
+func (m *MockMCPClientInterface) GetServerTools(serverURL string) ([]mcp.Tool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetServerTools", serverURL)
+	ret0, _ := ret[0].([]mcp.Tool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetServerTools indicates an expected call of GetServerTools.
+func (mr *MockMCPClientInterfaceMockRecorder) GetServerTools(serverURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerTools", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerTools), serverURL)
+}
+
+// GetServers mocks base method.
+func (m *MockMCPClientInterface) GetServers() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetServers")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetServers indicates an expected call of GetServers.
+func (mr *MockMCPClientInterfaceMockRecorder) GetServers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServers", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServers))
 }
 
 // InitializeAll mocks base method.
