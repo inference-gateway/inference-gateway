@@ -158,11 +158,8 @@ func TestMCPMiddleware(t *testing.T) {
 					useMcp = val.(bool)
 				}
 
-				// For testing middleware that modifies the request body,
-				// we need to get the data directly from c.Request.Body
 				if c.Request.Body != nil {
 					bodyBytes, _ := io.ReadAll(c.Request.Body)
-					// Reset the body for potential future middleware/handlers
 					c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 					if len(bodyBytes) > 0 {

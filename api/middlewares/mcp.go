@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -112,12 +113,49 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			m.logger.Debug("MCP: No tools available to add to request")
 		}
 
+		w := &responseBodyWriter{
+			ResponseWriter: c.Writer,
+			body:           &bytes.Buffer{},
+		}
+		c.Writer = w
+
 		c.Next()
 
-		// TODO - while there are tool_calls in the response continue processing, otherwise return the response back to the client
-		// 1. Parse the tool calls from the response
-		// 2. Call the ExecuteTool function using the MCP client and get the tool call results
-		// 3. Send additional request to the LLM with the tool call results
+		var responseBody providers.CreateChatCompletionResponse
+		bodyBytes := w.body.Bytes()
+		if err := json.Unmarshal(bodyBytes, &responseBody); err != nil {
+			m.logger.Debug("MCP: Could not parse response body", "error", err.Error())
+			return
+		}
+
+		if len(responseBody.Choices) == 0 {
+			m.logger.Debug("MCP: No choices found in response")
+			return
+		}
+		if responseBody.Choices[0].Message.ToolCalls == nil {
+			m.logger.Debug("MCP: No tool calls found in response message")
+			return
+		}
+
+		// TODO - while there are tool_calls in the response continue processing, otherwise return the response back to the client, for now set timeout to 70 seconds
+		timeout := time.After(10 * time.Second)
+		for {
+			select {
+			case <-timeout:
+				m.logger.Debug("MCP: Timeout reached, stopping tool call processing")
+				return
+			default:
+				m.logger.Debug("MCP: Processing tool calls from response")
+				// 1. Parse the tool calls from the response
+
+				// 2. Call the ExecuteTool function using the MCP client and get the tool call results
+
+				// 3. Send additional request to the LLM with the tool call results
+
+				time.Sleep(time.Second * 5)
+			}
+		}
+
 	}
 }
 
