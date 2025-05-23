@@ -35,11 +35,35 @@
         "githubPullRequests.experimental.chat": true,
         "githubPullRequests.experimental.notificationsView": true,
         "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+        "github.copilot.chat.codeGeneration.instructions": [
+          {
+            "file": ".github/copilot-instructions.md"
+          },
+          {
+            "file": "../README.md"
+          }
+        ],
         "github.copilot.chat.commitMessageGeneration.instructions": [
           {
             "text": "Always use conventional commit message format."
           }
         ]
+      },
+      "mcp": {
+        "servers": {
+          "context7": {
+            "command": "docker",
+            "args": [
+              "run",
+              "-i",
+              "--rm",
+              "node:lts",
+              "npx",
+              "-y",
+              "@upstash/context7-mcp@latest"
+            ]
+          }
+        }
       }
     }
   },
