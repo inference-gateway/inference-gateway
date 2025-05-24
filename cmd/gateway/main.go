@@ -147,8 +147,6 @@ func main() {
 			logger.Error("Failed to initialize MCP middleware", err)
 			return
 		}
-	} else {
-		mcpMiddleware, _ = middlewares.NewMCPMiddleware(nil, nil, nil, logger, cfg)
 	}
 
 	// Set GIN mode based on environment

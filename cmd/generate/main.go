@@ -74,7 +74,6 @@ func main() {
 		}
 	case "MCPTypes":
 		fmt.Printf("Generating MCP types from schema to %s\n", output)
-		// Choose either JSON or YAML schema based on your preference
 		err := codegen.GenerateMCPTypes(output, "mcp/mcp-schema.yaml")
 		if err != nil {
 			fmt.Printf("Error generating MCP types: %v\n", err)
