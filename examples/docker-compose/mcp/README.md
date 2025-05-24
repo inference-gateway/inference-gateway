@@ -78,7 +78,46 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 }'
 ```
 
-The Inference Gateway will:
+### Example 3: Multiple Tools
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "What is the current time and also find me information about the Model Context Protocol."
+    }
+  ]
+}'
+```
+
+### Example 4: MCP Streaming
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "What is the current time? and also find me information about the Model Context Protocol."
+    }
+  ],
+  "stream": true
+}'
+```
+
+## How It Works
+
+When you send a request to the Inference Gateway, it will:
 
 1. Discover the tools available from both MCP servers (time and search)
 2. Inject these tools into the LLM request

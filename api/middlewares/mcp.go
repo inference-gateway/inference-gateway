@@ -288,7 +288,7 @@ func (m *MCPMiddlewareImpl) processNonStreamingResponse(ctx context.Context, w *
 	return nil
 }
 
-// processStreamingResponse handles streaming chat completion responses
+// processStreamingResponse handles streaming chat completion responses with agent loop
 func (m *MCPMiddlewareImpl) processStreamingResponse(ctx context.Context, w *customResponseWriter, originalRequest *providers.CreateChatCompletionRequest, provider providers.IProvider, providerModel string) error {
 	responseBody := w.body.String()
 	if responseBody == "" {
@@ -317,57 +317,93 @@ func (m *MCPMiddlewareImpl) processStreamingResponse(ctx context.Context, w *cus
 		return nil
 	}
 
-	toolResults, err := m.executeToolCalls(ctx, toolCalls)
-	if err != nil {
-		m.logger.Error("Failed to execute tool calls", err)
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
-		if _, err := w.ResponseWriter.Write(w.body.Bytes()); err != nil {
-			m.logger.Error("Failed to write response", err)
-		}
-		return nil
-	}
-
-	assistantMessage, err := m.extractAssistantMessageFromStream(responseBody, toolCalls)
-	if err != nil {
-		m.logger.Error("Failed to extract assistant message", err)
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
-		if _, err := w.ResponseWriter.Write(w.body.Bytes()); err != nil {
-			m.logger.Error("Failed to write response", err)
-		}
-		return nil
-	}
-
-	updatedRequest := *originalRequest
-	updatedRequest.Messages = append(updatedRequest.Messages, assistantMessage)
-	updatedRequest.Messages = append(updatedRequest.Messages, toolResults...)
-
-	return m.processStreamingToolCalls(ctx, w, &updatedRequest, toolCalls, provider, providerModel)
-}
-
-// processStreamingToolCalls handles the streaming of tool call results
-func (m *MCPMiddlewareImpl) processStreamingToolCalls(ctx context.Context, w *customResponseWriter, updatedRequest *providers.CreateChatCompletionRequest, assembledToolCalls []providers.ChatCompletionMessageToolCall, provider providers.IProvider, providerModel string) error {
-	updatedRequest.Model = providerModel
-	streamCh, err := provider.StreamChatCompletions(ctx, *updatedRequest)
-	if err != nil {
-		return fmt.Errorf("failed to stream chat completion: %w", err)
-	}
+	currentRequest := *originalRequest
+	maxIterations := 10
+	iteration := 0
 
 	w.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.ResponseWriter.Header().Set("Cache-Control", "no-cache")
 	w.ResponseWriter.Header().Set("Connection", "keep-alive")
 	w.ResponseWriter.WriteHeader(http.StatusOK)
 
-	for chunk := range streamCh {
-		if _, err := w.ResponseWriter.Write([]byte("data: " + string(chunk) + "\n\n")); err != nil {
-			m.logger.Error("Failed to write chunk", err)
+	initialResponseLines := strings.Split(responseBody, "\n")
+	for _, line := range initialResponseLines {
+		if strings.TrimSpace(line) != "" {
+			if _, err := w.ResponseWriter.Write([]byte(line + "\n")); err != nil {
+				m.logger.Error("Failed to write initial response line", err)
+				break
+			}
+		}
+	}
+
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+
+	for iteration < maxIterations {
+		if len(toolCalls) == 0 {
 			break
 		}
 
-		if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
-			flusher.Flush()
+		m.logger.Debug("Streaming agent loop iteration", "iteration", iteration+1, "toolCalls", len(toolCalls))
+
+		toolResults, err := m.executeToolCalls(ctx, toolCalls)
+		if err != nil {
+			m.logger.Error("Failed to execute tool calls in streaming loop", err)
+			break
 		}
+
+		assistantMessage, err := m.extractAssistantMessageFromStream(responseBody, toolCalls)
+		if err != nil {
+			m.logger.Error("Failed to extract assistant message in streaming loop", err)
+			break
+		}
+
+		currentRequest.Messages = append(currentRequest.Messages, assistantMessage)
+		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
+
+		m.logger.Debug("Updated request for streaming tool call continuation", "messageCount", len(currentRequest.Messages))
+
+		currentRequest.Model = providerModel
+		streamCh, err := provider.StreamChatCompletions(ctx, currentRequest)
+		if err != nil {
+			m.logger.Error("Failed to stream chat completion in agent loop", err)
+			break
+		}
+
+		var nextResponseBody strings.Builder
+		hasContent := false
+
+		for chunk := range streamCh {
+			if _, err := w.ResponseWriter.Write([]byte("data: " + string(chunk) + "\n\n")); err != nil {
+				m.logger.Error("Failed to write chunk in streaming loop", err)
+				break
+			}
+
+			if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+				flusher.Flush()
+			}
+
+			nextResponseBody.WriteString("data: " + string(chunk) + "\n")
+			hasContent = true
+		}
+
+		if !hasContent {
+			break
+		}
+
+		responseBody = nextResponseBody.String()
+		toolCalls, err = m.parseStreamingToolCalls(responseBody)
+		if err != nil {
+			m.logger.Error("Failed to parse streaming tool calls in agent loop", err)
+			break
+		}
+
+		iteration++
+	}
+
+	if iteration >= maxIterations {
+		m.logger.Error("Streaming agent loop reached maximum iterations", fmt.Errorf("max iterations reached: %d", maxIterations))
 	}
 
 	if _, err := w.ResponseWriter.Write([]byte("data: [DONE]\n\n")); err != nil {
@@ -428,17 +464,38 @@ func (m *MCPMiddlewareImpl) parseStreamingToolCalls(responseBody string) ([]prov
 			if toolCallChunk.Type != nil {
 				toolCall.Type = providers.ChatCompletionToolType(*toolCallChunk.Type)
 			}
-
 			if toolCallChunk.Function != nil {
-				var rawData map[string]interface{}
-				chunkBytes, _ := json.Marshal(toolCallChunk)
-				if err := json.Unmarshal(chunkBytes, &rawData); err == nil {
-					if function, ok := rawData["function"].(map[string]interface{}); ok {
-						if name, ok := function["name"].(string); ok {
-							toolCall.Function.Name = name
-						}
-						if arguments, ok := function["arguments"].(string); ok {
-							toolCall.Function.Arguments += arguments
+				type TempToolCallFunction struct {
+					Name      string `json:"name,omitempty"`
+					Arguments string `json:"arguments,omitempty"`
+				}
+				type TempToolCall struct {
+					Index    int                  `json:"index"`
+					Function TempToolCallFunction `json:"function"`
+				}
+				type TempChoice struct {
+					Delta struct {
+						ToolCalls []TempToolCall `json:"tool_calls"`
+					} `json:"delta"`
+				}
+				type TempResponse struct {
+					Choices []TempChoice `json:"choices"`
+				}
+
+				var tempResp TempResponse
+				if err := json.Unmarshal([]byte(data), &tempResp); err == nil {
+					if len(tempResp.Choices) > 0 {
+						for _, tc := range tempResp.Choices[0].Delta.ToolCalls {
+							if tc.Index == index {
+								if tc.Function.Name != "" {
+									toolCall.Function.Name = tc.Function.Name
+									m.logger.Debug("Parsed tool name from stream", "name", tc.Function.Name)
+								}
+								if tc.Function.Arguments != "" {
+									toolCall.Function.Arguments += tc.Function.Arguments
+									m.logger.Debug("Parsed tool arguments from stream", "args", tc.Function.Arguments)
+								}
+							}
 						}
 					}
 				}
@@ -449,10 +506,12 @@ func (m *MCPMiddlewareImpl) parseStreamingToolCalls(responseBody string) ([]prov
 	var toolCalls []providers.ChatCompletionMessageToolCall
 	for i := 0; i < len(toolCallsMap); i++ {
 		if toolCall, exists := toolCallsMap[i]; exists {
+			m.logger.Debug("Final parsed tool call", "toolCall", fmt.Sprintf("id=%s name=%s args=%s", toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments))
 			toolCalls = append(toolCalls, *toolCall)
 		}
 	}
 
+	m.logger.Debug("Total parsed tool calls", "count", len(toolCalls))
 	return toolCalls, nil
 }
 
@@ -487,10 +546,16 @@ func (m *MCPMiddlewareImpl) extractAssistantMessageFromStream(responseBody strin
 		Content: content,
 	}
 
+	// Use the parsed tool calls directly - they already contain the correct data
 	if len(toolCalls) > 0 {
+		m.logger.Debug("Adding tool calls to assistant message", "toolCallCount", len(toolCalls))
+		for i, tc := range toolCalls {
+			m.logger.Debug("Tool call in assistant message", "index", i, "id", tc.ID, "name", tc.Function.Name, "argsLength", len(tc.Function.Arguments))
+		}
 		message.ToolCalls = &toolCalls
 	}
 
+	m.logger.Debug("Extracted assistant message", "contentLength", len(content), "hasToolCalls", message.ToolCalls != nil)
 	return message, nil
 }
 

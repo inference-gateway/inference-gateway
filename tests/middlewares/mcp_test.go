@@ -502,7 +502,11 @@ data: [DONE]`,
 
 			mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 			mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
 
 			if tt.expectToolCalls {
@@ -672,4 +676,56 @@ func TestNoopMCPMiddleware(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, "success", response["message"])
+}
+
+func TestParseStreamingToolCalls(t *testing.T) {
+	ctrl, mockRegistry, mockClient, mockMCPClient, mockLogger, _ := createMockDependencies(t)
+	defer ctrl.Finish()
+
+	cfg := createTestConfig()
+
+	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+	mockLogger.EXPECT().Info(gomock.Any(), gomock.Any()).AnyTimes()
+
+	middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mockLogger, cfg)
+	assert.NoError(t, err)
+
+	_, ok := middleware.(*middlewares.MCPMiddlewareImpl)
+	assert.True(t, ok, "Expected MCPMiddlewareImpl type")
+
+	tests := []struct {
+		name           string
+		streamResponse string
+		expectedLen    int
+		expectedName   string
+		expectedArgs   string
+	}{
+		{
+			name: "Parse tool call from streaming chunks",
+			streamResponse: `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_123","type":"function","function":{"name":"test_tool"}}]}}]}
+data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"arg1\""}}]}}]}
+data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":":\"value1\",\"arg2\":42}"}}]}}]}
+data: [DONE]`,
+			expectedLen:  1,
+			expectedName: "test_tool",
+			expectedArgs: `{"arg1":"value1","arg2":42}`,
+		},
+		{
+			name: "Parse multiple tool calls",
+			streamResponse: `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"tool_one"}},{"index":1,"id":"call_2","type":"function","function":{"name":"tool_two"}}]}}]}
+data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"x\":1}"}},{"index":1,"function":{"arguments":"{\"y\":2}"}}]}}]}
+data: [DONE]`,
+			expectedLen: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Contains(t, tt.streamResponse, "tool_calls")
+			if tt.expectedLen == 1 {
+				assert.Contains(t, tt.streamResponse, tt.expectedName)
+				assert.Contains(t, tt.streamResponse, "arg1")
+			}
+		})
+	}
 }
