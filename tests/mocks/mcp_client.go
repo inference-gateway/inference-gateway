@@ -57,10 +57,10 @@ func (mr *MockMCPClientInterfaceMockRecorder) ConvertMCPToolsToChatCompletionToo
 }
 
 // ExecuteTool mocks base method.
-func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, request mcp.Request, serverURL string) (mcp.CallToolResult, error) {
+func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, request mcp.Request, serverURL string) (*mcp.CallToolResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteTool", ctx, request, serverURL)
-	ret0, _ := ret[0].(mcp.CallToolResult)
+	ret0, _ := ret[0].(*mcp.CallToolResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

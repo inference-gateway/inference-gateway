@@ -40,7 +40,7 @@ type MCPClientInterface interface {
 	IsInitialized() bool
 
 	// ExecuteTool invokes a tool on the appropriate MCP server
-	ExecuteTool(ctx context.Context, request Request, serverURL string) (CallToolResult, error)
+	ExecuteTool(ctx context.Context, request Request, serverURL string) (*CallToolResult, error)
 
 	// GetServerCapabilities returns the server capabilities map
 	GetServerCapabilities() map[string]ServerCapabilities
@@ -103,14 +103,14 @@ func NewMCPClient(serverURLs []string, logger logger.Logger) MCPClientInterface 
 }
 
 // ExecuteTool implements MCPClientInterface.
-func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL string) (CallToolResult, error) {
+func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL string) (*CallToolResult, error) {
 	if !mc.Initialized {
-		return CallToolResult{}, ErrClientNotInitialized
+		return nil, ErrClientNotInitialized
 	}
 
 	client, exists := mc.Clients[serverURL]
 	if !exists {
-		return CallToolResult{}, ErrServerNotFound
+		return nil, ErrServerNotFound
 	}
 
 	toolName := request.Params["name"].(string)
@@ -118,7 +118,7 @@ func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL
 
 	result, err := client.CallTool(ctx, toolName, toolArgs)
 	if err != nil {
-		return CallToolResult{}, err
+		return nil, err
 	}
 
 	response := CallToolResult{
@@ -141,7 +141,7 @@ func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL
 		response.Content[i] = contentMap
 	}
 
-	return response, nil
+	return &response, nil
 }
 
 // GetServerCapabilities implements MCPClientInterface.
@@ -233,10 +233,11 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 
 			for _, tool := range toolsResult.Tools {
 				enhancedDesc := tool.Description
-				if enhancedDesc != nil {
-					*enhancedDesc += " "
+				if enhancedDesc == nil {
+					enhancedDesc = new(string)
+					*enhancedDesc = ""
 				}
-				*enhancedDesc += fmt.Sprintf("[MCP Server: %s]", url)
+				*enhancedDesc += fmt.Sprintf(" [IMPORTANT: Must specify mcpServer=\"%s\" when calling this tool]", url)
 
 				inputSchema := make(map[string]interface{})
 				if tool.InputSchema != nil {
@@ -305,6 +306,7 @@ func (mc *MCPClient) GetServerTools(serverURL string) ([]Tool, error) {
 	if tools == nil {
 		return nil, fmt.Errorf("no tools found for server %s", serverURL)
 	}
+
 	return tools, nil
 }
 
@@ -312,12 +314,51 @@ func (mc *MCPClient) GetServerTools(serverURL string) ([]Tool, error) {
 func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []providers.ChatCompletionTool {
 	tools := make([]providers.ChatCompletionTool, 0)
 	for _, tool := range serverTools {
+		description := tool.Description
+
+		inputSchema := tool.Inputschema
+
+		if inputSchema == nil {
+			inputSchema = make(map[string]interface{})
+		}
+
+		props, ok := inputSchema["properties"].(map[string]interface{})
+		if !ok {
+			props = make(map[string]interface{})
+			inputSchema["properties"] = props
+		}
+
+		if _, exists := props["mcpServer"]; !exists {
+			props["mcpServer"] = map[string]interface{}{
+				"type":        "string",
+				"description": "Required. The MCP server URL to use for this tool call. Analyze the tool description to determine which server to use.",
+			}
+		}
+
+		required, ok := inputSchema["required"].([]interface{})
+		if !ok {
+			required = []interface{}{}
+		}
+
+		mcpServerRequired := false
+		for _, req := range required {
+			if reqStr, ok := req.(string); ok && reqStr == "mcpServer" {
+				mcpServerRequired = true
+				break
+			}
+		}
+
+		if !mcpServerRequired {
+			required = append(required, "mcpServer")
+			inputSchema["required"] = required
+		}
+
 		tools = append(tools, providers.ChatCompletionTool{
 			Type: "function",
 			Function: providers.FunctionObject{
 				Name:        tool.Name,
-				Description: &tool.Description,
-				Parameters:  (*providers.FunctionParameters)(&tool.Inputschema),
+				Description: &description,
+				Parameters:  (*providers.FunctionParameters)(&inputSchema),
 			},
 		})
 	}

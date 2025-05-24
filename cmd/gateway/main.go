@@ -116,6 +116,21 @@ func main() {
 		return
 	}
 
+	// Initialize provider registry and HTTP client
+	clientConfig, err := providers.NewClientConfig()
+	if err != nil {
+		log.Printf("fatal: failed to initialize client configuration: %v", err)
+		return
+	}
+
+	scheme := "http"
+	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
+		scheme = "https"
+	}
+
+	client := providers.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
+	providerRegistry := providers.NewProviderRegistry(cfg.Providers, logger)
+
 	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
 	var mcpMiddleware middlewares.MCPMiddleware
@@ -127,28 +142,14 @@ func main() {
 			return
 		}
 
-		mcpMiddleware, err = middlewares.NewMCPMiddleware(mcpClient, logger, cfg)
+		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, logger, cfg)
 		if err != nil {
 			logger.Error("Failed to initialize MCP middleware", err)
 			return
 		}
 	} else {
-		mcpMiddleware, _ = middlewares.NewMCPMiddleware(nil, logger, cfg)
+		mcpMiddleware, _ = middlewares.NewMCPMiddleware(nil, nil, nil, logger, cfg)
 	}
-
-	scheme := "http"
-	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
-		scheme = "https"
-	}
-
-	clientConfig, err := providers.NewClientConfig()
-	if err != nil {
-		log.Printf("fatal: failed to initialize client configuration: %v", err)
-		return
-	}
-
-	client := providers.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
-	providerRegistry := providers.NewProviderRegistry(cfg.Providers, logger)
 
 	// Set GIN mode based on environment
 	if cfg.Environment != "development" {

@@ -12,6 +12,7 @@ Today is May 23, 2025.
 - Always prefer type safety over dynamic typing: Use strong typing and interfaces to ensure type safety and reduce runtime errors.
 - When working on MCP (Model Context Protocol) related tasks, always refer to the official MCP documentation and examples for guidance and ensure you run `task jrpc-mcp-schema-download` and `task generate` to keep the MCP Golang types up to date.
 - When possible code to an interface so it's easier to mock in tests.
+- When writing tests, each test case should have it's own isolated mock server mock dependecies so it's easier to understand and maintain.
 
 ## Available Tools and MCPs
 

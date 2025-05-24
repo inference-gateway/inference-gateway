@@ -46,7 +46,7 @@ Once the services are running, you can make requests to the Inference Gateway us
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "deepseek/deepseek-chat",
+  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
   "messages": [
     {
       "role": "system",
@@ -64,7 +64,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "deepseek/deepseek-chat",
+  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
   "messages": [
     {
       "role": "system",

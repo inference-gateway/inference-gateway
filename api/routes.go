@@ -457,7 +457,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	providerID := providers.Provider(c.Query("provider"))
 	if providerID == "" {
 		var providerPtr *providers.Provider
-		providerPtr, model = determineProviderAndModelName(model)
+		providerPtr, model = providers.DetermineProviderAndModelName(model)
 		if providerPtr == nil {
 			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider."})
@@ -536,42 +536,4 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
-}
-
-func determineProviderAndModelName(model string) (provider *providers.Provider, modelName string) {
-	modelLower := strings.ToLower(model)
-
-	// First check for explicit provider prefixes (ollama-, groq-, etc.)
-	providerPrefixMapping := map[string]providers.Provider{
-		"ollama/":     providers.OllamaID,
-		"groq/":       providers.GroqID,
-		"cloudflare/": providers.CloudflareID,
-		"openai/":     providers.OpenaiID,
-		"anthropic/":  providers.AnthropicID,
-		"cohere/":     providers.CohereID,
-		"deepseek/":   providers.DeepseekID,
-	}
-
-	for prefix, providerID := range providerPrefixMapping {
-		if strings.HasPrefix(modelLower, prefix) {
-			return &providerID, strings.TrimPrefix(model, prefix)
-		}
-	}
-
-	// Then check for model-name based prefixes (gpt-, claude-, etc.)
-	modelPrefixMapping := map[string]providers.Provider{
-		"gpt-":      providers.OpenaiID,
-		"claude-":   providers.AnthropicID,
-		"llama-":    providers.GroqID,
-		"command-":  providers.CohereID,
-		"deepseek-": providers.GroqID,
-	}
-
-	for prefix, providerID := range modelPrefixMapping {
-		if strings.HasPrefix(modelLower, prefix) {
-			return &providerID, model
-		}
-	}
-
-	return nil, model
 }
