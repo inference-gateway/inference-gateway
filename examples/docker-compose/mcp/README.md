@@ -279,7 +279,7 @@ All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 
 The following environment variables can be configured:
 
-- `ENABLE_MCP`: Set to "true" to enable MCP middleware
+- `MCP_ENABLE`: Set to "true" to enable MCP middleware
 - `MCP_SERVERS`: Comma-separated list of MCP server URLs
 
 ## Adding Custom MCP Servers
