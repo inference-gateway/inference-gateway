@@ -163,11 +163,8 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 
 		client := mc.NewClient(url)
 
-		initCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
-		defer cancel()
-
 		mc.Logger.Debug("MCP: Attempting client initialization with timeout", "server", url, "timeout", mc.Config.MCP.RequestTimeout.String())
-		result, err := client.Initialize(initCtx)
+		result, err := client.Initialize(ctx)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
 				mc.Logger.Error("MCP: Client initialization timed out", err, "server", url)

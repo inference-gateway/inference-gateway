@@ -104,94 +104,170 @@ data:
 
     import (
       "context"
+      "encoding/json"
       "fmt"
       "log"
-      "net/http"
       "strings"
-      "time"
 
       "github.com/gin-gonic/gin"
       mcp_golang "github.com/metoro-io/mcp-golang"
-      http_transport "github.com/metoro-io/mcp-golang/transport/http"
+      httpTransport "github.com/metoro-io/mcp-golang/transport/http"
     )
 
+    // SearchArgs defines the arguments for the search tool
     type SearchArgs struct {
-      Query string `json:"query" jsonschema:"description=The search query"`
-      Limit int    `json:"limit,omitempty" jsonschema:"description=Maximum number of results to return"`
+      Query string `json:"query" jsonschema:"description=The search query string"`
+      Limit int    `json:"limit,omitempty" jsonschema:"description=Maximum number of results to return (default: 5)"`
+    }
+
+    // SearchResult represents a single search result
+    type SearchResult struct {
+      Title   string `json:"title"`
+      Snippet string `json:"snippet"`
+      URL     string `json:"url"`
+    }
+
+    // SearchResponse contains a list of search results
+    type SearchResponse struct {
+      Results []SearchResult `json:"results"`
+      Total   int            `json:"total"`
+      Query   string         `json:"query"`
     }
 
     func main() {
-      log.Println("Initializing MCP Search Server...")
+      // Create a Gin transport
+      transport := httpTransport.NewGinTransport()
 
-      gin.SetMode(gin.ReleaseMode)
-
-      log.Println("Creating Gin transport...")
-      transport := http_transport.NewGinTransport()
-
-      log.Println("Creating MCP server...")
+      // Create a new server with the transport
       server := mcp_golang.NewServer(transport, mcp_golang.WithName("mcp-search-server"), mcp_golang.WithVersion("0.0.1"))
 
-      err := server.RegisterTool("search", "Performs a web search and returns results", func(ctx context.Context, args SearchArgs) (*mcp_golang.ToolResponse, error) {
-        if args.Query == "" {
-          return nil, fmt.Errorf("search query cannot be empty")
+      // Register search tool
+      err := server.RegisterTool("search", "Performs a web search with the given query", func(ctx context.Context, args SearchArgs) (*mcp_golang.ToolResponse, error) {
+        ginCtx, ok := ctx.Value("ginContext").(*gin.Context)
+        if !ok {
+          return nil, fmt.Errorf("ginContext not found in context")
+        }
+        userAgent := ginCtx.GetHeader("User-Agent")
+        log.Printf("Request from User-Agent: %s", userAgent)
+
+        log.Printf("Received search request with query: %s, limit: %d", args.Query, args.Limit)
+
+        // Set default limit if not specified
+        limit := args.Limit
+        if limit <= 0 {
+          limit = 5
         }
 
-        if args.Limit == 0 {
-          args.Limit = 5
+        // Perform mock search (in a real implementation, this would call a search API)
+        results := performMockSearch(args.Query, limit)
+
+        // Convert to JSON for structured response
+        jsonResults, err := json.Marshal(results)
+        if err != nil {
+          return nil, fmt.Errorf("failed to marshal search results: %v", err)
         }
 
-        mockResults := []string{
-          fmt.Sprintf("Search result 1 for '%s': This is a comprehensive guide about %s", args.Query, args.Query),
-          fmt.Sprintf("Search result 2 for '%s': Learn more about %s with this tutorial", args.Query, args.Query),
-          fmt.Sprintf("Search result 3 for '%s': %s best practices and examples", args.Query, strings.Title(args.Query)),
-          fmt.Sprintf("Search result 4 for '%s': Advanced %s techniques and tips", args.Query, args.Query),
-          fmt.Sprintf("Search result 5 for '%s': %s documentation and reference", args.Query, strings.Title(args.Query)),
-        }
-
-        if args.Limit < len(mockResults) {
-          mockResults = mockResults[:args.Limit]
-        }
-
-        resultText := fmt.Sprintf("Search results for '%s':\n\n", args.Query)
-        for i, result := range mockResults {
-          resultText += fmt.Sprintf("%d. %s\n\n", i+1, result)
-        }
-
-        return &mcp_golang.ToolResponse{
-          Content: []*mcp_golang.Content{
-            {
-              Type:        "text",
-              TextContent: &mcp_golang.TextContent{Text: resultText},
-            },
-          },
-        }, nil
+        return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(string(jsonResults))), nil
       })
-
       if err != nil {
-        log.Fatalf("Failed to register tool: %v", err)
+        panic(err)
       }
 
-      log.Println("Setting up Gin router...")
-      router := gin.Default()
+      go server.Serve()
 
-      log.Println("Registering MCP endpoint...")
-      router.POST("/mcp", transport.Handler())
+      // Create a Gin router
+      r := gin.Default()
 
-      log.Println("Registering health endpoint...")
-      router.GET("/health", func(c *gin.Context) {
-        log.Println("Health check requested")
-        c.JSON(http.StatusOK, gin.H{
-          "status":    "healthy",
-          "service":   "mcp-search-server",
-          "timestamp": time.Now().Unix(),
+      // Add CORS middleware
+      r.Use(func(c *gin.Context) {
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+        if c.Request.Method == "OPTIONS" {
+          c.AbortWithStatus(204) // Using 204 No Content status code
+          return
+        }
+
+        c.Next()
+      })
+
+      // Add the MCP endpoint
+      r.POST("/mcp", transport.Handler())
+
+      // Add a health check endpoint
+      r.GET("/health", func(c *gin.Context) {
+        c.JSON(200, gin.H{
+          "status": "ok",
         })
       })
 
-      log.Println("About to start HTTP server on 0.0.0.0:8082...")
-      log.Printf("Server will listen on all interfaces, port 8082")
+      // Start the server
+      log.Println("Starting MCP Search Server on 0.0.0.0:8082...")
+      if err := r.Run("0.0.0.0:8082"); err != nil {
+        log.Fatalf("Server error: %v", err)
+      }
+    }
 
-      if err := router.Run("0.0.0.0:8082"); err != nil {
-        log.Fatalf("Failed to start HTTP server: %v", err)
+    // performMockSearch returns mock search results for demonstration purposes
+    func performMockSearch(query string, limit int) SearchResponse {
+      // In a real implementation, this would call an actual search API
+      mockResults := []SearchResult{
+        {
+          Title:   "Understanding the Model Context Protocol",
+          Snippet: "Learn about MCP and how it enables AI models to interact with external tools and data sources.",
+          URL:     "https://modelcontextprotocol.github.io/",
+        },
+        {
+          Title:   "Inference Gateway Documentation",
+          Snippet: "Comprehensive guide to using Inference Gateway for AI model inference and integration.",
+          URL:     "https://github.com/inference-gateway/inference-gateway",
+        },
+        {
+          Title:   "Function Calling in LLMs",
+          Snippet: "How large language models use function calling to interact with external systems and APIs.",
+          URL:     "https://ai-docs.example.com/function-calling",
+        },
+        {
+          Title:   "Building MCP Servers in Go",
+          Snippet: "Tutorial on creating Model Context Protocol servers using Golang and the mcp-golang library.",
+          URL:     "https://golang-tutorials.example.com/mcp",
+        },
+        {
+          Title:   "AI Tool Integration Best Practices",
+          Snippet: "Learn the best practices for integrating AI models with external tools and services.",
+          URL:     "https://ai-integration.example.com/best-practices",
+        },
+        {
+          Title:   "Search APIs for AI Applications",
+          Snippet: "Guide to implementing search functionality in AI applications and tools.",
+          URL:     "https://apis.example.com/search-for-ai",
+        },
+      }
+
+      // Filter results based on query (simple contains check for demonstration)
+      filtered := make([]SearchResult, 0)
+      for _, result := range mockResults {
+        if strings.Contains(strings.ToLower(result.Title), strings.ToLower(query)) ||
+          strings.Contains(strings.ToLower(result.Snippet), strings.ToLower(query)) {
+          filtered = append(filtered, result)
+        }
+      }
+
+      // If no results found (or query is empty), return all results
+      if len(filtered) == 0 || query == "" {
+        filtered = mockResults
+      }
+
+      // Limit the number of results
+      if len(filtered) > limit {
+        filtered = filtered[:limit]
+      }
+
+      return SearchResponse{
+        Results: filtered,
+        Total:   len(filtered),
+        Query:   query,
       }
     }
 

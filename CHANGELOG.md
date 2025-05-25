@@ -2,6 +2,83 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.7.0-rc.1...v0.7.0-rc.2) (2025-05-25)
+
+### 🐛 Bug Fixes
+
+* **mcp:** Add timeout handling for MCP client initialization and log success message ([5c44d65](https://github.com/inference-gateway/inference-gateway/commit/5c44d6524d6982449ffd0737a21fdce28125e960))
+* **mcp:** Increase timeout values and update log commands for MCP servers ([30a3b4d](https://github.com/inference-gateway/inference-gateway/commit/30a3b4df644cf1ddd408e1c339711c871032226a))
+
+### 📚 Documentation
+
+* Add note for skipping setup step in VSCode dev container ([4946dcb](https://github.com/inference-gateway/inference-gateway/commit/4946dcb44487999775be93fe5005ba48663777e3))
+* **fix:** Update README to clarify optional API key setup and ensure MCP servers are deployed ([207bef7](https://github.com/inference-gateway/inference-gateway/commit/207bef7f3dfeb97ca07e2a3dd74d3169651fe08e))
+
+### 🔧 Miscellaneous
+
+* update CHART_VERSION to 0.7.0-rc.1 in Taskfile.yaml ([c527c58](https://github.com/inference-gateway/inference-gateway/commit/c527c58ed7939f72ced2359bcba7da6154886d64))
+
+## [0.7.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.6.3...v0.7.0-rc.1) (2025-05-25)
+
+### ✨ Features
+
+* Add MCP client timeout configurations and update related components ([2ac15c5](https://github.com/inference-gateway/inference-gateway/commit/2ac15c5384dec2276e05126edc43e426efd402dd))
+* Add MCP middleware tests and mock implementations ([022f654](https://github.com/inference-gateway/inference-gateway/commit/022f654e2fe284fbeb24076cf73bda8ab043df4f))
+* Add MCP tools endpoint and expose configuration ([024b29c](https://github.com/inference-gateway/inference-gateway/commit/024b29c7c6bbd885395de21be7d53964292c47c8))
+* Enhance MCP middleware error handling and response formatting ([1cadb80](https://github.com/inference-gateway/inference-gateway/commit/1cadb80857ea7f639d4276113a8ca78cde073cde))
+* Enhance MCP streaming response handling and add examples to documentation ([0c348ad](https://github.com/inference-gateway/inference-gateway/commit/0c348ad2c7d7fbed7b7f2e7e4880a76104a898f0))
+* Implement MCP client interface and middleware integration with tool execution capabilities ([333f8e7](https://github.com/inference-gateway/inference-gateway/commit/333f8e714875967ce1d72acf210e199797e199f3))
+* Implement the standard HTTP MCP middleware and enhance MCP Time Server in the examples ([e3a07e6](https://github.com/inference-gateway/inference-gateway/commit/e3a07e6ee06f46191215d64aa537a7a6873ce590))
+* Integrate Model Context Protocol (MCP) support with middleware and configuration options ([e6a1f04](https://github.com/inference-gateway/inference-gateway/commit/e6a1f040e3089239ea7fdad5305e106848325263))
+
+### ♻️ Improvements
+
+* Create a dedicated Model Context Protocol (MCP) configuration section and documentation updates ([53da3dd](https://github.com/inference-gateway/inference-gateway/commit/53da3dd89e19628ec464a7fce9bc4a45d53a8ae2))
+* **mcp:** Simplify MCPClientInterface - only add the methods needed ([3f95f75](https://github.com/inference-gateway/inference-gateway/commit/3f95f757ed4ba452ab05b9c155528dce4f7409ff))
+* **middleware:** Enhance MCP middleware to process tool calls only when absolutely necessary ([daa53a7](https://github.com/inference-gateway/inference-gateway/commit/daa53a78210eae92cebca2533cfc5f8bc3d9a6ac))
+* **middleware:** Implement chat completions endpoint and enhance request/response handling, use pre-defined types. ([a897d54](https://github.com/inference-gateway/inference-gateway/commit/a897d54258ec81af6fe8ffa0cfb3740108644c86))
+* **mocks:** Run task generate - Remove unused DiscoverCapabilities and StreamChatWithTools methods from MockMCPClientInterface ([3c55bd3](https://github.com/inference-gateway/inference-gateway/commit/3c55bd34f0a898e47be48314cf79c1af89b812e0))
+* Refactor MCP Middleware and Client Implementation ([c19a8e5](https://github.com/inference-gateway/inference-gateway/commit/c19a8e5e70a042b36d84759f000ed6c3489ccd49))
+* Refactor MCP middleware tests and update mock implementations ([2f0b886](https://github.com/inference-gateway/inference-gateway/commit/2f0b8861e43933121dea22980d53ba230e29ef81))
+* Remove unnecessary else statement ([f3947ec](https://github.com/inference-gateway/inference-gateway/commit/f3947ec065b2c9fb786ae9c34327a7e5dc91ae4b))
+* Sync latest changes from Anthropic official MCP implementation ([59e5ba4](https://github.com/inference-gateway/inference-gateway/commit/59e5ba4233b122b7217d032d52e5470782faf40f))
+* Update MCP types generation and improve schema format handling ([ccfadfd](https://github.com/inference-gateway/inference-gateway/commit/ccfadfd7362314fc40e5ede14df4649e7d79e879))
+
+### 🐛 Bug Fixes
+
+* Add error handling for response and request body encoding/decoding in MCP middleware and tests ([8ed9901](https://github.com/inference-gateway/inference-gateway/commit/8ed9901ef14ec949964616c53fac64976ae81a40))
+* Correct gitattributes entry for mcp/generated_types.go ([4479724](https://github.com/inference-gateway/inference-gateway/commit/4479724564e3be703e57ebd995714ab2d66b0982))
+* **docker:** Ensure MCP directory is copied in Dockerfile for proper build ([2977b4f](https://github.com/inference-gateway/inference-gateway/commit/2977b4f2d6f8adcb09c7b13930bb25d742e7a96e))
+* **middleware:** Add streaming request handling and context key for SSE events ([a664bb4](https://github.com/inference-gateway/inference-gateway/commit/a664bb4a53c59bf49acc161b5c6b2f74aea5314d))
+* **test:** Update expected response structure in MCP middleware tests to reflect changes in content handling instead of in response ([37bc074](https://github.com/inference-gateway/inference-gateway/commit/37bc0747690cfd0caa61ad9efd1dde0615b79d3c))
+* Update environment variables in docker-compose for MCP configuration ([ce7060d](https://github.com/inference-gateway/inference-gateway/commit/ce7060d6be6d97d2bf06b51c473d4f5bc0f5ec72))
+
+### 📚 Documentation
+
+* Add MCP support to README and update architecture diagram ([1892bde](https://github.com/inference-gateway/inference-gateway/commit/1892bdeb51016c47e5d07462aa7d560618e48fef))
+* Add MCP_EXPOSE environment variable to README for exposing MCP endpoints ([5bada81](https://github.com/inference-gateway/inference-gateway/commit/5bada81846cb23aa0cdd1c2587a2379246a358fa))
+* **examples-mcp-filesystem:** Add filesystem server to MCP with file management capabilities ([d37cfed](https://github.com/inference-gateway/inference-gateway/commit/d37cfeda61cc6fd188bf1d39237e126351c26e47))
+* **examples-mcp-kubernetes:** Add MCP Time Server deployment, service, and configuration ([731575e](https://github.com/inference-gateway/inference-gateway/commit/731575e65909e644a473bf4b652487f0ce1ddcf5))
+* **examples:** Add MCP Search Server and update README with search functionality ([b4be79a](https://github.com/inference-gateway/inference-gateway/commit/b4be79ad8016b250eab4464072a9d2a0f87fcbb3))
+* **fix:** Rename environment variable for enabling MCP middleware ([cb4d932](https://github.com/inference-gateway/inference-gateway/commit/cb4d932d4823a183b55a7f8e05798e1b770fa5e5))
+* Improve docs - mention the UI project ([#77](https://github.com/inference-gateway/inference-gateway/issues/77)) ([be5cb70](https://github.com/inference-gateway/inference-gateway/commit/be5cb702b1265e44d41185c117f364758a93ac38))
+* Update README with comprehensive Table of Contents and MCP Inspector details ([55eab5e](https://github.com/inference-gateway/inference-gateway/commit/55eab5e547c9cd55a2dc50bebd1f3e546aa9659d))
+* Update the Examples ([#76](https://github.com/inference-gateway/inference-gateway/issues/76)) ([a35b7ac](https://github.com/inference-gateway/inference-gateway/commit/a35b7ac06efb45c1d10d5767e90dd46d32e1d070))
+
+### 🔧 Miscellaneous
+
+* Add MCP client timeout configurations and update related documentation ([e275623](https://github.com/inference-gateway/inference-gateway/commit/e275623835cd168c711b51440a396b4b6f7e3061))
+* Enhance MCP middleware to process tool calls and handle response body ([d22a871](https://github.com/inference-gateway/inference-gateway/commit/d22a871b6e65f11f85ceec8277c1aff0286c0b83))
+* Merge branch 'main' into feature/implement-mcp-middleware ([afd1372](https://github.com/inference-gateway/inference-gateway/commit/afd13722f14f004145e7c0a61c9bf746b5a3dc78))
+* Remove unused indirect dependencies from go.mod and go.sum ([65cf0a2](https://github.com/inference-gateway/inference-gateway/commit/65cf0a23471136a1cc318adca5cd3e0b85007701))
+* Update go.uber.org/mock to v0.5.2 and add new indirect dependencies ([75e29e2](https://github.com/inference-gateway/inference-gateway/commit/75e29e29f083d9f665babf7d571a42b6cbbd905d))
+
+### 🔨 Miscellaneous
+
+* Add MCP configuration for fetch command in devcontainer ([3c08b93](https://github.com/inference-gateway/inference-gateway/commit/3c08b9376934a94c08806faf29645c7bb5a09c2e))
+* Add MCP Context7 to fetch latest documentation about any library ([268e9ee](https://github.com/inference-gateway/inference-gateway/commit/268e9eed4b3db9c03b258b00be7df1afc4e867c2))
+* Improve codegen - add MCP types and update client interfaces ([399a5d5](https://github.com/inference-gateway/inference-gateway/commit/399a5d554b3c6db01dff7b2cfb107ea5665c0c76))
+
 ## [0.6.3](https://github.com/inference-gateway/inference-gateway/compare/v0.6.2...v0.6.3) (2025-05-22)
 
 ### 🐛 Bug Fixes

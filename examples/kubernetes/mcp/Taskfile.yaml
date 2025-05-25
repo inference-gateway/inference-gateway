@@ -3,7 +3,7 @@ version: "3"
 vars:
   NAMESPACE: inference-gateway
   RELEASE_NAME: inference-gateway
-  CHART_VERSION: 0.6.3
+  CHART_VERSION: 0.7.0-rc.2
   CHART: oci://ghcr.io/inference-gateway/charts/inference-gateway
 
 tasks:
@@ -174,15 +174,16 @@ tasks:
             meta.helm.sh/release-name: {{.RELEASE_NAME}}
             meta.helm.sh/release-namespace: {{.NAMESPACE}}
         data:
+          ENVIRONMENT: "development"
           MCP_ENABLE: "true"
           MCP_EXPOSE: "true"
           MCP_SERVERS: "http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp"
-          MCP_CLIENT_TIMEOUT: "10s"
-          MCP_DIAL_TIMEOUT: "5s"
-          MCP_TLS_HANDSHAKE_TIMEOUT: "5s"
-          MCP_RESPONSE_HEADER_TIMEOUT: "5s"
-          MCP_EXPECT_CONTINUE_TIMEOUT: "2s"
-          MCP_REQUEST_TIMEOUT: "10s"
+          MCP_CLIENT_TIMEOUT: "5s"
+          MCP_DIAL_TIMEOUT: "3s"
+          MCP_TLS_HANDSHAKE_TIMEOUT: "3s"
+          MCP_RESPONSE_HEADER_TIMEOUT: "3s"
+          MCP_EXPECT_CONTINUE_TIMEOUT: "1s"
+          MCP_REQUEST_TIMEOUT: "5s"
         EOF
       - |
         helm upgrade --install \
@@ -205,6 +206,8 @@ tasks:
     desc: "Deploy complete MCP setup"
     cmds:
       - task: deploy-infrastructure
+      - task: deploy-mcp-servers
+      - task: wait
       - task: deploy-inference-gateway
       - echo "🎉 Complete MCP setup deployed successfully!"
       - echo ""
@@ -337,9 +340,9 @@ tasks:
   logs:mcp-servers:
     desc: "Show logs from MCP servers only"
     cmds:
-      - kubectl logs -l app=mcp-time-server -n {{.NAMESPACE}} --tail=50
-      - kubectl logs -l app=mcp-search-server -n {{.NAMESPACE}} --tail=50
-      - kubectl logs -l app=mcp-filesystem-server -n {{.NAMESPACE}} --tail=50
+      - kubectl logs -l app.kubernetes.io/name=mcp-time-server -n {{.NAMESPACE}} --tail=50
+      - kubectl logs -l app.kubernetes.io/name=mcp-search-server -n {{.NAMESPACE}} --tail=50
+      - kubectl logs -l app.kubernetes.io/name=mcp-filesystem-server -n {{.NAMESPACE}} --tail=50
 
   status:
     desc: "Show status of all resources"
@@ -367,9 +370,10 @@ tasks:
   restart:
     desc: "Restart all deployments"
     cmds:
-      - kubectl rollout restart deployment -n {{.NAMESPACE}}
+      - kubectl rollout restart deployment --selector=app.kubernetes.io/component=mcp-server -n {{.NAMESPACE}}
       - echo "🔄 All deployments restarted!"
       - task: wait
+      - kubectl rollout restart deployment/{{.RELEASE_NAME}} -n {{.NAMESPACE}}
 
   undeploy:
     desc: "Remove all MCP components"
