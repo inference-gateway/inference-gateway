@@ -2,6 +2,8 @@
 
 This example demonstrates how to deploy the Inference Gateway with Model Context Protocol (MCP) support in Kubernetes, allowing LLMs to access external tools and data through multiple MCP servers.
 
+> **⚠️ Important Notice**: The MCP servers included in this example (time, search, and filesystem servers) are simplified implementations designed for demonstration and testing purposes only. They should **NOT** be used in production environments without proper security hardening, input validation, authentication, authorization, and error handling. For production deployments, implement proper MCP servers with comprehensive security measures and robust error handling.
+
 ## Table of Contents
 
 - [Model Context Protocol (MCP) Integration Example](#model-context-protocol-mcp-integration-example)
@@ -104,11 +106,13 @@ The Model Context Protocol is an open standard for implementing function calling
 ## Components
 
 - **Inference Gateway**: Main service deployed via official Helm chart with MCP configuration
-- **MCP Time Server**: Provides time-related tools and utilities
-- **MCP Search Server**: Provides web search functionality (mock implementation)
-- **MCP Filesystem Server**: Provides file operations (read, write, delete, list directories)
+- **MCP Time Server**: Provides time-related tools and utilities _(example implementation only)_
+- **MCP Search Server**: Provides web search functionality _(mock implementation for demo purposes)_
+- **MCP Filesystem Server**: Provides file operations (read, write, delete, list directories) _(example implementation only)_
 - **MCP Inspector**: Web-based debugging tool for exploring and testing MCP servers
 - **NGINX Ingress**: Routes external traffic to the gateway
+
+> **Note**: The MCP servers in this example are basic implementations for demonstration purposes. They lack production-ready features such as proper authentication, authorization, input validation, rate limiting, and comprehensive error handling.
 
 ## Prerequisites
 
