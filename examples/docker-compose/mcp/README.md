@@ -16,6 +16,7 @@ The Model Context Protocol is an open standard for implementing function calling
 - **Inference Gateway**: The main service that proxies requests to LLM providers
 - **MCP Time Server**: A simple MCP server that provides time data tools
 - **MCP Search Server**: A simple MCP server that provides web search functionality
+- **MCP Filesystem Server**: A practical MCP server that provides file operations (read, write, delete, list directories)
 
 ## Setup Instructions
 
@@ -115,14 +116,92 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 }'
 ```
 
+### Example 5: Filesystem Operations
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant with access to filesystem operations."
+    },
+    {
+      "role": "user",
+      "content": "Create a file called hello.txt with the content \"Hello, MCP World!\" and then read it back to me."
+    }
+  ]
+}'
+```
+
+Notice the file was created in filesystem-data directory.
+
+### Example 6: Directory Management
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant with access to filesystem operations."
+    },
+    {
+      "role": "user",
+      "content": "Create a directory called projects, then create a subdirectory called mcp-demo, and list the contents of the projects directory."
+    }
+  ]
+}'
+```
+
+### Example 7: File Information and Management
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant with access to filesystem operations."
+    },
+    {
+      "role": "user",
+      "content": "Check if a file called config.json exists, and if not, create it with some sample JSON configuration data. Then show me the file information."
+    }
+  ]
+}'
+```
+
 ## How It Works
 
 When you send a request to the Inference Gateway, it will:
 
-1. Discover the tools available from both MCP servers (time and search)
+1. Discover the tools available from all MCP servers (time, search, and filesystem)
 2. Inject these tools into the LLM request
 3. Process any tool calls made by the LLM
 4. Return the complete response with tool results
+
+## Available Tools
+
+### Time Server Tools
+
+- **time**: Get the current time in various formats
+
+### Search Server Tools
+
+- **search**: Perform web searches for information
+
+### Filesystem Server Tools
+
+- **write_file**: Write content to a file (supports overwrite and append modes)
+- **read_file**: Read content from a file
+- **delete_file**: Delete a file
+- **list_directory**: List directory contents (supports recursive listing)
+- **create_directory**: Create a directory
+- **file_exists**: Check if a file or directory exists
+- **file_info**: Get detailed information about a file or directory
+
+All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 
 ## Configuration Options
 
@@ -139,6 +218,12 @@ You can add more MCP-compliant servers to the setup by:
 2. Ensuring the server implements the MCP specification
 3. Verifying the server has proper CORS settings for web clients
 4. Updating the docker-compose.yml to include your new MCP server
+
+The current example includes three servers running on different ports:
+
+- Time Server: http://mcp-time-server:8081/mcp
+- Search Server: http://mcp-search-server:8082/mcp
+- Filesystem Server: http://mcp-filesystem-server:8083/mcp
 
 ## Learn More
 

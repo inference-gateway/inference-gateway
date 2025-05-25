@@ -11,11 +11,13 @@ services:
     environment:
       ENVIRONMENT: development
       ENABLE_MCP: true
-      MCP_SERVERS: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp
+      MCP_SERVERS: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp
     depends_on:
       mcp-time-server:
         condition: service_healthy
       mcp-search-server:
+        condition: service_healthy
+      mcp-filesystem-server:
         condition: service_healthy
     networks:
       - mcp-network
@@ -31,13 +33,15 @@ services:
     environment:
       LOG_LEVEL: debug
       HOST: 0.0.0.0
-      MCP_SERVER_URL: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp
+      MCP_SERVER_URL: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp
     networks:
       - mcp-network
     depends_on:
       mcp-time-server:
         condition: service_healthy
       mcp-search-server:
+        condition: service_healthy
+      mcp-filesystem-server:
         condition: service_healthy
 
   mcp-time-server:
@@ -65,6 +69,23 @@ services:
       sh -c "apk add --no-cache curl && go run main.go"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - mcp-network
+
+  mcp-filesystem-server:
+    image: golang:1.23-alpine
+    working_dir: /app
+    volumes:
+      - ./filesystem-server:/app
+      - ./filesystem-data:/tmp/mcp-files
+    command: >
+      sh -c "apk add --no-cache curl && go run main.go"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
       interval: 30s
       timeout: 10s
       retries: 3
