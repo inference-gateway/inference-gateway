@@ -370,9 +370,10 @@ tasks:
   restart:
     desc: "Restart all deployments"
     cmds:
-      - kubectl rollout restart deployment -n {{.NAMESPACE}}
+      - kubectl rollout restart deployment --selector=app.kubernetes.io/component=mcp-server -n {{.NAMESPACE}}
       - echo "🔄 All deployments restarted!"
       - task: wait
+      - kubectl rollout restart deployment/{{.RELEASE_NAME}} -n {{.NAMESPACE}}
 
   undeploy:
     desc: "Remove all MCP components"
