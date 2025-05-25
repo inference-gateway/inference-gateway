@@ -136,11 +136,17 @@ func main() {
 	var mcpMiddleware middlewares.MCPMiddleware
 	if cfg.MCP.Enable && cfg.MCP.Servers != "" {
 		mcpClient = mcp.NewMCPClient(strings.Split(cfg.MCP.Servers, ","), logger, cfg)
-		initErr := mcpClient.InitializeAll(context.Background())
+
+		initCtx, cancel := context.WithTimeout(context.Background(), cfg.MCP.RequestTimeout)
+		defer cancel()
+
+		logger.Info("MCP: Starting client initialization", "timeout", cfg.MCP.RequestTimeout.String())
+		initErr := mcpClient.InitializeAll(initCtx)
 		if initErr != nil {
 			logger.Error("Failed to initialize MCP client", initErr)
 			return
 		}
+		logger.Info("MCP client initialized successfully")
 
 		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, logger, cfg)
 		if err != nil {
