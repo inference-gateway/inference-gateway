@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.7.0-rc.1...v0.7.0-rc.2) (2025-05-25)
+
+### 🐛 Bug Fixes
+
+* **mcp:** Add timeout handling for MCP client initialization and log success message ([5c44d65](https://github.com/inference-gateway/inference-gateway/commit/5c44d6524d6982449ffd0737a21fdce28125e960))
+* **mcp:** Increase timeout values and update log commands for MCP servers ([30a3b4d](https://github.com/inference-gateway/inference-gateway/commit/30a3b4df644cf1ddd408e1c339711c871032226a))
+
+### 📚 Documentation
+
+* Add note for skipping setup step in VSCode dev container ([4946dcb](https://github.com/inference-gateway/inference-gateway/commit/4946dcb44487999775be93fe5005ba48663777e3))
+* **fix:** Update README to clarify optional API key setup and ensure MCP servers are deployed ([207bef7](https://github.com/inference-gateway/inference-gateway/commit/207bef7f3dfeb97ca07e2a3dd74d3169651fe08e))
+
+### 🔧 Miscellaneous
+
+* update CHART_VERSION to 0.7.0-rc.1 in Taskfile.yaml ([c527c58](https://github.com/inference-gateway/inference-gateway/commit/c527c58ed7939f72ced2359bcba7da6154886d64))
+
 ## [0.7.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.6.3...v0.7.0-rc.1) (2025-05-25)
 
 ### ✨ Features
