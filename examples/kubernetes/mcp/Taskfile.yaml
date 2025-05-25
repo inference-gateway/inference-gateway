@@ -3,7 +3,7 @@ version: "3"
 vars:
   NAMESPACE: inference-gateway
   RELEASE_NAME: inference-gateway
-  CHART_VERSION: 0.6.3
+  CHART_VERSION: 0.7.0-rc.1
   CHART: oci://ghcr.io/inference-gateway/charts/inference-gateway
 
 tasks:
