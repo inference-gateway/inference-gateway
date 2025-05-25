@@ -129,7 +129,7 @@ The Model Context Protocol is an open standard for implementing function calling
    This will:
 
    - Create a k3d cluster with ingress
-   - Set up API keys for inference providers
+   - Set up API keys for inference providers (press enter to skip)
    - Deploy all MCP servers
    - Deploy the Inference Gateway with MCP configuration using Helm
 
