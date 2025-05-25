@@ -38,7 +38,6 @@ func TestNewLogger(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, log)
 
-				// Verify logger functionality
 				assert.NotPanics(t, func() {
 					log.Info("test info")
 					log.Debug("test debug")

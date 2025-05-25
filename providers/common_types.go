@@ -1,3 +1,4 @@
+// Code generated from OpenAPI schema. DO NOT EDIT.
 package providers
 
 // The authentication type of the specific provider
@@ -220,6 +221,20 @@ type ListModelsResponse struct {
 	Data     []Model   `json:"data"`
 	Object   string    `json:"object"`
 	Provider *Provider `json:"provider,omitempty"`
+}
+
+// ListToolsResponse represents a ListToolsResponse in the API
+type ListToolsResponse struct {
+	Data   []MCPTool `json:"data"`
+	Object string    `json:"object"`
+}
+
+// MCPTool represents a MCPTool in the API
+type MCPTool struct {
+	Description string                  `json:"description"`
+	InputSchema *map[string]interface{} `json:"input_schema,omitempty"`
+	Name        string                  `json:"name"`
+	Server      string                  `json:"server"`
 }
 
 // Message represents a Message in the API

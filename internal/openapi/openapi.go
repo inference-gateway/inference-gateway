@@ -100,6 +100,9 @@ type OpenAPISchema struct {
 			ChatCompletionMessageToolCallChunk    SchemaProperty `yaml:"ChatCompletionMessageToolCallChunk"`
 			ChatCompletionMessageToolCall         SchemaProperty `yaml:"ChatCompletionMessageToolCall"`
 			ChatCompletionMessageToolCallFunction SchemaProperty `yaml:"ChatCompletionMessageToolCallFunction"`
+			ListToolsResponse                     SchemaProperty `yaml:"ListToolsResponse"`
+			MCPTool                               SchemaProperty `yaml:"MCPTool"`
+			MCPNotExposed                         SchemaProperty `yaml:"MCPNotExposed"`
 		}
 	}
 }

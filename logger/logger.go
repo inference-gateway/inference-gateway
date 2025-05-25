@@ -2,6 +2,8 @@ package logger
 
 import (
 	"errors"
+	"os"
+	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -20,8 +22,36 @@ type LoggerZapImpl struct {
 	logger *zap.Logger
 }
 
+// NoOpLogger is a logger implementation that discards all logs
+// This is useful for testing to prevent logs from cluttering test output
+type NoopLogger struct{}
+
+func (l *NoopLogger) Info(message string, fields ...interface{})             {}
+func (l *NoopLogger) Debug(message string, fields ...interface{})            {}
+func (l *NoopLogger) Error(message string, err error, fields ...interface{}) {}
+func (l *NoopLogger) Fatal(message string, err error, fields ...interface{}) {}
+
+// NewNoopLogger returns a logger that discards all logs
+func NewNoopLogger() Logger {
+	return &NoopLogger{}
+}
+
+// isTestMode checks if the code is running as part of tests
+func isTestMode() bool {
+	for _, arg := range os.Args {
+		if strings.HasPrefix(arg, "-test.") {
+			return true
+		}
+	}
+	return false
+}
+
 // NewLogger initializes a logger
 func NewLogger(env string) (Logger, error) {
+	if isTestMode() {
+		return NewNoopLogger(), nil
+	}
+
 	var cfg zap.Config
 	if env == "development" {
 		cfg = zap.NewDevelopmentConfig()

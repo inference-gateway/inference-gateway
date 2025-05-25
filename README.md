@@ -33,6 +33,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - 🚀 **Unified API Access**: Proxy requests to multiple language model APIs, including OpenAI, Ollama, Groq, Cohere etc.
 - ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
 - 🔧 **Tool-use Support**: Enable function calling capabilities across supported providers with a unified API.
+- 🌐 **MCP Support**: Integrate with Model Context Protocol servers so clients don't need to pass tools directly.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
 - 🖥️ **Web Interface**: Access through a modern web UI for easy interaction and management.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
@@ -71,14 +72,18 @@ graph TD
     IG2["🖥️ Inference Gateway"] --> P
     IG3["🖥️ Inference Gateway"] --> P
 
-    %% Proxy and providers
-    P["🔌 Proxy Gateway"] --> C["🦙 Ollama"]
-    P --> D["🚀 Groq"]
-    P --> E["☁️ OpenAI"]
-    P --> G["⚡ Cloudflare"]
-    P --> H1["💬 Cohere"]
-    P --> H2["🧠 Anthropic"]
-    P --> H3["🐋 DeepSeek"]
+    %% MCP Layer
+    P["🔌 Proxy Gateway"] --> MCP["🌐 MCP"]
+    P --> Direct["Direct Providers"]
+
+    %% Providers
+    MCP --> C["🦙 Ollama"]
+    MCP --> D["🚀 Groq"]
+    MCP --> E["☁️ OpenAI"]
+    Direct --> G["⚡ Cloudflare"]
+    Direct --> H1["💬 Cohere"]
+    Direct --> H2["🧠 Anthropic"]
+    Direct --> H3["🐋 DeepSeek"]
 
     %% Define styles
     classDef client fill:#9370DB,stroke:#333,stroke-width:1px,color:white;
@@ -93,6 +98,8 @@ graph TD
     class Auth auth;
     class IG1,IG2,IG3,P gateway;
     class C,D,E,G,H1,H2,H3 provider;
+    class MCP mcp;
+    class Direct direct;
 ```
 
 Client is sending:

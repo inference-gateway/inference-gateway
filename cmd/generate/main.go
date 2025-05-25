@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-
 	"os"
 
 	"github.com/inference-gateway/inference-gateway/internal/codegen"
@@ -71,6 +70,13 @@ func main() {
 		err := codegen.GenerateCommonTypes("providers/common_types.go", "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating providers common types: %v\n", err)
+			os.Exit(1)
+		}
+	case "MCPTypes":
+		fmt.Printf("Generating MCP types from schema to %s\n", output)
+		err := codegen.GenerateMCPTypes(output, "mcp/mcp-schema.yaml")
+		if err != nil {
+			fmt.Printf("Error generating MCP types: %v\n", err)
 			os.Exit(1)
 		}
 	case "Config":

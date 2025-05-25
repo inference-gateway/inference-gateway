@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
+	"github.com/inference-gateway/inference-gateway/mcp"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -110,7 +112,14 @@ func main() {
 	// Initialize OIDC authenticator middleware
 	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(logger, cfg)
 	if err != nil {
-		logger.Error("Failed to initialize OIDC authenticator: %v", err)
+		logger.Error("Failed to initialize OIDC authenticator", err)
+		return
+	}
+
+	// Initialize provider registry and HTTP client
+	clientConfig, err := providers.NewClientConfig()
+	if err != nil {
+		log.Printf("fatal: failed to initialize client configuration: %v", err)
 		return
 	}
 
@@ -119,21 +128,33 @@ func main() {
 		scheme = "https"
 	}
 
-	clientConfig, err := providers.NewClientConfig()
-	if err != nil {
-		log.Printf("fatal: failed to initialize client configuration: %v", err)
-		return
-	}
-
 	client := providers.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
 	providerRegistry := providers.NewProviderRegistry(cfg.Providers, logger)
+
+	// Initialize MCP middleware if enabled
+	var mcpClient mcp.MCPClientInterface
+	var mcpMiddleware middlewares.MCPMiddleware
+	if cfg.EnableMcp && cfg.McpServers != "" {
+		mcpClient = mcp.NewMCPClient(strings.Split(cfg.McpServers, ","), logger)
+		initErr := mcpClient.InitializeAll(context.Background())
+		if initErr != nil {
+			logger.Error("Failed to initialize MCP client", initErr)
+			return
+		}
+
+		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, logger, cfg)
+		if err != nil {
+			logger.Error("Failed to initialize MCP middleware", err)
+			return
+		}
+	}
 
 	// Set GIN mode based on environment
 	if cfg.Environment != "development" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, client)
+	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.EnableTelemetry {
@@ -141,11 +162,18 @@ func main() {
 	}
 	r.Use(oidcAuthenticator.Middleware())
 
+	// Add MCP middleware if enabled
+	if cfg.EnableMcp {
+		r.Use(mcpMiddleware.Middleware())
+		logger.Info("MCP middleware added to request pipeline")
+	}
+
 	r.GET("/health", api.HealthcheckHandler)
 	r.Any("/proxy/:provider/*path", api.ProxyHandler)
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/models", api.ListModelsHandler)
+		v1.GET("/mcp/tools", api.ListToolsHandler)
 		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 	}
 	r.NoRoute(api.NotFoundHandler)

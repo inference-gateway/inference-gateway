@@ -47,21 +47,21 @@
           {
             "text": "Always use conventional commit message format."
           }
-        ]
-      },
-      "mcp": {
-        "servers": {
-          "context7": {
-            "command": "docker",
-            "args": [
-              "run",
-              "-i",
-              "--rm",
-              "node:lts",
-              "npx",
-              "-y",
-              "@upstash/context7-mcp@latest"
-            ]
+        ],
+        "mcp": {
+          "servers": {
+            "context7": {
+              "command": "docker",
+              "args": [
+                "run",
+                "-i",
+                "--rm",
+                "node:lts",
+                "npx",
+                "-y",
+                "@upstash/context7-mcp@latest"
+              ]
+            }
           }
         }
       }

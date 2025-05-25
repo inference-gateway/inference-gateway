@@ -19,6 +19,7 @@ import (
 	gin "github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
+	"github.com/inference-gateway/inference-gateway/mcp"
 	providers "github.com/inference-gateway/inference-gateway/providers"
 )
 
@@ -26,16 +27,18 @@ import (
 type Router interface {
 	ListModelsHandler(c *gin.Context)
 	ChatCompletionsHandler(c *gin.Context)
+	ListToolsHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
 }
 
 type RouterImpl struct {
-	cfg      config.Config
-	logger   l.Logger
-	registry providers.ProviderRegistry
-	client   providers.Client
+	cfg       config.Config
+	logger    l.Logger
+	registry  providers.ProviderRegistry
+	client    providers.Client
+	mcpClient mcp.MCPClientInterface
 }
 
 type ErrorResponse struct {
@@ -46,12 +49,13 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client) Router {
+func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client, mcpClient mcp.MCPClientInterface) Router {
 	return &RouterImpl{
 		cfg,
 		logger,
 		registry,
 		client,
+		mcpClient,
 	}
 }
 
@@ -457,7 +461,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	providerID := providers.Provider(c.Query("provider"))
 	if providerID == "" {
 		var providerPtr *providers.Provider
-		providerPtr, model = determineProviderAndModelName(model)
+		providerPtr, model = providers.DetermineProviderAndModelName(model)
 		if providerPtr == nil {
 			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider."})
@@ -522,6 +526,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	// Non-streaming response
+	c.Header("Content-Type", "application/json")
 	response, err := provider.ChatCompletions(ctx, req)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
@@ -537,40 +542,72 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-func determineProviderAndModelName(model string) (provider *providers.Provider, modelName string) {
-	modelLower := strings.ToLower(model)
-
-	// First check for explicit provider prefixes (ollama-, groq-, etc.)
-	providerPrefixMapping := map[string]providers.Provider{
-		"ollama/":     providers.OllamaID,
-		"groq/":       providers.GroqID,
-		"cloudflare/": providers.CloudflareID,
-		"openai/":     providers.OpenaiID,
-		"anthropic/":  providers.AnthropicID,
-		"cohere/":     providers.CohereID,
-		"deepseek/":   providers.DeepseekID,
+// ListToolsHandler implements an endpoint that returns available MCP tools
+// when EXPOSE_MCP environment variable is enabled.
+//
+// Response format when MCP is exposed:
+//
+//	{
+//	  "object": "list",
+//	  "data": [
+//	    {
+//	      "name": "read_file",
+//	      "description": "Read the contents of a file",
+//	      "server": "filesystem-server",
+//	      "input_schema": {...}
+//	    },
+//	    ...
+//	  ]
+//	}
+//
+// Response when MCP is not exposed:
+//
+//	{
+//	  "error": "MCP tools endpoint is not exposed"
+//	}
+func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
+	if !router.cfg.ExposeMcp {
+		router.logger.Error("MCP tools endpoint access attempted but not exposed", nil)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: "MCP tools endpoint is not exposed"})
+		return
 	}
 
-	for prefix, providerID := range providerPrefixMapping {
-		if strings.HasPrefix(modelLower, prefix) {
-			return &providerID, strings.TrimPrefix(model, prefix)
+	if router.mcpClient == nil || !router.mcpClient.IsInitialized() {
+		router.logger.Error("MCP client not initialized", nil)
+		c.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "MCP client not available"})
+		return
+	}
+
+	var allTools []providers.MCPTool
+
+	servers := router.mcpClient.GetServers()
+
+	for _, serverURL := range servers {
+		tools, err := router.mcpClient.GetServerTools(serverURL)
+		if err != nil {
+			router.logger.Error("failed to get tools from MCP server", err, "server", serverURL)
+			continue
+		}
+
+		for _, tool := range tools {
+			mcpTool := providers.MCPTool{
+				Name:        tool.Name,
+				Description: tool.Description,
+				Server:      serverURL,
+				InputSchema: &tool.Inputschema,
+			}
+			allTools = append(allTools, mcpTool)
 		}
 	}
 
-	// Then check for model-name based prefixes (gpt-, claude-, etc.)
-	modelPrefixMapping := map[string]providers.Provider{
-		"gpt-":      providers.OpenaiID,
-		"claude-":   providers.AnthropicID,
-		"llama-":    providers.GroqID,
-		"command-":  providers.CohereID,
-		"deepseek-": providers.GroqID,
+	if allTools == nil {
+		allTools = make([]providers.MCPTool, 0)
 	}
 
-	for prefix, providerID := range modelPrefixMapping {
-		if strings.HasPrefix(modelLower, prefix) {
-			return &providerID, model
-		}
+	response := providers.ListToolsResponse{
+		Object: "list",
+		Data:   allTools,
 	}
 
-	return nil, model
+	c.JSON(http.StatusOK, response)
 }

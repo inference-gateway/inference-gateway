@@ -2,7 +2,7 @@
 
 config/config.go linguist-generated=true
 providers/common_types.go linguist-generated=true
-# providers/*.go linguist-generated=true
+mcp/generated_types.go linguist-generated=true
 
 tests/mocks/* linguist-generated=true
 

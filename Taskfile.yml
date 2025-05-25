@@ -2,6 +2,19 @@
 version: "3"
 
 tasks:
+  jrpc-mcp-schema-download:
+    desc: "Download the latest MCP schema and convert to YAML"
+    cmds:
+      - curl -o mcp/mcp-schema.json https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/refs/heads/main/schema/draft/schema.json
+      - |
+        echo "Converting JSON schema to YAML format"
+        NODE_PATH=/usr/lib/node_modules node -e "
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          const json = JSON.parse(fs.readFileSync('mcp/mcp-schema.json', 'utf8'));
+          fs.writeFileSync('mcp/mcp-schema.yaml', yaml.dump(json, {lineWidth: -1}));
+        "
+
   generate:
     desc: "Generate the gateway from OpenAPI Spec"
     cmds:
@@ -20,7 +33,9 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/tools/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/ui/.env.backend.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
-      - go generate ./providers/... ./api/... ./otel/...
+      - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
+      - go run cmd/generate/main.go -type MCPTypes -output mcp/generated_types.go
+      - go generate ./providers/... ./api/... ./otel/... ./mcp/... ./logger/...
 
   tidy:
     desc: "Tidy the gateway"
