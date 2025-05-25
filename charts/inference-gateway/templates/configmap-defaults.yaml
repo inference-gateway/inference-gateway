@@ -9,8 +9,9 @@ data:
   ENVIRONMENT: {{ .Values.config.ENVIRONMENT | quote }}
   ENABLE_TELEMETRY: {{ .Values.config.ENABLE_TELEMETRY | quote }}
   ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
-  ENABLE_MCP: {{ .Values.config.ENABLE_MCP | quote }}
-  EXPOSE_MCP: {{ .Values.config.EXPOSE_MCP | quote }}
+  # Model Context Protocol (MCP)
+  MCP_ENABLE: {{ .Values.config.MCP_ENABLE | quote }}
+  MCP_EXPOSE: {{ .Values.config.MCP_EXPOSE | quote }}
   MCP_SERVERS: {{ .Values.config.MCP_SERVERS | quote }}
   MCP_CLIENT_TIMEOUT: {{ .Values.config.MCP_CLIENT_TIMEOUT | quote }}
   MCP_DIAL_TIMEOUT: {{ .Values.config.MCP_DIAL_TIMEOUT | quote }}

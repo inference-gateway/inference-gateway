@@ -74,15 +74,15 @@ type MCPClient struct {
 // NewClient creates a new MCP client for a given server URL
 func (mc *MCPClient) NewClient(url string) *m.Client {
 	httpClient := &http.Client{
-		Timeout: mc.Config.McpClientTimeout,
+		Timeout: mc.Config.MCP.ClientTimeout,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				Timeout:   mc.Config.McpDialTimeout,
+				Timeout:   mc.Config.MCP.DialTimeout,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
-			TLSHandshakeTimeout:   mc.Config.McpTlsHandshakeTimeout,
-			ResponseHeaderTimeout: mc.Config.McpResponseHeaderTimeout,
-			ExpectContinueTimeout: mc.Config.McpExpectContinueTimeout,
+			TLSHandshakeTimeout:   mc.Config.MCP.TlsHandshakeTimeout,
+			ResponseHeaderTimeout: mc.Config.MCP.ResponseHeaderTimeout,
+			ExpectContinueTimeout: mc.Config.MCP.ExpectContinueTimeout,
 		},
 	}
 
@@ -163,10 +163,10 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 
 		client := mc.NewClient(url)
 
-		initCtx, cancel := context.WithTimeout(ctx, mc.Config.McpRequestTimeout)
+		initCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
 		defer cancel()
 
-		mc.Logger.Debug("MCP: Attempting client initialization with timeout", "server", url, "timeout", mc.Config.McpRequestTimeout.String())
+		mc.Logger.Debug("MCP: Attempting client initialization with timeout", "server", url, "timeout", mc.Config.MCP.RequestTimeout.String())
 		result, err := client.Initialize(initCtx)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
@@ -218,10 +218,10 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 
 		mc.Logger.Debug("MCP: Fetching available tools", "server", url)
 
-		toolsCtx, toolsCancel := context.WithTimeout(ctx, mc.Config.McpRequestTimeout)
+		toolsCtx, toolsCancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
 		defer toolsCancel()
 
-		mc.Logger.Debug("MCP: Attempting to list tools with timeout", "server", url, "timeout", mc.Config.McpRequestTimeout.String())
+		mc.Logger.Debug("MCP: Attempting to list tools with timeout", "server", url, "timeout", mc.Config.MCP.RequestTimeout.String())
 		toolsResult, err := client.ListTools(toolsCtx, nil)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {

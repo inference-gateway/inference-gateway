@@ -566,7 +566,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 //	  "error": "MCP tools endpoint is not exposed"
 //	}
 func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
-	if !router.cfg.ExposeMcp {
+	if !router.cfg.MCP.Expose {
 		router.logger.Error("MCP tools endpoint access attempted but not exposed", nil)
 		c.JSON(http.StatusForbidden, ErrorResponse{Error: "MCP tools endpoint is not exposed"})
 		return

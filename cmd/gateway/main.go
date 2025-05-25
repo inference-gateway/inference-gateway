@@ -134,8 +134,8 @@ func main() {
 	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
 	var mcpMiddleware middlewares.MCPMiddleware
-	if cfg.EnableMcp && cfg.McpServers != "" {
-		mcpClient = mcp.NewMCPClient(strings.Split(cfg.McpServers, ","), logger, cfg)
+	if cfg.MCP.Enable && cfg.MCP.Servers != "" {
+		mcpClient = mcp.NewMCPClient(strings.Split(cfg.MCP.Servers, ","), logger, cfg)
 		initErr := mcpClient.InitializeAll(context.Background())
 		if initErr != nil {
 			logger.Error("Failed to initialize MCP client", initErr)
@@ -163,7 +163,7 @@ func main() {
 	r.Use(oidcAuthenticator.Middleware())
 
 	// Add MCP middleware if enabled
-	if cfg.EnableMcp {
+	if cfg.MCP.Enable {
 		r.Use(mcpMiddleware.Middleware())
 		logger.Info("MCP middleware added to request pipeline")
 	}

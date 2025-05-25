@@ -19,6 +19,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 
 - [Key Features](#key-features)
 - [Overview](#overview)
+  - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
 - [Supported API's](#supported-apis)
 - [Configuration](#configuration)
 - [Examples](#examples)
@@ -33,7 +34,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - 🚀 **Unified API Access**: Proxy requests to multiple language model APIs, including OpenAI, Ollama, Groq, Cohere etc.
 - ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
 - 🔧 **Tool-use Support**: Enable function calling capabilities across supported providers with a unified API.
-- 🌐 **MCP Support**: Integrate with Model Context Protocol servers so clients don't need to pass tools directly.
+- 🌐 **MCP Support**: Full Model Context Protocol integration - automatically discover and expose tools from MCP servers to LLMs without client-side tool management.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
 - 🖥️ **Web Interface**: Access through a modern web UI for easy interaction and management.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
@@ -153,6 +154,27 @@ Finally client receives:
 
 For streaming the tokens simply add to the request body `stream: true`.
 
+### Model Context Protocol (MCP) Integration
+
+Enable MCP to automatically provide tools to LLMs without requiring clients to manage them:
+
+```bash
+# Enable MCP and connect to tool servers
+export MCP_ENABLE=true
+export MCP_SERVERS="http://filesystem-server:3001,http://search-server:3002"
+
+# LLMs will automatically discover and use available tools
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -d '{
+    "model": "gpt-4",
+    "messages": [{"role": "user", "content": "List files in the current directory"}]
+  }'
+```
+
+The gateway automatically injects available tools into requests and handles tool execution, making external capabilities seamlessly available to any LLM.
+
+> **Learn more**: [Model Context Protocol Documentation](https://modelcontextprotocol.io/) | [MCP Integration Example](examples/docker-compose/mcp/)
+
 ## Supported API's
 
 - [OpenAI](https://platform.openai.com/)
@@ -170,6 +192,11 @@ The Inference Gateway can be configured using environment variables. The followi
 ## Examples
 
 - Using [Docker Compose](examples/docker-compose/)
+  - [Basic setup](examples/docker-compose/basic/) - Simple configuration with a single provider
+  - [MCP Integration](examples/docker-compose/mcp/) - Model Context Protocol with multiple tool servers
+  - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers (cloud + local)
+  - [Authentication](examples/docker-compose/authentication/) - OIDC authentication setup
+  - [Web UI](examples/docker-compose/ui/) - Complete setup with web interface
 - Using [Kubernetes](examples/kubernetes/)
 - Using standard [REST endpoints](examples/rest-endpoints/)
 

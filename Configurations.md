@@ -6,8 +6,13 @@
 | ENVIRONMENT | `production` | The environment |
 | ENABLE_TELEMETRY | `false` | Enable telemetry |
 | ENABLE_AUTH | `false` | Enable authentication |
-| ENABLE_MCP | `false` | Enable MCP |
-| EXPOSE_MCP | `false` | Expose MCP tools endpoint |
+
+
+### Model Context Protocol (MCP)
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| MCP_ENABLE | `false` | Enable MCP |
+| MCP_EXPOSE | `false` | Expose MCP tools endpoint |
 | MCP_SERVERS | `""` | List of MCP servers |
 | MCP_CLIENT_TIMEOUT | `5s` | MCP client HTTP timeout |
 | MCP_DIAL_TIMEOUT | `3s` | MCP client dial timeout |

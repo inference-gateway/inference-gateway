@@ -59,12 +59,18 @@ type Config struct {
 	{{- range $field := $section.Settings }}
 	{{ pascalCase $field.Env }} {{ $field.Type }} ` + "`env:\"{{ $field.Env }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
+	{{- else if eq $name "mcp" }}
+	// MCP settings
+	MCP *MCPConfig ` + "`env:\", prefix=MCP_\" description:\"MCP configuration\"`" + `
 	{{- else if eq $name "oidc" }}
 	// OIDC settings
 	OIDC *OIDC ` + "`env:\", prefix=OIDC_\" description:\"OIDC configuration\"`" + `
 	{{- else if eq $name "server" }}
 	// Server settings
 	Server *ServerConfig ` + "`env:\", prefix=SERVER_\" description:\"Server configuration\"`" + `
+	{{- else if eq $name "client" }}
+	// Client settings
+	Client *ClientConfig ` + "`env:\", prefix=CLIENT_\" description:\"Client configuration\"`" + `
 	{{- end }}
 	{{- end }}
 	{{- end }}
@@ -75,7 +81,15 @@ type Config struct {
 
 {{- range $section := .Sections }}
 {{- range $name, $section := $section }}
-{{- if eq $name "oidc" }}
+{{- if eq $name "mcp" }}
+
+// MCP configuration
+type MCPConfig struct {
+	{{- range $field := $section.Settings }}
+	{{ pascalCase (trimPrefix $field.Env "MCP_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"MCP_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+	{{- end }}
+}
+{{- else if eq $name "oidc" }}
 
 // OIDC configuration
 type OIDC struct {
@@ -89,6 +103,14 @@ type OIDC struct {
 type ServerConfig struct {
 	{{- range $field := $section.Settings }}
 	{{ pascalCase (trimPrefix $field.Env "SERVER_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"SERVER_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+	{{- end }}
+}
+{{- else if eq $name "client" }}
+
+// Client configuration
+type ClientConfig struct {
+	{{- range $field := $section.Settings }}
+	{{ pascalCase (trimPrefix $field.Env "CLIENT_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"CLIENT_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
 }
 {{- end }}
@@ -134,14 +156,16 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 func (cfg *Config) String() string {
     return fmt.Sprintf(
         "Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
-            "OIDC:%+v, Server:%+v, Providers:%+v}",
+            "MCP:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
         APPLICATION_NAME,
         VERSION,
         cfg.Environment,
         cfg.EnableTelemetry,
         cfg.EnableAuth,
+        cfg.MCP,
         cfg.OIDC,
         cfg.Server,
+        cfg.Client,
         cfg.Providers,
     )
 }

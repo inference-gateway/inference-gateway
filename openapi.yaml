@@ -1188,13 +1188,16 @@ components:
                   type: bool
                   default: "false"
                   description: "Enable authentication"
-                - name: enable_mcp
-                  env: "ENABLE_MCP"
+          - mcp:
+              title: "Model Context Protocol (MCP)"
+              settings:
+                - name: mcp_enable
+                  env: "MCP_ENABLE"
                   type: bool
                   default: "false"
                   description: "Enable MCP"
-                - name: expose_mcp
-                  env: "EXPOSE_MCP"
+                - name: mcp_expose
+                  env: "MCP_EXPOSE"
                   type: bool
                   default: "false"
                   description: "Expose MCP tools endpoint"

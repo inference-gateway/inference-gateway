@@ -141,8 +141,9 @@ config:
   ENVIRONMENT: "production"
   ENABLE_TELEMETRY: "false"
   ENABLE_AUTH: "false"
-  ENABLE_MCP: "false"
-  EXPOSE_MCP: "false"
+  # Model Context Protocol (MCP)
+  MCP_ENABLE: "false"
+  MCP_EXPOSE: "false"
   MCP_SERVERS: ""
   MCP_CLIENT_TIMEOUT: "5s"
   MCP_DIAL_TIMEOUT: "3s"
