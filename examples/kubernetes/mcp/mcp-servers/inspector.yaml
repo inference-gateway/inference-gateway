@@ -1,0 +1,84 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-inspector
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: mcp-inspector
+    app.kubernetes.io/part-of: inference-gateway-mcp
+    app.kubernetes.io/component: inspector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mcp-inspector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mcp-inspector
+        app.kubernetes.io/part-of: inference-gateway-mcp
+        app.kubernetes.io/component: inspector
+    spec:
+      containers:
+        - name: mcp-inspector
+          image: node:lts
+          workingDir: /app
+          command:
+            - sh
+            - -c
+            - |
+              echo "Starting MCP Inspector..."
+              npx -y @modelcontextprotocol/inspector
+          ports:
+            - containerPort: 6274
+              name: inspector
+            - containerPort: 6277
+              name: websocket
+          env:
+            - name: LOG_LEVEL
+              value: "debug"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: MCP_SERVER_URL
+              value: "http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 6274
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 6274
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-inspector
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: mcp-inspector
+    app.kubernetes.io/part-of: inference-gateway-mcp
+    app.kubernetes.io/component: inspector
+spec:
+  selector:
+    app.kubernetes.io/name: mcp-inspector
+  ports:
+    - port: 6274
+      targetPort: 6274
+      name: inspector
+    - port: 6277
+      targetPort: 6277
+      name: websocket

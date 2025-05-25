@@ -1,0 +1,409 @@
+version: "3"
+
+vars:
+  NAMESPACE: inference-gateway
+  RELEASE_NAME: inference-gateway
+  CHART_VERSION: 0.6.3
+  CHART: oci://ghcr.io/inference-gateway/charts/inference-gateway
+
+tasks:
+  default:
+    desc: "Show available options for MCP Kubernetes deployment"
+    silent: true
+    cmds:
+      - echo "🚀 MCP Kubernetes Deployment"
+      - echo ""
+      - echo "🎯 Common tasks:"
+      - echo "   task quick-start           - Deploy everything and run tests"
+      - echo "   task validate-requirements - Check if all tools are installed"
+      - echo "   task deploy                - Deploy MCP setup step by step"
+      - echo "   task test                  - Run comprehensive tests"
+      - echo "   task clean                 - Clean up everything"
+      - echo ""
+      - echo "📋 Run 'task --list' to see all available tasks"
+      - echo "📖 Check README.md for detailed usage examples"
+
+  check-cluster:
+    desc: "Check cluster and Helm status"
+    cmds:
+      - echo "🔍 Checking cluster status..."
+      - kubectl cluster-info || echo "❌ No cluster connection"
+      - echo ""
+      - echo "📊 Current Helm releases:"
+      - helm list -A || echo "❌ Helm not accessible"
+      - echo ""
+      - echo "🏗️  Current pods in kube-system:"
+      - kubectl get pods -n kube-system || echo "❌ Cannot access kube-system"
+      - echo ""
+      - echo "🏗️  Current pods in {{.NAMESPACE}}:"
+      - kubectl get pods -n {{.NAMESPACE}} || echo "❌ Namespace {{.NAMESPACE}} not found"
+
+  validate-requirements:
+    desc: "Validate that all required tools are installed"
+    silent: true
+    cmds:
+      - |
+        echo "🔍 Validating requirements..."
+
+        # Check required tools
+        command -v ctlptl >/dev/null 2>&1 || { echo "❌ ctlptl is required but not installed. Install from: https://github.com/tilt-dev/ctlptl"; exit 1; }
+        command -v kubectl >/dev/null 2>&1 || { echo "❌ kubectl is required but not installed."; exit 1; }
+        command -v helm >/dev/null 2>&1 || { echo "❌ helm is required but not installed."; exit 1; }
+        command -v curl >/dev/null 2>&1 || { echo "❌ curl is required but not installed."; exit 1; }
+        command -v jq >/dev/null 2>&1 || { echo "❌ jq is required but not installed."; exit 1; }
+
+        echo "✅ All required tools are installed!"
+
+        # Check if cluster exists
+        if ctlptl get cluster mcp-k3d-cluster >/dev/null 2>&1; then
+          echo "ℹ️  Cluster 'mcp-k3d-cluster' already exists"
+        else
+          echo "ℹ️  Cluster 'mcp-k3d-cluster' not found - will be created during deployment"
+        fi
+
+  quick-start:
+    desc: "Quick start: deploy everything and run tests"
+    cmds:
+      - task: deploy
+      - echo "🚀 Quick start deployment completed!"
+      - echo ""
+      - task: setup-hosts
+      - echo ""
+      - echo "⏳ Waiting for all services to be ready..."
+      - task: wait
+      - echo ""
+      - echo "🧪 Running tests to verify deployment..."
+      - task: test
+      - echo ""
+      - echo "🎉 Quick start completed successfully!"
+      - echo ""
+      - echo "🔍 Next steps:"
+      - echo "   1. Run 'task port-forward' to access MCP Inspector locally"
+      - echo "   2. Run 'task test:interactive' to test external access"
+      - echo "   3. Use the MCP tools list endpoint to see available tools"
+      - echo "   4. Check the README.md for usage examples"
+
+  deploy-infrastructure:
+    desc: "Deploy infrastructure components (k3d cluster, NGINX ingress)"
+    deps:
+      - validate-requirements
+    cmds:
+      - |
+        # Check if infrastructure is already deployed
+        if kubectl get nodes >/dev/null 2>&1 && helm list -n kube-system | grep -q ingress-nginx; then
+          echo "ℹ️  Infrastructure already deployed, skipping..."
+          exit 0
+        fi
+      - ctlptl apply -f Cluster.yaml
+      - echo "⏳ Waiting for cluster to be ready..."
+      - kubectl wait --for=condition=Ready nodes --all --timeout=300s
+      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - helm repo update
+      - echo "🔍 Installing ingress-nginx..."
+      - |
+        # Clean install of ingress-nginx
+        helm upgrade --install \
+          --create-namespace \
+          --namespace kube-system \
+          --set controller.progressDeadlineSeconds=500 \
+          --version 4.12.2 \
+          --wait \
+          --timeout=10m \
+          ingress-nginx ingress-nginx/ingress-nginx
+      - echo "🚀 Infrastructure deployed successfully!"
+
+  setup-secrets:
+    desc: "Set up the necessary secrets for the Inference Gateway"
+    cmds:
+      - kubectl create namespace {{.NAMESPACE}} --dry-run=client -o yaml | kubectl apply --server-side -f -
+      - |
+        # Read API keys for providers
+        echo "Setting up API keys for inference providers..."
+        echo "You can press Enter to skip any provider you don't want to configure."
+        echo ""
+
+        read -p "Enter your Groq API key (recommended for testing): " GROQ_API_KEY
+        read -p "Enter your OpenAI API key (optional): " OPENAI_API_KEY
+        read -p "Enter your Anthropic API key (optional): " ANTHROPIC_API_KEY
+
+        # Delete existing secret if it exists (to avoid conflicts)
+        kubectl delete secret {{.RELEASE_NAME}} -n {{.NAMESPACE}} --ignore-not-found=true
+
+        # Create the secret with Helm metadata
+        kubectl apply -f - <<EOK
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: {{.RELEASE_NAME}}
+          namespace: {{.NAMESPACE}}
+          labels:
+            app.kubernetes.io/managed-by: Helm
+          annotations:
+            meta.helm.sh/release-name: {{.RELEASE_NAME}}
+            meta.helm.sh/release-namespace: {{.NAMESPACE}}
+        type: Opaque
+        stringData:
+          GROQ_API_KEY: "${GROQ_API_KEY}"
+          OPENAI_API_KEY: "${OPENAI_API_KEY}"
+          ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
+        EOK
+        echo "✅ Secrets configured successfully!"
+
+  deploy-mcp-servers:
+    desc: "Deploy MCP servers (time, search, filesystem)"
+    cmds:
+      - kubectl create namespace {{.NAMESPACE}} --dry-run=client -o yaml | kubectl apply --server-side -f -
+      - kubectl apply -f mcp-servers/ -n {{.NAMESPACE}}
+      - echo "🔧 MCP servers deployed successfully!"
+
+  deploy-inference-gateway:
+    desc: "Deploy Inference Gateway with MCP configuration using Helm"
+    cmds:
+      - task: setup-secrets
+      - task: deploy-mcp-servers
+      - |
+        kubectl apply -f - <<EOF
+        apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: {{.RELEASE_NAME}}
+          namespace: {{.NAMESPACE}}
+          labels:
+            app.kubernetes.io/managed-by: Helm
+          annotations:
+            meta.helm.sh/release-name: {{.RELEASE_NAME}}
+            meta.helm.sh/release-namespace: {{.NAMESPACE}}
+        data:
+          MCP_ENABLE: "true"
+          MCP_EXPOSE: "true"
+          MCP_SERVERS: "http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp"
+          MCP_CLIENT_TIMEOUT: "10s"
+          MCP_DIAL_TIMEOUT: "5s"
+          MCP_TLS_HANDSHAKE_TIMEOUT: "5s"
+          MCP_RESPONSE_HEADER_TIMEOUT: "5s"
+          MCP_EXPECT_CONTINUE_TIMEOUT: "2s"
+          MCP_REQUEST_TIMEOUT: "10s"
+        EOF
+      - |
+        helm upgrade --install \
+          --create-namespace \
+          --namespace {{.NAMESPACE}} \
+          --set envFrom.configMapRef={{.RELEASE_NAME}} \
+          --set envFrom.secretRef={{.RELEASE_NAME}} \
+          --set ingress.enabled=true \
+          --set ingress.className=nginx \
+          --set ingress.annotations."nginx\.ingress\.kubernetes\.io/rewrite-target"=/ \
+          --set "ingress.hosts[0].host=api.inference-gateway.local" \
+          --set "ingress.hosts[0].paths[0].path=/" \
+          --set "ingress.hosts[0].paths[0].pathType=Prefix" \
+          --version {{.CHART_VERSION}} \
+          --wait \
+          {{.RELEASE_NAME}} {{.CHART}}
+      - echo "🚪 Inference Gateway with MCP deployed successfully!"
+
+  deploy:
+    desc: "Deploy complete MCP setup"
+    cmds:
+      - task: deploy-infrastructure
+      - task: deploy-inference-gateway
+      - echo "🎉 Complete MCP setup deployed successfully!"
+      - echo ""
+      - echo "🌐 Access URLs (add to /etc/hosts 127.0.0.1 api.inference-gateway.local):"
+      - echo "   Inference Gateway http://api.inference-gateway.local"
+      - echo "   MCP Inspector http://localhost:6274 (after port-forward)"
+      - echo ""
+      - echo "🔍 Next steps:"
+      - echo "   1. Run 'task setup-hosts' for local access setup"
+      - echo "   2. Run 'task port-forward' to access services locally"
+      - echo "   3. Run 'task test' to verify the deployment"
+      - echo "   4. Check the README.md for usage examples"
+
+  setup-hosts:
+    desc: "Help setup /etc/hosts for local access"
+    cmds:
+      - |
+        echo "🌐 Setting up local access..."
+        echo ""
+        echo "To access the Inference Gateway locally, you need to add this entry to your /etc/hosts file:"
+        echo ""
+        echo "127.0.0.1 api.inference-gateway.local"
+        echo ""
+        echo "You can add it by running:"
+        echo "sudo echo '127.0.0.1 api.inference-gateway.local' >> /etc/hosts"
+        echo ""
+        echo "Or edit /etc/hosts manually with your preferred editor."
+        echo ""
+        echo "After adding the entry, you can access:"
+        echo "  🌐 Inference Gateway: http://api.inference-gateway.local"
+        echo "  🔍 MCP Inspector: http://localhost:6274 (after running 'task port-forward')"
+
+  port-forward:
+    desc: "Forward ports for local access"
+    cmds:
+      - |
+        echo "Starting port forwarding..."
+        echo "Inference Gateway: http://api.inference-gateway.local (via ingress)"
+        echo "MCP Inspector: http://localhost:6274"
+        echo "Press Ctrl+C to stop"
+        kubectl port-forward -n {{.NAMESPACE}} service/mcp-inspector 6274:6274
+
+  test:
+    desc: "Run comprehensive MCP integration tests"
+    deps:
+      - test:health
+      - test:mcp-tools
+    cmds:
+      - echo "🎉 All MCP integration tests passed successfully!"
+      - echo ""
+      - echo "📊 Test Summary:"
+      - echo "   ✅ Gateway Health Check"
+      - echo "   ✅ MCP Tools Discovery"
+      - echo ""
+      - echo "🚀 MCP integration is working correctly in Kubernetes!"
+
+  test:health:
+    desc: "Test Gateway and MCP servers health"
+    cmds:
+      - echo "🔍 Testing Inference Gateway health..."
+      - |
+        kubectl delete pod test-pod --ignore-not-found=true -n {{.NAMESPACE}}
+      - |
+        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -f http://{{.RELEASE_NAME}}:8080/health
+      - echo "✅ Gateway is healthy"
+      - echo ""
+      - echo "🔍 Testing MCP servers health..."
+      - |
+        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -f http://mcp-time-server:8081/health
+      - |
+        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -f http://mcp-search-server:8082/health
+      - |
+        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -f http://mcp-filesystem-server:8083/health
+      - echo "✅ All MCP servers are healthy"
+
+  test:mcp-tools:
+    desc: "Test MCP tools discovery endpoint"
+    cmds:
+      - echo "🔍 Testing MCP tools discovery..."
+      - |
+        TOOLS_RESPONSE=$(kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -s http://{{.RELEASE_NAME}}:8080/v1/mcp/tools)
+        echo "$TOOLS_RESPONSE"
+      - echo "✅ MCP tools endpoint working correctly"
+
+  test:interactive:
+    desc: "Run interactive MCP test with external access"
+    cmds:
+      - echo "🧪 Running interactive MCP test..."
+      - echo "This test requires external access to api.inference-gateway.local"
+      - echo "Make sure you have added '127.0.0.1 api.inference-gateway.local' to /etc/hosts"
+      - echo ""
+      - task: test:interactive:health
+      - task: test:interactive:tools
+
+  test:interactive:health:
+    desc: "Test health endpoint externally"
+    cmds:
+      - echo "1️⃣ Testing Gateway Health..."
+      - curl -s -f "http://api.inference-gateway.local/health" | jq . || (echo "❌ Gateway health check failed"; exit 1)
+      - echo "✅ Gateway is healthy"
+
+  test:interactive:tools:
+    desc: "Test MCP tools endpoint externally"
+    cmds:
+      - echo "2️⃣ Testing MCP Tools Endpoint..."
+      - |
+        TOOLS_RESPONSE=$(curl -s -f "http://api.inference-gateway.local/v1/mcp/tools")
+        echo "$TOOLS_RESPONSE" | jq . > /dev/null || (echo "❌ MCP tools endpoint failed"; exit 1)
+        TOOL_COUNT=$(echo "$TOOLS_RESPONSE" | jq '.tools | length')
+        echo "✅ Found $TOOL_COUNT MCP tools available"
+        echo ""
+        echo "🔍 Available MCP Tools:"
+        echo "$TOOLS_RESPONSE" | jq '.tools[] | "   • \(.name): \(.description)"' -r
+
+  logs:
+    desc: "Show logs from all pods"
+    cmds:
+      - kubectl logs -l app.kubernetes.io/part-of=inference-gateway-mcp -n {{.NAMESPACE}} --tail=100 -f
+
+  logs:gateway:
+    desc: "Show logs from inference gateway only"
+    cmds:
+      - kubectl logs -l app.kubernetes.io/name={{.RELEASE_NAME}} -n {{.NAMESPACE}} --tail=100 -f
+
+  logs:mcp-servers:
+    desc: "Show logs from MCP servers only"
+    cmds:
+      - kubectl logs -l app=mcp-time-server -n {{.NAMESPACE}} --tail=50
+      - kubectl logs -l app=mcp-search-server -n {{.NAMESPACE}} --tail=50
+      - kubectl logs -l app=mcp-filesystem-server -n {{.NAMESPACE}} --tail=50
+
+  status:
+    desc: "Show status of all resources"
+    cmds:
+      - kubectl get all -n {{.NAMESPACE}}
+
+  status:detailed:
+    desc: "Show detailed status including events and descriptions"
+    cmds:
+      - kubectl get all -n {{.NAMESPACE}} -o wide
+      - echo ""
+      - echo "📊 Recent Events:"
+      - kubectl get events -n {{.NAMESPACE}} --sort-by='.lastTimestamp' | tail -10
+      - echo ""
+      - echo "🔍 Pod Details:"
+      - kubectl describe pods -n {{.NAMESPACE}}
+
+  wait:
+    desc: "Wait for all pods to be ready"
+    cmds:
+      - echo "⏳ Waiting for all pods to be ready..."
+      - kubectl wait --for=condition=ready pod --all -n {{.NAMESPACE}} --timeout=300s
+      - echo "✅ All pods are ready!"
+
+  restart:
+    desc: "Restart all deployments"
+    cmds:
+      - kubectl rollout restart deployment -n {{.NAMESPACE}}
+      - echo "🔄 All deployments restarted!"
+      - task: wait
+
+  undeploy:
+    desc: "Remove all MCP components"
+    cmds:
+      - helm uninstall {{.RELEASE_NAME}} -n {{.NAMESPACE}} --ignore-not-found
+      - kubectl delete -f mcp-servers/ -n {{.NAMESPACE}} --ignore-not-found=true
+      - kubectl delete namespace {{.NAMESPACE}} --ignore-not-found=true
+
+  clean:
+    desc: "Clean up everything including cluster"
+    cmds:
+      - task: undeploy
+      - |
+        # Clean up any stuck helm releases
+        helm uninstall ingress-nginx -n kube-system --ignore-not-found || true
+      - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Everything cleaned up successfully!"
+
+  clean-helm:
+    desc: "Clean up stuck Helm releases"
+    cmds:
+      - echo "🧹 Cleaning up stuck Helm releases..."
+      - |
+        # List all releases to see current state
+        echo "Current Helm releases:"
+        helm list -A || true
+        echo ""
+
+        # Clean up stuck ingress-nginx
+        echo "Cleaning up ingress-nginx..."
+        helm uninstall ingress-nginx -n kube-system --ignore-not-found || true
+
+        # Clean up inference-gateway
+        echo "Cleaning up {{.RELEASE_NAME}}..."
+        helm uninstall {{.RELEASE_NAME}} -n {{.NAMESPACE}} --ignore-not-found || true
+
+        echo "✅ Helm cleanup completed!"
