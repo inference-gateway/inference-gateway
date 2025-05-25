@@ -140,6 +140,8 @@ The Model Context Protocol is an open standard for implementing function calling
    127.0.0.1 api.inference-gateway.local
    ```
 
+   If using vscode dev container, you can skip this step.
+
 3. **Access the services:**
 
    - Inference Gateway: http://api.inference-gateway.local
