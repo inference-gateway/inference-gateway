@@ -177,12 +177,12 @@ tasks:
           MCP_ENABLE: "true"
           MCP_EXPOSE: "true"
           MCP_SERVERS: "http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp"
-          MCP_CLIENT_TIMEOUT: "10s"
-          MCP_DIAL_TIMEOUT: "5s"
-          MCP_TLS_HANDSHAKE_TIMEOUT: "5s"
-          MCP_RESPONSE_HEADER_TIMEOUT: "5s"
-          MCP_EXPECT_CONTINUE_TIMEOUT: "2s"
-          MCP_REQUEST_TIMEOUT: "10s"
+          MCP_CLIENT_TIMEOUT: "60s"
+          MCP_DIAL_TIMEOUT: "30s"
+          MCP_TLS_HANDSHAKE_TIMEOUT: "30s"
+          MCP_RESPONSE_HEADER_TIMEOUT: "30s"
+          MCP_EXPECT_CONTINUE_TIMEOUT: "30s"
+          MCP_REQUEST_TIMEOUT: "30s"
         EOF
       - |
         helm upgrade --install \
@@ -338,9 +338,9 @@ tasks:
   logs:mcp-servers:
     desc: "Show logs from MCP servers only"
     cmds:
-      - kubectl logs -l app=mcp-time-server -n {{.NAMESPACE}} --tail=50
-      - kubectl logs -l app=mcp-search-server -n {{.NAMESPACE}} --tail=50
-      - kubectl logs -l app=mcp-filesystem-server -n {{.NAMESPACE}} --tail=50
+      - kubectl logs -l app.kubernetes.io/name=mcp-time-server -n {{.NAMESPACE}} --tail=50
+      - kubectl logs -l app.kubernetes.io/name=mcp-search-server -n {{.NAMESPACE}} --tail=50
+      - kubectl logs -l app.kubernetes.io/name=mcp-filesystem-server -n {{.NAMESPACE}} --tail=50
 
   status:
     desc: "Show status of all resources"
