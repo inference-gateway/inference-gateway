@@ -9,6 +9,12 @@
 | ENABLE_MCP | `false` | Enable MCP |
 | EXPOSE_MCP | `false` | Expose MCP tools endpoint |
 | MCP_SERVERS | `""` | List of MCP servers |
+| MCP_CLIENT_TIMEOUT | `5s` | MCP client HTTP timeout |
+| MCP_DIAL_TIMEOUT | `3s` | MCP client dial timeout |
+| MCP_TLS_HANDSHAKE_TIMEOUT | `3s` | MCP client TLS handshake timeout |
+| MCP_RESPONSE_HEADER_TIMEOUT | `3s` | MCP client response header timeout |
+| MCP_EXPECT_CONTINUE_TIMEOUT | `1s` | MCP client expect continue timeout |
+| MCP_REQUEST_TIMEOUT | `5s` | MCP client request timeout for initialize and tool calls |
 
 
 ### OpenID Connect

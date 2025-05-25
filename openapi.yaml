@@ -1202,6 +1202,36 @@ components:
                   env: "MCP_SERVERS"
                   type: string
                   description: "List of MCP servers"
+                - name: mcp_client_timeout
+                  env: "MCP_CLIENT_TIMEOUT"
+                  type: time.Duration
+                  default: "5s"
+                  description: "MCP client HTTP timeout"
+                - name: mcp_dial_timeout
+                  env: "MCP_DIAL_TIMEOUT"
+                  type: time.Duration
+                  default: "3s"
+                  description: "MCP client dial timeout"
+                - name: mcp_tls_handshake_timeout
+                  env: "MCP_TLS_HANDSHAKE_TIMEOUT"
+                  type: time.Duration
+                  default: "3s"
+                  description: "MCP client TLS handshake timeout"
+                - name: mcp_response_header_timeout
+                  env: "MCP_RESPONSE_HEADER_TIMEOUT"
+                  type: time.Duration
+                  default: "3s"
+                  description: "MCP client response header timeout"
+                - name: mcp_expect_continue_timeout
+                  env: "MCP_EXPECT_CONTINUE_TIMEOUT"
+                  type: time.Duration
+                  default: "1s"
+                  description: "MCP client expect continue timeout"
+                - name: mcp_request_timeout
+                  env: "MCP_REQUEST_TIMEOUT"
+                  type: time.Duration
+                  default: "5s"
+                  description: "MCP client request timeout for initialize and tool calls"
           - oidc:
               title: "OpenID Connect"
               settings:

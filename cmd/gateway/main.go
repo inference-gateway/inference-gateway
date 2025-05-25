@@ -135,7 +135,7 @@ func main() {
 	var mcpClient mcp.MCPClientInterface
 	var mcpMiddleware middlewares.MCPMiddleware
 	if cfg.EnableMcp && cfg.McpServers != "" {
-		mcpClient = mcp.NewMCPClient(strings.Split(cfg.McpServers, ","), logger)
+		mcpClient = mcp.NewMCPClient(strings.Split(cfg.McpServers, ","), logger, cfg)
 		initErr := mcpClient.InitializeAll(context.Background())
 		if initErr != nil {
 			logger.Error("Failed to initialize MCP client", initErr)

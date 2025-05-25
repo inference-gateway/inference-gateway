@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
 	m "github.com/metoro-io/mcp-golang"
@@ -63,6 +64,7 @@ type MCPClient struct {
 	ServerURLs          []string
 	Clients             map[string]*m.Client
 	Logger              logger.Logger
+	Config              config.Config
 	ServerCapabilities  map[string]ServerCapabilities
 	ServerTools         map[string][]Tool
 	ChatCompletionTools []providers.ChatCompletionTool
@@ -72,15 +74,15 @@ type MCPClient struct {
 // NewClient creates a new MCP client for a given server URL
 func (mc *MCPClient) NewClient(url string) *m.Client {
 	httpClient := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: mc.Config.McpClientTimeout,
 		Transport: &http.Transport{
 			DialContext: (&net.Dialer{
-				Timeout:   3 * time.Second,
+				Timeout:   mc.Config.McpDialTimeout,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
-			TLSHandshakeTimeout:   3 * time.Second,
-			ResponseHeaderTimeout: 3 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
+			TLSHandshakeTimeout:   mc.Config.McpTlsHandshakeTimeout,
+			ResponseHeaderTimeout: mc.Config.McpResponseHeaderTimeout,
+			ExpectContinueTimeout: mc.Config.McpExpectContinueTimeout,
 		},
 	}
 
@@ -90,11 +92,12 @@ func (mc *MCPClient) NewClient(url string) *m.Client {
 }
 
 // NewMCPClient is a variable holding the function to create a new MCP client
-func NewMCPClient(serverURLs []string, logger logger.Logger) MCPClientInterface {
+func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) MCPClientInterface {
 	return &MCPClient{
 		ServerURLs:          serverURLs,
 		Clients:             make(map[string]*m.Client),
 		Logger:              logger,
+		Config:              cfg,
 		ServerCapabilities:  make(map[string]ServerCapabilities),
 		ServerTools:         make(map[string][]Tool),
 		ChatCompletionTools: make([]providers.ChatCompletionTool, 0),
@@ -160,10 +163,10 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 
 		client := mc.NewClient(url)
 
-		initCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		initCtx, cancel := context.WithTimeout(ctx, mc.Config.McpRequestTimeout)
 		defer cancel()
 
-		mc.Logger.Debug("MCP: Attempting client initialization with timeout", "server", url, "timeout", "5s")
+		mc.Logger.Debug("MCP: Attempting client initialization with timeout", "server", url, "timeout", mc.Config.McpRequestTimeout.String())
 		result, err := client.Initialize(initCtx)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
@@ -215,10 +218,10 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 
 		mc.Logger.Debug("MCP: Fetching available tools", "server", url)
 
-		toolsCtx, toolsCancel := context.WithTimeout(ctx, 5*time.Second)
+		toolsCtx, toolsCancel := context.WithTimeout(ctx, mc.Config.McpRequestTimeout)
 		defer toolsCancel()
 
-		mc.Logger.Debug("MCP: Attempting to list tools with timeout", "server", url, "timeout", "5s")
+		mc.Logger.Debug("MCP: Attempting to list tools with timeout", "server", url, "timeout", mc.Config.McpRequestTimeout.String())
 		toolsResult, err := client.ListTools(toolsCtx, nil)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {

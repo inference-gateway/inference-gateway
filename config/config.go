@@ -14,12 +14,18 @@ import (
 // Config holds the configuration for the Inference Gateway
 type Config struct {
 	// General settings
-	Environment     string `env:"ENVIRONMENT, default=production" description:"The environment"`
-	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
-	EnableAuth      bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
-	EnableMcp       bool   `env:"ENABLE_MCP, default=false" description:"Enable MCP"`
-	ExposeMcp       bool   `env:"EXPOSE_MCP, default=false" description:"Expose MCP tools endpoint"`
-	McpServers      string `env:"MCP_SERVERS" description:"List of MCP servers"`
+	Environment              string        `env:"ENVIRONMENT, default=production" description:"The environment"`
+	EnableTelemetry          bool          `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
+	EnableAuth               bool          `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
+	EnableMcp                bool          `env:"ENABLE_MCP, default=false" description:"Enable MCP"`
+	ExposeMcp                bool          `env:"EXPOSE_MCP, default=false" description:"Expose MCP tools endpoint"`
+	McpServers               string        `env:"MCP_SERVERS" description:"List of MCP servers"`
+	McpClientTimeout         time.Duration `env:"MCP_CLIENT_TIMEOUT, default=5s" description:"MCP client HTTP timeout"`
+	McpDialTimeout           time.Duration `env:"MCP_DIAL_TIMEOUT, default=3s" description:"MCP client dial timeout"`
+	McpTlsHandshakeTimeout   time.Duration `env:"MCP_TLS_HANDSHAKE_TIMEOUT, default=3s" description:"MCP client TLS handshake timeout"`
+	McpResponseHeaderTimeout time.Duration `env:"MCP_RESPONSE_HEADER_TIMEOUT, default=3s" description:"MCP client response header timeout"`
+	McpExpectContinueTimeout time.Duration `env:"MCP_EXPECT_CONTINUE_TIMEOUT, default=1s" description:"MCP client expect continue timeout"`
+	McpRequestTimeout        time.Duration `env:"MCP_REQUEST_TIMEOUT, default=5s" description:"MCP client request timeout for initialize and tool calls"`
 	// OIDC settings
 	OIDC *OIDC `env:", prefix=OIDC_" description:"OIDC configuration"`
 	// Server settings

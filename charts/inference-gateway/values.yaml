@@ -144,6 +144,12 @@ config:
   ENABLE_MCP: "false"
   EXPOSE_MCP: "false"
   MCP_SERVERS: ""
+  MCP_CLIENT_TIMEOUT: "5s"
+  MCP_DIAL_TIMEOUT: "3s"
+  MCP_TLS_HANDSHAKE_TIMEOUT: "3s"
+  MCP_RESPONSE_HEADER_TIMEOUT: "3s"
+  MCP_EXPECT_CONTINUE_TIMEOUT: "1s"
+  MCP_REQUEST_TIMEOUT: "5s"
   # OpenID Connect
   OIDC_ISSUER_URL: "http://keycloak:8080/realms/inference-gateway-realm"
   # Server settings

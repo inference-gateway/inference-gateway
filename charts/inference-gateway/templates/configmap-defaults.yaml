@@ -12,6 +12,12 @@ data:
   ENABLE_MCP: {{ .Values.config.ENABLE_MCP | quote }}
   EXPOSE_MCP: {{ .Values.config.EXPOSE_MCP | quote }}
   MCP_SERVERS: {{ .Values.config.MCP_SERVERS | quote }}
+  MCP_CLIENT_TIMEOUT: {{ .Values.config.MCP_CLIENT_TIMEOUT | quote }}
+  MCP_DIAL_TIMEOUT: {{ .Values.config.MCP_DIAL_TIMEOUT | quote }}
+  MCP_TLS_HANDSHAKE_TIMEOUT: {{ .Values.config.MCP_TLS_HANDSHAKE_TIMEOUT | quote }}
+  MCP_RESPONSE_HEADER_TIMEOUT: {{ .Values.config.MCP_RESPONSE_HEADER_TIMEOUT | quote }}
+  MCP_EXPECT_CONTINUE_TIMEOUT: {{ .Values.config.MCP_EXPECT_CONTINUE_TIMEOUT | quote }}
+  MCP_REQUEST_TIMEOUT: {{ .Values.config.MCP_REQUEST_TIMEOUT | quote }}
   # OpenID Connect
   OIDC_ISSUER_URL: {{ .Values.config.OIDC_ISSUER_URL | quote }}
   # Server settings
