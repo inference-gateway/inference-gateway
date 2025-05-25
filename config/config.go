@@ -18,6 +18,7 @@ type Config struct {
 	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
 	EnableAuth      bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
 	EnableMcp       bool   `env:"ENABLE_MCP, default=false" description:"Enable MCP"`
+	ExposeMcp       bool   `env:"EXPOSE_MCP, default=false" description:"Expose MCP tools endpoint"`
 	McpServers      string `env:"MCP_SERVERS" description:"List of MCP servers"`
 	// OIDC settings
 	OIDC *OIDC `env:", prefix=OIDC_" description:"OIDC configuration"`

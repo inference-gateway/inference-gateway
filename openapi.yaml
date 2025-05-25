@@ -29,6 +29,8 @@ tags:
     description: List and describe the various models available in the API.
   - name: Completions
     description: Generate completions from the models.
+  - name: Tools
+    description: List and manage MCP tools.
   - name: Proxy
     description: Proxy requests to provider endpoints.
   - name: Health
@@ -150,6 +152,29 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /mcp/tools:
+    get:
+      operationId: listTools
+      tags:
+        - Tools
+      description: |
+        Lists the currently available MCP tools. Only accessible when EXPOSE_MCP is enabled.
+      summary: Lists the currently available MCP tools
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListToolsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MCPNotExposed"
         "500":
           $ref: "#/components/responses/InternalError"
   /proxy/{provider}/{path}:
@@ -357,6 +382,14 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
+    MCPNotExposed:
+      description: MCP tools endpoint is not exposed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable."
     ProviderResponse:
       description: |
         ProviderResponse depends on the specific provider and endpoint being called
@@ -646,6 +679,53 @@ components:
       required:
         - object
         - data
+    ListToolsResponse:
+      type: object
+      description: Response structure for listing MCP tools
+      properties:
+        object:
+          type: string
+          description: Always "list"
+          example: "list"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/MCPTool"
+          default: []
+          description: Array of available MCP tools
+      required:
+        - object
+        - data
+    MCPTool:
+      type: object
+      description: An MCP tool definition
+      properties:
+        name:
+          type: string
+          description: The name of the tool
+          example: "read_file"
+        description:
+          type: string
+          description: A description of what the tool does
+          example: "Read content from a file"
+        server:
+          type: string
+          description: The MCP server that provides this tool
+          example: "http://mcp-filesystem-server:8083/mcp"
+        input_schema:
+          type: object
+          description: JSON schema for the tool's input parameters
+          example:
+            type: "object"
+            properties:
+              file_path:
+                type: "string"
+                description: "Path to the file to read"
+            required: ["file_path"]
+      required:
+        - name
+        - description
+        - server
     FunctionObject:
       type: object
       properties:
@@ -1113,6 +1193,11 @@ components:
                   type: bool
                   default: "false"
                   description: "Enable MCP"
+                - name: expose_mcp
+                  env: "EXPOSE_MCP"
+                  type: bool
+                  default: "false"
+                  description: "Expose MCP tools endpoint"
                 - name: mcp_servers
                   env: "MCP_SERVERS"
                   type: string

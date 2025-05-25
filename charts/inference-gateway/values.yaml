@@ -142,6 +142,7 @@ config:
   ENABLE_TELEMETRY: "false"
   ENABLE_AUTH: "false"
   ENABLE_MCP: "false"
+  EXPOSE_MCP: "false"
   MCP_SERVERS: ""
   # OpenID Connect
   OIDC_ISSUER_URL: "http://keycloak:8080/realms/inference-gateway-realm"

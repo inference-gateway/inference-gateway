@@ -19,6 +19,7 @@ import (
 	gin "github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
+	"github.com/inference-gateway/inference-gateway/mcp"
 	providers "github.com/inference-gateway/inference-gateway/providers"
 )
 
@@ -26,16 +27,18 @@ import (
 type Router interface {
 	ListModelsHandler(c *gin.Context)
 	ChatCompletionsHandler(c *gin.Context)
+	ListToolsHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
 }
 
 type RouterImpl struct {
-	cfg      config.Config
-	logger   l.Logger
-	registry providers.ProviderRegistry
-	client   providers.Client
+	cfg       config.Config
+	logger    l.Logger
+	registry  providers.ProviderRegistry
+	client    providers.Client
+	mcpClient mcp.MCPClientInterface
 }
 
 type ErrorResponse struct {
@@ -46,12 +49,13 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client) Router {
+func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client, mcpClient mcp.MCPClientInterface) Router {
 	return &RouterImpl{
 		cfg,
 		logger,
 		registry,
 		client,
+		mcpClient,
 	}
 }
 
@@ -533,6 +537,76 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		router.logger.Error("failed to generate tokens", err, "provider", providerID)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Failed to generate tokens: %s", err)})
 		return
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ListToolsHandler implements an endpoint that returns available MCP tools
+// when EXPOSE_MCP environment variable is enabled.
+//
+// Response format when MCP is exposed:
+//
+//	{
+//	  "object": "list",
+//	  "data": [
+//	    {
+//	      "name": "read_file",
+//	      "description": "Read the contents of a file",
+//	      "server": "filesystem-server",
+//	      "input_schema": {...}
+//	    },
+//	    ...
+//	  ]
+//	}
+//
+// Response when MCP is not exposed:
+//
+//	{
+//	  "error": "MCP tools endpoint is not exposed"
+//	}
+func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
+	if !router.cfg.ExposeMcp {
+		router.logger.Error("MCP tools endpoint access attempted but not exposed", nil)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: "MCP tools endpoint is not exposed"})
+		return
+	}
+
+	if router.mcpClient == nil || !router.mcpClient.IsInitialized() {
+		router.logger.Error("MCP client not initialized", nil)
+		c.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "MCP client not available"})
+		return
+	}
+
+	var allTools []providers.MCPTool
+
+	servers := router.mcpClient.GetServers()
+
+	for _, serverURL := range servers {
+		tools, err := router.mcpClient.GetServerTools(serverURL)
+		if err != nil {
+			router.logger.Error("failed to get tools from MCP server", err, "server", serverURL)
+			continue
+		}
+
+		for _, tool := range tools {
+			mcpTool := providers.MCPTool{
+				Name:        tool.Name,
+				Description: tool.Description,
+				Server:      serverURL,
+				InputSchema: &tool.Inputschema,
+			}
+			allTools = append(allTools, mcpTool)
+		}
+	}
+
+	if allTools == nil {
+		allTools = make([]providers.MCPTool, 0)
+	}
+
+	response := providers.ListToolsResponse{
+		Object: "list",
+		Data:   allTools,
 	}
 
 	c.JSON(http.StatusOK, response)

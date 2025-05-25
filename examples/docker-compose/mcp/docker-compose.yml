@@ -11,6 +11,7 @@ services:
     environment:
       ENVIRONMENT: development
       ENABLE_MCP: true
+      EXPOSE_MCP: true
       MCP_SERVERS: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp
     depends_on:
       mcp-time-server:

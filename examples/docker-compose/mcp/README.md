@@ -172,6 +172,78 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 }'
 ```
 
+### Example 8: List Available MCP Tools
+
+You can also query the Inference Gateway to see all available tools from connected MCP servers:
+
+```bash
+curl -X GET http://localhost:8080/v1/mcp/tools
+```
+
+This endpoint returns a JSON response containing all available tools from all connected MCP servers, including:
+
+- Tool names and descriptions
+- Required and optional parameters
+- Input/output schemas
+- Which MCP server provides each tool
+
+Example response:
+
+```json
+{
+  "tools": [
+    {
+      "name": "time",
+      "description": "Get the current time",
+      "server": "http://mcp-time-server:8081/mcp",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "description": "Time format (ISO, human-readable, etc.)"
+          }
+        }
+      }
+    },
+    {
+      "name": "search",
+      "description": "Perform web search",
+      "server": "http://mcp-search-server:8082/mcp",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "write_file",
+      "description": "Write content to a file",
+      "server": "http://mcp-filesystem-server:8083/mcp",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path"
+          },
+          "content": {
+            "type": "string",
+            "description": "File content"
+          }
+        },
+        "required": ["path", "content"]
+      }
+    }
+  ]
+}
+```
+
 ## How It Works
 
 When you send a request to the Inference Gateway, it will:

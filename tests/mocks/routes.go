@@ -76,6 +76,18 @@ func (mr *MockRouterMockRecorder) ListModelsHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListModelsHandler", reflect.TypeOf((*MockRouter)(nil).ListModelsHandler), c)
 }
 
+// ListToolsHandler mocks base method.
+func (m *MockRouter) ListToolsHandler(c *gin.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListToolsHandler", c)
+}
+
+// ListToolsHandler indicates an expected call of ListToolsHandler.
+func (mr *MockRouterMockRecorder) ListToolsHandler(c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListToolsHandler", reflect.TypeOf((*MockRouter)(nil).ListToolsHandler), c)
+}
+
 // NotFoundHandler mocks base method.
 func (m *MockRouter) NotFoundHandler(c *gin.Context) {
 	m.ctrl.T.Helper()

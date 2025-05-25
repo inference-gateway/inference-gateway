@@ -154,7 +154,7 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, client)
+	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.EnableTelemetry {
@@ -173,6 +173,7 @@ func main() {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/models", api.ListModelsHandler)
+		v1.GET("/mcp/tools", api.ListToolsHandler)
 		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 	}
 	r.NoRoute(api.NotFoundHandler)

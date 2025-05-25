@@ -10,6 +10,7 @@ data:
   ENABLE_TELEMETRY: {{ .Values.config.ENABLE_TELEMETRY | quote }}
   ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
   ENABLE_MCP: {{ .Values.config.ENABLE_MCP | quote }}
+  EXPOSE_MCP: {{ .Values.config.EXPOSE_MCP | quote }}
   MCP_SERVERS: {{ .Values.config.MCP_SERVERS | quote }}
   # OpenID Connect
   OIDC_ISSUER_URL: {{ .Values.config.OIDC_ISSUER_URL | quote }}
