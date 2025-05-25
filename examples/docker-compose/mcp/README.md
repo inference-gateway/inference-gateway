@@ -2,6 +2,37 @@
 
 This example demonstrates how to integrate the Model Context Protocol (MCP) with Inference Gateway, allowing LLMs to access external tools and data through multiple MCP servers.
 
+## Table of Contents
+
+- [Model Context Protocol Integration Example](#model-context-protocol-integration-example)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Components](#components)
+  - [MCP Inspector](#mcp-inspector)
+    - [Accessing the Inspector](#accessing-the-inspector)
+    - [Using the Inspector](#using-the-inspector)
+  - [Setup Instructions](#setup-instructions)
+    - [Prerequisites](#prerequisites)
+    - [Environment Variables](#environment-variables)
+    - [Start the Services](#start-the-services)
+  - [Usage](#usage)
+    - [Example 1: Time Tool](#example-1-time-tool)
+    - [Example 2: Search Tool](#example-2-search-tool)
+    - [Example 3: Multiple Tools](#example-3-multiple-tools)
+    - [Example 4: MCP Streaming](#example-4-mcp-streaming)
+    - [Example 5: Filesystem Operations](#example-5-filesystem-operations)
+    - [Example 6: Directory Management](#example-6-directory-management)
+    - [Example 7: File Information and Management](#example-7-file-information-and-management)
+    - [Example 8: List Available MCP Tools](#example-8-list-available-mcp-tools)
+  - [How It Works](#how-it-works)
+  - [Available Tools](#available-tools)
+    - [Time Server Tools](#time-server-tools)
+    - [Search Server Tools](#search-server-tools)
+    - [Filesystem Server Tools](#filesystem-server-tools)
+  - [Configuration Options](#configuration-options)
+  - [Adding Custom MCP Servers](#adding-custom-mcp-servers)
+  - [Learn More](#learn-more)
+
 ## Overview
 
 The Model Context Protocol is an open standard for implementing function calling in AI applications. This example shows how to:
@@ -17,6 +48,44 @@ The Model Context Protocol is an open standard for implementing function calling
 - **MCP Time Server**: A simple MCP server that provides time data tools
 - **MCP Search Server**: A simple MCP server that provides web search functionality
 - **MCP Filesystem Server**: A practical MCP server that provides file operations (read, write, delete, list directories)
+- **MCP Inspector**: A web-based debugging tool for exploring and testing MCP servers
+
+## MCP Inspector
+
+The MCP Inspector is included in this example to help you debug and explore your MCP servers. It provides a web interface for:
+
+- **Server Discovery**: View all connected MCP servers and their capabilities
+- **Tool Exploration**: Browse available tools from each server with their schemas
+- **Interactive Testing**: Execute tool calls directly and see the responses
+- **Protocol Debugging**: Monitor MCP protocol messages and debug connection issues
+
+### Accessing the Inspector
+
+Once the services are running, you can access the MCP Inspector at:
+
+```
+http://localhost:6274
+```
+
+The inspector will automatically connect to all the MCP servers configured in the docker-compose setup:
+
+- Time Server: `http://mcp-time-server:8081/mcp`
+- Search Server: `http://mcp-search-server:8082/mcp`
+- Filesystem Server: `http://mcp-filesystem-server:8083/mcp`
+
+### Using the Inspector
+
+1. **Browse Servers**: The left panel shows all connected MCP servers
+2. **Explore Tools**: Click on a server to see its available tools and capabilities
+3. **Test Tools**: Select a tool to see its input schema and execute test calls
+4. **View Responses**: See real-time responses and debug any issues
+
+The inspector is particularly useful for:
+
+- Verifying that your MCP servers are working correctly
+- Understanding the available tools and their parameters
+- Testing tool calls before integrating them into your applications
+- Debugging connection issues or protocol errors
 
 ## Setup Instructions
 
