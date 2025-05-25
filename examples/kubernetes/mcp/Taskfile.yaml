@@ -3,7 +3,7 @@ version: "3"
 vars:
   NAMESPACE: inference-gateway
   RELEASE_NAME: inference-gateway
-  CHART_VERSION: 0.7.0-rc.1
+  CHART_VERSION: 0.7.0-rc.2
   CHART: oci://ghcr.io/inference-gateway/charts/inference-gateway
 
 tasks:
@@ -174,6 +174,7 @@ tasks:
             meta.helm.sh/release-name: {{.RELEASE_NAME}}
             meta.helm.sh/release-namespace: {{.NAMESPACE}}
         data:
+          ENVIRONMENT: "development"
           MCP_ENABLE: "true"
           MCP_EXPOSE: "true"
           MCP_SERVERS: "http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp"
@@ -206,6 +207,7 @@ tasks:
     cmds:
       - task: deploy-infrastructure
       - task: deploy-mcp-servers
+      - task: wait
       - task: deploy-inference-gateway
       - echo "🎉 Complete MCP setup deployed successfully!"
       - echo ""
