@@ -41,7 +41,7 @@ tasks:
           --set ingress.enabled=true \
           --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
           --set envFrom.secretRef=inference-gateway \
-          --version 0.6.3 \
+          --version 0.7.1 \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
       - echo "🚪 Inference Gateway with hybrid providers deployed successfully!"

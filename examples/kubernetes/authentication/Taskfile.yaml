@@ -133,7 +133,7 @@ tasks:
           --set volumeMounts[0].subPath=ca.crt \
           --set volumeMounts[0].readOnly=true \
           --wait \
-          --version 0.6.3 \
+          --version 0.7.1 \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
       - echo "🔒 Inference Gateway with authentication enabled, deployed successfully!"
 
