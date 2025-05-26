@@ -134,19 +134,23 @@ func main() {
 	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
 	var mcpMiddleware middlewares.MCPMiddleware
-	if cfg.MCP.Enable && cfg.MCP.Servers != "" {
-		mcpClient = mcp.NewMCPClient(strings.Split(cfg.MCP.Servers, ","), logger, cfg)
+	if cfg.MCP.Enable {
+		if cfg.MCP.Servers != "" {
+			mcpClient = mcp.NewMCPClient(strings.Split(cfg.MCP.Servers, ","), logger, cfg)
 
-		initCtx, cancel := context.WithTimeout(context.Background(), cfg.MCP.RequestTimeout)
-		defer cancel()
+			initCtx, cancel := context.WithTimeout(context.Background(), cfg.MCP.RequestTimeout)
+			defer cancel()
 
-		logger.Info("MCP: Starting client initialization", "timeout", cfg.MCP.RequestTimeout.String())
-		initErr := mcpClient.InitializeAll(initCtx)
-		if initErr != nil {
-			logger.Error("Failed to initialize MCP client", initErr)
-			return
+			logger.Info("MCP: Starting client initialization", "timeout", cfg.MCP.RequestTimeout.String())
+			initErr := mcpClient.InitializeAll(initCtx)
+			if initErr != nil {
+				logger.Error("Failed to initialize MCP client", initErr)
+				return
+			}
+			logger.Info("MCP client initialized successfully")
+		} else {
+			logger.Info("MCP is enabled but no servers configured, using no-op middleware")
 		}
-		logger.Info("MCP client initialized successfully")
 
 		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, logger, cfg)
 		if err != nil {
