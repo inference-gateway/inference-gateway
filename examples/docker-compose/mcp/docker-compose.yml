@@ -1,9 +1,7 @@
 ---
 services:
   inference-gateway:
-    build:
-      context: ../../../
-      dockerfile: Dockerfile
+    image: ghcr.io/inference-gateway/inference-gateway:latest
     ports:
       - "8080:8080"
     env_file:
