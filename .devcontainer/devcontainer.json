@@ -34,6 +34,12 @@
         "dev.containers.copyGitConfig": true,
         "githubPullRequests.experimental.chat": true,
         "githubPullRequests.experimental.notificationsView": true,
+        "github.copilot.enable": {
+          "*": true
+        },
+        "github.copilot.advanced": {
+          "authProvider": "github"
+        },
         "github.copilot.chat.codeGeneration.useInstructionFiles": true,
         "github.copilot.chat.codeGeneration.instructions": [
           {
