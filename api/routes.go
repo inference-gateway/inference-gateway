@@ -572,36 +572,39 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 		return
 	}
 
-	if router.mcpClient == nil || !router.mcpClient.IsInitialized() {
-		router.logger.Error("MCP client not initialized", nil)
-		c.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: "MCP client not available"})
-		return
-	}
-
 	var allTools []providers.MCPTool
 
-	servers := router.mcpClient.GetServers()
-
-	for _, serverURL := range servers {
-		tools, err := router.mcpClient.GetServerTools(serverURL)
-		if err != nil {
-			router.logger.Error("failed to get tools from MCP server", err, "server", serverURL)
-			continue
-		}
-
-		for _, tool := range tools {
-			mcpTool := providers.MCPTool{
-				Name:        tool.Name,
-				Description: tool.Description,
-				Server:      serverURL,
-				InputSchema: &tool.Inputschema,
-			}
-			allTools = append(allTools, mcpTool)
-		}
-	}
-
-	if allTools == nil {
+	switch {
+	case router.mcpClient == nil:
+		router.logger.Debug("MCP client is nil, returning empty tools list")
 		allTools = make([]providers.MCPTool, 0)
+	case !router.mcpClient.IsInitialized():
+		router.logger.Info("MCP client not initialized, no tools available")
+		allTools = make([]providers.MCPTool, 0)
+	default:
+		servers := router.mcpClient.GetServers()
+
+		for _, serverURL := range servers {
+			tools, err := router.mcpClient.GetServerTools(serverURL)
+			if err != nil {
+				router.logger.Error("failed to get tools from MCP server", err, "server", serverURL)
+				continue
+			}
+
+			for _, tool := range tools {
+				mcpTool := providers.MCPTool{
+					Name:        tool.Name,
+					Description: tool.Description,
+					Server:      serverURL,
+					InputSchema: &tool.Inputschema,
+				}
+				allTools = append(allTools, mcpTool)
+			}
+		}
+
+		if allTools == nil {
+			allTools = make([]providers.MCPTool, 0)
+		}
 	}
 
 	response := providers.ListToolsResponse{
