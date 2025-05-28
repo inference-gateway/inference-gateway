@@ -1,164 +1,69 @@
 # Model Context Protocol Integration Example
 
-This example demonstrates how to integrate the Model Context Protocol (MCP) with Inference Gateway, allowing LLMs to access external tools and data through multiple MCP servers.
+This example demonstrates integrating the Model Context Protocol (MCP) with Inference Gateway, enabling LLMs to access external tools and data through multiple MCP servers.
 
-**✨ Enhanced with Server-Sent Events (SSE) Support**
+## Features
 
-All MCP servers in this example have been enhanced with SSE capabilities for real-time streaming communication:
-
-- **Dual Protocol Support**: Both traditional JSON-RPC and SSE streaming
-- **Real-time Updates**: Live streaming of tool responses and server status
-- **Browser Compatible**: CORS-enabled for web client integration
-- **Backward Compatible**: Existing MCP clients work unchanged
-
-For detailed SSE documentation, see [SSE-README.md](./SSE-README.md).
+- **✨ Server-Sent Events (SSE)**: Real-time streaming with dual JSON-RPC and SSE protocol support
+- **🔍 MCP Inspector**: Web-based debugging tool for exploring and testing MCP servers
+- **🛠️ Multiple Tools**: Time, search, filesystem, and pizza-related tools
+- **🔧 Easy Setup**: Docker Compose configuration with CORS support
 
 ## Table of Contents
 
-- [Model Context Protocol Integration Example](#model-context-protocol-integration-example)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Components](#components)
-  - [MCP Inspector](#mcp-inspector)
-    - [Accessing the Inspector](#accessing-the-inspector)
-    - [Using the Inspector](#using-the-inspector)
-  - [Setup Instructions](#setup-instructions)
-    - [Prerequisites](#prerequisites)
-    - [Environment Variables](#environment-variables)
-    - [Start the Services](#start-the-services)
-    - [Testing SSE Functionality](#testing-sse-functionality)
-  - [Usage](#usage)
-    - [Example 1: Time Tool](#example-1-time-tool)
-    - [Example 2: Search Tool](#example-2-search-tool)
-    - [Example 3: Multiple Tools](#example-3-multiple-tools)
-    - [Example 4: MCP Streaming](#example-4-mcp-streaming)
-    - [Example 5: Filesystem Operations](#example-5-filesystem-operations)
-    - [Example 6: Directory Management](#example-6-directory-management)
-    - [Example 7: File Information and Management](#example-7-file-information-and-management)
-    - [Example 8: List Available MCP Tools](#example-8-list-available-mcp-tools)
-    - [Example 9: Official TypeScript SDK Tools](#example-9-official-typescript-sdk-tools)
-  - [How It Works](#how-it-works)
-  - [Available Tools](#available-tools)
-    - [Time Server Tools](#time-server-tools)
-    - [Search Server Tools](#search-server-tools)
-    - [Filesystem Server Tools](#filesystem-server-tools)
-    - [Official TypeScript Server Tools](#official-typescript-server-tools)
-  - [Configuration Options](#configuration-options)
-  - [Adding Custom MCP Servers](#adding-custom-mcp-servers)
-  - [Learn More](#learn-more)
+- [Quick Start](#quick-start)
+- [Components](#components)
+- [MCP Inspector](#mcp-inspector)
+- [Usage](#usage)
+- [How It Works](#how-it-works)
+- [Available Tools](#available-tools)
+- [Adding Your Own MCP Servers](#adding-your-own-mcp-servers)
+- [Learn More](#learn-more)
 
-## Overview
-
-This example demonstrates how to integrate the Model Context Protocol (MCP) with Inference Gateway, allowing LLMs to access external tools and data through multiple MCP servers.
-
-**✨ Enhanced with Server-Sent Events (SSE) Support**
-
-All MCP servers in this example have been enhanced with SSE capabilities for real-time streaming communication:
-
-- **Dual Protocol Support**: Both traditional JSON-RPC and SSE streaming
-- **Real-time Updates**: Live streaming of tool responses and server status
-- **Browser Compatible**: CORS-enabled for web client integration
-- **Backward Compatible**: Existing MCP clients work unchanged
-
-For detailed SSE documentation, see [SSE-README.md](./SSE-README.md).
-
-## Components
-
-- **Inference Gateway**: The main service that proxies requests to LLM providers
-- **MCP Time Server**: A simple MCP server that provides time data tools
-- **MCP Search Server**: A simple MCP server that provides web search functionality
-- **MCP Filesystem Server**: A practical MCP server that provides file operations (read, write, delete, list directories)
-- **Official TypeScript Server**: A reference implementation built with the official `@modelcontextprotocol/sdk` showcasing best practices
-- **MCP Inspector**: A web-based debugging tool for exploring and testing MCP servers
-
-## MCP Inspector
-
-The MCP Inspector is included in this example to help you debug and explore your MCP servers. It provides a web interface for:
-
-- **Server Discovery**: View all connected MCP servers and their capabilities
-- **Tool Exploration**: Browse available tools from each server with their schemas
-- **Interactive Testing**: Execute tool calls directly and see the responses
-- **Protocol Debugging**: Monitor MCP protocol messages and debug connection issues
-
-### Accessing the Inspector
-
-Once the services are running, you can access the MCP Inspector at:
-
-```
-http://localhost:6274
-```
-
-The inspector will automatically connect to all the MCP servers configured in the docker-compose setup:
-
-- Time Server: `http://mcp-time-server:8081/mcp`
-- Search Server: `http://mcp-search-server:8082/mcp`
-- Filesystem Server: `http://mcp-filesystem-server:8083/mcp`
-- Official TypeScript Server: `http://official-ts-server:8084/mcp`
-
-### Using the Inspector
-
-1. **Browse Servers**: The left panel shows all connected MCP servers
-2. **Explore Tools**: Click on a server to see its available tools and capabilities
-3. **Test Tools**: Select a tool to see its input schema and execute test calls
-4. **View Responses**: See real-time responses and debug any issues
-
-The inspector is particularly useful for:
-
-- Verifying that your MCP servers are working correctly
-- Understanding the available tools and their parameters
-- Testing tool calls before integrating them into your applications
-- Debugging connection issues or protocol errors
-
-## Setup Instructions
+## Quick Start
 
 ### Prerequisites
 
 - Docker and Docker Compose
 - Groq API key
 
-### Environment Variables
-
-Set your Groq API key:
+### Setup
 
 ```bash
 export GROQ_API_KEY=your_groq_api_key
-```
-
-### Start the Services
-
-```bash
 docker-compose up
 ```
 
-### Testing SSE Functionality
+### Test and Troubleshoot
 
-Test the SSE streaming capabilities using the provided test script:
+Use the MCP Inspector at `http://localhost:6274` to explore servers, test tools, and troubleshoot any issues.
 
-```bash
-./test-sse.sh
-```
+## Components
 
-Or manually test individual SSE endpoints:
+- **Inference Gateway**: Main service that proxies requests to LLM providers
+- **MCP Time Server**: Provides time data tools
+- **MCP Search Server**: Provides web search functionality
+- **MCP Filesystem Server**: Provides file operations (read, write, delete, list directories)
+- **MCP Pizza Server**: TypeScript MCP server providing pizza-related tools using `@modelcontextprotocol/sdk`
+- **MCP Inspector**: Web-based debugging tool for exploring MCP servers
 
-```bash
-# Test time server SSE stream (sends periodic time updates)
-curl -N -H "Accept: text/event-stream" http://localhost:8081/mcp/stream
+## MCP Inspector
 
-# Test search server SSE stream (sends server status updates)
-curl -N -H "Accept: text/event-stream" http://localhost:8082/mcp/stream
+Debug and explore your MCP servers with the web interface at `http://localhost:6274`.
 
-# Test filesystem server SSE stream (sends file system updates)
-curl -N -H "Accept: text/event-stream" http://localhost:8083/mcp/stream
-```
+**Capabilities:**
 
-**SSE Message Format:**
+- View all connected servers and their tools
+- Browse tool schemas and parameters
+- Execute tool calls and see responses
+- Monitor protocol messages and debug issues
 
-```
-data: {"type":"connection","status":"connected","message":"MCP Time Server SSE stream established"}
+**Connected Servers:**
 
-data: {"type":"time_update","timestamp":"2025-05-27T22:45:32Z","server":"mcp-time-server"}
-
-```
+- Time Server: `http://mcp-time-server:8081/mcp`
+- Search Server: `http://mcp-search-server:8082/mcp`
+- Filesystem Server: `http://mcp-filesystem-server:8083/mcp`
+- Pizza Server: `http://mcp-pizza-server:8084/mcp`
 
 ## Usage
 
@@ -370,9 +275,9 @@ Example response:
 }
 ```
 
-### Example 9: Official TypeScript SDK Tools
+### Example 9: Pizza Server Tools
 
-This example demonstrates using tools from the official TypeScript MCP server built with `@modelcontextprotocol/sdk`. The official-ts-server provides mathematical operations, utility functions, and time queries:
+This example demonstrates using tools from the official TypeScript MCP server built with `@modelcontextprotocol/sdk`. The pizza server provides pizza-related tools:
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
@@ -423,38 +328,50 @@ When you send a request to the Inference Gateway, it will:
 
 All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 
-### Official TypeScript Server Tools
+### Pizza Server Tools
 
-- **add**: Add two numbers together (demonstrates math operations)
-- **multiply**: Multiply two numbers (demonstrates math operations)
-- **generate-uuid**: Generate a random UUID (demonstrates utility functions)
-- **get-time**: Get current time in various formats (iso, timestamp, readable)
+- **get-top-pizzas**: Returns mock data of the top 5 pizzas in the world with detailed information
 
-The official TypeScript server showcases best practices using the `@modelcontextprotocol/sdk` and includes comprehensive session management, type validation with Zod schemas, and dual transport support.
+The pizza server showcases best practices using the `@modelcontextprotocol/sdk` and includes comprehensive session management, type validation with Zod schemas, and dual transport support.
 
-## Configuration Options
+## Adding Your Own MCP Servers
 
-The following environment variables can be configured:
+**It's incredibly easy to add more MCP servers!** Simply follow these steps:
+
+### Quick Setup
+
+1. **Add your server URL** to the `MCP_SERVERS` environment variable:
+
+   ```bash
+   MCP_SERVERS=http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://your-new-server:8085/mcp
+   ```
+
+2. **Include your server** in the docker-compose.yml file (if running in Docker)
+
+3. **Restart the services** - that's it! Your tools will automatically be available.
+
+### Requirements for Your MCP Server
+
+- Implements the [MCP specification](https://modelcontextprotocol.io/specification)
+- Responds to HTTP requests on the `/mcp` endpoint
+- Supports CORS for web clients (if using the MCP Inspector)
+
+### Current Example Servers
+
+This example includes four pre-configured servers:
+
+- **Time Server**: `http://mcp-time-server:8081/mcp` - Get current time
+- **Search Server**: `http://mcp-search-server:8082/mcp` - Web search functionality
+- **Filesystem Server**: `http://mcp-filesystem-server:8083/mcp` - File operations
+- **TypeScript Server**: `http://official-ts-server:8084/mcp` - Math and utility functions
+
+### Configuration Options
+
+Environment variables you can configure:
 
 - `MCP_ENABLE`: Set to "true" to enable MCP middleware
 - `MCP_EXPOSE`: Set to "true" to expose MCP endpoints
 - `MCP_SERVERS`: Comma-separated list of MCP server URLs
-
-## Adding Custom MCP Servers
-
-You can add more MCP-compliant servers to the setup by:
-
-1. Adding the server URL to the `MCP_SERVERS` environment variable
-2. Ensuring the server implements the MCP specification
-3. Verifying the server has proper CORS settings for web clients
-4. Updating the docker-compose.yml to include your new MCP server
-
-The current example includes four servers running on different ports:
-
-- Time Server: http://mcp-time-server:8081/mcp
-- Search Server: http://mcp-search-server:8082/mcp
-- Filesystem Server: http://mcp-filesystem-server:8083/mcp
-- Official TypeScript Server: http://official-ts-server:8084/mcp
 
 ## Learn More
 
