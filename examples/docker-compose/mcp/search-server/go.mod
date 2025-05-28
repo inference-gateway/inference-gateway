@@ -4,7 +4,7 @@ go 1.23.8
 
 require (
 	github.com/gin-gonic/gin v1.10.0
-	github.com/metoro-io/mcp-golang v0.11.0
+	github.com/metoro-io/mcp-golang v0.13.0
 )
 
 require (
