@@ -321,17 +321,25 @@ func (m *MCPMiddlewareImpl) processStreamingResponse(ctx context.Context, w *cus
 	maxIterations := 10
 	iteration := 0
 
-	w.ResponseWriter.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.ResponseWriter.Header().Set("Content-Type", "text/event-stream")
 	w.ResponseWriter.Header().Set("Cache-Control", "no-cache")
 	w.ResponseWriter.Header().Set("Connection", "keep-alive")
+	w.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	w.ResponseWriter.Header().Set("Access-Control-Allow-Headers", "Cache-Control")
 	w.ResponseWriter.WriteHeader(http.StatusOK)
 
 	initialResponseLines := strings.Split(responseBody, "\n")
 	for _, line := range initialResponseLines {
-		if strings.TrimSpace(line) != "" {
-			if _, err := w.ResponseWriter.Write([]byte(line + "\n")); err != nil {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "data: ") {
+			if _, err := w.ResponseWriter.Write([]byte("data: " + line + "\n\n")); err != nil {
 				m.logger.Error("Failed to write initial response line", err)
-				break
+				return err
+			}
+		} else if strings.HasPrefix(line, "data: ") {
+			if _, err := w.ResponseWriter.Write([]byte(line + "\n\n")); err != nil {
+				m.logger.Error("Failed to write initial response line", err)
+				return err
 			}
 		}
 	}
@@ -375,6 +383,11 @@ func (m *MCPMiddlewareImpl) processStreamingResponse(ctx context.Context, w *cus
 		hasContent := false
 
 		for chunk := range streamCh {
+			if ctx.Err() != nil {
+				m.logger.Debug("Client disconnected during streaming", "error", ctx.Err())
+				break
+			}
+
 			if _, err := w.ResponseWriter.Write([]byte("data: " + string(chunk) + "\n\n")); err != nil {
 				m.logger.Error("Failed to write chunk in streaming loop", err)
 				break

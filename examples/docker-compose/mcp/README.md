@@ -2,6 +2,17 @@
 
 This example demonstrates how to integrate the Model Context Protocol (MCP) with Inference Gateway, allowing LLMs to access external tools and data through multiple MCP servers.
 
+**✨ Enhanced with Server-Sent Events (SSE) Support**
+
+All MCP servers in this example have been enhanced with SSE capabilities for real-time streaming communication:
+
+- **Dual Protocol Support**: Both traditional JSON-RPC and SSE streaming
+- **Real-time Updates**: Live streaming of tool responses and server status
+- **Browser Compatible**: CORS-enabled for web client integration
+- **Backward Compatible**: Existing MCP clients work unchanged
+
+For detailed SSE documentation, see [SSE-README.md](./SSE-README.md).
+
 ## Table of Contents
 
 - [Model Context Protocol Integration Example](#model-context-protocol-integration-example)
@@ -15,6 +26,7 @@ This example demonstrates how to integrate the Model Context Protocol (MCP) with
     - [Prerequisites](#prerequisites)
     - [Environment Variables](#environment-variables)
     - [Start the Services](#start-the-services)
+    - [Testing SSE Functionality](#testing-sse-functionality)
   - [Usage](#usage)
     - [Example 1: Time Tool](#example-1-time-tool)
     - [Example 2: Search Tool](#example-2-search-tool)
@@ -24,23 +36,31 @@ This example demonstrates how to integrate the Model Context Protocol (MCP) with
     - [Example 6: Directory Management](#example-6-directory-management)
     - [Example 7: File Information and Management](#example-7-file-information-and-management)
     - [Example 8: List Available MCP Tools](#example-8-list-available-mcp-tools)
+    - [Example 9: Official TypeScript SDK Tools](#example-9-official-typescript-sdk-tools)
   - [How It Works](#how-it-works)
   - [Available Tools](#available-tools)
     - [Time Server Tools](#time-server-tools)
     - [Search Server Tools](#search-server-tools)
     - [Filesystem Server Tools](#filesystem-server-tools)
+    - [Official TypeScript Server Tools](#official-typescript-server-tools)
   - [Configuration Options](#configuration-options)
   - [Adding Custom MCP Servers](#adding-custom-mcp-servers)
   - [Learn More](#learn-more)
 
 ## Overview
 
-The Model Context Protocol is an open standard for implementing function calling in AI applications. This example shows how to:
+This example demonstrates how to integrate the Model Context Protocol (MCP) with Inference Gateway, allowing LLMs to access external tools and data through multiple MCP servers.
 
-1. Connect the Inference Gateway to multiple MCP servers simultaneously
-2. Route LLM requests through the MCP middleware
-3. Discover and utilize tools provided by different MCP servers
-4. Execute tool calls and return results to the LLM
+**✨ Enhanced with Server-Sent Events (SSE) Support**
+
+All MCP servers in this example have been enhanced with SSE capabilities for real-time streaming communication:
+
+- **Dual Protocol Support**: Both traditional JSON-RPC and SSE streaming
+- **Real-time Updates**: Live streaming of tool responses and server status
+- **Browser Compatible**: CORS-enabled for web client integration
+- **Backward Compatible**: Existing MCP clients work unchanged
+
+For detailed SSE documentation, see [SSE-README.md](./SSE-README.md).
 
 ## Components
 
@@ -48,6 +68,7 @@ The Model Context Protocol is an open standard for implementing function calling
 - **MCP Time Server**: A simple MCP server that provides time data tools
 - **MCP Search Server**: A simple MCP server that provides web search functionality
 - **MCP Filesystem Server**: A practical MCP server that provides file operations (read, write, delete, list directories)
+- **Official TypeScript Server**: A reference implementation built with the official `@modelcontextprotocol/sdk` showcasing best practices
 - **MCP Inspector**: A web-based debugging tool for exploring and testing MCP servers
 
 ## MCP Inspector
@@ -72,6 +93,7 @@ The inspector will automatically connect to all the MCP servers configured in th
 - Time Server: `http://mcp-time-server:8081/mcp`
 - Search Server: `http://mcp-search-server:8082/mcp`
 - Filesystem Server: `http://mcp-filesystem-server:8083/mcp`
+- Official TypeScript Server: `http://official-ts-server:8084/mcp`
 
 ### Using the Inspector
 
@@ -106,6 +128,36 @@ export GROQ_API_KEY=your_groq_api_key
 
 ```bash
 docker-compose up
+```
+
+### Testing SSE Functionality
+
+Test the SSE streaming capabilities using the provided test script:
+
+```bash
+./test-sse.sh
+```
+
+Or manually test individual SSE endpoints:
+
+```bash
+# Test time server SSE stream (sends periodic time updates)
+curl -N -H "Accept: text/event-stream" http://localhost:8081/mcp/stream
+
+# Test search server SSE stream (sends server status updates)
+curl -N -H "Accept: text/event-stream" http://localhost:8082/mcp/stream
+
+# Test filesystem server SSE stream (sends file system updates)
+curl -N -H "Accept: text/event-stream" http://localhost:8083/mcp/stream
+```
+
+**SSE Message Format:**
+
+```
+data: {"type":"connection","status":"connected","message":"MCP Time Server SSE stream established"}
+
+data: {"type":"time_update","timestamp":"2025-05-27T22:45:32Z","server":"mcp-time-server"}
+
 ```
 
 ## Usage
@@ -313,6 +365,26 @@ Example response:
 }
 ```
 
+### Example 9: Official TypeScript SDK Tools
+
+This example demonstrates using tools from the official TypeScript MCP server built with `@modelcontextprotocol/sdk`. The official-ts-server provides mathematical operations, utility functions, and time queries:
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Top 5 pizzas in the world. Go!"
+    }
+  ]
+}'
+```
+
 ## How It Works
 
 When you send a request to the Inference Gateway, it will:
@@ -344,6 +416,15 @@ When you send a request to the Inference Gateway, it will:
 
 All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 
+### Official TypeScript Server Tools
+
+- **add**: Add two numbers together (demonstrates math operations)
+- **multiply**: Multiply two numbers (demonstrates math operations)
+- **generate-uuid**: Generate a random UUID (demonstrates utility functions)
+- **get-time**: Get current time in various formats (iso, timestamp, readable)
+
+The official TypeScript server showcases best practices using the `@modelcontextprotocol/sdk` and includes comprehensive session management, type validation with Zod schemas, and dual transport support.
+
 ## Configuration Options
 
 The following environment variables can be configured:
@@ -361,11 +442,12 @@ You can add more MCP-compliant servers to the setup by:
 3. Verifying the server has proper CORS settings for web clients
 4. Updating the docker-compose.yml to include your new MCP server
 
-The current example includes three servers running on different ports:
+The current example includes four servers running on different ports:
 
 - Time Server: http://mcp-time-server:8081/mcp
 - Search Server: http://mcp-search-server:8082/mcp
 - Filesystem Server: http://mcp-filesystem-server:8083/mcp
+- Official TypeScript Server: http://official-ts-server:8084/mcp
 
 ## Learn More
 

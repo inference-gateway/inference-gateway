@@ -1,7 +1,9 @@
 ---
 services:
   inference-gateway:
-    image: ghcr.io/inference-gateway/inference-gateway:latest
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     env_file:
@@ -10,13 +12,15 @@ services:
       ENVIRONMENT: development
       MCP_ENABLE: ${MCP_ENABLE:-true}
       MCP_EXPOSE: ${MCP_EXPOSE:-true}
-      MCP_SERVERS: ${MCP_SERVERS:-http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp}
+      MCP_SERVERS: ${MCP_SERVERS:-http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp,http://mcp-pizza-server:8084/mcp}
     depends_on:
       mcp-time-server:
         condition: service_healthy
       mcp-search-server:
         condition: service_healthy
       mcp-filesystem-server:
+        condition: service_healthy
+      mcp-pizza-server:
         condition: service_healthy
     networks:
       - mcp-network
@@ -32,7 +36,7 @@ services:
     environment:
       LOG_LEVEL: debug
       HOST: 0.0.0.0
-      MCP_SERVER_URL: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp
+      MCP_SERVER_URL: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp,http://mcp-pizza-server:8084/mcp
     networks:
       - mcp-network
     depends_on:
@@ -42,14 +46,13 @@ services:
         condition: service_healthy
       mcp-filesystem-server:
         condition: service_healthy
+      mcp-pizza-server:
+        condition: service_healthy
 
   mcp-time-server:
-    image: golang:1.23-alpine
-    working_dir: /app
-    volumes:
-      - ./time-server:/app
-    command: >
-      sh -c "apk add --no-cache curl && go run main.go"
+    build:
+      context: ./time-server
+      dockerfile: Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
       interval: 30s
@@ -60,12 +63,9 @@ services:
       - mcp-network
 
   mcp-search-server:
-    image: golang:1.23-alpine
-    working_dir: /app
-    volumes:
-      - ./search-server:/app
-    command: >
-      sh -c "apk add --no-cache curl && go run main.go"
+    build:
+      context: ./search-server
+      dockerfile: Dockerfile
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
       interval: 30s
@@ -76,19 +76,36 @@ services:
       - mcp-network
 
   mcp-filesystem-server:
-    image: golang:1.23-alpine
-    working_dir: /app
+    build:
+      context: ./filesystem-server
+      dockerfile: Dockerfile
     volumes:
-      - ./filesystem-server:/app
       - ./filesystem-data:/tmp/mcp-files
-    command: >
-      sh -c "apk add --no-cache curl && go run main.go"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+    networks:
+      - mcp-network
+
+  mcp-pizza-server:
+    build:
+      context: ./pizza-server
+      dockerfile: Dockerfile
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --no-verbose
+        - --tries=1
+        - --spider
+        - http://localhost:8084/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
     networks:
       - mcp-network
 

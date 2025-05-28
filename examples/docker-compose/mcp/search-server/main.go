@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	mcp_golang "github.com/metoro-io/mcp-golang"
@@ -30,6 +31,126 @@ type SearchResponse struct {
 	Results []SearchResult `json:"results"`
 	Total   int            `json:"total"`
 	Query   string         `json:"query"`
+}
+
+// SSE Handler for search streaming
+func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
+	router.GET("/mcp/stream", func(c *gin.Context) {
+		// Set SSE headers
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Cache-Control")
+
+		// Handle client disconnection
+		clientGone := c.Request.Context().Done()
+
+		// Send initial connection message
+		initialMsg := map[string]interface{}{
+			"type":    "connection",
+			"status":  "connected",
+			"message": "MCP Search Server SSE stream established",
+		}
+
+		data, _ := json.Marshal(initialMsg)
+		fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+		c.Writer.Flush()
+
+		// Listen for streaming requests
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-clientGone:
+				log.Println("Search SSE client disconnected")
+				return
+			case <-ticker.C:
+				// Send periodic server status
+				statusUpdate := map[string]interface{}{
+					"type":      "status",
+					"timestamp": time.Now().Format(time.RFC3339),
+					"server":    "mcp-search-server",
+					"ready":     true,
+				}
+
+				data, _ := json.Marshal(statusUpdate)
+				fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+				c.Writer.Flush()
+			}
+		}
+	})
+
+	// SSE endpoint for streaming search results
+	router.POST("/mcp/stream/search", func(c *gin.Context) {
+		// Set SSE headers
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Cache-Control")
+
+		var request struct {
+			Query string `json:"query"`
+			Limit int    `json:"limit,omitempty"`
+		}
+
+		if err := c.ShouldBindJSON(&request); err != nil {
+			errorMsg := map[string]interface{}{
+				"type":  "error",
+				"error": err.Error(),
+			}
+			data, _ := json.Marshal(errorMsg)
+			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+			c.Writer.Flush()
+			return
+		}
+
+		// Stream search processing status
+		fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"processing","message":"Starting search request...","query":"`+request.Query+`"}`)
+		c.Writer.Flush()
+
+		// Simulate search processing with streaming results
+		time.Sleep(100 * time.Millisecond)
+
+		fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"progress","message":"Searching databases..."}`)
+		c.Writer.Flush()
+
+		time.Sleep(200 * time.Millisecond)
+
+		// Get search results
+		results := performMockSearch(request.Query, request.Limit)
+
+		// Stream each result individually for real-time effect
+		for i, result := range results.Results {
+			resultMsg := map[string]interface{}{
+				"type":   "search_result",
+				"index":  i + 1,
+				"total":  len(results.Results),
+				"result": result,
+			}
+
+			data, _ := json.Marshal(resultMsg)
+			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+			c.Writer.Flush()
+
+			// Small delay between results for streaming effect
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		// Send completion message
+		completionMsg := map[string]interface{}{
+			"type":    "complete",
+			"total":   results.Total,
+			"query":   results.Query,
+			"message": fmt.Sprintf("Search completed. Found %d results.", results.Total),
+		}
+
+		data, _ := json.Marshal(completionMsg)
+		fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+		c.Writer.Flush()
+	})
 }
 
 func main() {
@@ -90,7 +211,10 @@ func main() {
 		c.Next()
 	})
 
-	// Add the MCP endpoint
+	// Setup SSE endpoints for real-time search streaming
+	setupSearchSSEHandler(server, r)
+
+	// Add the traditional MCP endpoint
 	r.POST("/mcp", transport.Handler())
 
 	// Add a health check endpoint
@@ -100,8 +224,35 @@ func main() {
 		})
 	})
 
+	// Add capabilities endpoint
+	r.GET("/capabilities", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"mcp_version": "0.0.1",
+			"server_name": "mcp-search-server",
+			"features": []string{
+				"search",
+				"server-sent-events",
+				"real-time-streaming",
+				"progressive-results",
+			},
+			"endpoints": gin.H{
+				"mcp":          "/mcp",
+				"sse_stream":   "/mcp/stream",
+				"sse_search":   "/mcp/stream/search",
+				"health":       "/health",
+				"capabilities": "/capabilities",
+			},
+		})
+	})
+
 	// Start the server
-	log.Println("Starting MCP Search Server on :8082...")
+	log.Println("Starting MCP Search Server with SSE support on :8082...")
+	log.Println("Endpoints:")
+	log.Println("  - POST /mcp (traditional MCP)")
+	log.Println("  - GET  /mcp/stream (SSE stream)")
+	log.Println("  - POST /mcp/stream/search (SSE search)")
+	log.Println("  - GET  /health (health check)")
+	log.Println("  - GET  /capabilities (server info)")
 	if err := r.Run(":8082"); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}

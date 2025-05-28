@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	mcp_golang "github.com/metoro-io/mcp-golang"
-	"github.com/metoro-io/mcp-golang/transport/http"
+	httpTransport "github.com/metoro-io/mcp-golang/transport/http"
 )
 
 // FileWriteArgs defines the arguments for writing to a file
@@ -57,6 +59,123 @@ const (
 	BASE_DIR = "/tmp/mcp-files"
 )
 
+// SSE Handler for filesystem operations streaming
+func setupFilesystemSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
+	router.GET("/mcp/stream", func(c *gin.Context) {
+		// Set SSE headers
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Cache-Control")
+
+		// Handle client disconnection
+		clientGone := c.Request.Context().Done()
+
+		// Send initial connection message
+		initialMsg := map[string]interface{}{
+			"type":    "connection",
+			"status":  "connected",
+			"message": "MCP Filesystem Server SSE stream established",
+		}
+
+		data, _ := json.Marshal(initialMsg)
+		fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+		c.Writer.Flush()
+
+		// Listen for streaming requests
+		ticker := time.NewTicker(15 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-clientGone:
+				log.Println("Filesystem SSE client disconnected")
+				return
+			case <-ticker.C:
+				// Send periodic filesystem status
+				statusUpdate := map[string]interface{}{
+					"type":      "status",
+					"timestamp": time.Now().Format(time.RFC3339),
+					"server":    "mcp-filesystem-server",
+					"base_dir":  BASE_DIR,
+					"ready":     true,
+				}
+
+				data, _ := json.Marshal(statusUpdate)
+				fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+				c.Writer.Flush()
+			}
+		}
+	})
+
+	// SSE endpoint for streaming file operations
+	router.POST("/mcp/stream/file", func(c *gin.Context) {
+		// Set SSE headers
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Cache-Control")
+
+		var request struct {
+			Operation string `json:"operation"`
+			Path      string `json:"path"`
+			Content   string `json:"content,omitempty"`
+			Mode      string `json:"mode,omitempty"`
+		}
+
+		if err := c.ShouldBindJSON(&request); err != nil {
+			errorMsg := map[string]interface{}{
+				"type":  "error",
+				"error": err.Error(),
+			}
+			data, _ := json.Marshal(errorMsg)
+			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+			c.Writer.Flush()
+			return
+		}
+
+		// Stream file operation processing
+		fmt.Fprintf(c.Writer, "data: %s\n\n",
+			fmt.Sprintf(`{"type":"processing","message":"Starting %s operation...","path":"%s"}`,
+				request.Operation, request.Path))
+		c.Writer.Flush()
+
+		time.Sleep(100 * time.Millisecond)
+
+		// Simulate processing based on operation type
+		switch request.Operation {
+		case "read":
+			fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"progress","message":"Reading file content..."}`)
+			c.Writer.Flush()
+			time.Sleep(100 * time.Millisecond)
+
+		case "write":
+			fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"progress","message":"Writing file content..."}`)
+			c.Writer.Flush()
+			time.Sleep(150 * time.Millisecond)
+
+		case "list":
+			fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"progress","message":"Scanning directory..."}`)
+			c.Writer.Flush()
+			time.Sleep(200 * time.Millisecond)
+		}
+
+		// Send completion message
+		completionMsg := map[string]interface{}{
+			"type":      "complete",
+			"operation": request.Operation,
+			"path":      request.Path,
+			"message":   fmt.Sprintf("Operation %s completed successfully", request.Operation),
+		}
+
+		data, _ := json.Marshal(completionMsg)
+		fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+		c.Writer.Flush()
+	})
+}
+
 func main() {
 	// Ensure base directory exists
 	if err := os.MkdirAll(BASE_DIR, 0755); err != nil {
@@ -64,7 +183,7 @@ func main() {
 	}
 
 	// Create a Gin transport
-	transport := http.NewGinTransport()
+	transport := httpTransport.NewGinTransport()
 
 	// Create a new server with the transport
 	server := mcp_golang.NewServer(transport, mcp_golang.WithName("mcp-filesystem-server"), mcp_golang.WithVersion("0.0.1"))
@@ -370,7 +489,10 @@ func main() {
 	// Create a Gin router
 	r := gin.Default()
 
-	// Add the MCP endpoint
+	// Setup SSE endpoints for real-time filesystem streaming
+	setupFilesystemSSEHandler(server, r)
+
+	// Add the traditional MCP endpoint
 	r.POST("/mcp", transport.Handler())
 
 	// Add a health check endpoint
@@ -380,8 +502,35 @@ func main() {
 		})
 	})
 
+	// Add capabilities endpoint
+	r.GET("/capabilities", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"mcp_version": "0.0.1",
+			"server_name": "mcp-filesystem-server",
+			"features": []string{
+				"filesystem",
+				"server-sent-events",
+				"real-time-streaming",
+				"file-operations",
+			},
+			"endpoints": gin.H{
+				"mcp":          "/mcp",
+				"sse_stream":   "/mcp/stream",
+				"sse_file":     "/mcp/stream/file",
+				"health":       "/health",
+				"capabilities": "/capabilities",
+			},
+		})
+	})
+
 	// Start the server
-	log.Println("Starting Filesystem MCP server on :8083...")
+	log.Println("Starting MCP Filesystem Server with SSE support on :8083...")
+	log.Println("Endpoints:")
+	log.Println("  - POST /mcp (traditional MCP)")
+	log.Println("  - GET  /mcp/stream (SSE stream)")
+	log.Println("  - POST /mcp/stream/file (SSE file ops)")
+	log.Println("  - GET  /health (health check)")
+	log.Println("  - GET  /capabilities (server info)")
 	if err := r.Run(":8083"); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}

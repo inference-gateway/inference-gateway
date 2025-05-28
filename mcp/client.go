@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/inference-gateway/inference-gateway/config"
@@ -71,22 +73,136 @@ type MCPClient struct {
 	Initialized         bool
 }
 
+// customRoundTripper wraps http.RoundTripper to add streaming headers and handle SSE responses
+type customRoundTripper struct {
+	base      http.RoundTripper
+	sessionID string
+}
+
+// parseSSEResponse extracts JSON data from SSE formatted response
+func parseSSEResponse(responseBody string) (string, error) {
+	lines := strings.Split(responseBody, "\n")
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "data: ") {
+			jsonData := strings.TrimPrefix(line, "data: ")
+			if jsonData != "" && jsonData != "[DONE]" {
+				return jsonData, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("no valid JSON data found in SSE response")
+}
+
+func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Clone the request to avoid modifying the original
+	req = req.Clone(req.Context())
+
+	// Add headers for streaming support
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Connection", "keep-alive")
+
+	// Add session ID header if we have one
+	if c.sessionID != "" {
+		req.Header.Set("mcp-session-id", c.sessionID)
+	}
+
+	// Filter out null cursor parameters for MCP requests
+	if req.Method == "POST" && req.Body != nil {
+		bodyBytes, err := io.ReadAll(req.Body)
+		if err != nil {
+			return nil, err
+		}
+		req.Body.Close()
+
+		// Parse the JSON request body to filter null cursor
+		var jsonBody map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &jsonBody); err == nil {
+			if params, ok := jsonBody["params"].(map[string]interface{}); ok {
+				if cursor, exists := params["cursor"]; exists && cursor == nil {
+					// Remove null cursor parameter
+					delete(params, "cursor")
+					// Re-marshal the modified body
+					if modifiedBody, err := json.Marshal(jsonBody); err == nil {
+						bodyBytes = modifiedBody
+					}
+				}
+			}
+		}
+
+		// Create new body reader with modified content
+		req.Body = io.NopCloser(strings.NewReader(string(bodyBytes)))
+		req.ContentLength = int64(len(bodyBytes))
+	}
+
+	resp, err := c.base.RoundTrip(req)
+	if err != nil {
+		return resp, err
+	}
+
+	// Extract session ID from response headers if present
+	if sessionID := resp.Header.Get("mcp-session-id"); sessionID != "" {
+		c.sessionID = sessionID
+	}
+
+	// Check if response contains SSE content
+	contentType := resp.Header.Get("Content-Type")
+	if strings.Contains(contentType, "text/event-stream") ||
+		strings.Contains(contentType, "text/plain") { // Some servers use text/plain for SSE
+
+		// Read the response body
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return resp, err
+		}
+		resp.Body.Close()
+
+		// Check if the body contains SSE format
+		bodyStr := string(body)
+		if strings.Contains(bodyStr, "data: ") {
+			// Parse SSE and extract JSON
+			jsonData, err := parseSSEResponse(bodyStr)
+			if err != nil {
+				return resp, fmt.Errorf("failed to parse SSE response: %v", err)
+			}
+
+			// Create a new response with just the JSON data
+			resp.Body = io.NopCloser(strings.NewReader(jsonData))
+			resp.Header.Set("Content-Type", "application/json")
+			resp.ContentLength = int64(len(jsonData))
+		} else {
+			// Not SSE format, restore original body
+			resp.Body = io.NopCloser(strings.NewReader(bodyStr))
+		}
+	}
+
+	return resp, nil
+}
+
 // NewClient creates a new MCP client for a given server URL
 func (mc *MCPClient) NewClient(url string) *m.Client {
+	baseTransport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   mc.Config.MCP.DialTimeout,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   mc.Config.MCP.TlsHandshakeTimeout,
+		ResponseHeaderTimeout: mc.Config.MCP.ResponseHeaderTimeout,
+		ExpectContinueTimeout: mc.Config.MCP.ExpectContinueTimeout,
+	}
+
 	httpClient := &http.Client{
 		Timeout: mc.Config.MCP.ClientTimeout,
-		Transport: &http.Transport{
-			DialContext: (&net.Dialer{
-				Timeout:   mc.Config.MCP.DialTimeout,
-				KeepAlive: 30 * time.Second,
-			}).DialContext,
-			TLSHandshakeTimeout:   mc.Config.MCP.TlsHandshakeTimeout,
-			ResponseHeaderTimeout: mc.Config.MCP.ResponseHeaderTimeout,
-			ExpectContinueTimeout: mc.Config.MCP.ExpectContinueTimeout,
+		Transport: &customRoundTripper{
+			base: baseTransport,
 		},
 	}
 
-	httpTransport := transport.NewHTTPClientTransport(url).WithClient(httpClient)
+	httpTransport := transport.NewHTTPClientTransport(url).WithHeader(
+		"Accept", "application/json, text/event-stream").WithClient(httpClient)
 
 	return m.NewClient(httpTransport)
 }
@@ -219,7 +335,9 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		defer toolsCancel()
 
 		mc.Logger.Debug("MCP: Attempting to list tools with timeout", "server", url, "timeout", mc.Config.MCP.RequestTimeout.String())
-		toolsResult, err := client.ListTools(toolsCtx, nil)
+		// Use empty string cursor instead of nil to avoid "null" being sent
+		var cursor *string
+		toolsResult, err := client.ListTools(toolsCtx, cursor)
 		if err != nil {
 			if errors.Is(err, context.DeadlineExceeded) {
 				mc.Logger.Error("MCP: Tools listing timed out", err, "server", url)

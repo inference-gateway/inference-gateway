@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -9,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	mcp_golang "github.com/metoro-io/mcp-golang"
-	"github.com/metoro-io/mcp-golang/transport/http"
+	httpTransport "github.com/metoro-io/mcp-golang/transport/http"
 )
 
 // TimeArgs defines the arguments for the time tool
@@ -17,9 +18,107 @@ type TimeArgs struct {
 	Format string `json:"format,omitempty" jsonschema:"description=The time format to use"`
 }
 
+// SSEHandler handles Server-Sent Events for real-time MCP responses
+func setupSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
+	router.GET("/mcp/stream", func(c *gin.Context) {
+		// Set SSE headers
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Cache-Control")
+
+		// Create a channel for streaming responses
+		responseChan := make(chan map[string]interface{}, 10)
+		defer close(responseChan)
+
+		// Handle client disconnection
+		clientGone := c.Request.Context().Done()
+
+		// Send initial connection message
+		initialMsg := map[string]interface{}{
+			"type":    "connection",
+			"status":  "connected",
+			"message": "MCP Time Server SSE stream established",
+		}
+
+		data, _ := json.Marshal(initialMsg)
+		fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+		c.Writer.Flush()
+
+		// Listen for streaming requests (this would be enhanced for real streaming)
+		// For now, we'll send periodic time updates as a demonstration
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-clientGone:
+				log.Println("SSE client disconnected")
+				return
+			case <-ticker.C:
+				// Send periodic time update
+				timeUpdate := map[string]interface{}{
+					"type":      "time_update",
+					"timestamp": time.Now().Format(time.RFC3339),
+					"server":    "mcp-time-server",
+				}
+
+				data, _ := json.Marshal(timeUpdate)
+				fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+				c.Writer.Flush()
+			}
+		}
+	})
+
+	// SSE endpoint for tool calls
+	router.POST("/mcp/stream/tool", func(c *gin.Context) {
+		// Set SSE headers
+		c.Header("Content-Type", "text/event-stream")
+		c.Header("Cache-Control", "no-cache")
+		c.Header("Connection", "keep-alive")
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Headers", "Cache-Control")
+
+		var request struct {
+			Method string      `json:"method"`
+			Params interface{} `json:"params"`
+		}
+
+		if err := c.ShouldBindJSON(&request); err != nil {
+			errorMsg := map[string]interface{}{
+				"type":  "error",
+				"error": err.Error(),
+			}
+			data, _ := json.Marshal(errorMsg)
+			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+			c.Writer.Flush()
+			return
+		}
+
+		// Stream the response for tool calls
+		if request.Method == "tools/call" {
+			fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"processing","message":"Processing time tool request..."}`)
+			c.Writer.Flush()
+
+			// Simulate processing and stream result
+			time.Sleep(100 * time.Millisecond)
+
+			result := map[string]interface{}{
+				"type":   "result",
+				"result": fmt.Sprintf("Current time (streamed): %s", time.Now().Format(time.RFC3339)),
+			}
+
+			data, _ := json.Marshal(result)
+			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+			c.Writer.Flush()
+		}
+	})
+}
+
 func main() {
 	// Create a Gin transport
-	transport := http.NewGinTransport()
+	transport := httpTransport.NewGinTransport()
 
 	// Create a new server with the transport
 	server := mcp_golang.NewServer(transport, mcp_golang.WithName("mcp-time-server"), mcp_golang.WithVersion("0.0.1"))
@@ -111,7 +210,10 @@ func main() {
 	// Create a Gin router
 	r := gin.Default()
 
-	// Add the MCP endpoint
+	// Setup SSE endpoints for real-time streaming
+	setupSSEHandler(server, r)
+
+	// Add the traditional MCP endpoint
 	r.POST("/mcp", transport.Handler())
 
 	// Add a health check endpoint
@@ -121,8 +223,34 @@ func main() {
 		})
 	})
 
+	// Add SSE capability info endpoint
+	r.GET("/capabilities", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"mcp_version": "0.0.1",
+			"server_name": "mcp-time-server",
+			"features": []string{
+				"tools",
+				"server-sent-events",
+				"real-time-streaming",
+			},
+			"endpoints": gin.H{
+				"mcp":          "/mcp",
+				"sse_stream":   "/mcp/stream",
+				"sse_tool":     "/mcp/stream/tool",
+				"health":       "/health",
+				"capabilities": "/capabilities",
+			},
+		})
+	})
+
 	// Start the server
-	log.Println("Starting Gin server on :8081...")
+	log.Println("Starting MCP Time Server with SSE support on :8081...")
+	log.Println("Endpoints:")
+	log.Println("  - POST /mcp (traditional MCP)")
+	log.Println("  - GET  /mcp/stream (SSE stream)")
+	log.Println("  - POST /mcp/stream/tool (SSE tool calls)")
+	log.Println("  - GET  /health (health check)")
+	log.Println("  - GET  /capabilities (server info)")
 	if err := r.Run(":8081"); err != nil {
 		log.Fatalf("Server error: %v", err)
 	}
