@@ -5,6 +5,7 @@ vars:
   RELEASE_NAME: inference-gateway
   CHART_VERSION: 0.7.0-rc.2
   CHART: oci://ghcr.io/inference-gateway/charts/inference-gateway
+  CLUSTER_NAME: mcp-cluster
 
 tasks:
   default:
@@ -55,10 +56,10 @@ tasks:
         echo "✅ All required tools are installed!"
 
         # Check if cluster exists
-        if ctlptl get cluster mcp-k3d-cluster >/dev/null 2>&1; then
-          echo "ℹ️  Cluster 'mcp-k3d-cluster' already exists"
+        if ctlptl get cluster {{.CLUSTER_NAME}} >/dev/null 2>&1; then
+          echo "ℹ️  Cluster '{{.CLUSTER_NAME}}' already exists"
         else
-          echo "ℹ️  Cluster 'mcp-k3d-cluster' not found - will be created during deployment"
+          echo "ℹ️  Cluster '{{.CLUSTER_NAME}}' not found - will be created during deployment"
         fi
 
   quick-start:
@@ -149,11 +150,34 @@ tasks:
         EOK
         echo "✅ Secrets configured successfully!"
 
+  build-mcp-servers:
+    desc: "Build MCP servers (time, search, filesystem)"
+    cmds:
+      - echo "🔍 Building MCP servers..."
+      - echo "Building time server..."
+      - cd time-server && docker build -t mcp-time-server:latest . && cd ..
+      - echo "Building search server..."
+      - cd search-server && docker build -t mcp-search-server:latest . && cd ..
+      - echo "Building filesystem server..."
+      - cd filesystem-server && docker build -t mcp-filesystem-server:latest . && cd ..
+      - echo "🔧 MCP servers built successfully!"
+      - echo "Loading images into k3d cluster..."
+      - |
+        k3d image import \
+          mcp-time-server:latest \
+          mcp-search-server:latest \
+          mcp-filesystem-server:latest \
+          --cluster {{.CLUSTER_NAME}} || echo "⚠️ Failed to load images into k3d cluster, continuing..."
+
   deploy-mcp-servers:
     desc: "Deploy MCP servers (time, search, filesystem)"
     cmds:
+      - task: build-mcp-servers
+      - echo "🔍 Deploying MCP servers..."
       - kubectl create namespace {{.NAMESPACE}} --dry-run=client -o yaml | kubectl apply --server-side -f -
-      - kubectl apply -f mcp-servers/ -n {{.NAMESPACE}}
+      - kubectl apply -f filesystem-server/ -n {{.NAMESPACE}}
+      - kubectl apply -f search-server/ -n {{.NAMESPACE}}
+      - kubectl apply -f time-server/ -n {{.NAMESPACE}}
       - echo "🔧 MCP servers deployed successfully!"
 
   deploy-inference-gateway:
@@ -269,21 +293,24 @@ tasks:
     cmds:
       - echo "🔍 Testing Inference Gateway health..."
       - |
-        kubectl delete pod test-pod --ignore-not-found=true -n {{.NAMESPACE}}
+        kubectl delete pod test-pod-01 --ignore-not-found=true -n {{.NAMESPACE}}
+        kubectl delete pod test-pod-02 --ignore-not-found=true -n {{.NAMESPACE}}
+        kubectl delete pod test-pod-03 --ignore-not-found=true -n {{.NAMESPACE}}
+        kubectl delete pod test-pod-04 --ignore-not-found=true -n {{.NAMESPACE}}
       - |
-        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+        kubectl run test-pod-01 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -f http://{{.RELEASE_NAME}}:8080/health
       - echo "✅ Gateway is healthy"
       - echo ""
       - echo "🔍 Testing MCP servers health..."
       - |
-        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+        kubectl run test-pod-02 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -f http://mcp-time-server:8081/health
       - |
-        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+        kubectl run test-pod-03 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -f http://mcp-search-server:8082/health
       - |
-        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+        kubectl run test-pod-04 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -f http://mcp-filesystem-server:8083/health
       - echo "✅ All MCP servers are healthy"
 
@@ -379,7 +406,9 @@ tasks:
     desc: "Remove all MCP components"
     cmds:
       - helm uninstall {{.RELEASE_NAME}} -n {{.NAMESPACE}} --ignore-not-found
-      - kubectl delete -f mcp-servers/ -n {{.NAMESPACE}} --ignore-not-found=true
+      - kubectl delete -f filesystem-server/ -n {{.NAMESPACE}} --ignore-not-found=true
+      - kubectl delete -f search-server/ -n {{.NAMESPACE}} --ignore-not-found=true
+      - kubectl delete -f time-server/ -n {{.NAMESPACE}} --ignore-not-found=true
       - kubectl delete namespace {{.NAMESPACE}} --ignore-not-found=true
 
   clean:

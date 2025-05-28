@@ -1,0 +1,86 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-filesystem-server
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: mcp-filesystem-server
+    app.kubernetes.io/part-of: inference-gateway-mcp
+    app.kubernetes.io/component: mcp-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mcp-filesystem-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mcp-filesystem-server
+        app.kubernetes.io/part-of: inference-gateway-mcp
+        app.kubernetes.io/component: mcp-server
+    spec:
+      containers:
+        - name: mcp-filesystem-server
+          image: mcp-filesystem-server:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8083
+              name: http
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8083"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "25m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 65534
+            capabilities:
+              drop:
+                - ALL
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-filesystem-server
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: mcp-filesystem-server
+    app.kubernetes.io/part-of: inference-gateway-mcp
+    app.kubernetes.io/component: mcp-server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: mcp-filesystem-server
+  ports:
+    - port: 8083
+      targetPort: 8083
+      protocol: TCP
+      name: http

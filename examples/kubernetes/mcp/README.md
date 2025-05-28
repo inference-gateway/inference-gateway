@@ -101,7 +101,8 @@ The Model Context Protocol is an open standard for implementing function calling
 4. Gateway executes tool calls via MCP protocol to appropriate servers
 5. MCP servers return tool results
 6. Gateway integrates results and sends response to LLM provider
-7. Final response returned to client
+7. The provider's LLM iterates with the MCP servers as needed (max 10 iterations)
+8. Final response returned to client
 
 ## Components
 

@@ -1,0 +1,86 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-search-server
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: mcp-search-server
+    app.kubernetes.io/part-of: inference-gateway-mcp
+    app.kubernetes.io/component: mcp-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mcp-search-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mcp-search-server
+        app.kubernetes.io/part-of: inference-gateway-mcp
+        app.kubernetes.io/component: mcp-server
+    spec:
+      containers:
+        - name: mcp-search-server
+          image: mcp-search-server:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+              name: http
+              protocol: TCP
+          env:
+            - name: PORT
+              value: "8082"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8082
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "25m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65534
+            capabilities:
+              drop:
+                - ALL
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-search-server
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: mcp-search-server
+    app.kubernetes.io/part-of: inference-gateway-mcp
+    app.kubernetes.io/component: mcp-server
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: mcp-search-server
+  ports:
+    - port: 8082
+      targetPort: 8082
+      protocol: TCP
+      name: http
