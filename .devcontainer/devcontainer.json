@@ -34,6 +34,7 @@
         "dev.containers.copyGitConfig": true,
         "githubPullRequests.experimental.chat": true,
         "githubPullRequests.experimental.notificationsView": true,
+        "files.insertFinalNewline": true,
         "github.copilot.enable": {
           "*": true
         },
