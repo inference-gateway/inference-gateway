@@ -451,10 +451,20 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	var req providers.CreateChatCompletionRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		router.logger.Error("failed to decode request", err)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
-		return
+	if mcpRequest, exists := c.Get("X-MCP-Internal"); exists {
+		if parsedRequest, ok := mcpRequest.(*providers.CreateChatCompletionRequest); ok {
+			req = *parsedRequest
+		} else {
+			router.logger.Error("invalid MCP request type in context", nil)
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Internal server error"})
+			return
+		}
+	} else {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			router.logger.Error("failed to decode request", err)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+			return
+		}
 	}
 
 	model := req.Model

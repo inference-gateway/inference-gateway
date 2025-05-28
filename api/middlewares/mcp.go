@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -16,12 +15,23 @@ import (
 	"github.com/inference-gateway/inference-gateway/providers"
 )
 
+const (
+	// ChatCompletionsPath is the endpoint path for chat completions
+	ChatCompletionsPath = "/v1/chat/completions"
+
+	// MCPInternalHeader marks internal MCP requests to prevent middleware loops
+	MCPInternalHeader = "X-MCP-Internal"
+
+	// MaxAgentIterations limits the number of agent loop iterations
+	MaxAgentIterations = 10
+)
+
 // contextKey is a custom type for context keys to avoid collisions
 type mcpContextKey string
 
 const (
 	// mcpInternalKey is the context key for marking internal MCP requests
-	mcpInternalKey mcpContextKey = "X-MCP-Internal"
+	mcpInternalKey mcpContextKey = MCPInternalHeader
 )
 
 // customResponseWriter captures the response body but doesn't write it
@@ -51,8 +61,6 @@ func (w *customResponseWriter) Write(b []byte) (int, error) {
 	}
 	return len(b), nil
 }
-
-const ChatCompletionsPath = "/v1/chat/completions"
 
 // MCPMiddleware defines the interface for MCP middleware
 type MCPMiddleware interface {
@@ -97,7 +105,7 @@ func (n *NoopMCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 // Middleware returns the MCP middleware handler
 func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.GetHeader("X-MCP-Internal") != "" {
+		if c.GetHeader(MCPInternalHeader) != "" {
 			c.Next()
 			return
 		}
@@ -109,60 +117,26 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		m.logger.Debug("MCP middleware invoked", "path", c.Request.URL.Path)
 
-		bodyBytes, err := io.ReadAll(c.Request.Body)
+		originalRequest, err := m.parseRequest(c)
 		if err != nil {
-			m.logger.Error("Failed to read request body", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read request body"})
-			return
-		}
-
-		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-
-		var originalRequest providers.CreateChatCompletionRequest
-		if err := json.Unmarshal(bodyBytes, &originalRequest); err != nil {
 			m.logger.Error("Failed to parse request body", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 			return
 		}
 
-		if m.mcpClient.IsInitialized() {
-			c.Set("use_mcp", true)
+		m.addMCPToolsToRequest(c, originalRequest)
 
-			mcpTools := m.mcpClient.GetAllChatCompletionTools()
-			if len(mcpTools) > 0 {
-				if originalRequest.Tools == nil {
-					originalRequest.Tools = &mcpTools
-				} else {
-					existingTools := *originalRequest.Tools
-					existingTools = append(existingTools, mcpTools...)
-					originalRequest.Tools = &existingTools
-				}
+		c.Set(string(mcpInternalKey), originalRequest)
 
-				m.logger.Debug("Added MCP tools to request", "toolCount", len(mcpTools))
-
-				modifiedBodyBytes, err := json.Marshal(originalRequest)
-				if err != nil {
-					m.logger.Error("Failed to marshal modified request", err)
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process request"})
-					return
-				}
-
-				c.Request.Body = io.NopCloser(bytes.NewBuffer(modifiedBodyBytes))
-			}
-		}
-
-		providerPtr, providerModel := providers.DetermineProviderAndModelName(originalRequest.Model)
-		if providerPtr == nil {
-			m.logger.Error("Failed to determine provider", fmt.Errorf("unsupported model: %s", originalRequest.Model), "model", originalRequest.Model)
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Unsupported model: %s", originalRequest.Model)})
-			return
-		}
-		providerID := *providerPtr
-
-		provider, err := m.registry.BuildProvider(providerID, m.inferenceGatewayClient)
+		result, err := m.getProviderAndModel(originalRequest.Model)
 		if err != nil {
-			m.logger.Error("Failed to get provider", err, "provider", providerID)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Provider not available"})
+			if result.ProviderID == nil {
+				m.logger.Error("Failed to determine provider", err, "model", originalRequest.Model)
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Unsupported model: %s", originalRequest.Model)})
+			} else {
+				m.logger.Error("Failed to get provider", err, "provider", *result.ProviderID)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Provider not available"})
+			}
 			return
 		}
 
@@ -178,9 +152,9 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		ctx := c.Request.Context()
 		if originalRequest.Stream != nil && *originalRequest.Stream {
-			err = m.processStreamingResponse(ctx, customWriter, &originalRequest, provider, providerModel)
+			err = m.processStreamingResponse(ctx, customWriter, originalRequest, result.Provider, result.ProviderModel)
 		} else {
-			err = m.processNonStreamingResponse(ctx, customWriter, &originalRequest, provider, providerModel)
+			err = m.processNonStreamingResponse(ctx, customWriter, originalRequest, result.Provider, result.ProviderModel)
 		}
 
 		if err != nil {
@@ -191,242 +165,107 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	}
 }
 
+// parseRequest parses the incoming request body into a chat completion request
+func (m *MCPMiddlewareImpl) parseRequest(c *gin.Context) (*providers.CreateChatCompletionRequest, error) {
+	var originalRequest providers.CreateChatCompletionRequest
+	if err := c.ShouldBindJSON(&originalRequest); err != nil {
+		return nil, err
+	}
+	return &originalRequest, nil
+}
+
+// addMCPToolsToRequest adds available MCP tools to the request if any are available
+func (m *MCPMiddlewareImpl) addMCPToolsToRequest(c *gin.Context, request *providers.CreateChatCompletionRequest) {
+	if !m.mcpClient.IsInitialized() {
+		return
+	}
+
+	availableTools := m.mcpClient.GetAllChatCompletionTools()
+	if len(availableTools) == 0 {
+		return
+	}
+
+	m.logger.Debug("Added MCP tools to request", "toolCount", len(availableTools))
+
+	request.Tools = &availableTools
+}
+
+// ProviderModelResult contains the result of provider and model determination
+type ProviderModelResult struct {
+	Provider      providers.IProvider
+	ProviderModel string
+	ProviderID    *providers.Provider
+}
+
+// getProviderAndModel determines the provider and model from the request model string
+func (m *MCPMiddlewareImpl) getProviderAndModel(model string) (*ProviderModelResult, error) {
+	providerPtr, providerModel := providers.DetermineProviderAndModelName(model)
+	if providerPtr == nil {
+		return &ProviderModelResult{ProviderID: nil}, fmt.Errorf("unable to determine provider for model: %s", model)
+	}
+
+	provider, err := m.registry.BuildProvider(*providerPtr, m.inferenceGatewayClient)
+	if err != nil {
+		return &ProviderModelResult{ProviderID: providerPtr}, fmt.Errorf("failed to build provider: %w", err)
+	}
+
+	return &ProviderModelResult{
+		Provider:      provider,
+		ProviderModel: providerModel,
+		ProviderID:    providerPtr,
+	}, nil
+}
+
 // processNonStreamingResponse handles non-streaming chat completion responses with agent loop
 func (m *MCPMiddlewareImpl) processNonStreamingResponse(ctx context.Context, w *customResponseWriter, originalRequest *providers.CreateChatCompletionRequest, provider providers.IProvider, providerModel string) error {
 	responseBody := w.body.String()
 	if responseBody == "" {
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
+		m.writeFallbackResponse(w)
 		return nil
 	}
 
 	var response providers.CreateChatCompletionResponse
 	if err := json.Unmarshal(w.body.Bytes(), &response); err != nil {
 		m.logger.Error("Failed to parse response", err)
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
-		if _, err := w.ResponseWriter.Write(w.body.Bytes()); err != nil {
-			m.logger.Error("Failed to write response", err)
-		}
+		m.writeFallbackResponse(w)
 		return nil
 	}
 
 	if len(response.Choices) == 0 || response.Choices[0].Message.ToolCalls == nil || len(*response.Choices[0].Message.ToolCalls) == 0 {
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
-		if _, err := w.ResponseWriter.Write(w.body.Bytes()); err != nil {
-			m.logger.Error("Failed to write response", err)
-		}
+		m.writeFallbackResponse(w)
 		return nil
 	}
 
-	currentRequest := *originalRequest
-	currentResponse := response
-	maxIterations := 10
-	iteration := 0
-
-	for iteration < maxIterations {
-		if len(currentResponse.Choices) == 0 || currentResponse.Choices[0].Message.ToolCalls == nil || len(*currentResponse.Choices[0].Message.ToolCalls) == 0 {
-			break
-		}
-
-		m.logger.Debug("Agent loop iteration", "iteration", iteration+1, "toolCalls", len(*currentResponse.Choices[0].Message.ToolCalls))
-
-		toolResults, err := m.executeToolCalls(ctx, *currentResponse.Choices[0].Message.ToolCalls)
-		if err != nil {
-			m.logger.Error("Failed to execute tool calls", err)
-			finalResponseBytes, _ := json.Marshal(currentResponse)
-			w.ResponseWriter.Header().Set("Content-Type", "application/json")
-			w.ResponseWriter.WriteHeader(http.StatusOK)
-			if _, err := w.ResponseWriter.Write(finalResponseBytes); err != nil {
-				m.logger.Error("Failed to write response", err)
-			}
-			return nil
-		}
-
-		currentRequest.Messages = append(currentRequest.Messages, currentResponse.Choices[0].Message)
-		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
-
-		internalCtx := context.WithValue(ctx, mcpInternalKey, "true")
-		currentRequest.Model = providerModel
-		nextResponse, err := provider.ChatCompletions(internalCtx, currentRequest)
-		if err != nil {
-			m.logger.Error("Failed to get response in agent loop", err)
-			finalResponseBytes, _ := json.Marshal(currentResponse)
-			w.ResponseWriter.Header().Set("Content-Type", "application/json")
-			w.ResponseWriter.WriteHeader(http.StatusOK)
-			if _, err := w.ResponseWriter.Write(finalResponseBytes); err != nil {
-				m.logger.Error("Failed to write response", err)
-			}
-			return nil
-		}
-
-		currentResponse = nextResponse
-		iteration++
-	}
-
-	if iteration >= maxIterations {
-		m.logger.Error("Agent loop reached maximum iterations", fmt.Errorf("max iterations reached: %d", maxIterations))
-	}
-
-	finalResponseBytes, err := json.Marshal(currentResponse)
+	finalResponse, err := m.executeAgentLoop(ctx, originalRequest, &response, provider, providerModel)
 	if err != nil {
-		m.logger.Error("Failed to marshal final response", err)
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
-		if _, err := w.ResponseWriter.Write(w.body.Bytes()); err != nil {
-			m.logger.Error("Failed to write response", err)
-		}
-		return nil
+		m.logger.Error("Failed to execute agent loop", err)
+		return m.writeResponse(w, response)
 	}
 
-	w.ResponseWriter.Header().Set("Content-Type", "application/json")
-	w.ResponseWriter.WriteHeader(http.StatusOK)
-	if _, err := w.ResponseWriter.Write(finalResponseBytes); err != nil {
-		m.logger.Error("Failed to write response", err)
-	}
-	return nil
+	return m.writeResponse(w, finalResponse)
 }
 
 // processStreamingResponse handles streaming chat completion responses with agent loop
 func (m *MCPMiddlewareImpl) processStreamingResponse(ctx context.Context, w *customResponseWriter, originalRequest *providers.CreateChatCompletionRequest, provider providers.IProvider, providerModel string) error {
 	responseBody := w.body.String()
 	if responseBody == "" {
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
+		m.writeFallbackResponse(w)
 		return nil
 	}
 
 	toolCalls, err := m.parseStreamingToolCalls(responseBody)
 	if err != nil {
 		m.logger.Error("Failed to parse streaming tool calls", err)
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
-		if _, err := w.ResponseWriter.Write(w.body.Bytes()); err != nil {
-			m.logger.Error("Failed to write response", err)
-		}
+		m.writeFallbackResponse(w)
 		return nil
 	}
 
 	if len(toolCalls) == 0 {
-		w.writeToClient = true
-		w.ResponseWriter.WriteHeader(w.statusCode)
-		if _, err := w.ResponseWriter.Write(w.body.Bytes()); err != nil {
-			m.logger.Error("Failed to write response", err)
-		}
+		m.writeFallbackResponse(w)
 		return nil
 	}
 
-	currentRequest := *originalRequest
-	maxIterations := 10
-	iteration := 0
-
-	w.ResponseWriter.Header().Set("Content-Type", "text/event-stream")
-	w.ResponseWriter.Header().Set("Cache-Control", "no-cache")
-	w.ResponseWriter.Header().Set("Connection", "keep-alive")
-	w.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
-	w.ResponseWriter.Header().Set("Access-Control-Allow-Headers", "Cache-Control")
-	w.ResponseWriter.WriteHeader(http.StatusOK)
-
-	initialResponseLines := strings.Split(responseBody, "\n")
-	for _, line := range initialResponseLines {
-		line = strings.TrimSpace(line)
-		if line != "" && !strings.HasPrefix(line, "data: ") {
-			if _, err := w.ResponseWriter.Write([]byte("data: " + line + "\n\n")); err != nil {
-				m.logger.Error("Failed to write initial response line", err)
-				return err
-			}
-		} else if strings.HasPrefix(line, "data: ") {
-			if _, err := w.ResponseWriter.Write([]byte(line + "\n\n")); err != nil {
-				m.logger.Error("Failed to write initial response line", err)
-				return err
-			}
-		}
-	}
-
-	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
-		flusher.Flush()
-	}
-
-	for iteration < maxIterations {
-		if len(toolCalls) == 0 {
-			break
-		}
-
-		m.logger.Debug("Streaming agent loop iteration", "iteration", iteration+1, "toolCalls", len(toolCalls))
-
-		toolResults, err := m.executeToolCalls(ctx, toolCalls)
-		if err != nil {
-			m.logger.Error("Failed to execute tool calls in streaming loop", err)
-			break
-		}
-
-		assistantMessage, err := m.extractAssistantMessageFromStream(responseBody, toolCalls)
-		if err != nil {
-			m.logger.Error("Failed to extract assistant message in streaming loop", err)
-			break
-		}
-
-		currentRequest.Messages = append(currentRequest.Messages, assistantMessage)
-		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
-
-		m.logger.Debug("Updated request for streaming tool call continuation", "messageCount", len(currentRequest.Messages))
-
-		currentRequest.Model = providerModel
-		streamCh, err := provider.StreamChatCompletions(ctx, currentRequest)
-		if err != nil {
-			m.logger.Error("Failed to stream chat completion in agent loop", err)
-			break
-		}
-
-		var nextResponseBody strings.Builder
-		hasContent := false
-
-		for chunk := range streamCh {
-			if ctx.Err() != nil {
-				m.logger.Debug("Client disconnected during streaming", "error", ctx.Err())
-				break
-			}
-
-			if _, err := w.ResponseWriter.Write([]byte("data: " + string(chunk) + "\n\n")); err != nil {
-				m.logger.Error("Failed to write chunk in streaming loop", err)
-				break
-			}
-
-			if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
-				flusher.Flush()
-			}
-
-			nextResponseBody.WriteString("data: " + string(chunk) + "\n")
-			hasContent = true
-		}
-
-		if !hasContent {
-			break
-		}
-
-		responseBody = nextResponseBody.String()
-		toolCalls, err = m.parseStreamingToolCalls(responseBody)
-		if err != nil {
-			m.logger.Error("Failed to parse streaming tool calls in agent loop", err)
-			break
-		}
-
-		iteration++
-	}
-
-	if iteration >= maxIterations {
-		m.logger.Error("Streaming agent loop reached maximum iterations", fmt.Errorf("max iterations reached: %d", maxIterations))
-	}
-
-	if _, err := w.ResponseWriter.Write([]byte("data: [DONE]\n\n")); err != nil {
-		m.logger.Error("Failed to write done marker", err)
-	}
-	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
-		flusher.Flush()
-	}
-
-	return nil
+	return m.executeStreamingAgentLoop(ctx, w, originalRequest, responseBody, provider, providerModel)
 }
 
 // parseStreamingToolCalls parses streaming response to extract tool calls
@@ -559,7 +398,6 @@ func (m *MCPMiddlewareImpl) extractAssistantMessageFromStream(responseBody strin
 		Content: content,
 	}
 
-	// Use the parsed tool calls directly - they already contain the correct data
 	if len(toolCalls) > 0 {
 		m.logger.Debug("Adding tool calls to assistant message", "toolCallCount", len(toolCalls))
 		for i, tc := range toolCalls {
@@ -634,4 +472,207 @@ func (m *MCPMiddlewareImpl) executeToolCalls(ctx context.Context, toolCalls []pr
 	}
 
 	return results, nil
+}
+
+// writeResponse writes a response to the custom response writer
+func (m *MCPMiddlewareImpl) writeResponse(w *customResponseWriter, response interface{}) error {
+	responseBytes, err := json.Marshal(response)
+	if err != nil {
+		return err
+	}
+
+	w.ResponseWriter.Header().Set("Content-Type", "application/json")
+	w.ResponseWriter.WriteHeader(http.StatusOK)
+	_, err = w.ResponseWriter.Write(responseBytes)
+	return err
+}
+
+// writeFallbackResponse writes the original response when processing fails
+func (m *MCPMiddlewareImpl) writeFallbackResponse(w *customResponseWriter) {
+	w.writeToClient = true
+	w.ResponseWriter.WriteHeader(w.statusCode)
+	if _, err := w.ResponseWriter.Write(w.body.Bytes()); err != nil {
+		m.logger.Error("Failed to write fallback response", err)
+	}
+}
+
+// executeAgentLoop executes the agent loop for non-streaming responses
+func (m *MCPMiddlewareImpl) executeAgentLoop(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse, provider providers.IProvider, providerModel string) (*providers.CreateChatCompletionResponse, error) {
+	currentRequest := *request
+	currentResponse := *response
+	iteration := 0
+
+	for iteration < MaxAgentIterations {
+		if len(currentResponse.Choices) == 0 || currentResponse.Choices[0].Message.ToolCalls == nil || len(*currentResponse.Choices[0].Message.ToolCalls) == 0 {
+			break
+		}
+
+		m.logger.Debug("Agent loop iteration", "iteration", iteration+1, "toolCalls", len(*currentResponse.Choices[0].Message.ToolCalls))
+
+		toolResults, err := m.executeToolCalls(ctx, *currentResponse.Choices[0].Message.ToolCalls)
+		if err != nil {
+			m.logger.Error("Failed to execute tool calls", err)
+			return &currentResponse, nil
+		}
+
+		currentRequest.Messages = append(currentRequest.Messages, currentResponse.Choices[0].Message)
+		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
+
+		internalCtx := context.WithValue(ctx, mcpInternalKey, "true")
+		currentRequest.Model = providerModel
+		nextResponse, err := provider.ChatCompletions(internalCtx, currentRequest)
+		if err != nil {
+			m.logger.Error("Failed to get response in agent loop", err)
+			return &currentResponse, nil
+		}
+
+		currentResponse = nextResponse
+		iteration++
+	}
+
+	if iteration >= MaxAgentIterations {
+		m.logger.Error("Agent loop reached maximum iterations", fmt.Errorf("max iterations reached: %d", MaxAgentIterations))
+	}
+
+	return &currentResponse, nil
+}
+
+// executeStreamingAgentLoop executes the agent loop for streaming responses
+func (m *MCPMiddlewareImpl) executeStreamingAgentLoop(ctx context.Context, w *customResponseWriter, request *providers.CreateChatCompletionRequest, responseBody string, provider providers.IProvider, providerModel string) error {
+	toolCalls, err := m.parseStreamingToolCalls(responseBody)
+	if err != nil {
+		return err
+	}
+
+	if len(toolCalls) == 0 {
+		return nil
+	}
+
+	currentRequest := *request
+	iteration := 0
+
+	m.writeStreamingHeaders(w)
+
+	if err := m.writeInitialStreamingResponse(w, responseBody); err != nil {
+		m.logger.Error("Failed to write initial streaming response", err)
+		return err
+	}
+
+	for iteration < MaxAgentIterations {
+		if len(toolCalls) == 0 {
+			break
+		}
+
+		m.logger.Debug("Streaming agent loop iteration", "iteration", iteration+1, "toolCalls", len(toolCalls))
+
+		toolResults, err := m.executeToolCalls(ctx, toolCalls)
+		if err != nil {
+			m.logger.Error("Failed to execute tool calls in streaming loop", err)
+			break
+		}
+
+		assistantMessage, err := m.extractAssistantMessageFromStream(responseBody, toolCalls)
+		if err != nil {
+			m.logger.Error("Failed to extract assistant message in streaming loop", err)
+			break
+		}
+
+		currentRequest.Messages = append(currentRequest.Messages, assistantMessage)
+		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
+
+		m.logger.Debug("Updated request for streaming tool call continuation", "messageCount", len(currentRequest.Messages))
+
+		currentRequest.Model = providerModel
+		streamCh, err := provider.StreamChatCompletions(ctx, currentRequest)
+		if err != nil {
+			m.logger.Error("Failed to stream chat completion in agent loop", err)
+			break
+		}
+
+		var nextResponseBody strings.Builder
+		hasContent := false
+
+		for chunk := range streamCh {
+			if ctx.Err() != nil {
+				m.logger.Debug("Client disconnected during streaming", "error", ctx.Err())
+				break
+			}
+
+			if _, err := w.ResponseWriter.Write([]byte("data: " + string(chunk) + "\n\n")); err != nil {
+				m.logger.Error("Failed to write chunk in streaming loop", err)
+				break
+			}
+
+			if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+				flusher.Flush()
+			}
+
+			nextResponseBody.WriteString("data: " + string(chunk) + "\n")
+			hasContent = true
+		}
+
+		if !hasContent {
+			break
+		}
+
+		responseBody = nextResponseBody.String()
+		toolCalls, err = m.parseStreamingToolCalls(responseBody)
+		if err != nil {
+			m.logger.Error("Failed to parse streaming tool calls in agent loop", err)
+			break
+		}
+
+		iteration++
+	}
+
+	if iteration >= MaxAgentIterations {
+		m.logger.Error("Streaming agent loop reached maximum iterations", fmt.Errorf("max iterations reached: %d", MaxAgentIterations))
+	}
+
+	m.finishStreamingResponse(w)
+
+	return nil
+}
+
+// writeStreamingHeaders sets up the necessary headers for streaming responses
+func (m *MCPMiddlewareImpl) writeStreamingHeaders(w *customResponseWriter) {
+	w.ResponseWriter.Header().Set("Content-Type", "text/event-stream")
+	w.ResponseWriter.Header().Set("Cache-Control", "no-cache")
+	w.ResponseWriter.Header().Set("Connection", "keep-alive")
+	w.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")
+	w.ResponseWriter.Header().Set("Access-Control-Allow-Headers", "Cache-Control")
+	w.ResponseWriter.WriteHeader(http.StatusOK)
+}
+
+// writeInitialStreamingResponse writes the initial streaming response to the client
+func (m *MCPMiddlewareImpl) writeInitialStreamingResponse(w *customResponseWriter, responseBody string) error {
+	initialResponseLines := strings.Split(responseBody, "\n")
+	for _, line := range initialResponseLines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "data: ") {
+			if _, err := w.ResponseWriter.Write([]byte("data: " + line + "\n\n")); err != nil {
+				return err
+			}
+		} else if strings.HasPrefix(line, "data: ") {
+			if _, err := w.ResponseWriter.Write([]byte(line + "\n\n")); err != nil {
+				return err
+			}
+		}
+	}
+
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+
+	return nil
+}
+
+// finishStreamingResponse writes the final streaming response markers
+func (m *MCPMiddlewareImpl) finishStreamingResponse(w *customResponseWriter) {
+	if _, err := w.ResponseWriter.Write([]byte("data: [DONE]\n\n")); err != nil {
+		m.logger.Error("Failed to write done marker", err)
+	}
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
 }

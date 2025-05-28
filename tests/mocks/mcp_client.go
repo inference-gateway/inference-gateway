@@ -42,6 +42,20 @@ func (m *MockMCPClientInterface) EXPECT() *MockMCPClientInterfaceMockRecorder {
 	return m.recorder
 }
 
+// BuildSSEFallbackURL mocks base method.
+func (m *MockMCPClientInterface) BuildSSEFallbackURL(serverURL string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BuildSSEFallbackURL", serverURL)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// BuildSSEFallbackURL indicates an expected call of BuildSSEFallbackURL.
+func (mr *MockMCPClientInterfaceMockRecorder) BuildSSEFallbackURL(serverURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildSSEFallbackURL", reflect.TypeOf((*MockMCPClientInterface)(nil).BuildSSEFallbackURL), serverURL)
+}
+
 // ConvertMCPToolsToChatCompletionTools mocks base method.
 func (m *MockMCPClientInterface) ConvertMCPToolsToChatCompletionTools(arg0 []mcp.Tool) []providers.ChatCompletionTool {
 	m.ctrl.T.Helper()

@@ -167,7 +167,9 @@ Once the services are running, you can make requests to the Inference Gateway us
 ### Example 1: Time Tool
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions -d '{
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
   "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
   "messages": [
     {
@@ -185,7 +187,9 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 ### Example 2: Search Tool
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions -d '{
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
   "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
   "messages": [
     {
@@ -196,7 +200,8 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
       "role": "user",
       "content": "Find me information about the Model Context Protocol."
     }
-  ]
+  ],
+  "stream": true
 }'
 ```
 
@@ -370,7 +375,9 @@ Example response:
 This example demonstrates using tools from the official TypeScript MCP server built with `@modelcontextprotocol/sdk`. The official-ts-server provides mathematical operations, utility functions, and time queries:
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions -d '{
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
   "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
   "messages": [
     {
