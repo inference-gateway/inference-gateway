@@ -886,7 +886,6 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 
 		var collectedChunks []string
 		var doneCount int
-		var agentDoneCount int
 		for chunk := range middlewareStreamCh {
 			chunkStr := string(chunk)
 			collectedChunks = append(collectedChunks, chunkStr)
@@ -894,19 +893,13 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 			if strings.Contains(chunkStr, "[DONE]") {
 				doneCount++
 			}
-
-			if strings.Contains(chunkStr, "AGENT_DONE") {
-				agentDoneCount++
-			}
 		}
 
 		allChunks := strings.Join(collectedChunks, "")
 		t.Logf("Collected chunks:\n%s", allChunks)
 		t.Logf("Number of [DONE] markers found in agent output: %d", doneCount)
-		t.Logf("Number of AGENT_DONE signals found in agent output: %d", agentDoneCount)
 
-		assert.Equal(t, 0, doneCount, "Agent should filter out all [DONE] markers from provider streams, but found %d", doneCount)
-		assert.Equal(t, 1, agentDoneCount, "Agent should send exactly one AGENT_DONE signal, but found %d", agentDoneCount)
+		assert.Equal(t, 1, doneCount, "Agent should send exactly one final [DONE] marker, but found %d", doneCount)
 		assert.Contains(t, allChunks, "pizza", "Response should contain content from first iteration")
 		assert.Contains(t, allChunks, "get-pizza-info", "Response should contain tool call")
 		assert.Contains(t, allChunks, "Margherita", "Response should contain content from final iteration")

@@ -102,8 +102,8 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	a.logger.Debug("Agent: Starting agent streaming with model", "model", currentRequest.Model)
 
 	defer func() {
-		a.logger.Debug("Agent: Sending agent completion signal", "defer")
-		middlewareStreamCh <- []byte("data: [AGENT_DONE]\n\n")
+		a.logger.Debug("Agent: Sending agent completion signal")
+		middlewareStreamCh <- []byte("data: [DONE]\n\n")
 	}()
 
 	for iteration := 0; iteration < maxIterations; iteration++ {
@@ -130,18 +130,55 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 		for !streamComplete {
 			select {
 			case line, ok := <-streamCh:
-				middlewareStreamCh <- line
-
 				if !ok {
 					a.logger.Debug("Agent: Stream channel closed")
 					streamComplete = true
 					break
 				}
 
-				responseBody.Write(line)
+				// Filter out [DONE] markers from provider - only agent should send completion signals
+				// TODO - I need find a better way of handling this
+				lineStr := string(line)
+				trimmedLine := strings.TrimSpace(lineStr)
 
-				chunkData := strings.TrimPrefix(strings.TrimSpace(string(line)), "data:")
-				a.logger.Debug("Agent: Sending chunk to middlewareStreamCh", "chunk", chunkData)
+				if lineStr != "data: [DONE]\n\n" && lineStr != "[DONE]" && trimmedLine != "data: [DONE]" {
+					var formattedData []byte
+
+					switch {
+					case strings.HasPrefix(trimmedLine, "data: "):
+						// Already SSE formatted - ensure proper line breaks
+						dataContent := strings.TrimPrefix(trimmedLine, "data: ")
+						if dataContent != "" && dataContent != "[DONE]" {
+							formattedData = []byte(fmt.Sprintf("data: %s\n\n", dataContent))
+						}
+					case trimmedLine != "" && trimmedLine != "[DONE]":
+						// Raw JSON - format as SSE
+						formattedData = []byte(fmt.Sprintf("data: %s\n\n", trimmedLine))
+					default:
+						// Empty line or just whitespace - skip
+						continue
+					}
+
+					if formattedData != nil {
+						middlewareStreamCh <- formattedData
+						responseBody.Write(formattedData)
+					}
+				} else {
+					// Still add to response body for parsing, but don't send to middleware
+					responseBody.Write(line)
+				}
+
+				var chunkData string
+				switch {
+				case strings.HasPrefix(trimmedLine, "data: "):
+					chunkData = strings.TrimPrefix(trimmedLine, "data: ")
+				case trimmedLine != "[DONE]" && trimmedLine != "":
+					chunkData = trimmedLine
+				default:
+					continue
+				}
+
+				a.logger.Debug("Agent: Processing chunk", "chunk", chunkData)
 
 				if chunkData == "" || chunkData == "[DONE]" {
 					continue
@@ -174,10 +211,11 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 					}
 				}
 
-				if choice.FinishReason == providers.FinishReasonToolCalls {
+				switch choice.FinishReason {
+				case providers.FinishReasonToolCalls:
 					a.logger.Debug("Agent: Stream completing due to tool calls finish reason", "finishReason", string(choice.FinishReason))
 					streamComplete = true
-				} else if choice.FinishReason == providers.FinishReasonStop {
+				case providers.FinishReasonStop:
 					a.logger.Debug("Agent: Stream completing due to stop finish reason", "finishReason", string(choice.FinishReason))
 					streamComplete = true
 				}
@@ -304,17 +342,26 @@ func (a *agentImpl) parseStreamingToolCalls(responseBody string) ([]providers.Ch
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "data: ") {
+
+		// Handle both formats: with and without "data: " prefix
+		var data string
+		switch {
+		case strings.HasPrefix(line, "data: "):
+			data = strings.TrimPrefix(line, "data: ")
+		case line != "" && line != "[DONE]":
+			// Try to parse as direct JSON
+			data = line
+		default:
 			continue
 		}
 
-		data := strings.TrimPrefix(line, "data: ")
-		if data == "[DONE]" {
+		if data == "[DONE]" || data == "" {
 			break
 		}
 
 		var chunk providers.CreateChatCompletionStreamResponse
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
+			a.logger.Debug("Agent: Failed to parse streaming chunk", "data", data, "error", err)
 			continue
 		}
 

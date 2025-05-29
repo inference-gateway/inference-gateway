@@ -195,21 +195,12 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 						return false
 					}
 
-					m.logger.Debug("MCP Middleware: Received line from agent", "line", string(line))
-
-					trimmed := strings.TrimPrefix(strings.TrimSpace(string(line)), "data:")
-					if trimmed == "[DONE]" {
-						m.logger.Debug("MCP Middleware: Skipping provider [DONE] marker")
+					if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
+						m.logger.Debug("MCP Middleware: Agent completed all iterations, sending [DONE]")
 						return true
 					}
 
-					if trimmed == "[AGENT_DONE]" {
-						m.logger.Debug("MCP Middleware: Agent completed all iterations, sending [DONE]")
-						if _, err := w.Write([]byte("[DONE]\n\n")); err != nil {
-							m.logger.Error("MCP Middleware: Failed to write [DONE] marker", err)
-						}
-						return false
-					}
+					m.logger.Debug("MCP Middleware: Received line from agent", "line", string(line))
 
 					if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
 						var errMsg struct {
