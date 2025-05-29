@@ -177,7 +177,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 			// Start agent streaming in a goroutine
 			go func() {
-				defer close(processedChunk) // Close channel when agent completes
+				defer close(processedChunk)
 				err := agent.RunWithStream(c.Request.Context(), processedChunk, c, &originalRequestBody)
 				if err != nil {
 					m.logger.Error("MCP Middleware: Agent streaming failed", err)
@@ -221,7 +221,8 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 		c.Writer = customWriter
 
-		// Let the next handler execute first
+		// For non-streaming requests, we need to handle the response after the provider call
+		// and iterate through the agent's tool calls if any until we get a final response
 		c.Next()
 
 		// non-streaming response handling
