@@ -100,13 +100,20 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 		name           string
 		path           string
 		internalHeader string
+		setupMocks     func(*mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockMCPClientInterface, *mocks.MockLogger, *mocks.MockIProvider)
 		shouldSkip     bool
 	}{
 		{
 			name:           "Skip with internal header",
 			path:           "/v1/chat/completions",
 			internalHeader: "true",
-			shouldSkip:     true,
+			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
+				mockLogger.EXPECT().Debug("MCP Middleware: Not an internal MCP call").AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			},
+			shouldSkip: true,
 		},
 		{
 			name:       "Skip non-chat endpoint",
@@ -114,8 +121,15 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 			shouldSkip: true,
 		},
 		{
-			name:       "Process chat completions without internal header",
-			path:       "/v1/chat/completions",
+			name: "Process chat completions without internal header",
+			path: "/v1/chat/completions",
+			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
+				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			},
 			shouldSkip: false,
 		},
 	}
@@ -127,11 +141,8 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 
 			cfg := createTestConfig()
 
-			if !tt.shouldSkip && tt.path == "/v1/chat/completions" {
-				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
-				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
-				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
+			if tt.setupMocks != nil {
+				tt.setupMocks(mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider)
 			}
 
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mockLogger, cfg)
@@ -231,11 +242,13 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			mockMCPClient.EXPECT().IsInitialized().Return(tt.isInitialized).AnyTimes()
 			if tt.isInitialized {
 				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return(tt.mcpTools).AnyTimes()
-				if len(tt.mcpTools) > 0 {
-					mockLogger.EXPECT().Debug("Added MCP tools to request", "toolCount", len(tt.mcpTools)).AnyTimes()
-				}
 			}
-			mockLogger.EXPECT().Debug("MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
 
@@ -575,8 +588,8 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			name:        "Invalid JSON request body",
 			requestBody: `invalid json`,
 			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
-				mockLogger.EXPECT().Error("Failed to parse request body", gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug("MCP Middleware: MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
+				mockLogger.EXPECT().Error("MCP Middleware: Failed to parse request body", gomock.Any()).AnyTimes()
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Invalid request body",
@@ -586,9 +599,17 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			requestBody: `{"model":"unsupported/model","messages":[]}`,
 			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
-				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
-				mockLogger.EXPECT().Debug("MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
-				mockLogger.EXPECT().Error("Failed to determine provider", gomock.Any(), "model", "unsupported/model").AnyTimes()
+				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
+					{
+						Type: providers.ChatCompletionToolTypeFunction,
+						Function: providers.FunctionObject{
+							Name: "test_tool",
+						},
+					},
+				}).AnyTimes()
+				mockLogger.EXPECT().Debug("MCP Middleware: MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
+				mockLogger.EXPECT().Debug("MCP Middleware: Added MCP tools to request", "toolCount", 1).AnyTimes()
+				mockLogger.EXPECT().Error("MCP Middleware: Failed to determine provider", gomock.Any(), "model", "unsupported/model").AnyTimes()
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Unsupported model: unsupported/model",
@@ -598,10 +619,18 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			requestBody: `{"model":"openai/gpt-3.5-turbo","messages":[]}`,
 			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
-				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
-				mockLogger.EXPECT().Debug("MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
+				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
+					{
+						Type: providers.ChatCompletionToolTypeFunction,
+						Function: providers.FunctionObject{
+							Name: "test_tool",
+						},
+					},
+				}).AnyTimes()
+				mockLogger.EXPECT().Debug("MCP Middleware: MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
+				mockLogger.EXPECT().Debug("MCP Middleware: Added MCP tools to request", "toolCount", 1).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(nil, fmt.Errorf("provider build failed")).AnyTimes()
-				mockLogger.EXPECT().Error("Failed to get provider", gomock.Any(), "provider", providers.OpenaiID).AnyTimes()
+				mockLogger.EXPECT().Error("MCP Middleware: Failed to get provider", gomock.Any(), "provider", providers.OpenaiID).AnyTimes()
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedError:  "Provider not available",
@@ -644,7 +673,9 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 				}
 			}
 
-			if tt.expectedStatus < 400 {
+			if tt.expectedStatus >= 400 {
+				assert.False(t, handlerCalled, "Handler should not be called for error responses")
+			} else {
 				assert.True(t, handlerCalled, "Handler should be called for successful responses")
 			}
 		})

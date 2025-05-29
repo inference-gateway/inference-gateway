@@ -113,10 +113,10 @@ type ChatCompletionMessageToolCall struct {
 
 // ChatCompletionMessageToolCallChunk represents a ChatCompletionMessageToolCallChunk in the API
 type ChatCompletionMessageToolCallChunk struct {
-	Function *struct{} `json:"function,omitempty"`
-	ID       *string   `json:"id,omitempty"`
-	Index    int       `json:"index"`
-	Type     *string   `json:"type,omitempty"`
+	Function *ChatCompletionMessageToolCallFunction `json:"function,omitempty"`
+	ID       *string                                `json:"id,omitempty"`
+	Index    int                                    `json:"index"`
+	Type     *string                                `json:"type,omitempty"`
 }
 
 // ChatCompletionMessageToolCallFunction represents a ChatCompletionMessageToolCallFunction in the API

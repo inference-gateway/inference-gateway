@@ -10,6 +10,7 @@ COPY cmd ./cmd
 COPY api ./api
 COPY providers ./providers
 COPY mcp ./mcp
+COPY agent ./agent
 COPY internal ./internal
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o inference-gateway ./cmd/gateway/main.go

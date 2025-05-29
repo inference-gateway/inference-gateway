@@ -35,7 +35,7 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
       - go run cmd/generate/main.go -type MCPTypes -output mcp/generated_types.go
-      - go generate ./providers/... ./api/... ./otel/... ./mcp/... ./logger/...
+      - go generate ./providers/... ./api/... ./otel/... ./mcp/... ./logger/... ./agent/...
 
   tidy:
     desc: "Tidy the gateway"
