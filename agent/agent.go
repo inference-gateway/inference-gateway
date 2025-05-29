@@ -245,7 +245,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			},
 		}
 
-		a.logger.Debug("Agent: Executing tool call", "toolCall", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
+		a.logger.Info("Agent: Executing tool call", "toolCall", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
 		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
 		if err != nil {
 			a.logger.Error("Agent: Failed to execute tool call", err, "tool", toolCall.Function.Name)
