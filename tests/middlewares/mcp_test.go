@@ -896,8 +896,6 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		}
 
 		allChunks := strings.Join(collectedChunks, "")
-		t.Logf("Collected chunks:\n%s", allChunks)
-		t.Logf("Number of [DONE] markers found in agent output: %d", doneCount)
 
 		assert.Equal(t, 1, doneCount, "Agent should send exactly one final [DONE] marker, but found %d", doneCount)
 		assert.Contains(t, allChunks, "pizza", "Response should contain content from first iteration")
