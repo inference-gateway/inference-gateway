@@ -12,6 +12,61 @@ import (
 	l "github.com/inference-gateway/inference-gateway/logger"
 )
 
+// Helper functions for common operations
+func (p *ProviderImpl) buildProviderURL() string {
+	providerID := ""
+	if p.GetID() != nil {
+		providerID = string(*p.GetID())
+	}
+	return "/proxy/" + providerID + p.EndpointChat()
+}
+
+func (p *ProviderImpl) prepareStreamingRequest(clientReq CreateChatCompletionRequest) CreateChatCompletionRequest {
+	// Enforce usage tracking for streaming completions
+	clientReq.StreamOptions = &ChatCompletionStreamOptions{
+		IncludeUsage: true,
+	}
+
+	// Special case - cohere doesn't like stream_options, so we don't
+	// include it - probably they haven't implemented it yet in their OpenAI "compatible" API
+	if *p.GetID() == CohereID {
+		clientReq.StreamOptions = nil
+	}
+
+	return clientReq
+}
+
+func (p *ProviderImpl) createHTTPRequest(ctx context.Context, url string, body []byte) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	if authToken := ctx.Value("authToken"); authToken != nil {
+		req.Header.Set("Authorization", "Bearer "+authToken.(string))
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	return req, nil
+}
+
+func (p *ProviderImpl) handleHTTPError(response *http.Response, operation string) error {
+	if response.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	bodyBytes, readErr := io.ReadAll(response.Body)
+	if readErr != nil {
+		p.logger.Error("Failed to read error response body", readErr, "provider", p.GetName())
+		return fmt.Errorf("HTTP error: %d - %s", response.StatusCode, operation)
+	}
+
+	errorMsg := string(bodyBytes)
+	err := fmt.Errorf("HTTP error: %d - %s: %s", response.StatusCode, operation, errorMsg)
+	p.logger.Error("Non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode)
+	return err
+}
+
 //go:generate mockgen -source=management.go -destination=../tests/mocks/provider.go -package=mocks
 type IProvider interface {
 	// Getters
@@ -74,11 +129,7 @@ func (p *ProviderImpl) EndpointChat() string {
 
 // ListModels fetches the list of models available from the provider and returns them in OpenAI compatible format
 func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, error) {
-	providerID := ""
-	if p.GetID() != nil {
-		providerID = string(*p.GetID())
-	}
-	url := "/proxy/" + providerID + p.EndpointModels()
+	url := "/proxy/" + string(*p.GetID()) + p.EndpointModels()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -96,17 +147,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 		return ListModelsResponse{}, err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		bodyBytes, readErr := io.ReadAll(response.Body)
-		if readErr != nil {
-			p.logger.Error("Failed to read error response body", readErr, "provider", p.GetName())
-			err := fmt.Errorf("HTTP error: %d - Error fetching models", response.StatusCode)
-			return ListModelsResponse{}, err
-		}
-
-		errorMsg := string(bodyBytes)
-		err := fmt.Errorf("HTTP error: %d - Error fetching models: %s", response.StatusCode, errorMsg)
-		p.logger.Error("Non-200 status code when listing models", err, "provider", p.GetName(), "statusCode", response.StatusCode)
+	if err := p.handleHTTPError(response, "Error fetching models"); err != nil {
 		return ListModelsResponse{}, err
 	}
 
@@ -168,11 +209,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 
 // ChatCompletions generates chat completions from the provider
 func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (CreateChatCompletionResponse, error) {
-	providerID := ""
-	if p.GetID() != nil {
-		providerID = string(*p.GetID())
-	}
-	url := "/proxy/" + providerID + p.EndpointChat()
+	url := p.buildProviderURL()
 
 	reqBody, err := json.Marshal(clientReq)
 	if err != nil {
@@ -180,17 +217,11 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq CreateChat
 		return CreateChatCompletionResponse{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
+	req, err := p.createHTTPRequest(ctx, url, reqBody)
 	if err != nil {
 		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
 		return CreateChatCompletionResponse{}, err
 	}
-
-	if authToken := ctx.Value("authToken"); authToken != nil {
-		req.Header.Set("Authorization", "Bearer "+authToken.(string))
-	}
-
-	req.Header.Set("Content-Type", "application/json")
 
 	response, err := p.client.Do(req)
 	if err != nil {
@@ -199,17 +230,7 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq CreateChat
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK {
-		bodyBytes, readErr := io.ReadAll(response.Body)
-		if readErr != nil {
-			p.logger.Error("Failed to read error response body", readErr, "provider", p.GetName())
-			err := fmt.Errorf("HTTP error: %d - Error generating chat completion", response.StatusCode)
-			return CreateChatCompletionResponse{}, err
-		}
-
-		errorMsg := string(bodyBytes)
-		err := fmt.Errorf("HTTP error: %d - Error generating chat completion: %s", response.StatusCode, errorMsg)
-		p.logger.Error("Non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode)
+	if err := p.handleHTTPError(response, "Error generating chat completion"); err != nil {
 		return CreateChatCompletionResponse{}, err
 	}
 
@@ -224,43 +245,23 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq CreateChat
 
 // StreamChatCompletions generates chat completions from the provider using streaming
 func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (<-chan []byte, error) {
-	providerID := ""
-	if p.GetID() != nil {
-		providerID = string(*p.GetID())
-	}
-	url := "/proxy/" + providerID + p.EndpointChat()
+	url := p.buildProviderURL()
 
-	// Enforce usage tracking for streaming completions
-	clientReq.StreamOptions = &ChatCompletionStreamOptions{
-		IncludeUsage: true,
-	}
+	streamReq := p.prepareStreamingRequest(clientReq)
 
-	// Special case - cohere doesn't like stream_options, so we don't
-	// include it - probably they haven't implemented it yet in their OpenAI "compatible" API
-	if *p.GetID() == CohereID {
-		clientReq.StreamOptions = nil
-	}
+	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", url, "request", streamReq)
 
-	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", url, "request", clientReq)
-
-	reqBody, err := json.Marshal(clientReq)
+	reqBody, err := json.Marshal(streamReq)
 	if err != nil {
 		p.logger.Error("Failed to marshal request", err, "provider", p.GetName())
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
+	req, err := p.createHTTPRequest(ctx, url, reqBody)
 	if err != nil {
 		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
 		return nil, err
 	}
-
-	if authToken := ctx.Value("authToken"); authToken != nil {
-		req.Header.Set("Authorization", "Bearer "+authToken.(string))
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "text/event-stream")
 
 	response, err := p.client.Do(req)
 	if err != nil {
@@ -268,23 +269,12 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 		return nil, err
 	}
 
-	if response.StatusCode != http.StatusOK {
-		bodyBytes, readErr := io.ReadAll(response.Body)
+	if err := p.handleHTTPError(response, "Error generating streaming chat completion"); err != nil {
 		response.Body.Close()
-
-		if readErr != nil {
-			p.logger.Error("Failed to read error response body", readErr, "provider", p.GetName())
-			err := fmt.Errorf("HTTP error: %d - Error generating streaming chat completion", response.StatusCode)
-			return nil, err
-		}
-
-		errorMsg := string(bodyBytes)
-		err := fmt.Errorf("HTTP error: %d - Error generating streaming chat completion: %s", response.StatusCode, errorMsg)
-		p.logger.Error("Non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode)
 		return nil, err
 	}
 
-	stream := make(chan []byte, 100)
+	stream := make(chan []byte)
 	go func() {
 		defer response.Body.Close()
 		defer close(stream)
@@ -292,35 +282,28 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 		reader := bufio.NewReader(response.Body)
 
 		for {
+			select {
+			case <-ctx.Done():
+				p.logger.Debug("Stream cancelled due to context", "provider", p.GetName())
+				return
+			default:
+			}
+
 			line, err := reader.ReadBytes('\n')
 			if err != nil {
-				if err.Error() != "EOF" {
-					p.logger.Error("Error reading stream", err, "provider", p.GetName())
-				} else {
+				if err == io.EOF {
 					p.logger.Debug("Stream ended gracefully", "provider", p.GetName())
+				} else {
+					p.logger.Error("Error reading stream", err, "provider", p.GetName())
 				}
 				return
 			}
 
-			line = bytes.TrimSpace(line)
-			if len(line) == 0 {
-				continue
-			}
-
-			if bytes.HasPrefix(line, []byte("data: ")) {
-				line = bytes.TrimPrefix(line, []byte("data: "))
-
-				if bytes.Equal(line, []byte("[DONE]")) {
-					p.logger.Debug("Stream completed", "provider", p.GetName())
-					return
-				}
-
-				select {
-				case stream <- line:
-				case <-ctx.Done():
-					p.logger.Debug("Stream context canceled", "provider", p.GetName())
-					return
-				}
+			select {
+			case stream <- line:
+			case <-ctx.Done():
+				p.logger.Debug("Stream cancelled while sending data", "provider", p.GetName())
+				return
 			}
 		}
 	}()

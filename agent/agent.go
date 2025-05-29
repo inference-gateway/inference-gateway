@@ -101,6 +101,11 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	currentRequest.Model = a.providerModel
 	a.logger.Debug("Agent: Starting agent streaming with model", "model", currentRequest.Model)
 
+	defer func() {
+		a.logger.Debug("Agent: Sending agent completion signal", "defer")
+		middlewareStreamCh <- []byte("data: [AGENT_DONE]\n\n")
+	}()
+
 	for iteration := 0; iteration < maxIterations; iteration++ {
 		a.logger.Debug("Agent: Streaming iteration", "iteration", iteration+1)
 
@@ -125,21 +130,28 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 		for !streamComplete {
 			select {
 			case line, ok := <-streamCh:
+				middlewareStreamCh <- line
+
 				if !ok {
+					a.logger.Debug("Agent: Stream channel closed")
 					streamComplete = true
 					break
 				}
 
-				chunkData := []byte("data: " + string(line) + "\n\n")
-				middlewareStreamCh <- chunkData
+				responseBody.Write(line)
 
-				var resp providers.CreateChatCompletionStreamResponse
-				if err := json.Unmarshal(line, &resp); err != nil {
-					a.logger.Debug("Agent: Failed to unmarshal streaming chunk", err)
+				chunkData := strings.TrimPrefix(strings.TrimSpace(string(line)), "data:")
+				a.logger.Debug("Agent: Sending chunk to middlewareStreamCh", "chunk", chunkData)
+
+				if chunkData == "" || chunkData == "[DONE]" {
 					continue
 				}
 
-				responseBody.WriteString("data: " + string(line) + "\n")
+				var resp providers.CreateChatCompletionStreamResponse
+				if err := json.Unmarshal([]byte(chunkData), &resp); err != nil {
+					a.logger.Debug("Agent: Failed to unmarshal streaming chunk", err, "chunkData", chunkData)
+					continue
+				}
 
 				if len(resp.Choices) == 0 {
 					continue
@@ -152,25 +164,33 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				}
 
 				if choice.Delta.ToolCalls != nil && len(*choice.Delta.ToolCalls) > 0 {
+					a.logger.Debug("Agent: Found tool calls in delta", "count", len(*choice.Delta.ToolCalls))
 					for _, toolCall := range *choice.Delta.ToolCalls {
 						if toolCall.ID != nil || (toolCall.Function != nil && (toolCall.Function.Name != "" || toolCall.Function.Arguments != "")) {
+							a.logger.Debug("Agent: Valid tool call detected", "id", toolCall.ID, "functionName", toolCall.Function)
 							hasToolCalls = true
 							break
 						}
 					}
 				}
 
-				if choice.FinishReason == providers.FinishReasonStop ||
-					choice.FinishReason == providers.FinishReasonToolCalls {
+				if choice.FinishReason == providers.FinishReasonToolCalls {
+					a.logger.Debug("Agent: Stream completing due to tool calls finish reason", "finishReason", string(choice.FinishReason))
+					streamComplete = true
+				} else if choice.FinishReason == providers.FinishReasonStop {
+					a.logger.Debug("Agent: Stream completing due to stop finish reason", "finishReason", string(choice.FinishReason))
 					streamComplete = true
 				}
 
 			case <-ctx.Done():
 				a.logger.Debug("Context cancelled during streaming")
-				middlewareStreamCh <- []byte("data: [DONE]\n\n")
 				return ctx.Err()
 			}
 		}
+
+		a.logger.Debug("Agent: Stream completed for iteration", "iteration", iteration+1, "hasToolCalls", hasToolCalls)
+
+		a.logger.Debug("Agent: Final response body", "responseBody", responseBody.String())
 
 		var toolCalls []providers.ChatCompletionMessageToolCall
 		if hasToolCalls {
@@ -188,7 +208,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		if len(toolCalls) == 0 {
 			a.logger.Debug("Agent: No tool calls found, ending agent loop")
-			middlewareStreamCh <- []byte("data: [DONE]\n\n")
 			return nil
 		}
 
@@ -210,7 +229,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	}
 
 	a.logger.Error("Agent: Agent streaming reached maximum iterations", fmt.Errorf("max iterations reached: %d", maxIterations))
-	middlewareStreamCh <- []byte("data: [DONE]\n\n")
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/inference-gateway/inference-gateway/agent"
@@ -172,7 +173,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			c.Header("Connection", "keep-alive")
 			c.Header("Transfer-Encoding", "chunked")
 
-			processedChunk := make(chan []byte, 100)
+			processedChunk := make(chan []byte)
 			errCh := make(chan error, 1)
 
 			// Start agent streaming in a goroutine
@@ -188,19 +189,47 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			// Stream response to client
 			c.Stream(func(w io.Writer) bool {
 				select {
-				case chunk, ok := <-processedChunk:
+				case line, ok := <-processedChunk:
 					if !ok {
-						m.logger.Debug("MCP Middleware: No more chunks to stream, closing connection")
+						m.logger.Debug("MCP Middleware: Agent stream channel closed unexpectedly")
 						return false
 					}
-					_, err := w.Write(chunk)
+
+					m.logger.Debug("MCP Middleware: Received line from agent", "line", string(line))
+
+					trimmed := strings.TrimPrefix(strings.TrimSpace(string(line)), "data:")
+					if trimmed == "[DONE]" {
+						m.logger.Debug("MCP Middleware: Skipping provider [DONE] marker")
+						return true
+					}
+
+					if trimmed == "[AGENT_DONE]" {
+						m.logger.Debug("MCP Middleware: Agent completed all iterations, sending [DONE]")
+						if _, err := w.Write([]byte("[DONE]\n\n")); err != nil {
+							m.logger.Error("MCP Middleware: Failed to write [DONE] marker", err)
+						}
+						return false
+					}
+
+					if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
+						var errMsg struct {
+							Error string `json:"error"`
+						}
+						if err := json.Unmarshal(line[6:], &errMsg); err == nil {
+							m.logger.Error("MCP Middleware: Upstream provider error", fmt.Errorf(errMsg.Error))
+							c.Writer.WriteHeader(http.StatusServiceUnavailable)
+						}
+					}
+
+					_, err := w.Write(line)
 					if err != nil {
-						m.logger.Error("MCP Middleware: Failed to write chunk to client", err)
+						m.logger.Error("MCP Middleware: Failed to write line to client", err)
 						return false
 					}
 					return true
 				case err := <-errCh:
 					m.logger.Error("MCP Middleware: Agent streaming error", err)
+					c.Writer.WriteHeader(http.StatusServiceUnavailable)
 					if _, writeErr := fmt.Fprintf(w, "data: {\"error\": \"%s\"}\n\n", err.Error()); writeErr != nil {
 						m.logger.Error("MCP Middleware: Failed to write error to stream", writeErr)
 					}

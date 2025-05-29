@@ -2,6 +2,7 @@ package middleware_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
+	"github.com/inference-gateway/inference-gateway/agent"
 	"github.com/inference-gateway/inference-gateway/api/middlewares"
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/mcp"
@@ -759,4 +761,157 @@ data: [DONE]`,
 			}
 		})
 	}
+}
+
+func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
+	t.Run("Multiple tool call iterations should only send one final [DONE]", func(t *testing.T) {
+		ctrl, mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider := createMockDependencies(t)
+		defer ctrl.Finish()
+
+		mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+		mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
+			{
+				Type: providers.ChatCompletionToolTypeFunction,
+				Function: providers.FunctionObject{
+					Name: "get-pizza-info",
+				},
+			},
+		}).AnyTimes()
+
+		mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+		mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		mockLogger.EXPECT().Info(gomock.Any(), gomock.Any()).AnyTimes()
+		mockLogger.EXPECT().Info(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+		mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
+
+		mockRegistry.EXPECT().BuildProvider(providers.GroqID, mockClient).Return(mockProvider, nil).AnyTimes()
+
+		mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "http://mcp-pizza-server:8084/mcp").Return(&mcp.CallToolResult{
+			Content: []interface{}{
+				map[string]interface{}{
+					"type": "text",
+					"text": "Top pizzas: Margherita, Pepperoni, Hawaiian",
+				},
+			},
+		}, nil).AnyTimes()
+
+		agentImpl := agent.NewAgent(mockLogger, mockMCPClient, mockProvider, "meta-llama/llama-4-scout-17b-instruct")
+
+		firstStreamCh := make(chan []byte, 10)
+		go func() {
+			defer close(firstStreamCh)
+			chunks := []string{
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"role":"assistant","content":null},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":"I'll"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" get"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" pizza"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" info"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw1","type":"function","function":{"name":"get-pizza-info","arguments":"{\"mcpServer\":\"http://mcp-pizza-server:8084/mcp\"}"},"index":0}]},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
+			}
+			for _, chunk := range chunks {
+				firstStreamCh <- []byte(chunk)
+			}
+			firstStreamCh <- []byte("[DONE]")
+		}()
+
+		secondStreamCh := make(chan []byte, 10)
+		go func() {
+			defer close(secondStreamCh)
+			chunks := []string{
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"role":"assistant","content":null},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":"Let"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" me"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" get"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" more"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw2","type":"function","function":{"name":"get-pizza-info","arguments":"{\"mcpServer\":\"http://mcp-pizza-server:8084/mcp\"}"},"index":0}]},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
+			}
+			for _, chunk := range chunks {
+				secondStreamCh <- []byte(chunk)
+			}
+			secondStreamCh <- []byte("[DONE]")
+		}()
+
+		thirdStreamCh := make(chan []byte, 10)
+		go func() {
+			defer close(thirdStreamCh)
+			chunks := []string{
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"role":"assistant","content":null},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":"Based"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" on"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" pizza"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" info"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":","},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" Margherita"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":","},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" Pepperoni"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" Hawaiian"},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
+			}
+			for _, chunk := range chunks {
+				thirdStreamCh <- []byte(chunk)
+			}
+
+			thirdStreamCh <- []byte("[DONE]")
+		}()
+
+		call1 := mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(firstStreamCh, nil).Times(1)
+		call2 := mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(secondStreamCh, nil).Times(1)
+		call3 := mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(thirdStreamCh, nil).Times(1)
+
+		gomock.InOrder(call1, call2, call3)
+
+		requestData := providers.CreateChatCompletionRequest{
+			Model: "groq/meta-llama/llama-4-scout-17b-instruct",
+			Messages: []providers.Message{
+				{Role: providers.MessageRoleUser, Content: "What are the top pizzas?"},
+			},
+			Stream: &[]bool{true}[0],
+		}
+
+		middlewareStreamCh := make(chan []byte, 100)
+		ctx := context.Background()
+
+		go func() {
+			defer close(middlewareStreamCh)
+			err := agentImpl.RunWithStream(ctx, middlewareStreamCh, nil, &requestData)
+			if err != nil {
+				t.Errorf("Agent streaming failed: %v", err)
+			}
+		}()
+
+		var collectedChunks []string
+		var doneCount int
+		var agentDoneCount int
+		for chunk := range middlewareStreamCh {
+			chunkStr := string(chunk)
+			collectedChunks = append(collectedChunks, chunkStr)
+
+			if strings.Contains(chunkStr, "[DONE]") {
+				doneCount++
+			}
+
+			if strings.Contains(chunkStr, "AGENT_DONE") {
+				agentDoneCount++
+			}
+		}
+
+		allChunks := strings.Join(collectedChunks, "")
+		t.Logf("Collected chunks:\n%s", allChunks)
+		t.Logf("Number of [DONE] markers found in agent output: %d", doneCount)
+		t.Logf("Number of AGENT_DONE signals found in agent output: %d", agentDoneCount)
+
+		assert.Equal(t, 0, doneCount, "Agent should filter out all [DONE] markers from provider streams, but found %d", doneCount)
+		assert.Equal(t, 1, agentDoneCount, "Agent should send exactly one AGENT_DONE signal, but found %d", agentDoneCount)
+		assert.Contains(t, allChunks, "pizza", "Response should contain content from first iteration")
+		assert.Contains(t, allChunks, "get-pizza-info", "Response should contain tool call")
+		assert.Contains(t, allChunks, "Margherita", "Response should contain content from final iteration")
+		assert.Contains(t, allChunks, "Pepperoni", "Response should contain content from final iteration")
+		assert.Contains(t, allChunks, "Hawaiian", "Response should contain content from final iteration")
+		assert.True(t, len(collectedChunks) > 10, "Should have collected multiple chunks from all iterations")
+	})
 }

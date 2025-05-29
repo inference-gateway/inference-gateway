@@ -455,13 +455,13 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		if parsedRequest, ok := mcpRequest.(*providers.CreateChatCompletionRequest); ok {
 			req = *parsedRequest
 		} else {
-			router.logger.Error("invalid MCP request type in context", nil)
+			router.logger.Error("Router: invalid MCP request type in context", nil)
 			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Internal server error"})
 			return
 		}
 	} else {
 		if err := c.ShouldBindJSON(&req); err != nil {
-			router.logger.Error("failed to decode request", err)
+			router.logger.Error("Router: failed to decode request", err)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
 			return
 		}
@@ -473,7 +473,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		var providerPtr *providers.Provider
 		providerPtr, model = providers.DetermineProviderAndModelName(model)
 		if providerPtr == nil {
-			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
+			router.logger.Error("Router: unable to determine provider for model", nil, "model", req.Model)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider."})
 			return
 		}
@@ -484,16 +484,16 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	provider, err := router.registry.BuildProvider(providerID, router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", providerID)
+			router.logger.Error("Router: provider requires authentication but no API key was configured", err, "provider", providerID)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
 			return
 		}
-		router.logger.Error("provider not found or not supported", err, "provider", providerID)
+		router.logger.Error("Router: provider not found or not supported", err, "provider", providerID)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
 		return
 	}
 
-	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
+	router.logger.Debug("Router: server read timeout", "timeout", router.cfg.Server.ReadTimeout)
 
 	ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout)
 	defer cancel()
@@ -507,7 +507,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 		streamCh, err := provider.StreamChatCompletions(ctx, req)
 		if err != nil {
-			router.logger.Error("failed to start streaming", err)
+			router.logger.Error("Router: failed to start streaming", err)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to start streaming"})
 			return
 		}
@@ -516,14 +516,17 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			select {
 			case line, ok := <-streamCh:
 				if !ok {
-					if _, err := c.Writer.Write([]byte("data: [DONE]\n\n")); err != nil {
-						router.logger.Error("failed to write [DONE] marker", err)
-					}
+					router.logger.Debug("Router: stream closed", "provider", providerID)
 					return false
 				}
 
-				if _, err := c.Writer.Write([]byte("data: " + string(line) + "\n\n")); err != nil {
-					router.logger.Error("failed to write chunk", err)
+				router.logger.Debug("Router: stream chunk",
+					"provider", providerID,
+					"bytes", len(line),
+					"line", string(line))
+
+				if _, err := c.Writer.Write(line); err != nil {
+					router.logger.Error("Router: failed to write chunk", err)
 					return false
 				}
 				c.Writer.Flush()
@@ -540,11 +543,11 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	response, err := provider.ChatCompletions(ctx, req)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "provider", providerID)
+			router.logger.Error("Router: request timed out", err, "provider", providerID)
 			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
 			return
 		}
-		router.logger.Error("failed to generate tokens", err, "provider", providerID)
+		router.logger.Error("Router: failed to generate tokens", err, "provider", providerID)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Failed to generate tokens: %s", err)})
 		return
 	}
