@@ -474,7 +474,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		providerPtr, model = providers.DetermineProviderAndModelName(model)
 		if providerPtr == nil {
 			router.logger.Error("Router: unable to determine provider for model", nil, "model", req.Model)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider."})
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-4)."})
 			return
 		}
 		providerID = *providerPtr

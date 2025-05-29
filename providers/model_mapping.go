@@ -3,17 +3,17 @@ package providers
 import "strings"
 
 // DetermineProviderAndModelName analyzes a model string and tries to determine
-// the provider based on naming conventions. It returns both the detected provider
+// the provider based on explicit naming conventions only. It returns both the detected provider
 // and the model name (which might be modified to strip provider prefixes).
 //
-// It first checks for explicit provider prefixes like "ollama/", "groq/", etc.
-// Then checks for model-name based prefixes like "gpt-", "claude-", etc.
+// It only checks for explicit provider prefixes like "ollama/", "groq/", etc.
+// Implicit model name-based routing (like "gpt-" -> OpenAI) is not supported.
 //
-// Returns nil provider if no provider could be determined.
+// Returns nil provider if no explicit provider prefix is found.
+// In such cases, the provider must be specified via query parameter.
 func DetermineProviderAndModelName(model string) (provider *Provider, modelName string) {
 	modelLower := strings.ToLower(model)
 
-	// First check for explicit provider prefixes (ollama/, groq/, etc.)
 	providerPrefixMapping := map[string]Provider{
 		"ollama/":     OllamaID,
 		"groq/":       GroqID,
@@ -26,22 +26,8 @@ func DetermineProviderAndModelName(model string) (provider *Provider, modelName 
 
 	for prefix, providerID := range providerPrefixMapping {
 		if strings.HasPrefix(modelLower, prefix) {
-			return &providerID, strings.TrimPrefix(model, prefix)
-		}
-	}
-
-	// Then check for model-name based prefixes (gpt-, claude-, etc.)
-	modelPrefixMapping := map[string]Provider{
-		"gpt-":      OpenaiID,
-		"claude-":   AnthropicID,
-		"llama-":    GroqID,
-		"command-":  CohereID,
-		"deepseek-": GroqID,
-	}
-
-	for prefix, providerID := range modelPrefixMapping {
-		if strings.HasPrefix(modelLower, prefix) {
-			return &providerID, model
+			originalPrefix := model[:len(prefix)]
+			return &providerID, strings.TrimPrefix(model, originalPrefix)
 		}
 	}
 

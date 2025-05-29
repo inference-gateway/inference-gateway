@@ -148,7 +148,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		// Mark the request as internal to prevent middleware loops
 		c.Set(string(mcpInternalKey), &originalRequestBody)
 
-		result, err := m.getProviderAndModel(originalRequestBody.Model)
+		result, err := m.getProviderAndModel(c, originalRequestBody.Model)
 		if err != nil {
 			if result.ProviderID == nil {
 				m.logger.Error("MCP Middleware: Failed to determine provider", err, "model", originalRequestBody.Model)
@@ -292,11 +292,24 @@ type ProviderModelResult struct {
 	ProviderID    *providers.Provider
 }
 
-// getProviderAndModel determines the provider and model from the request model string
-func (m *MCPMiddlewareImpl) getProviderAndModel(model string) (*ProviderModelResult, error) {
+// getProviderAndModel determines the provider and model from the request model string or query parameter
+func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*ProviderModelResult, error) {
+	if providerID := providers.Provider(c.Query("provider")); providerID != "" {
+		provider, err := m.registry.BuildProvider(providerID, m.inferenceGatewayClient)
+		if err != nil {
+			return &ProviderModelResult{ProviderID: &providerID}, fmt.Errorf("failed to build provider: %w", err)
+		}
+
+		return &ProviderModelResult{
+			Provider:      provider,
+			ProviderModel: model,
+			ProviderID:    &providerID,
+		}, nil
+	}
+
 	providerPtr, providerModel := providers.DetermineProviderAndModelName(model)
 	if providerPtr == nil {
-		return &ProviderModelResult{ProviderID: nil}, fmt.Errorf("unable to determine provider for model: %s", model)
+		return &ProviderModelResult{ProviderID: nil}, fmt.Errorf("unable to determine provider for model: %s. Please specify a provider using the ?provider= query parameter or use the provider/model format", model)
 	}
 
 	provider, err := m.registry.BuildProvider(*providerPtr, m.inferenceGatewayClient)
