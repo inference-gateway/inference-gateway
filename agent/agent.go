@@ -160,7 +160,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 					}
 				}
 
-				// Check if stream is complete
 				if choice.FinishReason == providers.FinishReasonStop ||
 					choice.FinishReason == providers.FinishReasonToolCalls {
 					streamComplete = true
@@ -173,7 +172,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			}
 		}
 
-		// Parse tool calls if present
 		var toolCalls []providers.ChatCompletionMessageToolCall
 		if hasToolCalls {
 			toolCalls, err = a.parseStreamingToolCalls(responseBody.String())
@@ -184,19 +182,16 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			}
 		}
 
-		// Build complete assistant message
 		if len(toolCalls) > 0 {
 			assistantMessage.ToolCalls = &toolCalls
 		}
 
-		// If no tool calls, end the agent loop
 		if len(toolCalls) == 0 {
 			a.logger.Debug("Agent: No tool calls found, ending agent loop")
 			middlewareStreamCh <- []byte("data: [DONE]\n\n")
 			return nil
 		}
 
-		// Execute tool calls
 		a.logger.Debug("Agent: Executing tool calls", "count", len(toolCalls))
 		toolResults, err := a.ExecuteTools(ctx, toolCalls)
 		if err != nil {
@@ -206,7 +201,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			return err
 		}
 
-		// Update messages for next iteration
 		currentRequest.Messages = append(currentRequest.Messages, assistantMessage)
 		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
 		currentRequest.Model = a.providerModel
@@ -215,7 +209,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			"toolResults", len(toolResults), "totalMessages", len(currentRequest.Messages))
 	}
 
-	// Max iterations reached
 	a.logger.Error("Agent: Agent streaming reached maximum iterations", fmt.Errorf("max iterations reached: %d", maxIterations))
 	middlewareStreamCh <- []byte("data: [DONE]\n\n")
 	return nil
@@ -252,7 +245,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			},
 		}
 
-		// Execute the tool call using the MCP client
 		a.logger.Debug("Agent: Executing tool call", "toolCall", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
 		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
 		if err != nil {
