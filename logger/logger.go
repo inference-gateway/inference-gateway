@@ -60,7 +60,7 @@ func NewLogger(env string) (Logger, error) {
 		cfg.EncoderConfig.TimeKey = "timestamp"
 		cfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	}
-	zapLogger, err := cfg.Build()
+	zapLogger, err := cfg.Build(zap.AddCallerSkip(1))
 	if err != nil {
 		return nil, err
 	}
