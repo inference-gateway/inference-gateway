@@ -102,7 +102,7 @@ func TestAgent_Run(t *testing.T) {
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
 				mockLogger.EXPECT().Debug("Agent: Agent loop iteration", "iteration", 1, "toolCalls", 1).Times(1)
 				mockLogger.EXPECT().Debug("Agent: Executing tool calls", "count", 1).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Executing tool call", "toolCall", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
+				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
 				mockLogger.EXPECT().Debug("Agent: Agent loop completed", "iterations", 1, "finalChoices", 1).Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
@@ -175,7 +175,7 @@ func TestAgent_Run(t *testing.T) {
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
 				mockLogger.EXPECT().Debug("Agent: Agent loop iteration", "iteration", gomock.Any(), "toolCalls", 1).Times(10) // MaxAgentIterations
 				mockLogger.EXPECT().Debug("Agent: Executing tool calls", "count", 1).Times(10)
-				mockLogger.EXPECT().Debug("Agent: Executing tool call", "toolCall", gomock.Any()).Times(10)
+				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", gomock.Any()).Times(10)
 				mockLogger.EXPECT().Error("Agent: Agent loop reached maximum iterations", gomock.Any()).Times(1)
 				mockLogger.EXPECT().Debug("Agent: Agent loop completed", "iterations", 10, "finalChoices", 1).Times(1)
 
@@ -282,7 +282,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "successful tool execution",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("Agent: Executing tool call", "toolCall", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
+				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -320,7 +320,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "tool execution with MCP server",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("Agent: Executing tool call", "toolCall", "id=call_456 name=server_tool args=map[param:value] server=http://custom-server:8080").Times(1)
+				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_456 name=server_tool args=map[param:value] server=http://custom-server:8080").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -377,7 +377,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "MCP execution error",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("Agent: Executing tool call", "toolCall", "id=call_error name=failing_tool args=map[param:value] server=").Times(1)
+				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_error name=failing_tool args=map[param:value] server=").Times(1)
 				mockLogger.EXPECT().Error("Agent: Failed to execute tool call", gomock.Any(), "tool", "failing_tool").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "").Return(nil, fmt.Errorf("tool execution failed")).Times(1)
