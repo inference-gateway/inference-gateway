@@ -136,53 +136,28 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 					break
 				}
 
-				// Filter out [DONE] markers from provider - only agent should send completion signals
-				// TODO - I need to find a better way of handling this
 				lineStr := string(line)
 				trimmedLine := strings.TrimSpace(lineStr)
 
-				if lineStr != "data: [DONE]\n\n" && lineStr != "[DONE]" && trimmedLine != "data: [DONE]" {
-					var formattedData []byte
-
-					switch {
-					case strings.HasPrefix(trimmedLine, "data: "):
-						// Already SSE formatted - ensure proper line breaks
-						dataContent := strings.TrimPrefix(trimmedLine, "data: ")
-						if dataContent != "" && dataContent != "[DONE]" {
-							formattedData = []byte(fmt.Sprintf("data: %s\n\n", dataContent))
-						}
-					case trimmedLine != "" && trimmedLine != "[DONE]":
-						// Raw JSON - format as SSE
-						formattedData = []byte(fmt.Sprintf("data: %s\n\n", trimmedLine))
-					default:
-						// Empty line or just whitespace - skip
-						continue
-					}
-
-					if formattedData != nil {
-						middlewareStreamCh <- formattedData
-						responseBody.Write(formattedData)
-					}
-				} else {
-					// Still add to response body for parsing, but don't send to middleware
+				if strings.Contains(trimmedLine, "[DONE]") {
 					responseBody.Write(line)
-				}
-
-				var chunkData string
-				switch {
-				case strings.HasPrefix(trimmedLine, "data: "):
-					chunkData = strings.TrimPrefix(trimmedLine, "data: ")
-				case trimmedLine != "[DONE]" && trimmedLine != "":
-					chunkData = trimmedLine
-				default:
 					continue
 				}
+
+				if !strings.HasPrefix(trimmedLine, "data: ") {
+					continue
+				}
+
+				chunkData := strings.TrimPrefix(trimmedLine, "data: ")
+				if chunkData == "" {
+					continue
+				}
+
+				formattedData := []byte(fmt.Sprintf("data: %s\n\n", chunkData))
+				middlewareStreamCh <- formattedData
+				responseBody.Write(formattedData)
 
 				a.logger.Debug("Agent: Processing chunk", "chunk", chunkData)
-
-				if chunkData == "" || chunkData == "[DONE]" {
-					continue
-				}
 
 				var resp providers.CreateChatCompletionStreamResponse
 				if err := json.Unmarshal([]byte(chunkData), &resp); err != nil {
