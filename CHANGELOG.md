@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.7.6...v0.8.0-rc.1) (2025-05-30)
+
+### ✨ Features
+
+* Add client configuration options for compression and timeouts ([c56d681](https://github.com/inference-gateway/inference-gateway/commit/c56d681dbb643a2d6b73caf90a47666f469fdb3b))
+
+### ♻️ Improvements
+
+* Enhance streaming support and optimize request handling in provider ([a5fee60](https://github.com/inference-gateway/inference-gateway/commit/a5fee603783e9c61469a0c5952817985ccc3c51c))
+
+### 🐛 Bug Fixes
+
+* Improve logging for streaming requests and responses, enhance development environment ([7cc37ef](https://github.com/inference-gateway/inference-gateway/commit/7cc37ef1126b916c1c59748999a15366529e2155))
+* Update inference-gateway service to use pre-built image instead of build context ([f1396cd](https://github.com/inference-gateway/inference-gateway/commit/f1396cd2805f0ca6dd0abd49d3fb60ecbf6be518))
+
 ## [0.7.6](https://github.com/inference-gateway/inference-gateway/compare/v0.7.5...v0.7.6) (2025-05-29)
 
 ### 🐛 Bug Fixes
