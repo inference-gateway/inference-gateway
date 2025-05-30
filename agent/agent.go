@@ -245,7 +245,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	return nil
 }
 
-// ExecuteTool executes a tool with the provided context, tool name, and arguments
+// ExecuteTools executes tools with the provided context, tool name, and arguments
 func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.ChatCompletionMessageToolCall) ([]providers.Message, error) {
 	var results []providers.Message
 
