@@ -1,7 +1,9 @@
 ---
 services:
   inference-gateway:
-    image: ghcr.io/inference-gateway/inference-gateway:latest
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
     ports:
       - 8080:8080
     env_file:
@@ -14,83 +16,105 @@ services:
         reservations:
           memory: 100M
           cpus: "0.1"
+    depends_on:
+      ollama-health-checker:
+        condition: service_healthy
     networks:
       - app_network
       - external_network
     pull_policy: always
 
-  curl:
+  ollama-health-checker:
     image: alpine/curl:latest
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "tail -f /dev/null"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "curl -f http://ollama:8080/api/version || exit 1"
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
     networks:
       - app_network
-      - external_network
 
   ollama:
     image: ollama/ollama:latest
-    user: 65534:65534
-    read_only: true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-    entrypoint: ["/bin/sh", "-c"]
+    entrypoint:
+      - /bin/sh
+      - -c
     command: >
-      "ollama serve"
+      "
+      ollama serve
+      "
+    working_dir: /root
     environment:
       OLLAMA_HOST: 0.0.0.0:8080
-      OLLAMA_DEBUG: 1
-      HOME: /
+      OLLAMA_DEBUG: 0
+      OLLAMA_KEEP_ALIVE: "10m"
+      OLLAMA_MAX_LOADED_MODELS: 2
+      OLLAMA_FLASH_ATTENTION: 1
+      OLLAMA_NUM_PARALLEL: 6
+      OLLAMA_LLM_LIBRARY: cpu
+      OLLAMA_MAX_QUEUE: 512
+      OLLAMA_RUNNERS_DIR: /tmp
+      OLLAMA_TMPDIR: /tmp
+      HOME: /root
+      OLLAMA_REQUEST_TIMEOUT: 300s
+      OLLAMA_CONCURRENT_REQUESTS: 4
     volumes:
       - type: volume
         source: docker-compose-ollama-data
-        target: /.ollama
+        target: /root/.ollama
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 2G
     deploy:
       resources:
         limits:
-          cpus: "4"
+          cpus: "6"
           memory: 8G
         reservations:
-          memory: 4G
-          cpus: "3"
-    depends_on:
-      ollama-model-downloader:
-        condition: service_completed_successfully
+          memory: 6G
+          cpus: "5"
     networks:
       - app_network
 
   ollama-model-downloader:
     image: ollama/ollama:latest
-    entrypoint: ["/bin/sh", "-c"]
-    environment:
-      HOME: /
-      OLLAMA_HOST: 127.0.0.0:8080
-      OLLAMA_MAX_LOADED_MODELS: 0
+    entrypoint:
+      - /bin/sh
+      - -c
     command: >
-      "ollama serve & sleep 5 && ollama pull deepseek-r1:1.5b && chown -R 65534:65534 /.ollama"
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 512M
-        reservations:
-          memory: 512M
-          cpus: "0.5"
+      "
+      ollama serve &
+      sleep 10 &&
+      ollama pull deepseek-r1:1.5b &&
+      ollama pull qwen3:0.6b
+      "
     volumes:
       - type: volume
         source: docker-compose-ollama-data
-        target: /.ollama
+        target: /root/.ollama
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+      OLLAMA_MAX_LOADED_MODELS: 0
+    networks:
+      - app_network
+      - external_network
+    depends_on:
+      ollama-health-checker:
+        condition: service_healthy
 
 volumes:
-  docker-compose-llama-data:
   docker-compose-ollama-data:
 
 networks:
   app_network:
     internal: true
   external_network:
-    driver: bridge
     internal: false

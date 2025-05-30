@@ -57,11 +57,16 @@ func (m *DevRequestModifier) Modify(req *http.Request) error {
 
 	bodyBuffer := bytes.NewBuffer(body)
 
+	bodyPreview := string(body)
+	if len(bodyPreview) > 1024 {
+		bodyPreview = bodyPreview[:1024] + "... (truncated)"
+	}
+
 	m.logger.Debug("proxy request",
 		"method", req.Method,
 		"url", req.URL.String(),
-		"headers", req.Header,
-		"body", string(body),
+		"content_length", len(body),
+		"body_preview", bodyPreview,
 	)
 
 	req.Body = io.NopCloser(bodyBuffer)
@@ -75,6 +80,23 @@ func (m *DevResponseModifier) Modify(resp *http.Response) error {
 		return nil
 	}
 
+	contentType := resp.Header.Get("Content-Type")
+	transferEncoding := resp.Header.Get("Transfer-Encoding")
+
+	isStreaming := contentType == "text/event-stream" ||
+		transferEncoding == "chunked" ||
+		resp.ContentLength == -1
+
+	if isStreaming {
+		m.logger.Debug("proxy streaming response",
+			"status", resp.Status,
+			"content_type", contentType,
+			"transfer_encoding", transferEncoding,
+			"streaming", true,
+		)
+		return nil
+	}
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		m.logger.Error("failed to read response body", err)
@@ -83,29 +105,41 @@ func (m *DevResponseModifier) Modify(resp *http.Response) error {
 
 	originalBody := bytes.NewBuffer(body)
 
-	var logBody []byte
-	if resp.Header.Get("Content-Encoding") == "gzip" {
-		reader, err := gzip.NewReader(bytes.NewReader(body))
-		if err == nil {
-			defer reader.Close()
-			if uncompressed, err := io.ReadAll(reader); err == nil {
-				logBody = uncompressed
+	if len(body) <= 4096 {
+		var logBody []byte
+		if resp.Header.Get("Content-Encoding") == "gzip" {
+			reader, err := gzip.NewReader(bytes.NewReader(body))
+			if err == nil {
+				defer reader.Close()
+				if uncompressed, err := io.ReadAll(reader); err == nil {
+					logBody = uncompressed
+				}
+			}
+		} else {
+			logBody = body
+		}
+
+		var prettyJSON bytes.Buffer
+		if len(logBody) <= 2048 && json.Valid(logBody) {
+			if err := json.Indent(&prettyJSON, logBody, "", "  "); err == nil {
+				logBody = prettyJSON.Bytes()
 			}
 		}
+
+		m.logger.Debug("proxy response",
+			"status", resp.Status,
+			"content_length", len(body),
+			"content_type", resp.Header.Get("Content-Type"),
+			"body", string(logBody),
+		)
 	} else {
-		logBody = body
+		m.logger.Debug("proxy response",
+			"status", resp.Status,
+			"content_length", len(body),
+			"content_type", resp.Header.Get("Content-Type"),
+			"body", "... (response too large for logging)",
+		)
 	}
-
-	var prettyJSON bytes.Buffer
-	if err := json.Indent(&prettyJSON, logBody, "", "  "); err == nil {
-		logBody = prettyJSON.Bytes()
-	}
-
-	m.logger.Debug("proxy response",
-		"status", resp.Status,
-		"headers", resp.Header,
-		"body", string(logBody),
-	)
 
 	resp.Body = io.NopCloser(originalBody)
 	resp.ContentLength = int64(originalBody.Len())

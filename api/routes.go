@@ -187,10 +187,24 @@ func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router
 			return true
 		}
 
-		router.logger.Debug("stream chunk",
-			"provider", c.Param("provider"),
-			"bytes", len(line),
-			"data", string(bytes.TrimSpace(line)))
+		if router.cfg.Environment == "development" {
+			shouldLog := len(line) > 512 ||
+				(c.Param("provider") != "" && len(line) > 0 && (len(line)%10 == 0))
+
+			if shouldLog {
+				router.logger.Debug("stream chunk",
+					"provider", c.Param("provider"),
+					"bytes", len(line),
+					"data_preview", func() string {
+						preview := string(bytes.TrimSpace(line))
+						if len(preview) > 200 {
+							return preview[:200] + "... (truncated)"
+						}
+						return preview
+					}(),
+				)
+			}
+		}
 
 		if _, err := w.Write(line); err != nil {
 			router.logger.Error("failed to write response", err,

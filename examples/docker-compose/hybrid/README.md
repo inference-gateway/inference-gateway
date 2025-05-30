@@ -50,11 +50,21 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 4. Or with streaming using Ollama:
 
 ```bash
+# Download the models first
+docker compose run --rm -it ollama-model-downloader
+```
+
+```bash
+# List them
+curl -X GET http://localhost:8080/v1/models?provider=ollama | jq '.'
+```
+
+```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H 'Content-Type: application/json,text/event-stream' \
   -H 'Accept: application/json,text/event-stream' \
   -d '{
-    "model": "ollama/deepseek-r1:1.5b",
+    "model": "ollama/qwen3:0.6b",
     "messages": [
       {
         "role": "system",

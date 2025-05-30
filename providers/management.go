@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -275,7 +276,7 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 		defer response.Body.Close()
 		defer close(stream)
 
-		buffer := make([]byte, 2048)
+		reader := bufio.NewReaderSize(response.Body, 4096)
 
 		for {
 			select {
@@ -285,22 +286,19 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 			default:
 			}
 
-			n, err := response.Body.Read(buffer)
+			line, err := reader.ReadBytes('\n')
 			if err != nil {
-				if err == io.EOF {
-					p.logger.Debug("Stream ended gracefully", "provider", p.GetName())
-				} else {
+				if err != io.EOF {
 					p.logger.Error("Error reading stream", err, "provider", p.GetName())
+				} else {
+					p.logger.Debug("Stream ended gracefully", "provider", p.GetName())
 				}
 				return
 			}
 
-			if n > 0 {
-				chunk := make([]byte, n)
-				copy(chunk, buffer[:n])
-
+			if len(line) > 0 {
 				select {
-				case stream <- chunk:
+				case stream <- line:
 				case <-ctx.Done():
 					p.logger.Debug("Stream cancelled while sending data", "provider", p.GetName())
 					return
