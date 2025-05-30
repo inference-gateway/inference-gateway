@@ -1,7 +1,6 @@
 package providers
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -14,11 +13,7 @@ import (
 
 // Helper functions for common operations
 func (p *ProviderImpl) buildProviderURL() string {
-	providerID := ""
-	if p.GetID() != nil {
-		providerID = string(*p.GetID())
-	}
-	return "/proxy/" + providerID + p.EndpointChat()
+	return "/proxy/" + string(*p.GetID()) + p.EndpointChat()
 }
 
 func (p *ProviderImpl) prepareStreamingRequest(clientReq CreateChatCompletionRequest) CreateChatCompletionRequest {
@@ -42,11 +37,12 @@ func (p *ProviderImpl) createHTTPRequest(ctx context.Context, url string, body [
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	if authToken := ctx.Value("authToken"); authToken != nil {
-		req.Header.Set("Authorization", "Bearer "+authToken.(string))
-	}
-
 	req.Header.Set("Content-Type", "application/json")
+	// Optimize headers for streaming
+	req.Header.Set("Accept", "text/event-stream, application/json")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Connection", "keep-alive")
+
 	return req, nil
 }
 
@@ -274,12 +270,12 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 		return nil, err
 	}
 
-	stream := make(chan []byte)
+	stream := make(chan []byte, 100)
 	go func() {
 		defer response.Body.Close()
 		defer close(stream)
 
-		reader := bufio.NewReader(response.Body)
+		buffer := make([]byte, 2048)
 
 		for {
 			select {
@@ -289,7 +285,7 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 			default:
 			}
 
-			line, err := reader.ReadBytes('\n')
+			n, err := response.Body.Read(buffer)
 			if err != nil {
 				if err == io.EOF {
 					p.logger.Debug("Stream ended gracefully", "provider", p.GetName())
@@ -299,11 +295,16 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 				return
 			}
 
-			select {
-			case stream <- line:
-			case <-ctx.Done():
-				p.logger.Debug("Stream cancelled while sending data", "provider", p.GetName())
-				return
+			if n > 0 {
+				chunk := make([]byte, n)
+				copy(chunk, buffer[:n])
+
+				select {
+				case stream <- chunk:
+				case <-ctx.Done():
+					p.logger.Debug("Stream cancelled while sending data", "provider", p.GetName())
+					return
+				}
 			}
 		}
 	}()

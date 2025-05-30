@@ -33,7 +33,7 @@ curl -X GET http://localhost:8080/v1/models?provider=ollama | jq '.'
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model": "llama-3.3-70b-versatile",
+    "model": "groq/llama3-8b-8192",
     "messages": [
       {
         "role": "system",
@@ -45,4 +45,26 @@ curl -X POST http://localhost:8080/v1/chat/completions \
       }
     ]
   }' | jq '.'
+```
+
+4. Or with streaming using Ollama:
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H 'Content-Type: application/json,text/event-stream' \
+  -H 'Accept: application/json,text/event-stream' \
+  -d '{
+    "model": "ollama/deepseek-r1:1.5b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "Hi, can you tell me a joke?"
+      }
+    ],
+    "stream": true
+  }'
 ```

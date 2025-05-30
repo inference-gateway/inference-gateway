@@ -504,6 +504,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
 		c.Header("Connection", "keep-alive")
 		c.Header("Transfer-Encoding", "chunked")
+		c.Header("X-Accel-Buffering", "no")
 
 		streamCh, err := provider.StreamChatCompletions(ctx, req)
 		if err != nil {
@@ -525,11 +526,14 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 					"bytes", len(line),
 					"line", string(line))
 
-				if _, err := c.Writer.Write(line); err != nil {
+				if _, err := w.Write(line); err != nil {
 					router.logger.Error("Router: failed to write chunk", err)
 					return false
 				}
-				c.Writer.Flush()
+
+				if flusher, ok := w.(http.Flusher); ok {
+					flusher.Flush()
+				}
 				return true
 			case <-ctx.Done():
 				return false
