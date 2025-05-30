@@ -1307,6 +1307,21 @@ components:
                   type: string
                   default: "TLS12"
                   description: "Minimum TLS version"
+                - name: disable_compression
+                  env: "CLIENT_DISABLE_COMPRESSION"
+                  type: bool
+                  default: "true"
+                  description: "Disable compression for faster streaming"
+                - name: response_header_timeout
+                  env: "CLIENT_RESPONSE_HEADER_TIMEOUT"
+                  type: time.Duration
+                  default: "10s"
+                  description: "Response header timeout"
+                - name: expect_continue_timeout
+                  env: "CLIENT_EXPECT_CONTINUE_TIMEOUT"
+                  type: time.Duration
+                  default: "1s"
+                  description: "Expect continue timeout"
           - providers:
               title: "Providers"
               settings:

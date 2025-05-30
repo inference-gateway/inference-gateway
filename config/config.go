@@ -63,11 +63,14 @@ type ServerConfig struct {
 
 // Client configuration
 type ClientConfig struct {
-	Timeout             time.Duration `env:"TIMEOUT, default=30s" description:"Client timeout"`
-	MaxIdleConns        int           `env:"MAX_IDLE_CONNS, default=20" description:"Maximum idle connections"`
-	MaxIdleConnsPerHost int           `env:"MAX_IDLE_CONNS_PER_HOST, default=20" description:"Maximum idle connections per host"`
-	IdleConnTimeout     time.Duration `env:"IDLE_CONN_TIMEOUT, default=30s" description:"Idle connection timeout"`
-	TlsMinVersion       string        `env:"TLS_MIN_VERSION, default=TLS12" description:"Minimum TLS version"`
+	Timeout               time.Duration `env:"TIMEOUT, default=30s" description:"Client timeout"`
+	MaxIdleConns          int           `env:"MAX_IDLE_CONNS, default=20" description:"Maximum idle connections"`
+	MaxIdleConnsPerHost   int           `env:"MAX_IDLE_CONNS_PER_HOST, default=20" description:"Maximum idle connections per host"`
+	IdleConnTimeout       time.Duration `env:"IDLE_CONN_TIMEOUT, default=30s" description:"Idle connection timeout"`
+	TlsMinVersion         string        `env:"TLS_MIN_VERSION, default=TLS12" description:"Minimum TLS version"`
+	DisableCompression    bool          `env:"DISABLE_COMPRESSION, default=true" description:"Disable compression for faster streaming"`
+	ResponseHeaderTimeout time.Duration `env:"RESPONSE_HEADER_TIMEOUT, default=10s" description:"Response header timeout"`
+	ExpectContinueTimeout time.Duration `env:"EXPECT_CONTINUE_TIMEOUT, default=1s" description:"Expect continue timeout"`
 }
 
 // Load configuration

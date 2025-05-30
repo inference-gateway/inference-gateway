@@ -48,11 +48,14 @@ func TestLoad(t *testing.T) {
 					IdleTimeout:  120 * time.Second,
 				},
 				Client: &config.ClientConfig{
-					Timeout:             30 * time.Second,
-					MaxIdleConns:        20,
-					MaxIdleConnsPerHost: 20,
-					IdleConnTimeout:     30 * time.Second,
-					TlsMinVersion:       "TLS12",
+					Timeout:               30 * time.Second,
+					MaxIdleConns:          20,
+					MaxIdleConnsPerHost:   20,
+					IdleConnTimeout:       30 * time.Second,
+					TlsMinVersion:         "TLS12",
+					DisableCompression:    true,
+					ResponseHeaderTimeout: 10 * time.Second,
+					ExpectContinueTimeout: 1 * time.Second,
 				},
 				Providers: map[providers.Provider]*providers.Config{
 					providers.AnthropicID: {
@@ -173,11 +176,14 @@ func TestLoad(t *testing.T) {
 					IdleTimeout:  180 * time.Second,
 				},
 				Client: &config.ClientConfig{
-					Timeout:             30 * time.Second,
-					MaxIdleConns:        20,
-					MaxIdleConnsPerHost: 20,
-					IdleConnTimeout:     30 * time.Second,
-					TlsMinVersion:       "TLS12",
+					Timeout:               30 * time.Second,
+					MaxIdleConns:          20,
+					MaxIdleConnsPerHost:   20,
+					IdleConnTimeout:       30 * time.Second,
+					TlsMinVersion:         "TLS12",
+					DisableCompression:    true,
+					ResponseHeaderTimeout: 10 * time.Second,
+					ExpectContinueTimeout: 1 * time.Second,
 				},
 				Providers: map[providers.Provider]*providers.Config{
 					providers.OllamaID: {
@@ -314,11 +320,14 @@ func TestLoad(t *testing.T) {
 					IdleTimeout:  120 * time.Second,
 				},
 				Client: &config.ClientConfig{
-					Timeout:             30 * time.Second,
-					MaxIdleConns:        20,
-					MaxIdleConnsPerHost: 20,
-					IdleConnTimeout:     30 * time.Second,
-					TlsMinVersion:       "TLS12",
+					Timeout:               30 * time.Second,
+					MaxIdleConns:          20,
+					MaxIdleConnsPerHost:   20,
+					IdleConnTimeout:       30 * time.Second,
+					TlsMinVersion:         "TLS12",
+					DisableCompression:    true,
+					ResponseHeaderTimeout: 10 * time.Second,
+					ExpectContinueTimeout: 1 * time.Second,
 				},
 				Providers: map[providers.Provider]*providers.Config{
 					providers.OllamaID: {

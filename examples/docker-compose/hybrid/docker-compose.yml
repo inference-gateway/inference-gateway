@@ -17,6 +17,7 @@ services:
     networks:
       - app_network
       - external_network
+    pull_policy: always
 
   curl:
     image: alpine/curl:latest

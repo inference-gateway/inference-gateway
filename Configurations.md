@@ -50,6 +50,9 @@
 | CLIENT_MAX_IDLE_CONNS_PER_HOST | `20` | Maximum idle connections per host |
 | CLIENT_IDLE_CONN_TIMEOUT | `30s` | Idle connection timeout |
 | CLIENT_TLS_MIN_VERSION | `TLS12` | Minimum TLS version |
+| CLIENT_DISABLE_COMPRESSION | `true` | Disable compression for faster streaming |
+| CLIENT_RESPONSE_HEADER_TIMEOUT | `10s` | Response header timeout |
+| CLIENT_EXPECT_CONTINUE_TIMEOUT | `1s` | Expect continue timeout |
 
 
 ### Providers
