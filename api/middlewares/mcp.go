@@ -22,9 +22,6 @@ const (
 
 	// MCPInternalHeader marks internal MCP requests to prevent middleware loops
 	MCPInternalHeader = "X-MCP-Internal"
-
-	// MaxAgentIterations limits the number of agent loop iterations
-	MaxAgentIterations = 10
 )
 
 // contextKey is a custom type for context keys to avoid collisions

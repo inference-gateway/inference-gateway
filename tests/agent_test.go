@@ -441,18 +441,18 @@ func TestAgent_RunWithStream(t *testing.T) {
 			name: "no tool calls streaming",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
 				streamCh := make(chan []byte, 3)
-				streamCh <- []byte(`{"id":"test","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}`)
-				streamCh <- []byte(`{"id":"test","choices":[{"index":0,"delta":{"content":" there!"},"finish_reason":null}]}`)
-				streamCh <- []byte(`{"id":"test","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`)
+				streamCh <- []byte(`data: {"id":"test","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}`)
+				streamCh <- []byte(`data: {"id":"test","choices":[{"index":0,"delta":{"content":" there!"},"finish_reason":null}]}`)
+				streamCh <- []byte(`data: {"id":"test","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`)
 				close(streamCh)
 
 				mockLogger.EXPECT().Debug("Agent: Starting agent streaming with model", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("Agent: Streaming iteration", "iteration", gomock.Any()).Times(1)
 				mockLogger.EXPECT().Debug("Agent: Processing chunk", "chunk", gomock.Any()).Times(3)
 				mockLogger.EXPECT().Debug("Agent: Stream completing due to stop finish reason", "finishReason", "stop").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Stream completed for iteration", gomock.Any()).Times(1)
+				mockLogger.EXPECT().Debug("Agent: Stream completed for iteration", "iteration", gomock.Any(), "hasToolCalls", false).Times(1)
 				mockLogger.EXPECT().Debug("Agent: Final response body", "responseBody", gomock.Any()).Times(1)
-				mockLogger.EXPECT().Debug("Agent: No tool calls found, ending agent loop", gomock.Any()).Times(1)
+				mockLogger.EXPECT().Debug("Agent: No tool calls found, ending agent loop").Times(1)
 				mockLogger.EXPECT().Debug("Agent: Sending agent completion signal").Times(1)
 
 				mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(streamCh, nil).Times(1)
