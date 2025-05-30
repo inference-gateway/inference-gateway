@@ -117,7 +117,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			return err
 		}
 
-		var responseBody strings.Builder
+		var responseBodyBuilder strings.Builder
 		assistantMessage := providers.Message{
 			Role:      providers.MessageRoleAssistant,
 			Content:   "",
@@ -140,7 +140,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				trimmedLine := strings.TrimSpace(lineStr)
 
 				if strings.Contains(trimmedLine, "[DONE]") {
-					responseBody.Write(line)
+					responseBodyBuilder.Write(line)
 					continue
 				}
 
@@ -155,7 +155,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 				formattedData := []byte(fmt.Sprintf("data: %s\n\n", chunkData))
 				middlewareStreamCh <- formattedData
-				responseBody.Write(formattedData)
+				responseBodyBuilder.Write(formattedData)
 
 				a.logger.Debug("Agent: Processing chunk", "chunk", chunkData)
 
@@ -203,11 +203,11 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		a.logger.Debug("Agent: Stream completed for iteration", "iteration", iteration+1, "hasToolCalls", hasToolCalls)
 
-		a.logger.Debug("Agent: Final response body", "responseBody", responseBody.String())
+		a.logger.Debug("Agent: Final response body", "responseBodyBuilder", responseBodyBuilder.String())
 
 		var toolCalls []providers.ChatCompletionMessageToolCall
 		if hasToolCalls {
-			toolCalls, err = a.parseStreamingToolCalls(responseBody.String())
+			toolCalls, err = a.parseStreamingToolCalls(responseBodyBuilder.String())
 			if err != nil {
 				a.logger.Error("Agent: Failed to parse streaming tool calls", err)
 			} else {
@@ -311,20 +311,18 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 }
 
 // parseStreamingToolCalls parses streaming response to extract tool calls
-func (a *agentImpl) parseStreamingToolCalls(responseBody string) ([]providers.ChatCompletionMessageToolCall, error) {
+func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]providers.ChatCompletionMessageToolCall, error) {
 	toolCallsMap := make(map[int]*providers.ChatCompletionMessageToolCall)
-	lines := strings.Split(responseBody, "\n")
+	lines := strings.Split(responseBodyBuilder, "\n")
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 
-		// Handle both formats: with and without "data: " prefix
 		var data string
 		switch {
 		case strings.HasPrefix(line, "data: "):
 			data = strings.TrimPrefix(line, "data: ")
 		case line != "" && line != "[DONE]":
-			// Try to parse as direct JSON
 			data = line
 		default:
 			continue

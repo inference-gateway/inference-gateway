@@ -534,7 +534,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 				mockLogger.EXPECT().Debug("Agent: Processing chunk", "chunk", gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug("Agent: Stream completing due to stop finish reason", "finishReason", "stop").Times(1)
 				mockLogger.EXPECT().Debug("Agent: Stream completed for iteration", "iteration", gomock.Any(), "hasToolCalls", false).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Final response body", "responseBody", gomock.Any()).Times(1)
+				mockLogger.EXPECT().Debug("Agent: Final response body", "responseBodyBuilder", gomock.Any()).Times(1)
 				mockLogger.EXPECT().Debug("Agent: No tool calls found, ending agent loop").Times(1)
 				mockLogger.EXPECT().Debug("Agent: Sending agent completion signal").Times(1)
 
