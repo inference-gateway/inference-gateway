@@ -1224,6 +1224,23 @@ components:
                   type: time.Duration
                   default: "5s"
                   description: "MCP client request timeout for initialize and tool calls"
+          - a2a:
+              title: "Agent-to-Agent (A2A) Protocol"
+              settings:
+                - name: a2a_enable
+                  env: "A2A_ENABLE"
+                  type: bool
+                  default: "false"
+                  description: "Enable A2A protocol support"
+                - name: a2a_agents
+                  env: "A2A_AGENTS"
+                  type: string
+                  description: "Comma-separated list of A2A agent URLs"
+                - name: a2a_client_timeout
+                  env: "A2A_CLIENT_TIMEOUT"
+                  type: time.Duration
+                  default: "30s"
+                  description: "A2A client timeout"
           - oidc:
               title: "OpenID Connect"
               settings:
