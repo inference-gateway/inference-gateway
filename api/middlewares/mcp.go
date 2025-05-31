@@ -227,6 +227,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 					return false
 				}
 			})
+			c.Abort()
 			return
 		}
 
