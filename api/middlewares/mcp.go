@@ -194,7 +194,11 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 					if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
 						m.logger.Debug("MCP Middleware: Agent completed all iterations, sending [DONE]")
-						return true
+						_, err := w.Write(line)
+						if err != nil {
+							m.logger.Error("MCP Middleware: Failed to write [DONE] to client", err)
+						}
+						return false
 					}
 
 					m.logger.Debug("MCP Middleware: Received line from agent", "line", string(line))
