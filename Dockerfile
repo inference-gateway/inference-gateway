@@ -10,6 +10,7 @@ COPY cmd ./cmd
 COPY api ./api
 COPY providers ./providers
 COPY mcp ./mcp
+COPY a2a ./a2a
 COPY agent ./agent
 COPY internal ./internal
 

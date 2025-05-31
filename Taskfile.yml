@@ -61,6 +61,11 @@ tasks:
     cmds:
       - go build -o bin/inference-gateway cmd/gateway/main.go
 
+  build:container:
+    desc: "Build the gateway container"
+    cmds:
+      - docker build -t inference-gateway .
+
   run:
     desc: "Run the gateway"
     cmds:
