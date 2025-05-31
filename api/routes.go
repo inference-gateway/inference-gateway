@@ -350,6 +350,8 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 			return
 		}
 
+		response.Data = router.filterModelsByAllowList(response.Data, router.cfg.AllowedModels)
+
 		c.JSON(http.StatusOK, response)
 	} else {
 		var wg sync.WaitGroup
@@ -399,6 +401,8 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 		if allModels == nil {
 			allModels = make([]providers.Model, 0)
 		}
+
+		allModels = router.filterModelsByAllowList(allModels, router.cfg.AllowedModels)
 
 		unifiedResponse := providers.ListModelsResponse{
 			Object: "list",
@@ -482,6 +486,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	model := req.Model
+	originalModel := req.Model
 	providerID := providers.Provider(c.Query("provider"))
 	if providerID == "" {
 		var providerPtr *providers.Provider
@@ -494,6 +499,14 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		providerID = *providerPtr
 	}
 	req.Model = model
+
+	if router.cfg.AllowedModels != "" {
+		if !router.isModelAllowed(originalModel, router.cfg.AllowedModels) {
+			router.logger.Error("model not in allowed list", nil, "model", originalModel, "allowed_models", router.cfg.AllowedModels)
+			c.JSON(http.StatusForbidden, ErrorResponse{Error: "Model not allowed. Please check the list of allowed models."})
+			return
+		}
+	}
 
 	provider, err := router.registry.BuildProvider(providerID, router.client)
 	if err != nil {
@@ -644,4 +657,78 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// filterModelsByAllowList filters models based on the comma-separated ALLOWED_MODELS configuration.
+// If allowedModels is empty, all models are returned. Otherwise, only models matching
+// the allowed list are returned. The matching is done using case-insensitive comparison.
+func (router *RouterImpl) filterModelsByAllowList(models []providers.Model, allowedModels string) []providers.Model {
+	if allowedModels == "" {
+		return models
+	}
+
+	allowedMap := make(map[string]bool)
+	for _, model := range strings.Split(allowedModels, ",") {
+		trimmed := strings.TrimSpace(model)
+		if trimmed != "" {
+			allowedMap[strings.ToLower(trimmed)] = true
+		}
+	}
+
+	if len(allowedMap) == 0 {
+		return models
+	}
+
+	filtered := make([]providers.Model, 0)
+	for _, model := range models {
+		modelID := strings.ToLower(model.ID)
+
+		parts := strings.SplitN(model.ID, "/", 2)
+		modelName := ""
+		if len(parts) == 2 {
+			modelName = strings.ToLower(parts[1])
+		}
+
+		if allowedMap[modelID] || (modelName != "" && allowedMap[modelName]) {
+			filtered = append(filtered, model)
+		}
+	}
+
+	return filtered
+}
+
+// isModelAllowed checks if a specific model is allowed based on the ALLOWED_MODELS configuration.
+// If allowedModels is empty, all models are allowed. Otherwise, only models matching
+// the allowed list are permitted. The matching is done using case-insensitive comparison.
+func (router *RouterImpl) isModelAllowed(modelID string, allowedModels string) bool {
+	if allowedModels == "" {
+		return true
+	}
+
+	allowedMap := make(map[string]bool)
+	for _, model := range strings.Split(allowedModels, ",") {
+		trimmed := strings.TrimSpace(model)
+		if trimmed != "" {
+			allowedMap[strings.ToLower(trimmed)] = true
+		}
+	}
+
+	if len(allowedMap) == 0 {
+		return true
+	}
+
+	modelIDLower := strings.ToLower(modelID)
+	if allowedMap[modelIDLower] {
+		return true
+	}
+
+	parts := strings.SplitN(modelID, "/", 2)
+	if len(parts) == 2 {
+		modelName := strings.ToLower(parts[1])
+		if allowedMap[modelName] {
+			return true
+		}
+	}
+
+	return false
 }

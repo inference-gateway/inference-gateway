@@ -141,6 +141,7 @@ config:
   ENVIRONMENT: "production"
   ENABLE_TELEMETRY: "false"
   ENABLE_AUTH: "false"
+  ALLOWED_MODELS: ""
   # Model Context Protocol (MCP)
   MCP_ENABLE: "false"
   MCP_EXPOSE: "false"

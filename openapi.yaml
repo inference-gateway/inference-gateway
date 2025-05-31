@@ -1177,6 +1177,11 @@ components:
                   type: bool
                   default: "false"
                   description: "Enable authentication"
+                - name: allowed_models
+                  env: "ALLOWED_MODELS"
+                  type: string
+                  default: ""
+                  description: "Comma-separated list of models to allow. If empty, all models will be available"
           - mcp:
               title: "Model Context Protocol (MCP)"
               settings:

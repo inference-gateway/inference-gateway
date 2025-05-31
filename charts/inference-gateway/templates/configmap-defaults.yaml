@@ -9,6 +9,7 @@ data:
   ENVIRONMENT: {{ .Values.config.ENVIRONMENT | quote }}
   ENABLE_TELEMETRY: {{ .Values.config.ENABLE_TELEMETRY | quote }}
   ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
+  ALLOWED_MODELS: {{ .Values.config.ALLOWED_MODELS | quote }}
   # Model Context Protocol (MCP)
   MCP_ENABLE: {{ .Values.config.MCP_ENABLE | quote }}
   MCP_EXPOSE: {{ .Values.config.MCP_EXPOSE | quote }}
