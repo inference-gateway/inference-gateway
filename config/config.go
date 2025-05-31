@@ -98,7 +98,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 
 			token, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_KEY")
 			if !ok {
-				println("Warn: provider " + id + " is not configured")
+				println("{\"notice\": \"provider " + id + " is not configured\"}")
 			}
 			providerCfg.Token = token
 			cfg.Providers[id] = providerCfg

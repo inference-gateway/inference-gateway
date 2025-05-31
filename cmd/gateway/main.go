@@ -26,7 +26,7 @@ func main() {
 	var config config.Config
 	cfg, err := config.Load(envconfig.OsLookuper())
 	if err != nil {
-		log.Printf("Config load error: %v", err)
+		log.Printf("{\"error\": \"config load error: %v\"}", err)
 		return
 	}
 
@@ -34,7 +34,7 @@ func main() {
 	var logger l.Logger
 	logger, err = l.NewLogger(cfg.Environment)
 	if err != nil {
-		log.Printf("Logger init error: %v", err)
+		log.Printf("{\"error\": \"logger init error: %v\"}", err)
 		return
 	}
 

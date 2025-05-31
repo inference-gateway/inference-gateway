@@ -583,7 +583,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 				}
 
 				extractedContent := combinedContent.String()
-				t.Logf("Extracted content: %q", extractedContent)
 
 				for _, expectedContent := range []string{"Hello there!"} {
 					assert.Contains(t, extractedContent, expectedContent, "Response should contain expected content")
@@ -832,7 +831,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 				}
 
 				extractedContent := combinedContent.String()
-				t.Logf("Extracted content: %q", extractedContent)
 
 				expectedContents := []string{
 					"I'll use both tools to help you.",
