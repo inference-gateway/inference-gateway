@@ -20,6 +20,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - [Key Features](#key-features)
 - [Overview](#overview)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
+- [Agent-to-Agent (A2A) Integration](#agent-to-agent-a2a-integration)
 - [Supported API's](#supported-apis)
 - [Configuration](#configuration)
 - [Examples](#examples)
@@ -35,6 +36,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
 - 🔧 **Tool-use Support**: Enable function calling capabilities across supported providers with a unified API.
 - 🌐 **MCP Support**: Full Model Context Protocol integration - automatically discover and expose tools from MCP servers to LLMs without client-side tool management.
+- 🤝 **A2A Support**: Agent-to-Agent protocol integration - connect to external A2A-compliant agents and automatically expose their skills as tools.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
 - 🖥️ **Web Interface**: Access through a modern web UI for easy interaction and management.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
@@ -174,6 +176,27 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 The gateway automatically injects available tools into requests and handles tool execution, making external capabilities seamlessly available to any LLM.
 
 > **Learn more**: [Model Context Protocol Documentation](https://modelcontextprotocol.io/) | [MCP Integration Example](examples/docker-compose/mcp/)
+
+## Agent-to-Agent (A2A) Integration
+
+Enable A2A to connect with external agents and expose their skills as tools:
+
+```bash
+# Enable A2A and connect to agent endpoints
+export A2A_ENABLE=true
+export A2A_AGENTS="http://booking-agent:3001,http://calculator-agent:3002"
+
+# LLMs will automatically discover and use agent skills
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -d '{
+    "model": "openai/gpt-4",
+    "messages": [{"role": "user", "content": "Book a flight to New York and calculate the cost"}]
+  }'
+```
+
+The gateway automatically discovers agent skills, converts them to chat completion tools, and handles skill execution, enabling seamless collaboration between LLMs and external agents.
+
+> **Learn more**: [A2A Protocol Documentation](a2a/README.md) | [Agent Integration Guide](examples/docker-compose/tools/)
 
 ## Supported API's
 
