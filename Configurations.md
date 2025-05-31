@@ -26,6 +26,7 @@
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 | A2A_ENABLE | `false` | Enable A2A protocol support |
+| A2A_EXPOSE | `false` | Expose A2A agents list cards endpoint |
 | A2A_AGENTS | `""` | Comma-separated list of A2A agent URLs |
 | A2A_CLIENT_TIMEOUT | `30s` | A2A client timeout |
 
