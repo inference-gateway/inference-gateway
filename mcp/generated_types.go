@@ -48,6 +48,13 @@ type BlobResourceContents struct {
 	URI      string `json:"uri"`
 }
 
+type BooleanSchema struct {
+	Default     bool   `json:"default"`
+	Description string `json:"description"`
+	Title       string `json:"title"`
+	Type        string `json:"type"`
+}
+
 // Used by the client to invoke a tool provided by the server.
 type CallToolRequest struct {
 	Method string                 `json:"method"`
@@ -76,6 +83,7 @@ type CancelledNotification struct {
 
 // Capabilities a client may support. Known capabilities are defined here, in this schema, but this is not a closed set: any client can define its own, additional capabilities.
 type ClientCapabilities struct {
+	Elicitation  map[string]interface{} `json:"elicitation"`
 	Experimental map[string]interface{} `json:"experimental"`
 	Roots        map[string]interface{} `json:"roots"`
 	Sampling     map[string]interface{} `json:"sampling"`
@@ -121,6 +129,19 @@ type CreateMessageResult struct {
 type Cursor struct {
 }
 
+// A request from the server to elicit additional information from the user via the client.
+type ElicitRequest struct {
+	Method string                 `json:"method"`
+	Params map[string]interface{} `json:"params"`
+}
+
+// The client's response to an elicitation request.
+type ElicitResult struct {
+	Meta    map[string]interface{} `json:"_meta"`
+	Action  string                 `json:"action"`
+	Content map[string]interface{} `json:"content"`
+}
+
 // The contents of a resource, embedded into a prompt or tool call result.
 //
 // It is up to the client how best to render embedded resources for the benefit
@@ -132,6 +153,14 @@ type EmbeddedResource struct {
 }
 
 type EmptyResult struct {
+}
+
+type EnumSchema struct {
+	Description string   `json:"description"`
+	Enum        []string `json:"enum"`
+	Enumnames   []string `json:"enumNames"`
+	Title       string   `json:"title"`
+	Type        string   `json:"type"`
 }
 
 // Used by the client to get a prompt provided by the server.
@@ -332,6 +361,14 @@ type Notification struct {
 	Params map[string]interface{} `json:"params"`
 }
 
+type NumberSchema struct {
+	Description string `json:"description"`
+	Maximum     int    `json:"maximum"`
+	Minimum     int    `json:"minimum"`
+	Title       string `json:"title"`
+	Type        string `json:"type"`
+}
+
 type PaginatedRequest struct {
 	Method string                 `json:"method"`
 	Params map[string]interface{} `json:"params"`
@@ -346,6 +383,11 @@ type PaginatedResult struct {
 type PingRequest struct {
 	Method string                 `json:"method"`
 	Params map[string]interface{} `json:"params"`
+}
+
+// Restricted schema definitions that only allow primitive types
+// without nested objects or arrays.
+type PrimitiveSchemaDefinition struct {
 }
 
 // An out-of-band notification used to inform the receiver of a progress update for a long-running request.
@@ -504,6 +546,15 @@ type ServerResult struct {
 type SetLevelRequest struct {
 	Method string                 `json:"method"`
 	Params map[string]interface{} `json:"params"`
+}
+
+type StringSchema struct {
+	Description string `json:"description"`
+	Format      string `json:"format"`
+	Maxlength   int    `json:"maxLength"`
+	Minlength   int    `json:"minLength"`
+	Title       string `json:"title"`
+	Type        string `json:"type"`
 }
 
 // Sent from the client to request resources/updated notifications from the server whenever a particular resource changes.
