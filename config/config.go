@@ -4,6 +4,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -97,8 +98,10 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 			}
 
 			token, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_KEY")
-			if !ok {
-				println("{\"notice\": \"provider " + id + " is not configured\"}")
+			if (!ok || token == "") && id != providers.OllamaID {
+				t := time.Now().UTC().Format(time.RFC3339)
+				log.SetFlags(0)
+				log.Printf("{\"level\":\"notice\",\"timestamp\":\"%s\",\"caller\":\"config/config.go:103\",\"msg\":\"provider is not configured\",\"provider\":\"%s\"}", t, string(id))
 			}
 			providerCfg.Token = token
 			cfg.Providers[id] = providerCfg
