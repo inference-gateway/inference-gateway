@@ -1232,6 +1232,11 @@ components:
                   type: bool
                   default: "false"
                   description: "Enable A2A protocol support"
+                - name: a2a_expose
+                  env: "A2A_EXPOSE"
+                  type: bool
+                  default: "false"
+                  description: "Expose A2A agents list cards endpoint"
                 - name: a2a_agents
                   env: "A2A_AGENTS"
                   type: string
