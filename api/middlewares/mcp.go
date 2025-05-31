@@ -22,9 +22,6 @@ const (
 
 	// MCPInternalHeader marks internal MCP requests to prevent middleware loops
 	MCPInternalHeader = "X-MCP-Internal"
-
-	// MaxAgentIterations limits the number of agent loop iterations
-	MaxAgentIterations = 10
 )
 
 // contextKey is a custom type for context keys to avoid collisions
@@ -173,7 +170,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			c.Header("Connection", "keep-alive")
 			c.Header("Transfer-Encoding", "chunked")
 
-			processedChunk := make(chan []byte)
+			processedChunk := make(chan []byte, 100)
 			errCh := make(chan error, 1)
 
 			// Start agent streaming in a goroutine
@@ -197,7 +194,11 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 					if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
 						m.logger.Debug("MCP Middleware: Agent completed all iterations, sending [DONE]")
-						return true
+						_, err := w.Write(line)
+						if err != nil {
+							m.logger.Error("MCP Middleware: Failed to write [DONE] to client", err)
+						}
+						return false
 					}
 
 					m.logger.Debug("MCP Middleware: Received line from agent", "line", string(line))
@@ -230,6 +231,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 					return false
 				}
 			})
+			c.Abort()
 			return
 		}
 

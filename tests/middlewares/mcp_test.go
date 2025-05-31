@@ -813,9 +813,9 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
 			}
 			for _, chunk := range chunks {
-				firstStreamCh <- []byte(chunk)
+				firstStreamCh <- []byte("data: " + chunk)
 			}
-			firstStreamCh <- []byte("[DONE]")
+			firstStreamCh <- []byte("data: [DONE]")
 		}()
 
 		secondStreamCh := make(chan []byte, 10)
@@ -831,9 +831,9 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
 			}
 			for _, chunk := range chunks {
-				secondStreamCh <- []byte(chunk)
+				secondStreamCh <- []byte("data: " + chunk)
 			}
-			secondStreamCh <- []byte("[DONE]")
+			secondStreamCh <- []byte("data: [DONE]")
 		}()
 
 		thirdStreamCh := make(chan []byte, 10)
@@ -853,10 +853,10 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 				`{"id":"chatcmpl-3","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}`,
 			}
 			for _, chunk := range chunks {
-				thirdStreamCh <- []byte(chunk)
+				thirdStreamCh <- []byte("data: " + chunk)
 			}
 
-			thirdStreamCh <- []byte("[DONE]")
+			thirdStreamCh <- []byte("data: [DONE]")
 		}()
 
 		call1 := mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(firstStreamCh, nil).Times(1)

@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     environment:
-      ENVIRONMENT: development
+      ENVIRONMENT: ${ENVIRONMENT:-development}
       MCP_ENABLE: ${MCP_ENABLE:-true}
       MCP_EXPOSE: ${MCP_EXPOSE:-true}
       MCP_SERVERS: ${MCP_SERVERS:-http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp,http://mcp-pizza-server:8084/mcp}

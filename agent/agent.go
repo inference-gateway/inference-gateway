@@ -117,7 +117,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			return err
 		}
 
-		var responseBody strings.Builder
+		var responseBodyBuilder strings.Builder
 		assistantMessage := providers.Message{
 			Role:      providers.MessageRoleAssistant,
 			Content:   "",
@@ -136,53 +136,28 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 					break
 				}
 
-				// Filter out [DONE] markers from provider - only agent should send completion signals
-				// TODO - I need to find a better way of handling this
 				lineStr := string(line)
 				trimmedLine := strings.TrimSpace(lineStr)
 
-				if lineStr != "data: [DONE]\n\n" && lineStr != "[DONE]" && trimmedLine != "data: [DONE]" {
-					var formattedData []byte
-
-					switch {
-					case strings.HasPrefix(trimmedLine, "data: "):
-						// Already SSE formatted - ensure proper line breaks
-						dataContent := strings.TrimPrefix(trimmedLine, "data: ")
-						if dataContent != "" && dataContent != "[DONE]" {
-							formattedData = []byte(fmt.Sprintf("data: %s\n\n", dataContent))
-						}
-					case trimmedLine != "" && trimmedLine != "[DONE]":
-						// Raw JSON - format as SSE
-						formattedData = []byte(fmt.Sprintf("data: %s\n\n", trimmedLine))
-					default:
-						// Empty line or just whitespace - skip
-						continue
-					}
-
-					if formattedData != nil {
-						middlewareStreamCh <- formattedData
-						responseBody.Write(formattedData)
-					}
-				} else {
-					// Still add to response body for parsing, but don't send to middleware
-					responseBody.Write(line)
-				}
-
-				var chunkData string
-				switch {
-				case strings.HasPrefix(trimmedLine, "data: "):
-					chunkData = strings.TrimPrefix(trimmedLine, "data: ")
-				case trimmedLine != "[DONE]" && trimmedLine != "":
-					chunkData = trimmedLine
-				default:
+				if strings.Contains(trimmedLine, "[DONE]") {
+					responseBodyBuilder.Write(line)
 					continue
 				}
+
+				if !strings.HasPrefix(trimmedLine, "data: ") {
+					continue
+				}
+
+				chunkData := strings.TrimPrefix(trimmedLine, "data: ")
+				if chunkData == "" {
+					continue
+				}
+
+				formattedData := []byte(fmt.Sprintf("data: %s\n\n", chunkData))
+				middlewareStreamCh <- formattedData
+				responseBodyBuilder.Write(formattedData)
 
 				a.logger.Debug("Agent: Processing chunk", "chunk", chunkData)
-
-				if chunkData == "" || chunkData == "[DONE]" {
-					continue
-				}
 
 				var resp providers.CreateChatCompletionStreamResponse
 				if err := json.Unmarshal([]byte(chunkData), &resp); err != nil {
@@ -228,11 +203,11 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		a.logger.Debug("Agent: Stream completed for iteration", "iteration", iteration+1, "hasToolCalls", hasToolCalls)
 
-		a.logger.Debug("Agent: Final response body", "responseBody", responseBody.String())
+		a.logger.Debug("Agent: Final response body", "responseBodyBuilder", responseBodyBuilder.String())
 
 		var toolCalls []providers.ChatCompletionMessageToolCall
 		if hasToolCalls {
-			toolCalls, err = a.parseStreamingToolCalls(responseBody.String())
+			toolCalls, err = a.parseStreamingToolCalls(responseBodyBuilder.String())
 			if err != nil {
 				a.logger.Error("Agent: Failed to parse streaming tool calls", err)
 			} else {
@@ -270,7 +245,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	return nil
 }
 
-// ExecuteTool executes a tool with the provided context, tool name, and arguments
+// ExecuteTools executes tools with the provided context, tool name, and arguments
 func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.ChatCompletionMessageToolCall) ([]providers.Message, error) {
 	var results []providers.Message
 
@@ -336,20 +311,18 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 }
 
 // parseStreamingToolCalls parses streaming response to extract tool calls
-func (a *agentImpl) parseStreamingToolCalls(responseBody string) ([]providers.ChatCompletionMessageToolCall, error) {
+func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]providers.ChatCompletionMessageToolCall, error) {
 	toolCallsMap := make(map[int]*providers.ChatCompletionMessageToolCall)
-	lines := strings.Split(responseBody, "\n")
+	lines := strings.Split(responseBodyBuilder, "\n")
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 
-		// Handle both formats: with and without "data: " prefix
 		var data string
 		switch {
 		case strings.HasPrefix(line, "data: "):
 			data = strings.TrimPrefix(line, "data: ")
 		case line != "" && line != "[DONE]":
-			// Try to parse as direct JSON
 			data = line
 		default:
 			continue
