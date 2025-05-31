@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/inference-gateway/inference-gateway/config"
+	"github.com/inference-gateway/inference-gateway/logger"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
@@ -15,7 +16,7 @@ import (
 
 // OpenTelemetry defines the operations for telemetry
 type OpenTelemetry interface {
-	Init(config config.Config) error
+	Init(config config.Config, logger logger.Logger) error
 	// Application level metrics
 	RecordTokenUsage(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64)
 
@@ -28,6 +29,7 @@ type OpenTelemetry interface {
 }
 
 type OpenTelemetryImpl struct {
+	logger        logger.Logger
 	meterProvider *sdkmetric.MeterProvider
 	meter         metric.Meter
 
@@ -46,12 +48,22 @@ type OpenTelemetryImpl struct {
 	requestDurationHistogram metric.Float64Histogram
 }
 
-func (o *OpenTelemetryImpl) Init(cfg config.Config) error {
+func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
+	o.logger = log
+
+	o.logger.Info("initializing opentelemetry",
+		"service_name", config.APPLICATION_NAME,
+		"version", config.VERSION,
+		"environment", cfg.Environment)
+
 	// Create a Prometheus exporter
 	exporter, err := prometheus.New()
 	if err != nil {
+		o.logger.Error("failed to create prometheus exporter", err)
 		return err
 	}
+
+	o.logger.Debug("prometheus exporter created successfully")
 
 	// Create resource with service information
 	res := resource.NewWithAttributes(
@@ -60,6 +72,10 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config) error {
 		semconv.ServiceVersion(config.VERSION),
 		semconv.DeploymentEnvironmentName(cfg.Environment),
 	)
+
+	o.logger.Debug("opentelemetry resource created",
+		"service_name", config.APPLICATION_NAME,
+		"service_version", config.VERSION)
 
 	// Define histogram boundaries for metrics
 	histogramBoundaries := []float64{1, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000}
@@ -76,6 +92,8 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config) error {
 		},
 	)
 
+	o.logger.Debug("histogram boundaries configured", "boundaries", histogramBoundaries)
+
 	// Create meter provider with the Prometheus exporter
 	o.meterProvider = sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(res),
@@ -86,10 +104,15 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config) error {
 	// Set global meter provider
 	otel.SetMeterProvider(o.meterProvider)
 
+	o.logger.Debug("meter provider created and set globally")
+
 	// Create meter
 	o.meter = o.meterProvider.Meter(config.APPLICATION_NAME)
 
+	o.logger.Debug("meter created", "name", config.APPLICATION_NAME)
+
 	// Initialize metrics
+	o.logger.Debug("initializing opentelemetry metrics")
 	var err1, err2, err3, err4, err5, err6, err7, err8, err9, err10 error
 
 	o.promptTokensCounter, err1 = o.meter.Int64Counter("llm_usage_prompt_tokens",
@@ -128,11 +151,21 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config) error {
 		metric.WithUnit("ms"))
 
 	// Check for errors
-	for _, err := range []error{err1, err2, err3, err4, err5, err6, err7, err8, err9, err10} {
+	for i, err := range []error{err1, err2, err3, err4, err5, err6, err7, err8, err9, err10} {
 		if err != nil {
+			metricNames := []string{
+				"llm_usage_prompt_tokens", "llm_usage_completion_tokens", "llm_usage_total_tokens",
+				"llm_latency_queue_time", "llm_latency_prompt_time", "llm_latency_completion_time",
+				"llm_latency_total_time", "llm_requests_total", "llm_responses_total", "llm_request_duration",
+			}
+			o.logger.Error("failed to create metric", err, "metric_name", metricNames[i])
 			return err
 		}
 	}
+
+	o.logger.Info("opentelemetry initialization completed successfully",
+		"metrics_initialized", 7, // Only counting non-commented metrics
+		"prometheus_endpoint", "/metrics")
 
 	return nil
 }

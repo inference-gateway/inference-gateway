@@ -74,7 +74,7 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "no tool calls",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("Agent: Agent loop completed", "iterations", 0, "finalChoices", 1).Times(1)
+				mockLogger.EXPECT().Debug("agent loop completed", "iterations", 0, "final_choices", 1).Times(1)
 			},
 			request: &providers.CreateChatCompletionRequest{
 				Model: "test-model",
@@ -101,10 +101,10 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "with tool calls",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("Agent: Agent loop iteration", "iteration", 1, "toolCalls", 1).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Executing tool calls", "count", 1).Times(1)
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Agent loop completed", "iterations", 1, "finalChoices", 1).Times(1)
+				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", 1, "tool_calls", 1).Times(1)
+				mockLogger.EXPECT().Debug("executing tool calls", "count", 1).Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
+				mockLogger.EXPECT().Debug("agent loop completed", "iterations", 1, "final_choices", 1).Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -174,11 +174,11 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "max iterations reached",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("Agent: Agent loop iteration", "iteration", gomock.Any(), "toolCalls", 1).Times(10) // MaxAgentIterations
-				mockLogger.EXPECT().Debug("Agent: Executing tool calls", "count", 1).Times(10)
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", gomock.Any()).Times(10)
-				mockLogger.EXPECT().Error("Agent: Agent loop reached maximum iterations", gomock.Any()).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Agent loop completed", "iterations", 10, "finalChoices", 1).Times(1)
+				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", gomock.Any(), "tool_calls", 1).Times(10) // MaxAgentIterations
+				mockLogger.EXPECT().Debug("executing tool calls", "count", 1).Times(10)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", gomock.Any()).Times(10)
+				mockLogger.EXPECT().Warn("agent loop reached maximum iterations", gomock.Any()).Times(1)
+				mockLogger.EXPECT().Debug("agent loop completed", "iterations", 10, "final_choices", 1).Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mcp.CallToolResult{
 					Content: []interface{}{
@@ -283,7 +283,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "successful tool execution",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -321,7 +321,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "tool execution with MCP server",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_456 name=server_tool args=map[param:value] server=http://custom-server:8080").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=server_tool args=map[param:value] server=http://custom-server:8080").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -359,7 +359,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "invalid JSON arguments",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Error("Agent: Failed to parse tool arguments", gomock.Any(), "args", "invalid json").Times(1)
+				mockLogger.EXPECT().Error("failed to parse tool arguments", gomock.Any(), "args", "invalid json", "tool_name", "bad_tool").Times(1)
 			},
 			toolCalls: []providers.ChatCompletionMessageToolCall{
 				{
@@ -378,8 +378,8 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "MCP execution error",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_error name=failing_tool args=map[param:value] server=").Times(1)
-				mockLogger.EXPECT().Error("Agent: Failed to execute tool call", gomock.Any(), "tool", "failing_tool").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_error name=failing_tool args=map[param:value] server=").Times(1)
+				mockLogger.EXPECT().Error("failed to execute tool call", gomock.Any(), "tool", "failing_tool", "server", "").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "").Return(nil, fmt.Errorf("tool execution failed")).Times(1)
 			},
@@ -400,8 +400,8 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "multiple tool execution",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_multi1 name=first_tool args=map[param:value1] server=").Times(1)
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_multi2 name=second_tool args=map[action:execute] server=").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi1 name=first_tool args=map[param:value1] server=").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi2 name=second_tool args=map[action:execute] server=").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -529,14 +529,19 @@ func TestAgent_RunWithStream(t *testing.T) {
 					defer close(streamCh)
 				}()
 
-				mockLogger.EXPECT().Debug("Agent: Starting agent streaming with model", "model", "test-model").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Streaming iteration", "iteration", gomock.Any()).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Processing chunk", "chunk", gomock.Any()).AnyTimes()
-				mockLogger.EXPECT().Debug("Agent: Stream completing due to stop finish reason", "finishReason", "stop").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Stream completed for iteration", "iteration", gomock.Any(), "hasToolCalls", false).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Final response body", "responseBodyBuilder", gomock.Any()).Times(1)
-				mockLogger.EXPECT().Debug("Agent: No tool calls found, ending agent loop").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Sending agent completion signal").Times(1)
+				mockLogger.EXPECT().Debug("starting agent streaming", "model", "test-model", "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 1, "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Debug("processing chunk", "chunk", gomock.Any(), "iteration", 1).AnyTimes()
+				mockLogger.EXPECT().Debug("stream completing due to stop finish reason", "finish_reason", "stop", "iteration", 1).Times(1)
+				mockLogger.EXPECT().Debug("stream completed for iteration", "iteration", 1, "has_tool_calls", false).Times(1)
+				mockLogger.EXPECT().Debug("final response body", "response_body_builder", gomock.Any()).Times(1)
+				mockLogger.EXPECT().Debug("no tool calls found, ending agent loop", "iteration", 1).Times(1)
+				mockLogger.EXPECT().Debug("sending agent completion signal").Times(1)
+				// Allow any additional debug logs
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 				mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(streamCh, nil).Times(1)
 			},
@@ -555,9 +560,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 			validateResponse: func(t *testing.T, responses []string, err error) {
 				assert.NoError(t, err)
 				assert.True(t, len(responses) > 0, "Should receive at least one response chunk")
-
-				fullResponse := strings.Join(responses, "")
-				t.Logf("Full response: %q", fullResponse)
 
 				var combinedContent strings.Builder
 				for _, response := range responses {
@@ -591,10 +593,10 @@ func TestAgent_RunWithStream(t *testing.T) {
 		{
 			name: "provider error",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("Agent: Starting agent streaming with model", "model", "test-model").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Streaming iteration", "iteration", gomock.Any()).Times(1)
-				mockLogger.EXPECT().Error("Agent: Failed to start streaming", gomock.Any()).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Sending agent completion signal").Times(1)
+				mockLogger.EXPECT().Debug("starting agent streaming", "model", "test-model", "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 1, "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Error("failed to start streaming", gomock.Any(), "iteration", 1, "model", "test-model").Times(1)
+				mockLogger.EXPECT().Debug("sending agent completion signal").Times(1)
 
 				mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("provider streaming failed")).Times(1)
 			},
@@ -619,10 +621,10 @@ func TestAgent_RunWithStream(t *testing.T) {
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
 				streamCh := make(chan []byte)
 
-				mockLogger.EXPECT().Debug("Agent: Starting agent streaming with model", "model", "test-model").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Streaming iteration", "iteration", gomock.Any()).Times(1)
-				mockLogger.EXPECT().Debug("Context cancelled during streaming").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Sending agent completion signal").Times(1)
+				mockLogger.EXPECT().Debug("starting agent streaming", "model", "test-model", "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 1, "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Debug("context cancelled during streaming", "iteration", 1).Times(1)
+				mockLogger.EXPECT().Debug("sending agent completion signal").Times(1)
 
 				mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(streamCh, nil).Times(1)
 			},
@@ -719,31 +721,35 @@ func TestAgent_RunWithStream(t *testing.T) {
 					close(secondStreamCh)
 				}()
 
-				mockLogger.EXPECT().Debug("Agent: Starting agent streaming with model", "model", "test-model").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Streaming iteration", "iteration", 1).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Processing chunk", "chunk", gomock.Any()).AnyTimes()
-				mockLogger.EXPECT().Debug("Agent: Found tool calls in delta", "count", gomock.Any()).AnyTimes()
-				mockLogger.EXPECT().Debug("Agent: Valid tool call detected", "id", gomock.Any(), "functionName", gomock.Any()).AnyTimes()
-				mockLogger.EXPECT().Debug("Agent: Stream completing due to tool calls finish reason", "finishReason", "tool_calls").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Stream completed for iteration", "iteration", 1, "hasToolCalls", true).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Final response body", "responseBody", gomock.Any()).AnyTimes()
-				mockLogger.EXPECT().Debug("Agent: Parsed tool calls from stream", "count", 2).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Final parsed tool call", "toolCall", gomock.Any()).AnyTimes()
-				mockLogger.EXPECT().Debug("Agent: Total parsed tool calls", "count", 2).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Executing tool calls", "count", 2).Times(1)
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
-				mockLogger.EXPECT().Info("Agent: Executing tool call", "toolCall", "id=call_456 name=other_tool args=map[action:execute] server=").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Tool execution complete, continuing to next iteration", "toolResults", 2, "totalMessages", gomock.Any()).Times(1)
+				mockLogger.EXPECT().Debug("starting agent streaming", "model", "test-model", "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 1, "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Debug("processing chunk", "chunk", gomock.Any(), "iteration", 1).AnyTimes()
+				mockLogger.EXPECT().Debug("found tool calls in delta", "count", gomock.Any(), "iteration", 1).AnyTimes()
+				mockLogger.EXPECT().Debug("valid tool call detected", "id", gomock.Any(), "function_name", gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug("stream completing due to tool calls finish reason", "finish_reason", "tool_calls", "iteration", 1).Times(1)
+				mockLogger.EXPECT().Debug("stream completed for iteration", "iteration", 1, "has_tool_calls", true).Times(1)
+				mockLogger.EXPECT().Debug("parsed tool calls from stream", "count", 2, "iteration", 1).Times(1)
+				mockLogger.EXPECT().Debug("final parsed tool call", "tool_call", gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug("total parsed tool calls", "count", 2).Times(1)
+				mockLogger.EXPECT().Debug("executing tool calls", "count", 2, "iteration", 1).Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=other_tool args=map[action:execute] server=").Times(1)
+				mockLogger.EXPECT().Debug("tool execution complete, continuing to next iteration", "tool_results", 2, "total_messages", gomock.Any(), "iteration", 1).Times(1)
 
-				mockLogger.EXPECT().Debug("Agent: Streaming iteration", "iteration", 2).Times(1)
-				mockLogger.EXPECT().Debug("Agent: Stream completing due to stop finish reason", "finishReason", "stop").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Stream completed for iteration", "iteration", 2, "hasToolCalls", false).Times(1)
-				mockLogger.EXPECT().Debug("Agent: No tool calls found, ending agent loop").Times(1)
-				mockLogger.EXPECT().Debug("Agent: Sending agent completion signal").Times(1)
+				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 2, "max_iterations", 10).Times(1)
+				mockLogger.EXPECT().Debug("processing chunk", "chunk", gomock.Any(), "iteration", 2).AnyTimes()
+				mockLogger.EXPECT().Debug("stream completing due to stop finish reason", "finish_reason", "stop", "iteration", 2).Times(1)
+				mockLogger.EXPECT().Debug("stream completed for iteration", "iteration", 2, "has_tool_calls", false).Times(1)
+				mockLogger.EXPECT().Debug("final response body", "response_body_builder", gomock.Any()).Times(2)
+				mockLogger.EXPECT().Debug("no tool calls found, ending agent loop", "iteration", 2).Times(1)
+				mockLogger.EXPECT().Debug("sending agent completion signal").Times(1)
 
-				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -803,8 +809,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 				assert.True(t, len(responses) > 0, "Should receive at least one response chunk")
 
 				fullResponse := strings.Join(responses, "")
-				t.Logf("Full response: %q", fullResponse)
-				t.Logf("Number of response chunks: %d", len(responses))
 
 				var combinedContent strings.Builder
 				for _, response := range responses {

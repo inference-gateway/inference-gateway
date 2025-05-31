@@ -60,7 +60,7 @@ func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRe
 }
 
 func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
-	router.logger.Error("requested route is not found", nil)
+	router.logger.Warn("route not found", "path", c.Request.URL.Path, "method", c.Request.Method)
 	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
 }
 
@@ -69,7 +69,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	provider, err := router.registry.BuildProvider(p, router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no API key was configured", err, "provider", p)
+			router.logger.Error("provider authentication required but api key not configured", err, "provider", p)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
 			return
 		}
@@ -127,7 +127,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router
 
 	fullURL, err := constructProviderURL(provider, c.Param("path"), c.Request.URL.RawQuery)
 	if err != nil {
-		router.logger.Error("failed to construct provider URL", err)
+		router.logger.Error("failed to construct provider url", err, "provider", provider.GetName())
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
 		return
 	}
@@ -137,7 +137,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router
 	const maxBodySize = 10 << 20
 	body, err := io.ReadAll(io.LimitReader(c.Request.Body, maxBodySize))
 	if err != nil {
-		router.logger.Error("failed to read request body", err)
+		router.logger.Error("failed to read request body", err, "maxBodySize", maxBodySize)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
 		return
 	}
@@ -149,7 +149,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router
 	ctx := c.Request.Context()
 	upstreamReq, err := http.NewRequestWithContext(ctx, c.Request.Method, fullURL.String(), bytes.NewReader(body))
 	if err != nil {
-		router.logger.Error("failed to create upstream request", err)
+		router.logger.Error("failed to create upstream request", err, "method", c.Request.Method, "url", fullURL.String())
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
 		return
 	}
@@ -158,7 +158,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router
 
 	resp, err := router.client.Do(upstreamReq)
 	if err != nil {
-		router.logger.Error("failed to make upstream request", err)
+		router.logger.Error("failed to make upstream request", err, "url", fullURL.String())
 		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
 		return
 	}
@@ -223,7 +223,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router
 func handleProxyRequest(c *gin.Context, provider providers.IProvider, router *RouterImpl) {
 	fullURL, err := constructProviderURL(provider, c.Param("path"), c.Request.URL.RawQuery)
 	if err != nil {
-		router.logger.Error("failed to construct provider URL", err)
+		router.logger.Error("failed to construct provider url", err, "provider", provider.GetName())
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
 		return
 	}
@@ -233,7 +233,7 @@ func handleProxyRequest(c *gin.Context, provider providers.IProvider, router *Ro
 	c.Request.Header.Set("Accept", "application/json")
 
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		router.logger.Error("proxy request failed", err)
+		router.logger.Error("proxy request failed", err, "url", fullURL.String())
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadGateway)
 		err = json.NewEncoder(w).Encode(ErrorResponse{
@@ -326,7 +326,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 		provider, err := router.registry.BuildProvider(providerID, router.client)
 		if err != nil {
 			if strings.Contains(err.Error(), "token not configured") {
-				router.logger.Error("provider requires authentication but no API key was configured", err, "provider", providerID)
+				router.logger.Error("provider authentication required but api key not configured", err, "provider", providerID)
 				c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
 				return
 			}
@@ -469,13 +469,13 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		if parsedRequest, ok := mcpRequest.(*providers.CreateChatCompletionRequest); ok {
 			req = *parsedRequest
 		} else {
-			router.logger.Error("Router: invalid MCP request type in context", nil)
+			router.logger.Error("invalid mcp request type in context", nil)
 			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Internal server error"})
 			return
 		}
 	} else {
 		if err := c.ShouldBindJSON(&req); err != nil {
-			router.logger.Error("Router: failed to decode request", err)
+			router.logger.Error("failed to decode request", err)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
 			return
 		}
@@ -487,7 +487,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		var providerPtr *providers.Provider
 		providerPtr, model = providers.DetermineProviderAndModelName(model)
 		if providerPtr == nil {
-			router.logger.Error("Router: unable to determine provider for model", nil, "model", req.Model)
+			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-4)."})
 			return
 		}
@@ -498,16 +498,16 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	provider, err := router.registry.BuildProvider(providerID, router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("Router: provider requires authentication but no API key was configured", err, "provider", providerID)
+			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
 			return
 		}
-		router.logger.Error("Router: provider not found or not supported", err, "provider", providerID)
+		router.logger.Error("provider not found or not supported", err, "provider", providerID)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
 		return
 	}
 
-	router.logger.Debug("Router: server read timeout", "timeout", router.cfg.Server.ReadTimeout)
+	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
 
 	ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout)
 	defer cancel()
@@ -522,7 +522,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 		streamCh, err := provider.StreamChatCompletions(ctx, req)
 		if err != nil {
-			router.logger.Error("Router: failed to start streaming", err)
+			router.logger.Error("failed to start streaming", err, "provider", providerID)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to start streaming"})
 			return
 		}
@@ -531,17 +531,17 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			select {
 			case line, ok := <-streamCh:
 				if !ok {
-					router.logger.Debug("Router: stream closed", "provider", providerID)
+					router.logger.Debug("stream closed", "provider", providerID)
 					return false
 				}
 
-				router.logger.Debug("Router: stream chunk",
+				router.logger.Debug("stream chunk",
 					"provider", providerID,
 					"bytes", len(line),
 					"line", string(line))
 
 				if _, err := w.Write(line); err != nil {
-					router.logger.Error("Router: failed to write chunk", err)
+					router.logger.Error("failed to write chunk", err)
 					return false
 				}
 
@@ -561,11 +561,11 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	response, err := provider.ChatCompletions(ctx, req)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("Router: request timed out", err, "provider", providerID)
+			router.logger.Error("request timed out", err, "provider", providerID)
 			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
 			return
 		}
-		router.logger.Error("Router: failed to generate tokens", err, "provider", providerID)
+		router.logger.Error("failed to generate tokens", err, "provider", providerID)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Failed to generate tokens: %s", err)})
 		return
 	}
@@ -598,8 +598,8 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 //	}
 func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	if !router.cfg.MCP.Expose {
-		router.logger.Error("MCP tools endpoint access attempted but not exposed", nil)
-		c.JSON(http.StatusForbidden, ErrorResponse{Error: "MCP tools endpoint is not exposed"})
+		router.logger.Error("mcp tools endpoint access attempted but not exposed", nil)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: "mcp tools endpoint is not exposed"})
 		return
 	}
 
@@ -607,10 +607,10 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 
 	switch {
 	case router.mcpClient == nil:
-		router.logger.Debug("MCP client is nil, returning empty tools list")
+		router.logger.Debug("mcp client is nil, returning empty tools list")
 		allTools = make([]providers.MCPTool, 0)
 	case !router.mcpClient.IsInitialized():
-		router.logger.Info("MCP client not initialized, no tools available")
+		router.logger.Info("mcp client not initialized, no tools available")
 		allTools = make([]providers.MCPTool, 0)
 	default:
 		servers := router.mcpClient.GetServers()
@@ -618,7 +618,7 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 		for _, serverURL := range servers {
 			tools, err := router.mcpClient.GetServerTools(serverURL)
 			if err != nil {
-				router.logger.Error("failed to get tools from MCP server", err, "server", serverURL)
+				router.logger.Error("failed to get tools from mcp server", err, "server", serverURL)
 				continue
 			}
 

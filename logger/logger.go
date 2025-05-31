@@ -13,6 +13,8 @@ import (
 type Logger interface {
 	Info(message string, fields ...interface{})
 	Debug(message string, fields ...interface{})
+	Warn(message string, fields ...interface{})
+	Notice(message string, fields ...interface{})
 	Error(message string, err error, fields ...interface{})
 	Fatal(message string, err error, fields ...interface{})
 }
@@ -28,6 +30,8 @@ type NoopLogger struct{}
 
 func (l *NoopLogger) Info(message string, fields ...interface{})             {}
 func (l *NoopLogger) Debug(message string, fields ...interface{})            {}
+func (l *NoopLogger) Warn(message string, fields ...interface{})             {}
+func (l *NoopLogger) Notice(message string, fields ...interface{})           {}
 func (l *NoopLogger) Error(message string, err error, fields ...interface{}) {}
 func (l *NoopLogger) Fatal(message string, err error, fields ...interface{}) {}
 
@@ -78,6 +82,15 @@ func (l *LoggerZapImpl) Debug(message string, fields ...interface{}) {
 	if l.env == "development" {
 		l.logger.Debug(message, parseFields(fields...)...)
 	}
+}
+
+func (l *LoggerZapImpl) Warn(message string, fields ...interface{}) {
+	l.logger.Warn(message, parseFields(fields...)...)
+}
+
+func (l *LoggerZapImpl) Notice(message string, fields ...interface{}) {
+	fields = append(fields, "level", "notice")
+	l.logger.Info(message, parseFields(fields...)...)
 }
 
 func (l *LoggerZapImpl) Error(message string, err error, fields ...interface{}) {

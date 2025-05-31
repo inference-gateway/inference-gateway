@@ -55,12 +55,12 @@ func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatComple
 			break
 		}
 
-		a.logger.Debug("Agent: Agent loop iteration", "iteration", iteration+1, "toolCalls", len(*currentResponse.Choices[0].Message.ToolCalls))
+		a.logger.Debug("agent loop iteration", "iteration", iteration+1, "tool_calls", len(*currentResponse.Choices[0].Message.ToolCalls))
 
-		a.logger.Debug("Agent: Executing tool calls", "count", len(*currentResponse.Choices[0].Message.ToolCalls))
+		a.logger.Debug("executing tool calls", "count", len(*currentResponse.Choices[0].Message.ToolCalls))
 		toolResults, err := a.ExecuteTools(ctx, *currentResponse.Choices[0].Message.ToolCalls)
 		if err != nil {
-			a.logger.Error("Agent: Failed to execute tool calls", err)
+			a.logger.Error("failed to execute tool calls", err, "iteration", iteration+1)
 			return err
 		}
 
@@ -70,7 +70,7 @@ func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatComple
 		currentRequest.Model = a.providerModel
 		nextResponse, err := a.provider.ChatCompletions(ctx, currentRequest)
 		if err != nil {
-			a.logger.Error("Agent: Failed to get response in agent loop", err)
+			a.logger.Error("failed to get response in agent loop", err, "iteration", iteration+1, "model", a.providerModel)
 			return err
 		}
 
@@ -79,10 +79,10 @@ func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatComple
 	}
 
 	if iteration >= MaxAgentIterations {
-		a.logger.Error("Agent: Agent loop reached maximum iterations", fmt.Errorf("max iterations reached: %d", MaxAgentIterations))
+		a.logger.Warn("agent loop reached maximum iterations", "max_iterations", MaxAgentIterations, "iterations_completed", iteration)
 	}
 
-	a.logger.Debug("Agent: Agent loop completed", "iterations", iteration, "finalChoices", len(currentResponse.Choices))
+	a.logger.Debug("agent loop completed", "iterations", iteration, "final_choices", len(currentResponse.Choices))
 
 	*response = currentResponse
 
@@ -99,19 +99,19 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	maxIterations := 10
 
 	currentRequest.Model = a.providerModel
-	a.logger.Debug("Agent: Starting agent streaming with model", "model", currentRequest.Model)
+	a.logger.Debug("starting agent streaming", "model", currentRequest.Model, "max_iterations", maxIterations)
 
 	defer func() {
-		a.logger.Debug("Agent: Sending agent completion signal")
+		a.logger.Debug("sending agent completion signal")
 		middlewareStreamCh <- []byte("data: [DONE]\n\n")
 	}()
 
 	for iteration := 0; iteration < maxIterations; iteration++ {
-		a.logger.Debug("Agent: Streaming iteration", "iteration", iteration+1)
+		a.logger.Debug("streaming iteration", "iteration", iteration+1, "max_iterations", maxIterations)
 
 		streamCh, err := a.provider.StreamChatCompletions(ctx, currentRequest)
 		if err != nil {
-			a.logger.Error("Agent: Failed to start streaming", err)
+			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", a.providerModel)
 			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to start streaming: %s\"}\n\n", err.Error()))
 			middlewareStreamCh <- errorData
 			return err
@@ -131,7 +131,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			select {
 			case line, ok := <-streamCh:
 				if !ok {
-					a.logger.Debug("Agent: Stream channel closed")
+					a.logger.Debug("stream channel closed", "iteration", iteration+1)
 					streamComplete = true
 					break
 				}
@@ -157,11 +157,11 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				middlewareStreamCh <- formattedData
 				responseBodyBuilder.Write(formattedData)
 
-				a.logger.Debug("Agent: Processing chunk", "chunk", chunkData)
+				a.logger.Debug("processing chunk", "chunk", chunkData, "iteration", iteration+1)
 
 				var resp providers.CreateChatCompletionStreamResponse
 				if err := json.Unmarshal([]byte(chunkData), &resp); err != nil {
-					a.logger.Debug("Agent: Failed to unmarshal streaming chunk", err, "chunkData", chunkData)
+					a.logger.Debug("failed to unmarshal streaming chunk", err, "chunk_data", chunkData, "iteration", iteration+1)
 					continue
 				}
 
@@ -176,10 +176,10 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				}
 
 				if choice.Delta.ToolCalls != nil && len(*choice.Delta.ToolCalls) > 0 {
-					a.logger.Debug("Agent: Found tool calls in delta", "count", len(*choice.Delta.ToolCalls))
+					a.logger.Debug("found tool calls in delta", "count", len(*choice.Delta.ToolCalls), "iteration", iteration+1)
 					for _, toolCall := range *choice.Delta.ToolCalls {
 						if toolCall.ID != nil || (toolCall.Function != nil && (toolCall.Function.Name != "" || toolCall.Function.Arguments != "")) {
-							a.logger.Debug("Agent: Valid tool call detected", "id", toolCall.ID, "functionName", toolCall.Function)
+							a.logger.Debug("valid tool call detected", "id", toolCall.ID, "function_name", toolCall.Function)
 							hasToolCalls = true
 							break
 						}
@@ -188,30 +188,30 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 				switch choice.FinishReason {
 				case providers.FinishReasonToolCalls:
-					a.logger.Debug("Agent: Stream completing due to tool calls finish reason", "finishReason", string(choice.FinishReason))
+					a.logger.Debug("stream completing due to tool calls finish reason", "finish_reason", string(choice.FinishReason), "iteration", iteration+1)
 					streamComplete = true
 				case providers.FinishReasonStop:
-					a.logger.Debug("Agent: Stream completing due to stop finish reason", "finishReason", string(choice.FinishReason))
+					a.logger.Debug("stream completing due to stop finish reason", "finish_reason", string(choice.FinishReason), "iteration", iteration+1)
 					streamComplete = true
 				}
 
 			case <-ctx.Done():
-				a.logger.Debug("Context cancelled during streaming")
+				a.logger.Debug("context cancelled during streaming", "iteration", iteration+1)
 				return ctx.Err()
 			}
 		}
 
-		a.logger.Debug("Agent: Stream completed for iteration", "iteration", iteration+1, "hasToolCalls", hasToolCalls)
+		a.logger.Debug("stream completed for iteration", "iteration", iteration+1, "has_tool_calls", hasToolCalls)
 
-		a.logger.Debug("Agent: Final response body", "responseBodyBuilder", responseBodyBuilder.String())
+		a.logger.Debug("final response body", "response_body_builder", responseBodyBuilder.String())
 
 		var toolCalls []providers.ChatCompletionMessageToolCall
 		if hasToolCalls {
 			toolCalls, err = a.parseStreamingToolCalls(responseBodyBuilder.String())
 			if err != nil {
-				a.logger.Error("Agent: Failed to parse streaming tool calls", err)
+				a.logger.Error("failed to parse streaming tool calls", err, "iteration", iteration+1)
 			} else {
-				a.logger.Debug("Agent: Parsed tool calls from stream", "count", len(toolCalls))
+				a.logger.Debug("parsed tool calls from stream", "count", len(toolCalls), "iteration", iteration+1)
 			}
 		}
 
@@ -220,14 +220,14 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 		}
 
 		if len(toolCalls) == 0 {
-			a.logger.Debug("Agent: No tool calls found, ending agent loop")
+			a.logger.Debug("no tool calls found, ending agent loop", "iteration", iteration+1)
 			return nil
 		}
 
-		a.logger.Debug("Agent: Executing tool calls", "count", len(toolCalls))
+		a.logger.Debug("executing tool calls", "count", len(toolCalls), "iteration", iteration+1)
 		toolResults, err := a.ExecuteTools(ctx, toolCalls)
 		if err != nil {
-			a.logger.Error("Agent: Failed to execute tool calls", err)
+			a.logger.Error("failed to execute tool calls", err, "iteration", iteration+1, "tool_count", len(toolCalls))
 			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to execute tools: %s\"}\n\n", err.Error()))
 			middlewareStreamCh <- errorData
 			return err
@@ -237,11 +237,11 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
 		currentRequest.Model = a.providerModel
 
-		a.logger.Debug("Agent: Tool execution complete, continuing to next iteration",
-			"toolResults", len(toolResults), "totalMessages", len(currentRequest.Messages))
+		a.logger.Debug("tool execution complete, continuing to next iteration",
+			"tool_results", len(toolResults), "total_messages", len(currentRequest.Messages), "iteration", iteration+1)
 	}
 
-	a.logger.Error("Agent: Agent streaming reached maximum iterations", fmt.Errorf("max iterations reached: %d", maxIterations))
+	a.logger.Warn("agent streaming reached maximum iterations", "max_iterations", maxIterations, "iterations_completed", maxIterations)
 	return nil
 }
 
@@ -252,7 +252,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 	for _, toolCall := range toolCalls {
 		var args map[string]interface{}
 		if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
-			a.logger.Error("Agent: Failed to parse tool arguments", err, "args", toolCall.Function.Arguments)
+			a.logger.Error("failed to parse tool arguments", err, "args", toolCall.Function.Arguments, "tool_name", toolCall.Function.Name)
 			results = append(results, providers.Message{
 				Role:       providers.MessageRoleTool,
 				Content:    fmt.Sprintf("Error: Failed to parse arguments: %v", err),
@@ -276,10 +276,10 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			},
 		}
 
-		a.logger.Info("Agent: Executing tool call", "toolCall", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
+		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
 		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
 		if err != nil {
-			a.logger.Error("Agent: Failed to execute tool call", err, "tool", toolCall.Function.Name)
+			a.logger.Error("failed to execute tool call", err, "tool", toolCall.Function.Name, "server", server)
 			results = append(results, providers.Message{
 				Role:       providers.MessageRoleTool,
 				Content:    fmt.Sprintf("Error: %v", err),
@@ -334,7 +334,7 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 
 		var chunk providers.CreateChatCompletionStreamResponse
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
-			a.logger.Debug("Agent: Failed to parse streaming chunk", "data", data, "error", err)
+			a.logger.Debug("failed to parse streaming chunk", "data", data, "error", err)
 			continue
 		}
 
@@ -391,11 +391,11 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 							if tc.Index == index {
 								if tc.Function.Name != "" {
 									toolCall.Function.Name = tc.Function.Name
-									a.logger.Debug("Parsed tool name from stream", "name", tc.Function.Name)
+									a.logger.Debug("parsed tool name from stream", "name", tc.Function.Name)
 								}
 								if tc.Function.Arguments != "" {
 									toolCall.Function.Arguments += tc.Function.Arguments
-									a.logger.Debug("Parsed tool arguments from stream", "args", tc.Function.Arguments)
+									a.logger.Debug("parsed tool arguments from stream", "args", tc.Function.Arguments)
 								}
 							}
 						}
@@ -408,11 +408,11 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 	var toolCalls []providers.ChatCompletionMessageToolCall
 	for i := 0; i < len(toolCallsMap); i++ {
 		if toolCall, exists := toolCallsMap[i]; exists {
-			a.logger.Debug("Agent: Final parsed tool call", "toolCall", fmt.Sprintf("id=%s name=%s args=%s", toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments))
+			a.logger.Debug("final parsed tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%s", toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments))
 			toolCalls = append(toolCalls, *toolCall)
 		}
 	}
 
-	a.logger.Debug("Agent: Total parsed tool calls", "count", len(toolCalls))
+	a.logger.Debug("total parsed tool calls", "count", len(toolCalls))
 	return toolCalls, nil
 }

@@ -246,23 +246,23 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 
 	streamReq := p.prepareStreamingRequest(clientReq)
 
-	p.logger.Debug("Streaming chat completions", "provider", p.GetName(), "url", url, "request", streamReq)
+	p.logger.Debug("streaming chat completions", "provider", p.GetName(), "url", url, "request", streamReq)
 
 	reqBody, err := json.Marshal(streamReq)
 	if err != nil {
-		p.logger.Error("Failed to marshal request", err, "provider", p.GetName())
+		p.logger.Error("failed to marshal request", err, "provider", p.GetName())
 		return nil, err
 	}
 
 	req, err := p.createHTTPRequest(ctx, url, reqBody)
 	if err != nil {
-		p.logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
+		p.logger.Error("failed to create request", err, "provider", p.GetName(), "url", url)
 		return nil, err
 	}
 
 	response, err := p.client.Do(req)
 	if err != nil {
-		p.logger.Error("Failed to send request", err, "provider", p.GetName(), "url", url)
+		p.logger.Error("failed to send request", err, "provider", p.GetName(), "url", url)
 		return nil, err
 	}
 
@@ -281,7 +281,7 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 		for {
 			select {
 			case <-ctx.Done():
-				p.logger.Debug("Stream cancelled due to context", "provider", p.GetName())
+				p.logger.Debug("stream cancelled due to context", "provider", p.GetName())
 				return
 			default:
 			}
@@ -289,9 +289,9 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 			line, err := reader.ReadBytes('\n')
 			if err != nil {
 				if err != io.EOF {
-					p.logger.Error("Error reading stream", err, "provider", p.GetName())
+					p.logger.Error("error reading stream", err, "provider", p.GetName())
 				} else {
-					p.logger.Debug("Stream ended gracefully", "provider", p.GetName())
+					p.logger.Debug("stream ended gracefully", "provider", p.GetName())
 				}
 				return
 			}
@@ -300,7 +300,7 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 				select {
 				case stream <- line:
 				case <-ctx.Done():
-					p.logger.Debug("Stream cancelled while sending data", "provider", p.GetName())
+					p.logger.Debug("stream cancelled while sending data", "provider", p.GetName())
 					return
 				}
 			}

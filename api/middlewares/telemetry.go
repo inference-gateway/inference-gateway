@@ -105,7 +105,10 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		c.Next()
 
 		if provider == "unknown" {
-			t.logger.Debug("Unknown provider", "model", model)
+			t.logger.Warn("unknown provider detected",
+				"model", model,
+				"path", c.Request.URL.Path,
+				"query", c.Request.URL.RawQuery)
 			return
 		}
 
@@ -141,7 +144,10 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 					}
 
 					if err := json.Unmarshal([]byte(chunk), &chatCompletionStreamResponse); err != nil {
-						t.logger.Error("telemetry middleware - failed to unmarshal response", err)
+						t.logger.Error("failed to unmarshal streaming response chunk", err,
+							"provider", provider,
+							"model", model,
+							"chunk_length", len(chunk))
 						break
 					}
 
@@ -156,7 +162,11 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		} else {
 			var chatCompletionResponse providers.CreateChatCompletionResponse
 			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionResponse); err != nil {
-				t.logger.Error("telemetry middleware - failed to unmarshal response", err)
+				t.logger.Error("failed to unmarshal non-streaming response", err,
+					"provider", provider,
+					"model", model,
+					"response_length", w.body.Len(),
+					"status_code", statusCode)
 			}
 
 			if chatCompletionResponse.Usage != nil {
@@ -166,13 +176,15 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			}
 		}
 
-		// t.logger.Debug("Tokens usage",
-		// 	"provider", provider,
-		// 	"model", model,
-		// 	"promptTokens", promptTokens,
-		// 	"completionTokens", completionTokens,
-		// 	"totalTokens", totalTokens,
-		// )
+		t.logger.Debug("token usage recorded",
+			"provider", provider,
+			"model", model,
+			"prompt_tokens", promptTokens,
+			"completion_tokens", completionTokens,
+			"total_tokens", totalTokens,
+			"duration_ms", duration,
+			"status_code", statusCode,
+		)
 
 		t.telemetry.RecordTokenUsage(
 			c.Request.Context(),

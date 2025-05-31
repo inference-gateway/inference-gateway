@@ -21,8 +21,8 @@ func NewLoggerMiddleware(logger *logger.Logger) (Logger, error) {
 
 func (l LoggerImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		l.logger.Info("Request received", "method", c.Request.Method, "host", c.Request.Host, "path", c.Request.URL.Path)
-		l.logger.Debug("Request received", "query", c.Request.URL.RawQuery, "headers", c.Request.Header)
+		l.logger.Info("request received", "method", c.Request.Method, "host", c.Request.Host, "path", c.Request.URL.Path)
+		l.logger.Debug("request details", "query", c.Request.URL.RawQuery, "headers", c.Request.Header)
 
 		c.Next()
 	}

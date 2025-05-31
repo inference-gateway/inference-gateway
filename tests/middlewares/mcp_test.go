@@ -78,7 +78,7 @@ func TestNewMCPMiddleware(t *testing.T) {
 			cfg := createTestConfig()
 
 			if tt.mcpClient == nil {
-				mockLogger.EXPECT().Info("MCP client is nil, using no-op middleware")
+				mockLogger.EXPECT().Info("mcp client is nil, using no-op middleware")
 			}
 
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, tt.mcpClient, mockLogger, cfg)
@@ -110,7 +110,7 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 			path:           "/v1/chat/completions",
 			internalHeader: "true",
 			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("MCP Middleware: Not an internal MCP call").AnyTimes()
+				mockLogger.EXPECT().Debug("not an internal mcp call").AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -590,8 +590,8 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			name:        "Invalid JSON request body",
 			requestBody: `invalid json`,
 			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
-				mockLogger.EXPECT().Debug("MCP Middleware: MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
-				mockLogger.EXPECT().Error("MCP Middleware: Failed to parse request body", gomock.Any()).AnyTimes()
+				mockLogger.EXPECT().Debug("mcp middleware invoked", "path", "/v1/chat/completions").AnyTimes()
+				mockLogger.EXPECT().Error("failed to parse request body", gomock.Any()).AnyTimes()
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Invalid request body",
@@ -609,9 +609,9 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 						},
 					},
 				}).AnyTimes()
-				mockLogger.EXPECT().Debug("MCP Middleware: MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
-				mockLogger.EXPECT().Debug("MCP Middleware: Added MCP tools to request", "toolCount", 1).AnyTimes()
-				mockLogger.EXPECT().Error("MCP Middleware: Failed to determine provider", gomock.Any(), "model", "unsupported/model").AnyTimes()
+				mockLogger.EXPECT().Debug("mcp middleware invoked", "path", "/v1/chat/completions").AnyTimes()
+				mockLogger.EXPECT().Debug("added mcp tools to request", "tool_count", 1).AnyTimes()
+				mockLogger.EXPECT().Error("failed to determine provider", gomock.Any(), "model", "unsupported/model").AnyTimes()
 			},
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Unsupported model: unsupported/model",
@@ -629,10 +629,10 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 						},
 					},
 				}).AnyTimes()
-				mockLogger.EXPECT().Debug("MCP Middleware: MCP middleware invoked", "path", "/v1/chat/completions").AnyTimes()
-				mockLogger.EXPECT().Debug("MCP Middleware: Added MCP tools to request", "toolCount", 1).AnyTimes()
+				mockLogger.EXPECT().Debug("mcp middleware invoked", "path", "/v1/chat/completions").AnyTimes()
+				mockLogger.EXPECT().Debug("added mcp tools to request", "tool_count", 1).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(nil, fmt.Errorf("provider build failed")).AnyTimes()
-				mockLogger.EXPECT().Error("MCP Middleware: Failed to get provider", gomock.Any(), "provider", providers.OpenaiID).AnyTimes()
+				mockLogger.EXPECT().Error("failed to get provider", gomock.Any(), "provider", providers.OpenaiID).AnyTimes()
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedError:  "Provider not available",

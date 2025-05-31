@@ -347,62 +347,62 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	}
 
 	for _, url := range mc.ServerURLs {
-		mc.Logger.Debug("MCP: Initializing client with transport fallback", "server", url)
+		mc.Logger.Debug("initializing client with transport fallback", "server", url)
 
 		client, err := mc.initializeClientWithTransport(ctx, url, TransportModeStreamableHTTP)
 		if err != nil {
-			mc.Logger.Debug("MCP: Streamable HTTP failed, attempting SSE fallback", "server", url, "error", err.Error())
+			mc.Logger.Debug("streamable http failed, attempting sse fallback", "server", url, "error", err.Error())
 
 			client, err = mc.initializeClientWithTransport(ctx, url, TransportModeSSE)
 			if err != nil {
-				mc.Logger.Error("MCP: Both Streamable HTTP and SSE transports failed", err, "server", url)
+				mc.Logger.Error("both streamable http and sse transports failed", err, "server", url)
 				continue
 			}
-			mc.Logger.Info("MCP: Successfully connected using SSE transport fallback", "server", url)
+			mc.Logger.Info("successfully connected using sse transport fallback", "server", url)
 		} else {
-			mc.Logger.Debug("MCP: Successfully connected using Streamable HTTP transport", "server", url)
+			mc.Logger.Debug("successfully connected using streamable http transport", "server", url)
 		}
 
 		mc.Clients[url] = client
 
 		if err := mc.discoverServerCapabilities(ctx, client, url); err != nil {
-			mc.Logger.Error("MCP: Failed to discover server capabilities", err, "server", url)
+			mc.Logger.Error("failed to discover server capabilities", err, "server", url)
 			continue
 		}
 
-		mc.Logger.Debug("MCP: Client initialized successfully", "server", url)
+		mc.Logger.Debug("mcp client initialized successfully", "server", url)
 	}
 
 	if len(mc.Clients) == 0 {
 		return ErrNoClientsInitialized
 	}
 
-	mc.Logger.Debug("MCP: Pre-converting all tools to chat completion format")
-	mc.Logger.Debug("MCP: ServerTools map status", "serverCount", len(mc.ServerTools))
+	mc.Logger.Debug("mcp pre-converting all tools to chat completion format")
+	mc.Logger.Debug("mcp serverTools map status", "serverCount", len(mc.ServerTools))
 
 	for serverURL, serverTools := range mc.ServerTools {
-		mc.Logger.Debug("MCP: Server tools status", "server", serverURL, "toolCount", len(serverTools))
+		mc.Logger.Debug("mcp server tools status", "server", serverURL, "toolCount", len(serverTools))
 	}
 
 	allChatCompletionTools := make([]providers.ChatCompletionTool, 0)
 
 	for serverURL, serverTools := range mc.ServerTools {
 		if len(serverTools) == 0 {
-			mc.Logger.Debug("MCP: No tools to convert for server", "server", serverURL)
+			mc.Logger.Debug("no tools to convert for server", "server", serverURL)
 			continue
 		}
 
-		mc.Logger.Debug("MCP: Converting tools for server", "server", serverURL, "inputToolCount", len(serverTools))
+		mc.Logger.Debug("converting tools for server", "server", serverURL, "inputToolCount", len(serverTools))
 		chatTools := mc.ConvertMCPToolsToChatCompletionTools(serverTools)
-		mc.Logger.Debug("MCP: Converted tools for server", "server", serverURL, "outputCount", len(chatTools))
+		mc.Logger.Debug("converted tools for server", "server", serverURL, "outputCount", len(chatTools))
 		allChatCompletionTools = append(allChatCompletionTools, chatTools...)
 	}
 
 	mc.ChatCompletionTools = allChatCompletionTools
-	mc.Logger.Debug("MCP: Total pre-converted tools", "count", len(mc.ChatCompletionTools))
+	mc.Logger.Debug("total pre-converted tools", "count", len(mc.ChatCompletionTools))
 
 	mc.Initialized = true
-	mc.Logger.Info("MCP: Client initialization completed", "successfulServers", len(mc.Clients), "totalServers", len(mc.ServerURLs))
+	mc.Logger.Info("client initialization completed", "successfulServers", len(mc.Clients), "totalServers", len(mc.ServerURLs))
 	return nil
 }
 
@@ -410,7 +410,7 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverURL string, mode TransportMode) (*m.Client, error) {
 	client := mc.NewClientWithTransport(serverURL, mode)
 
-	mc.Logger.Debug("MCP: Attempting client initialization", "server", serverURL, "transport", string(mode), "timeout", mc.Config.MCP.RequestTimeout.String())
+	mc.Logger.Debug("attempting client initialization", "server", serverURL, "transport", string(mode), "timeout", mc.Config.MCP.RequestTimeout.String())
 
 	initCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
 	defer cancel()
@@ -438,34 +438,34 @@ func (mc *MCPClient) discoverServerCapabilities(ctx context.Context, client *m.C
 	}
 
 	mc.ServerCapabilities[serverURL] = capabilities
-	mc.Logger.Debug("MCP: Server capabilities discovered", "server", serverURL)
+	mc.Logger.Debug("mcp server capabilities discovered", "server", serverURL)
 
 	return mc.discoverServerTools(ctx, client, serverURL)
 }
 
 // discoverServerTools discovers and stores server tools
 func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, serverURL string) error {
-	mc.Logger.Debug("MCP: Fetching available tools", "server", serverURL)
+	mc.Logger.Debug("fetching available tools", "server", serverURL)
 
 	toolsCtx, toolsCancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
 	defer toolsCancel()
 
-	mc.Logger.Debug("MCP: Attempting to list tools with timeout", "server", serverURL, "timeout", mc.Config.MCP.RequestTimeout.String())
+	mc.Logger.Debug("attempting to list tools with timeout", "server", serverURL, "timeout", mc.Config.MCP.RequestTimeout.String())
 	var cursor *string
 	toolsResult, err := client.ListTools(toolsCtx, cursor)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			mc.Logger.Error("MCP: Tools listing timed out", err, "server", serverURL)
+			mc.Logger.Error("tools listing timed out", err, "server", serverURL)
 		} else {
-			mc.Logger.Error("MCP: Failed to list tools", err, "server", serverURL)
-			mc.Logger.Debug("MCP: Tools listing error details", "error", err.Error(), "server", serverURL)
+			mc.Logger.Error("failed to list tools", err, "server", serverURL)
+			mc.Logger.Debug("tools listing error details", "error", err.Error(), "server", serverURL)
 		}
 		return err
 	}
 
-	mc.Logger.Debug("MCP: Successfully retrieved tools list", "server", serverURL, "rawToolsCount", len(toolsResult.Tools))
+	mc.Logger.Debug("successfully retrieved tools list", "server", serverURL, "rawToolsCount", len(toolsResult.Tools))
 	for i, tool := range toolsResult.Tools {
-		mc.Logger.Debug("MCP: Raw tool discovered", "server", serverURL, "index", i, "name", tool.Name, "hasDescription", tool.Description != nil, "hasInputSchema", tool.InputSchema != nil)
+		mc.Logger.Debug("mcp raw tool discovered", "server", serverURL, "index", i, "name", tool.Name, "hasDescription", tool.Description != nil, "hasInputSchema", tool.InputSchema != nil)
 	}
 
 	serverTools := make([]Tool, 0, len(toolsResult.Tools))
@@ -491,11 +491,11 @@ func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, 
 			Inputschema: inputSchema,
 		})
 
-		mc.Logger.Debug("MCP: Processed tool", "server", serverURL, "toolName", tool.Name, "enhancedDesc", *enhancedDesc)
+		mc.Logger.Debug("processed tool", "server", serverURL, "toolName", tool.Name, "enhancedDesc", *enhancedDesc)
 	}
 
 	mc.ServerTools[serverURL] = serverTools
-	mc.Logger.Debug("MCP: Found tools for server", "server", serverURL, "count", len(serverTools))
+	mc.Logger.Debug("found tools for server", "server", serverURL, "count", len(serverTools))
 
 	return nil
 }

@@ -84,7 +84,7 @@ type NoopMCPMiddlewareImpl struct{}
 // NewMCPMiddleware creates a new MCP middleware instance
 func NewMCPMiddleware(registry providers.ProviderRegistry, inferenceGatewayClient providers.Client, mcpClient mcp.MCPClientInterface, logger logger.Logger, cfg config.Config) (MCPMiddleware, error) {
 	if mcpClient == nil {
-		logger.Info("MCP client is nil, using no-op middleware")
+		logger.Info("mcp client is nil, using no-op middleware")
 		return &NoopMCPMiddlewareImpl{}, nil
 	}
 
@@ -109,7 +109,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Check if the request is marked as internal to prevent loops
 		if c.GetHeader(MCPInternalHeader) != "" {
-			m.logger.Debug("MCP Middleware: Not an internal MCP call")
+			m.logger.Debug("not an internal mcp call")
 			c.Next()
 			return
 		}
@@ -120,10 +120,10 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		m.logger.Debug("MCP Middleware: MCP middleware invoked", "path", c.Request.URL.Path)
+		m.logger.Debug("mcp middleware invoked", "path", c.Request.URL.Path)
 		var originalRequestBody providers.CreateChatCompletionRequest
 		if err := c.ShouldBindJSON(&originalRequestBody); err != nil {
-			m.logger.Error("MCP Middleware: Failed to parse request body", err)
+			m.logger.Error("failed to parse request body", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 			c.Abort()
 			return
@@ -139,7 +139,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			c.Next()
 			return
 		}
-		m.logger.Debug("MCP Middleware: Added MCP tools to request", "toolCount", len(availableTools))
+		m.logger.Debug("added mcp tools to request", "tool_count", len(availableTools))
 		originalRequestBody.Tools = &availableTools
 
 		// Mark the request as internal to prevent middleware loops
@@ -148,23 +148,23 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		result, err := m.getProviderAndModel(c, originalRequestBody.Model)
 		if err != nil {
 			if result.ProviderID == nil {
-				m.logger.Error("MCP Middleware: Failed to determine provider", err, "model", originalRequestBody.Model)
+				m.logger.Error("failed to determine provider", err, "model", originalRequestBody.Model)
 				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Unsupported model: %s", originalRequestBody.Model)})
 			} else {
-				m.logger.Error("MCP Middleware: Failed to get provider", err, "provider", *result.ProviderID)
+				m.logger.Error("failed to get provider", err, "provider", *result.ProviderID)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Provider not available"})
 			}
 			c.Abort()
 			return
 		}
 
-		m.logger.Debug("Using provider", "provider", result.ProviderID, "model", result.ProviderModel)
+		m.logger.Debug("using provider", "provider", result.ProviderID, "model", result.ProviderModel)
 
 		agent := agent.NewAgent(m.logger, m.mcpClient, result.Provider, result.ProviderModel)
 
 		// Streaming response handling
 		if originalRequestBody.Stream != nil && *originalRequestBody.Stream {
-			m.logger.Debug("Starting agent streaming mode")
+			m.logger.Debug("starting agent streaming mode")
 			c.Header("Content-Type", "text/event-stream")
 			c.Header("Cache-Control", "no-cache")
 			c.Header("Connection", "keep-alive")
@@ -178,7 +178,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 				defer close(processedChunk)
 				err := agent.RunWithStream(c.Request.Context(), processedChunk, c, &originalRequestBody)
 				if err != nil {
-					m.logger.Error("MCP Middleware: Agent streaming failed", err)
+					m.logger.Error("agent streaming failed", err)
 					errCh <- err
 				}
 			}()
@@ -188,46 +188,46 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 				select {
 				case line, ok := <-processedChunk:
 					if !ok {
-						m.logger.Debug("MCP Middleware: Agent stream channel closed unexpectedly")
+						m.logger.Debug("agent stream channel closed unexpectedly")
 						return false
 					}
 
 					if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
-						m.logger.Debug("MCP Middleware: Agent completed all iterations, sending [DONE]")
+						m.logger.Debug("agent completed all iterations, sending [DONE]")
 						_, err := w.Write(line)
 						if err != nil {
-							m.logger.Error("MCP Middleware: Failed to write [DONE] to client", err)
+							m.logger.Error("failed to write [DONE] to client", err)
 						}
 						return false
 					}
 
-					m.logger.Debug("MCP Middleware: Received line from agent", "line", string(line))
+					m.logger.Debug("received line from agent", "line", string(line))
 
 					if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
 						var errMsg struct {
 							Error string `json:"error"`
 						}
 						if err := json.Unmarshal(line[6:], &errMsg); err == nil {
-							m.logger.Error("MCP Middleware: Upstream provider error", fmt.Errorf(errMsg.Error))
+							m.logger.Error("upstream provider error", fmt.Errorf(errMsg.Error))
 							c.Writer.WriteHeader(http.StatusServiceUnavailable)
 						}
 					}
 
 					_, err := w.Write(line)
 					if err != nil {
-						m.logger.Error("MCP Middleware: Failed to write line to client", err)
+						m.logger.Error("failed to write line to client", err)
 						return false
 					}
 					return true
 				case err := <-errCh:
-					m.logger.Error("MCP Middleware: Agent streaming error", err)
+					m.logger.Error("agent streaming error", err)
 					c.Writer.WriteHeader(http.StatusServiceUnavailable)
 					if _, writeErr := fmt.Fprintf(w, "data: {\"error\": \"%s\"}\n\n", err.Error()); writeErr != nil {
-						m.logger.Error("MCP Middleware: Failed to write error to stream", writeErr)
+						m.logger.Error("failed to write error to stream", writeErr)
 					}
 					return false
 				case <-c.Request.Context().Done():
-					m.logger.Debug("Request context done, stopping stream")
+					m.logger.Debug("request context done, stopping stream")
 					return false
 				}
 			})
@@ -248,29 +248,29 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		c.Next()
 
 		// non-streaming response handling
-		m.logger.Debug("MCP Middleware: Non-streaming response, waiting for provider response")
+		m.logger.Debug("non-streaming response, waiting for provider response")
 
 		var response providers.CreateChatCompletionResponse
 		err = json.Unmarshal(customWriter.body.Bytes(), &response)
 		if err != nil {
-			m.logger.Error("MCP Middleware: Failed to parse response body", err)
+			m.logger.Error("failed to parse response body", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
 			return
 		}
-		m.logger.Debug("MCP Middleware: Parsed response from provider", "response", response)
+		m.logger.Debug("parsed response from provider", "response", response)
 
 		// Run the agent to process tool calls and get the final response
 		err = agent.Run(c.Request.Context(), &originalRequestBody, &response)
 		if err != nil {
-			m.logger.Error("MCP Middleware: Agent failed", err)
+			m.logger.Error("agent failed", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Agent processing failed"})
 			return
 		}
 
-		m.logger.Debug("MCP Middleware: Received final response from agent", "response", response)
+		m.logger.Debug("received final response from agent", "response", response)
 		responseBytes, err := json.Marshal(response)
 		if err != nil {
-			m.logger.Error("MCP Middleware: Failed to marshal final response", err)
+			m.logger.Error("failed to marshal final response", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal response"})
 			return
 		}
@@ -280,7 +280,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		customWriter.ResponseWriter.WriteHeader(http.StatusOK)
 		_, err = customWriter.ResponseWriter.Write(responseBytes)
 		if err != nil {
-			m.logger.Error("MCP Middleware: Failed to write response", err)
+			m.logger.Error("failed to write response", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write response"})
 			return
 		}

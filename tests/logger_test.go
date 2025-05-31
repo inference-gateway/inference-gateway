@@ -60,7 +60,7 @@ func TestLoggerMethods(t *testing.T) {
 		execute func(logger.Logger)
 	}{
 		{
-			name: "Info logging",
+			name: "info logging",
 			setup: func() {
 				mockLogger.EXPECT().Info("test info", "key1", "value1")
 			},
@@ -69,7 +69,7 @@ func TestLoggerMethods(t *testing.T) {
 			},
 		},
 		{
-			name: "Debug logging",
+			name: "debug logging",
 			setup: func() {
 				mockLogger.EXPECT().Debug("test debug", "key1", "value1")
 			},
@@ -78,7 +78,25 @@ func TestLoggerMethods(t *testing.T) {
 			},
 		},
 		{
-			name: "Error logging",
+			name: "warn logging",
+			setup: func() {
+				mockLogger.EXPECT().Warn("test warn", "key1", "value1")
+			},
+			execute: func(l logger.Logger) {
+				l.Warn("test warn", "key1", "value1")
+			},
+		},
+		{
+			name: "notice logging",
+			setup: func() {
+				mockLogger.EXPECT().Notice("test notice", "key1", "value1")
+			},
+			execute: func(l logger.Logger) {
+				l.Notice("test notice", "key1", "value1")
+			},
+		},
+		{
+			name: "error logging",
 			setup: func() {
 				mockLogger.EXPECT().Error("test error", gomock.Any(), "key1", "value1")
 			},

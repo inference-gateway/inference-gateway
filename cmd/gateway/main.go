@@ -39,22 +39,22 @@ func main() {
 	}
 
 	// Log config in debug mode
-	logger.Debug("Loaded config", "config", cfg.String())
+	logger.Debug("loaded config", "config", cfg.String())
 
 	// Initialize OpenTelemetry Prometheus exporter Server
 	var telemetryImpl otel.OpenTelemetry
 	if cfg.EnableTelemetry {
 		telemetryImpl = &otel.OpenTelemetryImpl{}
-		err := telemetryImpl.Init(cfg)
+		err := telemetryImpl.Init(cfg, logger)
 		if err != nil {
-			logger.Error("OpenTelemetry init error", err)
+			logger.Error("opentelemetry initialization failed", err)
 			return
 		}
 
 		metricsMux := http.NewServeMux()
 		metricsMux.Handle("/metrics", promhttp.Handler())
 
-		logger.Info("Telemetry initialized successfully")
+		logger.Info("telemetry initialized successfully")
 
 		metricsServer := &http.Server{
 			Addr:         ":9464",
@@ -65,21 +65,21 @@ func main() {
 		}
 
 		go func() {
-			logger.Info("Starting metrics server", "port", "9464")
+			logger.Info("starting metrics server", "port", "9464")
 			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				logger.Error("Metrics server failed", err)
+				logger.Error("metrics server failed", err)
 			}
 		}()
 
 		defer func() {
-			logger.Info("Shutting down metrics server...")
+			logger.Info("shutting down metrics server...")
 			ctxMetrics, cancelMetrics := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancelMetrics()
 
 			if err := metricsServer.Shutdown(ctxMetrics); err != nil {
-				logger.Error("Metrics server shutdown error", err)
+				logger.Error("metrics server shutdown error", err)
 			} else {
-				logger.Info("Metrics server gracefully stopped")
+				logger.Info("metrics server gracefully stopped")
 			}
 		}()
 
@@ -87,7 +87,7 @@ func main() {
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			if err := telemetryImpl.ShutDown(ctx); err != nil {
-				logger.Error("Error shutting down telemetry", err)
+				logger.Error("error shutting down telemetry", err)
 			}
 		}()
 	}
@@ -95,7 +95,7 @@ func main() {
 	// Initialize logger middleware
 	loggerMiddleware, err := middlewares.NewLoggerMiddleware(&logger)
 	if err != nil {
-		logger.Error("Failed to initialize logger middleware: %v", err)
+		logger.Error("failed to initialize logger middleware", err)
 		return
 	}
 
@@ -104,7 +104,7 @@ func main() {
 	if cfg.EnableTelemetry {
 		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, logger)
 		if err != nil {
-			logger.Error("Failed to initialize telemetry middleware: %v", err)
+			logger.Error("failed to initialize telemetry middleware", err)
 			return
 		}
 	}
@@ -112,7 +112,7 @@ func main() {
 	// Initialize OIDC authenticator middleware
 	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(logger, cfg)
 	if err != nil {
-		logger.Error("Failed to initialize OIDC authenticator", err)
+		logger.Error("failed to initialize oidc authenticator", err)
 		return
 	}
 
@@ -141,20 +141,20 @@ func main() {
 			initCtx, cancel := context.WithTimeout(context.Background(), cfg.MCP.RequestTimeout)
 			defer cancel()
 
-			logger.Info("MCP: Starting client initialization", "timeout", cfg.MCP.RequestTimeout.String())
+			logger.Info("starting mcp client initialization", "timeout", cfg.MCP.RequestTimeout.String())
 			initErr := mcpClient.InitializeAll(initCtx)
 			if initErr != nil {
-				logger.Error("Failed to initialize MCP client", initErr)
+				logger.Error("failed to initialize mcp client", initErr)
 				return
 			}
-			logger.Info("MCP client initialized successfully")
+			logger.Info("mcp client initialized successfully")
 		} else {
-			logger.Info("MCP is enabled but no servers configured, using no-op middleware")
+			logger.Info("mcp is enabled but no servers configured, using no-op middleware")
 		}
 
 		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, logger, cfg)
 		if err != nil {
-			logger.Error("Failed to initialize MCP middleware", err)
+			logger.Error("failed to initialize mcp middleware", err)
 			return
 		}
 	}
@@ -175,7 +175,7 @@ func main() {
 	// Add MCP middleware if enabled
 	if cfg.MCP.Enable {
 		r.Use(mcpMiddleware.Middleware())
-		logger.Info("MCP middleware added to request pipeline")
+		logger.Info("mcp middleware added to request pipeline")
 	}
 
 	r.GET("/health", api.HealthcheckHandler)
@@ -198,18 +198,18 @@ func main() {
 
 	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
 		go func() {
-			logger.Info("Starting Inference Gateway with TLS", "port", cfg.Server.Port)
+			logger.Info("starting inference gateway with tls", "port", cfg.Server.Port)
 
 			if err := server.ListenAndServeTLS(cfg.Server.TlsCertPath, cfg.Server.TlsKeyPath); err != nil && err != http.ErrServerClosed {
-				logger.Error("ListenAndServeTLS error", err)
+				logger.Error("listen and serve tls error", err)
 			}
 		}()
 	} else {
 		go func() {
-			logger.Info("Starting Inference Gateway", "port", cfg.Server.Port)
+			logger.Info("starting inference gateway", "port", cfg.Server.Port)
 
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				logger.Error("ListenAndServe error", err)
+				logger.Error("listen and serve error", err)
 			}
 		}()
 	}
@@ -217,14 +217,14 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
-	logger.Info("Shutting down server...")
+	logger.Info("shutting down server...")
 
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(ctxShutdown); err != nil {
-		logger.Error("Server Shutdown error", err)
+		logger.Error("server shutdown error", err)
 	} else {
-		logger.Info("Server gracefully stopped")
+		logger.Info("server gracefully stopped")
 	}
 }
