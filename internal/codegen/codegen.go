@@ -63,6 +63,9 @@ type Config struct {
 	{{- else if eq $name "mcp" }}
 	// MCP settings
 	MCP *MCPConfig ` + "`env:\", prefix=MCP_\" description:\"MCP configuration\"`" + `
+	{{- else if eq $name "a2a" }}
+	// A2A settings
+	A2A *A2AConfig ` + "`env:\", prefix=A2A_\" description:\"A2A configuration\"`" + `
 	{{- else if eq $name "oidc" }}
 	// OIDC settings
 	OIDC *OIDC ` + "`env:\", prefix=OIDC_\" description:\"OIDC configuration\"`" + `
@@ -88,6 +91,14 @@ type Config struct {
 type MCPConfig struct {
 	{{- range $field := $section.Settings }}
 	{{ pascalCase (trimPrefix $field.Env "MCP_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"MCP_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+	{{- end }}
+}
+{{- else if eq $name "a2a" }}
+
+// A2A configuration
+type A2AConfig struct {
+	{{- range $field := $section.Settings }}
+	{{ pascalCase (trimPrefix $field.Env "A2A_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"A2A_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
 }
 {{- else if eq $name "oidc" }}
@@ -159,13 +170,14 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 func (cfg *Config) String() string {
     return fmt.Sprintf(
         "Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
-            "MCP:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
+            "MCP:%+v, A2A:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
         APPLICATION_NAME,
         VERSION,
         cfg.Environment,
         cfg.EnableTelemetry,
         cfg.EnableAuth,
         cfg.MCP,
+        cfg.A2A,
         cfg.OIDC,
         cfg.Server,
         cfg.Client,
