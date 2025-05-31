@@ -170,7 +170,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			c.Header("Connection", "keep-alive")
 			c.Header("Transfer-Encoding", "chunked")
 
-			processedChunk := make(chan []byte)
+			processedChunk := make(chan []byte, 100)
 			errCh := make(chan error, 1)
 
 			// Start agent streaming in a goroutine
