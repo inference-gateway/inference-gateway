@@ -203,13 +203,17 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 					m.logger.Debug("received line from agent", "line", string(line))
 
-					if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
-						var errMsg struct {
-							Error string `json:"error"`
-						}
-						if err := json.Unmarshal(line[6:], &errMsg); err == nil {
-							m.logger.Error("upstream provider error", fmt.Errorf(errMsg.Error))
-							c.Writer.WriteHeader(http.StatusServiceUnavailable)
+					lineStr := string(line)
+					if strings.HasPrefix(lineStr, "data:") && strings.Contains(lineStr, "\"error\":") {
+						afterData := strings.TrimSpace(strings.TrimPrefix(lineStr, "data:"))
+						if strings.HasPrefix(afterData, "{") {
+							var errMsg struct {
+								Error string `json:"error"`
+							}
+							if err := json.Unmarshal([]byte(afterData), &errMsg); err == nil && errMsg.Error != "" {
+								m.logger.Error("upstream provider error", fmt.Errorf(errMsg.Error))
+								c.Writer.WriteHeader(http.StatusServiceUnavailable)
+							}
 						}
 					}
 

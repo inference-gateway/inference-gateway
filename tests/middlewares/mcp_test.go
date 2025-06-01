@@ -906,3 +906,183 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		assert.True(t, len(collectedChunks) > 10, "Should have collected multiple chunks from all iterations")
 	})
 }
+
+func TestMCPMiddleware_StreamingErrorDetection(t *testing.T) {
+	tests := []struct {
+		name                 string
+		line                 string
+		expectErrorDetection bool
+		expectedErrorMessage string
+	}{
+		{
+			name:                 "Detect error with space after data colon",
+			line:                 `data: {"error": "Rate limit exceeded"}`,
+			expectErrorDetection: true,
+			expectedErrorMessage: "Rate limit exceeded",
+		},
+		{
+			name:                 "Detect error without space after data colon",
+			line:                 `data:{"error": "Authentication failed"}`,
+			expectErrorDetection: true,
+			expectedErrorMessage: "Authentication failed",
+		},
+		{
+			name:                 "Detect error with multiple spaces after data colon",
+			line:                 `data:  {"error": "Service unavailable"}`,
+			expectErrorDetection: true,
+			expectedErrorMessage: "Service unavailable",
+		},
+		{
+			name:                 "Detect error with tab after data colon",
+			line:                 "data:\t{\"error\": \"Internal server error\"}",
+			expectErrorDetection: true,
+			expectedErrorMessage: "Internal server error",
+		},
+		{
+			name:                 "Ignore valid JSON without error field",
+			line:                 `data: {"status": "processing"}`,
+			expectErrorDetection: false,
+		},
+		{
+			name:                 "Ignore lines that don't start with data:",
+			line:                 `event: message`,
+			expectErrorDetection: false,
+		},
+		{
+			name:                 "Ignore malformed JSON",
+			line:                 `data: {invalid json}`,
+			expectErrorDetection: false,
+		},
+		{
+			name:                 "Detect error in complex JSON structure",
+			line:                 `data: {"timestamp": 1234567890, "error": "Model not found", "details": {"code": 404}}`,
+			expectErrorDetection: true,
+			expectedErrorMessage: "Model not found",
+		},
+		{
+			name:                 "Handle DONE message correctly",
+			line:                 `data: [DONE]`,
+			expectErrorDetection: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lineBytes := []byte(tt.line)
+			lineStr := string(lineBytes)
+
+			if !strings.HasPrefix(lineStr, "data:") {
+				if tt.expectErrorDetection {
+					t.Errorf("Expected error detection but line doesn't start with 'data:'")
+				}
+				return
+			}
+
+			lineStr = strings.TrimSpace(strings.TrimPrefix(lineStr, "data:"))
+			if !strings.Contains(lineStr, "\"error\":") {
+				if tt.expectErrorDetection {
+					t.Errorf("Expected error detection but line doesn't contain 'error' field")
+				}
+				return
+			}
+
+			var errMsg struct {
+				Error string `json:"error"`
+			}
+			if err := json.Unmarshal([]byte(lineStr), &errMsg); err != nil || errMsg.Error == "" {
+				if tt.expectErrorDetection {
+					t.Errorf("Expected error detection but JSON parsing failed or error field was empty")
+				}
+				return
+			}
+
+			if tt.expectErrorDetection {
+				assert.Equal(t, tt.expectedErrorMessage, errMsg.Error)
+			} else {
+				t.Errorf("Expected no error detection, but found error: %s", errMsg.Error)
+			}
+		})
+	}
+}
+
+func TestMCPMiddleware_StreamingErrorDetectionEdgeCases(t *testing.T) {
+	tests := []struct {
+		name                string
+		streamingLine       string
+		expectErrorDetected bool
+		expectedErrorMsg    string
+	}{
+		{
+			name:                "Error field with empty string",
+			streamingLine:       `data: {"error": ""}`,
+			expectErrorDetected: false,
+		},
+		{
+			name:                "Error field with null value",
+			streamingLine:       `data: {"error": null}`,
+			expectErrorDetected: false,
+		},
+		{
+			name:                "Error field with number value",
+			streamingLine:       `data: {"error": 500}`,
+			expectErrorDetected: false,
+		},
+		{
+			name:                "Error field nested in object",
+			streamingLine:       `data: {"response": {"error": "Nested error message"}}`,
+			expectErrorDetected: false,
+		},
+		{
+			name:                "Multiple error fields",
+			streamingLine:       `data: {"error": "First error", "error_details": {"error": "Second error"}}`,
+			expectErrorDetected: true,
+			expectedErrorMsg:    "First error",
+		},
+		{
+			name:                "Error with special characters",
+			streamingLine:       `data: {"error": "Error with unicode: ñáéíóú and symbols: @#$%^&*()"}`,
+			expectErrorDetected: true,
+			expectedErrorMsg:    "Error with unicode: ñáéíóú and symbols: @#$%^&*()",
+		},
+		{
+			name:                "Error with escaped quotes",
+			streamingLine:       `data: {"error": "Error with \"quotes\" inside"}`,
+			expectErrorDetected: true,
+			expectedErrorMsg:    "Error with \"quotes\" inside",
+		},
+		{
+			name:                "Very long error message",
+			streamingLine:       `data: {"error": "` + strings.Repeat("Very long error message. ", 100) + `"}`,
+			expectErrorDetected: true,
+			expectedErrorMsg:    strings.Repeat("Very long error message. ", 100),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lineBytes := []byte(tt.streamingLine)
+			lineStr := string(lineBytes)
+
+			if !strings.HasPrefix(lineStr, "data:") || !strings.Contains(lineStr, "\"error\":") {
+				return
+			}
+
+			lineStr = strings.TrimSpace(strings.TrimPrefix(lineStr, "data:"))
+
+			var errMsg struct {
+				Error string `json:"error"`
+			}
+			if err := json.Unmarshal([]byte(lineStr), &errMsg); err != nil || errMsg.Error == "" {
+				return
+			}
+
+			errorDetected := true
+			actualErrorMsg := errMsg.Error
+
+			assert.Equal(t, tt.expectErrorDetected, errorDetected, "Error detection mismatch")
+			if tt.expectErrorDetected && errorDetected {
+				assert.Equal(t, tt.expectedErrorMsg, actualErrorMsg, "Error message mismatch")
+			}
+		})
+	}
+}
