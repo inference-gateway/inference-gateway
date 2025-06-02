@@ -531,10 +531,8 @@ func TestAgent_RunWithStream(t *testing.T) {
 
 				mockLogger.EXPECT().Debug("starting agent streaming", "model", "test-model", "max_iterations", 10).Times(1)
 				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 1, "max_iterations", 10).Times(1)
-				mockLogger.EXPECT().Debug("processing chunk", "chunk", gomock.Any(), "iteration", 1).AnyTimes()
 				mockLogger.EXPECT().Debug("stream completing due to stop finish reason", "finish_reason", "stop", "iteration", 1).Times(1)
 				mockLogger.EXPECT().Debug("stream completed for iteration", "iteration", 1, "has_tool_calls", false).Times(1)
-				mockLogger.EXPECT().Debug("final response body", "response_body_builder", gomock.Any()).Times(1)
 				mockLogger.EXPECT().Debug("no tool calls found, ending agent loop", "iteration", 1).Times(1)
 				mockLogger.EXPECT().Debug("sending agent completion signal").Times(1)
 				// Allow any additional debug logs
@@ -722,7 +720,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 
 				mockLogger.EXPECT().Debug("starting agent streaming", "model", "test-model", "max_iterations", 10).Times(1)
 				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 1, "max_iterations", 10).Times(1)
-				mockLogger.EXPECT().Debug("processing chunk", "chunk", gomock.Any(), "iteration", 1).AnyTimes()
 				mockLogger.EXPECT().Debug("found tool calls in delta", "count", gomock.Any(), "iteration", 1).AnyTimes()
 				mockLogger.EXPECT().Debug("valid tool call detected", "id", gomock.Any(), "function_name", gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug("stream completing due to tool calls finish reason", "finish_reason", "tool_calls", "iteration", 1).Times(1)
@@ -739,7 +736,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 				mockLogger.EXPECT().Debug("processing chunk", "chunk", gomock.Any(), "iteration", 2).AnyTimes()
 				mockLogger.EXPECT().Debug("stream completing due to stop finish reason", "finish_reason", "stop", "iteration", 2).Times(1)
 				mockLogger.EXPECT().Debug("stream completed for iteration", "iteration", 2, "has_tool_calls", false).Times(1)
-				mockLogger.EXPECT().Debug("final response body", "response_body_builder", gomock.Any()).Times(2)
 				mockLogger.EXPECT().Debug("no tool calls found, ending agent loop", "iteration", 2).Times(1)
 				mockLogger.EXPECT().Debug("sending agent completion signal").Times(1)
 

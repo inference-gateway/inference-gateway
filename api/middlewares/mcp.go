@@ -201,7 +201,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 						return false
 					}
 
-					m.logger.Debug("received line from agent", "line", string(line))
+					m.logger.Debug("processed chunk", "line", string(line))
 
 					if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
 						var errMsg struct {
