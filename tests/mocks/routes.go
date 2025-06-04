@@ -64,6 +64,18 @@ func (mr *MockRouterMockRecorder) HealthcheckHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HealthcheckHandler", reflect.TypeOf((*MockRouter)(nil).HealthcheckHandler), c)
 }
 
+// ListAgentsHandler mocks base method.
+func (m *MockRouter) ListAgentsHandler(c *gin.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ListAgentsHandler", c)
+}
+
+// ListAgentsHandler indicates an expected call of ListAgentsHandler.
+func (mr *MockRouterMockRecorder) ListAgentsHandler(c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAgentsHandler", reflect.TypeOf((*MockRouter)(nil).ListAgentsHandler), c)
+}
+
 // ListModelsHandler mocks base method.
 func (m *MockRouter) ListModelsHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
