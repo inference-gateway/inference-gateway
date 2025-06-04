@@ -6,6 +6,7 @@
 | ENVIRONMENT | `production` | The environment |
 | ENABLE_TELEMETRY | `false` | Enable telemetry |
 | ENABLE_AUTH | `false` | Enable authentication |
+| ALLOWED_MODELS | `""` | Comma-separated list of models to allow. If empty, all models will be available |
 
 
 ### Model Context Protocol (MCP)

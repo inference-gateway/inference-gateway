@@ -157,8 +157,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				middlewareStreamCh <- formattedData
 				responseBodyBuilder.Write(formattedData)
 
-				a.logger.Debug("processing chunk", "chunk", chunkData, "iteration", iteration+1)
-
 				var resp providers.CreateChatCompletionStreamResponse
 				if err := json.Unmarshal([]byte(chunkData), &resp); err != nil {
 					a.logger.Debug("failed to unmarshal streaming chunk", err, "chunk_data", chunkData, "iteration", iteration+1)
@@ -202,8 +200,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 		}
 
 		a.logger.Debug("stream completed for iteration", "iteration", iteration+1, "has_tool_calls", hasToolCalls)
-
-		a.logger.Debug("final response body", "response_body_builder", responseBodyBuilder.String())
 
 		var toolCalls []providers.ChatCompletionMessageToolCall
 		if hasToolCalls {

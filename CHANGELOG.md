@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.0](https://github.com/inference-gateway/inference-gateway/compare/v0.8.1...v0.9.0) (2025-06-02)
+
+### ✨ Features
+
+* Add ALLOWED_MODELS configuration for model filtering ([#108](https://github.com/inference-gateway/inference-gateway/issues/108)) ([9d3dcfe](https://github.com/inference-gateway/inference-gateway/commit/9d3dcfe50eb7c608895e5d4cf6b9344a46d515c7))
+
+### ♻️ Improvements
+
+* Remove redundant debug logs in RunWithStream and update log messages in MCPMiddleware ([#112](https://github.com/inference-gateway/inference-gateway/issues/112)) ([ca9659e](https://github.com/inference-gateway/inference-gateway/commit/ca9659ea5b5f858440dccc4efd648dbb595ffe53))
+
+### 📚 Documentation
+
+* **typo:** Correct NoOpLogger to NoopLogger in comments ([48c4065](https://github.com/inference-gateway/inference-gateway/commit/48c4065de7358fdf60e4ce0249513fef3bc49dfe))
+* Update model identifiers to include OpenAI namespace in examples ([ecf3d23](https://github.com/inference-gateway/inference-gateway/commit/ecf3d23e42b6ac97cbe3bb4b2f7b398ce1059a28))
+
 ## [0.8.1](https://github.com/inference-gateway/inference-gateway/compare/v0.8.0...v0.8.1) (2025-05-31)
 
 ### ♻️ Improvements

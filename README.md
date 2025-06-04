@@ -163,7 +163,7 @@ Enable MCP to automatically provide tools to LLMs without requiring clients to m
 ```bash
 # Enable MCP and connect to tool servers
 export MCP_ENABLE=true
-export MCP_SERVERS="http://filesystem-server:3001,http://search-server:3002"
+export MCP_SERVERS="http://filesystem-server:3001/mcp,http://search-server:3002/mcp"
 
 # LLMs will automatically discover and use available tools
 curl -X POST http://localhost:8080/v1/chat/completions \
