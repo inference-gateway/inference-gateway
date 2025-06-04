@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	a2a "weather-agent/a2a"
 )
 
 type WeatherData struct {
@@ -103,8 +103,8 @@ func handleJSONRPCRequest(c *gin.Context) {
 		return
 	}
 
-	if req.JSONRPC == "" {
-		req.JSONRPC = "2.0"
+	if req.Jsonrpc == "" {
+		req.Jsonrpc = "2.0"
 	}
 
 	if req.ID == nil {
@@ -136,7 +136,7 @@ func handleCurrent(c *gin.Context, req a2a.JSONRPCRequest) {
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		JSONRPC: "2.0",
+		Jsonrpc: "2.0",
 		Result: map[string]interface{}{
 			"weather": weather,
 			"agent":   "weather-agent",
@@ -170,7 +170,7 @@ func handleForecast(c *gin.Context, req a2a.JSONRPCRequest) {
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		JSONRPC: "2.0",
+		Jsonrpc: "2.0",
 		Result: map[string]interface{}{
 			"location": location,
 			"forecast": forecast,
@@ -193,7 +193,7 @@ func handleConditions(c *gin.Context, req a2a.JSONRPCRequest) {
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		JSONRPC: "2.0",
+		Jsonrpc: "2.0",
 		Result: map[string]interface{}{
 			"location":   location,
 			"conditions": conditions,
@@ -373,8 +373,8 @@ func generateFeelsLike() float64 {
 func sendError(c *gin.Context, id interface{}, code int, message string) {
 	response := a2a.JSONRPCErrorResponse{
 		ID:      id,
-		JSONRPC: "2.0",
-		Error: &a2a.JSONRPCError{
+		Jsonrpc: "2.0",
+		Error: a2a.JSONRPCError{
 			Code:    code,
 			Message: message,
 		},

@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	"helloworld-agent/a2a"
 )
 
 func main() {
@@ -66,8 +66,8 @@ func handleA2ARequest(c *gin.Context) {
 	}
 
 	// Set JSON-RPC version if not provided
-	if req.JSONRPC == "" {
-		req.JSONRPC = "2.0"
+	if req.Jsonrpc == "" {
+		req.Jsonrpc = "2.0"
 	}
 
 	// Generate ID if not provided
@@ -112,7 +112,7 @@ func handleGreet(c *gin.Context, req a2a.JSONRPCRequest) {
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		JSONRPC: "2.0",
+		Jsonrpc: "2.0",
 		Result: map[string]interface{}{
 			"greeting": greeting,
 			"language": language,
@@ -126,7 +126,7 @@ func handleGreet(c *gin.Context, req a2a.JSONRPCRequest) {
 func handleIntroduce(c *gin.Context, req a2a.JSONRPCRequest) {
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		JSONRPC: "2.0",
+		Jsonrpc: "2.0",
 		Result: map[string]interface{}{
 			"introduction": "I am the HelloWorld Agent. I can greet you in multiple languages including English, Spanish, French, German, and Japanese. Just call the 'greet' method with your name and preferred language!",
 			"capabilities": []string{
@@ -144,8 +144,8 @@ func handleIntroduce(c *gin.Context, req a2a.JSONRPCRequest) {
 func sendError(c *gin.Context, id interface{}, code int, message string) {
 	response := a2a.JSONRPCErrorResponse{
 		ID:      id,
-		JSONRPC: "2.0",
-		Error: &a2a.JSONRPCError{
+		Jsonrpc: "2.0",
+		Error: a2a.JSONRPCError{
 			Code:    code,
 			Message: message,
 		},
