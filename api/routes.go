@@ -664,6 +664,70 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// ListAgentsHandler implements an endpoint that returns available A2A agents
+// when A2A_EXPOSE environment variable is enabled.
+//
+// This handler supports the Agent-to-Agent (A2A) protocol by exposing a list of
+// connected agents along with their metadata such as name, description, and URL.
+//
+// The endpoint follows the OpenAI-compatible API format pattern used throughout
+// the gateway for consistency.
+//
+// Request:
+//   - Method: GET
+//   - Path: /a2a/agents
+//   - Authentication: Required (Bearer token)
+//   - Query Parameters: None
+//
+// Response format when A2A is exposed and agents are available:
+//
+//	{
+//	  "object": "list",
+//	  "data": [
+//	    {
+//	      "id": "https://agent1.example.com",
+//	      "name": "Calculator Agent",
+//	      "description": "An agent that can perform mathematical calculations",
+//	      "url": "https://agent1.example.com"
+//	    },
+//	    {
+//	      "id": "https://agent2.example.com",
+//	      "name": "Weather Agent",
+//	      "description": "An agent that provides weather information",
+//	      "url": "https://agent2.example.com"
+//	    }
+//	  ]
+//	}
+//
+// Response when A2A is not exposed:
+//
+//	{
+//	  "error": "A2A agents endpoint is not exposed. Set A2A_EXPOSE=true to enable."
+//	}
+//
+// Response when no agents are available:
+//
+//	{
+//	  "object": "list",
+//	  "data": []
+//	}
+//
+// Error Handling:
+//   - Returns 403 Forbidden if A2A_EXPOSE is not enabled
+//   - Returns empty list if A2A client is not initialized
+//   - Continues processing other agents if individual agent card retrieval fails
+//   - Logs errors for failed agent card retrievals but doesn't fail the entire request
+//
+// The handler gracefully handles various states:
+//   - A2A client is nil (returns empty list)
+//   - A2A client is not initialized (returns empty list)
+//   - Individual agent card retrieval failures (skips failed agents, continues with others)
+//   - No agents configured (returns empty list)
+//
+// Security:
+//   - Requires authentication via Bearer token
+//   - Only exposes agents when explicitly configured via A2A_EXPOSE=true
+//   - Does not expose internal errors to clients
 func (router *RouterImpl) ListAgentsHandler(c *gin.Context) {
 	if !router.cfg.A2A.Expose {
 		router.logger.Error("a2a agents endpoint access attempted but not exposed", nil)
