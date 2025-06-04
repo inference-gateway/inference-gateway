@@ -188,7 +188,7 @@ func (c *A2AClient) GetAgentCard(ctx context.Context, agentURL string) (*AgentCa
 		return nil, ErrAgentNotFound
 	}
 
-	cardURL, err := url.JoinPath(agentURL, "agent-card")
+	cardURL, err := url.JoinPath(agentURL, ".well-known/agent.json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to build agent card URL: %w", err)
 	}
