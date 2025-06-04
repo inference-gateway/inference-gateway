@@ -11,6 +11,7 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
+	"github.com/inference-gateway/inference-gateway/a2a"
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -159,12 +160,33 @@ func main() {
 		}
 	}
 
+	// Initialize A2A client if enabled
+	var a2aClient a2a.A2AClientInterface
+	if cfg.A2A.Enable {
+		if cfg.A2A.Agents != "" {
+			a2aClient = a2a.NewA2AClient(cfg, logger)
+
+			initCtx, cancel := context.WithTimeout(context.Background(), cfg.A2A.ClientTimeout)
+			defer cancel()
+
+			logger.Info("starting a2a client initialization", "timeout", cfg.A2A.ClientTimeout.String())
+			initErr := a2aClient.InitializeAll(initCtx)
+			if initErr != nil {
+				logger.Error("failed to initialize a2a client", initErr)
+				return
+			}
+			logger.Info("a2a client initialized successfully")
+		} else {
+			logger.Info("a2a is enabled but no agents configured")
+		}
+	}
+
 	// Set GIN mode based on environment
 	if cfg.Environment != "development" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient)
+	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient, a2aClient)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.EnableTelemetry {
@@ -183,6 +205,7 @@ func main() {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/models", api.ListModelsHandler)
+		v1.GET("/a2a/agents", api.ListAgentsHandler)
 		v1.GET("/mcp/tools", api.ListToolsHandler)
 		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 	}

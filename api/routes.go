@@ -16,10 +16,12 @@ import (
 
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
+	"github.com/inference-gateway/inference-gateway/a2a"
+	"github.com/inference-gateway/inference-gateway/mcp"
+
 	gin "github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/mcp"
 	providers "github.com/inference-gateway/inference-gateway/providers"
 )
 
@@ -28,6 +30,7 @@ type Router interface {
 	ListModelsHandler(c *gin.Context)
 	ChatCompletionsHandler(c *gin.Context)
 	ListToolsHandler(c *gin.Context)
+	ListAgentsHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
@@ -39,6 +42,7 @@ type RouterImpl struct {
 	registry  providers.ProviderRegistry
 	client    providers.Client
 	mcpClient mcp.MCPClientInterface
+	a2aClient a2a.A2AClientInterface
 }
 
 type ErrorResponse struct {
@@ -49,13 +53,14 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client, mcpClient mcp.MCPClientInterface) Router {
+func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client, mcpClient mcp.MCPClientInterface, a2aClient a2a.A2AClientInterface) Router {
 	return &RouterImpl{
 		cfg,
 		logger,
 		registry,
 		client,
 		mcpClient,
+		a2aClient,
 	}
 }
 
@@ -641,6 +646,54 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	response := providers.ListToolsResponse{
 		Object: "list",
 		Data:   allTools,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+func (router *RouterImpl) ListAgentsHandler(c *gin.Context) {
+	if !router.cfg.A2A.Expose {
+		router.logger.Error("a2a agents endpoint access attempted but not exposed", nil)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: "A2A agents endpoint is not exposed. Set A2A_EXPOSE=true to enable."})
+		return
+	}
+
+	var allAgents []providers.A2AItem
+
+	switch {
+	case router.a2aClient == nil:
+		router.logger.Debug("a2a client is nil, returning empty agents list")
+		allAgents = make([]providers.A2AItem, 0)
+	case !router.a2aClient.IsInitialized():
+		router.logger.Info("a2a client not initialized, no agents available")
+		allAgents = make([]providers.A2AItem, 0)
+	default:
+		agentURLs := router.a2aClient.GetAgents()
+
+		for _, agentURL := range agentURLs {
+			agentCard, err := router.a2aClient.GetAgentCard(c.Request.Context(), agentURL)
+			if err != nil {
+				router.logger.Error("failed to get agent card from a2a agent", err, "agent", agentURL)
+				continue
+			}
+
+			a2aAgent := providers.A2AItem{
+				ID:          agentURL,
+				Name:        agentCard.Name,
+				Description: &agentCard.Description,
+				Url:         &agentURL,
+			}
+			allAgents = append(allAgents, a2aAgent)
+		}
+
+		if allAgents == nil {
+			allAgents = make([]providers.A2AItem, 0)
+		}
+	}
+
+	response := providers.ListAgentsResponse{
+		Object: "list",
+		Data:   allAgents,
 	}
 
 	c.JSON(http.StatusOK, response)
