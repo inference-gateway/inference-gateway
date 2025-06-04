@@ -39,9 +39,9 @@ docker-compose up
 
 The A2A agents will be available at the following endpoints:
 
-- **Hello World Agent**: `http://localhost:3001`
-- **Calculator Agent**: `http://localhost:3002`
-- **Weather Agent**: `http://localhost:3003`
+- **Hello World Agent**: `http://localhost:8081`
+- **Calculator Agent**: `http://localhost:8082`
+- **Weather Agent**: `http://localhost:8083`
 
 ## Components
 
@@ -146,7 +146,7 @@ Response will show available agents and their capabilities:
 {
   "agents": [
     {
-      "url": "http://helloworld-agent:3001",
+      "url": "http://helloworld-agent:8081",
       "capabilities": {
         "skills": [
           {
@@ -158,7 +158,7 @@ Response will show available agents and their capabilities:
       }
     },
     {
-      "url": "http://calculator-agent:3002",
+      "url": "http://calculator-agent:8082",
       "capabilities": {
         "skills": [
           {
@@ -199,13 +199,13 @@ The A2A middleware handles all the protocol-specific communication, including:
 
 ### Hello World Agent
 
-- **Endpoint**: `http://helloworld-agent:3001`
+- **Endpoint**: `http://helloworld-agent:8081`
 - **Skills**:
   - `hello_world`: Returns a simple greeting message
 
 ### Calculator Agent
 
-- **Endpoint**: `http://calculator-agent:3002`
+- **Endpoint**: `http://calculator-agent:8082`
 - **Skills**:
   - `add`: Add two numbers together
   - `subtract`: Subtract one number from another
@@ -214,7 +214,7 @@ The A2A middleware handles all the protocol-specific communication, including:
 
 ### Weather Agent
 
-- **Endpoint**: `http://weather-agent:3003`
+- **Endpoint**: `http://weather-agent:8083`
 - **Skills**:
   - `get_weather`: Get current weather information for a location
   - `get_forecast`: Get weather forecast for a location
@@ -228,7 +228,7 @@ The A2A middleware handles all the protocol-specific communication, including:
 1. **Add your agent URL** to the `A2A_AGENTS` environment variable:
 
    ```bash
-   A2A_AGENTS=http://helloworld-agent:3001,http://calculator-agent:3002,http://your-new-agent:3004
+   A2A_AGENTS=http://helloworld-agent:8081,http://calculator-agent:8082,http://your-new-agent:3004
    ```
 
 2. **Include your agent service** in the docker-compose.yml file (if running in Docker)
@@ -255,9 +255,9 @@ Environment variables you can configure:
 
 This example includes three pre-configured agents:
 
-- **Hello World Agent**: `http://helloworld-agent:3001` - Basic greeting functionality
-- **Calculator Agent**: `http://calculator-agent:3002` - Mathematical operations
-- **Weather Agent**: `http://weather-agent:3003` - Weather information services
+- **Hello World Agent**: `http://helloworld-agent:8081` - Basic greeting functionality
+- **Calculator Agent**: `http://calculator-agent:8082` - Mathematical operations
+- **Weather Agent**: `http://weather-agent:8083` - Weather information services
 
 ## Learn More
 
