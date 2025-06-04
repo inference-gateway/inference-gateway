@@ -1,0 +1,102 @@
+services:
+  inference-gateway:
+    image: ghcr.io/inference-gateway/inference-gateway:latest
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # General settings
+      - ENVIRONMENT=production
+      - ENABLE_TELEMETRY=false
+      - ENABLE_AUTH=false
+
+      # A2A Configuration
+      - A2A_ENABLE=true
+      - A2A_EXPOSE=true
+      - A2A_AGENTS=http://helloworld-agent:8081,http://calculator-agent:8082,http://weather-agent:8083
+      - A2A_CLIENT_TIMEOUT=30s
+
+      # Provider settings
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+      # Server settings
+      - SERVER_HOST=0.0.0.0
+      - SERVER_PORT=8080
+    depends_on:
+      - helloworld-agent
+      - calculator-agent
+      - weather-agent
+    networks:
+      - a2a-network
+
+  helloworld-agent:
+    build:
+      context: ./helloworld-agent
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+    networks:
+      - a2a-network
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8081/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  calculator-agent:
+    build:
+      context: ./calculator-agent
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      PORT: 8082
+    networks:
+      - a2a-network
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8082/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  weather-agent:
+    build:
+      context: ./weather-agent
+      dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: 8083
+      WEATHER_API_KEY: ${WEATHER_API_KEY:-demo_key}
+    networks:
+      - a2a-network
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -f
+        - http://localhost:8083/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+networks:
+  a2a-network:
+    driver: bridge
