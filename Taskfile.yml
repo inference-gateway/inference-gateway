@@ -50,7 +50,7 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/a2a/.env.example
       - go run cmd/generate/main.go -type MCPTypes -output mcp/generated_types.go
       - go run cmd/generate/main.go -type A2ATypes -output a2a/generated_types.go
-      - go generate ./providers/... ./api/... ./otel/... ./mcp/... ./logger/... ./agent/... ./a2a/...
+      - go generate ./providers/... ./api/... ./otel/... ./logger/...  ./mcp/... ./a2a/...
 
   tidy:
     desc: "Tidy the gateway"

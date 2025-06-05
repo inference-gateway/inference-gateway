@@ -17,6 +17,7 @@ import (
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 func init() {
@@ -64,7 +65,7 @@ func TestNewAgent(t *testing.T) {
 func TestAgent_Run(t *testing.T) {
 	tests := []struct {
 		name           string
-		setupMocks     func(*mocks.MockLogger, *mcpmocks.MockMCPClientInterface, *mocks.MockIProvider)
+		setupMocks     func(*mocks.MockLogger, *mcpmocks.MockMCPClientInterface, *providersmocks.MockIProvider)
 		request        *providers.CreateChatCompletionRequest
 		response       *providers.CreateChatCompletionResponse
 		expectError    bool
@@ -72,7 +73,7 @@ func TestAgent_Run(t *testing.T) {
 	}{
 		{
 			name: "no tool calls",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
@@ -102,7 +103,7 @@ func TestAgent_Run(t *testing.T) {
 		},
 		{
 			name: "with tool calls",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
@@ -178,7 +179,7 @@ func TestAgent_Run(t *testing.T) {
 		},
 		{
 			name: "max iterations reached",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
@@ -259,7 +260,7 @@ func TestAgent_Run(t *testing.T) {
 
 			mockLogger := mocks.NewMockLogger(ctrl)
 			mockMCPClient := mcpmocks.NewMockMCPClientInterface(ctrl)
-			mockProvider := mocks.NewMockIProvider(ctrl)
+			mockProvider := providersmocks.NewMockIProvider(ctrl)
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
@@ -284,7 +285,7 @@ func TestAgent_Run(t *testing.T) {
 func TestAgent_ExecuteTools(t *testing.T) {
 	tests := []struct {
 		name            string
-		setupMocks      func(*mocks.MockLogger, *mcpmocks.MockMCPClientInterface, *mocks.MockIProvider)
+		setupMocks      func(*mocks.MockLogger, *mcpmocks.MockMCPClientInterface, *providersmocks.MockIProvider)
 		toolCalls       []providers.ChatCompletionMessageToolCall
 		expectError     bool
 		expectedResults int
@@ -292,7 +293,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 	}{
 		{
 			name: "successful tool execution",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
@@ -330,7 +331,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		},
 		{
 			name: "tool execution with MCP server",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=server_tool args=map[param:value] server=http://custom-server:8080").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
@@ -368,7 +369,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		},
 		{
 			name: "invalid JSON arguments",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockLogger.EXPECT().Error("failed to parse tool arguments", gomock.Any(), "args", "invalid json", "tool_name", "bad_tool").Times(1)
 			},
 			toolCalls: []providers.ChatCompletionMessageToolCall{
@@ -387,7 +388,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		},
 		{
 			name: "MCP execution error",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_error name=failing_tool args=map[param:value] server=").Times(1)
 				mockLogger.EXPECT().Error("failed to execute tool call", gomock.Any(), "tool", "failing_tool", "server", "").Times(1)
 
@@ -409,7 +410,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		},
 		{
 			name: "multiple tool execution",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi1 name=first_tool args=map[param:value1] server=").Times(1)
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi2 name=second_tool args=map[action:execute] server=").Times(1)
 
@@ -482,7 +483,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 
 			mockLogger := mocks.NewMockLogger(ctrl)
 			mockMCPClient := mcpmocks.NewMockMCPClientInterface(ctrl)
-			mockProvider := mocks.NewMockIProvider(ctrl)
+			mockProvider := providersmocks.NewMockIProvider(ctrl)
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
@@ -514,7 +515,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 func TestAgent_RunWithStream(t *testing.T) {
 	tests := []struct {
 		name              string
-		setupMocks        func(*mocks.MockLogger, *mcpmocks.MockMCPClientInterface, *mocks.MockIProvider)
+		setupMocks        func(*mocks.MockLogger, *mcpmocks.MockMCPClientInterface, *providersmocks.MockIProvider)
 		request           *providers.CreateChatCompletionRequest
 		expectError       bool
 		expectedResponses []string
@@ -524,7 +525,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 	}{
 		{
 			name: "no tool calls streaming",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
@@ -602,7 +603,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 		},
 		{
 			name: "provider error",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
@@ -631,7 +632,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 		},
 		{
 			name: "context cancellation",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
@@ -667,7 +668,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 		},
 		{
 			name: "executing multiple mcp tools",
-			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
@@ -871,7 +872,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 
 			mockLogger := mocks.NewMockLogger(ctrl)
 			mockMCPClient := mcpmocks.NewMockMCPClientInterface(ctrl)
-			mockProvider := mocks.NewMockIProvider(ctrl)
+			mockProvider := providersmocks.NewMockIProvider(ctrl)
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 

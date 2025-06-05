@@ -64,7 +64,7 @@ func (p *ProviderImpl) handleHTTPError(response *http.Response, operation string
 	return err
 }
 
-//go:generate mockgen -source=management.go -destination=../tests/mocks/provider.go -package=mocks
+//go:generate mockgen -source=management.go -destination=../tests/mocks/providers/management.go -package=providersmocks
 type IProvider interface {
 	// Getters
 	GetID() *Provider

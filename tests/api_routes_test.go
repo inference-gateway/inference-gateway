@@ -14,8 +14,8 @@ import (
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
-	"github.com/inference-gateway/inference-gateway/tests/mocks"
 	a2amocks "github.com/inference-gateway/inference-gateway/tests/mocks/a2a"
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -131,7 +131,7 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockClient := mocks.NewMockClient(ctrl)
+			mockClient := providersmocks.NewMockClient(ctrl)
 
 			mockClient.EXPECT().
 				Do(gomock.Any()).
@@ -231,7 +231,7 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 	tests := []struct {
 		name           string
 		providerParam  string
-		mockSetup      func(*mocks.MockClient)
+		mockSetup      func(*providersmocks.MockClient)
 		expectedStatus int
 		expectedError  string
 		description    string
@@ -239,7 +239,7 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 		{
 			name:           "Unknown provider",
 			providerParam:  "unknown",
-			mockSetup:      func(mockClient *mocks.MockClient) {},
+			mockSetup:      func(mockClient *providersmocks.MockClient) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Provider not found",
 			description:    "Should return error for unknown provider",
@@ -250,7 +250,7 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockClient := mocks.NewMockClient(ctrl)
+			mockClient := providersmocks.NewMockClient(ctrl)
 			tt.mockSetup(mockClient)
 
 			log, err := logger.NewLogger("test")
@@ -370,7 +370,7 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockClient := mocks.NewMockClient(ctrl)
+			mockClient := providersmocks.NewMockClient(ctrl)
 
 			mockClient.EXPECT().
 				Do(gomock.Any()).
@@ -588,8 +588,8 @@ func TestListAgentsHandler(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			mockRegistry := mocks.NewMockProviderRegistry(ctrl)
-			mockClient := mocks.NewMockClient(ctrl)
+			mockRegistry := providersmocks.NewMockProviderRegistry(ctrl)
+			mockClient := providersmocks.NewMockClient(ctrl)
 			var mockA2AClient *a2amocks.MockA2AClientInterface
 
 			log, err := logger.NewLogger("test")
