@@ -66,6 +66,13 @@ func (a *agentImpl) SetModel(model *string) {
 }
 
 func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse) error {
+	if a.provider == nil {
+		return errors.New("provider is not set for agent")
+	}
+	if a.model == nil {
+		return errors.New("model is not set for agent")
+	}
+
 	currentRequest := *request
 	currentResponse := *response
 	iteration := 0
@@ -115,6 +122,13 @@ type ErrorResponse struct {
 
 // RunWithStream executes the agent with the provided streaming response channel
 func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *providers.CreateChatCompletionRequest) error {
+	if a.provider == nil {
+		return errors.New("provider is not set for agent")
+	}
+	if a.model == nil {
+		return errors.New("model is not set for agent")
+	}
+
 	currentRequest := *body
 	maxIterations := 10
 
@@ -131,7 +145,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		streamCh, err := a.provider.StreamChatCompletions(ctx, currentRequest)
 		if err != nil {
-			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", a.model)
+			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", *a.model)
 			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to start streaming: %s\"}\n\n", err.Error()))
 			middlewareStreamCh <- errorData
 			return err

@@ -62,11 +62,25 @@ func (a *agentImpl) SetModel(model *string) {
 }
 
 func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *providers.CreateChatCompletionRequest) error {
+	if a.provider == nil {
+		return errors.New("provider is not set for agent")
+	}
+	if a.model == nil {
+		return errors.New("model is not set for agent")
+	}
+
 	// TODO: Implement the agent run with stream logic
 	return nil
 }
 
 func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse) error {
+	if a.provider == nil {
+		return errors.New("provider is not set for agent")
+	}
+	if a.model == nil {
+		return errors.New("model is not set for agent")
+	}
+
 	// TODO: Implement the agent run logic
 	return nil
 }
