@@ -63,7 +63,6 @@ func TestNewA2AMiddleware(t *testing.T) {
 			ginHandler := middleware.Middleware()
 			assert.NotNil(t, ginHandler)
 
-			// Test that the handler behaves correctly
 			gin.SetMode(gin.TestMode)
 			router := gin.New()
 			router.Use(ginHandler)
@@ -78,7 +77,6 @@ func TestNewA2AMiddleware(t *testing.T) {
 			router.ServeHTTP(w, req)
 
 			if tt.expectNoop {
-				// Noop middleware should pass through
 				assert.Equal(t, http.StatusOK, w.Code)
 			}
 		})
@@ -140,7 +138,6 @@ func TestA2AMiddleware_RequestWithA2AMiddlewareEnabled(t *testing.T) {
 			mockInferenceClient := providersmocks.NewMockClient(ctrl)
 			mockProvider := providersmocks.NewMockIProvider(ctrl)
 
-			// Setup common mock expectations
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
@@ -418,7 +415,6 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 			mockInferenceClient := providersmocks.NewMockClient(ctrl)
 			mockProvider := providersmocks.NewMockIProvider(ctrl)
 
-			// Setup mock expectations
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -437,10 +433,8 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				mockA2AClient.EXPECT().GetAgentSkills(agentURL).Return(skills, nil)
 			}
 
-			// Mock providers.DetermineProviderAndModelName and BuildProvider calls
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 
-			// Setup agent card expectations for query tool calls
 			for _, toolCall := range tt.toolCalls {
 				if toolCall.Function.Name == "query_a2a_agent_card" {
 					mockA2AClient.EXPECT().GetAgentCard(gomock.Any(), gomock.Any()).Return(&a2a.AgentCard{
@@ -459,7 +453,6 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				}
 			}
 
-			// Setup task submission expectations
 			if tt.expectTaskSubmission {
 				if tt.sendMessageError != nil {
 					mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, tt.sendMessageError)
@@ -513,7 +506,6 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 
 			router.ServeHTTP(w, req)
 
-			// Check that we get a response
 			assert.Equal(t, http.StatusOK, w.Code)
 
 			var response map[string]interface{}
@@ -565,7 +557,6 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			mockInferenceClient := providersmocks.NewMockClient(ctrl)
 			mockProvider := providersmocks.NewMockIProvider(ctrl)
 
-			// Setup mock expectations
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -580,10 +571,8 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 				{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
 			}, nil)
 
-			// Mock providers.DetermineProviderAndModelName and BuildProvider calls
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 
-			// Setup task submission response
 			sendMessageResp := &a2a.SendMessageSuccessResponse{
 				Result: a2a.Task{
 					ID: tt.taskID,
@@ -591,7 +580,6 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			}
 			mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageResp, nil)
 
-			// Setup task polling if needed
 			if tt.pollSuccessful && !tt.isStreaming {
 				getTaskResp := &a2a.GetTaskSuccessResponse{
 					Result: a2a.Task{
@@ -690,7 +678,7 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 		{
 			name:           "Task execution fails with agent error",
 			taskFailure:    "agent_connection_error",
-			expectedStatus: http.StatusOK, // Middleware handles errors gracefully
+			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "Task polling timeout",
@@ -711,7 +699,6 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 			mockInferenceClient := providersmocks.NewMockClient(ctrl)
 			mockProvider := providersmocks.NewMockIProvider(ctrl)
 
-			// Setup mock expectations
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -727,10 +714,8 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 				{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
 			}, nil)
 
-			// Mock providers.DetermineProviderAndModelName and BuildProvider calls
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 
-			// Setup task submission failure
 			var taskError error
 			switch tt.taskFailure {
 			case "agent_connection_error":
@@ -810,7 +795,7 @@ func TestA2AMiddleware_InvalidRequests(t *testing.T) {
 	}{
 		{
 			name:           "Invalid JSON request body",
-			requestBody:    `{"model": "openai/gpt-4", "messages": [}`, // Invalid JSON
+			requestBody:    `{"model": "openai/gpt-4", "messages": [}`,
 			expectedStatus: http.StatusBadRequest,
 			expectedError:  "Invalid request body",
 		},
