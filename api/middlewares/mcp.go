@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/inference-gateway/inference-gateway/agent"
 	config "github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/mcp"
@@ -22,15 +21,25 @@ const (
 
 	// MCPInternalHeader marks internal MCP requests to prevent middleware loops
 	MCPInternalHeader = "X-MCP-Internal"
+
+	// MaxMCPAgentIterations limits the number of agent loop iterations
+	MaxMCPAgentIterations = 10
 )
 
-// contextKey is a custom type for context keys to avoid collisions
+// mcpContextKey is a custom type for context keys to avoid collisions
 type mcpContextKey string
 
 const (
 	// mcpInternalKey is the context key for marking internal MCP requests
 	mcpInternalKey mcpContextKey = MCPInternalHeader
 )
+
+// MCPProviderModelResult contains the result of provider and model determination
+type MCPProviderModelResult struct {
+	Provider      providers.IProvider
+	ProviderModel string
+	ProviderID    *providers.Provider
+}
 
 // customResponseWriter captures the response body but doesn't write it
 // to the client until we're ready, allowing us to intercept tool calls
@@ -74,17 +83,18 @@ type MCPMiddlewareImpl struct {
 	registry               providers.ProviderRegistry
 	inferenceGatewayClient providers.Client
 	mcpClient              mcp.MCPClientInterface
+	mcpAgent               mcp.Agent
 	logger                 logger.Logger
-	cfg                    config.Config
+	config                 config.Config
 }
 
 // NoopMCPMiddlewareImpl is a no-op implementation of MCPMiddleware
 type NoopMCPMiddlewareImpl struct{}
 
 // NewMCPMiddleware creates a new MCP middleware instance
-func NewMCPMiddleware(registry providers.ProviderRegistry, inferenceGatewayClient providers.Client, mcpClient mcp.MCPClientInterface, logger logger.Logger, cfg config.Config) (MCPMiddleware, error) {
+func NewMCPMiddleware(registry providers.ProviderRegistry, inferenceGatewayClient providers.Client, mcpClient mcp.MCPClientInterface, mcpAgent mcp.Agent, log logger.Logger, cfg config.Config) (MCPMiddleware, error) {
 	if mcpClient == nil {
-		logger.Info("mcp client is nil, using no-op middleware")
+		log.Info("mcp client is nil, using no-op middleware")
 		return &NoopMCPMiddlewareImpl{}, nil
 	}
 
@@ -92,8 +102,9 @@ func NewMCPMiddleware(registry providers.ProviderRegistry, inferenceGatewayClien
 		registry:               registry,
 		inferenceGatewayClient: inferenceGatewayClient,
 		mcpClient:              mcpClient,
-		logger:                 logger,
-		cfg:                    cfg,
+		mcpAgent:               mcpAgent,
+		logger:                 log,
+		config:                 cfg,
 	}, nil
 }
 
@@ -147,94 +158,40 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		result, err := m.getProviderAndModel(c, originalRequestBody.Model)
 		if err != nil {
-			if result.ProviderID == nil {
+			if result == nil || result.ProviderID == nil {
 				m.logger.Error("failed to determine provider", err, "model", originalRequestBody.Model)
 				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Unsupported model: %s", originalRequestBody.Model)})
-			} else {
+				c.Abort()
+				return
+			}
+
+			if result.Provider == nil {
 				m.logger.Error("failed to get provider", err, "provider", *result.ProviderID)
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Provider not available"})
+				c.Abort()
+				return
 			}
-			c.Abort()
-			return
 		}
-
-		m.logger.Debug("using provider", "provider", result.ProviderID, "model", result.ProviderModel)
-
-		agent := agent.NewAgent(m.logger, m.mcpClient, result.Provider, result.ProviderModel)
 
 		// Streaming response handling
 		if originalRequestBody.Stream != nil && *originalRequestBody.Stream {
-			m.logger.Debug("starting agent streaming mode")
+			m.logger.Debug("starting mcp streaming mode")
 			c.Header("Content-Type", "text/event-stream")
 			c.Header("Cache-Control", "no-cache")
 			c.Header("Connection", "keep-alive")
 			c.Header("Transfer-Encoding", "chunked")
 
-			processedChunk := make(chan []byte, 100)
-			errCh := make(chan error, 1)
-
-			// Start agent streaming in a goroutine
-			go func() {
-				defer close(processedChunk)
-				err := agent.RunWithStream(c.Request.Context(), processedChunk, c, &originalRequestBody)
-				if err != nil {
-					m.logger.Error("agent streaming failed", err)
-					errCh <- err
-				}
-			}()
-
-			// Stream response to client
-			c.Stream(func(w io.Writer) bool {
-				select {
-				case line, ok := <-processedChunk:
-					if !ok {
-						m.logger.Debug("agent stream channel closed unexpectedly")
-						return false
-					}
-
-					if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
-						m.logger.Debug("agent completed all iterations, sending [DONE]")
-						_, err := w.Write(line)
-						if err != nil {
-							m.logger.Error("failed to write [DONE] to client", err)
-						}
-						return false
-					}
-
-					m.logger.Debug("processed chunk", "line", string(line))
-
-					if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
-						var errMsg struct {
-							Error string `json:"error"`
-						}
-						if err := json.Unmarshal(line[6:], &errMsg); err == nil {
-							m.logger.Error("upstream provider error", fmt.Errorf(errMsg.Error))
-							c.Writer.WriteHeader(http.StatusServiceUnavailable)
-						}
-					}
-
-					_, err := w.Write(line)
-					if err != nil {
-						m.logger.Error("failed to write line to client", err)
-						return false
-					}
-					return true
-				case err := <-errCh:
-					m.logger.Error("agent streaming error", err)
-					c.Writer.WriteHeader(http.StatusServiceUnavailable)
-					if _, writeErr := fmt.Fprintf(w, "data: {\"error\": \"%s\"}\n\n", err.Error()); writeErr != nil {
-						m.logger.Error("failed to write error to stream", writeErr)
-					}
-					return false
-				case <-c.Request.Context().Done():
-					m.logger.Debug("request context done, stopping stream")
-					return false
-				}
-			})
+			if err := m.handleMCPStreamingRequest(c, &originalRequestBody, result); err != nil {
+				m.logger.Error("failed to handle mcp streaming", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "MCP streaming failed"})
+				c.Abort()
+				return
+			}
 			c.Abort()
 			return
 		}
 
+		// Non-streaming response handling
 		customWriter := &customResponseWriter{
 			ResponseWriter: c.Writer,
 			body:           &bytes.Buffer{},
@@ -243,66 +200,36 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 		c.Writer = customWriter
 
-		// For non-streaming requests, we need to handle the response after the provider call
-		// and iterate through the agent's tool calls if any until we get a final response
 		c.Next()
 
-		// non-streaming response handling
-		m.logger.Debug("non-streaming response, waiting for provider response")
-
 		var response providers.CreateChatCompletionResponse
-		err = json.Unmarshal(customWriter.body.Bytes(), &response)
-		if err != nil {
+		if err := json.Unmarshal(customWriter.body.Bytes(), &response); err != nil {
 			m.logger.Error("failed to parse response body", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse response"})
-			return
-		}
-		m.logger.Debug("parsed response from provider", "response", response)
-
-		// Run the agent to process tool calls and get the final response
-		err = agent.Run(c.Request.Context(), &originalRequestBody, &response)
-		if err != nil {
-			m.logger.Error("agent failed", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Agent processing failed"})
+			m.writeErrorResponse(c, customWriter, "Failed to parse response", http.StatusInternalServerError)
 			return
 		}
 
-		m.logger.Debug("received final response from agent", "response", response)
-		responseBytes, err := json.Marshal(response)
-		if err != nil {
-			m.logger.Error("failed to marshal final response", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal response"})
-			return
+		if len(response.Choices) > 0 && response.Choices[0].Message.ToolCalls != nil {
+			if err := m.handleMCPToolCalls(c, &response, &originalRequestBody, result); err != nil {
+				m.logger.Error("failed to handle mcp tool calls", err)
+				m.writeErrorResponse(c, customWriter, "Failed to execute MCP tools", http.StatusInternalServerError)
+				return
+			}
 		}
 
-		customWriter.writeToClient = true
-		customWriter.ResponseWriter.Header().Set("Content-Type", "application/json")
-		customWriter.ResponseWriter.WriteHeader(http.StatusOK)
-		_, err = customWriter.ResponseWriter.Write(responseBytes)
-		if err != nil {
-			m.logger.Error("failed to write response", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to write response"})
-			return
-		}
+		m.writeResponse(c, customWriter, response)
 	}
 }
 
-// ProviderModelResult contains the result of provider and model determination
-type ProviderModelResult struct {
-	Provider      providers.IProvider
-	ProviderModel string
-	ProviderID    *providers.Provider
-}
-
 // getProviderAndModel determines the provider and model from the request model string or query parameter
-func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*ProviderModelResult, error) {
+func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*MCPProviderModelResult, error) {
 	if providerID := providers.Provider(c.Query("provider")); providerID != "" {
 		provider, err := m.registry.BuildProvider(providerID, m.inferenceGatewayClient)
 		if err != nil {
-			return &ProviderModelResult{ProviderID: &providerID}, fmt.Errorf("failed to build provider: %w", err)
+			return &MCPProviderModelResult{ProviderID: &providerID}, fmt.Errorf("failed to build provider: %w", err)
 		}
 
-		return &ProviderModelResult{
+		return &MCPProviderModelResult{
 			Provider:      provider,
 			ProviderModel: model,
 			ProviderID:    &providerID,
@@ -311,17 +238,121 @@ func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*
 
 	providerPtr, providerModel := providers.DetermineProviderAndModelName(model)
 	if providerPtr == nil {
-		return &ProviderModelResult{ProviderID: nil}, fmt.Errorf("unable to determine provider for model: %s. Please specify a provider using the ?provider= query parameter or use the provider/model format", model)
+		return &MCPProviderModelResult{ProviderID: nil}, fmt.Errorf("unable to determine provider for model: %s. Please specify a provider using the ?provider= query parameter or use the provider/model format", model)
 	}
 
 	provider, err := m.registry.BuildProvider(*providerPtr, m.inferenceGatewayClient)
 	if err != nil {
-		return &ProviderModelResult{ProviderID: providerPtr}, fmt.Errorf("failed to build provider: %w", err)
+		return &MCPProviderModelResult{ProviderID: providerPtr}, fmt.Errorf("failed to build provider: %w", err)
 	}
 
-	return &ProviderModelResult{
+	return &MCPProviderModelResult{
 		Provider:      provider,
 		ProviderModel: providerModel,
 		ProviderID:    providerPtr,
 	}, nil
+}
+
+// handleMCPStreamingRequest handles streaming requests with MCP agent
+func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *providers.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
+	m.mcpAgent.SetProvider(result.Provider)
+	m.mcpAgent.SetModel(&result.ProviderModel)
+
+	processedChunk := make(chan []byte, 100)
+	errCh := make(chan error, 1)
+
+	go func() {
+		defer close(processedChunk)
+		err := m.mcpAgent.RunWithStream(c.Request.Context(), processedChunk, c, request)
+		if err != nil {
+			m.logger.Error("mcp agent streaming failed", err)
+			errCh <- err
+		}
+	}()
+
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case line, ok := <-processedChunk:
+			if !ok {
+				m.logger.Debug("mcp agent stream channel closed unexpectedly")
+				return false
+			}
+
+			if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
+				m.logger.Debug("mcp agent completed all iterations, sending [DONE]")
+				_, err := w.Write(line)
+				if err != nil {
+					m.logger.Error("failed to write [DONE] to client", err)
+				}
+				return false
+			}
+
+			m.logger.Debug("processed chunk", "line", string(line))
+
+			if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
+				var errMsg struct {
+					Error string `json:"error"`
+				}
+				if err := json.Unmarshal(line[6:], &errMsg); err == nil {
+					m.logger.Error("upstream provider error", fmt.Errorf(errMsg.Error))
+					c.Writer.WriteHeader(http.StatusServiceUnavailable)
+				}
+			}
+
+			_, err := w.Write(line)
+			if err != nil {
+				m.logger.Error("failed to write line to client", err)
+				return false
+			}
+			return true
+		case err := <-errCh:
+			m.logger.Error("mcp agent streaming error", err)
+			c.Writer.WriteHeader(http.StatusServiceUnavailable)
+			if _, writeErr := fmt.Fprintf(w, "data: {\"error\": \"%s\"}\n\n", err.Error()); writeErr != nil {
+				m.logger.Error("failed to write error to stream", writeErr)
+			}
+			return false
+		case <-c.Request.Context().Done():
+			m.logger.Debug("request context done, stopping stream")
+			return false
+		}
+	})
+	return nil
+}
+
+// handleMCPToolCalls executes MCP tool calls using the injected agent
+func (m *MCPMiddlewareImpl) handleMCPToolCalls(c *gin.Context, response *providers.CreateChatCompletionResponse, originalRequest *providers.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
+	m.mcpAgent.SetProvider(result.Provider)
+	m.mcpAgent.SetModel(&result.ProviderModel)
+
+	if err := m.mcpAgent.Run(c.Request.Context(), originalRequest, response); err != nil {
+		return fmt.Errorf("mcp agent processing failed: %w", err)
+	}
+
+	m.logger.Debug("mcp agent processing completed successfully")
+	return nil
+}
+
+// writeErrorResponse writes an error response to the client
+func (m *MCPMiddlewareImpl) writeErrorResponse(c *gin.Context, customWriter *customResponseWriter, message string, statusCode int) {
+	errorResponse := ErrorResponse{Error: message}
+	customWriter.statusCode = statusCode
+	m.writeResponse(c, customWriter, errorResponse)
+}
+
+// writeResponse writes the response to the client
+func (m *MCPMiddlewareImpl) writeResponse(c *gin.Context, customWriter *customResponseWriter, response interface{}) {
+	customWriter.writeToClient = true
+	customWriter.WriteHeader(customWriter.statusCode)
+
+	responseBytes, err := json.Marshal(response)
+	if err != nil {
+		m.logger.Error("failed to marshal final response", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	if _, err := customWriter.Write(responseBytes); err != nil {
+		m.logger.Error("failed to write response", err)
+	}
 }

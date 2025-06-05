@@ -35,7 +35,7 @@ var (
 
 // MCPClientInterface defines the interface for MCP client implementations
 //
-//go:generate mockgen -source=client.go -destination=../tests/mocks/mcp_client.go -package=mocks
+//go:generate mockgen -source=client.go -destination=../tests/mocks/mcp/client.go -package=mcpmocks
 type MCPClientInterface interface {
 	// InitializeAll establishes connection with MCP servers and performs handshake
 	InitializeAll(ctx context.Context) error

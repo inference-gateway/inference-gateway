@@ -14,7 +14,6 @@ import (
 
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers"
 )
 
 var (
@@ -33,7 +32,7 @@ var (
 
 // A2AClientInterface defines the interface for A2A client implementations
 //
-//go:generate mockgen -source=client.go -destination=../tests/mocks/a2a_client.go -package=mocks
+//go:generate mockgen -source=client.go -destination=../tests/mocks/a2a/client.go -package=a2amocks
 type A2AClientInterface interface {
 	// InitializeAll discovers and connects to A2A agents
 	InitializeAll(ctx context.Context) error
@@ -61,12 +60,6 @@ type A2AClientInterface interface {
 
 	// GetAgentSkills returns the skills available for the specified agent
 	GetAgentSkills(agentURL string) ([]AgentSkill, error)
-
-	// GetAllChatCompletionTools returns all pre-converted chat completion tools from all agents
-	GetAllChatCompletionTools() []providers.ChatCompletionTool
-
-	// ConvertA2ASkillsToChatCompletionTools converts A2A agent skills to chat completion tools
-	ConvertA2ASkillsToChatCompletionTools(skills []AgentSkill) []providers.ChatCompletionTool
 }
 
 // A2AClient provides methods to interact with A2A agents
@@ -296,50 +289,6 @@ func (c *A2AClient) GetAgentSkills(agentURL string) ([]AgentSkill, error) {
 	}
 
 	return agentCard.Skills, nil
-}
-
-// ConvertA2ASkillsToChatCompletionTools converts A2A agent skills to chat completion tools
-func (c *A2AClient) ConvertA2ASkillsToChatCompletionTools(skills []AgentSkill) []providers.ChatCompletionTool {
-	tools := make([]providers.ChatCompletionTool, 0, len(skills))
-
-	for _, skill := range skills {
-		description := skill.Description
-
-		if len(skill.Inputmodes) > 0 || len(skill.Outputmodes) > 0 {
-			description += fmt.Sprintf(" (Input modes: %s, Output modes: %s)",
-				strings.Join(skill.Inputmodes, ", "),
-				strings.Join(skill.Outputmodes, ", "))
-		}
-
-		tool := providers.ChatCompletionTool{
-			Type: providers.ChatCompletionToolTypeFunction,
-			Function: providers.FunctionObject{
-				Name:        skill.ID,
-				Description: &description,
-				Parameters: &providers.FunctionParameters{
-					"type":       "object",
-					"properties": map[string]interface{}{},
-					"required":   []string{},
-				},
-			},
-		}
-
-		tools = append(tools, tool)
-	}
-
-	return tools
-}
-
-// GetAllChatCompletionTools returns all pre-converted chat completion tools from all agents
-func (c *A2AClient) GetAllChatCompletionTools() []providers.ChatCompletionTool {
-	allTools := []providers.ChatCompletionTool{}
-
-	for _, agentCard := range c.AgentCards {
-		tools := c.ConvertA2ASkillsToChatCompletionTools(agentCard.Skills)
-		allTools = append(allTools, tools...)
-	}
-
-	return allTools
 }
 
 // makeJSONRPCRequest makes a JSON-RPC request to the specified agent

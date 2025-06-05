@@ -15,6 +15,7 @@ import (
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
+	a2amocks "github.com/inference-gateway/inference-gateway/tests/mocks/a2a"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -589,13 +590,13 @@ func TestListAgentsHandler(t *testing.T) {
 
 			mockRegistry := mocks.NewMockProviderRegistry(ctrl)
 			mockClient := mocks.NewMockClient(ctrl)
-			var mockA2AClient *mocks.MockA2AClientInterface
+			var mockA2AClient *a2amocks.MockA2AClientInterface
 
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
 
 			if !tt.a2aClientNil {
-				mockA2AClient = mocks.NewMockA2AClientInterface(ctrl)
+				mockA2AClient = a2amocks.NewMockA2AClientInterface(ctrl)
 
 				mockA2AClient.EXPECT().
 					IsInitialized().

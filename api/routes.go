@@ -41,8 +41,8 @@ type RouterImpl struct {
 	logger    l.Logger
 	registry  providers.ProviderRegistry
 	client    providers.Client
-	mcpClient mcp.MCPClientInterface
 	a2aClient a2a.A2AClientInterface
+	mcpClient mcp.MCPClientInterface
 }
 
 type ErrorResponse struct {
@@ -53,14 +53,21 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client, mcpClient mcp.MCPClientInterface, a2aClient a2a.A2AClientInterface) Router {
+func NewRouter(
+	cfg config.Config,
+	logger l.Logger,
+	registry providers.ProviderRegistry,
+	client providers.Client,
+	mcpClient mcp.MCPClientInterface,
+	a2aClient a2a.A2AClientInterface,
+) Router {
 	return &RouterImpl{
 		cfg,
 		logger,
 		registry,
 		client,
-		mcpClient,
 		a2aClient,
+		mcpClient,
 	}
 }
 

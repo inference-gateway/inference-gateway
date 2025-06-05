@@ -434,7 +434,7 @@ import (
     "github.com/sethvargo/go-envconfig"
 )
 
-//go:generate mockgen -source=client.go -destination=../tests/mocks/client.go -package=mocks
+//go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
 type Client interface {
     Do(req *http.Request) (*http.Response, error)
     Get(url string) (*http.Response, error)
@@ -450,7 +450,7 @@ type ClientImpl struct {
 
 type ClientConfig struct {
     {{- range $setting := .ClientSettings }}
-    {{ pascalCase $setting.Env }} {{ $setting.Type }} ` + "`env:\"{{ $setting.Env }}, default={{ $setting.Default }}\" description:\"{{ $setting.Description }}\"`" + `
+    {{ pascalCase $setting.Env }} {{ $setting.Type }} ` + "`" + `env:"{{ $setting.Env }}, default={{ $setting.Default }}" description:"{{ $setting.Description }}"` + "`" + `
     {{- end }}
 }
 
