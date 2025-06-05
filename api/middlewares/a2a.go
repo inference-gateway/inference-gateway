@@ -111,6 +111,12 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 		m.addToolToRequest(&originalRequestBody, agentQueryTool)
 		m.logger.Debug("added a2a agent query tool to request")
 
+		agentSkillTools := m.createAgentSkillTools()
+		for _, tool := range agentSkillTools {
+			m.addToolToRequest(&originalRequestBody, tool)
+		}
+		m.logger.Debug("added a2a agent skill tools to request", "count", len(agentSkillTools))
+
 		c.Set(string(a2aInternalKey), &originalRequestBody)
 
 		result, err := m.getProviderAndModel(c, originalRequestBody.Model)
@@ -688,6 +694,44 @@ func (m *A2AMiddlewareImpl) createAgentQueryTool() providers.ChatCompletionTool 
 			},
 		},
 	}
+}
+
+// createAgentSkillTools creates chat completion tools from all available A2A agent skills
+func (m *A2AMiddlewareImpl) createAgentSkillTools() []providers.ChatCompletionTool {
+	var tools []providers.ChatCompletionTool
+
+	agents := m.a2aClient.GetAgents()
+
+	for _, agentURL := range agents {
+		skills, err := m.a2aClient.GetAgentSkills(agentURL)
+		if err != nil {
+			m.logger.Warn("failed to get agent skills", "agent", agentURL, "error", err)
+			continue
+		}
+
+		for _, skill := range skills {
+			tool := providers.ChatCompletionTool{
+				Type: providers.ChatCompletionToolTypeFunction,
+				Function: providers.FunctionObject{
+					Name:        skill.ID,
+					Description: &skill.Description,
+					Parameters: &providers.FunctionParameters{
+						"type": "object",
+						"properties": map[string]interface{}{
+							"arguments": map[string]interface{}{
+								"type":        "object",
+								"description": "Arguments for the " + skill.Name + " skill",
+							},
+						},
+						"required": []string{},
+					},
+				},
+			}
+			tools = append(tools, tool)
+		}
+	}
+
+	return tools
 }
 
 // addToolToRequest adds a single tool to the request

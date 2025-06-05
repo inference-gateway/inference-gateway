@@ -49,6 +49,11 @@ func TestNewA2AMiddleware(t *testing.T) {
 			mockLogger := mocks.NewMockLogger(ctrl)
 			mockInferenceClient := providersmocks.NewMockClient(ctrl)
 
+			if tt.a2aEnabled {
+				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+				mockA2AClient.EXPECT().IsInitialized().Return(false)
+			}
+
 			cfg := config.Config{
 				A2A: &config.A2AConfig{
 					Enable: tt.a2aEnabled,
@@ -144,6 +149,7 @@ func TestA2AMiddleware_RequestWithA2AMiddlewareEnabled(t *testing.T) {
 
 			if tt.expectA2AProcessing {
 				mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
+				mockA2AClient.EXPECT().GetAgents().Return([]string{})
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 			} else if tt.path == "/v1/chat/completions" && !tt.hasInternalHeader {
 				mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
@@ -427,10 +433,10 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 			mockLogger.EXPECT().Warn(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
-			mockA2AClient.EXPECT().GetAgents().Return(tt.availableAgents)
+			mockA2AClient.EXPECT().GetAgents().Return(tt.availableAgents).AnyTimes()
 
 			for agentURL, skills := range tt.agentSkills {
-				mockA2AClient.EXPECT().GetAgentSkills(agentURL).Return(skills, nil)
+				mockA2AClient.EXPECT().GetAgentSkills(agentURL).Return(skills, nil).AnyTimes()
 			}
 
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
@@ -566,10 +572,10 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			mockLogger.EXPECT().Warn(gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
-			mockA2AClient.EXPECT().GetAgents().Return([]string{"http://agent1.example.com"})
+			mockA2AClient.EXPECT().GetAgents().Return([]string{"http://agent1.example.com"}).AnyTimes()
 			mockA2AClient.EXPECT().GetAgentSkills("http://agent1.example.com").Return([]a2a.AgentSkill{
 				{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
-			}, nil)
+			}, nil).AnyTimes()
 
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 
@@ -580,7 +586,7 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			}
 			mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageResp, nil)
 
-			if tt.pollSuccessful && !tt.isStreaming {
+			if tt.pollSuccessful {
 				getTaskResp := &a2a.GetTaskSuccessResponse{
 					Result: a2a.Task{
 						Status: a2a.TaskStatus{
@@ -671,19 +677,47 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 
 func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 	tests := []struct {
-		name           string
-		taskFailure    string
-		expectedStatus int
+		name               string
+		taskFailure        string
+		sendMessageError   error
+		taskStatus         string
+		expectedStatus     int
+		expectErrorMessage bool
 	}{
 		{
-			name:           "Task execution fails with agent error",
-			taskFailure:    "agent_connection_error",
-			expectedStatus: http.StatusOK,
+			name:               "Task execution fails with agent connection error",
+			taskFailure:        "agent_connection_error",
+			sendMessageError:   fmt.Errorf("agent connection failed"),
+			expectedStatus:     http.StatusOK,
+			expectErrorMessage: true,
 		},
 		{
-			name:           "Task polling timeout",
-			taskFailure:    "polling_timeout",
-			expectedStatus: http.StatusOK,
+			name:               "Task execution fails with timeout",
+			taskFailure:        "polling_timeout",
+			taskStatus:         string(a2a.TaskStateFailed),
+			expectedStatus:     http.StatusOK,
+			expectErrorMessage: true,
+		},
+		{
+			name:               "Task execution fails with failed state",
+			taskFailure:        "task_failed",
+			taskStatus:         string(a2a.TaskStateFailed),
+			expectedStatus:     http.StatusOK,
+			expectErrorMessage: true,
+		},
+		{
+			name:               "Task execution fails with rejected state",
+			taskFailure:        "task_rejected",
+			taskStatus:         string(a2a.TaskStateRejected),
+			expectedStatus:     http.StatusOK,
+			expectErrorMessage: true,
+		},
+		{
+			name:               "Task execution fails with canceled state",
+			taskFailure:        "task_canceled",
+			taskStatus:         string(a2a.TaskStateCanceled),
+			expectedStatus:     http.StatusOK,
+			expectErrorMessage: true,
 		},
 	}
 
@@ -702,29 +736,50 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Warn(gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
-			mockA2AClient.EXPECT().GetAgents().Return([]string{"http://agent1.example.com"})
+			mockA2AClient.EXPECT().GetAgents().Return([]string{"http://agent1.example.com"}).AnyTimes()
 			mockA2AClient.EXPECT().GetAgentSkills("http://agent1.example.com").Return([]a2a.AgentSkill{
 				{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
-			}, nil)
+			}, nil).AnyTimes()
 
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 
-			var taskError error
-			switch tt.taskFailure {
-			case "agent_connection_error":
-				taskError = fmt.Errorf("connection refused")
-			case "polling_timeout":
-				taskError = fmt.Errorf("context deadline exceeded")
-			}
+			if tt.sendMessageError != nil {
+				mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(nil, tt.sendMessageError)
+			} else {
+				sendMessageResp := &a2a.SendMessageSuccessResponse{
+					Result: a2a.Task{
+						ID: "task_failed_123",
+					},
+				}
+				mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageResp, nil)
 
-			mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(nil, taskError)
+				getTaskResp := &a2a.GetTaskSuccessResponse{
+					Result: a2a.Task{
+						Status: a2a.TaskStatus{
+							State: a2a.TaskState(tt.taskStatus),
+							Message: a2a.Message{
+								Role:  "assistant",
+								Parts: []a2a.Part{},
+							},
+						},
+						History: []a2a.Message{
+							{
+								Role:  "assistant",
+								Parts: []a2a.Part{},
+							},
+						},
+					},
+				}
+				mockA2AClient.EXPECT().GetTask(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(getTaskResp, nil).AnyTimes()
+			}
 
 			cfg := config.Config{
 				A2A: &config.A2AConfig{
@@ -782,6 +837,12 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 			router.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			var response map[string]interface{}
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			assert.NoError(t, err)
+
+			assert.NotNil(t, response)
 		})
 	}
 }
