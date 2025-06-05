@@ -33,7 +33,7 @@ curl -X GET http://localhost:8080/v1/models?provider=ollama | jq '.'
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model": "groq/llama3-8b-8192",
+    "model": "groq/llama-3.1-8b-instant",
     "messages": [
       {
         "role": "system",
