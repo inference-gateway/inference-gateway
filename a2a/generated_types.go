@@ -34,9 +34,10 @@ type APIKeySecurityScheme struct {
 
 // Defines optional capabilities supported by an agent.
 type AgentCapabilities struct {
-	Pushnotifications      bool `json:"pushNotifications"`
-	Statetransitionhistory bool `json:"stateTransitionHistory"`
-	Streaming              bool `json:"streaming"`
+	Extensions             []AgentExtension `json:"extensions"`
+	Pushnotifications      bool             `json:"pushNotifications"`
+	Statetransitionhistory bool             `json:"stateTransitionHistory"`
+	Streaming              bool             `json:"streaming"`
 }
 
 // An AgentCard conveys key information:
@@ -61,6 +62,14 @@ type AgentCard struct {
 	Version                           string                   `json:"version"`
 }
 
+// A declaration of an extension supported by an Agent.
+type AgentExtension struct {
+	Description string                 `json:"description"`
+	Params      map[string]interface{} `json:"params"`
+	Required    bool                   `json:"required"`
+	URI         string                 `json:"uri"`
+}
+
 // Represents the service provider of an agent.
 type AgentProvider struct {
 	Organization string `json:"organization"`
@@ -82,6 +91,7 @@ type AgentSkill struct {
 type Artifact struct {
 	Artifactid  string                 `json:"artifactId"`
 	Description string                 `json:"description"`
+	Extensions  []string               `json:"extensions"`
 	Metadata    map[string]interface{} `json:"metadata"`
 	Name        string                 `json:"name"`
 	Parts       []Part                 `json:"parts"`
@@ -293,6 +303,7 @@ type JSONRPCSuccessResponse struct {
 // Represents a single message exchanged between user and agent.
 type Message struct {
 	Contextid        string                 `json:"contextId"`
+	Extensions       []string               `json:"extensions"`
 	Kind             string                 `json:"kind"`
 	Messageid        string                 `json:"messageId"`
 	Metadata         map[string]interface{} `json:"metadata"`
@@ -371,6 +382,7 @@ type PushNotificationAuthenticationInfo struct {
 // Configuration for setting up push notifications for task updates.
 type PushNotificationConfig struct {
 	Authentication PushNotificationAuthenticationInfo `json:"authentication"`
+	ID             string                             `json:"id"`
 	Token          string                             `json:"token"`
 	URL            string                             `json:"url"`
 }
