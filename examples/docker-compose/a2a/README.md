@@ -26,12 +26,12 @@ This example demonstrates integrating the Agent-to-Agent (A2A) protocol with Inf
 ### Prerequisites
 
 - Docker and Docker Compose
-- Groq API key (or any other supported provider)
+- DeepSeek API key (or any other supported provider)
 
 ### Setup
 
 ```bash
-export GROQ_API_KEY=your_groq_api_key
+export DEEPSEEK_API_KEY=your_deepseek_api_key
 docker-compose up
 ```
 
@@ -60,7 +60,7 @@ Once the services are running, you can make requests to the Inference Gateway. T
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-chat",
   "messages": [
     {
       "role": "system",
@@ -80,7 +80,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-chat",
   "messages": [
     {
       "role": "system",
@@ -100,7 +100,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-chat",
   "messages": [
     {
       "role": "system",
@@ -120,7 +120,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-chat",
   "messages": [
     {
       "role": "system",
