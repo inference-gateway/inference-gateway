@@ -127,6 +127,13 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
+
+			if result.Provider == nil {
+				m.logger.Error("failed to get provider", err, "provider", *result.ProviderID)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Provider not available"})
+				c.Abort()
+				return
+			}
 		}
 
 		bodyBytes, err := json.Marshal(&originalRequestBody)
