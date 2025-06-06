@@ -293,7 +293,7 @@ func (c *A2AClient) GetAgentSkills(agentURL string) ([]AgentSkill, error) {
 
 // makeJSONRPCRequest makes a JSON-RPC request to the specified agent
 func (c *A2AClient) makeJSONRPCRequest(ctx context.Context, request interface{}, agentURL string, response interface{}) (interface{}, error) {
-	rpcURL, err := url.JoinPath(agentURL, "jsonrpc")
+	rpcURL, err := url.JoinPath(agentURL, "a2a")
 	if err != nil {
 		return nil, fmt.Errorf("failed to build JSON-RPC URL: %w", err)
 	}
