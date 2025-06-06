@@ -43,6 +43,9 @@ type A2AClientInterface interface {
 	// GetAgentCard retrieves an agent card from the specified agent URL
 	GetAgentCard(ctx context.Context, agentURL string) (*AgentCard, error)
 
+	// RefreshAgentCard forces a refresh of an agent card from the remote source
+	RefreshAgentCard(ctx context.Context, agentURL string) (*AgentCard, error)
+
 	// SendMessage sends a message to the specified agent (A2A's main task submission method)
 	SendMessage(ctx context.Context, request *SendMessageRequest, agentURL string) (*SendMessageSuccessResponse, error)
 
@@ -159,7 +162,7 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 
 // initializeAgent initializes a single agent by fetching its agent card
 func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error {
-	agentCard, err := c.GetAgentCard(ctx, agentURL)
+	agentCard, err := c.fetchAgentCardFromRemote(ctx, agentURL)
 	if err != nil {
 		return fmt.Errorf("failed to get agent card: %w", err)
 	}
@@ -176,11 +179,30 @@ func (c *A2AClient) IsInitialized() bool {
 }
 
 // GetAgentCard retrieves an agent card from the specified agent URL
+// First checks the cache, then fetches from remote if not found
 func (c *A2AClient) GetAgentCard(ctx context.Context, agentURL string) (*AgentCard, error) {
 	if !c.isValidAgentURL(agentURL) {
 		return nil, ErrAgentNotFound
 	}
 
+	if cachedCard, exists := c.AgentCards[agentURL]; exists {
+		c.Logger.Debug("retrieved agent card from cache", "agentURL", agentURL, "component", "a2a_client")
+		return cachedCard, nil
+	}
+
+	agentCard, err := c.fetchAgentCardFromRemote(ctx, agentURL)
+	if err != nil {
+		return nil, err
+	}
+
+	c.AgentCards[agentURL] = agentCard
+	c.AgentCapabilities[agentURL] = agentCard.Capabilities
+
+	return agentCard, nil
+}
+
+// fetchAgentCardFromRemote fetches an agent card from the remote agent URL
+func (c *A2AClient) fetchAgentCardFromRemote(ctx context.Context, agentURL string) (*AgentCard, error) {
 	cardURL, err := url.JoinPath(agentURL, ".well-known/agent.json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to build agent card URL: %w", err)
@@ -215,6 +237,23 @@ func (c *A2AClient) GetAgentCard(ctx context.Context, agentURL string) (*AgentCa
 	}
 
 	return &agentCard, nil
+}
+
+// RefreshAgentCard forces a refresh of an agent card from the remote source
+func (c *A2AClient) RefreshAgentCard(ctx context.Context, agentURL string) (*AgentCard, error) {
+	if !c.isValidAgentURL(agentURL) {
+		return nil, ErrAgentNotFound
+	}
+
+	agentCard, err := c.fetchAgentCardFromRemote(ctx, agentURL)
+	if err != nil {
+		return nil, err
+	}
+
+	c.AgentCards[agentURL] = agentCard
+	c.AgentCapabilities[agentURL] = agentCard.Capabilities
+
+	return agentCard, nil
 }
 
 // SendMessage sends a message to the specified agent (A2A's main task submission method)

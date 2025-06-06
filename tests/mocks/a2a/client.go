@@ -157,6 +157,21 @@ func (mr *MockA2AClientInterfaceMockRecorder) IsInitialized() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsInitialized", reflect.TypeOf((*MockA2AClientInterface)(nil).IsInitialized))
 }
 
+// RefreshAgentCard mocks base method.
+func (m *MockA2AClientInterface) RefreshAgentCard(ctx context.Context, agentURL string) (*a2a.AgentCard, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefreshAgentCard", ctx, agentURL)
+	ret0, _ := ret[0].(*a2a.AgentCard)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefreshAgentCard indicates an expected call of RefreshAgentCard.
+func (mr *MockA2AClientInterfaceMockRecorder) RefreshAgentCard(ctx, agentURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefreshAgentCard", reflect.TypeOf((*MockA2AClientInterface)(nil).RefreshAgentCard), ctx, agentURL)
+}
+
 // SendMessage mocks base method.
 func (m *MockA2AClientInterface) SendMessage(ctx context.Context, request *a2a.SendMessageRequest, agentURL string) (*a2a.SendMessageSuccessResponse, error) {
 	m.ctrl.T.Helper()

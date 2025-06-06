@@ -1,5 +1,9 @@
 package a2a
 
+import (
+	"time"
+)
+
 // JSON-RPC 2.0 types
 type JSONRPCRequest struct {
 	Jsonrpc string                 `json:"jsonrpc"`
@@ -52,11 +56,50 @@ type AgentCard struct {
 	Version            string            `json:"version"`
 }
 
-// A2A Request types for method parameters
-type GreetRequest struct {
-	Name string `json:"name,omitempty"`
+type Part struct {
+	Type     string                 `json:"type"`
+	Text     string                 `json:"text,omitempty"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
-type GreetResponse struct {
-	Message string `json:"message"`
+type Message struct {
+	Role      string                 `json:"role"`
+	Parts     []Part                 `json:"parts"`
+	MessageId string                 `json:"messageId"`
+	ContextId string                 `json:"contextId,omitempty"`
+	TaskId    string                 `json:"taskId,omitempty"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+type MessageSendConfiguration struct {
+	Blocking bool `json:"blocking,omitempty"`
+}
+
+type MessageSendParams struct {
+	Message       Message                  `json:"message"`
+	Configuration MessageSendConfiguration `json:"configuration,omitempty"`
+	Metadata      map[string]interface{}   `json:"metadata,omitempty"`
+}
+
+type TaskStatus struct {
+	State     string    `json:"state"`
+	Timestamp time.Time `json:"timestamp"`
+	Message   *Message  `json:"message,omitempty"`
+}
+
+type Artifact struct {
+	ArtifactId string                 `json:"artifactId"`
+	Name       string                 `json:"name,omitempty"`
+	Parts      []Part                 `json:"parts"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+}
+
+type Task struct {
+	Id        string                 `json:"id"`
+	ContextId string                 `json:"contextId"`
+	Status    TaskStatus             `json:"status"`
+	Artifacts []Artifact             `json:"artifacts,omitempty"`
+	History   []Message              `json:"history,omitempty"`
+	Kind      string                 `json:"kind"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 }

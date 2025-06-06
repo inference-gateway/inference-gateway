@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -22,7 +23,7 @@ func main() {
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
 		info := a2a.AgentCard{
 			Name:        "helloworld-agent",
-			Description: "A simple greeting agent that provides personalized greetings",
+			Description: "A simple greeting agent that provides personalized greetings using the A2A protocol",
 			URL:         "http://localhost:8081",
 			Version:     "1.0.0",
 			Capabilities: a2a.AgentCapabilities{
@@ -30,22 +31,15 @@ func main() {
 				Pushnotifications:      false,
 				Statetransitionhistory: false,
 			},
-			Defaultinputmodes:  []string{"text"},
-			Defaultoutputmodes: []string{"text"},
+			Defaultinputmodes:  []string{"text/plain"},
+			Defaultoutputmodes: []string{"text/plain"},
 			Skills: []a2a.AgentSkill{
 				{
-					ID:          "greet",
-					Name:        "greet",
-					Description: "Provide a personalized greeting",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
-				},
-				{
-					ID:          "introduce",
-					Name:        "introduce",
-					Description: "Introduce the agent and its capabilities",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					ID:          "greeting",
+					Name:        "greeting",
+					Description: "Provide personalized greetings in multiple languages",
+					Inputmodes:  []string{"text/plain"},
+					Outputmodes: []string{"text/plain"},
 				},
 			},
 		}
@@ -65,80 +59,148 @@ func handleA2ARequest(c *gin.Context) {
 		return
 	}
 
-	// Set JSON-RPC version if not provided
 	if req.Jsonrpc == "" {
 		req.Jsonrpc = "2.0"
 	}
 
-	// Generate ID if not provided
 	if req.ID == nil {
 		req.ID = uuid.New().String()
 	}
 
 	switch req.Method {
-	case "greet":
-		handleGreet(c, req)
-	case "introduce":
-		handleIntroduce(c, req)
+	case "message/send":
+		handleMessageSend(c, req)
+	case "message/stream":
+		handleMessageStream(c, req)
+	case "task/get":
+		handleTaskGet(c, req)
+	case "task/cancel":
+		handleTaskCancel(c, req)
 	default:
 		sendError(c, req.ID, -32601, "method not found")
 	}
 }
 
-func handleGreet(c *gin.Context, req a2a.JSONRPCRequest) {
-	name, ok := req.Params["name"].(string)
+func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
+	paramsMap, ok := req.Params["message"].(map[string]interface{})
 	if !ok {
-		name = "World"
+		sendError(c, req.ID, -32602, "invalid params: missing message")
+		return
 	}
 
-	language, ok := req.Params["language"].(string)
+	partsArray, ok := paramsMap["parts"].([]interface{})
 	if !ok {
-		language = "en"
+		sendError(c, req.ID, -32602, "invalid params: missing message parts")
+		return
+	}
+
+	var messageText string = "World"
+	for _, partInterface := range partsArray {
+		part, ok := partInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if partType, exists := part["type"]; exists && partType == "text" {
+			if text, textExists := part["text"].(string); textExists {
+				messageText = text
+				break
+			}
+		}
 	}
 
 	var greeting string
-	switch language {
-	case "es":
-		greeting = "¡Hola, " + name + "!"
-	case "fr":
-		greeting = "Bonjour, " + name + "!"
-	case "de":
-		greeting = "Hallo, " + name + "!"
-	case "ja":
-		greeting = "こんにちは、" + name + "さん！"
-	default:
-		greeting = "Hello, " + name + "!"
+	if messageText == "Hello" || messageText == "hello" ||
+		messageText == "Hi" || messageText == "hi" ||
+		messageText == "Say hello using the hello world agent." {
+		greeting = "Hello, World!"
+	} else {
+		greeting = "Hello, " + messageText + "!"
+	}
+
+	taskId := uuid.New().String()
+	contextId := uuid.New().String()
+	messageId := uuid.New().String()
+
+	responseMessage := a2a.Message{
+		Role:      "assistant",
+		MessageId: messageId,
+		ContextId: contextId,
+		TaskId:    taskId,
+		Parts: []a2a.Part{
+			{
+				Type: "text",
+				Text: greeting,
+			},
+		},
+	}
+
+	task := a2a.Task{
+		Id:        taskId,
+		ContextId: contextId,
+		Status: a2a.TaskStatus{
+			State:     "completed",
+			Timestamp: time.Now(),
+			Message:   &responseMessage,
+		},
+		Artifacts: []a2a.Artifact{
+			{
+				ArtifactId: uuid.New().String(),
+				Name:       "greeting",
+				Parts: []a2a.Part{
+					{
+						Type: "text",
+						Text: greeting,
+					},
+				},
+			},
+		},
+		History: []a2a.Message{
+			{
+				Role:      "user",
+				MessageId: getStringParam(paramsMap, "messageId", uuid.New().String()),
+				ContextId: contextId,
+				TaskId:    taskId,
+				Parts: []a2a.Part{
+					{
+						Type: "text",
+						Text: messageText,
+					},
+				},
+			},
+			responseMessage,
+		},
+		Kind: "task",
 	}
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
 		Jsonrpc: "2.0",
-		Result: map[string]interface{}{
-			"greeting": greeting,
-			"language": language,
-			"agent":    "helloworld-agent",
-		},
+		Result:  task,
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-func handleIntroduce(c *gin.Context, req a2a.JSONRPCRequest) {
-	response := a2a.JSONRPCSuccessResponse{
-		ID:      req.ID,
-		Jsonrpc: "2.0",
-		Result: map[string]interface{}{
-			"introduction": "I am the HelloWorld Agent. I can greet you in multiple languages including English, Spanish, French, German, and Japanese. Just call the 'greet' method with your name and preferred language!",
-			"capabilities": []string{
-				"Multi-language greetings",
-				"Personalized messages",
-				"Friendly responses",
-			},
-			"agent": "helloworld-agent",
-		},
-	}
+func handleMessageStream(c *gin.Context, req a2a.JSONRPCRequest) {
+	handleMessageSend(c, req)
+}
 
-	c.JSON(http.StatusOK, response)
+func handleTaskGet(c *gin.Context, req a2a.JSONRPCRequest) {
+	sendError(c, req.ID, -32601, "task/get not implemented")
+}
+
+func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest) {
+	sendError(c, req.ID, -32601, "task/cancel not implemented")
+}
+
+func getStringParam(params map[string]interface{}, key string, defaultValue string) string {
+	if value, exists := params[key]; exists {
+		if str, ok := value.(string); ok {
+			return str
+		}
+	}
+	return defaultValue
 }
 
 func sendError(c *gin.Context, id interface{}, code int, message string) {
