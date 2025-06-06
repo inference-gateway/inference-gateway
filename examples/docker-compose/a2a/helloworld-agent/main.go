@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -50,6 +51,22 @@ func main() {
 	if err := r.Run(":8081"); err != nil {
 		log.Fatal("failed to start server:", err)
 	}
+}
+
+func containsSpanishRequest(text string) bool {
+	lowerText := strings.ToLower(text)
+	spanishKeywords := []string{
+		"spanish", "español", "espanol", "spanish", "en español",
+		"en espanol", "greet me in spanish", "greeting in spanish",
+		"hola", "buenos días", "buenas tardes", "saludar",
+	}
+
+	for _, keyword := range spanishKeywords {
+		if strings.Contains(lowerText, keyword) {
+			return true
+		}
+	}
+	return false
 }
 
 func handleA2ARequest(c *gin.Context) {
@@ -110,7 +127,16 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 	}
 
 	var greeting string
-	if messageText == "Hello" || messageText == "hello" ||
+	if containsSpanishRequest(messageText) {
+		if messageText == "Hola" || messageText == "hola" ||
+			messageText == "Buenos días" || messageText == "buenos días" ||
+			messageText == "Buenas tardes" || messageText == "buenas tardes" ||
+			containsSpanishRequest(messageText) {
+			greeting = "¡Hola, Mundo!"
+		} else {
+			greeting = "¡Hola, " + messageText + "!"
+		}
+	} else if messageText == "Hello" || messageText == "hello" ||
 		messageText == "Hi" || messageText == "hi" ||
 		messageText == "Say hello using the hello world agent." {
 		greeting = "Hello, World!"
