@@ -31,10 +31,11 @@ var _ Agent = (*agentImpl)(nil)
 
 // agentImpl is the concrete implementation of the Agent interface
 type agentImpl struct {
-	logger    logger.Logger
-	a2aClient A2AClientInterface
-	provider  providers.IProvider
-	model     *string
+	logger          logger.Logger
+	a2aClient       A2AClientInterface
+	provider        providers.IProvider
+	model           *string
+	discoveredTools []providers.ChatCompletionTool
 }
 
 // NewAgent creates a new Agent instance
@@ -248,6 +249,20 @@ func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatComple
 		currentRequest.Messages = append(currentRequest.Messages, currentResponse.Choices[0].Message)
 		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
 
+		if len(a.discoveredTools) > 0 {
+			originalTools := currentRequest.Tools
+			if originalTools == nil {
+				originalTools = &[]providers.ChatCompletionTool{}
+			}
+
+			allTools := make([]providers.ChatCompletionTool, len(*originalTools)+len(a.discoveredTools))
+			copy(allTools, *originalTools)
+			copy(allTools[len(*originalTools):], a.discoveredTools)
+
+			currentRequest.Tools = &allTools
+			a.logger.Debug("added discovered tools to request", "original_tools", len(*originalTools), "discovered_tools", len(a.discoveredTools), "total_tools", len(allTools))
+		}
+
 		currentRequest.Model = *a.model
 		nextResponse, err := a.provider.ChatCompletions(ctx, currentRequest)
 		if err != nil {
@@ -275,7 +290,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 	var results []providers.Message
 
 	for _, toolCall := range toolCalls {
-		// Handle agent query tool calls specially
 		if toolCall.Function.Name == "query_a2a_agent_card" {
 			result, err := a.handleAgentQueryTool(ctx, toolCall)
 			if err != nil {
@@ -291,7 +305,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			continue
 		}
 
-		// Parse the tool arguments for regular A2A skills
 		var args map[string]interface{}
 		if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
 			a.logger.Error("failed to parse a2a tool arguments", err, "args", toolCall.Function.Arguments, "tool_name", toolCall.Function.Name)
@@ -303,15 +316,13 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			continue
 		}
 
-		// Extract the agent URL (this should be provided by the middleware)
 		var agentURL string
 		if agentURLVal, ok := args["agentURL"].(string); ok && agentURLVal != "" {
 			agentURL = agentURLVal
 		} else {
-			// Find a suitable agent URL from available agents
 			agents := a.a2aClient.GetAgents()
 			if len(agents) > 0 {
-				agentURL = agents[0] // Use the first available agent as fallback
+				agentURL = agents[0]
 			} else {
 				a.logger.Error("no a2a agents available for tool execution", nil, "tool", toolCall.Function.Name)
 				results = append(results, providers.Message{
@@ -323,14 +334,11 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			}
 		}
 
-		// Remove agentURL from args since it's not part of the actual tool arguments
 		delete(args, "agentURL")
 
-		// Generate unique IDs for A2A requests
 		requestID := fmt.Sprintf("req_%s", toolCall.ID)
 		messageID := fmt.Sprintf("msg_%s", toolCall.ID)
 
-		// Create the A2A send message request
 		sendRequest := &SendMessageRequest{
 			ID:      requestID,
 			JSONRPC: "2.0",
@@ -338,11 +346,11 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			Params: MessageSendParams{
 				Message: Message{
 					Role:      "user",
-					Parts:     []Part{}, // A2A agents handle the skill through metadata
+					Parts:     []Part{},
 					Messageid: messageID,
 				},
 				Configuration: MessageSendConfiguration{
-					Blocking: true, // Synchronous execution for agent loop
+					Blocking: true,
 				},
 				Metadata: map[string]interface{}{
 					"skill":     toolCall.Function.Name,
@@ -353,7 +361,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 
 		a.logger.Info("executing a2a tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v agent=%s", toolCall.ID, toolCall.Function.Name, args, agentURL))
 
-		// Execute the A2A tool call
 		result, err := a.a2aClient.SendMessage(ctx, sendRequest, agentURL)
 		if err != nil {
 			a.logger.Error("failed to execute a2a tool call", err, "tool", toolCall.Function.Name, "agent", agentURL)
@@ -365,7 +372,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			continue
 		}
 
-		// Format the result
 		var resultStr string
 		if result == nil {
 			resultStr = "A2A task completed successfully"
@@ -445,7 +451,6 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 			}
 
 			if toolCallChunk.Function != nil {
-				// Use temporary struct to handle streaming function data
 				type TempToolCallFunction struct {
 					Name      string `json:"name,omitempty"`
 					Arguments string `json:"arguments,omitempty"`
@@ -498,25 +503,40 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 
 // handleAgentQueryTool handles the special query_a2a_agent_card tool call
 func (a *agentImpl) handleAgentQueryTool(ctx context.Context, toolCall providers.ChatCompletionMessageToolCall) (providers.Message, error) {
-	// Parse the tool arguments
 	var args map[string]interface{}
 	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
 		return providers.Message{}, fmt.Errorf("failed to parse arguments: %w", err)
 	}
 
-	// Extract agent URL
 	agentURL, ok := args["agent_url"].(string)
 	if !ok || agentURL == "" {
 		return providers.Message{}, fmt.Errorf("missing or invalid agent_url parameter")
 	}
 
-	// Fetch agent card
 	agentCard, err := a.a2aClient.GetAgentCard(ctx, agentURL)
 	if err != nil {
 		return providers.Message{}, fmt.Errorf("failed to query agent card: %w", err)
 	}
 
-	// Format agent card as JSON response
+	for _, skill := range agentCard.Skills {
+		skillTool := a.convertSkillToTool(skill, agentURL)
+
+		exists := false
+		for _, existingTool := range a.discoveredTools {
+			if existingTool.Function.Name == skillTool.Function.Name {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			a.discoveredTools = append(a.discoveredTools, skillTool)
+			a.logger.Debug("added discovered skill as tool", "skill_name", skill.Name, "skill_id", skill.ID, "agent_url", agentURL)
+		}
+	}
+
+	a.logger.Info("discovered and added agent skills as tools", "agent_url", agentURL, "agent_name", agentCard.Name, "skills_count", len(agentCard.Skills), "total_discovered_tools", len(a.discoveredTools))
+
 	agentCardBytes, err := json.Marshal(agentCard)
 	if err != nil {
 		return providers.Message{}, fmt.Errorf("failed to format agent card: %w", err)
@@ -529,4 +549,43 @@ func (a *agentImpl) handleAgentQueryTool(ctx context.Context, toolCall providers
 		Content:    string(agentCardBytes),
 		ToolCallId: &toolCall.ID,
 	}, nil
+}
+
+// convertSkillToTool converts an AgentSkill to a ChatCompletionTool
+func (a *agentImpl) convertSkillToTool(skill AgentSkill, agentURL string) providers.ChatCompletionTool {
+	description := skill.Description
+	if len(skill.Examples) > 0 {
+		description += "\n\nExamples:\n"
+		for _, example := range skill.Examples {
+			description += "- " + example + "\n"
+		}
+	}
+
+	parameters := &providers.FunctionParameters{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"request": map[string]interface{}{
+				"type":        "string",
+				"description": "The request or instruction for the " + skill.Name + " skill",
+			},
+		},
+		"required": []string{"request"},
+	}
+
+	if props, ok := (*parameters)["properties"].(map[string]interface{}); ok {
+		props["agentURL"] = map[string]interface{}{
+			"type":        "string",
+			"description": "The A2A agent URL to use for this skill (auto-filled)",
+			"default":     agentURL,
+		}
+	}
+
+	return providers.ChatCompletionTool{
+		Type: providers.ChatCompletionToolTypeFunction,
+		Function: providers.FunctionObject{
+			Name:        skill.Name,
+			Description: &description,
+			Parameters:  parameters,
+		},
+	}
 }

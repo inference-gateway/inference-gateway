@@ -104,8 +104,6 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Add agent query tool to allow LLM to discover agent capabilities
-		// Skills will be added progressively after querying specific agents
 		agentQueryTool := m.createAgentQueryTool()
 		m.addToolToRequest(&originalRequestBody, agentQueryTool)
 
@@ -159,11 +157,9 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		if len(response.Choices) > 0 && response.Choices[0].Message.ToolCalls != nil {
-			// Set up the A2A agent for tool execution
 			m.a2aAgent.SetProvider(result.Provider)
 			m.a2aAgent.SetModel(&result.ProviderModel)
 
-			// Run the A2A agent loop which handles both query tools and skill execution
 			if err := m.a2aAgent.Run(c, &originalRequestBody, &response); err != nil {
 				m.logger.Error("failed to handle a2a tool calls", err)
 				m.writeErrorResponse(c, customWriter, "Failed to execute A2A tools", http.StatusInternalServerError)
