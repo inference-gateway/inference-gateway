@@ -1,14 +1,14 @@
-package agent
+package mcp
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/mcp"
 	"github.com/inference-gateway/inference-gateway/providers"
 )
 
@@ -17,11 +17,13 @@ const MaxAgentIterations = 10
 
 // Agent defines the interface for running agent operations
 //
-//go:generate mockgen -source=agent.go -destination=../tests/mocks/agent.go -package=mocks
+//go:generate mockgen -source=agent.go -destination=../tests/mocks/mcp/agent.go -package=mcpmocks
 type Agent interface {
 	Run(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse) error
 	RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *providers.CreateChatCompletionRequest) error
 	ExecuteTools(ctx context.Context, toolCalls []providers.ChatCompletionMessageToolCall) ([]providers.Message, error)
+	SetProvider(provider providers.IProvider)
+	SetModel(model *string)
 }
 
 // Ensure agentImpl implements Agent interface at compile time
@@ -29,23 +31,48 @@ var _ Agent = (*agentImpl)(nil)
 
 // agentImpl is the concrete implementation of the Agent interface
 type agentImpl struct {
-	logger        logger.Logger
-	mcpClient     mcp.MCPClientInterface
-	provider      providers.IProvider
-	providerModel string
+	logger    logger.Logger
+	mcpClient MCPClientInterface
+	provider  providers.IProvider
+	model     *string
 }
 
 // NewAgent creates a new Agent instance
-func NewAgent(logger logger.Logger, mcpClient mcp.MCPClientInterface, provider providers.IProvider, providerModel string) Agent {
+func NewAgent(logger logger.Logger, mcpClient MCPClientInterface) Agent {
 	return &agentImpl{
-		mcpClient:     mcpClient,
-		logger:        logger,
-		provider:      provider,
-		providerModel: providerModel,
+		mcpClient: mcpClient,
+		logger:    logger,
+		provider:  nil,
+		model:     nil,
 	}
 }
 
+func (a *agentImpl) SetProvider(provider providers.IProvider) {
+	if provider == nil {
+		a.logger.Error("attempted to set nil provider", errors.New("provider is nil"))
+		return
+	}
+	a.provider = provider
+	a.logger.Debug("provider set for agent", "provider", provider.GetName())
+}
+
+func (a *agentImpl) SetModel(model *string) {
+	if model == nil {
+		a.logger.Error("attempted to set nil model", errors.New("model is nil"))
+		return
+	}
+	a.model = model
+	a.logger.Debug("model set for agent", "model", *model)
+}
+
 func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse) error {
+	if a.provider == nil {
+		return errors.New("provider is not set for agent")
+	}
+	if a.model == nil {
+		return errors.New("model is not set for agent")
+	}
+
 	currentRequest := *request
 	currentResponse := *response
 	iteration := 0
@@ -67,10 +94,10 @@ func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatComple
 		currentRequest.Messages = append(currentRequest.Messages, currentResponse.Choices[0].Message)
 		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
 
-		currentRequest.Model = a.providerModel
+		currentRequest.Model = *a.model
 		nextResponse, err := a.provider.ChatCompletions(ctx, currentRequest)
 		if err != nil {
-			a.logger.Error("failed to get response in agent loop", err, "iteration", iteration+1, "model", a.providerModel)
+			a.logger.Error("failed to get response in agent loop", err, "iteration", iteration+1, "model", a.model)
 			return err
 		}
 
@@ -95,10 +122,17 @@ type ErrorResponse struct {
 
 // RunWithStream executes the agent with the provided streaming response channel
 func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *providers.CreateChatCompletionRequest) error {
+	if a.provider == nil {
+		return errors.New("provider is not set for agent")
+	}
+	if a.model == nil {
+		return errors.New("model is not set for agent")
+	}
+
 	currentRequest := *body
 	maxIterations := 10
 
-	currentRequest.Model = a.providerModel
+	currentRequest.Model = *a.model
 	a.logger.Debug("starting agent streaming", "model", currentRequest.Model, "max_iterations", maxIterations)
 
 	defer func() {
@@ -111,7 +145,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		streamCh, err := a.provider.StreamChatCompletions(ctx, currentRequest)
 		if err != nil {
-			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", a.providerModel)
+			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", *a.model)
 			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to start streaming: %s\"}\n\n", err.Error()))
 			middlewareStreamCh <- errorData
 			return err
@@ -231,7 +265,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		currentRequest.Messages = append(currentRequest.Messages, assistantMessage)
 		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
-		currentRequest.Model = a.providerModel
+		currentRequest.Model = *a.model
 
 		a.logger.Debug("tool execution complete, continuing to next iteration",
 			"tool_results", len(toolResults), "total_messages", len(currentRequest.Messages), "iteration", iteration+1)
@@ -264,7 +298,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 
 		delete(args, "mcpServer")
 
-		mcpRequest := mcp.Request{
+		mcpRequest := Request{
 			Method: "tools/call",
 			Params: map[string]interface{}{
 				"name":      toolCall.Function.Name,

@@ -103,6 +103,9 @@ type OpenAPISchema struct {
 			ListToolsResponse                     SchemaProperty `yaml:"ListToolsResponse"`
 			MCPTool                               SchemaProperty `yaml:"MCPTool"`
 			MCPNotExposed                         SchemaProperty `yaml:"MCPNotExposed"`
+			ListAgentsResponse                    SchemaProperty `yaml:"ListAgentsResponse"`
+			A2AItem                               SchemaProperty `yaml:"A2AItem"`
+			A2ANotExposed                         SchemaProperty `yaml:"A2ANotExposed"`
 		}
 	}
 }

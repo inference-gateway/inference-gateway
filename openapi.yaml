@@ -31,6 +31,8 @@ tags:
     description: Generate completions from the models.
   - name: Tools
     description: List and manage MCP tools.
+  - name: A2A
+    description: List and manage A2A agents.
   - name: Proxy
     description: Proxy requests to provider endpoints.
   - name: Health
@@ -175,6 +177,29 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/MCPNotExposed"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /a2a/agents:
+    get:
+      operationId: listAgents
+      tags:
+        - Agents
+      description: |
+        Lists the currently available A2A agents. Only accessible when EXPOSE_A2A is enabled.
+      summary: Lists the currently available A2A agents
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListAgentsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/A2ANotExposed"
         "500":
           $ref: "#/components/responses/InternalError"
   /proxy/{provider}/{path}:
@@ -390,6 +415,14 @@ components:
             $ref: "#/components/schemas/Error"
           example:
             error: "MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable."
+    A2ANotExposed:
+      description: A2A agents endpoint is not exposed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "A2A agents endpoint is not exposed. Set EXPOSE_A2A=true to enable."
     ProviderResponse:
       description: |
         ProviderResponse depends on the specific provider and endpoint being called
@@ -696,6 +729,23 @@ components:
       required:
         - object
         - data
+    ListAgentsResponse:
+      type: object
+      description: Response structure for listing A2A agents
+      properties:
+        object:
+          type: string
+          description: Always "list"
+          example: "list"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/A2AItem"
+          default: []
+          description: Array of available A2A agents
+      required:
+        - object
+        - data
     MCPTool:
       type: object
       description: An MCP tool definition
@@ -727,6 +777,26 @@ components:
         - name
         - description
         - server
+    A2AItem:
+      type: object
+      description: An item in the A2A list
+      properties:
+        id:
+          type: string
+          description: The ID of the item
+        name:
+          type: string
+          description: The name of the item
+        description:
+          type: string
+          description: A description of the item
+        url:
+          type: string
+          format: uri
+          description: The URL of the item
+      required:
+        - id
+        - name
     FunctionObject:
       type: object
       properties:
@@ -1229,6 +1299,28 @@ components:
                   type: time.Duration
                   default: "5s"
                   description: "MCP client request timeout for initialize and tool calls"
+          - a2a:
+              title: "Agent-to-Agent (A2A) Protocol"
+              settings:
+                - name: a2a_enable
+                  env: "A2A_ENABLE"
+                  type: bool
+                  default: "false"
+                  description: "Enable A2A protocol support"
+                - name: a2a_expose
+                  env: "A2A_EXPOSE"
+                  type: bool
+                  default: "false"
+                  description: "Expose A2A agents list cards endpoint"
+                - name: a2a_agents
+                  env: "A2A_AGENTS"
+                  type: string
+                  description: "Comma-separated list of A2A agent URLs"
+                - name: a2a_client_timeout
+                  env: "A2A_CLIENT_TIMEOUT"
+                  type: time.Duration
+                  default: "30s"
+                  description: "A2A client timeout"
           - oidc:
               title: "OpenID Connect"
               settings:

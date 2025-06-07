@@ -2,7 +2,7 @@
 version: "3"
 
 tasks:
-  jrpc-mcp-schema-download:
+  mcp-schema-download:
     desc: "Download the latest MCP schema and convert to YAML"
     cmds:
       - curl -o mcp/mcp-schema.json https://raw.githubusercontent.com/modelcontextprotocol/modelcontextprotocol/refs/heads/main/schema/draft/schema.json
@@ -13,6 +13,19 @@ tasks:
           const yaml = require('js-yaml');
           const json = JSON.parse(fs.readFileSync('mcp/mcp-schema.json', 'utf8'));
           fs.writeFileSync('mcp/mcp-schema.yaml', yaml.dump(json, {lineWidth: -1}));
+        "
+
+  a2a-schema-download:
+    desc: "Download the latest A2A schema and convert to YAML"
+    cmds:
+      - curl -o a2a/a2a-schema.json https://raw.githubusercontent.com/google-a2a/A2A/main/specification/json/a2a.json
+      - |
+        echo "Converting A2A JSON schema to YAML format"
+        NODE_PATH=/usr/lib/node_modules node -e "
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          const json = JSON.parse(fs.readFileSync('a2a/a2a-schema.json', 'utf8'));
+          fs.writeFileSync('a2a/a2a-schema.yaml', yaml.dump(json, {lineWidth: -1}));
         "
 
   generate:
@@ -34,8 +47,10 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/ui/.env.backend.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/docker-compose/a2a/.env.example
       - go run cmd/generate/main.go -type MCPTypes -output mcp/generated_types.go
-      - go generate ./providers/... ./api/... ./otel/... ./mcp/... ./logger/... ./agent/...
+      - go run cmd/generate/main.go -type A2ATypes -output a2a/generated_types.go
+      - go generate ./providers/... ./api/... ./otel/... ./logger/...  ./mcp/... ./a2a/...
 
   tidy:
     desc: "Tidy the gateway"
@@ -46,6 +61,11 @@ tasks:
     desc: "Build the gateway"
     cmds:
       - go build -o bin/inference-gateway cmd/gateway/main.go
+
+  build:container:
+    desc: "Build the gateway container"
+    cmds:
+      - docker build -t inference-gateway .
 
   run:
     desc: "Run the gateway"

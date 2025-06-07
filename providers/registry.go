@@ -17,7 +17,7 @@ type Config struct {
 	Endpoints    Endpoints
 }
 
-//go:generate mockgen -source=registry.go -destination=../tests/mocks/provider_registry.go -package=mocks
+//go:generate mockgen -source=registry.go -destination=../tests/mocks/providers/registry.go -package=providersmocks
 type ProviderRegistry interface {
 	GetProviders() map[Provider]*Config
 	BuildProvider(providerID Provider, client Client) (IProvider, error)

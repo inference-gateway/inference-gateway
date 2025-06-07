@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
-	"github.com/inference-gateway/inference-gateway/tests/mocks"
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -57,7 +57,7 @@ func TestProviderRegistry(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := mocks.NewMockClient(ctrl)
+	mockClient := providersmocks.NewMockClient(ctrl)
 
 	openaiProvider, err := registry.BuildProvider(providers.OpenaiID, mockClient)
 	require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestProviderChatCompletions(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := mocks.NewMockClient(ctrl)
+	mockClient := providersmocks.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -186,7 +186,7 @@ func TestProviderListModels(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := mocks.NewMockClient(ctrl)
+	mockClient := providersmocks.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -275,7 +275,7 @@ func TestDifferentAuthTypes(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockClient := mocks.NewMockClient(ctrl)
+			mockClient := providersmocks.NewMockClient(ctrl)
 
 			provider, err := registry.BuildProvider(tc.providerId, mockClient)
 			require.NoError(t, err)
@@ -314,7 +314,7 @@ func BenchmarkChatCompletions(b *testing.B) {
 
 	ctrl := gomock.NewController(b)
 	defer ctrl.Finish()
-	mockClient := mocks.NewMockClient(ctrl)
+	mockClient := providersmocks.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -385,7 +385,7 @@ func BenchmarkListModels(b *testing.B) {
 
 	ctrl := gomock.NewController(b)
 	defer ctrl.Finish()
-	mockClient := mocks.NewMockClient(ctrl)
+	mockClient := providersmocks.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).

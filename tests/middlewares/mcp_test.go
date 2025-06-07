@@ -14,12 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"github.com/inference-gateway/inference-gateway/agent"
 	"github.com/inference-gateway/inference-gateway/api/middlewares"
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/mcp"
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
+	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 func init() {
@@ -27,13 +28,13 @@ func init() {
 }
 
 // Test helper to create mock dependencies for each test case
-func createMockDependencies(t *testing.T) (*gomock.Controller, *mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockMCPClientInterface, *mocks.MockLogger, *mocks.MockIProvider) {
+func createMockDependencies(t *testing.T) (*gomock.Controller, *providersmocks.MockProviderRegistry, *providersmocks.MockClient, *mcpmocks.MockMCPClientInterface, *mocks.MockLogger, *providersmocks.MockIProvider) {
 	ctrl := gomock.NewController(t)
-	mockRegistry := mocks.NewMockProviderRegistry(ctrl)
-	mockClient := mocks.NewMockClient(ctrl)
-	mockMCPClient := mocks.NewMockMCPClientInterface(ctrl)
+	mockRegistry := providersmocks.NewMockProviderRegistry(ctrl)
+	mockClient := providersmocks.NewMockClient(ctrl)
+	mockMCPClient := mcpmocks.NewMockMCPClientInterface(ctrl)
 	mockLogger := mocks.NewMockLogger(ctrl)
-	mockProvider := mocks.NewMockIProvider(ctrl)
+	mockProvider := providersmocks.NewMockIProvider(ctrl)
 
 	return ctrl, mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider
 }
@@ -58,7 +59,7 @@ func TestNewMCPMiddleware(t *testing.T) {
 	}{
 		{
 			name:        "Success with MCP client",
-			mcpClient:   &mocks.MockMCPClientInterface{},
+			mcpClient:   &mcpmocks.MockMCPClientInterface{},
 			expectNoOp:  false,
 			expectError: false,
 		},
@@ -81,7 +82,8 @@ func TestNewMCPMiddleware(t *testing.T) {
 				mockLogger.EXPECT().Info("mcp client is nil, using no-op middleware")
 			}
 
-			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, tt.mcpClient, mockLogger, cfg)
+			mcpAgent := mcp.NewAgent(mockLogger, tt.mcpClient)
+			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, tt.mcpClient, mcpAgent, mockLogger, cfg)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -102,14 +104,14 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 		name           string
 		path           string
 		internalHeader string
-		setupMocks     func(*mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockMCPClientInterface, *mocks.MockLogger, *mocks.MockIProvider)
+		setupMocks     func(*providersmocks.MockProviderRegistry, *providersmocks.MockClient, *mcpmocks.MockMCPClientInterface, *mocks.MockLogger, *providersmocks.MockIProvider)
 		shouldSkip     bool
 	}{
 		{
 			name:           "Skip with internal header",
 			path:           "/v1/chat/completions",
 			internalHeader: "true",
-			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockLogger.EXPECT().Debug("not an internal mcp call").AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -125,7 +127,7 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 		{
 			name: "Process chat completions without internal header",
 			path: "/v1/chat/completions",
-			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
@@ -147,7 +149,8 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 				tt.setupMocks(mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider)
 			}
 
-			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mockLogger, cfg)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
+			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
 			router := gin.New()
@@ -264,7 +267,8 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 
 			requestBody, _ := json.Marshal(requestData)
 
-			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mockLogger, cfg)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
+			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 			router := gin.New()
 			router.Use(middleware.Middleware())
@@ -442,7 +446,8 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 
 			requestBody, _ := json.Marshal(requestData)
 
-			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mockLogger, cfg)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
+			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
 			router := gin.New()
@@ -553,7 +558,8 @@ data: [DONE]`,
 
 			requestBody, _ := json.Marshal(requestData)
 
-			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mockLogger, cfg)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
+			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
 			router := gin.New()
@@ -582,14 +588,14 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 	tests := []struct {
 		name           string
 		requestBody    string
-		setupMocks     func(*mocks.MockProviderRegistry, *mocks.MockClient, *mocks.MockMCPClientInterface, *mocks.MockLogger, *mocks.MockIProvider)
+		setupMocks     func(*providersmocks.MockProviderRegistry, *providersmocks.MockClient, *mcpmocks.MockMCPClientInterface, *mocks.MockLogger, *providersmocks.MockIProvider)
 		expectedStatus int
 		expectedError  string
 	}{
 		{
 			name:        "Invalid JSON request body",
 			requestBody: `invalid json`,
-			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockLogger.EXPECT().Debug("mcp middleware invoked", "path", "/v1/chat/completions").AnyTimes()
 				mockLogger.EXPECT().Error("failed to parse request body", gomock.Any()).AnyTimes()
 			},
@@ -599,7 +605,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 		{
 			name:        "Unsupported model",
 			requestBody: `{"model":"unsupported/model","messages":[]}`,
-			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
 					{
@@ -619,7 +625,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 		{
 			name:        "Provider build failure",
 			requestBody: `{"model":"openai/gpt-3.5-turbo","messages":[]}`,
-			setupMocks: func(mockRegistry *mocks.MockProviderRegistry, mockClient *mocks.MockClient, mockMCPClient *mocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *mocks.MockIProvider) {
+			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
 					{
@@ -648,7 +654,8 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 
 			tt.setupMocks(mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider)
 
-			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mockLogger, cfg)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
+			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
 			router := gin.New()
@@ -720,7 +727,8 @@ func TestParseStreamingToolCalls(t *testing.T) {
 	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 	mockLogger.EXPECT().Info(gomock.Any(), gomock.Any()).AnyTimes()
 
-	middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mockLogger, cfg)
+	mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
+	middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 	assert.NoError(t, err)
 
 	_, ok := middleware.(*middlewares.MCPMiddlewareImpl)
@@ -788,6 +796,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
 
 		mockRegistry.EXPECT().BuildProvider(providers.GroqID, mockClient).Return(mockProvider, nil).AnyTimes()
+		mockProvider.EXPECT().GetName().Return("groq").AnyTimes()
 
 		mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "http://mcp-pizza-server:8084/mcp").Return(&mcp.CallToolResult{
 			Content: []interface{}{
@@ -798,7 +807,11 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 			},
 		}, nil).AnyTimes()
 
-		agentImpl := agent.NewAgent(mockLogger, mockMCPClient, mockProvider, "meta-llama/llama-4-scout-17b-instruct")
+		agentImpl := mcp.NewAgent(mockLogger, mockMCPClient)
+
+		agentImpl.SetProvider(mockProvider)
+		model := "groq/meta-llama/llama-4-scout-17b-instruct"
+		agentImpl.SetModel(&model)
 
 		firstStreamCh := make(chan []byte, 10)
 		go func() {

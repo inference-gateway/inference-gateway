@@ -35,6 +35,11 @@ func TestLoad(t *testing.T) {
 					ExpectContinueTimeout: 1 * time.Second,
 					RequestTimeout:        5 * time.Second,
 				},
+				A2A: &config.A2AConfig{
+					Enable:        false,
+					Agents:        "",
+					ClientTimeout: 30 * time.Second,
+				},
 				OIDC: &config.OIDC{
 					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",
 					ClientId:     "inference-gateway-client",
@@ -162,6 +167,11 @@ func TestLoad(t *testing.T) {
 					ResponseHeaderTimeout: 3 * time.Second,
 					ExpectContinueTimeout: 1 * time.Second,
 					RequestTimeout:        5 * time.Second,
+				},
+				A2A: &config.A2AConfig{
+					Enable:        false,
+					Agents:        "",
+					ClientTimeout: 30 * time.Second,
 				},
 				OIDC: &config.OIDC{
 					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",
@@ -306,6 +316,11 @@ func TestLoad(t *testing.T) {
 					ResponseHeaderTimeout: 3 * time.Second,
 					ExpectContinueTimeout: 1 * time.Second,
 					RequestTimeout:        5 * time.Second,
+				},
+				A2A: &config.A2AConfig{
+					Enable:        false,
+					Agents:        "",
+					ClientTimeout: 30 * time.Second,
 				},
 				OIDC: &config.OIDC{
 					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",

@@ -97,6 +97,14 @@ type ListModelsTransformer interface {
 	Transform() ListModelsResponse
 }
 
+// A2AItem represents a A2AItem in the API
+type A2AItem struct {
+	Description *string `json:"description,omitempty"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Url         *string `json:"url,omitempty"`
+}
+
 // ChatCompletionChoice represents a ChatCompletionChoice in the API
 type ChatCompletionChoice struct {
 	FinishReason FinishReason `json:"finish_reason"`
@@ -215,6 +223,12 @@ type FunctionObject struct {
 
 // FunctionParameters represents a FunctionParameters in the API
 type FunctionParameters map[string]interface{}
+
+// ListAgentsResponse represents a ListAgentsResponse in the API
+type ListAgentsResponse struct {
+	Data   []A2AItem `json:"data"`
+	Object string    `json:"object"`
+}
 
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {

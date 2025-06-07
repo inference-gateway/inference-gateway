@@ -11,6 +11,7 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
+	"github.com/inference-gateway/inference-gateway/a2a"
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -133,6 +134,7 @@ func main() {
 
 	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
+	var mcpAgent mcp.Agent
 	var mcpMiddleware middlewares.MCPMiddleware
 	if cfg.MCP.Enable {
 		if cfg.MCP.Servers != "" {
@@ -148,13 +150,45 @@ func main() {
 				return
 			}
 			logger.Info("mcp client initialized successfully")
+			// Create MCP agent with the initialized client
+			mcpAgent = mcp.NewAgent(logger, mcpClient)
+			logger.Info("mcp agent created successfully")
 		} else {
 			logger.Info("mcp is enabled but no servers configured, using no-op middleware")
+			mcpAgent = mcp.NewAgent(logger, mcpClient)
 		}
-
-		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, logger, cfg)
+		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, mcpAgent, logger, cfg)
 		if err != nil {
 			logger.Error("failed to initialize mcp middleware", err)
+			return
+		}
+	}
+
+	// Initialize A2A client if enabled
+	var a2aClient a2a.A2AClientInterface
+	var a2aMiddleware middlewares.A2AMiddleware
+	if cfg.A2A.Enable {
+		if cfg.A2A.Agents != "" {
+			a2aClient = a2a.NewA2AClient(cfg, logger)
+
+			initCtx, cancel := context.WithTimeout(context.Background(), cfg.A2A.ClientTimeout)
+			defer cancel()
+
+			logger.Info("starting a2a client initialization", "timeout", cfg.A2A.ClientTimeout.String())
+			initErr := a2aClient.InitializeAll(initCtx)
+			if initErr != nil {
+				logger.Error("failed to initialize a2a client", initErr)
+				return
+			}
+			logger.Info("a2a client initialized successfully")
+		} else {
+			logger.Info("a2a is enabled but no agents configured")
+		}
+
+		a2aAgent := a2a.NewAgent(logger, a2aClient)
+		a2aMiddleware, err = middlewares.NewA2AMiddleware(providerRegistry, a2aClient, a2aAgent, logger, client, cfg)
+		if err != nil {
+			logger.Error("failed to initialize a2a middleware", err)
 			return
 		}
 	}
@@ -164,13 +198,19 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient)
+	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient, a2aClient)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.EnableTelemetry {
 		r.Use(telemetry.Middleware())
 	}
 	r.Use(oidcAuthenticator.Middleware())
+
+	// Add A2A middleware if enabled
+	if cfg.A2A.Enable {
+		r.Use(a2aMiddleware.Middleware())
+		logger.Info("a2a middleware added to request pipeline")
+	}
 
 	// Add MCP middleware if enabled
 	if cfg.MCP.Enable {
@@ -183,6 +223,7 @@ func main() {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/models", api.ListModelsHandler)
+		v1.GET("/a2a/agents", api.ListAgentsHandler)
 		v1.GET("/mcp/tools", api.ListToolsHandler)
 		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 	}

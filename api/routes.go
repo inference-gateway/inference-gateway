@@ -16,10 +16,12 @@ import (
 
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
+	"github.com/inference-gateway/inference-gateway/a2a"
+	"github.com/inference-gateway/inference-gateway/mcp"
+
 	gin "github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/mcp"
 	providers "github.com/inference-gateway/inference-gateway/providers"
 )
 
@@ -28,6 +30,7 @@ type Router interface {
 	ListModelsHandler(c *gin.Context)
 	ChatCompletionsHandler(c *gin.Context)
 	ListToolsHandler(c *gin.Context)
+	ListAgentsHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
@@ -38,6 +41,7 @@ type RouterImpl struct {
 	logger    l.Logger
 	registry  providers.ProviderRegistry
 	client    providers.Client
+	a2aClient a2a.A2AClientInterface
 	mcpClient mcp.MCPClientInterface
 }
 
@@ -49,12 +53,20 @@ type ResponseJSON struct {
 	Message string `json:"message"`
 }
 
-func NewRouter(cfg config.Config, logger l.Logger, registry providers.ProviderRegistry, client providers.Client, mcpClient mcp.MCPClientInterface) Router {
+func NewRouter(
+	cfg config.Config,
+	logger l.Logger,
+	registry providers.ProviderRegistry,
+	client providers.Client,
+	mcpClient mcp.MCPClientInterface,
+	a2aClient a2a.A2AClientInterface,
+) Router {
 	return &RouterImpl{
 		cfg,
 		logger,
 		registry,
 		client,
+		a2aClient,
 		mcpClient,
 	}
 }
@@ -654,6 +666,118 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	response := providers.ListToolsResponse{
 		Object: "list",
 		Data:   allTools,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// ListAgentsHandler implements an endpoint that returns available A2A agents
+// when A2A_EXPOSE environment variable is enabled.
+//
+// This handler supports the Agent-to-Agent (A2A) protocol by exposing a list of
+// connected agents along with their metadata such as name, description, and URL.
+//
+// The endpoint follows the OpenAI-compatible API format pattern used throughout
+// the gateway for consistency.
+//
+// Request:
+//   - Method: GET
+//   - Path: /a2a/agents
+//   - Authentication: Required (Bearer token)
+//   - Query Parameters: None
+//
+// Response format when A2A is exposed and agents are available:
+//
+//	{
+//	  "object": "list",
+//	  "data": [
+//	    {
+//	      "id": "https://agent1.example.com",
+//	      "name": "Calculator Agent",
+//	      "description": "An agent that can perform mathematical calculations",
+//	      "url": "https://agent1.example.com"
+//	    },
+//	    {
+//	      "id": "https://agent2.example.com",
+//	      "name": "Weather Agent",
+//	      "description": "An agent that provides weather information",
+//	      "url": "https://agent2.example.com"
+//	    }
+//	  ]
+//	}
+//
+// Response when A2A is not exposed:
+//
+//	{
+//	  "error": "A2A agents endpoint is not exposed. Set A2A_EXPOSE=true to enable."
+//	}
+//
+// Response when no agents are available:
+//
+//	{
+//	  "object": "list",
+//	  "data": []
+//	}
+//
+// Error Handling:
+//   - Returns 403 Forbidden if A2A_EXPOSE is not enabled
+//   - Returns empty list if A2A client is not initialized
+//   - Continues processing other agents if individual agent card retrieval fails
+//   - Logs errors for failed agent card retrievals but doesn't fail the entire request
+//
+// The handler gracefully handles various states:
+//   - A2A client is nil (returns empty list)
+//   - A2A client is not initialized (returns empty list)
+//   - Individual agent card retrieval failures (skips failed agents, continues with others)
+//   - No agents configured (returns empty list)
+//
+// Security:
+//   - Requires authentication via Bearer token
+//   - Only exposes agents when explicitly configured via A2A_EXPOSE=true
+//   - Does not expose internal errors to clients
+func (router *RouterImpl) ListAgentsHandler(c *gin.Context) {
+	if !router.cfg.A2A.Expose {
+		router.logger.Error("a2a agents endpoint access attempted but not exposed", nil)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: "A2A agents endpoint is not exposed. Set A2A_EXPOSE=true to enable."})
+		return
+	}
+
+	var allAgents []providers.A2AItem
+
+	switch {
+	case router.a2aClient == nil:
+		router.logger.Debug("a2a client is nil, returning empty agents list")
+		allAgents = make([]providers.A2AItem, 0)
+	case !router.a2aClient.IsInitialized():
+		router.logger.Info("a2a client not initialized, no agents available")
+		allAgents = make([]providers.A2AItem, 0)
+	default:
+		agentURLs := router.a2aClient.GetAgents()
+
+		for _, agentURL := range agentURLs {
+			agentCard, err := router.a2aClient.GetAgentCard(c.Request.Context(), agentURL)
+			if err != nil {
+				router.logger.Error("failed to get agent card from a2a agent", err, "agent", agentURL)
+				continue
+			}
+
+			a2aAgent := providers.A2AItem{
+				ID:          agentURL,
+				Name:        agentCard.Name,
+				Description: &agentCard.Description,
+				Url:         &agentURL,
+			}
+			allAgents = append(allAgents, a2aAgent)
+		}
+
+		if allAgents == nil {
+			allAgents = make([]providers.A2AItem, 0)
+		}
+	}
+
+	response := providers.ListAgentsResponse{
+		Object: "list",
+		Data:   allAgents,
 	}
 
 	c.JSON(http.StatusOK, response)

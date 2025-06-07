@@ -21,6 +21,8 @@ type Config struct {
 	AllowedModels   string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
 	// MCP settings
 	MCP *MCPConfig `env:", prefix=MCP_" description:"MCP configuration"`
+	// A2A settings
+	A2A *A2AConfig `env:", prefix=A2A_" description:"A2A configuration"`
 	// OIDC settings
 	OIDC *OIDC `env:", prefix=OIDC_" description:"OIDC configuration"`
 	// Server settings
@@ -43,6 +45,14 @@ type MCPConfig struct {
 	ResponseHeaderTimeout time.Duration `env:"RESPONSE_HEADER_TIMEOUT, default=3s" description:"MCP client response header timeout"`
 	ExpectContinueTimeout time.Duration `env:"EXPECT_CONTINUE_TIMEOUT, default=1s" description:"MCP client expect continue timeout"`
 	RequestTimeout        time.Duration `env:"REQUEST_TIMEOUT, default=5s" description:"MCP client request timeout for initialize and tool calls"`
+}
+
+// A2A configuration
+type A2AConfig struct {
+	Enable        bool          `env:"ENABLE, default=false" description:"Enable A2A protocol support"`
+	Expose        bool          `env:"EXPOSE, default=false" description:"Expose A2A agents list cards endpoint"`
+	Agents        string        `env:"AGENTS" description:"Comma-separated list of A2A agent URLs"`
+	ClientTimeout time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"A2A client timeout"`
 }
 
 // OIDC configuration
@@ -116,13 +126,14 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 func (cfg *Config) String() string {
 	return fmt.Sprintf(
 		"Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
-			"MCP:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
+			"MCP:%+v, A2A:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
 		APPLICATION_NAME,
 		VERSION,
 		cfg.Environment,
 		cfg.EnableTelemetry,
 		cfg.EnableAuth,
 		cfg.MCP,
+		cfg.A2A,
 		cfg.OIDC,
 		cfg.Server,
 		cfg.Client,

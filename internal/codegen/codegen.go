@@ -63,6 +63,9 @@ type Config struct {
 	{{- else if eq $name "mcp" }}
 	// MCP settings
 	MCP *MCPConfig ` + "`env:\", prefix=MCP_\" description:\"MCP configuration\"`" + `
+	{{- else if eq $name "a2a" }}
+	// A2A settings
+	A2A *A2AConfig ` + "`env:\", prefix=A2A_\" description:\"A2A configuration\"`" + `
 	{{- else if eq $name "oidc" }}
 	// OIDC settings
 	OIDC *OIDC ` + "`env:\", prefix=OIDC_\" description:\"OIDC configuration\"`" + `
@@ -88,6 +91,14 @@ type Config struct {
 type MCPConfig struct {
 	{{- range $field := $section.Settings }}
 	{{ pascalCase (trimPrefix $field.Env "MCP_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"MCP_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+	{{- end }}
+}
+{{- else if eq $name "a2a" }}
+
+// A2A configuration
+type A2AConfig struct {
+	{{- range $field := $section.Settings }}
+	{{ pascalCase (trimPrefix $field.Env "A2A_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"A2A_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
 }
 {{- else if eq $name "oidc" }}
@@ -159,13 +170,14 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 func (cfg *Config) String() string {
     return fmt.Sprintf(
         "Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
-            "MCP:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
+            "MCP:%+v, A2A:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
         APPLICATION_NAME,
         VERSION,
         cfg.Environment,
         cfg.EnableTelemetry,
         cfg.EnableAuth,
         cfg.MCP,
+        cfg.A2A,
         cfg.OIDC,
         cfg.Server,
         cfg.Client,
@@ -422,7 +434,7 @@ import (
     "github.com/sethvargo/go-envconfig"
 )
 
-//go:generate mockgen -source=client.go -destination=../tests/mocks/client.go -package=mocks
+//go:generate mockgen -source=client.go -destination=../tests/mocks/providers/client.go -package=providersmocks
 type Client interface {
     Do(req *http.Request) (*http.Response, error)
     Get(url string) (*http.Response, error)
@@ -438,7 +450,7 @@ type ClientImpl struct {
 
 type ClientConfig struct {
     {{- range $setting := .ClientSettings }}
-    {{ pascalCase $setting.Env }} {{ $setting.Type }} ` + "`env:\"{{ $setting.Env }}, default={{ $setting.Default }}\" description:\"{{ $setting.Description }}\"`" + `
+    {{ pascalCase $setting.Env }} {{ $setting.Type }} ` + "`" + `env:"{{ $setting.Env }}, default={{ $setting.Default }}" description:"{{ $setting.Description }}"` + "`" + `
     {{- end }}
 }
 
@@ -735,12 +747,214 @@ package mcp
 	return nil
 }
 
+// GenerateA2ATypes generates Go types from A2A JSON/YAML schema
+func GenerateA2ATypes(destination string, schemaPath string) error {
+	data, err := os.ReadFile(schemaPath)
+	if err != nil {
+		return fmt.Errorf("failed to read A2A schema: %w", err)
+	}
+
+	var schema map[string]interface{}
+
+	switch {
+	case strings.HasSuffix(schemaPath, ".json"):
+		if err := json.Unmarshal(data, &schema); err != nil {
+			return fmt.Errorf("failed to parse JSON schema: %w", err)
+		}
+	case strings.HasSuffix(schemaPath, ".yaml"), strings.HasSuffix(schemaPath, ".yml"):
+		if err := yaml.Unmarshal(data, &schema); err != nil {
+			return fmt.Errorf("failed to parse YAML schema: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported schema format: must be .json, .yaml, or .yml")
+	}
+
+	definitions, ok := schema["definitions"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("schema does not contain definitions")
+	}
+
+	outputFile, err := os.Create(destination)
+	if err != nil {
+		return fmt.Errorf("failed to create output file: %w", err)
+	}
+	defer outputFile.Close()
+
+	header := `// Code generated from A2A schema. DO NOT EDIT.
+package a2a
+
+`
+	if _, err := outputFile.WriteString(header); err != nil {
+		return fmt.Errorf("failed to write file header: %w", err)
+	}
+
+	processedTypes := map[string]bool{}
+
+	acronyms := map[string]bool{
+		"id":      true,
+		"uri":     true,
+		"url":     true,
+		"api":     true,
+		"html":    true,
+		"http":    true,
+		"https":   true,
+		"json":    true,
+		"jsonrpc": true,
+		"rpc":     true,
+		"mime":    true,
+		"a2a":     true,
+		"sse":     true,
+		"uuid":    true,
+	}
+
+	typeNames := make([]string, 0, len(definitions))
+	for typeName := range definitions {
+		typeNames = append(typeNames, typeName)
+	}
+	sort.Strings(typeNames)
+
+	for _, typeName := range typeNames {
+		definition := definitions[typeName]
+
+		defMap, ok := definition.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		isEnum := false
+		var enumValues []interface{}
+		if enum, ok := defMap["enum"].([]interface{}); ok && len(enum) > 0 {
+			isEnum = true
+			enumValues = enum
+		}
+
+		if !isEnum {
+			continue
+		}
+
+		description := ""
+		if desc, ok := defMap["description"].(string); ok {
+			description = desc
+		}
+
+		if description != "" {
+			formattedDescription := formatDescription(description)
+			if _, err := outputFile.WriteString(formattedDescription + "\n"); err != nil {
+				return err
+			}
+		}
+
+		typeStr := "string"
+		if t, ok := defMap["type"].(string); ok {
+			typeStr = t
+		}
+
+		typeDecl := fmt.Sprintf("type %s %s\n\n", typeName, typeStr)
+		if _, err := outputFile.WriteString(typeDecl); err != nil {
+			return err
+		}
+
+		constDecl := fmt.Sprintf("// %s enum values\nconst (\n", typeName)
+		if _, err := outputFile.WriteString(constDecl); err != nil {
+			return err
+		}
+
+		enumStrings := make([]string, 0, len(enumValues))
+		for _, val := range enumValues {
+			if strVal, ok := val.(string); ok {
+				enumStrings = append(enumStrings, strVal)
+			}
+		}
+		sort.Strings(enumStrings)
+
+		for _, val := range enumStrings {
+			enumVal := fmt.Sprintf("\t%s%s %s = \"%s\"\n", typeName, convertToGoFieldName(val, acronyms), typeName, val)
+			if _, err := outputFile.WriteString(enumVal); err != nil {
+				return err
+			}
+		}
+
+		if _, err := outputFile.WriteString(")\n\n"); err != nil {
+			return err
+		}
+
+		processedTypes[typeName] = true
+	}
+
+	for _, typeName := range typeNames {
+		definition := definitions[typeName]
+
+		defMap, ok := definition.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if processedTypes[typeName] {
+			continue
+		}
+
+		description := ""
+		if desc, ok := defMap["description"].(string); ok {
+			description = desc
+		}
+
+		if description != "" {
+			formattedDescription := formatDescription(description)
+			if _, err := outputFile.WriteString(formattedDescription + "\n"); err != nil {
+				return err
+			}
+		}
+
+		structDef := fmt.Sprintf("type %s struct {\n", typeName)
+		if _, err := outputFile.WriteString(structDef); err != nil {
+			return err
+		}
+
+		properties, ok := defMap["properties"].(map[string]interface{})
+		if ok {
+			propNames := make([]string, 0, len(properties))
+			for propName := range properties {
+				propNames = append(propNames, propName)
+			}
+			sort.Strings(propNames)
+
+			for _, propName := range propNames {
+				propDef := properties[propName]
+				propMap, ok := propDef.(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				fieldName := convertToGoFieldName(propName, acronyms)
+
+				propType := determineGoType(propMap, definitions)
+				propDefStr := fmt.Sprintf("\t%s %s `json:\"%s\"`\n", fieldName, propType, propName)
+				if _, err := outputFile.WriteString(propDefStr); err != nil {
+					return err
+				}
+			}
+		}
+
+		if _, err := outputFile.WriteString("}\n\n"); err != nil {
+			return err
+		}
+	}
+
+	cmd := exec.Command("go", "fmt", destination)
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
+	}
+
+	return nil
+}
+
 // convertToGoFieldName converts a JSON property name to a properly capitalized Go field name
 func convertToGoFieldName(name string, acronyms map[string]bool) string {
 	if name == "_meta" {
 		return "Meta"
 	}
 
+	name = strings.ReplaceAll(name, "-", "_")
 	parts := strings.Split(name, "_")
 	for i, part := range parts {
 		lowerPart := strings.ToLower(part)

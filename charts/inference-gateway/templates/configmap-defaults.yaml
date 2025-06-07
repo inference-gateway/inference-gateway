@@ -20,6 +20,11 @@ data:
   MCP_RESPONSE_HEADER_TIMEOUT: {{ .Values.config.MCP_RESPONSE_HEADER_TIMEOUT | quote }}
   MCP_EXPECT_CONTINUE_TIMEOUT: {{ .Values.config.MCP_EXPECT_CONTINUE_TIMEOUT | quote }}
   MCP_REQUEST_TIMEOUT: {{ .Values.config.MCP_REQUEST_TIMEOUT | quote }}
+  # Agent-to-Agent (A2A) Protocol
+  A2A_ENABLE: {{ .Values.config.A2A_ENABLE | quote }}
+  A2A_EXPOSE: {{ .Values.config.A2A_EXPOSE | quote }}
+  A2A_AGENTS: {{ .Values.config.A2A_AGENTS | quote }}
+  A2A_CLIENT_TIMEOUT: {{ .Values.config.A2A_CLIENT_TIMEOUT | quote }}
   # OpenID Connect
   OIDC_ISSUER_URL: {{ .Values.config.OIDC_ISSUER_URL | quote }}
   # Server settings
