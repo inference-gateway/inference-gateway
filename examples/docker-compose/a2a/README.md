@@ -273,7 +273,7 @@ The A2A middleware handles all the protocol-specific communication, including:
   - Google Calendar API integration with fallback to mock service
 - **Configuration**:
   - `GOOGLE_CREDENTIALS_JSON`: Google service account credentials JSON
-  - `CALENDAR_ID`: Target calendar ID (defaults to "primary")
+  - `GOOGLE_CALENDAR_ID`: Target calendar ID (defaults to "primary")
 
 ## Adding Your Own A2A Agents
 

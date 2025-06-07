@@ -19,6 +19,7 @@ import (
 	"google.golang.org/api/option"
 
 	"google-calendar-agent/a2a"
+	"google-calendar-agent/utils"
 )
 
 var logger *zap.Logger
@@ -55,6 +56,16 @@ func (g *googleCalendarService) ListEvents(calendarID string, timeMin, timeMax t
 		zap.Time("timeMin", timeMin),
 		zap.Time("timeMax", timeMax))
 
+	// Log the exact API request parameters
+	logger.Debug("google calendar api request parameters",
+		zap.String("component", "calendar-service"),
+		zap.String("operation", "list-events"),
+		zap.String("calendarID", calendarID),
+		zap.String("timeMinRFC3339", timeMin.Format(time.RFC3339)),
+		zap.String("timeMaxRFC3339", timeMax.Format(time.RFC3339)),
+		zap.String("orderBy", "startTime"),
+		zap.Bool("singleEvents", true))
+
 	events, err := g.service.Events.List(calendarID).
 		TimeMin(timeMin.Format(time.RFC3339)).
 		TimeMax(timeMax.Format(time.RFC3339)).
@@ -68,6 +79,35 @@ func (g *googleCalendarService) ListEvents(calendarID string, timeMin, timeMax t
 			zap.String("calendarID", calendarID),
 			zap.Error(err))
 		return nil, fmt.Errorf("unable to retrieve events: %w", err)
+	}
+
+	// Log detailed API response
+	logger.Debug("google calendar api response details",
+		zap.String("component", "calendar-service"),
+		zap.String("operation", "list-events"),
+		zap.String("calendarID", calendarID),
+		zap.String("kind", events.Kind),
+		zap.String("etag", events.Etag),
+		zap.String("summary", events.Summary),
+		zap.String("description", events.Description),
+		zap.String("timeZone", events.TimeZone),
+		zap.String("accessRole", events.AccessRole),
+		zap.String("nextPageToken", events.NextPageToken),
+		zap.String("nextSyncToken", events.NextSyncToken),
+		zap.Int("itemCount", len(events.Items)))
+
+	// Log each event in detail
+	for i, event := range events.Items {
+		eventJson, _ := json.MarshalIndent(event, "", "  ")
+		logger.Debug("google calendar api event details",
+			zap.String("component", "calendar-service"),
+			zap.String("operation", "list-events"),
+			zap.String("calendarID", calendarID),
+			zap.Int("eventIndex", i),
+			zap.String("eventId", event.Id),
+			zap.String("eventSummary", event.Summary),
+			zap.String("eventStatus", event.Status),
+			zap.String("eventJson", string(eventJson)))
 	}
 
 	logger.Info("successfully retrieved events",
@@ -87,7 +127,15 @@ func (g *googleCalendarService) CreateEvent(calendarID string, event *calendar.E
 		zap.String("eventSummary", event.Summary),
 		zap.String("eventStart", event.Start.DateTime))
 
-	event, err := g.service.Events.Insert(calendarID, event).Do()
+	// Log the full event being sent to Google API
+	eventJson, _ := json.MarshalIndent(event, "", "  ")
+	logger.Debug("google calendar api create event request",
+		zap.String("component", "calendar-service"),
+		zap.String("operation", "create-event"),
+		zap.String("calendarID", calendarID),
+		zap.String("requestJson", string(eventJson)))
+
+	createdEvent, err := g.service.Events.Insert(calendarID, event).Do()
 	if err != nil {
 		logger.Error("failed to create event in google calendar api",
 			zap.String("component", "calendar-service"),
@@ -98,14 +146,22 @@ func (g *googleCalendarService) CreateEvent(calendarID string, event *calendar.E
 		return nil, fmt.Errorf("unable to create event: %w", err)
 	}
 
+	// Log the full response from Google API
+	responseJson, _ := json.MarshalIndent(createdEvent, "", "  ")
+	logger.Debug("google calendar api create event response",
+		zap.String("component", "calendar-service"),
+		zap.String("operation", "create-event"),
+		zap.String("calendarID", calendarID),
+		zap.String("responseJson", string(responseJson)))
+
 	logger.Info("successfully created event",
 		zap.String("component", "calendar-service"),
 		zap.String("operation", "create-event"),
 		zap.String("calendarID", calendarID),
-		zap.String("eventID", event.Id),
-		zap.String("eventSummary", event.Summary))
+		zap.String("eventID", createdEvent.Id),
+		zap.String("eventSummary", createdEvent.Summary))
 
-	return event, nil
+	return createdEvent, nil
 }
 
 func (g *googleCalendarService) UpdateEvent(calendarID, eventID string, event *calendar.Event) (*calendar.Event, error) {
@@ -206,6 +262,33 @@ func (g *googleCalendarService) ListCalendars() ([]*calendar.CalendarListEntry, 
 		return nil, fmt.Errorf("unable to list calendars: %w", err)
 	}
 
+	// Log detailed API response for calendars
+	logger.Debug("google calendar api calendars response details",
+		zap.String("component", "calendar-service"),
+		zap.String("operation", "list-calendars"),
+		zap.String("kind", calendarList.Kind),
+		zap.String("etag", calendarList.Etag),
+		zap.String("nextPageToken", calendarList.NextPageToken),
+		zap.String("nextSyncToken", calendarList.NextSyncToken),
+		zap.Int("itemCount", len(calendarList.Items)))
+
+	// Log each calendar in detail
+	for i, cal := range calendarList.Items {
+		calendarJson, _ := json.MarshalIndent(cal, "", "  ")
+		logger.Debug("google calendar api calendar details",
+			zap.String("component", "calendar-service"),
+			zap.String("operation", "list-calendars"),
+			zap.Int("calendarIndex", i),
+			zap.String("calendarId", cal.Id),
+			zap.String("calendarSummary", cal.Summary),
+			zap.String("calendarDescription", cal.Description),
+			zap.String("calendarTimeZone", cal.TimeZone),
+			zap.String("calendarAccessRole", cal.AccessRole),
+			zap.Bool("calendarPrimary", cal.Primary),
+			zap.Bool("calendarSelected", cal.Selected),
+			zap.String("calendarJson", string(calendarJson)))
+	}
+
 	logger.Info("successfully retrieved calendars",
 		zap.String("component", "calendar-service"),
 		zap.String("operation", "list-calendars"),
@@ -219,6 +302,7 @@ var calendarService CalendarService
 func main() {
 	var err error
 	config := zap.NewProductionConfig()
+	config.Level = zap.NewAtomicLevelAt(zap.DebugLevel) // Enable debug logging
 	config.OutputPaths = []string{"stdout"}
 	config.ErrorOutputPaths = []string{"stderr"}
 	config.Encoding = "json"
@@ -237,6 +321,23 @@ func main() {
 	}
 	defer logger.Sync()
 
+	credentialsPath := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+	if credentialsPath == "" {
+		credentialsPath = "credentials.json"
+		logger.Debug("credentials path not specified in environment, using default",
+			zap.String("credentialsPath", credentialsPath))
+	} else {
+		logger.Debug("using credentials path from environment",
+			zap.String("credentialsPath", credentialsPath))
+	}
+
+	err = utils.CreateGoogleCredentialsFile(logger)
+	if err != nil {
+		logger.Fatal("failed to create google credentials file",
+			zap.String("credentialsPath", credentialsPath),
+			zap.Error(err))
+	}
+
 	logger.Info("starting google-calendar-agent")
 
 	port := os.Getenv("PORT")
@@ -249,16 +350,6 @@ func main() {
 
 	ctx := context.Background()
 
-	credentialsPath := os.Getenv("GOOGLE_CREDENTIALS_PATH")
-	if credentialsPath == "" {
-		credentialsPath = "credentials.json"
-		logger.Debug("credentials path not specified in environment, using default",
-			zap.String("credentialsPath", credentialsPath))
-	} else {
-		logger.Debug("using credentials path from environment",
-			zap.String("credentialsPath", credentialsPath))
-	}
-
 	logger.Info("initializing calendar service", zap.String("credentialsPath", credentialsPath))
 	calendarService, err = NewCalendarService(ctx, option.WithCredentialsFile(credentialsPath))
 	if err != nil {
@@ -266,8 +357,11 @@ func main() {
 			zap.Error(err),
 			zap.String("credentialsPath", credentialsPath))
 		calendarService = &mockCalendarService{}
+		logger.Warn("using mock calendar service - no real google calendar api calls will be made",
+			zap.String("serviceType", "mock"))
 	} else {
-		logger.Info("calendar service initialized successfully")
+		logger.Info("calendar service initialized successfully",
+			zap.String("serviceType", "google-api"))
 	}
 
 	r := gin.Default()
@@ -843,6 +937,25 @@ func isDeleteEventRequest(text string) bool {
 func handleListEventsRequest(text string) (*CalendarResponse, error) {
 	logger.Debug("handling list events request", zap.String("text", text))
 
+	// Check which service implementation is being used
+	switch calendarService.(type) {
+	case *googleCalendarService:
+		logger.Info("using google calendar api service",
+			zap.String("component", "calendar-processor"),
+			zap.String("operation", "list-events"),
+			zap.String("serviceType", "google-api"))
+	case *mockCalendarService:
+		logger.Warn("using mock calendar service - returning empty results",
+			zap.String("component", "calendar-processor"),
+			zap.String("operation", "list-events"),
+			zap.String("serviceType", "mock"))
+	default:
+		logger.Warn("unknown calendar service type",
+			zap.String("component", "calendar-processor"),
+			zap.String("operation", "list-events"),
+			zap.String("serviceType", "unknown"))
+	}
+
 	var timeMin, timeMax time.Time
 	var timeDescription string
 
@@ -883,7 +996,7 @@ func handleListEventsRequest(text string) (*CalendarResponse, error) {
 		zap.Time("timeMax", timeMax),
 		zap.String("description", timeDescription))
 
-	calendarID := os.Getenv("CALENDAR_ID")
+	calendarID := os.Getenv("GOOGLE_CALENDAR_ID")
 	if calendarID == "" {
 		calendarID = os.Getenv("GOOGLE_CALENDAR_ID")
 	}
@@ -971,8 +1084,8 @@ func handleListCalendarsRequest(text string) (*CalendarResponse, error) {
 	}
 
 	responseText += "💡 **How to use a specific calendar:**\n"
-	responseText += "Set the `CALENDAR_ID` environment variable to one of the IDs above.\n"
-	responseText += "For example: `CALENDAR_ID=" + calendars[0].Id + "`\n\n"
+	responseText += "Set the `GOOGLE_CALENDAR_ID` environment variable to one of the IDs above.\n"
+	responseText += "For example: `GOOGLE_CALENDAR_ID=" + calendars[0].Id + "`\n\n"
 	responseText += "The default calendar ID is `primary` (your main calendar)."
 
 	logger.Debug("formatted calendars response text",

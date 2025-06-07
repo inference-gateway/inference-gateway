@@ -64,18 +64,18 @@ Create a `.env` file in the a2a directory:
 
 ```bash
 # .env file
-GOOGLE_CREDENTIALS_JSON='{"type":"service_account","project_id":"your-project",...}'
-CALENDAR_ID=primary
+GOOGLE_CALENDAR_SA_JSON='{"type":"service_account","project_id":"your-project",...}'
+GOOGLE_CALENDAR_ID=primary
 ```
 
 #### Option B: Direct Environment Export
 
 ```bash
 # Export the credentials JSON (replace with your actual credentials)
-export GOOGLE_CREDENTIALS_JSON='{"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"calendar-agent-service@your-project.iam.gserviceaccount.com","client_id":"...","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/calendar-agent-service%40your-project.iam.gserviceaccount.com"}'
+export GOOGLE_CALENDAR_SA_JSON='{"type":"service_account","project_id":"your-project","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"calendar-agent-service@your-project.iam.gserviceaccount.com","client_id":"...","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/calendar-agent-service%40your-project.iam.gserviceaccount.com"}'
 
 # Optionally specify a specific calendar ID (defaults to "primary")
-export CALENDAR_ID=primary
+export GOOGLE_CALENDAR_ID=primary
 ```
 
 #### Option C: Using File Path (for development)
@@ -85,7 +85,7 @@ export CALENDAR_ID=primary
 echo '{"type":"service_account",...}' > /path/to/google-credentials.json
 
 # Set the environment variable to the file path
-export GOOGLE_CREDENTIALS_JSON=$(cat /path/to/google-credentials.json)
+export GOOGLE_CALENDAR_SA_JSON=$(cat /path/to/google-credentials.json)
 ```
 
 ### Step 6: Test the Connection
@@ -118,7 +118,7 @@ curl -X POST http://localhost:8084 \
 
 ## Calendar ID Options
 
-The `CALENDAR_ID` environment variable accepts:
+The `GOOGLE_CALENDAR_ID` environment variable accepts:
 
 - `primary` - Your primary calendar (default)
 - `calendar-id@group.calendar.google.com` - A specific calendar ID
@@ -129,10 +129,12 @@ The `CALENDAR_ID` environment variable accepts:
 ### Common Issues
 
 1. **"Calendar not found" error**
+
    - Make sure the service account has access to the calendar
-   - Verify the CALENDAR_ID is correct
+   - Verify the GOOGLE_CALENDAR_ID is correct
 
 2. **"Insufficient permissions" error**
+
    - Ensure the service account has "Make changes to events" permission
    - Check that the Google Calendar API is enabled
 

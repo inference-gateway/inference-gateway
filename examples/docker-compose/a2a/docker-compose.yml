@@ -105,12 +105,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8084:8084"
+    env_file:
+      - ./google-calendar-agent/.env
     environment:
       PORT: 8084
-      GOOGLE_CREDENTIALS_PATH: /app/secrets/google-credentials.json
-      CALENDAR_ID: ${CALENDAR_ID:-primary}
-    volumes:
-      - ${GOOGLE_CREDENTIALS_FILE:-./google-calendar-agent/calendar-agent-sa.json}:/app/secrets/google-credentials.json:ro
+      GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/google-credentials.json
+      GOOGLE_CALENDAR_ID: ${GOOGLE_CALENDAR_ID:-primary}
     networks:
       - a2a-network
     healthcheck:

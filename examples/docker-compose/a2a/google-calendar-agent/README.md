@@ -2,6 +2,8 @@
 
 A comprehensive A2A (Agent-to-Agent) calendar management agent that integrates with Google Calendar API to provide calendar operations through natural language.
 
+If you want to test it with the real Google Calendar API, I'd suggest you to create a new calendar for testing purposes, as the agent will modify events in the calendar it is configured to use.
+
 ## Features
 
 The Google Calendar Agent supports the following operations:
@@ -83,8 +85,8 @@ The Google Calendar Agent supports the following operations:
 
 ### Environment Variables
 
-- `GOOGLE_APPLICATION_CREDENTIALS`: Path to the service account JSON file (optional if using default credentials)
-- `CALENDAR_ID`: Google Calendar ID to use (defaults to "primary")
+- `GOOGLE_CALENDAR_SA_JSON`: The SA in a JSON format
+- `GOOGLE_CALENDAR_ID`: Google Calendar ID to use (defaults to "primary")
 
 ## Running the Agent
 
