@@ -1,10 +1,13 @@
 package a2a
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -36,15 +39,17 @@ type agentImpl struct {
 	provider        providers.IProvider
 	model           *string
 	discoveredTools []providers.ChatCompletionTool
+	toolToAgentMap  map[string]string
 }
 
 // NewAgent creates a new Agent instance
 func NewAgent(logger logger.Logger, a2aClient A2AClientInterface) Agent {
 	return &agentImpl{
-		a2aClient: a2aClient,
-		logger:    logger,
-		provider:  nil,
-		model:     nil,
+		a2aClient:      a2aClient,
+		logger:         logger,
+		provider:       nil,
+		model:          nil,
+		toolToAgentMap: make(map[string]string),
 	}
 }
 
@@ -319,10 +324,14 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 		var agentURL string
 		if agentURLVal, ok := args["agentURL"].(string); ok && agentURLVal != "" {
 			agentURL = agentURLVal
+		} else if mappedAgent, ok := a.toolToAgentMap[toolCall.Function.Name]; ok {
+			agentURL = mappedAgent
+			a.logger.Debug("using mapped agent for tool", "tool_name", toolCall.Function.Name, "agent_url", agentURL)
 		} else {
 			agents := a.a2aClient.GetAgents()
 			if len(agents) > 0 {
 				agentURL = agents[0]
+				a.logger.Debug("falling back to first available agent", "tool_name", toolCall.Function.Name, "agent_url", agentURL)
 			} else {
 				a.logger.Error("no a2a agents available for tool execution", nil, "tool", toolCall.Function.Name)
 				results = append(results, providers.Message{
@@ -335,6 +344,11 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 		}
 
 		delete(args, "agentURL")
+
+		var requestText string
+		if req, ok := args["request"].(string); ok {
+			requestText = req
+		}
 
 		requestID := fmt.Sprintf("req_%s", toolCall.ID)
 		messageID := fmt.Sprintf("msg_%s", toolCall.ID)
@@ -359,36 +373,71 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			},
 		}
 
+		if requestText != "" {
+			sendRequest.Params.Message.Parts = append(sendRequest.Params.Message.Parts, Part{})
+		}
+
 		a.logger.Info("executing a2a tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v agent=%s", toolCall.ID, toolCall.Function.Name, args, agentURL))
 
-		result, err := a.a2aClient.SendMessage(ctx, sendRequest, agentURL)
-		if err != nil {
-			a.logger.Error("failed to execute a2a tool call", err, "tool", toolCall.Function.Name, "agent", agentURL)
+		if requestText != "" {
+			result, err := a.sendMessageWithTextPart(ctx, sendRequest, agentURL, requestText)
+			if err != nil {
+				a.logger.Error("failed to execute a2a tool call", err, "tool", toolCall.Function.Name, "agent", agentURL)
+				results = append(results, providers.Message{
+					Role:       providers.MessageRoleTool,
+					Content:    fmt.Sprintf("Error: %v", err),
+					ToolCallId: &toolCall.ID,
+				})
+				continue
+			}
+
+			var resultStr string
+			if result != nil && result.Result != nil {
+				if output, ok := result.Result.(string); ok {
+					resultStr = output
+				} else {
+					outputJSON, _ := json.Marshal(result.Result)
+					resultStr = string(outputJSON)
+				}
+			} else {
+				resultStr = "No output received from agent"
+			}
+
 			results = append(results, providers.Message{
 				Role:       providers.MessageRoleTool,
-				Content:    fmt.Sprintf("Error: %v", err),
+				Content:    resultStr,
 				ToolCallId: &toolCall.ID,
 			})
-			continue
-		}
-
-		var resultStr string
-		if result == nil {
-			resultStr = "A2A task completed successfully"
 		} else {
-			resultBytes, err := json.Marshal(result)
+			result, err := a.a2aClient.SendMessage(ctx, sendRequest, agentURL)
 			if err != nil {
-				resultStr = fmt.Sprintf("A2A task completed successfully (result format error: %v)", err)
-			} else {
-				resultStr = string(resultBytes)
+				a.logger.Error("failed to execute a2a tool call", err, "tool", toolCall.Function.Name, "agent", agentURL)
+				results = append(results, providers.Message{
+					Role:       providers.MessageRoleTool,
+					Content:    fmt.Sprintf("Error: %v", err),
+					ToolCallId: &toolCall.ID,
+				})
+				continue
 			}
-		}
 
-		results = append(results, providers.Message{
-			Role:       providers.MessageRoleTool,
-			Content:    resultStr,
-			ToolCallId: &toolCall.ID,
-		})
+			var resultStr string
+			if result != nil && result.Result != nil {
+				if output, ok := result.Result.(string); ok {
+					resultStr = output
+				} else {
+					outputJSON, _ := json.Marshal(result.Result)
+					resultStr = string(outputJSON)
+				}
+			} else {
+				resultStr = "No output received from agent"
+			}
+
+			results = append(results, providers.Message{
+				Role:       providers.MessageRoleTool,
+				Content:    resultStr,
+				ToolCallId: &toolCall.ID,
+			})
+		}
 	}
 
 	return results, nil
@@ -490,7 +539,7 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 	}
 
 	var toolCalls []providers.ChatCompletionMessageToolCall
-	for i := 0; i < len(toolCallsMap); i++ {
+	for i := 0; len(toolCallsMap) > 0 && i < len(toolCallsMap); i++ {
 		if toolCall, exists := toolCallsMap[i]; exists {
 			a.logger.Debug("final parsed a2a tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%s", toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments))
 			toolCalls = append(toolCalls, *toolCall)
@@ -531,6 +580,7 @@ func (a *agentImpl) handleAgentQueryTool(ctx context.Context, toolCall providers
 
 		if !exists {
 			a.discoveredTools = append(a.discoveredTools, skillTool)
+			a.toolToAgentMap[skill.ID] = agentURL // Map tool name to agent URL
 			a.logger.Debug("added discovered skill as tool", "skill_name", skill.Name, "skill_id", skill.ID, "agent_url", agentURL)
 		}
 	}
@@ -583,9 +633,79 @@ func (a *agentImpl) convertSkillToTool(skill AgentSkill, agentURL string) provid
 	return providers.ChatCompletionTool{
 		Type: providers.ChatCompletionToolTypeFunction,
 		Function: providers.FunctionObject{
-			Name:        skill.Name,
+			Name:        skill.ID,
 			Description: &description,
 			Parameters:  parameters,
 		},
 	}
+}
+
+// sendMessageWithTextPart sends an A2A message with a text part, working around the empty Part struct
+func (a *agentImpl) sendMessageWithTextPart(ctx context.Context, baseRequest *SendMessageRequest, agentURL string, text string) (*SendMessageSuccessResponse, error) {
+	// Create a custom request structure that will marshal with the correct JSON
+	customRequest := map[string]interface{}{
+		"id":      baseRequest.ID,
+		"jsonrpc": baseRequest.JSONRPC,
+		"method":  baseRequest.Method,
+		"params": map[string]interface{}{
+			"message": map[string]interface{}{
+				"role":      baseRequest.Params.Message.Role,
+				"messageId": baseRequest.Params.Message.Messageid,
+				"parts": []map[string]interface{}{
+					{
+						"type": "text",
+						"text": text,
+					},
+				},
+			},
+			"configuration": map[string]interface{}{
+				"blocking": baseRequest.Params.Configuration.Blocking,
+			},
+			"metadata": baseRequest.Params.Metadata,
+		},
+	}
+
+	// Marshal the custom request
+	requestBody, err := json.Marshal(customRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal custom request: %w", err)
+	}
+
+	// Make the HTTP request directly using the a2aClient's internal method
+	// We'll use reflection to access the makeJSONRPCRequest method or implement our own
+	return a.makeCustomA2ARequest(ctx, requestBody, agentURL)
+}
+
+// makeCustomA2ARequest makes a custom A2A request with pre-marshaled JSON
+func (a *agentImpl) makeCustomA2ARequest(ctx context.Context, requestBody []byte, agentURL string) (*SendMessageSuccessResponse, error) {
+	// Build the URL
+	rpcURL, err := url.JoinPath(agentURL, "a2a")
+	if err != nil {
+		return nil, fmt.Errorf("failed to build JSON-RPC URL: %w", err)
+	}
+
+	// Create the HTTP request
+	req, err := http.NewRequestWithContext(ctx, "POST", rpcURL, bytes.NewReader(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	// Make the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Parse the response
+	var response SendMessageSuccessResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &response, nil
 }

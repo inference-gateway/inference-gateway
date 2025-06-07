@@ -42,6 +42,7 @@ The A2A agents will be available at the following endpoints:
 - **Hello World Agent**: `http://localhost:8081`
 - **Calculator Agent**: `http://localhost:8082`
 - **Weather Agent**: `http://localhost:8083`
+- **Google Calendar Agent**: `http://localhost:8084`
 
 ## Components
 
@@ -49,6 +50,7 @@ The A2A agents will be available at the following endpoints:
 - **Hello World Agent**: Simple A2A agent demonstrating basic message handling
 - **Calculator Agent**: Mathematical computation agent with arithmetic operations
 - **Weather Agent**: Weather information agent providing current weather data
+- **Google Calendar Agent**: Calendar management agent with full CRUD operations for Google Calendar events
 
 ## Usage
 
@@ -114,7 +116,27 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 }'
 ```
 
-### Example 4: Multi-Agent Coordination
+### Example 4: Google Calendar Agent
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+  "model": "deepseek/deepseek-chat",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant with access to calendar management tools."
+    },
+    {
+      "role": "user",
+      "content": "List my events this week."
+    }
+  ]
+}'
+```
+
+### Example 5: Multi-Agent Coordination
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
@@ -128,16 +150,16 @@ curl -X POST http://localhost:8080/v1/chat/completions \
     },
     {
       "role": "user",
-      "content": "Say hello, then calculate 25 * 4, and finally tell me the weather in London."
+      "content": "Say hello, calculate how many days until Friday, check my calendar for today, and tell me the weather in London."
     }
   ]
 }'
 ```
 
-### Example 5: List Available A2A Agent Skills
+### Example 6: List Available A2A Agent Skills
 
 ```bash
-curl -X GET http://localhost:8080/a2a/agents
+curl -X GET http://localhost:8080/v1/a2a/agents
 ```
 
 Response will show available agents and their capabilities:
@@ -170,6 +192,23 @@ Response will show available agents and their capabilities:
             "id": "multiply",
             "name": "Multiply Numbers",
             "description": "Multiply two numbers together"
+          }
+        ]
+      }
+    },
+    {
+      "url": "http://google-calendar-agent:8084",
+      "capabilities": {
+        "skills": [
+          {
+            "id": "list-events",
+            "name": "List Calendar Events",
+            "description": "List calendar events for a specified time period"
+          },
+          {
+            "id": "create-event",
+            "name": "Create Calendar Event",
+            "description": "Create new calendar events with natural language parsing"
           }
         ]
       }
@@ -219,6 +258,23 @@ The A2A middleware handles all the protocol-specific communication, including:
   - `get_weather`: Get current weather information for a location
   - `get_forecast`: Get weather forecast for a location
 
+### Google Calendar Agent
+
+- **Endpoint**: `http://google-calendar-agent:8084`
+- **Skills**:
+  - `list-events`: List calendar events for a specified time period
+  - `create-event`: Create new calendar events with natural language parsing
+  - `update-event`: Update existing calendar events
+  - `delete-event`: Delete calendar events
+- **Features**:
+  - Natural language date/time parsing ("tomorrow at 2pm", "next Monday")
+  - Smart attendee extraction ("meeting with John and Sarah")
+  - Location detection and parsing
+  - Google Calendar API integration with fallback to mock service
+- **Configuration**:
+  - `GOOGLE_CREDENTIALS_JSON`: Google service account credentials JSON
+  - `CALENDAR_ID`: Target calendar ID (defaults to "primary")
+
 ## Adding Your Own A2A Agents
 
 **It's incredibly easy to add more A2A agents!** Simply follow these steps:
@@ -253,11 +309,12 @@ Environment variables you can configure:
 
 ### Current Example Agents
 
-This example includes three pre-configured agents:
+This example includes four pre-configured agents:
 
 - **Hello World Agent**: `http://helloworld-agent:8081` - Basic greeting functionality
 - **Calculator Agent**: `http://calculator-agent:8082` - Mathematical operations
 - **Weather Agent**: `http://weather-agent:8083` - Weather information services
+- **Google Calendar Agent**: `http://google-calendar-agent:8084` - Calendar management with Google Calendar integration
 
 ## Learn More
 
