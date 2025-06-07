@@ -33,6 +33,8 @@ type CalendarService interface {
 	ListCalendars() ([]*calendar.CalendarListEntry, error)
 }
 
+var _ CalendarService = (*googleCalendarService)(nil)
+
 type googleCalendarService struct {
 	service *calendar.Service
 }
@@ -572,7 +574,6 @@ func handleMessageStream(c *gin.Context, req a2a.JSONRPCRequest) {
 	logger.Info("processing message/stream request",
 		zap.Any("requestId", req.ID),
 		zap.String("clientIP", c.ClientIP()))
-	// For now, streaming is the same as regular message send
 	handleMessageSend(c, req)
 }
 
