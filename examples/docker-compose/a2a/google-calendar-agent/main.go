@@ -41,7 +41,14 @@ type googleCalendarService struct {
 }
 
 func NewCalendarService(ctx context.Context, opts ...option.ClientOption) (CalendarService, error) {
-	svc, err := calendar.NewService(ctx, opts...)
+	scopesOption := option.WithScopes(
+		calendar.CalendarReadonlyScope,
+		calendar.CalendarScope,
+	)
+
+	allOptions := append([]option.ClientOption{scopesOption}, opts...)
+
+	svc, err := calendar.NewService(ctx, allOptions...)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create calendar service: %w", err)
 	}
@@ -382,7 +389,7 @@ func main() {
 		info := a2a.AgentCard{
 			Name:        "google-calendar-agent",
 			Description: "A comprehensive Google Calendar agent that can list, create, update, and delete calendar events using the A2A protocol",
-			URL:         "http://localhost:8082",
+			URL:         "http://localhost:8084",
 			Version:     "1.0.0",
 			Capabilities: a2a.AgentCapabilities{
 				Streaming:              false,
