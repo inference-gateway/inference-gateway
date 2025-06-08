@@ -51,7 +51,6 @@ jobs:
         uses: actions/setup-node@v4.4.0
         with:
           node-version: 22
-          cache: "npm"
 
       - name: Install semantic release and plugins
         run: |
