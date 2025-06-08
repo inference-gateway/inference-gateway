@@ -39,3 +39,4 @@ A2A configuration is managed through environment variables:
 - [A2A Protocol Specification](https://github.com/google/a2a/blob/main/docs/specification.md)
 - [Google Agent Development Kit](https://github.com/google/adk-docs)
 - [A2A Examples](https://github.com/google/a2a/tree/main/examples)
+- [Curated A2A Agents](https://github.com/inference-gateway/awesome-a2a) - The A2A community is still new, here is a list of ready-to-use A2A agents

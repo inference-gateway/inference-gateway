@@ -196,7 +196,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 The gateway automatically discovers agent skills, converts them to chat completion tools, and handles skill execution, enabling seamless collaboration between LLMs and external agents.
 
-> **Learn more**: [A2A Protocol Documentation](a2a/README.md) | [Agent Integration Guide](examples/docker-compose/tools/)
+> **Learn more**: [A2A Protocol Documentation](a2a/README.md) | [A2A Integration Example](examples/docker-compose/a2a/) | [Curated A2A Agents](https://github.com/inference-gateway/awesome-a2a)
 
 ## Supported API's
 

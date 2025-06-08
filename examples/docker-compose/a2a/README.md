@@ -279,6 +279,8 @@ The A2A middleware handles all the protocol-specific communication, including:
 
 **It's incredibly easy to add more A2A agents!** Simply follow these steps:
 
+> **💡 Need inspiration?** Check out our [curated collection of ready-to-use A2A agents](https://github.com/inference-gateway/awesome-a2a) that you can deploy right away!
+
 ### Quick Setup
 
 1. **Add your agent URL** to the `A2A_AGENTS` environment variable:
@@ -322,3 +324,4 @@ This example includes four pre-configured agents:
 - [A2A Python SDK](https://github.com/google/a2a-python)
 - [Google Agent Development Kit](https://github.com/google/adk-docs)
 - [Inference Gateway Documentation](https://github.com/inference-gateway/inference-gateway)
+- [Curated A2A Agents](https://github.com/inference-gateway/awesome-a2a) - Community-maintained collection of ready-to-use A2A agents
