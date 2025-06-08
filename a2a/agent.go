@@ -653,7 +653,7 @@ func (a *agentImpl) sendMessageWithTextPart(ctx context.Context, baseRequest *Se
 				"messageId": baseRequest.Params.Message.Messageid,
 				"parts": []map[string]interface{}{
 					{
-						"type": "text",
+						"kind": "text",
 						"text": text,
 					},
 				},
