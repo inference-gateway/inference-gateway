@@ -2,6 +2,11 @@
 version: "3"
 
 tasks:
+  default:
+    desc: "Show available tasks"
+    cmds:
+      - task --list
+
   mcp-schema-download:
     desc: "Download the latest MCP schema and convert to YAML"
     cmds:
@@ -55,7 +60,7 @@ tasks:
   tidy:
     desc: "Tidy the gateway"
     cmds:
-      - go mod tidy
+      - find . -name 'go.mod' -execdir go mod tidy \;
 
   build:
     desc: "Build the gateway"
