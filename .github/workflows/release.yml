@@ -54,7 +54,7 @@ jobs:
 
       - name: Install semantic release and plugins
         run: |
-          npm install -g semantic-release@v24.2.3 \
+          npm install -g semantic-release@v24.2.5 \
             conventional-changelog-cli \
             conventional-changelog-conventionalcommits \
             @semantic-release/changelog \
