@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.10.0-rc.1...v0.10.0-rc.2) (2025-06-08)
+
+### 🐛 Bug Fixes
+
+* Rename 'type' to 'kind' in sendMessageWithTextPart ([69c8255](https://github.com/inference-gateway/inference-gateway/commit/69c82555a8e36bcf65d5e3b0150f7f4f93beb916))
+
 ## [0.10.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.9.0...v0.10.0-rc.1) (2025-06-08)
 
 ### ✨ Features
