@@ -2,6 +2,82 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.10.0-rc.1...v0.10.0-rc.2) (2025-06-08)
+
+### 🐛 Bug Fixes
+
+* Rename 'type' to 'kind' in sendMessageWithTextPart ([69c8255](https://github.com/inference-gateway/inference-gateway/commit/69c82555a8e36bcf65d5e3b0150f7f4f93beb916))
+
+## [0.10.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.9.0...v0.10.0-rc.1) (2025-06-08)
+
+### ✨ Features
+
+* **a2a:** Implement A2A agents listing and client initialization ([c16cff4](https://github.com/inference-gateway/inference-gateway/commit/c16cff49ffb0c5cba12ecb4246b0e34fe6754c6b))
+* **a2a:** Implement progressive discovery of agent skills and enhance tool handling ([998a871](https://github.com/inference-gateway/inference-gateway/commit/998a8719b90db151b6893c0210260f405e77532f))
+* Add A2A configuration support in the code generation ([2b35dd8](https://github.com/inference-gateway/inference-gateway/commit/2b35dd8fad121acbc1a23ea5b39d1e30066580b1))
+* Add A2A configuration support in the Config struct ([a1a3301](https://github.com/inference-gateway/inference-gateway/commit/a1a3301ada40cbd19dc09f82cc7a088d631eb9bb))
+* Add A2A directory to Dockerfile and implement build container task in Taskfile ([687da83](https://github.com/inference-gateway/inference-gateway/commit/687da8300f94f00426b77d666390659706eab866))
+* Add A2A expose option to components for agent list cards endpoint ([0ca8dcb](https://github.com/inference-gateway/inference-gateway/commit/0ca8dcb4ba8a64f901e8f9e4a84b8f932312fc1d))
+* Add A2A JSON Schema Definitions ([f0c72a4](https://github.com/inference-gateway/inference-gateway/commit/f0c72a4bb6cc24fe8ead1dccde73516d1161c7f3))
+* Add A2A schema download task and update generation commands ([09a4adb](https://github.com/inference-gateway/inference-gateway/commit/09a4adb3a853e4372fef5b8cf4d78faf60f2a1c5))
+* Add A2A types generation from schema in the generate command ([01a7989](https://github.com/inference-gateway/inference-gateway/commit/01a79893adf80ccaa02a26b42a5ed4e099b03d5e))
+* Add Agent-to-Agent (A2A) protocol support with configuration options ([3c746df](https://github.com/inference-gateway/inference-gateway/commit/3c746df44c8d873a0a24494853eb4ec59f72b10e))
+* Add CalendarService interface implementation check and clean up message stream handling ([7d8265f](https://github.com/inference-gateway/inference-gateway/commit/7d8265f6854b78092378473443d6864f3e48a2d3))
+* Add support for Spanish greetings in message handling ([1e2dba9](https://github.com/inference-gateway/inference-gateway/commit/1e2dba9f35d58ec8d4c2e9ec2383a1ddf079a3f3))
+* Enhance A2A agent functionality and improve message handling ([0e14b3d](https://github.com/inference-gateway/inference-gateway/commit/0e14b3df8deea90fc0fce58e40d70888f843ecfd))
+* Generate - add A2A_EXPOSE configuration for agent list cards endpoint ([699f2c4](https://github.com/inference-gateway/inference-gateway/commit/699f2c4ad3d84aef16ac9f4de4340f29dffa4e84))
+* Implement A2A middleware and client ([c8a9b2c](https://github.com/inference-gateway/inference-gateway/commit/c8a9b2c158930b68d20bf3b6608b3698816a9f46))
+* Implement GenerateA2ATypes function for A2A JSON/YAML schema processing ([58d8025](https://github.com/inference-gateway/inference-gateway/commit/58d80258587ed062e65fea035d0bae165f164d5e))
+* Integrate structured logging with zap and enhance greeting generation logic ([aa9e7fe](https://github.com/inference-gateway/inference-gateway/commit/aa9e7fef03d25e1f50335172e7b8b5f03e7cc04e))
+* **middleware:** Add agent skill tools to A2A middleware and enhance logging ([20f9738](https://github.com/inference-gateway/inference-gateway/commit/20f97388e5f90ecb7827d7e0d8eaa98b8062b760))
+* Run generate - add Agent-to-Agent (A2A) protocol configuration options ([7ddd9c2](https://github.com/inference-gateway/inference-gateway/commit/7ddd9c28e0c2ef0eff4762266628367d5c030359))
+* **schema:** Download the latest schema from a2a official repository - Add extensions property to AgentCapabilities and related definitions ([a45a5e8](https://github.com/inference-gateway/inference-gateway/commit/a45a5e825c81adbc10387e43beb24f9a5ac2de72))
+* **schema:** Run generate - add extensions property to AgentCapabilities and new AgentExtension type ([c48fcd4](https://github.com/inference-gateway/inference-gateway/commit/c48fcd41a68eb9f464db78d7b15dea121c482ee3))
+* Update Google Calendar agent configuration and logging enhancements ([b5108c6](https://github.com/inference-gateway/inference-gateway/commit/b5108c6f3148d547250270f97961c52045e5dab0))
+
+### ♻️ Improvements
+
+* Ensure defending errors checks ([89f2851](https://github.com/inference-gateway/inference-gateway/commit/89f2851ba7178aab64a2f9a0c4460f17047dff2d))
+* Refactor tests to use generated mocks for providers ([abd9b40](https://github.com/inference-gateway/inference-gateway/commit/abd9b40581d52a2e8030425ba7b48a5c02bd4df4))
+* Simplify logging in Google Calendar service and enhance calendar access checks ([602245f](https://github.com/inference-gateway/inference-gateway/commit/602245f680f79ff572a6dd782c915e10a7677111))
+* **tests:** Create a separation of concern between mcp and a2a testing mocks ([e6513ad](https://github.com/inference-gateway/inference-gateway/commit/e6513ad85226cef86f9ba61161cbc6a18ddcc994))
+* **tests:** Remove redundant comments in A2A middleware tests ([1ab8869](https://github.com/inference-gateway/inference-gateway/commit/1ab8869993cafcf97507548f130f7556c7cd6a9c))
+
+### 🐛 Bug Fixes
+
+* **a2a:** Add ALLOWED_MODELS variable to .env.example and mock ListAgentsHandler in routes ([c1170d3](https://github.com/inference-gateway/inference-gateway/commit/c1170d38969f8e008d95f9c9a3e6d73cbb3257ad))
+* **a2a:** Update agent card URL to use the correct path for agent.json ([8b7e5f1](https://github.com/inference-gateway/inference-gateway/commit/8b7e5f18d35a29568da0cd72c8d3dd7e6a199fc8))
+* **client:** Update JSON-RPC URL path in makeJSONRPCRequest method ([0a2bace](https://github.com/inference-gateway/inference-gateway/commit/0a2bace880ea557d4c0a37791472050fd723ba04))
+* **docs:** Update model name in README for, groq deprecated the other one ([6dc0505](https://github.com/inference-gateway/inference-gateway/commit/6dc05053e751ad72b425499a0f02665479e59930))
+* **docs:** Update README to replace Groq API key with DeepSeek API key and adjust model references ([1885793](https://github.com/inference-gateway/inference-gateway/commit/1885793762f2eb7d1ed2dab328fd74de56c3f9c5))
+* **middleware:** Handle missing provider in A2A middleware and log error ([afd785b](https://github.com/inference-gateway/inference-gateway/commit/afd785b9436622980fb57c215bbb764d42279e0e))
+* Remove indirect requirement for github.com/google/uuid ([2467b85](https://github.com/inference-gateway/inference-gateway/commit/2467b8542d9b61a0969207607e3c91fce3c5a350))
+* Update Dockerfile and main.go for Google Calendar agent configuration and service scopes ([c960f7d](https://github.com/inference-gateway/inference-gateway/commit/c960f7d0bc0011193cd9788cfd92599342b00e77))
+
+### 📚 Documentation
+
+* Add A2A integration section to README with usage instructions ([b91f6cb](https://github.com/inference-gateway/inference-gateway/commit/b91f6cb06b61f2f78c002b0273947374303c6aed))
+* Add README for A2A protocol integration and usage instructions ([dc7638d](https://github.com/inference-gateway/inference-gateway/commit/dc7638d2fcb5265b5f8a3a7131b143d5a40793db))
+* **examples-a2a:** Add HelloWorld and Weather agents with A2A protocol support ([b2f7a64](https://github.com/inference-gateway/inference-gateway/commit/b2f7a64edd3be07c23a759cfb36b6e317c349059))
+* **examples:** Add unit tests for A2A Google Calendar agent ([db5186d](https://github.com/inference-gateway/inference-gateway/commit/db5186df48793cb91c60231598ffc3babf55ef67))
+* **examples:** Vendor the a2a package for now ([66b4da1](https://github.com/inference-gateway/inference-gateway/commit/66b4da1d4e462fb616432f4e297410b93831c1d3))
+* **fix:** Update A2A agent endpoints in README to reflect correct ports ([113b434](https://github.com/inference-gateway/inference-gateway/commit/113b434120fbdbce42f6146ca4e35f464d9bb456))
+* Update MCP server endpoints to use streamableHttp servers ([9959238](https://github.com/inference-gateway/inference-gateway/commit/9959238401e84800e77fc3a523e375e4ec6409cc))
+
+### 🔧 Miscellaneous
+
+* Add guideline for using lowercase log messages for consistency ([e010cc2](https://github.com/inference-gateway/inference-gateway/commit/e010cc23d1389a053eeb1c33843d11bf1c541448))
+* Add TODOs ([4528828](https://github.com/inference-gateway/inference-gateway/commit/4528828ceee4dc493dbf0bb8dfd09d5bde24222e))
+* Fast-forward - merge branch 'main' into feature/implement-googles-a2a-client ([f055cfd](https://github.com/inference-gateway/inference-gateway/commit/f055cfda0598f00c6b69d92c5c7400e6a9514db3))
+* Mark a2a/generated_types.go as generated in .gitattributes ([7276b29](https://github.com/inference-gateway/inference-gateway/commit/7276b29938836a83e8fb25ced74e79a70089c069))
+* Move agent to a dedicated project ([59a7eca](https://github.com/inference-gateway/inference-gateway/commit/59a7eca187ea3ca63cea27ee52504f88d4092462))
+
+### ✅ Miscellaneous
+
+* **a2a:** Add ListAgentsHandler to expose A2A agents endpoint with detailed response handling ([f7364b6](https://github.com/inference-gateway/inference-gateway/commit/f7364b6030c888b0a9cfa179df3ae1cc748eebfa))
+* Add A2A configuration options to TestLoad function ([ddb854a](https://github.com/inference-gateway/inference-gateway/commit/ddb854a0b833d67e4d396ee0bd41c54899b912fa))
+* Add mock implementation for A2AClientInterface using MockGen ([2dde66e](https://github.com/inference-gateway/inference-gateway/commit/2dde66e0808f7670f9bd0c7bb4afa027a33335f9))
+
 ## [0.9.0](https://github.com/inference-gateway/inference-gateway/compare/v0.8.1...v0.9.0) (2025-06-02)
 
 ### ✨ Features
