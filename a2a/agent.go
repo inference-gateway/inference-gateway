@@ -580,7 +580,7 @@ func (a *agentImpl) handleAgentQueryTool(ctx context.Context, toolCall providers
 
 		if !exists {
 			a.discoveredTools = append(a.discoveredTools, skillTool)
-			a.toolToAgentMap[skill.ID] = agentURL // Map tool name to agent URL
+			a.toolToAgentMap[skill.ID] = agentURL
 			a.logger.Debug("added discovered skill as tool", "skill_name", skill.Name, "skill_id", skill.ID, "agent_url", agentURL)
 		}
 	}
@@ -642,7 +642,6 @@ func (a *agentImpl) convertSkillToTool(skill AgentSkill, agentURL string) provid
 
 // sendMessageWithTextPart sends an A2A message with a text part, working around the empty Part struct
 func (a *agentImpl) sendMessageWithTextPart(ctx context.Context, baseRequest *SendMessageRequest, agentURL string, text string) (*SendMessageSuccessResponse, error) {
-	// Create a custom request structure that will marshal with the correct JSON
 	customRequest := map[string]interface{}{
 		"id":      baseRequest.ID,
 		"jsonrpc": baseRequest.JSONRPC,
@@ -665,26 +664,21 @@ func (a *agentImpl) sendMessageWithTextPart(ctx context.Context, baseRequest *Se
 		},
 	}
 
-	// Marshal the custom request
 	requestBody, err := json.Marshal(customRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal custom request: %w", err)
 	}
 
-	// Make the HTTP request directly using the a2aClient's internal method
-	// We'll use reflection to access the makeJSONRPCRequest method or implement our own
 	return a.makeCustomA2ARequest(ctx, requestBody, agentURL)
 }
 
 // makeCustomA2ARequest makes a custom A2A request with pre-marshaled JSON
 func (a *agentImpl) makeCustomA2ARequest(ctx context.Context, requestBody []byte, agentURL string) (*SendMessageSuccessResponse, error) {
-	// Build the URL
 	rpcURL, err := url.JoinPath(agentURL, "a2a")
 	if err != nil {
 		return nil, fmt.Errorf("failed to build JSON-RPC URL: %w", err)
 	}
 
-	// Create the HTTP request
 	req, err := http.NewRequestWithContext(ctx, "POST", rpcURL, bytes.NewReader(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -693,7 +687,6 @@ func (a *agentImpl) makeCustomA2ARequest(ctx context.Context, requestBody []byte
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	// Make the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -701,7 +694,6 @@ func (a *agentImpl) makeCustomA2ARequest(ctx context.Context, requestBody []byte
 	}
 	defer resp.Body.Close()
 
-	// Parse the response
 	var response SendMessageSuccessResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
