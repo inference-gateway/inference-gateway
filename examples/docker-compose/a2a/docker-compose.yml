@@ -100,17 +100,17 @@ services:
       start_period: 20s
 
   google-calendar-agent:
-    build:
-      context: ./google-calendar-agent
-      dockerfile: Dockerfile
+    image: ghcr.io/inference-gateway/google-calendar-agent:latest
     ports:
       - "8084:8084"
     env_file:
-      - ./google-calendar-agent/.env
+      - .env
     environment:
-      PORT: 8084
-      GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/google-credentials.json
+      SERVER_PORT: 8084
+      GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS:-/tmp/google-credentials.json}
+      GOOGLE_CALENDAR_SA_JSON: ${GOOGLE_CALENDAR_SA_JSON:-}
       GOOGLE_CALENDAR_ID: ${GOOGLE_CALENDAR_ID:-primary}
+      APP_DEMO_MODE: ${APP_DEMO_MODE:-false}
     networks:
       - a2a-network
     healthcheck:
@@ -123,6 +123,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 20s
+    pull_policy: always
 
 networks:
   a2a-network:
