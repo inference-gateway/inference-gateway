@@ -21,6 +21,23 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// closeNotifierRecorder implements http.CloseNotifier for testing
+type closeNotifierRecorder struct {
+	*httptest.ResponseRecorder
+	closeNotify chan bool
+}
+
+func newCloseNotifierRecorder() *closeNotifierRecorder {
+	return &closeNotifierRecorder{
+		ResponseRecorder: httptest.NewRecorder(),
+		closeNotify:      make(chan bool, 1),
+	}
+}
+
+func (c *closeNotifierRecorder) CloseNotify() <-chan bool {
+	return c.closeNotify
+}
+
 func TestNewA2AMiddleware(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -579,7 +596,16 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 			mockA2AAgent.EXPECT().SetProvider(mockProvider).AnyTimes()
 			mockA2AAgent.EXPECT().SetModel(gomock.Any()).AnyTimes()
-			mockA2AAgent.EXPECT().Run(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			if tt.isStreaming {
+				mockA2AAgent.EXPECT().RunWithStream(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(
+					func(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *providers.CreateChatCompletionRequest) error {
+						middlewareStreamCh <- []byte("data: {\"id\":\"test\",\"object\":\"chat.completion.chunk\",\"choices\":[{\"delta\":{\"content\":\"Test streaming response\"}}]}\n\n")
+						middlewareStreamCh <- []byte("data: [DONE]\n\n")
+						return nil
+					}).AnyTimes()
+			} else {
+				mockA2AAgent.EXPECT().Run(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+			}
 
 			sendMessageResp := &a2a.SendMessageSuccessResponse{
 				Result: a2a.Task{
@@ -664,15 +690,26 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			requestBody, _ := json.Marshal(requestData)
 			req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
 
-			router.ServeHTTP(w, req)
+			var w *httptest.ResponseRecorder
+			if tt.isStreaming {
+				cnr := newCloseNotifierRecorder()
+				w = cnr.ResponseRecorder
+				router.ServeHTTP(cnr, req)
+			} else {
+				w = httptest.NewRecorder()
+				router.ServeHTTP(w, req)
+			}
 
 			assert.Equal(t, http.StatusOK, w.Code)
 
-			var response map[string]interface{}
-			err = json.Unmarshal(w.Body.Bytes(), &response)
-			assert.NoError(t, err)
+			if !tt.isStreaming {
+				var response map[string]interface{}
+				err = json.Unmarshal(w.Body.Bytes(), &response)
+				assert.NoError(t, err)
+			} else {
+				assert.Greater(t, w.Body.Len(), 0, "Streaming response should have content")
+			}
 		})
 	}
 }

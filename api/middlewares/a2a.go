@@ -139,6 +139,23 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 		c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 		c.Request.ContentLength = int64(len(bodyBytes))
 
+		if originalRequestBody.Stream != nil && *originalRequestBody.Stream {
+			m.logger.Debug("starting a2a streaming mode")
+			c.Header("Content-Type", "text/event-stream")
+			c.Header("Cache-Control", "no-cache")
+			c.Header("Connection", "keep-alive")
+			c.Header("Transfer-Encoding", "chunked")
+
+			if err := m.handleA2AStreamingRequest(c, &originalRequestBody, result); err != nil {
+				m.logger.Error("failed to handle a2a streaming", err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "A2A streaming failed"})
+				c.Abort()
+				return
+			}
+			c.Abort()
+			return
+		}
+
 		customWriter := &customResponseWriter{
 			ResponseWriter: c.Writer,
 			body:           &bytes.Buffer{},
@@ -169,6 +186,73 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		m.writeResponse(c, customWriter, response)
 	}
+}
+
+// handleA2AStreamingRequest handles streaming requests with A2A agent
+func (m *A2AMiddlewareImpl) handleA2AStreamingRequest(c *gin.Context, request *providers.CreateChatCompletionRequest, result *A2AProviderModelResult) error {
+	m.a2aAgent.SetProvider(result.Provider)
+	m.a2aAgent.SetModel(&result.ProviderModel)
+
+	processedChunk := make(chan []byte, 100)
+	errCh := make(chan error, 1)
+
+	go func() {
+		defer close(processedChunk)
+		err := m.a2aAgent.RunWithStream(c.Request.Context(), processedChunk, c, request)
+		if err != nil {
+			m.logger.Error("a2a agent streaming failed", err)
+			errCh <- err
+		}
+	}()
+
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case line, ok := <-processedChunk:
+			if !ok {
+				m.logger.Debug("a2a agent stream channel closed unexpectedly")
+				return false
+			}
+
+			if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
+				m.logger.Debug("a2a agent completed all iterations, sending [DONE]")
+				_, err := w.Write(line)
+				if err != nil {
+					m.logger.Error("failed to write [DONE] to client", err)
+				}
+				return false
+			}
+
+			m.logger.Debug("processed chunk", "line", string(line))
+
+			if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
+				var errMsg struct {
+					Error string `json:"error"`
+				}
+				if err := json.Unmarshal(line[6:], &errMsg); err == nil {
+					m.logger.Error("upstream provider error", fmt.Errorf("%s", errMsg.Error))
+					c.Writer.WriteHeader(http.StatusServiceUnavailable)
+				}
+			}
+
+			_, err := w.Write(line)
+			if err != nil {
+				m.logger.Error("failed to write line to client", err)
+				return false
+			}
+			return true
+		case err := <-errCh:
+			m.logger.Error("a2a agent streaming error", err)
+			c.Writer.WriteHeader(http.StatusServiceUnavailable)
+			if _, writeErr := fmt.Fprintf(w, "data: {\"error\": \"%s\"}\n\n", err.Error()); writeErr != nil {
+				m.logger.Error("failed to write error to stream", writeErr)
+			}
+			return false
+		case <-c.Request.Context().Done():
+			m.logger.Debug("request context done, stopping stream")
+			return false
+		}
+	})
+	return nil
 }
 
 // getProviderAndModel determines the provider and model from the request model string or query parameter
