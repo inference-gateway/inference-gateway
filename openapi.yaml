@@ -29,7 +29,7 @@ tags:
     description: List and describe the various models available in the API.
   - name: Completions
     description: Generate completions from the models.
-  - name: Tools
+  - name: MCP
     description: List and manage MCP tools.
   - name: A2A
     description: List and manage A2A agents.
@@ -160,7 +160,7 @@ paths:
     get:
       operationId: listTools
       tags:
-        - Tools
+        - MCP
       description: |
         Lists the currently available MCP tools. Only accessible when EXPOSE_MCP is enabled.
       summary: Lists the currently available MCP tools
@@ -183,7 +183,7 @@ paths:
     get:
       operationId: listAgents
       tags:
-        - Agents
+        - A2A
       description: |
         Lists the currently available A2A agents. Only accessible when EXPOSE_A2A is enabled.
       summary: Lists the currently available A2A agents
