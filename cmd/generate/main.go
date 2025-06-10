@@ -72,20 +72,6 @@ func main() {
 			fmt.Printf("Error generating providers common types: %v\n", err)
 			os.Exit(1)
 		}
-	case "MCPTypes":
-		fmt.Printf("Generating MCP types from schema to %s\n", output)
-		err := codegen.GenerateMCPTypes(output, "mcp/mcp-schema.yaml")
-		if err != nil {
-			fmt.Printf("Error generating MCP types: %v\n", err)
-			os.Exit(1)
-		}
-	case "A2ATypes":
-		fmt.Printf("Generating A2A types from schema to %s\n", output)
-		err := codegen.GenerateA2ATypes(output, "a2a/a2a-schema.yaml")
-		if err != nil {
-			fmt.Printf("Error generating A2A types: %v\n", err)
-			os.Exit(1)
-		}
 	case "Config":
 		fmt.Printf("Generating Go Config to %s\n", output)
 		err := codegen.GenerateConfig(output, "openapi.yaml")
