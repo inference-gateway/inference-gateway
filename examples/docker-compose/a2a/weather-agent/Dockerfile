@@ -10,5 +10,5 @@ FROM alpine:latest
 WORKDIR /app
 RUN apk add --no-cache curl
 COPY --from=builder /app/weather-agent .
-EXPOSE 8083
+EXPOSE 8080
 CMD ["./weather-agent"]

@@ -10,5 +10,5 @@ FROM alpine:latest
 WORKDIR /app
 RUN apk add --no-cache curl
 COPY --from=builder /app/helloworld-agent .
-EXPOSE 8081
+EXPOSE 8080
 CMD ["./helloworld-agent"]

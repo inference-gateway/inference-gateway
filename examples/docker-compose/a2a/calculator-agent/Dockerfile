@@ -10,5 +10,5 @@ FROM alpine:latest
 WORKDIR /app
 RUN apk add --no-cache curl
 COPY --from=builder /app/calculator-agent .
-EXPOSE 8082
+EXPOSE 8080
 CMD ["./calculator-agent"]
