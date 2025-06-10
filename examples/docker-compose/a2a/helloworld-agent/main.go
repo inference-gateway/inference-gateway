@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"helloworld-agent/a2a"
+	a2a "github.com/inference-gateway/inference-gateway/a2a"
 )
 
 var logger *zap.Logger
@@ -33,25 +33,29 @@ func main() {
 
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
 		logger.Info("agent info requested")
+		streaming := false
+		pushNotifications := false
+		stateTransitionHistory := false
+
 		info := a2a.AgentCard{
 			Name:        "helloworld-agent",
 			Description: "A simple greeting agent that provides personalized greetings using the A2A protocol",
 			URL:         "http://localhost:8081",
 			Version:     "1.0.0",
 			Capabilities: a2a.AgentCapabilities{
-				Streaming:              false,
-				Pushnotifications:      false,
-				Statetransitionhistory: false,
+				Streaming:              &streaming,
+				PushNotifications:      &pushNotifications,
+				StateTransitionHistory: &stateTransitionHistory,
 			},
-			Defaultinputmodes:  []string{"text/plain"},
-			Defaultoutputmodes: []string{"text/plain"},
+			DefaultInputModes:  []string{"text/plain"},
+			DefaultOutputModes: []string{"text/plain"},
 			Skills: []a2a.AgentSkill{
 				{
 					ID:          "greeting",
 					Name:        "greeting",
 					Description: "Provide personalized greetings in multiple languages",
-					Inputmodes:  []string{"text/plain"},
-					Outputmodes: []string{"text/plain"},
+					InputModes:  []string{"text/plain"},
+					OutputModes: []string{"text/plain"},
 				},
 			},
 		}
@@ -94,12 +98,13 @@ func handleA2ARequest(c *gin.Context) {
 		return
 	}
 
-	if req.Jsonrpc == "" {
-		req.Jsonrpc = "2.0"
+	if req.JSONRPC == "" {
+		req.JSONRPC = "2.0"
 	}
 
 	if req.ID == nil {
-		req.ID = uuid.New().String()
+		id := interface{}(uuid.New().String())
+		req.ID = &id
 	}
 
 	logger.Info("received a2a request",
@@ -167,32 +172,37 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 
 	responseMessage := a2a.Message{
 		Role:      "assistant",
-		MessageId: messageId,
-		ContextId: contextId,
-		TaskId:    taskId,
+		MessageID: messageId,
+		ContextID: &contextId,
+		TaskID:    &taskId,
+		Kind:      "message",
 		Parts: []a2a.Part{
-			{
-				Type: "text",
+			a2a.TextPart{
+				Kind: "text",
 				Text: greeting,
 			},
 		},
 	}
 
+	timestamp := time.Now().Format(time.RFC3339)
+	name := "greeting"
+
 	task := a2a.Task{
-		Id:        taskId,
-		ContextId: contextId,
+		ID:        taskId,
+		ContextID: contextId,
+		Kind:      "task",
 		Status: a2a.TaskStatus{
 			State:     "completed",
-			Timestamp: time.Now(),
+			Timestamp: &timestamp,
 			Message:   &responseMessage,
 		},
 		Artifacts: []a2a.Artifact{
 			{
-				ArtifactId: uuid.New().String(),
-				Name:       "greeting",
+				ArtifactID: uuid.New().String(),
+				Name:       &name,
 				Parts: []a2a.Part{
-					{
-						Type: "text",
+					a2a.TextPart{
+						Kind: "text",
 						Text: greeting,
 					},
 				},
@@ -201,24 +211,24 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 		History: []a2a.Message{
 			{
 				Role:      "user",
-				MessageId: getStringParam(paramsMap, "messageId", uuid.New().String()),
-				ContextId: contextId,
-				TaskId:    taskId,
+				MessageID: getStringParam(paramsMap, "messageId", uuid.New().String()),
+				ContextID: &contextId,
+				TaskID:    &taskId,
+				Kind:      "message",
 				Parts: []a2a.Part{
-					{
-						Type: "text",
+					a2a.TextPart{
+						Kind: "text",
 						Text: messageText,
 					},
 				},
 			},
 			responseMessage,
 		},
-		Kind: "task",
 	}
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result:  task,
 	}
 
@@ -271,7 +281,7 @@ func sendError(c *gin.Context, id interface{}, code int, message string) {
 
 	response := a2a.JSONRPCErrorResponse{
 		ID:      id,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Error: a2a.JSONRPCError{
 			Code:    code,
 			Message: message,

@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	a2a "weather-agent/a2a"
+	a2a "github.com/inference-gateway/inference-gateway/a2a"
 )
 
 type WeatherData struct {
@@ -44,46 +44,50 @@ func main() {
 	r.POST("/a2a", handleJSONRPCRequest)
 
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
+		streaming := false
+		pushNotifications := false
+		stateTransitionHistory := false
+
 		info := a2a.AgentCard{
 			Name:        "weather-agent",
 			Description: "A weather information agent that provides current weather and forecasts",
 			URL:         "http://localhost:8083",
 			Version:     "1.0.0",
 			Capabilities: a2a.AgentCapabilities{
-				Streaming:              false,
-				Pushnotifications:      false,
-				Statetransitionhistory: false,
+				Streaming:              &streaming,
+				PushNotifications:      &pushNotifications,
+				StateTransitionHistory: &stateTransitionHistory,
 			},
-			Defaultinputmodes:  []string{"text"},
-			Defaultoutputmodes: []string{"text"},
+			DefaultInputModes:  []string{"text"},
+			DefaultOutputModes: []string{"text"},
 			Skills: []a2a.AgentSkill{
 				{
 					ID:          "current",
 					Name:        "current",
 					Description: "Get current weather for a location",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "forecast",
 					Name:        "forecast",
 					Description: "Get weather forecast for a location",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "conditions",
 					Name:        "conditions",
 					Description: "Get detailed weather conditions",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "alerts",
 					Name:        "alerts",
 					Description: "Get weather alerts for a location",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 			},
 		}
@@ -103,12 +107,13 @@ func handleJSONRPCRequest(c *gin.Context) {
 		return
 	}
 
-	if req.Jsonrpc == "" {
-		req.Jsonrpc = "2.0"
+	if req.JSONRPC == "" {
+		req.JSONRPC = "2.0"
 	}
 
 	if req.ID == nil {
-		req.ID = uuid.New().String()
+		id := interface{}(uuid.New().String())
+		req.ID = &id
 	}
 
 	switch req.Method {
@@ -136,7 +141,7 @@ func handleCurrent(c *gin.Context, req a2a.JSONRPCRequest) {
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"weather": weather,
 			"agent":   "weather-agent",
@@ -170,7 +175,7 @@ func handleForecast(c *gin.Context, req a2a.JSONRPCRequest) {
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"location": location,
 			"forecast": forecast,
@@ -193,7 +198,7 @@ func handleConditions(c *gin.Context, req a2a.JSONRPCRequest) {
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"location":   location,
 			"conditions": conditions,
@@ -214,7 +219,8 @@ func handleAlerts(c *gin.Context, req a2a.JSONRPCRequest) {
 	alerts := generateAlerts(location)
 
 	response := a2a.JSONRPCSuccessResponse{
-		ID: req.ID,
+		ID:      req.ID,
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"location": location,
 			"alerts":   alerts,
@@ -373,7 +379,7 @@ func generateFeelsLike() float64 {
 func sendError(c *gin.Context, id interface{}, code int, message string) {
 	response := a2a.JSONRPCErrorResponse{
 		ID:      id,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Error: a2a.JSONRPCError{
 			Code:    code,
 			Message: message,

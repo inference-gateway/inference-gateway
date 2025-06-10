@@ -23,67 +23,71 @@ func main() {
 	r.POST("/a2a", handleA2ARequest)
 
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
+		streaming := false
+		pushNotifications := false
+		stateTransitionHistory := false
+
 		info := a2a.AgentCard{
 			Name:        "calculator-agent",
 			Description: "A mathematical calculator agent that performs basic and advanced calculations",
 			URL:         "http://localhost:8082",
 			Version:     "1.0.0",
 			Capabilities: a2a.AgentCapabilities{
-				Streaming:              false,
-				Pushnotifications:      false,
-				Statetransitionhistory: false,
+				Streaming:              &streaming,
+				PushNotifications:      &pushNotifications,
+				StateTransitionHistory: &stateTransitionHistory,
 			},
-			Defaultinputmodes:  []string{"text"},
-			Defaultoutputmodes: []string{"text"},
+			DefaultInputModes:  []string{"text"},
+			DefaultOutputModes: []string{"text"},
 			Skills: []a2a.AgentSkill{
 				{
 					ID:          "add",
 					Name:        "add",
 					Description: "Add two numbers",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "subtract",
 					Name:        "subtract",
 					Description: "Subtract two numbers",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "multiply",
 					Name:        "multiply",
 					Description: "Multiply two numbers",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "divide",
 					Name:        "divide",
 					Description: "Divide two numbers",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "power",
 					Name:        "power",
 					Description: "Raise a number to a power",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "sqrt",
 					Name:        "sqrt",
 					Description: "Calculate square root of a number",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 				{
 					ID:          "factorial",
 					Name:        "factorial",
 					Description: "Calculate factorial of a number",
-					Inputmodes:  []string{"text"},
-					Outputmodes: []string{"text"},
+					InputModes:  []string{"text"},
+					OutputModes: []string{"text"},
 				},
 			},
 		}
@@ -108,7 +112,8 @@ func handleA2ARequest(c *gin.Context) {
 	}
 
 	if req.ID == nil {
-		req.ID = uuid.New().String()
+		id := interface{}(uuid.New().String())
+		req.ID = &id
 	}
 
 	switch req.Method {
