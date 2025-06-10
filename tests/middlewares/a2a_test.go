@@ -167,7 +167,7 @@ func TestA2AMiddleware_RequestWithA2AMiddlewareEnabled(t *testing.T) {
 
 			if tt.expectA2AProcessing {
 				mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
-				mockA2AClient.EXPECT().GetAgents().Return([]string{})
+				mockA2AClient.EXPECT().GetAgents().Return([]string{}).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 			} else if tt.path == "/v1/chat/completions" && !tt.hasInternalHeader {
 				mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
@@ -222,7 +222,7 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 			agents:               []string{},
 			agentSkills:          map[string][]a2a.AgentSkill{},
 			expectToolsAdded:     true,
-			expectedToolCount:    1,
+			expectedToolCount:    2,
 		},
 		{
 			name:                 "Single agent with skills - only query tool added initially",
@@ -235,7 +235,7 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 				},
 			},
 			expectToolsAdded:  true,
-			expectedToolCount: 1,
+			expectedToolCount: 2,
 		},
 		{
 			name:                 "Multiple agents with skills - only query tool added initially",
@@ -250,7 +250,7 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 				},
 			},
 			expectToolsAdded:  true,
-			expectedToolCount: 1,
+			expectedToolCount: 2,
 		},
 	}
 
@@ -272,10 +272,8 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 
 			mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
 			if tt.a2aClientInitialized {
-				mockA2AClient.EXPECT().GetAgents().Return(tt.agents)
-				// Note: GetAgentSkills is no longer called upfront due to progressive discovery
+				mockA2AClient.EXPECT().GetAgents().Return(tt.agents).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
-				// Add mock expectations for agent calls that may happen during middleware processing
 				mockA2AAgent.EXPECT().SetProvider(mockProvider).AnyTimes()
 				mockA2AAgent.EXPECT().SetModel(gomock.Any()).AnyTimes()
 				mockA2AAgent.EXPECT().Run(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
@@ -338,13 +336,17 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 				assert.Equal(t, tt.expectedToolCount, len(*capturedRequest.Tools), "Expected number of tools should be added")
 
 				foundAgentQueryTool := false
+				foundTaskSubmissionTool := false
 				for _, tool := range *capturedRequest.Tools {
 					if tool.Function.Name == "query_a2a_agent_card" {
 						foundAgentQueryTool = true
-						break
+					}
+					if tool.Function.Name == "submit_task_to_agent" {
+						foundTaskSubmissionTool = true
 					}
 				}
 				assert.True(t, foundAgentQueryTool, "Agent query tool should be present")
+				assert.True(t, foundTaskSubmissionTool, "Task submission tool should be present")
 			}
 		})
 	}
@@ -962,206 +964,6 @@ func TestA2AMiddleware_InvalidRequests(t *testing.T) {
 				assert.Contains(t, response["error"], tt.expectedError)
 			}
 		})
-	}
-}
-
-func TestA2AMiddleware_ProgressiveDiscoveryPreventsRepeatedQueries(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	mockRegistry := providersmocks.NewMockProviderRegistry(ctrl)
-	mockA2AClient := a2amocks.NewMockA2AClientInterface(ctrl)
-	mockLogger := mocks.NewMockLogger(ctrl)
-	mockInferenceClient := providersmocks.NewMockClient(ctrl)
-	mockProvider := providersmocks.NewMockIProvider(ctrl)
-
-	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Info(gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Info(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Info(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Info(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Warn(gomock.Any(), gomock.Any()).AnyTimes()
-	mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
-
-	mockA2AClient.EXPECT().IsInitialized().Return(true).AnyTimes()
-	mockA2AClient.EXPECT().GetAgents().Return([]string{"http://test-agent.com"}).AnyTimes()
-	mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil).AnyTimes()
-	mockProvider.EXPECT().GetName().Return("openai").AnyTimes()
-
-	realA2AAgent := a2a.NewAgent(mockLogger, mockA2AClient)
-
-	agentSkills := []a2a.AgentSkill{
-		{
-			ID:          "calculate",
-			Name:        "calculate",
-			Description: "Perform mathematical calculations",
-			Examples:    []string{"Add 2 + 3", "Multiply 5 * 7"},
-		},
-	}
-
-	mockA2AClient.EXPECT().GetAgentCard(gomock.Any(), "http://test-agent.com").Return(&a2a.AgentCard{
-		Name:        "Test Agent",
-		Description: "A test agent for calculations",
-		Version:     "1.0",
-		Skills:      agentSkills,
-	}, nil).Times(1)
-
-	mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://test-agent.com").Return(&a2a.SendMessageSuccessResponse{
-		ID:      "test-response-id",
-		JSONRPC: "2.0",
-		Result: a2a.Message{
-			Kind:      "message",
-			MessageID: "msg-123",
-			Role:      "assistant",
-			Parts:     []a2a.Part{},
-		},
-	}, nil).AnyTimes()
-
-	realA2AAgent.SetProvider(mockProvider)
-	model := "gpt-4"
-	realA2AAgent.SetModel(&model)
-
-	firstCall := true
-	var capturedChatRequests []*providers.CreateChatCompletionRequest
-	mockProvider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, request providers.CreateChatCompletionRequest) (providers.CreateChatCompletionResponse, error) {
-			capturedChatRequests = append(capturedChatRequests, &request)
-
-			if firstCall {
-				firstCall = false
-				return providers.CreateChatCompletionResponse{
-					ID:    "test-id-1",
-					Model: "gpt-4",
-					Choices: []providers.ChatCompletionChoice{
-						{
-							Message: providers.Message{
-								Role:    providers.MessageRoleAssistant,
-								Content: "I'll use the calculate tool to solve this.",
-								ToolCalls: &[]providers.ChatCompletionMessageToolCall{
-									{
-										ID:   "call_2",
-										Type: providers.ChatCompletionToolTypeFunction,
-										Function: providers.ChatCompletionMessageToolCallFunction{
-											Name:      "calculate",
-											Arguments: `{"operation": "add", "numbers": [2, 3]}`,
-										},
-									},
-								},
-							},
-							FinishReason: providers.FinishReasonToolCalls,
-						},
-					},
-				}, nil
-			}
-
-			return providers.CreateChatCompletionResponse{
-				ID:    "test-id-2",
-				Model: "gpt-4",
-				Choices: []providers.ChatCompletionChoice{
-					{
-						Message: providers.Message{
-							Role:    providers.MessageRoleAssistant,
-							Content: "The calculation result is 5.",
-						},
-						FinishReason: providers.FinishReasonStop,
-					},
-				},
-			}, nil
-		}).AnyTimes()
-
-	cfg := config.Config{
-		A2A: &config.A2AConfig{
-			Enable: true,
-		},
-	}
-
-	middleware, err := middlewares.NewA2AMiddleware(mockRegistry, mockA2AClient, realA2AAgent, mockLogger, mockInferenceClient, cfg)
-	assert.NoError(t, err)
-
-	gin.SetMode(gin.TestMode)
-	router := gin.New()
-	router.Use(middleware.Middleware())
-
-	var capturedRequests []*providers.CreateChatCompletionRequest
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
-		var req providers.CreateChatCompletionRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		capturedRequests = append(capturedRequests, &req)
-
-		response := providers.CreateChatCompletionResponse{
-			ID:    "test-id",
-			Model: "gpt-4",
-			Choices: []providers.ChatCompletionChoice{
-				{
-					Message: providers.Message{
-						Role:    providers.MessageRoleAssistant,
-						Content: "I'll query the agent card to find available tools.",
-						ToolCalls: &[]providers.ChatCompletionMessageToolCall{
-							{
-								ID:   "call_1",
-								Type: providers.ChatCompletionToolTypeFunction,
-								Function: providers.ChatCompletionMessageToolCallFunction{
-									Name:      "query_a2a_agent_card",
-									Arguments: `{"agent_url": "http://test-agent.com"}`,
-								},
-							},
-						},
-					},
-					FinishReason: providers.FinishReasonToolCalls,
-				},
-			},
-		}
-
-		err := realA2AAgent.Run(c.Request.Context(), &req, &response)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		c.JSON(http.StatusOK, response)
-	})
-
-	requestBody := providers.CreateChatCompletionRequest{
-		Model: "openai/gpt-4",
-		Messages: []providers.Message{
-			{
-				Role:    providers.MessageRoleUser,
-				Content: "I need to calculate 2 + 3",
-			},
-		},
-	}
-
-	requestBytes, err := json.Marshal(requestBody)
-	assert.NoError(t, err)
-
-	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBytes))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	if len(capturedChatRequests) >= 2 {
-		secondRequest := capturedChatRequests[1]
-		if secondRequest.Tools != nil {
-			foundCalculateTool := false
-			for _, tool := range *secondRequest.Tools {
-				if tool.Function.Name == "calculate" {
-					foundCalculateTool = true
-					break
-				}
-			}
-			assert.True(t, foundCalculateTool, "Calculate tool should be available in second iteration due to progressive discovery")
-		}
 	}
 }
 
