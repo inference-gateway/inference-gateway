@@ -1,4 +1,4 @@
-// Code generated from MCP schema. DO NOT EDIT.
+// Code generated from JSON schema. DO NOT EDIT.
 package mcp
 
 // The severity of a log message.
@@ -30,29 +30,29 @@ const (
 
 // Optional annotations for the client. The client can use annotations to inform how objects are used or displayed
 type Annotations struct {
-	Audience []Role  `json:"audience"`
-	Priority float64 `json:"priority"`
+	Audience []Role   `json:"audience,omitempty"`
+	Priority *float64 `json:"priority,omitempty"`
 }
 
 // Audio provided to or from an LLM.
 type AudioContent struct {
-	Annotations Annotations `json:"annotations"`
-	Data        string      `json:"data"`
-	Mimetype    string      `json:"mimeType"`
-	Type        string      `json:"type"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Data        []byte       `json:"data"`
+	MIMEType    string       `json:"mimeType"`
+	Type        string       `json:"type"`
 }
 
 type BlobResourceContents struct {
-	Blob     string `json:"blob"`
-	Mimetype string `json:"mimeType"`
-	URI      string `json:"uri"`
+	Blob     []byte  `json:"blob"`
+	MIMEType *string `json:"mimeType,omitempty"`
+	URI      string  `json:"uri"`
 }
 
 type BooleanSchema struct {
-	Default     bool   `json:"default"`
-	Description string `json:"description"`
-	Title       string `json:"title"`
-	Type        string `json:"type"`
+	Default     *bool   `json:"default,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Type        string  `json:"type"`
 }
 
 // Used by the client to invoke a tool provided by the server.
@@ -63,10 +63,10 @@ type CallToolRequest struct {
 
 // The server's response to a tool call.
 type CallToolResult struct {
-	Meta              map[string]interface{} `json:"_meta"`
+	Meta              map[string]interface{} `json:"_meta,omitempty"`
 	Content           []interface{}          `json:"content"`
-	Iserror           bool                   `json:"isError"`
-	Structuredcontent map[string]interface{} `json:"structuredContent"`
+	IsError           *bool                  `json:"isError,omitempty"`
+	StructuredContent map[string]interface{} `json:"structuredContent,omitempty"`
 }
 
 // This notification can be sent by either side to indicate that it is cancelling a previously-issued request.
@@ -83,20 +83,17 @@ type CancelledNotification struct {
 
 // Capabilities a client may support. Known capabilities are defined here, in this schema, but this is not a closed set: any client can define its own, additional capabilities.
 type ClientCapabilities struct {
-	Elicitation  map[string]interface{} `json:"elicitation"`
-	Experimental map[string]interface{} `json:"experimental"`
-	Roots        map[string]interface{} `json:"roots"`
-	Sampling     map[string]interface{} `json:"sampling"`
+	Elicitation  map[string]interface{}            `json:"elicitation,omitempty"`
+	Experimental map[string]map[string]interface{} `json:"experimental,omitempty"`
+	Roots        map[string]interface{}            `json:"roots,omitempty"`
+	Sampling     map[string]interface{}            `json:"sampling,omitempty"`
 }
 
-type ClientNotification struct {
-}
+type ClientNotification interface{}
 
-type ClientRequest struct {
-}
+type ClientRequest interface{}
 
-type ClientResult struct {
-}
+type ClientResult interface{}
 
 // A request from the client to the server, to ask for completion options.
 type CompleteRequest struct {
@@ -106,7 +103,7 @@ type CompleteRequest struct {
 
 // The server's response to a completion/complete request
 type CompleteResult struct {
-	Meta       map[string]interface{} `json:"_meta"`
+	Meta       map[string]interface{} `json:"_meta,omitempty"`
 	Completion map[string]interface{} `json:"completion"`
 }
 
@@ -118,11 +115,11 @@ type CreateMessageRequest struct {
 
 // The client's response to a sampling/create_message request from the server. The client should inform the user before returning the sampled message, to allow them to inspect the response (human in the loop) and decide whether to allow the server to see it.
 type CreateMessageResult struct {
-	Meta       map[string]interface{} `json:"_meta"`
+	Meta       map[string]interface{} `json:"_meta,omitempty"`
 	Content    interface{}            `json:"content"`
 	Model      string                 `json:"model"`
 	Role       Role                   `json:"role"`
-	Stopreason string                 `json:"stopReason"`
+	StopReason *string                `json:"stopReason,omitempty"`
 }
 
 // An opaque token used to represent a cursor for pagination.
@@ -137,9 +134,9 @@ type ElicitRequest struct {
 
 // The client's response to an elicitation request.
 type ElicitResult struct {
-	Meta    map[string]interface{} `json:"_meta"`
+	Meta    map[string]interface{} `json:"_meta,omitempty"`
 	Action  string                 `json:"action"`
-	Content map[string]interface{} `json:"content"`
+	Content map[string]interface{} `json:"content,omitempty"`
 }
 
 // The contents of a resource, embedded into a prompt or tool call result.
@@ -147,19 +144,19 @@ type ElicitResult struct {
 // It is up to the client how best to render embedded resources for the benefit
 // of the LLM and/or the user.
 type EmbeddedResource struct {
-	Annotations Annotations `json:"annotations"`
-	Resource    interface{} `json:"resource"`
-	Type        string      `json:"type"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Resource    interface{}  `json:"resource"`
+	Type        string       `json:"type"`
 }
 
 type EmptyResult struct {
 }
 
 type EnumSchema struct {
-	Description string   `json:"description"`
+	Description *string  `json:"description,omitempty"`
 	Enum        []string `json:"enum"`
-	Enumnames   []string `json:"enumNames"`
-	Title       string   `json:"title"`
+	EnumNames   []string `json:"enumNames,omitempty"`
+	Title       *string  `json:"title,omitempty"`
 	Type        string   `json:"type"`
 }
 
@@ -171,17 +168,17 @@ type GetPromptRequest struct {
 
 // The server's response to a prompts/get request from the client.
 type GetPromptResult struct {
-	Meta        map[string]interface{} `json:"_meta"`
-	Description string                 `json:"description"`
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Description *string                `json:"description,omitempty"`
 	Messages    []PromptMessage        `json:"messages"`
 }
 
 // An image provided to or from an LLM.
 type ImageContent struct {
-	Annotations Annotations `json:"annotations"`
-	Data        string      `json:"data"`
-	Mimetype    string      `json:"mimeType"`
-	Type        string      `json:"type"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Data        []byte       `json:"data"`
+	MIMEType    string       `json:"mimeType"`
+	Type        string       `json:"type"`
 }
 
 // Describes the name and version of an MCP implementation.
@@ -198,17 +195,17 @@ type InitializeRequest struct {
 
 // After receiving an initialize request from the client, the server sends this response.
 type InitializeResult struct {
-	Meta            map[string]interface{} `json:"_meta"`
+	Meta            map[string]interface{} `json:"_meta,omitempty"`
 	Capabilities    ServerCapabilities     `json:"capabilities"`
-	Instructions    string                 `json:"instructions"`
-	Protocolversion string                 `json:"protocolVersion"`
-	Serverinfo      Implementation         `json:"serverInfo"`
+	Instructions    *string                `json:"instructions,omitempty"`
+	ProtocolVersion string                 `json:"protocolVersion"`
+	ServerInfo      Implementation         `json:"serverInfo"`
 }
 
 // This notification is sent from the client to the server after initialization has finished.
 type InitializedNotification struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // A JSON-RPC batch request, as described in https://www.jsonrpc.org/specification#batch.
@@ -227,14 +224,13 @@ type JSONRPCError struct {
 }
 
 // Refers to any valid JSON-RPC object that can be decoded off the wire, or encoded to be sent.
-type JSONRPCMessage struct {
-}
+type JSONRPCMessage interface{}
 
 // A notification which does not expect a response.
 type JSONRPCNotification struct {
 	JSONRPC string                 `json:"jsonrpc"`
 	Method  string                 `json:"method"`
-	Params  map[string]interface{} `json:"params"`
+	Params  map[string]interface{} `json:"params,omitempty"`
 }
 
 // A request that expects a response.
@@ -242,7 +238,7 @@ type JSONRPCRequest struct {
 	ID      RequestId              `json:"id"`
 	JSONRPC string                 `json:"jsonrpc"`
 	Method  string                 `json:"method"`
-	Params  map[string]interface{} `json:"params"`
+	Params  map[string]interface{} `json:"params,omitempty"`
 }
 
 // A successful (non-error) response to a request.
@@ -255,39 +251,39 @@ type JSONRPCResponse struct {
 // Sent from the client to request a list of prompts and prompt templates the server has.
 type ListPromptsRequest struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // The server's response to a prompts/list request from the client.
 type ListPromptsResult struct {
-	Meta       map[string]interface{} `json:"_meta"`
-	Nextcursor string                 `json:"nextCursor"`
+	Meta       map[string]interface{} `json:"_meta,omitempty"`
+	NextCursor *string                `json:"nextCursor,omitempty"`
 	Prompts    []Prompt               `json:"prompts"`
 }
 
 // Sent from the client to request a list of resource templates the server has.
 type ListResourceTemplatesRequest struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // The server's response to a resources/templates/list request from the client.
 type ListResourceTemplatesResult struct {
-	Meta              map[string]interface{} `json:"_meta"`
-	Nextcursor        string                 `json:"nextCursor"`
-	Resourcetemplates []ResourceTemplate     `json:"resourceTemplates"`
+	Meta              map[string]interface{} `json:"_meta,omitempty"`
+	NextCursor        *string                `json:"nextCursor,omitempty"`
+	ResourceTemplates []ResourceTemplate     `json:"resourceTemplates"`
 }
 
 // Sent from the client to request a list of resources the server has.
 type ListResourcesRequest struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // The server's response to a resources/list request from the client.
 type ListResourcesResult struct {
-	Meta       map[string]interface{} `json:"_meta"`
-	Nextcursor string                 `json:"nextCursor"`
+	Meta       map[string]interface{} `json:"_meta,omitempty"`
+	NextCursor *string                `json:"nextCursor,omitempty"`
 	Resources  []Resource             `json:"resources"`
 }
 
@@ -300,27 +296,27 @@ type ListResourcesResult struct {
 // structure or access specific locations that the client has permission to read from.
 type ListRootsRequest struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // The client's response to a roots/list request from the server.
 // This result contains an array of Root objects, each representing a root directory
 // or file that the server can operate on.
 type ListRootsResult struct {
-	Meta  map[string]interface{} `json:"_meta"`
+	Meta  map[string]interface{} `json:"_meta,omitempty"`
 	Roots []Root                 `json:"roots"`
 }
 
 // Sent from the client to request a list of tools the server has.
 type ListToolsRequest struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // The server's response to a tools/list request from the client.
 type ListToolsResult struct {
-	Meta       map[string]interface{} `json:"_meta"`
-	Nextcursor string                 `json:"nextCursor"`
+	Meta       map[string]interface{} `json:"_meta,omitempty"`
+	NextCursor *string                `json:"nextCursor,omitempty"`
 	Tools      []Tool                 `json:"tools"`
 }
 
@@ -335,7 +331,7 @@ type LoggingMessageNotification struct {
 // Keys not declared here are currently left unspecified by the spec and are up
 // to the client to interpret.
 type ModelHint struct {
-	Name string `json:"name"`
+	Name *string `json:"name,omitempty"`
 }
 
 // The server's preferences for model selection, requested of the client during sampling.
@@ -350,45 +346,44 @@ type ModelHint struct {
 // up to the client to decide how to interpret these preferences and how to
 // balance them against other considerations.
 type ModelPreferences struct {
-	Costpriority         float64     `json:"costPriority"`
-	Hints                []ModelHint `json:"hints"`
-	Intelligencepriority float64     `json:"intelligencePriority"`
-	Speedpriority        float64     `json:"speedPriority"`
+	CostPriority         *float64    `json:"costPriority,omitempty"`
+	Hints                []ModelHint `json:"hints,omitempty"`
+	IntelligencePriority *float64    `json:"intelligencePriority,omitempty"`
+	SpeedPriority        *float64    `json:"speedPriority,omitempty"`
 }
 
 type Notification struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 type NumberSchema struct {
-	Description string `json:"description"`
-	Maximum     int    `json:"maximum"`
-	Minimum     int    `json:"minimum"`
-	Title       string `json:"title"`
-	Type        string `json:"type"`
+	Description *string `json:"description,omitempty"`
+	Maximum     *int    `json:"maximum,omitempty"`
+	Minimum     *int    `json:"minimum,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Type        string  `json:"type"`
 }
 
 type PaginatedRequest struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 type PaginatedResult struct {
-	Meta       map[string]interface{} `json:"_meta"`
-	Nextcursor string                 `json:"nextCursor"`
+	Meta       map[string]interface{} `json:"_meta,omitempty"`
+	NextCursor *string                `json:"nextCursor,omitempty"`
 }
 
 // A ping, issued by either the server or the client, to check that the other party is still alive. The receiver must promptly respond, or else may be disconnected.
 type PingRequest struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // Restricted schema definitions that only allow primitive types
 // without nested objects or arrays.
-type PrimitiveSchemaDefinition struct {
-}
+type PrimitiveSchemaDefinition interface{}
 
 // An out-of-band notification used to inform the receiver of a progress update for a long-running request.
 type ProgressNotification struct {
@@ -402,22 +397,22 @@ type ProgressToken struct {
 
 // A prompt or prompt template that the server offers.
 type Prompt struct {
-	Arguments   []PromptArgument `json:"arguments"`
-	Description string           `json:"description"`
+	Arguments   []PromptArgument `json:"arguments,omitempty"`
+	Description *string          `json:"description,omitempty"`
 	Name        string           `json:"name"`
 }
 
 // Describes an argument that a prompt can accept.
 type PromptArgument struct {
-	Description string `json:"description"`
-	Name        string `json:"name"`
-	Required    bool   `json:"required"`
+	Description *string `json:"description,omitempty"`
+	Name        string  `json:"name"`
+	Required    *bool   `json:"required,omitempty"`
 }
 
 // An optional notification from the server to the client, informing it that the list of prompts it offers has changed. This may be issued by servers without any previous subscription from the client.
 type PromptListChangedNotification struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // Describes a message returned as part of a prompt.
@@ -443,13 +438,13 @@ type ReadResourceRequest struct {
 
 // The server's response to a resources/read request from the client.
 type ReadResourceResult struct {
-	Meta     map[string]interface{} `json:"_meta"`
+	Meta     map[string]interface{} `json:"_meta,omitempty"`
 	Contents []interface{}          `json:"contents"`
 }
 
 type Request struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // A uniquely identifying ID for a request in JSON-RPC.
@@ -458,24 +453,24 @@ type RequestId struct {
 
 // A known resource that the server is capable of reading.
 type Resource struct {
-	Annotations Annotations `json:"annotations"`
-	Description string      `json:"description"`
-	Mimetype    string      `json:"mimeType"`
-	Name        string      `json:"name"`
-	Size        int         `json:"size"`
-	URI         string      `json:"uri"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	MIMEType    *string      `json:"mimeType,omitempty"`
+	Name        string       `json:"name"`
+	Size        *int         `json:"size,omitempty"`
+	URI         string       `json:"uri"`
 }
 
 // The contents of a specific resource or sub-resource.
 type ResourceContents struct {
-	Mimetype string `json:"mimeType"`
-	URI      string `json:"uri"`
+	MIMEType *string `json:"mimeType,omitempty"`
+	URI      string  `json:"uri"`
 }
 
 // An optional notification from the server to the client, informing it that the list of resources it can read from has changed. This may be issued by servers without any previous subscription from the client.
 type ResourceListChangedNotification struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // A reference to a resource or resource template definition.
@@ -486,11 +481,11 @@ type ResourceReference struct {
 
 // A template description for resources available on the server.
 type ResourceTemplate struct {
-	Annotations Annotations `json:"annotations"`
-	Description string      `json:"description"`
-	Mimetype    string      `json:"mimeType"`
-	Name        string      `json:"name"`
-	Uritemplate string      `json:"uriTemplate"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	MIMEType    *string      `json:"mimeType,omitempty"`
+	Name        string       `json:"name"`
+	URITemplate string       `json:"uriTemplate"`
 }
 
 // A notification from the server to the client, informing it that a resource has changed and may need to be read again. This should only be sent if the client previously sent a resources/subscribe request.
@@ -500,13 +495,13 @@ type ResourceUpdatedNotification struct {
 }
 
 type Result struct {
-	Meta map[string]interface{} `json:"_meta"`
+	Meta map[string]interface{} `json:"_meta,omitempty"`
 }
 
 // Represents a root directory or file that the server can operate on.
 type Root struct {
-	Name string `json:"name"`
-	URI  string `json:"uri"`
+	Name *string `json:"name,omitempty"`
+	URI  string  `json:"uri"`
 }
 
 // A notification from the client to the server, informing it that the list of roots has changed.
@@ -514,7 +509,7 @@ type Root struct {
 // The server should then request an updated list of roots using the ListRootsRequest.
 type RootsListChangedNotification struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // Describes a message issued to or received from an LLM API.
@@ -525,22 +520,19 @@ type SamplingMessage struct {
 
 // Capabilities that a server may support. Known capabilities are defined here, in this schema, but this is not a closed set: any server can define its own, additional capabilities.
 type ServerCapabilities struct {
-	Completions  map[string]interface{} `json:"completions"`
-	Experimental map[string]interface{} `json:"experimental"`
-	Logging      map[string]interface{} `json:"logging"`
-	Prompts      map[string]interface{} `json:"prompts"`
-	Resources    map[string]interface{} `json:"resources"`
-	Tools        map[string]interface{} `json:"tools"`
+	Completions  map[string]interface{}            `json:"completions,omitempty"`
+	Experimental map[string]map[string]interface{} `json:"experimental,omitempty"`
+	Logging      map[string]interface{}            `json:"logging,omitempty"`
+	Prompts      map[string]interface{}            `json:"prompts,omitempty"`
+	Resources    map[string]interface{}            `json:"resources,omitempty"`
+	Tools        map[string]interface{}            `json:"tools,omitempty"`
 }
 
-type ServerNotification struct {
-}
+type ServerNotification interface{}
 
-type ServerRequest struct {
-}
+type ServerRequest interface{}
 
-type ServerResult struct {
-}
+type ServerResult interface{}
 
 // A request from the client to the server, to enable or adjust logging.
 type SetLevelRequest struct {
@@ -549,12 +541,12 @@ type SetLevelRequest struct {
 }
 
 type StringSchema struct {
-	Description string `json:"description"`
-	Format      string `json:"format"`
-	Maxlength   int    `json:"maxLength"`
-	Minlength   int    `json:"minLength"`
-	Title       string `json:"title"`
-	Type        string `json:"type"`
+	Description *string `json:"description,omitempty"`
+	Format      *string `json:"format,omitempty"`
+	MaxLength   *int    `json:"maxLength,omitempty"`
+	MinLength   *int    `json:"minLength,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Type        string  `json:"type"`
 }
 
 // Sent from the client to request resources/updated notifications from the server whenever a particular resource changes.
@@ -565,24 +557,24 @@ type SubscribeRequest struct {
 
 // Text provided to or from an LLM.
 type TextContent struct {
-	Annotations Annotations `json:"annotations"`
-	Text        string      `json:"text"`
-	Type        string      `json:"type"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Text        string       `json:"text"`
+	Type        string       `json:"type"`
 }
 
 type TextResourceContents struct {
-	Mimetype string `json:"mimeType"`
-	Text     string `json:"text"`
-	URI      string `json:"uri"`
+	MIMEType *string `json:"mimeType,omitempty"`
+	Text     string  `json:"text"`
+	URI      string  `json:"uri"`
 }
 
 // Definition for a tool the client can call.
 type Tool struct {
-	Annotations  ToolAnnotations        `json:"annotations"`
-	Description  string                 `json:"description"`
-	Inputschema  map[string]interface{} `json:"inputSchema"`
+	Annotations  *ToolAnnotations       `json:"annotations,omitempty"`
+	Description  *string                `json:"description,omitempty"`
+	InputSchema  map[string]interface{} `json:"inputSchema"`
 	Name         string                 `json:"name"`
-	Outputschema map[string]interface{} `json:"outputSchema"`
+	OutputSchema map[string]interface{} `json:"outputSchema,omitempty"`
 }
 
 // Additional properties describing a Tool to clients.
@@ -594,17 +586,17 @@ type Tool struct {
 // Clients should never make tool use decisions based on ToolAnnotations
 // received from untrusted servers.
 type ToolAnnotations struct {
-	Destructivehint bool   `json:"destructiveHint"`
-	Idempotenthint  bool   `json:"idempotentHint"`
-	Openworldhint   bool   `json:"openWorldHint"`
-	Readonlyhint    bool   `json:"readOnlyHint"`
-	Title           string `json:"title"`
+	DestructiveHint *bool   `json:"destructiveHint,omitempty"`
+	IdempotentHint  *bool   `json:"idempotentHint,omitempty"`
+	OpenWorldHint   *bool   `json:"openWorldHint,omitempty"`
+	ReadOnlyHint    *bool   `json:"readOnlyHint,omitempty"`
+	Title           *string `json:"title,omitempty"`
 }
 
 // An optional notification from the server to the client, informing it that the list of tools it offers has changed. This may be issued by servers without any previous subscription from the client.
 type ToolListChangedNotification struct {
 	Method string                 `json:"method"`
-	Params map[string]interface{} `json:"params"`
+	Params map[string]interface{} `json:"params,omitempty"`
 }
 
 // Sent from the client to request cancellation of resources/updated notifications from the server. This should follow a previous resources/subscribe request.

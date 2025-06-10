@@ -62,7 +62,8 @@ RUN apt-get update && \
 
 USER vscode
 
-RUN go install go.uber.org/mock/mockgen@v0.5.0
+RUN go install go.uber.org/mock/mockgen@v0.5.0 && \
+    go install github.com/inference-gateway/tools/cmd/generator@v0.1.1
 
 # Use Powerlevel10k theme
 RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /home/vscode/.powerlevel10k

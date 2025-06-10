@@ -33,8 +33,15 @@ tasks:
           fs.writeFileSync('a2a/a2a-schema.yaml', yaml.dump(json, {lineWidth: -1}));
         "
 
+  install:generator:
+    desc: "Install the generator tool"
+    cmds:
+      - go install github.com/inference-gateway/tools/cmd/generator@v0.1.1
+
   generate:
     desc: "Generate the gateway from OpenAPI Spec"
+    deps:
+      - install:generator
     cmds:
       - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client.go
       # TODO - migrate to an existing tool that generate the types from OpenAPI spec schemas
@@ -53,8 +60,8 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/a2a/.env.example
-      - go run cmd/generate/main.go -type MCPTypes -output mcp/generated_types.go
-      - go run cmd/generate/main.go -type A2ATypes -output a2a/generated_types.go
+      - generator -generator jsonrpc -package a2a a2a/a2a-schema.yaml a2a/generated_types.go
+      - generator -generator jsonrpc -package mcp mcp/mcp-schema.yaml mcp/generated_types.go
       - go generate ./providers/... ./api/... ./otel/... ./logger/...  ./mcp/... ./a2a/...
 
   tidy:
