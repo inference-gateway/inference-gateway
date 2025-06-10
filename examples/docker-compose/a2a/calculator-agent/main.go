@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	a2a "calculator-agent/a2a"
+	a2a "github.com/inference-gateway/inference-gateway/a2a"
 )
 
 func main() {
@@ -103,8 +103,8 @@ func handleA2ARequest(c *gin.Context) {
 		return
 	}
 
-	if req.Jsonrpc == "" {
-		req.Jsonrpc = "2.0"
+	if req.JSONRPC == "" {
+		req.JSONRPC = "2.0"
 	}
 
 	if req.ID == nil {
@@ -141,7 +141,7 @@ func handleAdd(c *gin.Context, req a2a.JSONRPCRequest) {
 	result := a + b
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"operation": "addition",
 			"operands":  []float64{a, b},
@@ -163,7 +163,7 @@ func handleSubtract(c *gin.Context, req a2a.JSONRPCRequest) {
 	result := a - b
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"operation": "subtraction",
 			"operands":  []float64{a, b},
@@ -185,7 +185,7 @@ func handleMultiply(c *gin.Context, req a2a.JSONRPCRequest) {
 	result := a * b
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"operation": "multiplication",
 			"operands":  []float64{a, b},
@@ -212,7 +212,7 @@ func handleDivide(c *gin.Context, req a2a.JSONRPCRequest) {
 	result := a / b
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"operation": "division",
 			"operands":  []float64{a, b},
@@ -234,7 +234,7 @@ func handlePower(c *gin.Context, req a2a.JSONRPCRequest) {
 	result := math.Pow(base, exponent)
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"operation": "power",
 			"base":      base,
@@ -262,7 +262,7 @@ func handleSqrt(c *gin.Context, req a2a.JSONRPCRequest) {
 	result := math.Sqrt(number)
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"operation": "square root",
 			"operand":   number,
@@ -289,7 +289,7 @@ func handleFactorial(c *gin.Context, req a2a.JSONRPCRequest) {
 	result := factorial(int(number))
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Result: map[string]interface{}{
 			"operation": "factorial",
 			"operand":   int(number),
@@ -370,7 +370,7 @@ func factorial(n int) int64 {
 func sendError(c *gin.Context, id interface{}, code int, message string) {
 	response := a2a.JSONRPCErrorResponse{
 		ID:      id,
-		Jsonrpc: "2.0",
+		JSONRPC: "2.0",
 		Error: a2a.JSONRPCError{
 			Code:    code,
 			Message: message,
