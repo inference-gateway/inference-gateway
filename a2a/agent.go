@@ -457,7 +457,6 @@ func (a *agentImpl) processStreamingResponse(streamCh <-chan []byte, middlewareS
 		line, ok := <-streamCh
 		if !ok {
 			a.logger.Debug("stream channel closed", "iteration", iteration+1)
-			streamComplete = true
 			break
 		}
 
