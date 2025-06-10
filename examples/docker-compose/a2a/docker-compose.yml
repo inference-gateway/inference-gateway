@@ -85,7 +85,7 @@ services:
       test:
         - CMD
         - "/healthcheck.sh"
-      interval: 30s
+      interval: 300s
       timeout: 15s
       retries: 3
       start_period: 60s
