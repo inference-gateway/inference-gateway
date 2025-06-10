@@ -108,7 +108,7 @@ func main() {
 		info := a2a.AgentCard{
 			Name:        "weather-agent",
 			Description: "A weather information agent that provides current weather and forecasts",
-			URL:         "http://localhost:8083",
+			URL:         "http://weather-agent:8080",
 			Version:     "1.0.0",
 			Capabilities: a2a.AgentCapabilities{
 				Streaming:              &streaming,
@@ -151,8 +151,8 @@ func main() {
 		c.JSON(http.StatusOK, info)
 	})
 
-	log.Println("weather-agent starting on port 8083...")
-	if err := r.Run(":8083"); err != nil {
+	log.Println("weather-agent starting on port 8080...")
+	if err := r.Run(":8080"); err != nil {
 		log.Fatal("failed to start server:", err)
 	}
 }

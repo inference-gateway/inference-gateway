@@ -30,7 +30,7 @@ func main() {
 		info := a2a.AgentCard{
 			Name:        "calculator-agent",
 			Description: "A mathematical calculator agent that performs basic and advanced calculations",
-			URL:         "http://localhost:8082",
+			URL:         "http://calculator-agent:8080",
 			Version:     "1.0.0",
 			Capabilities: a2a.AgentCapabilities{
 				Streaming:              &streaming,
@@ -94,8 +94,8 @@ func main() {
 		c.JSON(http.StatusOK, info)
 	})
 
-	log.Println("calculator-agent starting on port 8082...")
-	if err := r.Run(":8082"); err != nil {
+	log.Println("calculator-agent starting on port 8080...")
+	if err := r.Run(":8080"); err != nil {
 		log.Fatal("failed to start server:", err)
 	}
 }

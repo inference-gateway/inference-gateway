@@ -40,7 +40,7 @@ func main() {
 		info := a2a.AgentCard{
 			Name:        "helloworld-agent",
 			Description: "A simple greeting agent that provides personalized greetings using the A2A protocol",
-			URL:         "http://localhost:8081",
+			URL:         "http://helloworld-agent:8080",
 			Version:     "1.0.0",
 			Capabilities: a2a.AgentCapabilities{
 				Streaming:              &streaming,
@@ -62,8 +62,8 @@ func main() {
 		c.JSON(http.StatusOK, info)
 	})
 
-	logger.Info("helloworld-agent starting", zap.String("port", "8081"))
-	if err := r.Run(":8081"); err != nil {
+	logger.Info("helloworld-agent starting", zap.String("port", "8080"))
+	if err := r.Run(":8080"); err != nil {
 		logger.Fatal("failed to start server", zap.Error(err))
 	}
 }
