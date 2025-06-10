@@ -1,35 +1,80 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"log"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
+
+	sdk "github.com/inference-gateway/sdk"
 
 	a2a "github.com/inference-gateway/inference-gateway/a2a"
 )
 
 var logger *zap.Logger
 
-func main() {
-	var err error
-	logger, err = zap.NewProduction()
-	if err != nil {
-		panic("failed to initialize logger: " + err.Error())
-	}
-	defer logger.Sync()
+type Config struct {
+	Debug               bool   `env:"DEBUG,default=false"`
+	Port                string `env:"PORT,default=8080"`
+	InferenceGatewayURL string `env:"INFERENCE_GATEWAY_URL,required"`
+	LLMProvider         string `env:"LLM_PROVIDER,default=deepseek"`
+	LLMModel            string `env:"LLM_MODEL,default=deepseek-chat"`
+	MaxIterations       int    `env:"MAX_ITERATIONS,default=10"`
+}
 
+type JRPCErrorCode int
+
+const (
+	ErrParseError     JRPCErrorCode = -32700
+	ErrInvalidRequest JRPCErrorCode = -32600
+	ErrMethodNotFound JRPCErrorCode = -32601
+	ErrInvalidParams  JRPCErrorCode = -32602
+	ErrInternalError  JRPCErrorCode = -32603
+	ErrServerError    JRPCErrorCode = -32000
+)
+
+var tools = []sdk.ChatCompletionTool{
+	{
+		Type: "function",
+		Function: sdk.FunctionObject{
+			Name:        "greet",
+			Description: stringPtr("Greet the user in a specified language"),
+			Parameters: &sdk.FunctionParameters{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"language": map[string]interface{}{
+						"type":        "string",
+						"description": "The language to greet in (e.g., 'en' for English, 'es' for Spanish)",
+						"enum":        []string{"en", "es", "fr", "de", "zh"},
+					},
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "The name of the person to greet",
+					},
+				},
+				"required": []string{"language", "name"},
+			},
+		},
+	},
+}
+
+var cfg Config
+
+func setupRouter(logger *zap.Logger, client sdk.Client) *gin.Engine {
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
-		// logger.Info("health check requested")
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
-	r.POST("/a2a", handleA2ARequest)
+	r.POST("/a2a", func(c *gin.Context) {
+		handleA2ARequest(c, logger, client)
+	})
 
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
 		logger.Info("agent info requested")
@@ -62,39 +107,52 @@ func main() {
 		c.JSON(http.StatusOK, info)
 	})
 
-	logger.Info("helloworld-agent starting", zap.String("port", "8080"))
-	if err := r.Run(":8080"); err != nil {
+	return r
+}
+
+func main() {
+	ctx := context.Background()
+
+	if err := envconfig.Process(ctx, &cfg); err != nil {
+		log.Fatal("failed to process configuration:", err)
+	}
+
+	var err error
+	if cfg.Debug {
+		logger, err = zap.NewDevelopment()
+	} else {
+		logger, err = zap.NewProduction()
+	}
+	if err != nil {
+		log.Fatal("failed to initialize logger:", err)
+	}
+	defer logger.Sync()
+
+	client := sdk.NewClient(&sdk.ClientOptions{
+		BaseURL: cfg.InferenceGatewayURL,
+	})
+
+	logger.Info("starting helloworld agent",
+		zap.String("version", "1.0.0"),
+		zap.String("port", cfg.Port),
+		zap.String("inference_gateway_url", cfg.InferenceGatewayURL),
+		zap.String("llm_provider", cfg.LLMProvider),
+		zap.String("llm_model", cfg.LLMModel),
+		zap.Bool("debug_mode", cfg.Debug))
+
+	router := setupRouter(logger, client)
+
+	logger.Info("helloworld-agent starting on port 8080...")
+	if err := router.Run(":8080"); err != nil {
 		logger.Fatal("failed to start server", zap.Error(err))
 	}
 }
 
-func containsSpanishRequest(text string) bool {
-	lowerText := strings.ToLower(text)
-
-	switch {
-	case strings.Contains(lowerText, "spanish"),
-		strings.Contains(lowerText, "español"),
-		strings.Contains(lowerText, "espanol"),
-		strings.Contains(lowerText, "en español"),
-		strings.Contains(lowerText, "en espanol"),
-		strings.Contains(lowerText, "greet me in spanish"),
-		strings.Contains(lowerText, "greeting in spanish"),
-		strings.Contains(lowerText, "hola"),
-		strings.Contains(lowerText, "buenos días"),
-		strings.Contains(lowerText, "buenas tardes"),
-		strings.Contains(lowerText, "saludar"):
-		logger.Debug("spanish language detected", zap.String("text", text))
-		return true
-	default:
-		return false
-	}
-}
-
-func handleA2ARequest(c *gin.Context) {
+func handleA2ARequest(c *gin.Context, logger *zap.Logger, client sdk.Client) {
 	var req a2a.JSONRPCRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		logger.Error("failed to parse json request", zap.Error(err))
-		sendError(c, req.ID, -32700, "parse error")
+		sendError(c, req.ID, int(ErrParseError), "parse error", logger)
 		return
 	}
 
@@ -113,245 +171,210 @@ func handleA2ARequest(c *gin.Context) {
 
 	switch req.Method {
 	case "message/send":
-		handleMessageSend(c, req)
+		handleMessageSend(c, req, logger, client)
 	case "message/stream":
-		handleMessageStream(c, req)
+		handleMessageStream(c, req, logger, client)
 	case "task/get":
-		handleTaskGet(c, req)
+		handleTaskGet(c, req, logger, client)
 	case "task/cancel":
-		handleTaskCancel(c, req)
+		handleTaskCancel(c, req, logger, client)
 	default:
 		logger.Warn("unknown method requested", zap.String("method", req.Method))
-		sendError(c, req.ID, -32601, "method not found")
+		sendError(c, req.ID, int(ErrMethodNotFound), "method not found", logger)
 	}
 }
 
-func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
-	logger.Info("processing message/send request (called from inference gateway)", zap.Any("requestId", req.ID))
-
-	paramsMap, ok := req.Params["message"].(map[string]interface{})
-	if !ok {
-		logger.Error("invalid params: missing message", zap.Any("params", req.Params))
-		sendError(c, req.ID, -32602, "invalid params: missing message")
-		return
-	}
-
-	partsArray, ok := paramsMap["parts"].([]interface{})
-	if !ok {
-		logger.Error("invalid params: missing message parts", zap.Any("message", paramsMap))
-		sendError(c, req.ID, -32602, "invalid params: missing message parts")
-		return
-	}
-
-	var messageText string = "World"
-	for _, partInterface := range partsArray {
-		part, ok := partInterface.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		if partType, exists := part["type"]; exists && partType == "text" {
-			if text, textExists := part["text"].(string); textExists {
-				messageText = text
-				break
-			}
-		}
-	}
-
-	logger.Info("extracted message text", zap.String("text", messageText))
-
-	greeting := generateGreeting(messageText)
-
-	logger.Info("generated greeting",
-		zap.String("greeting", greeting),
-		zap.String("originalText", messageText))
-
-	taskId := uuid.New().String()
-	contextId := uuid.New().String()
-	messageId := uuid.New().String()
-
-	responseMessage := a2a.Message{
-		Role:      "assistant",
-		MessageID: messageId,
-		ContextID: &contextId,
-		TaskID:    &taskId,
-		Kind:      "message",
-		Parts: []a2a.Part{
-			a2a.TextPart{
-				Kind: "text",
-				Text: greeting,
-			},
-		},
-	}
-
-	timestamp := time.Now().Format(time.RFC3339)
-	name := "greeting"
-
-	task := a2a.Task{
-		ID:        taskId,
-		ContextID: contextId,
-		Kind:      "task",
-		Status: a2a.TaskStatus{
-			State:     "completed",
-			Timestamp: &timestamp,
-			Message:   &responseMessage,
-		},
-		Artifacts: []a2a.Artifact{
-			{
-				ArtifactID: uuid.New().String(),
-				Name:       &name,
-				Parts: []a2a.Part{
-					a2a.TextPart{
-						Kind: "text",
-						Text: greeting,
-					},
-				},
-			},
-		},
-		History: []a2a.Message{
-			{
-				Role:      "user",
-				MessageID: getStringParam(paramsMap, "messageId", uuid.New().String()),
-				ContextID: &contextId,
-				TaskID:    &taskId,
-				Kind:      "message",
-				Parts: []a2a.Part{
-					a2a.TextPart{
-						Kind: "text",
-						Text: messageText,
-					},
-				},
-			},
-			responseMessage,
-		},
-	}
-
-	response := a2a.JSONRPCSuccessResponse{
-		ID:      req.ID,
+func sendError(c *gin.Context, id interface{}, code int, message string, logger *zap.Logger) {
+	resp := a2a.JSONRPCErrorResponse{
 		JSONRPC: "2.0",
-		Result:  task,
-	}
-
-	logger.Info("sending response",
-		zap.String("taskId", taskId),
-		zap.String("status", "completed"))
-
-	c.JSON(http.StatusOK, response)
-}
-
-func handleMessageStream(c *gin.Context, req a2a.JSONRPCRequest) {
-	logger.Info("processing message/stream request (DIRECT call to agent - not via gateway)", zap.Any("requestId", req.ID))
-	handleMessageSend(c, req)
-}
-
-func handleTaskGet(c *gin.Context, req a2a.JSONRPCRequest) {
-	logger.Warn("task/get not implemented", zap.Any("requestId", req.ID))
-	sendError(c, req.ID, -32601, "task/get not implemented")
-}
-
-func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest) {
-	logger.Warn("task/cancel not implemented", zap.Any("requestId", req.ID))
-	sendError(c, req.ID, -32601, "task/cancel not implemented")
-}
-
-func getStringParam(params map[string]interface{}, key string, defaultValue string) string {
-	if value, exists := params[key]; exists {
-		if str, ok := value.(string); ok {
-			logger.Debug("parameter found",
-				zap.String("key", key),
-				zap.String("value", str))
-			return str
-		}
-		logger.Warn("parameter value is not a string",
-			zap.String("key", key),
-			zap.Any("value", value))
-	} else {
-		logger.Debug("parameter not found, using default",
-			zap.String("key", key),
-			zap.String("default", defaultValue))
-	}
-	return defaultValue
-}
-
-func sendError(c *gin.Context, id interface{}, code int, message string) {
-	logger.Error("sending error response",
-		zap.Any("id", id),
-		zap.Int("code", code),
-		zap.String("message", message))
-
-	response := a2a.JSONRPCErrorResponse{
 		ID:      id,
-		JSONRPC: "2.0",
-		Error: a2a.JSONRPCError{
+		Error: &a2a.JSONRPCError{
 			Code:    code,
 			Message: message,
 		},
 	}
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, resp)
+	logger.Error("sending error response", zap.Int("code", code), zap.String("message", message))
 }
 
-func detectLanguage(text string) string {
-	lowerText := strings.ToLower(text)
+func sendSuccess(c *gin.Context, id interface{}, result interface{}) {
+	resp := a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      id,
+		Result:  result,
+	}
+	c.JSON(http.StatusOK, resp)
+	logger.Info("sending success response", zap.Any("id", id), zap.Any("result", result))
+}
 
-	if containsSpanishRequest(lowerText) {
-		return "spanish"
+func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
+	var params a2a.MessageSendParams
+	paramsBytes, err := json.Marshal(req.Params)
+	if err != nil {
+		logger.Error("failed to marshal params", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid params", logger)
+		return
+	}
+	if err := json.Unmarshal(paramsBytes, &params); err != nil {
+		logger.Error("failed to parse message/send request", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid request", logger)
+		return
 	}
 
-	return "english"
+	if len(params.Message.Parts) <= 0 {
+		sendError(c, req.ID, -32600, "invalid request", logger)
+		return
+	}
+
+	defer func() {
+		logger.Debug("message/send request processed")
+	}()
+
+	var messages []sdk.Message
+	for _, part := range params.Message.Parts {
+		partMap, ok := part.(map[string]interface{})
+		if !ok {
+			logger.Error("failed to assert part to map")
+			sendError(c, req.ID, int(ErrInvalidParams), "invalid part format", logger)
+			return
+		}
+
+		textValue, exists := partMap["text"]
+		if !exists {
+			logger.Error("part missing text field")
+			sendError(c, req.ID, int(ErrInvalidParams), "part missing text field", logger)
+			return
+		}
+
+		textString, ok := textValue.(string)
+		if !ok {
+			logger.Error("text field is not a string")
+			sendError(c, req.ID, int(ErrInvalidParams), "text field is not a string", logger)
+			return
+		}
+
+		messages = append(messages, sdk.Message{
+			Role:    sdk.MessageRole(params.Message.Role),
+			Content: textString,
+		})
+	}
+
+	response, err := client.WithTools(&tools).WithHeader("X-A2A-Internal", "true").GenerateContent(context.Background(), sdk.Provider(cfg.LLMProvider), cfg.LLMModel, messages)
+	if err != nil {
+		logger.Error("failed to create chat completion", zap.Error(err))
+		sendError(c, req.ID, int(ErrServerError), "server error", logger)
+		return
+	}
+
+	if len(response.Choices) == 0 {
+		logger.Error("no choices returned from chat completion")
+		sendError(c, req.ID, int(ErrServerError), "no choices returned", logger)
+		return
+	}
+
+	var greeting string
+	var iteration int
+	for iteration < cfg.MaxIterations {
+		response, err = client.WithTools(&tools).WithHeader("X-A2A-Internal", "true").GenerateContent(context.Background(), sdk.Provider(cfg.LLMProvider), cfg.LLMModel, messages)
+		if err != nil {
+			logger.Error("failed to create chat completion", zap.Error(err))
+			sendError(c, req.ID, int(ErrServerError), "server error", logger)
+			return
+		}
+
+		if len(response.Choices) == 0 {
+			logger.Error("no choices returned from chat completion")
+			sendError(c, req.ID, int(ErrServerError), "no choices returned", logger)
+			return
+		}
+
+		toolCalls := response.Choices[0].Message.ToolCalls
+
+		if toolCalls == nil || len(*toolCalls) == 0 {
+			logger.Debug("no tool calls found in response, using text content")
+			break
+		}
+
+		assistantMessage := sdk.Message{
+			Role:      sdk.Assistant,
+			Content:   response.Choices[0].Message.Content,
+			ToolCalls: toolCalls,
+		}
+		messages = append(messages, assistantMessage)
+
+		for _, toolCall := range *toolCalls {
+			if toolCall.Function.Name != "greet" {
+				logger.Debug("ignoring tool call", zap.String("name", toolCall.Function.Name))
+				continue
+			}
+
+			var greetParams GreetParams
+			if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &greetParams); err != nil {
+				logger.Error("failed to unmarshal greet parameters", zap.Error(err))
+				sendError(c, req.ID, int(ErrInvalidParams), "invalid parameters for greet function", logger)
+				return
+			}
+
+			greeting = greet(greetParams.Language, greetParams.Name)
+
+			toolResponse := sdk.Message{
+				Role:       sdk.Tool,
+				Content:    greeting,
+				ToolCallId: &toolCall.Id,
+			}
+
+			messages = append(messages, toolResponse)
+		}
+
+		iteration++
+	}
+
+	logger.Debug("greeting generated", zap.String("greeting", greeting))
+
+	c.JSON(http.StatusOK, a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  greeting,
+	})
 }
 
-func normalizeText(text string) string {
-	return strings.ToLower(strings.TrimSpace(text))
+func handleMessageStream(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
+	logger.Info("streaming not implemented yet")
+	sendError(c, req.ID, int(ErrServerError), "streaming not implemented", logger)
 }
 
-func generateGreeting(messageText string) string {
-	logger.Debug("generating greeting", zap.String("input", messageText))
+func handleTaskGet(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
+	logger.Info("task/get not implemented yet")
+	sendError(c, req.ID, int(ErrServerError), "task/get not implemented", logger)
+}
 
-	language := detectLanguage(messageText)
-	normalizedText := normalizeText(messageText)
+func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
+	logger.Info("task/cancel not implemented yet")
+	sendError(c, req.ID, int(ErrServerError), "task/cancel not implemented", logger)
+}
 
-	logger.Debug("language detection",
-		zap.String("detected", language),
-		zap.String("normalized", normalizedText))
+func stringPtr(s string) *string {
+	return &s
+}
 
+type GreetParams struct {
+	Language string `json:"language"`
+	Name     string `json:"name"`
+}
+
+func greet(language, name string) string {
 	switch language {
-	case "spanish":
-		return generateSpanishGreeting(normalizedText, messageText)
-	case "english":
-		return generateEnglishGreeting(normalizedText, messageText)
+	case "en":
+		return "Hello, " + name
+	case "es":
+		return "Hola, " + name
+	case "fr":
+		return "Bonjour, " + name
+	case "de":
+		return "Hallo, " + name
+	case "zh":
+		return "你好, " + name
 	default:
-		logger.Warn("unknown language detected, defaulting to english",
-			zap.String("language", language))
-		return generateEnglishGreeting(normalizedText, messageText)
-	}
-}
-
-func generateSpanishGreeting(normalizedText, originalText string) string {
-	switch normalizedText {
-	case "hola", "buenos días", "buenos dias", "buenas tardes", "saludar":
-		return "¡Hola, Mundo!"
-	case "world", "mundo":
-		return "¡Hola, Mundo!"
-	default:
-		if containsSpanishRequest(originalText) {
-			return "¡Hola, " + originalText + "!"
-		}
-		return "¡Hola, Mundo!"
-	}
-}
-
-func generateEnglishGreeting(normalizedText, originalText string) string {
-	switch normalizedText {
-	case "hello", "hi", "hey", "greetings":
-		return "Hello, World!"
-	case "world":
-		return "Hello, World!"
-	case "say hello using the hello world agent.", "say hello using the hello world agent":
-		return "Hello, World!"
-	default:
-		if originalText != "" && originalText != "World" {
-			return "Hello, " + originalText + "!"
-		}
-		return "Hello, World!"
+		return "Hello, " + name
 	}
 }

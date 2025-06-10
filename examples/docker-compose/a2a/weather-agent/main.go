@@ -1,23 +1,36 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	sdk "github.com/inference-gateway/sdk"
+	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
 
 	a2a "github.com/inference-gateway/inference-gateway/a2a"
 )
 
 var logger *zap.Logger
+
+// Config holds all configuration values
+type Config struct {
+	Debug               bool   `env:"DEBUG,default=false"`
+	Port                string `env:"PORT,default=8080"`
+	InferenceGatewayURL string `env:"INFERENCE_GATEWAY_URL,required"`
+	LLMProvider         string `env:"LLM_PROVIDER,default=deepseek"`
+	LLMModel            string `env:"LLM_MODEL,default=deepseek-chat"`
+}
+
+var config Config
 
 type WeatherData struct {
 	Location    string  `json:"location"`
@@ -96,8 +109,14 @@ type StreamingWeatherUpdate struct {
 }
 
 func main() {
+	ctx := context.Background()
+
+	if err := envconfig.Process(ctx, &config); err != nil {
+		log.Fatal("failed to process configuration:", err)
+	}
+
 	var err error
-	if os.Getenv("DEBUG") == "true" {
+	if config.Debug {
 		logger, err = zap.NewDevelopment()
 	} else {
 		logger, err = zap.NewProduction()
@@ -109,8 +128,11 @@ func main() {
 
 	logger.Info("starting weather agent",
 		zap.String("version", "1.0.0"),
-		zap.String("port", "8080"),
-		zap.Bool("debug_mode", os.Getenv("DEBUG") == "true"))
+		zap.String("port", config.Port),
+		zap.String("inference_gateway_url", config.InferenceGatewayURL),
+		zap.String("llm_provider", config.LLMProvider),
+		zap.String("llm_model", config.LLMModel),
+		zap.Bool("debug_mode", config.Debug))
 
 	r := gin.Default()
 
@@ -177,6 +199,48 @@ func main() {
 	if err := r.Run(":8080"); err != nil {
 		logger.Fatal("failed to start server", zap.Error(err))
 	}
+}
+
+// callLLM makes a request to the Inference Gateway using the SDK
+func callLLM(ctx context.Context, prompt string) (string, error) {
+	client := sdk.NewClient(&sdk.ClientOptions{
+		BaseURL: config.InferenceGatewayURL,
+	})
+
+	messages := []sdk.Message{
+		{
+			Role:    sdk.User,
+			Content: prompt,
+		},
+	}
+
+	// Convert string provider to SDK provider type
+	var provider sdk.Provider
+	switch strings.ToLower(config.LLMProvider) {
+	case "deepseek":
+		provider = sdk.Deepseek
+	case "groq":
+		provider = sdk.Groq
+	case "openai":
+		provider = sdk.Openai
+	case "anthropic":
+		provider = sdk.Anthropic
+	case "ollama":
+		provider = sdk.Ollama
+	default:
+		provider = sdk.Deepseek
+	}
+
+	response, err := client.GenerateContent(ctx, provider, config.LLMModel, messages)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate content: %w", err)
+	}
+
+	if len(response.Choices) == 0 {
+		return "", fmt.Errorf("no choices in response")
+	}
+
+	return response.Choices[0].Message.Content, nil
 }
 
 func handleJSONRPCRequest(c *gin.Context) {

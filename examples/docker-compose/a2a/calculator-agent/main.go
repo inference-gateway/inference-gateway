@@ -1,15 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
-	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	sdk "github.com/inference-gateway/sdk"
+	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
 
 	a2a "github.com/inference-gateway/inference-gateway/a2a"
@@ -17,9 +20,28 @@ import (
 
 var logger *zap.Logger
 
+// Config holds all configuration values
+type Config struct {
+	Debug               bool   `env:"DEBUG,default=false"`
+	Port                string `env:"PORT,default=8080"`
+	InferenceGatewayURL string `env:"INFERENCE_GATEWAY_URL,required"`
+	LLMProvider         string `env:"LLM_PROVIDER,default=deepseek"`
+	LLMModel            string `env:"LLM_MODEL,default=deepseek-chat"`
+	MaxIterations       int    `env:"MAX_ITERATIONS,default=10"`
+}
+
+var config Config
+
 func main() {
+	ctx := context.Background()
+
+	// Load configuration from environment
+	if err := envconfig.Process(ctx, &config); err != nil {
+		log.Fatal("failed to process configuration:", err)
+	}
+
 	var err error
-	if os.Getenv("DEBUG") == "true" {
+	if config.Debug {
 		logger, err = zap.NewDevelopment()
 	} else {
 		logger, err = zap.NewProduction()
@@ -31,8 +53,11 @@ func main() {
 
 	logger.Info("starting calculator agent",
 		zap.String("version", "1.0.0"),
-		zap.String("port", "8080"),
-		zap.Bool("debug_mode", os.Getenv("DEBUG") == "true"))
+		zap.String("port", config.Port),
+		zap.String("inference_gateway_url", config.InferenceGatewayURL),
+		zap.String("llm_provider", config.LLMProvider),
+		zap.String("llm_model", config.LLMModel),
+		zap.Bool("debug_mode", config.Debug))
 
 	r := gin.Default()
 
@@ -117,10 +142,72 @@ func main() {
 		c.JSON(http.StatusOK, info)
 	})
 
-	log.Println("calculator-agent starting on port 8080...")
+	logger.Info("calculator-agent starting on port 8080...")
 	if err := r.Run(":8080"); err != nil {
 		logger.Fatal("failed to start server", zap.Error(err))
 	}
+}
+
+// callLLM makes a request to the Inference Gateway using the SDK
+func callLLM(ctx context.Context, prompt string) (string, error) {
+	client := sdk.NewClient(&sdk.ClientOptions{
+		BaseURL: config.InferenceGatewayURL,
+	})
+
+	messages := []sdk.Message{
+		{
+			Role:    sdk.User,
+			Content: prompt,
+		},
+	}
+
+	// Convert string provider to SDK provider type
+	var provider sdk.Provider
+	switch strings.ToLower(config.LLMProvider) {
+	case "deepseek":
+		provider = sdk.Deepseek
+	case "groq":
+		provider = sdk.Groq
+	case "openai":
+		provider = sdk.Openai
+	case "anthropic":
+		provider = sdk.Anthropic
+	case "ollama":
+		provider = sdk.Ollama
+	default:
+		provider = sdk.Deepseek // Default fallback
+	}
+
+	response, err := client.GenerateContent(ctx, provider, config.LLMModel, messages)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate content: %w", err)
+	}
+
+	// The SDK now returns the response directly as a *CreateChatCompletionResponse
+	if len(response.Choices) == 0 {
+		return "", fmt.Errorf("no choices in response")
+	}
+
+	return response.Choices[0].Message.Content, nil
+}
+
+// generateCalculationExplanation generates an explanation for a calculation using the LLM
+func generateCalculationExplanation(ctx context.Context, operation string, a, b, result float64) string {
+	if config.InferenceGatewayURL == "" {
+		return fmt.Sprintf("Performed %s: %.2f and %.2f = %.2f", operation, a, b, result)
+	}
+
+	prompt := fmt.Sprintf("Briefly explain the %s operation: %.2f and %.2f equals %.2f. Keep it simple and educational.", operation, a, b, result)
+
+	explanation, err := callLLM(ctx, prompt)
+	if err != nil {
+		logger.Warn("failed to generate explanation, using simple format",
+			zap.Error(err),
+			zap.String("operation", operation))
+		return fmt.Sprintf("Performed %s: %.2f and %.2f = %.2f", operation, a, b, result)
+	}
+
+	return strings.TrimSpace(explanation)
 }
 
 func handleA2ARequest(c *gin.Context) {
@@ -207,14 +294,19 @@ func handleAdd(c *gin.Context, req a2a.JSONRPCRequest) {
 		zap.Any("request_id", req.ID),
 		zap.Float64("result", result))
 
+	// Generate explanation using LLM
+	ctx := context.Background()
+	explanation := generateCalculationExplanation(ctx, "addition", a, b, result)
+
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
 		JSONRPC: "2.0",
 		Result: map[string]interface{}{
-			"operation": "addition",
-			"operands":  []float64{a, b},
-			"result":    result,
-			"agent":     "calculator-agent",
+			"operation":   "addition",
+			"operands":    []float64{a, b},
+			"result":      result,
+			"explanation": explanation,
+			"agent":       "calculator-agent",
 		},
 	}
 

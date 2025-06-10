@@ -24,6 +24,9 @@ services:
       dockerfile: Dockerfile
     environment:
       DEBUG: "true"
+      INFERENCE_GATEWAY_URL: "http://inference-gateway:8080/v1"
+      LLM_PROVIDER: "groq"
+      LLM_MODEL: "llama-3.1-8b-instant"
     ports:
       - "8081:8080"
     networks:
@@ -35,6 +38,9 @@ services:
       dockerfile: Dockerfile
     environment:
       DEBUG: "true"
+      INFERENCE_GATEWAY_URL: "http://inference-gateway:8080/v1"
+      LLM_PROVIDER: "deepseek"
+      LLM_MODEL: "deepseek-chat"
     ports:
       - "8082:8080"
     networks:
@@ -46,6 +52,9 @@ services:
       dockerfile: Dockerfile
     environment:
       DEBUG: "true"
+      INFERENCE_GATEWAY_URL: "http://inference-gateway:8080/v1"
+      LLM_PROVIDER: "deepseek"
+      LLM_MODEL: "deepseek-chat"
     ports:
       - "8083:8080"
     networks:
