@@ -419,13 +419,12 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 		return providers.Message{}, fmt.Errorf("failed to submit task to a2a agent: %w", err)
 	}
 
-	// Extract response content
 	responseContent := "Task completed successfully"
 	if taskResponse != nil && taskResponse.Result != nil {
-		// Try to cast Result to Message type
-		if message, ok := taskResponse.Result.(Message); ok {
+		if resultStr, ok := taskResponse.Result.(string); ok && resultStr != "" {
+			responseContent = resultStr
+		} else if message, ok := taskResponse.Result.(Message); ok {
 			if len(message.Parts) > 0 {
-				// Extract text content from the first part
 				for _, part := range message.Parts {
 					if textPart, ok := part.(TextPart); ok {
 						if textPart.Text != "" {
