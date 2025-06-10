@@ -6,14 +6,18 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	a2a "github.com/inference-gateway/inference-gateway/a2a"
 )
+
+var logger *zap.Logger
 
 type WeatherData struct {
 	Location    string  `json:"location"`
@@ -92,15 +96,33 @@ type StreamingWeatherUpdate struct {
 }
 
 func main() {
+	var err error
+	if os.Getenv("DEBUG") == "true" {
+		logger, err = zap.NewDevelopment()
+	} else {
+		logger, err = zap.NewProduction()
+	}
+	if err != nil {
+		log.Fatal("failed to initialize logger:", err)
+	}
+	defer logger.Sync()
+
+	logger.Info("starting weather agent",
+		zap.String("version", "1.0.0"),
+		zap.String("port", "8080"),
+		zap.Bool("debug_mode", os.Getenv("DEBUG") == "true"))
+
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
+		// logger.Debug("health check requested")
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
 	r.POST("/a2a", handleJSONRPCRequest)
 
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
+		logger.Debug("agent card requested")
 		streaming := true
 		pushNotifications := false
 		stateTransitionHistory := false
@@ -151,18 +173,28 @@ func main() {
 		c.JSON(http.StatusOK, info)
 	})
 
-	log.Println("weather-agent starting on port 8080...")
+	logger.Info("weather-agent starting on port 8080...")
 	if err := r.Run(":8080"); err != nil {
-		log.Fatal("failed to start server:", err)
+		logger.Fatal("failed to start server", zap.Error(err))
 	}
 }
 
 func handleJSONRPCRequest(c *gin.Context) {
 	var req a2a.JSONRPCRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error("failed to parse json-rpc request",
+			zap.Error(err),
+			zap.String("remote_addr", c.ClientIP()))
 		sendError(c, req.ID, -32700, "parse error")
 		return
 	}
+
+	logger.Debug("received json-rpc request",
+		zap.String("method", req.Method),
+		zap.String("jsonrpc", req.JSONRPC),
+		zap.Any("request_id", req.ID),
+		zap.Any("params", req.Params),
+		zap.String("remote_addr", c.ClientIP()))
 
 	if req.JSONRPC == "" {
 		req.JSONRPC = "2.0"
@@ -171,28 +203,48 @@ func handleJSONRPCRequest(c *gin.Context) {
 	if req.ID == nil {
 		id := interface{}(uuid.New().String())
 		req.ID = &id
+		logger.Debug("generated request id", zap.Any("request_id", req.ID))
 	}
 
 	switch req.Method {
 	case "message/send":
+		logger.Debug("handling message/send request")
 		handleMessageSend(c, req)
 	case "message/stream":
+		logger.Debug("handling message/stream request")
 		handleJSONRPCStreamRequest(c)
 	default:
+		logger.Warn("unknown method requested",
+			zap.String("method", req.Method),
+			zap.String("remote_addr", c.ClientIP()))
 		sendError(c, req.ID, -32601, "method not found")
 	}
 }
 
 // handleMessageSend handles A2A message/send requests
 func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
+	logger.Debug("processing message/send request",
+		zap.Any("request_id", req.ID),
+		zap.String("remote_addr", c.ClientIP()))
+
 	paramsMap, ok := req.Params["message"].(map[string]interface{})
 	if !ok {
+		logger.Error("invalid request: missing message parameter",
+			zap.Any("request_id", req.ID),
+			zap.Any("params", req.Params))
 		sendError(c, req.ID, -32602, "invalid params: missing message")
 		return
 	}
 
+	logger.Debug("extracted message parameters",
+		zap.Any("request_id", req.ID),
+		zap.Any("message_params", paramsMap))
+
 	partsArray, ok := paramsMap["parts"].([]interface{})
 	if !ok {
+		logger.Error("invalid request: missing message parts",
+			zap.Any("request_id", req.ID),
+			zap.Any("message_params", paramsMap))
 		sendError(c, req.ID, -32602, "invalid params: missing message parts")
 		return
 	}
@@ -212,6 +264,10 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 		}
 	}
 
+	logger.Debug("extracted message text",
+		zap.Any("request_id", req.ID),
+		zap.String("message_text", messageText))
+
 	metadata, ok := req.Params["metadata"].(map[string]interface{})
 	var skill string
 	var arguments map[string]interface{}
@@ -225,6 +281,12 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 		}
 	}
 
+	logger.Debug("extracted metadata",
+		zap.Any("request_id", req.ID),
+		zap.String("skill", skill),
+		zap.Any("arguments", arguments),
+		zap.Any("metadata", metadata))
+
 	if skill == "" {
 		text := strings.ToLower(messageText)
 		if strings.Contains(text, "forecast") {
@@ -236,6 +298,10 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 		} else {
 			skill = "current"
 		}
+		logger.Debug("inferred skill from message text",
+			zap.Any("request_id", req.ID),
+			zap.String("inferred_skill", skill),
+			zap.String("message_text_lower", strings.ToLower(messageText)))
 	}
 
 	var location string
@@ -251,9 +317,18 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 		location = messageText
 	}
 
+	logger.Debug("extracted task parameters",
+		zap.Any("request_id", req.ID),
+		zap.String("skill", skill),
+		zap.String("location", location),
+		zap.String("original_message", messageText))
+
 	var weatherResult interface{}
 	switch skill {
 	case "current":
+		logger.Debug("generating current weather data",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location))
 		weather := generateWeatherData(location)
 		weatherResult = WeatherResponse{
 			Weather: weather,
@@ -272,6 +347,10 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 				}
 			}
 		}
+		logger.Debug("generating weather forecast",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location),
+			zap.Int("days", days))
 		forecast := generateForecast(location, days)
 		weatherResult = ForecastResponse{
 			Location: location,
@@ -280,6 +359,9 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 			Agent:    "weather-agent",
 		}
 	case "conditions":
+		logger.Debug("generating weather conditions",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location))
 		conditions := generateConditions(location)
 		weatherResult = ConditionsResponse{
 			Location:   location,
@@ -287,6 +369,9 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 			Agent:      "weather-agent",
 		}
 	case "alerts":
+		logger.Debug("generating weather alerts",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location))
 		alerts := generateAlerts(location)
 		weatherResult = AlertsResponse{
 			Location: location,
@@ -294,6 +379,10 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 			Agent:    "weather-agent",
 		}
 	default:
+		logger.Debug("using default current weather",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location),
+			zap.String("unknown_skill", skill))
 		weather := generateWeatherData(location)
 		weatherResult = WeatherResponse{
 			Weather: weather,
@@ -308,6 +397,14 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 	messageId := uuid.New().String()
 	timestamp := time.Now().Format(time.RFC3339)
 	artifactName := fmt.Sprintf("%s_weather.json", skill)
+
+	logger.Debug("creating task response",
+		zap.Any("request_id", req.ID),
+		zap.String("task_id", taskId),
+		zap.String("context_id", contextId),
+		zap.String("message_id", messageId),
+		zap.String("artifact_name", artifactName),
+		zap.String("timestamp", timestamp))
 
 	responseMessage := a2a.Message{
 		Role:      "assistant",
@@ -368,6 +465,11 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 		Result:  task,
 	}
 
+	logger.Debug("sending task response",
+		zap.Any("request_id", req.ID),
+		zap.String("task_id", taskId),
+		zap.String("response_status", "success"))
+
 	c.JSON(http.StatusOK, response)
 }
 
@@ -382,6 +484,9 @@ func getStringFromMap(m map[string]interface{}, key string, defaultValue string)
 }
 
 func generateWeatherData(location string) WeatherData {
+	logger.Debug("generating weather data",
+		zap.String("location", location))
+
 	conditions := []string{"sunny", "partly cloudy", "cloudy", "rainy", "stormy", "snowy", "foggy"}
 	condition := conditions[rand.Intn(len(conditions))]
 
@@ -401,7 +506,7 @@ func generateWeatherData(location string) WeatherData {
 		temp = 15 + rand.Float64()*10
 	}
 
-	return WeatherData{
+	weather := WeatherData{
 		Location:    location,
 		Temperature: float64(int(temp*10)) / 10, // Round to 1 decimal
 		Humidity:    30 + rand.Intn(51),         // 30-80%
@@ -410,6 +515,16 @@ func generateWeatherData(location string) WeatherData {
 		Pressure:    980 + rand.Float64()*50, // 980-1030 hPa
 		Timestamp:   time.Now().Format("2006-01-02T15:04:05Z"),
 	}
+
+	logger.Debug("generated weather data",
+		zap.String("location", weather.Location),
+		zap.Float64("temperature", weather.Temperature),
+		zap.String("condition", weather.Condition),
+		zap.Int("humidity", weather.Humidity),
+		zap.Float64("wind_speed", weather.WindSpeed),
+		zap.Float64("pressure", weather.Pressure))
+
+	return weather
 }
 
 func generateForecast(location string, days int) []ForecastData {
@@ -541,9 +656,18 @@ func sendError(c *gin.Context, id interface{}, code int, message string) {
 func handleJSONRPCStreamRequest(c *gin.Context) {
 	var req a2a.JSONRPCRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error("failed to parse streaming request",
+			zap.Error(err),
+			zap.String("remote_addr", c.ClientIP()))
 		sendError(c, req.ID, -32700, "parse error")
 		return
 	}
+
+	logger.Debug("received streaming request",
+		zap.Any("request_id", req.ID),
+		zap.String("method", req.Method),
+		zap.Any("params", req.Params),
+		zap.String("remote_addr", c.ClientIP()))
 
 	if req.JSONRPC == "" {
 		req.JSONRPC = "2.0"
@@ -552,21 +676,31 @@ func handleJSONRPCStreamRequest(c *gin.Context) {
 	if req.ID == nil {
 		id := interface{}(uuid.New().String())
 		req.ID = &id
+		logger.Debug("generated streaming request id", zap.Any("request_id", req.ID))
 	}
 
 	if req.Method != "message/stream" {
+		logger.Error("invalid streaming method",
+			zap.Any("request_id", req.ID),
+			zap.String("method", req.Method))
 		sendError(c, req.ID, -32601, "method not found - use message/stream for streaming")
 		return
 	}
 
 	messageData, ok := req.Params["message"]
 	if !ok {
+		logger.Error("missing message parameter in streaming request",
+			zap.Any("request_id", req.ID),
+			zap.Any("params", req.Params))
 		sendError(c, req.ID, -32602, "missing 'message' parameter")
 		return
 	}
 
 	messageBytes, err := json.Marshal(messageData)
 	if err != nil {
+		logger.Error("failed to marshal message data",
+			zap.Any("request_id", req.ID),
+			zap.Error(err))
 		sendError(c, req.ID, -32602, "invalid message format")
 		return
 	}
@@ -581,15 +715,28 @@ func handleJSONRPCStreamRequest(c *gin.Context) {
 	}
 
 	if err := json.Unmarshal(messageBytes, &message); err != nil {
+		logger.Error("failed to unmarshal message structure",
+			zap.Any("request_id", req.ID),
+			zap.Error(err))
 		sendError(c, req.ID, -32602, "invalid message structure")
 		return
 	}
+
+	logger.Debug("parsed streaming message",
+		zap.Any("request_id", req.ID),
+		zap.String("role", message.Role),
+		zap.String("message_id", message.MessageID),
+		zap.Int("parts_count", len(message.Parts)))
 
 	var location string
 	var weatherAction string
 	for _, part := range message.Parts {
 		if part.Type == "text" {
 			text := strings.ToLower(part.Text)
+			logger.Debug("analyzing message part",
+				zap.Any("request_id", req.ID),
+				zap.String("part_text", part.Text))
+
 			if strings.Contains(text, "current") || strings.Contains(text, "weather") {
 				weatherAction = "current"
 			} else if strings.Contains(text, "forecast") {
@@ -618,15 +765,29 @@ func handleJSONRPCStreamRequest(c *gin.Context) {
 
 	if location == "" {
 		location = "Berlin"
+		logger.Debug("using default location", zap.Any("request_id", req.ID), zap.String("location", location))
 	}
 	if weatherAction == "" {
 		weatherAction = "current"
+		logger.Debug("using default action", zap.Any("request_id", req.ID), zap.String("action", weatherAction))
 	}
+
+	logger.Debug("extracted streaming parameters",
+		zap.Any("request_id", req.ID),
+		zap.String("location", location),
+		zap.String("weather_action", weatherAction),
+		zap.String("message_id", message.MessageID))
 
 	streamWeatherDataA2A(c, req, location, weatherAction, message.MessageID)
 }
 
 func streamWeatherDataA2A(c *gin.Context, req a2a.JSONRPCRequest, location string, action string, messageID string) {
+	logger.Debug("starting streaming weather response",
+		zap.Any("request_id", req.ID),
+		zap.String("location", location),
+		zap.String("action", action),
+		zap.String("message_id", messageID))
+
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
@@ -636,6 +797,12 @@ func streamWeatherDataA2A(c *gin.Context, req a2a.JSONRPCRequest, location strin
 	taskID := uuid.New().String()
 	contextID := uuid.New().String()
 	artifactID := uuid.New().String()
+
+	logger.Debug("generated streaming task identifiers",
+		zap.Any("request_id", req.ID),
+		zap.String("task_id", taskID),
+		zap.String("context_id", contextID),
+		zap.String("artifact_id", artifactID))
 
 	taskStatus := a2a.TaskStatus{
 		State:     a2a.TaskStateSubmitted,
@@ -672,6 +839,9 @@ func streamWeatherDataA2A(c *gin.Context, req a2a.JSONRPCRequest, location strin
 	}
 
 	data, _ := json.Marshal(submissionResponse)
+	logger.Debug("sending task submission response",
+		zap.Any("request_id", req.ID),
+		zap.String("task_id", taskID))
 	fmt.Fprintf(c.Writer, "data: %s\n\n", data)
 	c.Writer.Flush()
 
@@ -682,18 +852,33 @@ func streamWeatherDataA2A(c *gin.Context, req a2a.JSONRPCRequest, location strin
 
 	switch action {
 	case "current":
+		logger.Debug("generating current weather for streaming",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location))
 		weatherData = generateWeatherData(location)
 		artifactName = "current_weather.json"
 	case "forecast":
+		logger.Debug("generating forecast for streaming",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location))
 		weatherData = generateForecast(location, 5)
 		artifactName = "weather_forecast.json"
 	case "conditions":
+		logger.Debug("generating conditions for streaming",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location))
 		weatherData = generateConditions(location)
 		artifactName = "weather_conditions.json"
 	case "alerts":
+		logger.Debug("generating alerts for streaming",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location))
 		weatherData = generateAlerts(location)
 		artifactName = "weather_alerts.json"
 	default:
+		logger.Debug("generating default weather for streaming",
+			zap.Any("request_id", req.ID),
+			zap.String("location", location))
 		weatherData = generateWeatherData(location)
 		artifactName = "weather_data.json"
 	}
@@ -724,6 +909,9 @@ func streamWeatherDataA2A(c *gin.Context, req a2a.JSONRPCRequest, location strin
 	}
 
 	data, _ = json.Marshal(artifactResponse)
+	logger.Debug("sending artifact update response",
+		zap.Any("request_id", req.ID),
+		zap.String("artifact_name", artifactName))
 	fmt.Fprintf(c.Writer, "data: %s\n\n", data)
 	c.Writer.Flush()
 
@@ -749,6 +937,10 @@ func streamWeatherDataA2A(c *gin.Context, req a2a.JSONRPCRequest, location strin
 	}
 
 	data, _ = json.Marshal(completionResponse)
+	logger.Debug("sending task completion response",
+		zap.Any("request_id", req.ID),
+		zap.String("task_id", taskID),
+		zap.String("final_status", string(a2a.TaskStateCompleted)))
 	fmt.Fprintf(c.Writer, "data: %s\n\n", data)
 	c.Writer.Flush()
 }

@@ -25,7 +25,7 @@ func main() {
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
-		logger.Info("health check requested")
+		// logger.Info("health check requested")
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
 
