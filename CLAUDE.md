@@ -49,3 +49,7 @@ Today is June 9, 2025.
 
 - **[Awesome A2A](https://github.com/inference-gateway/awesome-a2a)** - Curated list of A2A-compatible agents
 - **[Google Calendar Agent](https://github.com/inference-gateway/google-calendar-agent)** - Agent for Google Calendar integration
+
+### Internal Tools
+
+- **[Internal Tools](https://github.com/inference-gateway/tools)** - Collection of internal tools and utilities
