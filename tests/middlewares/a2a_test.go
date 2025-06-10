@@ -449,9 +449,9 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 					}, nil).AnyTimes()
 					mockA2AClient.EXPECT().GetAgentCapabilities().Return(map[string]a2a.AgentCapabilities{
 						"http://agent1.example.com": {
-							Pushnotifications:      false,
-							Statetransitionhistory: false,
-							Streaming:              false,
+							PushNotifications:      boolPtr(false),
+							StateTransitionHistory: boolPtr(false),
+							Streaming:              boolPtr(false),
 						},
 					}).AnyTimes()
 				}
@@ -593,15 +593,19 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 					Result: a2a.Task{
 						Status: a2a.TaskStatus{
 							State: a2a.TaskState(tt.taskStatus),
-							Message: a2a.Message{
-								Role:  "assistant",
-								Parts: []a2a.Part{},
+							Message: &a2a.Message{
+								Kind:      "message",
+								MessageID: "msg-123",
+								Role:      "assistant",
+								Parts:     []a2a.Part{},
 							},
 						},
 						History: []a2a.Message{
 							{
-								Role:  "assistant",
-								Parts: []a2a.Part{},
+								Kind:      "message",
+								MessageID: "msg-456",
+								Role:      "assistant",
+								Parts:     []a2a.Part{},
 							},
 						},
 					},
@@ -768,15 +772,19 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 					Result: a2a.Task{
 						Status: a2a.TaskStatus{
 							State: a2a.TaskState(tt.taskStatus),
-							Message: a2a.Message{
-								Role:  "assistant",
-								Parts: []a2a.Part{},
+							Message: &a2a.Message{
+								Kind:      "message",
+								MessageID: "msg-123",
+								Role:      "assistant",
+								Parts:     []a2a.Part{},
 							},
 						},
 						History: []a2a.Message{
 							{
-								Role:  "assistant",
-								Parts: []a2a.Part{},
+								Kind:      "message",
+								MessageID: "msg-456",
+								Role:      "assistant",
+								Parts:     []a2a.Part{},
 							},
 						},
 					},
@@ -969,10 +977,10 @@ func TestA2AMiddleware_ProgressiveDiscoveryPreventsRepeatedQueries(t *testing.T)
 		ID:      "test-response-id",
 		JSONRPC: "2.0",
 		Result: a2a.Message{
+			Kind:      "message",
+			MessageID: "msg-123",
 			Role:      "assistant",
 			Parts:     []a2a.Part{},
-			Messageid: "msg-123",
-			Kind:      "message",
 		},
 	}, nil).AnyTimes()
 
@@ -1118,4 +1126,8 @@ func TestA2AMiddleware_ProgressiveDiscoveryPreventsRepeatedQueries(t *testing.T)
 			assert.True(t, foundCalculateTool, "Calculate tool should be available in second iteration due to progressive discovery")
 		}
 	}
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

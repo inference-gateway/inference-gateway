@@ -430,7 +430,7 @@ func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverUR
 func (mc *MCPClient) discoverServerCapabilities(ctx context.Context, client *m.Client, serverURL string) error {
 	capabilities := ServerCapabilities{
 		Completions:  make(map[string]interface{}),
-		Experimental: make(map[string]interface{}),
+		Experimental: make(map[string]map[string]interface{}),
 		Logging:      make(map[string]interface{}),
 		Prompts:      make(map[string]interface{}),
 		Resources:    make(map[string]interface{}),
@@ -487,8 +487,8 @@ func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, 
 
 		serverTools = append(serverTools, Tool{
 			Name:        tool.Name,
-			Description: *enhancedDesc,
-			Inputschema: inputSchema,
+			Description: enhancedDesc,
+			InputSchema: inputSchema,
 		})
 
 		mc.Logger.Debug("processed tool", "server", serverURL, "toolName", tool.Name, "enhancedDesc", *enhancedDesc)
@@ -531,7 +531,7 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 	for _, tool := range serverTools {
 		description := tool.Description
 
-		inputSchema := tool.Inputschema
+		inputSchema := tool.InputSchema
 
 		if inputSchema == nil {
 			inputSchema = make(map[string]interface{})
@@ -572,7 +572,7 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 			Type: "function",
 			Function: providers.FunctionObject{
 				Name:        tool.Name,
-				Description: &description,
+				Description: description,
 				Parameters:  (*providers.FunctionParameters)(&inputSchema),
 			},
 		})

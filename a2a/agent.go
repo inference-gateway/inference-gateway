@@ -361,10 +361,10 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 				Message: Message{
 					Role:      "user",
 					Parts:     []Part{},
-					Messageid: messageID,
+					MessageID: messageID,
 				},
-				Configuration: MessageSendConfiguration{
-					Blocking: true,
+				Configuration: &MessageSendConfiguration{
+					Blocking: boolPtr(true),
 				},
 				Metadata: map[string]interface{}{
 					"skill":     toolCall.Function.Name,
@@ -374,7 +374,10 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 		}
 
 		if requestText != "" {
-			sendRequest.Params.Message.Parts = append(sendRequest.Params.Message.Parts, Part{})
+			sendRequest.Params.Message.Parts = append(sendRequest.Params.Message.Parts, TextPart{
+				Kind: "text",
+				Text: requestText,
+			})
 		}
 
 		a.logger.Info("executing a2a tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v agent=%s", toolCall.ID, toolCall.Function.Name, args, agentURL))
@@ -649,7 +652,7 @@ func (a *agentImpl) sendMessageWithTextPart(ctx context.Context, baseRequest *Se
 		"params": map[string]interface{}{
 			"message": map[string]interface{}{
 				"role":      baseRequest.Params.Message.Role,
-				"messageId": baseRequest.Params.Message.Messageid,
+				"messageId": baseRequest.Params.Message.MessageID,
 				"parts": []map[string]interface{}{
 					{
 						"kind": "text",
@@ -700,4 +703,8 @@ func (a *agentImpl) makeCustomA2ARequest(ctx context.Context, requestBody []byte
 	}
 
 	return &response, nil
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

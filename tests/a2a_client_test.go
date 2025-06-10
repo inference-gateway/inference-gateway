@@ -42,9 +42,9 @@ func TestA2AClient_AgentCardCaching(t *testing.T) {
 				Description: "A test agent for unit testing",
 				Version:     "1.0.0",
 				Capabilities: a2a.AgentCapabilities{
-					Pushnotifications:      false,
-					Statetransitionhistory: true,
-					Streaming:              true,
+					PushNotifications:      boolPtr(false),
+					StateTransitionHistory: boolPtr(true),
+					Streaming:              boolPtr(true),
 				},
 				Skills: []a2a.AgentSkill{
 					{
@@ -52,8 +52,8 @@ func TestA2AClient_AgentCardCaching(t *testing.T) {
 						Description: "A test skill",
 						ID:          "test_skill_id",
 						Tags:        []string{"test"},
-						Inputmodes:  []string{"text"},
-						Outputmodes: []string{"text"},
+						InputModes:  []string{"text"},
+						OutputModes: []string{"text"},
 					},
 				},
 			}
@@ -290,4 +290,8 @@ func TestA2AClient_MalformedJSON(t *testing.T) {
 	_, err = client.GetAgentCard(ctx, server.URL)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to unmarshal agent card")
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
