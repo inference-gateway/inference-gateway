@@ -1,6 +1,8 @@
 services:
   inference-gateway:
-    image: ghcr.io/inference-gateway/inference-gateway:latest
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
     pull_policy: always
     ports:
       - "8080:8080"
@@ -34,6 +36,8 @@ services:
     build:
       context: ./weather-agent
       dockerfile: Dockerfile
+    ports:
+      - "8083:8083"
     networks:
       - a2a-network
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -34,6 +35,62 @@ type ForecastData struct {
 	Probability int     `json:"rain_probability"`
 }
 
+type WeatherResponse struct {
+	Weather WeatherData `json:"weather"`
+	Agent   string      `json:"agent"`
+}
+
+type ForecastResponse struct {
+	Location string         `json:"location"`
+	Forecast []ForecastData `json:"forecast"`
+	Days     int            `json:"days"`
+	Agent    string         `json:"agent"`
+}
+
+type WeatherConditions struct {
+	AirQuality   string  `json:"air_quality"`
+	UVIndex      int     `json:"uv_index"`
+	VisibilityKm float64 `json:"visibility_km"`
+	Sunrise      string  `json:"sunrise"`
+	Sunset       string  `json:"sunset"`
+	MoonPhase    string  `json:"moon_phase"`
+	FeelsLike    float64 `json:"feels_like"`
+	DewPoint     float64 `json:"dew_point"`
+}
+
+type ConditionsResponse struct {
+	Location   string            `json:"location"`
+	Conditions WeatherConditions `json:"conditions"`
+	Agent      string            `json:"agent"`
+}
+
+type WeatherAlert struct {
+	Type        string `json:"type"`
+	Severity    string `json:"severity"`
+	Description string `json:"description"`
+	StartTime   string `json:"start_time"`
+	EndTime     string `json:"end_time"`
+}
+
+type AlertsResponse struct {
+	Location string         `json:"location"`
+	Alerts   []WeatherAlert `json:"alerts"`
+	Agent    string         `json:"agent"`
+}
+
+type StreamingConnectionMessage struct {
+	Type     string `json:"type"`
+	Status   string `json:"status"`
+	Message  string `json:"message"`
+	Location string `json:"location"`
+}
+
+type StreamingWeatherUpdate struct {
+	Type    string      `json:"type"`
+	Weather WeatherData `json:"weather"`
+	Agent   string      `json:"agent"`
+}
+
 func main() {
 	r := gin.Default()
 
@@ -44,7 +101,7 @@ func main() {
 	r.POST("/a2a", handleJSONRPCRequest)
 
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
-		streaming := false
+		streaming := true
 		pushNotifications := false
 		stateTransitionHistory := false
 
@@ -117,118 +174,211 @@ func handleJSONRPCRequest(c *gin.Context) {
 	}
 
 	switch req.Method {
-	case "current":
-		handleCurrent(c, req)
-	case "forecast":
-		handleForecast(c, req)
-	case "conditions":
-		handleConditions(c, req)
-	case "alerts":
-		handleAlerts(c, req)
+	case "message/send":
+		handleMessageSend(c, req)
+	case "message/stream":
+		handleJSONRPCStreamRequest(c)
 	default:
 		sendError(c, req.ID, -32601, "method not found")
 	}
 }
 
-func handleCurrent(c *gin.Context, req a2a.JSONRPCRequest) {
-	location, ok := req.Params["location"].(string)
+// handleMessageSend handles A2A message/send requests
+func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
+	paramsMap, ok := req.Params["message"].(map[string]interface{})
 	if !ok {
-		sendError(c, req.ID, -32602, "parameter 'location' is required")
+		sendError(c, req.ID, -32602, "invalid params: missing message")
 		return
 	}
 
-	weather := generateWeatherData(location)
+	partsArray, ok := paramsMap["parts"].([]interface{})
+	if !ok {
+		sendError(c, req.ID, -32602, "invalid params: missing message parts")
+		return
+	}
+
+	var messageText string
+	for _, partInterface := range partsArray {
+		part, ok := partInterface.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if partKind, exists := part["kind"]; exists && partKind == "text" {
+			if text, textExists := part["text"].(string); textExists {
+				messageText = text
+				break
+			}
+		}
+	}
+
+	metadata, ok := req.Params["metadata"].(map[string]interface{})
+	var skill string
+	var arguments map[string]interface{}
+
+	if ok {
+		if skillVal, exists := metadata["skill"].(string); exists {
+			skill = skillVal
+		}
+		if argsVal, exists := metadata["arguments"].(map[string]interface{}); exists {
+			arguments = argsVal
+		}
+	}
+
+	if skill == "" {
+		text := strings.ToLower(messageText)
+		if strings.Contains(text, "forecast") {
+			skill = "forecast"
+		} else if strings.Contains(text, "conditions") {
+			skill = "conditions"
+		} else if strings.Contains(text, "alerts") {
+			skill = "alerts"
+		} else {
+			skill = "current"
+		}
+	}
+
+	var location string
+	if arguments != nil {
+		if loc, ok := arguments["location"].(string); ok {
+			location = loc
+		} else if req, ok := arguments["request"].(string); ok {
+			location = req
+		}
+	}
+
+	if location == "" {
+		location = messageText
+	}
+
+	var weatherResult interface{}
+	switch skill {
+	case "current":
+		weather := generateWeatherData(location)
+		weatherResult = WeatherResponse{
+			Weather: weather,
+			Agent:   "weather-agent",
+		}
+	case "forecast":
+		days := 5
+		if arguments != nil {
+			if d, ok := arguments["days"].(float64); ok {
+				days = int(d)
+				if days > 7 {
+					days = 7
+				}
+				if days < 1 {
+					days = 1
+				}
+			}
+		}
+		forecast := generateForecast(location, days)
+		weatherResult = ForecastResponse{
+			Location: location,
+			Forecast: forecast,
+			Days:     days,
+			Agent:    "weather-agent",
+		}
+	case "conditions":
+		conditions := generateConditions(location)
+		weatherResult = ConditionsResponse{
+			Location:   location,
+			Conditions: conditions,
+			Agent:      "weather-agent",
+		}
+	case "alerts":
+		alerts := generateAlerts(location)
+		weatherResult = AlertsResponse{
+			Location: location,
+			Alerts:   alerts,
+			Agent:    "weather-agent",
+		}
+	default:
+		weather := generateWeatherData(location)
+		weatherResult = WeatherResponse{
+			Weather: weather,
+			Agent:   "weather-agent",
+		}
+	}
+
+	resultJSON, _ := json.Marshal(weatherResult)
+
+	taskId := uuid.New().String()
+	contextId := uuid.New().String()
+	messageId := uuid.New().String()
+	timestamp := time.Now().Format(time.RFC3339)
+	artifactName := fmt.Sprintf("%s_weather.json", skill)
+
+	responseMessage := a2a.Message{
+		Role:      "assistant",
+		MessageID: messageId,
+		ContextID: &contextId,
+		TaskID:    &taskId,
+		Kind:      "message",
+		Parts: []a2a.Part{
+			a2a.TextPart{
+				Kind: "text",
+				Text: string(resultJSON),
+			},
+		},
+	}
+
+	task := a2a.Task{
+		ID:        taskId,
+		ContextID: contextId,
+		Kind:      "task",
+		Status: a2a.TaskStatus{
+			State:     "completed",
+			Timestamp: &timestamp,
+			Message:   &responseMessage,
+		},
+		Artifacts: []a2a.Artifact{
+			{
+				ArtifactID: uuid.New().String(),
+				Name:       &artifactName,
+				Parts: []a2a.Part{
+					a2a.TextPart{
+						Kind: "text",
+						Text: string(resultJSON),
+					},
+				},
+			},
+		},
+		History: []a2a.Message{
+			{
+				Role:      "user",
+				MessageID: getStringFromMap(paramsMap, "messageId", uuid.New().String()),
+				ContextID: &contextId,
+				TaskID:    &taskId,
+				Kind:      "message",
+				Parts: []a2a.Part{
+					a2a.TextPart{
+						Kind: "text",
+						Text: messageText,
+					},
+				},
+			},
+			responseMessage,
+		},
+	}
 
 	response := a2a.JSONRPCSuccessResponse{
 		ID:      req.ID,
 		JSONRPC: "2.0",
-		Result: map[string]interface{}{
-			"weather": weather,
-			"agent":   "weather-agent",
-		},
+		Result:  task,
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-func handleForecast(c *gin.Context, req a2a.JSONRPCRequest) {
-	location, ok := req.Params["location"].(string)
-	if !ok {
-		sendError(c, req.ID, -32602, "parameter 'location' is required")
-		return
-	}
-
-	days := 5
-	if d, ok := req.Params["days"]; ok {
-		if daysFloat, ok := d.(float64); ok {
-			days = int(daysFloat)
-		}
-		if days > 7 {
-			days = 7
-		}
-		if days < 1 {
-			days = 1
+// Helper function to extract string values from maps
+func getStringFromMap(m map[string]interface{}, key string, defaultValue string) string {
+	if val, exists := m[key]; exists {
+		if str, ok := val.(string); ok {
+			return str
 		}
 	}
-
-	forecast := generateForecast(location, days)
-
-	response := a2a.JSONRPCSuccessResponse{
-		ID:      req.ID,
-		JSONRPC: "2.0",
-		Result: map[string]interface{}{
-			"location": location,
-			"forecast": forecast,
-			"days":     days,
-			"agent":    "weather-agent",
-		},
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-func handleConditions(c *gin.Context, req a2a.JSONRPCRequest) {
-	location, ok := req.Params["location"].(string)
-	if !ok {
-		sendError(c, req.ID, -32602, "parameter 'location' is required")
-		return
-	}
-
-	conditions := generateConditions(location)
-
-	response := a2a.JSONRPCSuccessResponse{
-		ID:      req.ID,
-		JSONRPC: "2.0",
-		Result: map[string]interface{}{
-			"location":   location,
-			"conditions": conditions,
-			"agent":      "weather-agent",
-		},
-	}
-
-	c.JSON(http.StatusOK, response)
-}
-
-func handleAlerts(c *gin.Context, req a2a.JSONRPCRequest) {
-	location, ok := req.Params["location"].(string)
-	if !ok {
-		sendError(c, req.ID, -32602, "parameter 'location' is required")
-		return
-	}
-
-	alerts := generateAlerts(location)
-
-	response := a2a.JSONRPCSuccessResponse{
-		ID:      req.ID,
-		JSONRPC: "2.0",
-		Result: map[string]interface{}{
-			"location": location,
-			"alerts":   alerts,
-			"agent":    "weather-agent",
-		},
-	}
-
-	c.JSON(http.StatusOK, response)
+	return defaultValue
 }
 
 func generateWeatherData(location string) WeatherData {
@@ -302,7 +452,7 @@ func generateForecast(location string, days int) []ForecastData {
 	return forecast
 }
 
-func generateConditions(location string) map[string]interface{} {
+func generateConditions(location string) WeatherConditions {
 	locationLower := strings.ToLower(location)
 
 	var airQuality string
@@ -324,21 +474,21 @@ func generateConditions(location string) map[string]interface{} {
 		visibility = 5.0 + rand.Float64()*10.0
 	}
 
-	return map[string]interface{}{
-		"air_quality":   airQuality,
-		"uv_index":      uvIndex,
-		"visibility_km": float64(int(visibility*10)) / 10,
-		"sunrise":       "06:30",
-		"sunset":        "18:45",
-		"moon_phase":    getMoonPhase(),
-		"feels_like":    generateFeelsLike(),
-		"dew_point":     float64(rand.Intn(21)), // 0-20°C
+	return WeatherConditions{
+		AirQuality:   airQuality,
+		UVIndex:      uvIndex,
+		VisibilityKm: float64(int(visibility*10)) / 10,
+		Sunrise:      "06:30",
+		Sunset:       "18:45",
+		MoonPhase:    getMoonPhase(),
+		FeelsLike:    generateFeelsLike(),
+		DewPoint:     float64(rand.Intn(21)), // 0-20°C
 	}
 }
 
-func generateAlerts(location string) []map[string]interface{} {
+func generateAlerts(location string) []WeatherAlert {
 	if rand.Float64() < 0.3 { // 30% chance of having alerts
-		return []map[string]interface{}{}
+		return []WeatherAlert{}
 	}
 
 	alertTypes := []string{
@@ -355,15 +505,15 @@ func generateAlerts(location string) []map[string]interface{} {
 	alertType := alertTypes[rand.Intn(len(alertTypes))]
 	severity := severities[rand.Intn(len(severities))]
 
-	alert := map[string]interface{}{
-		"type":        alertType,
-		"severity":    severity,
-		"description": fmt.Sprintf("%s in effect for %s area", alertType, location),
-		"start_time":  time.Now().Format("2006-01-02T15:04:05Z"),
-		"end_time":    time.Now().Add(6 * time.Hour).Format("2006-01-02T15:04:05Z"),
+	alert := WeatherAlert{
+		Type:        alertType,
+		Severity:    severity,
+		Description: fmt.Sprintf("%s in effect for %s area", alertType, location),
+		StartTime:   time.Now().Format("2006-01-02T15:04:05Z"),
+		EndTime:     time.Now().Add(6 * time.Hour).Format("2006-01-02T15:04:05Z"),
 	}
 
-	return []map[string]interface{}{alert}
+	return []WeatherAlert{alert}
 }
 
 func getMoonPhase() string {
@@ -386,4 +536,227 @@ func sendError(c *gin.Context, id interface{}, code int, message string) {
 		},
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+func handleJSONRPCStreamRequest(c *gin.Context) {
+	var req a2a.JSONRPCRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		sendError(c, req.ID, -32700, "parse error")
+		return
+	}
+
+	if req.JSONRPC == "" {
+		req.JSONRPC = "2.0"
+	}
+
+	if req.ID == nil {
+		id := interface{}(uuid.New().String())
+		req.ID = &id
+	}
+
+	if req.Method != "message/stream" {
+		sendError(c, req.ID, -32601, "method not found - use message/stream for streaming")
+		return
+	}
+
+	messageData, ok := req.Params["message"]
+	if !ok {
+		sendError(c, req.ID, -32602, "missing 'message' parameter")
+		return
+	}
+
+	messageBytes, err := json.Marshal(messageData)
+	if err != nil {
+		sendError(c, req.ID, -32602, "invalid message format")
+		return
+	}
+
+	var message struct {
+		Role  string `json:"role"`
+		Parts []struct {
+			Type string `json:"type"`
+			Text string `json:"text"`
+		} `json:"parts"`
+		MessageID string `json:"messageId"`
+	}
+
+	if err := json.Unmarshal(messageBytes, &message); err != nil {
+		sendError(c, req.ID, -32602, "invalid message structure")
+		return
+	}
+
+	var location string
+	var weatherAction string
+	for _, part := range message.Parts {
+		if part.Type == "text" {
+			text := strings.ToLower(part.Text)
+			if strings.Contains(text, "current") || strings.Contains(text, "weather") {
+				weatherAction = "current"
+			} else if strings.Contains(text, "forecast") {
+				weatherAction = "forecast"
+			} else if strings.Contains(text, "conditions") {
+				weatherAction = "conditions"
+			} else if strings.Contains(text, "alerts") {
+				weatherAction = "alerts"
+			}
+
+			words := strings.Fields(part.Text)
+			for i, word := range words {
+				if (strings.Contains(strings.ToLower(word), "in") ||
+					strings.Contains(strings.ToLower(word), "for") ||
+					strings.Contains(strings.ToLower(word), "at")) && i+1 < len(words) {
+					location = words[i+1]
+					break
+				}
+			}
+
+			if location == "" && len(words) > 0 {
+				location = words[len(words)-1]
+			}
+		}
+	}
+
+	if location == "" {
+		location = "Berlin"
+	}
+	if weatherAction == "" {
+		weatherAction = "current"
+	}
+
+	streamWeatherDataA2A(c, req, location, weatherAction, message.MessageID)
+}
+
+func streamWeatherDataA2A(c *gin.Context, req a2a.JSONRPCRequest, location string, action string, messageID string) {
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Access-Control-Allow-Origin", "*")
+	c.Header("Access-Control-Allow-Headers", "Cache-Control")
+
+	taskID := uuid.New().String()
+	contextID := uuid.New().String()
+	artifactID := uuid.New().String()
+
+	taskStatus := a2a.TaskStatus{
+		State:     a2a.TaskStateSubmitted,
+		Timestamp: stringPtr(time.Now().Format("2006-01-02T15:04:05.000Z07:00")),
+	}
+
+	task := a2a.Task{
+		ID:        taskID,
+		ContextID: contextID,
+		Status:    taskStatus,
+		History: []a2a.Message{
+			{
+				Role: "user",
+				Parts: []a2a.Part{
+					a2a.TextPart{
+						Kind: "text",
+						Text: fmt.Sprintf("Get %s weather for %s", action, location),
+					},
+				},
+				MessageID: messageID,
+				TaskID:    &taskID,
+				ContextID: &contextID,
+				Kind:      "message",
+			},
+		},
+		Kind:     "task",
+		Metadata: map[string]interface{}{},
+	}
+
+	submissionResponse := a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  task,
+	}
+
+	data, _ := json.Marshal(submissionResponse)
+	fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+	c.Writer.Flush()
+
+	time.Sleep(500 * time.Millisecond)
+
+	var weatherData interface{}
+	var artifactName string
+
+	switch action {
+	case "current":
+		weatherData = generateWeatherData(location)
+		artifactName = "current_weather.json"
+	case "forecast":
+		weatherData = generateForecast(location, 5)
+		artifactName = "weather_forecast.json"
+	case "conditions":
+		weatherData = generateConditions(location)
+		artifactName = "weather_conditions.json"
+	case "alerts":
+		weatherData = generateAlerts(location)
+		artifactName = "weather_alerts.json"
+	default:
+		weatherData = generateWeatherData(location)
+		artifactName = "weather_data.json"
+	}
+
+	weatherJSON, _ := json.Marshal(weatherData)
+	artifactUpdateEvent := a2a.TaskArtifactUpdateEvent{
+		TaskID:    taskID,
+		ContextID: contextID,
+		Artifact: a2a.Artifact{
+			ArtifactID: artifactID,
+			Name:       &artifactName,
+			Parts: []a2a.Part{
+				a2a.TextPart{
+					Kind: "text",
+					Text: string(weatherJSON),
+				},
+			},
+		},
+		Append:    boolPtr(false),
+		LastChunk: boolPtr(true),
+		Kind:      "artifact-update",
+	}
+
+	artifactResponse := a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  artifactUpdateEvent,
+	}
+
+	data, _ = json.Marshal(artifactResponse)
+	fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+	c.Writer.Flush()
+
+	time.Sleep(200 * time.Millisecond)
+
+	completionStatus := a2a.TaskStatus{
+		State:     a2a.TaskStateCompleted,
+		Timestamp: stringPtr(time.Now().Format("2006-01-02T15:04:05.000Z07:00")),
+	}
+
+	statusUpdateEvent := a2a.TaskStatusUpdateEvent{
+		TaskID:    taskID,
+		ContextID: contextID,
+		Status:    completionStatus,
+		Final:     true,
+		Kind:      "status-update",
+	}
+
+	completionResponse := a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  statusUpdateEvent,
+	}
+
+	data, _ = json.Marshal(completionResponse)
+	fmt.Fprintf(c.Writer, "data: %s\n\n", data)
+	c.Writer.Flush()
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

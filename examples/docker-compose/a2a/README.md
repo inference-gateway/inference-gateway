@@ -115,7 +115,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
     },
     {
       "role": "user",
-      "content": "What is the current weather in New York?"
+      "content": "What is the current weather in Berlin?"
     }
   ]
 }'
