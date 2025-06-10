@@ -127,7 +127,7 @@ func handleA2ARequest(c *gin.Context) {
 }
 
 func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
-	logger.Info("processing message/send request", zap.Any("requestId", req.ID))
+	logger.Info("processing message/send request (called from inference gateway)", zap.Any("requestId", req.ID))
 
 	paramsMap, ok := req.Params["message"].(map[string]interface{})
 	if !ok {
@@ -240,7 +240,7 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest) {
 }
 
 func handleMessageStream(c *gin.Context, req a2a.JSONRPCRequest) {
-	logger.Info("processing message/stream request", zap.Any("requestId", req.ID))
+	logger.Info("processing message/stream request (DIRECT call to agent - not via gateway)", zap.Any("requestId", req.ID))
 	handleMessageSend(c, req)
 }
 

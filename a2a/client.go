@@ -1,6 +1,7 @@
 package a2a
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/tls"
@@ -48,6 +49,9 @@ type A2AClientInterface interface {
 
 	// SendMessage sends a message to the specified agent (A2A's main task submission method)
 	SendMessage(ctx context.Context, request *SendMessageRequest, agentURL string) (*SendMessageSuccessResponse, error)
+
+	// SendStreamingMessage sends a streaming message to the specified agent
+	SendStreamingMessage(ctx context.Context, request *SendStreamingMessageRequest, agentURL string) (<-chan []byte, error)
 
 	// GetTask retrieves the status of a task
 	GetTask(ctx context.Context, request *GetTaskRequest, agentURL string) (*GetTaskSuccessResponse, error)
@@ -274,6 +278,19 @@ func (c *A2AClient) SendMessage(ctx context.Context, request *SendMessageRequest
 	return response.(*SendMessageSuccessResponse), nil
 }
 
+// SendStreamingMessage sends a streaming message to the specified agent
+func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *SendStreamingMessageRequest, agentURL string) (<-chan []byte, error) {
+	if !c.Initialized {
+		return nil, ErrClientNotInitialized
+	}
+
+	if !c.isValidAgentURL(agentURL) {
+		return nil, ErrAgentNotFound
+	}
+
+	return c.makeStreamingJSONRPCRequest(ctx, request, agentURL)
+}
+
 // GetTask retrieves the status of a task
 func (c *A2AClient) GetTask(ctx context.Context, request *GetTaskRequest, agentURL string) (*GetTaskSuccessResponse, error) {
 	if !c.Initialized {
@@ -371,6 +388,77 @@ func (c *A2AClient) makeJSONRPCRequest(ctx context.Context, request interface{},
 	}
 
 	return response, nil
+}
+
+// makeStreamingJSONRPCRequest makes a streaming JSON-RPC request to the specified agent
+func (c *A2AClient) makeStreamingJSONRPCRequest(ctx context.Context, request interface{}, agentURL string) (<-chan []byte, error) {
+	rpcURL, err := url.JoinPath(agentURL, "a2a")
+	if err != nil {
+		return nil, fmt.Errorf("failed to build JSON-RPC URL: %w", err)
+	}
+
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", rpcURL, bytes.NewReader(requestBody))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("User-Agent", "inference-gateway-a2a-client/1.0")
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make streaming request: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		return nil, fmt.Errorf("streaming JSON-RPC request failed with status %d", resp.StatusCode)
+	}
+
+	stream := make(chan []byte, 100)
+	go func() {
+		defer resp.Body.Close()
+		defer close(stream)
+
+		reader := bufio.NewReaderSize(resp.Body, 4096)
+
+		for {
+			select {
+			case <-ctx.Done():
+				c.Logger.Debug("streaming cancelled due to context", "agent_url", agentURL)
+				return
+			default:
+			}
+
+			line, err := reader.ReadBytes('\n')
+			if err != nil {
+				if err != io.EOF {
+					c.Logger.Error("error reading stream", err, "agent_url", agentURL)
+				} else {
+					c.Logger.Debug("stream ended gracefully", "agent_url", agentURL)
+				}
+				return
+			}
+
+			if len(line) > 0 {
+				select {
+				case stream <- line:
+				case <-ctx.Done():
+					c.Logger.Debug("streaming cancelled while sending data", "agent_url", agentURL)
+					return
+				}
+			}
+		}
+	}()
+
+	return stream, nil
 }
 
 // isValidAgentURL checks if the agent URL is in the list of configured agents

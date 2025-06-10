@@ -84,8 +84,8 @@ func (m *DevResponseModifier) Modify(resp *http.Response) error {
 	transferEncoding := resp.Header.Get("Transfer-Encoding")
 
 	isStreaming := contentType == "text/event-stream" ||
-		transferEncoding == "chunked" ||
-		resp.ContentLength == -1
+		(transferEncoding == "chunked" && contentType != "application/json") ||
+		(resp.ContentLength == -1 && contentType != "application/json")
 
 	if isStreaming {
 		m.logger.Debug("proxy streaming response",

@@ -42,21 +42,6 @@ func (m *MockAgent) EXPECT() *MockAgentMockRecorder {
 	return m.recorder
 }
 
-// ExecuteTools mocks base method.
-func (m *MockAgent) ExecuteTools(ctx context.Context, toolCalls []providers.ChatCompletionMessageToolCall) ([]providers.Message, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExecuteTools", ctx, toolCalls)
-	ret0, _ := ret[0].([]providers.Message)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ExecuteTools indicates an expected call of ExecuteTools.
-func (mr *MockAgentMockRecorder) ExecuteTools(ctx, toolCalls any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteTools", reflect.TypeOf((*MockAgent)(nil).ExecuteTools), ctx, toolCalls)
-}
-
 // Run mocks base method.
 func (m *MockAgent) Run(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse) error {
 	m.ctrl.T.Helper()

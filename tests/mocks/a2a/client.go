@@ -186,3 +186,18 @@ func (mr *MockA2AClientInterfaceMockRecorder) SendMessage(ctx, request, agentURL
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendMessage", reflect.TypeOf((*MockA2AClientInterface)(nil).SendMessage), ctx, request, agentURL)
 }
+
+// SendStreamingMessage mocks base method.
+func (m *MockA2AClientInterface) SendStreamingMessage(ctx context.Context, request *a2a.SendStreamingMessageRequest, agentURL string) (<-chan []byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SendStreamingMessage", ctx, request, agentURL)
+	ret0, _ := ret[0].(<-chan []byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SendStreamingMessage indicates an expected call of SendStreamingMessage.
+func (mr *MockA2AClientInterfaceMockRecorder) SendStreamingMessage(ctx, request, agentURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendStreamingMessage", reflect.TypeOf((*MockA2AClientInterface)(nil).SendStreamingMessage), ctx, request, agentURL)
+}

@@ -107,7 +107,8 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 		agentQueryTool := m.createAgentQueryTool()
 		m.addToolToRequest(&originalRequestBody, agentQueryTool)
 
-		m.logger.Debug("added a2a query tool to request", "total_tools", 1)
+		taskSubmissionTool := m.createTaskSubmissionTool()
+		m.addToolToRequest(&originalRequestBody, taskSubmissionTool)
 
 		c.Set(string(a2aInternalKey), &originalRequestBody)
 
@@ -177,7 +178,7 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 			m.a2aAgent.SetProvider(result.Provider)
 			m.a2aAgent.SetModel(&result.ProviderModel)
 
-			if err := m.a2aAgent.Run(c, &originalRequestBody, &response); err != nil {
+			if err := m.a2aAgent.Run(c.Request.Context(), &originalRequestBody, &response); err != nil {
 				m.logger.Error("failed to handle a2a tool calls", err)
 				m.writeErrorResponse(c, customWriter, "Failed to execute A2A tools", http.StatusInternalServerError)
 				return
@@ -297,7 +298,7 @@ func (m *A2AMiddlewareImpl) createAgentQueryTool() providers.ChatCompletionTool 
 		agentsList = " No agents are currently available."
 	}
 
-	description := fmt.Sprintf("Query an A2A agent's card to understand its capabilities and determine if it's suitable for a task.%s", agentsList)
+	description := fmt.Sprintf("Query an A2A agent's card to understand its capabilities and determine if it's suitable for a task.%s \n\nIf you found the agent you are looking for, just query the agent card to find out more details.", agentsList)
 
 	return providers.ChatCompletionTool{
 		Type: providers.ChatCompletionToolTypeFunction,
@@ -313,6 +314,45 @@ func (m *A2AMiddlewareImpl) createAgentQueryTool() providers.ChatCompletionTool 
 					},
 				},
 				"required": []string{"agent_url"},
+			},
+		},
+	}
+}
+
+// createTaskSubmissionTool creates a tool that allows LLM to submit tasks to A2A agents
+func (m *A2AMiddlewareImpl) createTaskSubmissionTool() providers.ChatCompletionTool {
+	agents := m.a2aClient.GetAgents()
+	var agentsList string
+	if len(agents) > 0 {
+		agentsList = fmt.Sprintf(" Available agents: %s.", strings.Join(agents, ", "))
+	} else {
+		agentsList = " No agents are currently available."
+	}
+
+	description := fmt.Sprintf("Submit a task to an A2A agent for execution. The agent will use its skills to complete the task.%s", agentsList)
+
+	return providers.ChatCompletionTool{
+		Type: providers.ChatCompletionToolTypeFunction,
+		Function: providers.FunctionObject{
+			Name:        "submit_task_to_agent",
+			Description: &description,
+			Parameters: &providers.FunctionParameters{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"agent_url": map[string]interface{}{
+						"type":        "string",
+						"description": fmt.Sprintf("The URL of the A2A agent to submit the task to. Available agents: %s", strings.Join(agents, ", ")),
+					},
+					"task_description": map[string]interface{}{
+						"type":        "string",
+						"description": "A clear description of the task you want the agent to perform",
+					},
+					"additional_context": map[string]interface{}{
+						"type":        "string",
+						"description": "Any additional context or parameters needed for the task (optional)",
+					},
+				},
+				"required": []string{"agent_url", "task_description"},
 			},
 		},
 	}
