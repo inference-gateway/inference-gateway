@@ -650,9 +650,9 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 			for _, tool := range tools {
 				mcpTool := providers.MCPTool{
 					Name:        tool.Name,
-					Description: tool.Description,
+					Description: *tool.Description,
 					Server:      serverURL,
-					InputSchema: &tool.Inputschema,
+					InputSchema: &tool.InputSchema,
 				}
 				allTools = append(allTools, mcpTool)
 			}
