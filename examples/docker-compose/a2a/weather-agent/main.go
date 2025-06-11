@@ -22,12 +22,15 @@ import (
 var logger *zap.Logger
 
 type Config struct {
-	Debug               bool   `env:"DEBUG,default=false"`
-	Port                string `env:"PORT,default=8080"`
-	InferenceGatewayURL string `env:"INFERENCE_GATEWAY_URL,required"`
-	LLMProvider         string `env:"LLM_PROVIDER,default=deepseek"`
-	LLMModel            string `env:"LLM_MODEL,default=deepseek-chat"`
-	MaxIterations       int    `env:"MAX_ITERATIONS,default=10"`
+	Debug                         bool          `env:"DEBUG,default=false"`
+	Port                          string        `env:"PORT,default=8080"`
+	InferenceGatewayURL           string        `env:"INFERENCE_GATEWAY_URL,required"`
+	LLMProvider                   string        `env:"LLM_PROVIDER,default=deepseek"`
+	LLMModel                      string        `env:"LLM_MODEL,default=deepseek-chat"`
+	MaxIterations                 int           `env:"MAX_ITERATIONS,default=10"`
+	CleanupCompletedTaskInterval  time.Duration `env:"CLEANUP_COMPLETED_TASK_INTERVAL,default=30s"`
+	MaxQueueSize                  int           `env:"MAX_QUEUE_SIZE,default=100"`
+	StreamingStatusUpdateInterval time.Duration `env:"STREAMING_STATUS_UPDATE_INTERVAL,default=1s"`
 }
 
 type JRPCErrorCode int
@@ -150,13 +153,18 @@ func main() {
 		BaseURL: cfg.InferenceGatewayURL,
 	})
 
+	taskQueue = make(chan *QueuedTask, cfg.MaxQueueSize)
+
 	logger.Info("starting weather agent",
 		zap.String("version", "1.0.0"),
 		zap.String("port", cfg.Port),
 		zap.String("inference_gateway_url", cfg.InferenceGatewayURL),
 		zap.String("llm_provider", cfg.LLMProvider),
 		zap.String("llm_model", cfg.LLMModel),
-		zap.Bool("debug_mode", cfg.Debug))
+		zap.Bool("debug_mode", cfg.Debug),
+		zap.Duration("cleanup_completed_task_interval", cfg.CleanupCompletedTaskInterval),
+		zap.Int("max_queue_size", cfg.MaxQueueSize),
+		zap.Duration("streaming_status_update_interval", cfg.StreamingStatusUpdateInterval))
 
 	go startTaskProcessor(ctx, logger, client)
 
@@ -315,8 +323,128 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logge
 }
 
 func handleMessageStream(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
-	logger.Info("streaming not implemented yet")
-	sendError(c, req.ID, int(ErrServerError), "streaming not implemented", logger)
+	var params a2a.MessageSendParams
+	paramsBytes, err := json.Marshal(req.Params)
+	if err != nil {
+		logger.Error("failed to marshal params", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid params", logger)
+		return
+	}
+	if err := json.Unmarshal(paramsBytes, &params); err != nil {
+		logger.Error("failed to parse message/stream request", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid request", logger)
+		return
+	}
+
+	if len(params.Message.Parts) <= 0 {
+		sendError(c, req.ID, -32600, "invalid request", logger)
+		return
+	}
+
+	defer func() {
+		logger.Debug("message/stream request processed")
+	}()
+
+	contextID := params.Message.ContextID
+	if contextID == nil {
+		newContextID := uuid.New().String()
+		contextID = &newContextID
+	}
+
+	task := createTask(*contextID, a2a.TaskStateSubmitted, nil)
+	logger.Info("task created for streaming", zap.String("task_id", task.ID))
+
+	var messages []sdk.Message
+	for _, part := range params.Message.Parts {
+		partMap, ok := part.(map[string]interface{})
+		if !ok {
+			logger.Error("failed to assert part to map")
+			sendError(c, req.ID, int(ErrInvalidParams), "invalid part format", logger)
+			return
+		}
+
+		textValue, exists := partMap["text"]
+		if !exists {
+			logger.Error("part missing text field")
+			sendError(c, req.ID, int(ErrInvalidParams), "part missing text field", logger)
+			return
+		}
+
+		textString, ok := textValue.(string)
+		if !ok {
+			logger.Error("text field is not a string")
+			sendError(c, req.ID, int(ErrInvalidParams), "text field is not a string", logger)
+			return
+		}
+
+		messages = append(messages, sdk.Message{
+			Role:    sdk.MessageRole(params.Message.Role),
+			Content: textString,
+		})
+	}
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no")
+
+	initialResponse := a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  *task,
+	}
+
+	initialData, err := json.Marshal(initialResponse)
+	if err != nil {
+		logger.Error("failed to marshal initial response", zap.Error(err))
+		sendError(c, req.ID, int(ErrServerError), "failed to marshal response", logger)
+		return
+	}
+
+	c.SSEvent("data", string(initialData))
+	c.Writer.Flush()
+
+	go func() {
+		processTaskWithStreaming(task, messages, logger, client, c, *contextID)
+	}()
+
+	ticker := time.NewTicker(cfg.StreamingStatusUpdateInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			currentTask, exists := getTask(task.ID)
+			if !exists {
+				return
+			}
+
+			statusUpdate := a2a.TaskStatusUpdateEvent{
+				Kind:      "task_status_update",
+				ContextID: *contextID,
+				Status:    currentTask.Status,
+				Final:     currentTask.Status.State == a2a.TaskStateCompleted || currentTask.Status.State == a2a.TaskStateFailed || currentTask.Status.State == a2a.TaskStateCanceled,
+			}
+
+			updateData, err := json.Marshal(statusUpdate)
+			if err != nil {
+				logger.Error("failed to marshal status update", zap.Error(err))
+				return
+			}
+
+			c.SSEvent("data", string(updateData))
+			c.Writer.Flush()
+
+			if statusUpdate.Final {
+				c.SSEvent("", "[DONE]")
+				c.Writer.Flush()
+				return
+			}
+		case <-c.Request.Context().Done():
+			logger.Debug("client disconnected from stream")
+			return
+		}
+	}
 }
 
 func handleTaskGet(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
@@ -387,9 +515,9 @@ func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger
 	logger.Info("task canceled", zap.String("task_id", params.ID))
 
 	go func() {
-		time.Sleep(10 * time.Second)
+		time.Sleep(cfg.CleanupCompletedTaskInterval)
 		removeTask(task.ID)
-		logger.Debug("cleaned up canceled task after 10 seconds", zap.String("task_id", task.ID))
+		logger.Debug("cleaned up canceled task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.CleanupCompletedTaskInterval))
 	}()
 
 	c.JSON(http.StatusOK, a2a.JSONRPCSuccessResponse{
@@ -403,7 +531,6 @@ func stringPtr(s string) *string {
 	return &s
 }
 
-// fetchWeather simulates fetching weather data for the given location
 func fetchWeather(location string) *WeatherData {
 	logger.Debug("generating weather data for location", zap.String("location", location))
 
@@ -448,8 +575,7 @@ func fetchWeather(location string) *WeatherData {
 }
 
 var (
-	taskQueue = make(chan *QueuedTask, 100)
-	// In-memory store for all tasks (submitted, working, completed, failed, canceled)
+	taskQueue  chan *QueuedTask
 	allTasks   = make(map[string]*a2a.Task)
 	allTasksMu sync.RWMutex
 )
@@ -634,9 +760,184 @@ func processTaskAsync(queuedTask *QueuedTask, logger *zap.Logger, client sdk.Cli
 	logger.Info("task processing completed", zap.String("task_id", queuedTask.Task.ID))
 
 	go func() {
-		time.Sleep(10 * time.Second)
+		time.Sleep(cfg.CleanupCompletedTaskInterval)
 		removeTask(queuedTask.Task.ID)
-		logger.Debug("cleaned up completed task after 10 seconds", zap.String("task_id", queuedTask.Task.ID))
+		logger.Debug("cleaned up completed task", zap.String("task_id", queuedTask.Task.ID), zap.Duration("cleanup_interval", cfg.CleanupCompletedTaskInterval))
+	}()
+}
+
+func processTaskWithStreaming(task *a2a.Task, messages []sdk.Message, logger *zap.Logger, client sdk.Client, c *gin.Context, contextID string) {
+	logger.Info("processing task with streaming", zap.String("task_id", task.ID))
+
+	task.Status.State = a2a.TaskStateWorking
+	storeTask(task)
+
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("panic in streaming task processing", zap.Any("panic", r), zap.String("task_id", task.ID))
+			failTaskWithCleanup(task, "Task processing failed due to internal error", logger)
+		}
+	}()
+
+	response, err := client.WithTools(&tools).WithHeader("X-A2A-Internal", "true").GenerateContent(context.Background(), sdk.Provider(cfg.LLMProvider), cfg.LLMModel, messages)
+	if err != nil {
+		logger.Error("failed to create chat completion", zap.Error(err), zap.String("task_id", task.ID))
+		failTaskWithCleanup(task, "Failed to process weather request", logger)
+		return
+	}
+
+	if len(response.Choices) == 0 {
+		logger.Error("no choices returned from chat completion", zap.String("task_id", task.ID))
+		failTaskWithCleanup(task, "No response from weather service", logger)
+		return
+	}
+
+	var weatherResult string
+	var iteration int
+
+	for iteration < cfg.MaxIterations {
+		response, err = client.WithTools(&tools).WithHeader("X-A2A-Internal", "true").GenerateContent(context.Background(), sdk.Provider(cfg.LLMProvider), cfg.LLMModel, messages)
+		if err != nil {
+			logger.Error("failed to create chat completion in iteration", zap.Error(err), zap.String("task_id", task.ID), zap.Int("iteration", iteration))
+			failureMessage := &a2a.Message{
+				Kind:      "message",
+				MessageID: uuid.New().String(),
+				Role:      "assistant",
+				Parts: []a2a.Part{
+					map[string]interface{}{
+						"kind": "text",
+						"text": "Failed to process weather request during iteration",
+					},
+				},
+			}
+			task.Status.State = a2a.TaskStateFailed
+			task.Status.Message = failureMessage
+			storeTask(task)
+			return
+		}
+
+		if len(response.Choices) == 0 {
+			logger.Error("no choices returned from chat completion in iteration", zap.String("task_id", task.ID), zap.Int("iteration", iteration))
+			failureMessage := &a2a.Message{
+				Kind:      "message",
+				MessageID: uuid.New().String(),
+				Role:      "assistant",
+				Parts: []a2a.Part{
+					map[string]interface{}{
+						"kind": "text",
+						"text": "No response from weather service during processing",
+					},
+				},
+			}
+			task.Status.State = a2a.TaskStateFailed
+			task.Status.Message = failureMessage
+			storeTask(task)
+			return
+		}
+
+		toolCalls := response.Choices[0].Message.ToolCalls
+
+		if toolCalls == nil || len(*toolCalls) == 0 {
+			logger.Debug("no tool calls found in response, using text content", zap.String("task_id", task.ID))
+			break
+		}
+
+		assistantMessage := sdk.Message{
+			Role:      sdk.Assistant,
+			Content:   response.Choices[0].Message.Content,
+			ToolCalls: toolCalls,
+		}
+		messages = append(messages, assistantMessage)
+
+		for _, toolCall := range *toolCalls {
+			if toolCall.Function.Name != "fetch_weather" {
+				logger.Debug("ignoring tool call", zap.String("name", toolCall.Function.Name), zap.String("task_id", task.ID))
+				continue
+			}
+
+			var weatherParams FetchWeatherParams
+			if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &weatherParams); err != nil {
+				logger.Error("failed to unmarshal fetch_weather parameters", zap.Error(err), zap.String("task_id", task.ID))
+				failureMessage := &a2a.Message{
+					Kind:      "message",
+					MessageID: uuid.New().String(),
+					Role:      "assistant",
+					Parts: []a2a.Part{
+						map[string]interface{}{
+							"kind": "text",
+							"text": "Invalid parameters for weather request",
+						},
+					},
+				}
+				task.Status.State = a2a.TaskStateFailed
+				task.Status.Message = failureMessage
+				storeTask(task)
+				return
+			}
+
+			weatherData := fetchWeather(weatherParams.Location)
+			weatherJSON, _ := json.Marshal(weatherData)
+			weatherResult = string(weatherJSON)
+
+			toolResponse := sdk.Message{
+				Role:       sdk.Tool,
+				Content:    weatherResult,
+				ToolCallId: &toolCall.Id,
+			}
+
+			messages = append(messages, toolResponse)
+		}
+
+		iteration++
+	}
+
+	if len(response.Choices) == 0 {
+		logger.Error("no choices returned from chat completion after iterations", zap.String("task_id", task.ID))
+		failureMessage := &a2a.Message{
+			Kind:      "message",
+			MessageID: uuid.New().String(),
+			Role:      "assistant",
+			Parts: []a2a.Part{
+				map[string]interface{}{
+					"kind": "text",
+					"text": "No final response from weather service",
+				},
+			},
+		}
+		task.Status.State = a2a.TaskStateFailed
+		task.Status.Message = failureMessage
+		storeTask(task)
+		return
+	}
+
+	finalMessage := response.Choices[0].Message.Content
+
+	logger.Debug("weather result generated", zap.String("result", weatherResult), zap.String("task_id", task.ID))
+	logger.Debug("final response", zap.String("response", finalMessage), zap.String("task_id", task.ID))
+
+	resultMessage := &a2a.Message{
+		Kind:      "message",
+		MessageID: uuid.New().String(),
+		Role:      "assistant",
+		Parts: []a2a.Part{
+			a2a.TextPart{
+				Kind: "text",
+				Text: finalMessage,
+			},
+		},
+	}
+
+	task.Status.State = a2a.TaskStateCompleted
+	task.Status.Message = resultMessage
+
+	storeTask(task)
+
+	logger.Info("streaming task processing completed", zap.String("task_id", task.ID))
+
+	go func() {
+		time.Sleep(cfg.CleanupCompletedTaskInterval)
+		removeTask(task.ID)
+		logger.Debug("cleaned up completed streaming task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.CleanupCompletedTaskInterval))
 	}()
 }
 
@@ -693,8 +994,8 @@ func failTaskWithCleanup(task *a2a.Task, errorMessage string, logger *zap.Logger
 	storeTask(task)
 
 	go func() {
-		time.Sleep(10 * time.Second)
+		time.Sleep(cfg.CleanupCompletedTaskInterval)
 		removeTask(task.ID)
-		logger.Debug("cleaned up failed task after 10 seconds", zap.String("task_id", task.ID))
+		logger.Debug("cleaned up failed task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.CleanupCompletedTaskInterval))
 	}()
 }
