@@ -43,16 +43,16 @@ type TLSConfig struct {
 	KeyPath  string `env:"KEY_PATH,default=" description:"TLS key path"`
 }
 
-type QueueConfig struct {
-	MaxSize         int           `env:"MAX_SIZE,default=100"`
-	CleanupInterval time.Duration `env:"CLEANUP_INTERVAL,default=30s"`
-}
-
 type AuthConfig struct {
 	Enable       bool   `env:"ENABLE,default=false"`
 	IssuerURL    string `env:"ISSUER_URL,default=http://keycloak:8080/realms/inference-gateway-realm"`
 	ClientID     string `env:"CLIENT_ID,default=inference-gateway-client"`
 	ClientSecret string `env:"CLIENT_SECRET"`
+}
+
+type QueueConfig struct {
+	MaxSize         int           `env:"MAX_SIZE,default=100"`
+	CleanupInterval time.Duration `env:"CLEANUP_INTERVAL,default=30s"`
 }
 
 type JRPCErrorCode int
