@@ -96,7 +96,7 @@ func setupRouter(logger *zap.Logger, client sdk.Client) *gin.Engine {
 
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
 		logger.Info("agent info requested")
-		streaming := false
+		streaming := true
 		pushNotifications := false
 		stateTransitionHistory := false
 
@@ -472,7 +472,7 @@ func processTaskAsync(queuedTask *QueuedTask, logger *zap.Logger, client sdk.Cli
 	logger.Info("processing task from queue", zap.String("task_id", queuedTask.Task.ID))
 
 	queuedTask.Task.Status.State = a2a.TaskStateWorking
-	storeTask(queuedTask.Task) // Persist the working state
+	storeTask(queuedTask.Task)
 
 	defer func() {
 		if r := recover(); r != nil {
