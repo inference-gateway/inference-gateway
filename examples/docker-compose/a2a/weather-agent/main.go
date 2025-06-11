@@ -302,7 +302,7 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logge
 				},
 			},
 		}
-		storeTask(task) // Persist the failed state
+		storeTask(task)
 		sendError(c, req.ID, int(ErrServerError), "task queue is full", logger)
 		return
 	}
@@ -383,7 +383,7 @@ func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger
 	}
 
 	task.Status.State = a2a.TaskStateCanceled
-	storeTask(task) // Persist the canceled state
+	storeTask(task)
 	logger.Info("task canceled", zap.String("task_id", params.ID))
 
 	go func() {
