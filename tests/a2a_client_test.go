@@ -291,7 +291,3 @@ func TestA2AClient_MalformedJSON(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to unmarshal agent card")
 }
-
-func boolPtr(b bool) *bool {
-	return &b
-}

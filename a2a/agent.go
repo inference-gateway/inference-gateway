@@ -426,66 +426,17 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 		taskMessage += "\n\nAdditional context: " + args.AdditionalContext
 	}
 
-	taskRequest := &SendMessageRequest{
-		ID:      "task-" + fmt.Sprintf("%d", len(request.Messages)),
-		JSONRPC: "2.0",
-		Method:  "message/send",
-		Params: MessageSendParams{
-			Message: Message{
-				Kind:      "message",
-				MessageID: fmt.Sprintf("msg-%d", len(request.Messages)),
-				Role:      "user",
-				Parts: []Part{
-					TextPart{
-						Kind: "text",
-						Text: taskMessage,
-					},
-				},
-				Metadata: map[string]interface{}{
-					"tool_call": map[string]interface{}{
-						"id":        toolCall.ID,
-						"function":  toolCall.Function.Name,
-						"arguments": toolCall.Function.Arguments,
-					},
-				},
-			},
-		},
+	capabilities := a.a2aClient.GetAgentCapabilities()
+	agentCapability, hasCapability := capabilities[args.AgentURL]
+	supportsStreaming := hasCapability && agentCapability.Streaming != nil && *agentCapability.Streaming
+
+	if supportsStreaming {
+		a.logger.Debug("using streaming communication with a2a agent", "agent_url", args.AgentURL)
+		return a.handleStreamingTaskSubmission(ctx, request, toolCall, args.AgentURL, taskMessage)
 	}
 
-	response, err := a.a2aClient.SendMessage(ctx, taskRequest, args.AgentURL)
-	if err != nil {
-		return providers.Message{}, fmt.Errorf("failed to submit task to a2a agent: %w", err)
-	}
-
-	a.logger.Debug("task submitted successfully", "task_id", response.Result, "agent_url", args.AgentURL)
-
-	resultBytes, err := json.Marshal(response.Result)
-	if err != nil {
-		return providers.Message{}, fmt.Errorf("failed to marshal response result: %w", err)
-	}
-
-	var task Task
-	if err := json.Unmarshal(resultBytes, &task); err != nil {
-		return providers.Message{}, fmt.Errorf("failed to unmarshal task from response: %w", err)
-	}
-
-	taskID := task.ID
-	a.logger.Debug("received task ID from agent", "task_id", taskID, "agent_url", args.AgentURL)
-
-	if task.Status.State == TaskStateCompleted {
-		a.logger.Info("task completed immediately", "task_id", taskID, "agent_url", args.AgentURL)
-		return a.extractTaskResponse(&task, toolCall.ID)
-	}
-
-	a.logger.Debug("task not completed immediately, starting polling", "task_id", taskID, "status", task.Status.State, "agent_url", args.AgentURL)
-
-	completedTask, err := a.pollTaskUntilCompletion(ctx, taskID, args.AgentURL)
-	if err != nil {
-		return providers.Message{}, fmt.Errorf("failed to poll task completion: %w", err)
-	}
-
-	a.logger.Info("task completed via polling", "task_id", taskID, "agent_url", args.AgentURL)
-	return a.extractTaskResponse(completedTask, toolCall.ID)
+	a.logger.Debug("using non-streaming communication with a2a agent", "agent_url", args.AgentURL)
+	return a.handleNonStreamingTaskSubmission(ctx, request, toolCall, args.AgentURL, taskMessage)
 }
 
 // extractTaskResponse extracts the text response from a completed task
@@ -697,4 +648,186 @@ func (a *agentImpl) processStreamingResponse(streamCh <-chan []byte, middlewareS
 	}
 
 	return toolCalls, nil
+}
+
+// handleStreamingTaskSubmission handles task submission using streaming A2A communication
+func (a *agentImpl) handleStreamingTaskSubmission(ctx context.Context, request *providers.CreateChatCompletionRequest, toolCall providers.ChatCompletionMessageToolCall, agentURL, taskMessage string) (providers.Message, error) {
+	streamingRequest := &SendStreamingMessageRequest{
+		ID:      "stream-task-" + fmt.Sprintf("%d", len(request.Messages)),
+		JSONRPC: "2.0",
+		Method:  "message/stream",
+		Params: MessageSendParams{
+			Message: Message{
+				Kind:      "message",
+				MessageID: fmt.Sprintf("stream-msg-%d", len(request.Messages)),
+				Role:      "user",
+				Parts: []Part{
+					TextPart{
+						Kind: "text",
+						Text: taskMessage,
+					},
+				},
+				Metadata: map[string]interface{}{
+					"tool_call": map[string]interface{}{
+						"id":        toolCall.ID,
+						"function":  toolCall.Function.Name,
+						"arguments": toolCall.Function.Arguments,
+					},
+				},
+			},
+		},
+	}
+
+	streamCh, err := a.a2aClient.SendStreamingMessage(ctx, streamingRequest, agentURL)
+	if err != nil {
+		a.logger.Debug("streaming failed, falling back to non-streaming", "agent_url", agentURL, "error", err.Error())
+		return a.handleNonStreamingTaskSubmission(ctx, request, toolCall, agentURL, taskMessage)
+	}
+
+	a.logger.Debug("processing streaming response from a2a agent", "agent_url", agentURL)
+
+	var responseContent strings.Builder
+	for {
+		select {
+		case line, ok := <-streamCh:
+			if !ok {
+				a.logger.Debug("streaming response completed", "agent_url", agentURL)
+				goto ProcessComplete
+			}
+
+			lineStr := string(line)
+			a.logger.Debug("received streaming chunk from a2a agent", "agent_url", agentURL, "chunk", lineStr)
+
+			// Parse SSE data
+			if strings.HasPrefix(lineStr, "data: ") {
+				dataStr := strings.TrimPrefix(lineStr, "data: ")
+				dataStr = strings.TrimSpace(dataStr)
+
+				if dataStr == "" || dataStr == "[DONE]" {
+					continue
+				}
+
+				var sseEvent map[string]interface{}
+				if err := json.Unmarshal([]byte(dataStr), &sseEvent); err != nil {
+					a.logger.Debug("failed to parse SSE event", "data", dataStr, "error", err.Error())
+					continue
+				}
+
+				// Handle different types of SSE events according to A2A spec
+				if result, exists := sseEvent["result"].(map[string]interface{}); exists {
+					if kind, exists := result["kind"].(string); exists {
+						switch kind {
+						case "artifact-update":
+							if artifact, exists := result["artifact"].(map[string]interface{}); exists {
+								if parts, exists := artifact["parts"].([]interface{}); exists {
+									for _, part := range parts {
+										if partMap, ok := part.(map[string]interface{}); ok {
+											if partType, exists := partMap["type"].(string); exists && partType == "text" {
+												if text, exists := partMap["text"].(string); exists {
+													responseContent.WriteString(text)
+												}
+											}
+										}
+									}
+								}
+							}
+						case "status-update":
+							if status, exists := result["status"].(map[string]interface{}); exists {
+								if state, exists := status["state"].(string); exists {
+									a.logger.Debug("task status update", "state", state, "agent_url", agentURL)
+									if state == "completed" {
+										if final, exists := result["final"].(bool); exists && final {
+											goto ProcessComplete
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+		case <-ctx.Done():
+			a.logger.Debug("context cancelled during streaming", "agent_url", agentURL)
+			return providers.Message{}, ctx.Err()
+		}
+	}
+
+ProcessComplete:
+	finalResponse := responseContent.String()
+	if finalResponse == "" {
+		finalResponse = "Task completed successfully via streaming"
+	}
+
+	a.logger.Info("streaming task completed", "agent_url", agentURL, "response_length", len(finalResponse))
+
+	return providers.Message{
+		Role:       providers.MessageRoleTool,
+		Content:    finalResponse,
+		ToolCallId: &toolCall.ID,
+	}, nil
+}
+
+// handleNonStreamingTaskSubmission handles task submission using traditional blocking A2A communication
+func (a *agentImpl) handleNonStreamingTaskSubmission(ctx context.Context, request *providers.CreateChatCompletionRequest, toolCall providers.ChatCompletionMessageToolCall, agentURL, taskMessage string) (providers.Message, error) {
+	taskRequest := &SendMessageRequest{
+		ID:      "task-" + fmt.Sprintf("%d", len(request.Messages)),
+		JSONRPC: "2.0",
+		Method:  "message/send",
+		Params: MessageSendParams{
+			Message: Message{
+				Kind:      "message",
+				MessageID: fmt.Sprintf("msg-%d", len(request.Messages)),
+				Role:      "user",
+				Parts: []Part{
+					TextPart{
+						Kind: "text",
+						Text: taskMessage,
+					},
+				},
+				Metadata: map[string]interface{}{
+					"tool_call": map[string]interface{}{
+						"id":        toolCall.ID,
+						"function":  toolCall.Function.Name,
+						"arguments": toolCall.Function.Arguments,
+					},
+				},
+			},
+		},
+	}
+
+	response, err := a.a2aClient.SendMessage(ctx, taskRequest, agentURL)
+	if err != nil {
+		return providers.Message{}, fmt.Errorf("failed to submit task to a2a agent: %w", err)
+	}
+
+	a.logger.Debug("task submitted successfully", "task_id", response.Result, "agent_url", agentURL)
+
+	resultBytes, err := json.Marshal(response.Result)
+	if err != nil {
+		return providers.Message{}, fmt.Errorf("failed to marshal response result: %w", err)
+	}
+
+	var task Task
+	if err := json.Unmarshal(resultBytes, &task); err != nil {
+		return providers.Message{}, fmt.Errorf("failed to unmarshal task from response: %w", err)
+	}
+
+	taskID := task.ID
+	a.logger.Debug("received task ID from agent", "task_id", taskID, "agent_url", agentURL)
+
+	if task.Status.State == TaskStateCompleted {
+		a.logger.Info("task completed immediately", "task_id", taskID, "agent_url", agentURL)
+		return a.extractTaskResponse(&task, toolCall.ID)
+	}
+
+	a.logger.Debug("task not completed immediately, starting polling", "task_id", taskID, "status", task.Status.State, "agent_url", agentURL)
+
+	completedTask, err := a.pollTaskUntilCompletion(ctx, taskID, agentURL)
+	if err != nil {
+		return providers.Message{}, fmt.Errorf("failed to poll task completion: %w", err)
+	}
+
+	a.logger.Info("task completed via polling", "task_id", taskID, "agent_url", agentURL)
+	return a.extractTaskResponse(completedTask, toolCall.ID)
 }
