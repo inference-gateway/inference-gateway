@@ -436,11 +436,12 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 		return a.handleStreamingTaskSubmission(ctx, request, toolCall, args.AgentURL, taskMessage)
 	}
 
-	if supportsStreaming && !requestIsStreaming {
+	switch {
+	case supportsStreaming && !requestIsStreaming:
 		a.logger.Debug("using non-streaming communication with a2a agent", "agent_url", args.AgentURL, "reason", "agent supports streaming but request is non-streaming")
-	} else if !supportsStreaming {
+	case !supportsStreaming:
 		a.logger.Debug("using non-streaming communication with a2a agent", "agent_url", args.AgentURL, "reason", "agent does not support streaming")
-	} else {
+	default:
 		a.logger.Debug("using non-streaming communication with a2a agent", "agent_url", args.AgentURL)
 	}
 	return a.handleNonStreamingTaskSubmission(ctx, request, toolCall, args.AgentURL, taskMessage)

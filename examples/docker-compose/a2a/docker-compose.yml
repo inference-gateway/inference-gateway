@@ -25,8 +25,8 @@ services:
     environment:
       DEBUG: "true"
       INFERENCE_GATEWAY_URL: "http://inference-gateway:8080/v1"
-      LLM_PROVIDER: "groq"
-      LLM_MODEL: "llama-3.1-8b-instant"
+      LLM_PROVIDER: "cohere"
+      LLM_MODEL: "command-r"
     ports:
       - "8081:8080"
     networks:

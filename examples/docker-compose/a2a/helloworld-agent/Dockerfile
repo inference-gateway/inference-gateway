@@ -4,7 +4,7 @@ RUN apk add --no-cache curl
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o helloworld-agent main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o helloworld-agent .
 
 FROM alpine:latest
 WORKDIR /app
