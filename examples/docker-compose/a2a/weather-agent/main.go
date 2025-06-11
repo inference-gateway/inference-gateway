@@ -6,13 +6,16 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	oidcV3 "github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 
 	sdk "github.com/inference-gateway/sdk"
 
@@ -27,10 +30,22 @@ type Config struct {
 	InferenceGatewayURL           string        `env:"INFERENCE_GATEWAY_URL,required"`
 	LLMProvider                   string        `env:"LLM_PROVIDER,default=deepseek"`
 	LLMModel                      string        `env:"LLM_MODEL,default=deepseek-chat"`
-	MaxIterations                 int           `env:"MAX_ITERATIONS,default=10"`
-	CleanupCompletedTaskInterval  time.Duration `env:"CLEANUP_COMPLETED_TASK_INTERVAL,default=30s"`
-	MaxQueueSize                  int           `env:"MAX_QUEUE_SIZE,default=100"`
+	MaxChatCompletionIterations   int           `env:"MAX_CHAT_COMPLETION_ITERATIONS,default=10"`
 	StreamingStatusUpdateInterval time.Duration `env:"STREAMING_STATUS_UPDATE_INTERVAL,default=1s"`
+	AuthConfig                    *AuthConfig   `env:",prefix=AUTH_"`
+	QueueConfig                   *QueueConfig  `env:",prefix=QUEUE_"`
+}
+
+type QueueConfig struct {
+	MaxSize         int           `env:"MAX_SIZE,default=100"`
+	CleanupInterval time.Duration `env:"CLEANUP_INTERVAL,default=30s"`
+}
+
+type AuthConfig struct {
+	Enable       bool   `env:"ENABLE,default=false"`
+	IssuerURL    string `env:"ISSUER_URL,default=http://keycloak:8080/realms/inference-gateway-realm"`
+	ClientID     string `env:"CLIENT_ID,default=inference-gateway-client"`
+	ClientSecret string `env:"CLIENT_SECRET"`
 }
 
 type JRPCErrorCode int
@@ -86,8 +101,10 @@ type QueuedTask struct {
 
 var cfg Config
 
-func setupRouter(logger *zap.Logger, client sdk.Client) *gin.Engine {
+func setupRouter(logger *zap.Logger, client sdk.Client, oidcAuthenticator OIDCAuthenticator) *gin.Engine {
 	r := gin.Default()
+
+	r.Use(oidcAuthenticator.Middleware())
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
@@ -153,7 +170,12 @@ func main() {
 		BaseURL: cfg.InferenceGatewayURL,
 	})
 
-	taskQueue = make(chan *QueuedTask, cfg.MaxQueueSize)
+	oidcAuthenticator, err := NewOIDCAuthenticatorMiddleware(logger, cfg)
+	if err != nil {
+		logger.Fatal("failed to initialize oidc authenticator", zap.Error(err))
+	}
+
+	taskQueue = make(chan *QueuedTask, cfg.QueueConfig.MaxSize)
 
 	logger.Info("starting weather agent",
 		zap.String("version", "1.0.0"),
@@ -162,13 +184,14 @@ func main() {
 		zap.String("llm_provider", cfg.LLMProvider),
 		zap.String("llm_model", cfg.LLMModel),
 		zap.Bool("debug_mode", cfg.Debug),
-		zap.Duration("cleanup_completed_task_interval", cfg.CleanupCompletedTaskInterval),
-		zap.Int("max_queue_size", cfg.MaxQueueSize),
+		zap.Bool("enable_auth", cfg.AuthConfig.Enable),
+		zap.Duration("cleanup_completed_task_interval", cfg.QueueConfig.CleanupInterval),
+		zap.Int("max_queue_size", cfg.QueueConfig.MaxSize),
 		zap.Duration("streaming_status_update_interval", cfg.StreamingStatusUpdateInterval))
 
 	go startTaskProcessor(ctx, logger, client)
 
-	router := setupRouter(logger, client)
+	router := setupRouter(logger, client, oidcAuthenticator)
 
 	logger.Info("weather-agent starting on port 8080...")
 	if err := router.Run(":8080"); err != nil {
@@ -515,9 +538,9 @@ func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger
 	logger.Info("task canceled", zap.String("task_id", params.ID))
 
 	go func() {
-		time.Sleep(cfg.CleanupCompletedTaskInterval)
+		time.Sleep(cfg.QueueConfig.CleanupInterval)
 		removeTask(task.ID)
-		logger.Debug("cleaned up canceled task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.CleanupCompletedTaskInterval))
+		logger.Debug("cleaned up canceled task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.QueueConfig.CleanupInterval))
 	}()
 
 	c.JSON(http.StatusOK, a2a.JSONRPCSuccessResponse{
@@ -624,7 +647,7 @@ func processTaskAsync(queuedTask *QueuedTask, logger *zap.Logger, client sdk.Cli
 	var weatherResult string
 	var iteration int
 
-	for iteration < cfg.MaxIterations {
+	for iteration < cfg.MaxChatCompletionIterations {
 		response, err = client.WithTools(&tools).WithHeader("X-A2A-Internal", "true").GenerateContent(context.Background(), sdk.Provider(cfg.LLMProvider), cfg.LLMModel, messages)
 		if err != nil {
 			logger.Error("failed to create chat completion in iteration", zap.Error(err), zap.String("task_id", queuedTask.Task.ID), zap.Int("iteration", iteration))
@@ -760,9 +783,9 @@ func processTaskAsync(queuedTask *QueuedTask, logger *zap.Logger, client sdk.Cli
 	logger.Info("task processing completed", zap.String("task_id", queuedTask.Task.ID))
 
 	go func() {
-		time.Sleep(cfg.CleanupCompletedTaskInterval)
+		time.Sleep(cfg.QueueConfig.CleanupInterval)
 		removeTask(queuedTask.Task.ID)
-		logger.Debug("cleaned up completed task", zap.String("task_id", queuedTask.Task.ID), zap.Duration("cleanup_interval", cfg.CleanupCompletedTaskInterval))
+		logger.Debug("cleaned up completed task", zap.String("task_id", queuedTask.Task.ID), zap.Duration("cleanup_interval", cfg.QueueConfig.CleanupInterval))
 	}()
 }
 
@@ -795,7 +818,7 @@ func processTaskWithStreaming(task *a2a.Task, messages []sdk.Message, logger *za
 	var weatherResult string
 	var iteration int
 
-	for iteration < cfg.MaxIterations {
+	for iteration < cfg.MaxChatCompletionIterations {
 		response, err = client.WithTools(&tools).WithHeader("X-A2A-Internal", "true").GenerateContent(context.Background(), sdk.Provider(cfg.LLMProvider), cfg.LLMModel, messages)
 		if err != nil {
 			logger.Error("failed to create chat completion in iteration", zap.Error(err), zap.String("task_id", task.ID), zap.Int("iteration", iteration))
@@ -935,9 +958,9 @@ func processTaskWithStreaming(task *a2a.Task, messages []sdk.Message, logger *za
 	logger.Info("streaming task processing completed", zap.String("task_id", task.ID))
 
 	go func() {
-		time.Sleep(cfg.CleanupCompletedTaskInterval)
+		time.Sleep(cfg.QueueConfig.CleanupInterval)
 		removeTask(task.ID)
-		logger.Debug("cleaned up completed streaming task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.CleanupCompletedTaskInterval))
+		logger.Debug("cleaned up completed streaming task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.QueueConfig.CleanupInterval))
 	}()
 }
 
@@ -994,8 +1017,101 @@ func failTaskWithCleanup(task *a2a.Task, errorMessage string, logger *zap.Logger
 	storeTask(task)
 
 	go func() {
-		time.Sleep(cfg.CleanupCompletedTaskInterval)
+		time.Sleep(cfg.QueueConfig.CleanupInterval)
 		removeTask(task.ID)
-		logger.Debug("cleaned up failed task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.CleanupCompletedTaskInterval))
+		logger.Debug("cleaned up failed task", zap.String("task_id", task.ID), zap.Duration("cleanup_interval", cfg.QueueConfig.CleanupInterval))
 	}()
+}
+
+type contextKey string
+
+const (
+	AuthTokenContextKey contextKey = "authToken"
+	IDTokenContextKey   contextKey = "idToken"
+)
+
+type OIDCAuthenticator interface {
+	Middleware() gin.HandlerFunc
+}
+
+type OIDCAuthenticatorImpl struct {
+	logger   *zap.Logger
+	verifier *oidcV3.IDTokenVerifier
+	config   oauth2.Config
+}
+
+type OIDCAuthenticatorNoop struct{}
+
+func NewOIDCAuthenticatorMiddleware(logger *zap.Logger, cfg Config) (OIDCAuthenticator, error) {
+	if !cfg.EnableAuth {
+		return &OIDCAuthenticatorNoop{}, nil
+	}
+
+	provider, err := oidcV3.NewProvider(context.Background(), cfg.AuthConfig.IssuerURL)
+	if err != nil {
+		return nil, err
+	}
+
+	oidcConfig := &oidcV3.Config{
+		ClientID: cfg.AuthConfig.ClientID,
+	}
+
+	return &OIDCAuthenticatorImpl{
+		logger:   logger,
+		verifier: provider.Verifier(oidcConfig),
+		config: oauth2.Config{
+			ClientID:     cfg.AuthConfig.ClientID,
+			ClientSecret: cfg.AuthConfig.ClientSecret,
+			Endpoint:     provider.Endpoint(),
+			Scopes:       []string{oidcV3.ScopeOpenID, "profile", "email"},
+		},
+	}, nil
+}
+
+func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+	}
+}
+
+func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.URL.Path == "/health" {
+			c.Next()
+			return
+		}
+
+		if c.Request.URL.Path == "/.well-known/agent.json" {
+			c.Next()
+			return
+		}
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
+		const bearerPrefix = "Bearer "
+		if !strings.HasPrefix(authHeader, bearerPrefix) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header format"})
+			c.Abort()
+			return
+		}
+
+		token := authHeader[len(bearerPrefix):]
+		idToken, err := a.verifier.Verify(context.Background(), token)
+		if err != nil {
+			a.logger.Error("failed to verify id token", zap.Error(err))
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.Abort()
+			return
+		}
+
+		c.Set(string(AuthTokenContextKey), token)
+		c.Set(string(IDTokenContextKey), idToken)
+
+		c.Next()
+	}
 }

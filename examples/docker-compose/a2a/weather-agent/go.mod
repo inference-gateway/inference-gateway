@@ -3,12 +3,14 @@ module weather-agent
 go 1.24
 
 require (
+	github.com/coreos/go-oidc/v3 v3.12.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.6.0
 	github.com/inference-gateway/inference-gateway v0.10.2
 	github.com/inference-gateway/sdk v1.8.1
 	github.com/sethvargo/go-envconfig v1.2.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/oauth2 v0.25.0
 )
 
 require (
@@ -18,6 +20,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/gin-contrib/sse v1.0.0 // indirect
+	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.24.0 // indirect
