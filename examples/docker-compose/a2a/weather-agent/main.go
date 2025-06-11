@@ -25,6 +25,10 @@ import (
 var logger *zap.Logger
 
 type Config struct {
+	AgentName                     string        `env:"AGENT_NAME,default=weather-agent"`
+	AgentDescription              string        `env:"AGENT_DESCRIPTION,default=A weather information agent that provides current weather data using AI tools"`
+	AgentURL                      string        `env:"AGENT_URL,default=http://weather-agent:8080"`
+	AgentVersion                  string        `env:"AGENT_VERSION,default=1.0.0"`
 	Debug                         bool          `env:"DEBUG,default=false"`
 	Port                          string        `env:"PORT,default=8080"`
 	InferenceGatewayURL           string        `env:"INFERENCE_GATEWAY_URL,required"`
@@ -128,10 +132,10 @@ func setupRouter(logger *zap.Logger, client sdk.Client, oidcAuthenticator OIDCAu
 		stateTransitionHistory := false
 
 		info := a2a.AgentCard{
-			Name:        "weather-agent",
-			Description: "A weather information agent that provides current weather data using AI tools",
-			URL:         "http://weather-agent:8080",
-			Version:     "1.0.0",
+			Name:        cfg.AgentName,
+			Description: cfg.AgentDescription,
+			URL:         cfg.AgentURL,
+			Version:     cfg.AgentVersion,
 			Capabilities: a2a.AgentCapabilities{
 				Streaming:              &streaming,
 				PushNotifications:      &pushNotifications,
@@ -184,8 +188,9 @@ func main() {
 
 	taskQueue = make(chan *QueuedTask, cfg.QueueConfig.MaxSize)
 
-	logger.Info("starting weather agent",
-		zap.String("version", "1.0.0"),
+	logger.Info("starting agent",
+		zap.String("name", cfg.AgentName),
+		zap.String("version", cfg.AgentVersion),
 		zap.String("port", cfg.Port),
 		zap.String("inference_gateway_url", cfg.InferenceGatewayURL),
 		zap.String("llm_provider", cfg.LLMProvider),
@@ -210,12 +215,12 @@ func main() {
 	}
 
 	if cfg.TLSConfig.Enable {
-		logger.Info("weather-agent starting with tls", zap.String("port", cfg.Port))
+		logger.Info("agent starting with tls", zap.String("agent", cfg.AgentName), zap.String("port", cfg.Port))
 		if err := server.ListenAndServeTLS(cfg.TLSConfig.CertPath, cfg.TLSConfig.KeyPath); err != nil {
 			logger.Fatal("failed to start server with tls", zap.Error(err))
 		}
 	} else {
-		logger.Info("weather-agent starting", zap.String("port", cfg.Port))
+		logger.Info("agent starting", zap.String("agent", cfg.AgentName), zap.String("port", cfg.Port))
 		if err := server.ListenAndServe(); err != nil {
 			logger.Fatal("failed to start server", zap.Error(err))
 		}
