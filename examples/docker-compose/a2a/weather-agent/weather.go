@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"time"
 
+	sdk "github.com/inference-gateway/sdk"
 	"go.uber.org/zap"
 )
 
@@ -102,6 +103,17 @@ func NewWeatherToolHandler(weatherService WeatherService, logger *zap.Logger) *W
 	return &WeatherToolHandler{
 		weatherService: weatherService,
 		logger:         logger,
+	}
+}
+
+// HandleToolCall processes a general tool call (ADK interface)
+func (h *WeatherToolHandler) HandleToolCall(toolCall sdk.ChatCompletionMessageToolCall) (string, error) {
+	switch toolCall.Function.Name {
+	case "fetch_weather":
+		return h.HandleFetchWeather(toolCall.Function.Arguments)
+	default:
+		h.logger.Warn("unknown tool call", zap.String("function", toolCall.Function.Name))
+		return "", NewWeatherError("unknown function: " + toolCall.Function.Name)
 	}
 }
 

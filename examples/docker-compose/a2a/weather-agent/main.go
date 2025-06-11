@@ -4,23 +4,24 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"time"
 
 	sdk "github.com/inference-gateway/sdk"
 	envconfig "github.com/sethvargo/go-envconfig"
 	zap "go.uber.org/zap"
-)
 
-var logger *zap.Logger
-var cfg Config
+	// TODO - move to a2a package
+	adk "weather-agent/adk"
+)
 
 func main() {
 	ctx := context.Background()
 
+	var cfg adk.Config
 	if err := envconfig.Process(ctx, &cfg); err != nil {
 		log.Fatal("failed to process configuration:", err)
 	}
 
+	var logger *zap.Logger
 	var err error
 	if cfg.Debug {
 		logger, err = zap.NewDevelopment()
@@ -30,7 +31,11 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to initialize logger:", err)
 	}
-	defer logger.Sync()
+	defer func() {
+		if syncErr := logger.Sync(); syncErr != nil {
+			log.Printf("failed to sync logger: %v", syncErr)
+		}
+	}()
 
 	client := sdk.NewClient(&sdk.ClientOptions{
 		BaseURL: cfg.InferenceGatewayURL,
@@ -38,10 +43,19 @@ func main() {
 
 	weatherService := NewMockWeatherService(logger)
 	weatherToolHandler := NewWeatherToolHandler(weatherService, logger)
+	weatherToolProvider := NewWeatherToolProvider(weatherToolHandler)
 
-	agent := NewA2AAgent(cfg, logger, client, weatherToolHandler)
+	toolsHandler := adk.NewToolsHandler(logger, weatherToolProvider)
 
-	oidcAuthenticator, err := NewOIDCAuthenticatorMiddleware(logger, cfg)
+	agent := adk.NewA2AAgent(cfg, logger, client, toolsHandler)
+
+	weatherTaskProcessor := NewWeatherTaskResultProcessor(logger)
+	weatherInfoProvider := NewWeatherAgentInfoProvider(logger)
+
+	agent.SetTaskResultProcessor(weatherTaskProcessor)
+	agent.SetAgentInfoProvider(weatherInfoProvider)
+
+	oidcAuthenticator, err := adk.NewOIDCAuthenticatorMiddleware(logger, cfg)
 	if err != nil {
 		logger.Fatal("failed to initialize oidc authenticator", zap.Error(err))
 	}
@@ -58,7 +72,10 @@ func main() {
 		zap.Bool("tls_enabled", cfg.TLSConfig.Enable),
 		zap.Duration("cleanup_completed_task_interval", cfg.QueueConfig.CleanupInterval),
 		zap.Int("max_queue_size", cfg.QueueConfig.MaxSize),
-		zap.Duration("streaming_status_update_interval", cfg.StreamingStatusUpdateInterval))
+		zap.Duration("streaming_status_update_interval", cfg.StreamingStatusUpdateInterval),
+		zap.Duration("server_read_timeout", cfg.ServerConfig.ReadTimeout),
+		zap.Duration("server_write_timeout", cfg.ServerConfig.WriteTimeout),
+		zap.Duration("server_idle_timeout", cfg.ServerConfig.IdleTimeout))
 
 	go agent.StartTaskProcessor(ctx)
 
@@ -67,9 +84,9 @@ func main() {
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
 		Handler:      router,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		ReadTimeout:  cfg.ServerConfig.ReadTimeout,
+		WriteTimeout: cfg.ServerConfig.WriteTimeout,
+		IdleTimeout:  cfg.ServerConfig.IdleTimeout,
 	}
 
 	if cfg.TLSConfig.Enable {

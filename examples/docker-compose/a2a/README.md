@@ -95,7 +95,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
     },
     {
       "role": "user",
-      "content": "Calculate the result of 15 + 27 * 3."
+      "content": "Calculate the result of 15 + 27."
     }
   ]
 }'

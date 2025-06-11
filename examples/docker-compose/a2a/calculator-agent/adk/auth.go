@@ -1,4 +1,4 @@
-package main
+package adk
 
 import (
 	"context"
@@ -60,48 +60,43 @@ func NewOIDCAuthenticatorMiddleware(logger *zap.Logger, cfg Config) (OIDCAuthent
 	}, nil
 }
 
-// Middleware returns a no-op middleware for the noop authenticator
-func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
+// Middleware returns the OIDC authentication middleware for OIDCAuthenticatorImpl
+func (auth *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Next()
-	}
-}
-
-// Middleware returns the OIDC authentication middleware
-func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// Skip authentication for health check and agent info endpoints
-		if c.Request.URL.Path == "/health" || c.Request.URL.Path == "/.well-known/agent.json" {
-			c.Next()
-			return
-		}
-
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			auth.logger.Error("missing authorization header")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "missing authorization header"})
 			c.Abort()
 			return
 		}
 
-		const bearerPrefix = "Bearer "
-		if !strings.HasPrefix(authHeader, bearerPrefix) {
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			auth.logger.Error("invalid authorization header format")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid authorization header format"})
 			c.Abort()
 			return
 		}
 
-		token := authHeader[len(bearerPrefix):]
-		idToken, err := a.verifier.Verify(context.Background(), token)
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+
+		idToken, err := auth.verifier.Verify(c.Request.Context(), token)
 		if err != nil {
-			a.logger.Error("failed to verify id token", zap.Error(err))
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			auth.logger.Error("failed to verify id token", zap.Error(err))
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			c.Abort()
 			return
 		}
 
 		c.Set(string(AuthTokenContextKey), token)
 		c.Set(string(IDTokenContextKey), idToken)
+		c.Next()
+	}
+}
 
+// Middleware returns a no-op middleware for OIDCAuthenticatorNoop
+func (auth *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		c.Next()
 	}
 }

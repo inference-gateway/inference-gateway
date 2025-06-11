@@ -1,12 +1,12 @@
-package main
+package adk
 
 import "time"
 
 // Config holds all application configuration
 type Config struct {
-	AgentName                     string              `env:"AGENT_NAME,default=weather-agent"`
-	AgentDescription              string              `env:"AGENT_DESCRIPTION,default=A weather information agent that provides current weather data using AI tools"`
-	AgentURL                      string              `env:"AGENT_URL,default=http://weather-agent:8080"`
+	AgentName                     string              `env:"AGENT_NAME,default=helloworld-agent"`
+	AgentDescription              string              `env:"AGENT_DESCRIPTION,default=A simple greeting agent that provides personalized greetings using the A2A protocol"`
+	AgentURL                      string              `env:"AGENT_URL,default=http://helloworld-agent:8080"`
 	AgentVersion                  string              `env:"AGENT_VERSION,default=1.0.0"`
 	Debug                         bool                `env:"DEBUG,default=false"`
 	Port                          string              `env:"PORT,default=8080"`
@@ -19,6 +19,7 @@ type Config struct {
 	TLSConfig                     *TLSConfig          `env:",prefix=TLS_"`
 	AuthConfig                    *AuthConfig         `env:",prefix=AUTH_"`
 	QueueConfig                   *QueueConfig        `env:",prefix=QUEUE_"`
+	ServerConfig                  *ServerConfig       `env:",prefix=SERVER_"`
 }
 
 // CapabilitiesConfig defines agent capabilities
@@ -47,4 +48,11 @@ type AuthConfig struct {
 type QueueConfig struct {
 	MaxSize         int           `env:"MAX_SIZE,default=100"`
 	CleanupInterval time.Duration `env:"CLEANUP_INTERVAL,default=30s"`
+}
+
+// ServerConfig holds HTTP server configuration
+type ServerConfig struct {
+	ReadTimeout  time.Duration `env:"READ_TIMEOUT,default=120s" description:"HTTP server read timeout"`
+	WriteTimeout time.Duration `env:"WRITE_TIMEOUT,default=120s" description:"HTTP server write timeout"`
+	IdleTimeout  time.Duration `env:"IDLE_TIMEOUT,default=120s" description:"HTTP server idle timeout"`
 }
