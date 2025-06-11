@@ -32,8 +32,15 @@ type Config struct {
 	LLMModel                      string        `env:"LLM_MODEL,default=deepseek-chat"`
 	MaxChatCompletionIterations   int           `env:"MAX_CHAT_COMPLETION_ITERATIONS,default=10"`
 	StreamingStatusUpdateInterval time.Duration `env:"STREAMING_STATUS_UPDATE_INTERVAL,default=1s"`
+	TLSConfig                     *TLSConfig    `env:",prefix=TLS_"`
 	AuthConfig                    *AuthConfig   `env:",prefix=AUTH_"`
 	QueueConfig                   *QueueConfig  `env:",prefix=QUEUE_"`
+}
+
+type TLSConfig struct {
+	Enable   bool   `env:"ENABLE,default=false"`
+	CertPath string `env:"CERT_PATH,default=" description:"TLS certificate path"`
+	KeyPath  string `env:"KEY_PATH,default=" description:"TLS key path"`
 }
 
 type QueueConfig struct {
@@ -185,6 +192,7 @@ func main() {
 		zap.String("llm_model", cfg.LLMModel),
 		zap.Bool("debug_mode", cfg.Debug),
 		zap.Bool("enable_auth", cfg.AuthConfig.Enable),
+		zap.Bool("tls_enabled", cfg.TLSConfig.Enable),
 		zap.Duration("cleanup_completed_task_interval", cfg.QueueConfig.CleanupInterval),
 		zap.Int("max_queue_size", cfg.QueueConfig.MaxSize),
 		zap.Duration("streaming_status_update_interval", cfg.StreamingStatusUpdateInterval))
@@ -193,9 +201,24 @@ func main() {
 
 	router := setupRouter(logger, client, oidcAuthenticator)
 
-	logger.Info("weather-agent starting on port 8080...")
-	if err := router.Run(":8080"); err != nil {
-		logger.Fatal("failed to start server", zap.Error(err))
+	server := &http.Server{
+		Addr:         ":" + cfg.Port,
+		Handler:      router,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	if cfg.TLSConfig.Enable {
+		logger.Info("weather-agent starting with tls", zap.String("port", cfg.Port))
+		if err := server.ListenAndServeTLS(cfg.TLSConfig.CertPath, cfg.TLSConfig.KeyPath); err != nil {
+			logger.Fatal("failed to start server with tls", zap.Error(err))
+		}
+	} else {
+		logger.Info("weather-agent starting", zap.String("port", cfg.Port))
+		if err := server.ListenAndServe(); err != nil {
+			logger.Fatal("failed to start server", zap.Error(err))
+		}
 	}
 }
 
