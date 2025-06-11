@@ -416,19 +416,42 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 		return providers.Message{}, fmt.Errorf("failed to submit task to a2a agent: %w", err)
 	}
 
+	if task == nil {
+		return providers.Message{}, errors.New("task submission returned nil task")
+	}
+
+	if task.Status.Message == nil {
+		return providers.Message{}, errors.New("task submission returned no message")
+	}
+
+	a.logger.Debug("task submitted to a2a agent", "task_id", task.ID, "message_parts_count", len(task.Status.Message.Parts))
+
 	responseContent := "Task completed successfully"
-	if task != nil && task.Status.Message != nil {
-		message := task.Status.Message
-		if len(message.Parts) > 0 {
-			for _, part := range message.Parts {
-				if textPart, ok := part.(TextPart); ok {
-					if textPart.Text != "" {
-						responseContent = textPart.Text
-						break
-					}
-				}
-			}
+
+	message := task.Status.Message
+	if len(message.Parts) == 0 {
+		a.logger.Debug("no message parts found")
+		return providers.Message{}, errors.New("task submission returned no message parts")
+	}
+
+	a.logger.Debug("processing message parts", "parts_count", len(message.Parts))
+	for i, part := range message.Parts {
+		a.logger.Debug("processing part", "part_index", i, "part_type", fmt.Sprintf("%T", part))
+
+		textPart, ok := part.(TextPart)
+		if !ok {
+			a.logger.Debug("part is not a text part", "actual_type", fmt.Sprintf("%T", part))
+			continue
 		}
+
+		a.logger.Debug("found text part", "text_length", len(textPart.Text), "text_content", textPart.Text)
+		if textPart.Text == "" {
+			continue
+		}
+
+		responseContent = textPart.Text
+		a.logger.Debug("using text part as response content", "content", responseContent)
+		break
 	}
 
 	a.logger.Debug("task submitted successfully", "response_content", responseContent)
