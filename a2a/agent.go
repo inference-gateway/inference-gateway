@@ -429,13 +429,20 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 	capabilities := a.a2aClient.GetAgentCapabilities()
 	agentCapability, hasCapability := capabilities[args.AgentURL]
 	supportsStreaming := hasCapability && agentCapability.Streaming != nil && *agentCapability.Streaming
+	requestIsStreaming := request.Stream != nil && *request.Stream
 
-	if supportsStreaming {
-		a.logger.Debug("using streaming communication with a2a agent", "agent_url", args.AgentURL)
+	if supportsStreaming && requestIsStreaming {
+		a.logger.Debug("using streaming communication with a2a agent", "agent_url", args.AgentURL, "reason", "both agent supports streaming and request is streaming")
 		return a.handleStreamingTaskSubmission(ctx, request, toolCall, args.AgentURL, taskMessage)
 	}
 
-	a.logger.Debug("using non-streaming communication with a2a agent", "agent_url", args.AgentURL)
+	if supportsStreaming && !requestIsStreaming {
+		a.logger.Debug("using non-streaming communication with a2a agent", "agent_url", args.AgentURL, "reason", "agent supports streaming but request is non-streaming")
+	} else if !supportsStreaming {
+		a.logger.Debug("using non-streaming communication with a2a agent", "agent_url", args.AgentURL, "reason", "agent does not support streaming")
+	} else {
+		a.logger.Debug("using non-streaming communication with a2a agent", "agent_url", args.AgentURL)
+	}
 	return a.handleNonStreamingTaskSubmission(ctx, request, toolCall, args.AgentURL, taskMessage)
 }
 
