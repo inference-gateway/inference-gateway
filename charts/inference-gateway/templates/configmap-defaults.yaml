@@ -25,6 +25,10 @@ data:
   A2A_EXPOSE: {{ .Values.config.A2A_EXPOSE | quote }}
   A2A_AGENTS: {{ .Values.config.A2A_AGENTS | quote }}
   A2A_CLIENT_TIMEOUT: {{ .Values.config.A2A_CLIENT_TIMEOUT | quote }}
+  A2A_POLLING_ENABLE: {{ .Values.config.A2A_POLLING_ENABLE | quote }}
+  A2A_POLLING_INTERVAL: {{ .Values.config.A2A_POLLING_INTERVAL | quote }}
+  A2A_POLLING_TIMEOUT: {{ .Values.config.A2A_POLLING_TIMEOUT | quote }}
+  A2A_MAX_POLL_ATTEMPTS: {{ .Values.config.A2A_MAX_POLL_ATTEMPTS | quote }}
   # OpenID Connect
   OIDC_ISSUER_URL: {{ .Values.config.OIDC_ISSUER_URL | quote }}
   # Server settings

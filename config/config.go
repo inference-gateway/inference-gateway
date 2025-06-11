@@ -49,10 +49,14 @@ type MCPConfig struct {
 
 // A2A configuration
 type A2AConfig struct {
-	Enable        bool          `env:"ENABLE, default=false" description:"Enable A2A protocol support"`
-	Expose        bool          `env:"EXPOSE, default=false" description:"Expose A2A agents list cards endpoint"`
-	Agents        string        `env:"AGENTS" description:"Comma-separated list of A2A agent URLs"`
-	ClientTimeout time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"A2A client timeout"`
+	Enable          bool          `env:"ENABLE, default=false" description:"Enable A2A protocol support"`
+	Expose          bool          `env:"EXPOSE, default=false" description:"Expose A2A agents list cards endpoint"`
+	Agents          string        `env:"AGENTS" description:"Comma-separated list of A2A agent URLs"`
+	ClientTimeout   time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"A2A client timeout"`
+	PollingEnable   bool          `env:"POLLING_ENABLE, default=true" description:"Enable task status polling"`
+	PollingInterval time.Duration `env:"POLLING_INTERVAL, default=1s" description:"Interval between polling requests"`
+	PollingTimeout  time.Duration `env:"POLLING_TIMEOUT, default=30s" description:"Maximum time to wait for task completion"`
+	MaxPollAttempts int           `env:"MAX_POLL_ATTEMPTS, default=30" description:"Maximum number of polling attempts"`
 }
 
 // OIDC configuration

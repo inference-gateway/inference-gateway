@@ -1321,6 +1321,26 @@ components:
                   type: time.Duration
                   default: "30s"
                   description: "A2A client timeout"
+                - name: a2a_polling_enable
+                  env: "A2A_POLLING_ENABLE"
+                  type: bool
+                  default: "true"
+                  description: "Enable task status polling"
+                - name: a2a_polling_interval
+                  env: "A2A_POLLING_INTERVAL"
+                  type: time.Duration
+                  default: "1s"
+                  description: "Interval between polling requests"
+                - name: a2a_polling_timeout
+                  env: "A2A_POLLING_TIMEOUT"
+                  type: time.Duration
+                  default: "30s"
+                  description: "Maximum time to wait for task completion"
+                - name: a2a_max_poll_attempts
+                  env: "A2A_MAX_POLL_ATTEMPTS"
+                  type: int
+                  default: "30"
+                  description: "Maximum number of polling attempts"
           - oidc:
               title: "OpenID Connect"
               settings:

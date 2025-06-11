@@ -101,13 +101,11 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			return err
 		}
 
-		// If no tool calls found, end the loop
 		if len(toolCalls) == 0 {
 			a.logger.Debug("no tool calls found, ending a2a agent loop", "iteration", iteration+1)
 			return nil
 		}
 
-		// Process tool calls and prepare for next iteration
 		assistantMessage := providers.Message{
 			Role:      providers.MessageRoleAssistant,
 			Content:   "",
@@ -116,7 +114,6 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		currentRequest.Messages = append(currentRequest.Messages, assistantMessage)
 
-		// Process all tool calls
 		for _, toolCall := range toolCalls {
 			toolResult := a.processToolCall(ctx, &currentRequest, toolCall)
 			currentRequest.Messages = append(currentRequest.Messages, toolResult)
@@ -414,23 +411,20 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 		},
 	}
 
-	taskResponse, err := a.a2aClient.SendMessage(ctx, taskRequest, args.AgentURL)
+	task, err := a.a2aClient.SendMessageWithPolling(ctx, taskRequest, args.AgentURL)
 	if err != nil {
 		return providers.Message{}, fmt.Errorf("failed to submit task to a2a agent: %w", err)
 	}
 
 	responseContent := "Task completed successfully"
-	if taskResponse != nil && taskResponse.Result != nil {
-		if resultStr, ok := taskResponse.Result.(string); ok && resultStr != "" {
-			responseContent = resultStr
-		} else if message, ok := taskResponse.Result.(Message); ok {
-			if len(message.Parts) > 0 {
-				for _, part := range message.Parts {
-					if textPart, ok := part.(TextPart); ok {
-						if textPart.Text != "" {
-							responseContent = textPart.Text
-							break
-						}
+	if task != nil && task.Status.Message != nil {
+		message := task.Status.Message
+		if len(message.Parts) > 0 {
+			for _, part := range message.Parts {
+				if textPart, ok := part.(TextPart); ok {
+					if textPart.Text != "" {
+						responseContent = textPart.Text
+						break
 					}
 				}
 			}

@@ -478,9 +478,21 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 
 			if tt.expectTaskSubmission {
 				if tt.sendMessageError != nil {
-					mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, tt.sendMessageError).AnyTimes()
+					mockA2AClient.EXPECT().SendMessageWithPolling(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, tt.sendMessageError).AnyTimes()
 				} else if tt.sendMessageResp != nil {
-					mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), gomock.Any()).Return(tt.sendMessageResp, nil).AnyTimes()
+					task := &a2a.Task{
+						ID: "task-123",
+						Status: a2a.TaskStatus{
+							State: a2a.TaskStateCompleted,
+							Message: &a2a.Message{
+								Kind:      "message",
+								MessageID: "msg-123",
+								Role:      "assistant",
+								Parts:     []a2a.Part{},
+							},
+						},
+					}
+					mockA2AClient.EXPECT().SendMessageWithPolling(gomock.Any(), gomock.Any(), gomock.Any()).Return(task, nil).AnyTimes()
 				}
 			}
 
@@ -549,7 +561,6 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 		taskID             string
 		taskStatus         string
 		taskResult         string
-		pollSuccessful     bool
 		expectStreamEvents bool
 	}{
 		{
@@ -558,7 +569,6 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			taskID:             "task_123",
 			taskStatus:         string(a2a.TaskStateCompleted),
 			taskResult:         "Result: 8",
-			pollSuccessful:     true,
 			expectStreamEvents: false,
 		},
 		{
@@ -567,7 +577,6 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			taskID:             "task_456",
 			taskStatus:         string(a2a.TaskStateCompleted),
 			taskResult:         "Result: 15",
-			pollSuccessful:     true,
 			expectStreamEvents: true,
 		},
 	}
@@ -609,37 +618,19 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 				mockA2AAgent.EXPECT().Run(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			}
 
-			sendMessageResp := &a2a.SendMessageSuccessResponse{
-				Result: a2a.Task{
-					ID: tt.taskID,
+			sendMessageResp := &a2a.Task{
+				ID: tt.taskID,
+				Status: a2a.TaskStatus{
+					State: a2a.TaskStateCompleted,
+					Message: &a2a.Message{
+						Kind:      "message",
+						MessageID: "msg-123",
+						Role:      "assistant",
+						Parts:     []a2a.Part{},
+					},
 				},
 			}
-			mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageResp, nil).AnyTimes()
-
-			if tt.pollSuccessful {
-				getTaskResp := &a2a.GetTaskSuccessResponse{
-					Result: a2a.Task{
-						Status: a2a.TaskStatus{
-							State: a2a.TaskState(tt.taskStatus),
-							Message: &a2a.Message{
-								Kind:      "message",
-								MessageID: "msg-123",
-								Role:      "assistant",
-								Parts:     []a2a.Part{},
-							},
-						},
-						History: []a2a.Message{
-							{
-								Kind:      "message",
-								MessageID: "msg-456",
-								Role:      "assistant",
-								Parts:     []a2a.Part{},
-							},
-						},
-					},
-				}
-				mockA2AClient.EXPECT().GetTask(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(getTaskResp, nil).AnyTimes()
-			}
+			mockA2AClient.EXPECT().SendMessageWithPolling(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageResp, nil).AnyTimes()
 
 			cfg := config.Config{
 				A2A: &config.A2AConfig{
@@ -798,37 +789,21 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 			mockA2AAgent.EXPECT().Run(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
 			if tt.sendMessageError != nil {
-				mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(nil, tt.sendMessageError).AnyTimes()
+				mockA2AClient.EXPECT().SendMessageWithPolling(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(nil, tt.sendMessageError).AnyTimes()
 			} else {
-				sendMessageResp := &a2a.SendMessageSuccessResponse{
-					Result: a2a.Task{
-						ID: "task_failed_123",
-					},
-				}
-				mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageResp, nil).AnyTimes()
-
-				getTaskResp := &a2a.GetTaskSuccessResponse{
-					Result: a2a.Task{
-						Status: a2a.TaskStatus{
-							State: a2a.TaskState(tt.taskStatus),
-							Message: &a2a.Message{
-								Kind:      "message",
-								MessageID: "msg-123",
-								Role:      "assistant",
-								Parts:     []a2a.Part{},
-							},
-						},
-						History: []a2a.Message{
-							{
-								Kind:      "message",
-								MessageID: "msg-456",
-								Role:      "assistant",
-								Parts:     []a2a.Part{},
-							},
+				sendMessageTask := &a2a.Task{
+					ID: "task_failed_123",
+					Status: a2a.TaskStatus{
+						State: a2a.TaskState(tt.taskStatus),
+						Message: &a2a.Message{
+							Kind:      "message",
+							MessageID: "msg-123",
+							Role:      "assistant",
+							Parts:     []a2a.Part{},
 						},
 					},
 				}
-				mockA2AClient.EXPECT().GetTask(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(getTaskResp, nil).AnyTimes()
+				mockA2AClient.EXPECT().SendMessageWithPolling(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageTask, nil).AnyTimes()
 			}
 
 			cfg := config.Config{

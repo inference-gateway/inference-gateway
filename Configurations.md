@@ -30,6 +30,10 @@
 | A2A_EXPOSE | `false` | Expose A2A agents list cards endpoint |
 | A2A_AGENTS | `""` | Comma-separated list of A2A agent URLs |
 | A2A_CLIENT_TIMEOUT | `30s` | A2A client timeout |
+| A2A_POLLING_ENABLE | `true` | Enable task status polling |
+| A2A_POLLING_INTERVAL | `1s` | Interval between polling requests |
+| A2A_POLLING_TIMEOUT | `30s` | Maximum time to wait for task completion |
+| A2A_MAX_POLL_ATTEMPTS | `30` | Maximum number of polling attempts |
 
 
 ### OpenID Connect

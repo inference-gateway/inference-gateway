@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -226,6 +227,15 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logge
 		return
 	}
 
+	contextID := params.Message.ContextID
+	if contextID == nil {
+		newContextID := uuid.New().String()
+		contextID = &newContextID
+	}
+	task := createTask(*contextID, a2a.TaskStateSubmitted, nil)
+
+	updateTask(task.ID, a2a.TaskStateWorking, nil)
+
 	defer func() {
 		logger.Debug("message/send request processed")
 	}()
@@ -331,10 +341,23 @@ func handleMessageSend(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logge
 
 	logger.Debug("greeting generated", zap.String("greeting", greeting))
 
+	resultMessage := &a2a.Message{
+		Kind:      "message",
+		MessageID: uuid.New().String(),
+		Role:      "assistant",
+		Parts: []a2a.Part{
+			map[string]interface{}{
+				"kind": "text",
+				"text": greeting,
+			},
+		},
+	}
+	updateTask(task.ID, a2a.TaskStateCompleted, resultMessage)
+
 	c.JSON(http.StatusOK, a2a.JSONRPCSuccessResponse{
 		JSONRPC: "2.0",
 		ID:      req.ID,
-		Result:  greeting,
+		Result:  *task,
 	})
 }
 
@@ -344,8 +367,36 @@ func handleMessageStream(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Log
 }
 
 func handleTaskGet(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
-	logger.Info("task/get not implemented yet")
-	sendError(c, req.ID, int(ErrServerError), "task/get not implemented", logger)
+	var params a2a.TaskQueryParams
+	paramsBytes, err := json.Marshal(req.Params)
+	if err != nil {
+		logger.Error("failed to marshal params", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid params", logger)
+		return
+	}
+
+	if err := json.Unmarshal(paramsBytes, &params); err != nil {
+		logger.Error("failed to parse task/get request", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid request", logger)
+		return
+	}
+
+	logger.Info("retrieving task", zap.String("task_id", params.ID))
+
+	task, exists := getTask(params.ID)
+	if !exists {
+		logger.Error("task not found", zap.String("task_id", params.ID))
+		sendError(c, req.ID, int(ErrInvalidParams), "task not found", logger)
+		return
+	}
+
+	logger.Info("task retrieved successfully", zap.String("task_id", params.ID), zap.String("status", string(task.Status.State)))
+
+	c.JSON(http.StatusOK, a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  *task,
+	})
 }
 
 func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
@@ -377,4 +428,46 @@ func greet(language, name string) string {
 	default:
 		return "Hello, " + name
 	}
+}
+
+var (
+	taskStore   = make(map[string]*a2a.Task)
+	taskStoreMu sync.RWMutex
+)
+
+func createTask(contextID string, state a2a.TaskState, message *a2a.Message) *a2a.Task {
+	taskID := uuid.New().String()
+
+	task := &a2a.Task{
+		ID:        taskID,
+		ContextID: contextID,
+		Kind:      "task",
+		Status: a2a.TaskStatus{
+			State:   state,
+			Message: message,
+		},
+	}
+
+	taskStoreMu.Lock()
+	taskStore[taskID] = task
+	taskStoreMu.Unlock()
+
+	return task
+}
+
+func updateTask(taskID string, state a2a.TaskState, message *a2a.Message) {
+	taskStoreMu.Lock()
+	defer taskStoreMu.Unlock()
+
+	if task, exists := taskStore[taskID]; exists {
+		task.Status.State = state
+		task.Status.Message = message
+	}
+}
+
+func getTask(taskID string) (*a2a.Task, bool) {
+	taskStoreMu.RLock()
+	task, ok := taskStore[taskID]
+	taskStoreMu.RUnlock()
+	return task, ok
 }
