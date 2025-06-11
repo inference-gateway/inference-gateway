@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
 )
@@ -40,15 +42,17 @@ type agentImpl struct {
 	a2aClient A2AClientInterface
 	provider  providers.IProvider
 	model     *string
+	a2aConfig *config.A2AConfig
 }
 
 // NewAgent creates a new Agent instance
-func NewAgent(logger logger.Logger, a2aClient A2AClientInterface) Agent {
+func NewAgent(logger logger.Logger, a2aClient A2AClientInterface, a2aConfig *config.A2AConfig) Agent {
 	return &agentImpl{
 		a2aClient: a2aClient,
 		logger:    logger,
 		provider:  nil,
 		model:     nil,
+		a2aConfig: a2aConfig,
 	}
 }
 
@@ -140,9 +144,47 @@ func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatComple
 
 		request.Messages = append(request.Messages, response.Choices[0].Message)
 
+		allA2ATasksCompleted := true
+		var toolResults []providers.Message
+
 		for _, toolCall := range toolCalls {
 			toolResult := a.processToolCall(ctx, request, toolCall)
+			toolResults = append(toolResults, toolResult)
 			request.Messages = append(request.Messages, toolResult)
+
+			if toolCall.Function.Name != ToolSubmitTaskToAgent {
+				allA2ATasksCompleted = false
+			}
+		}
+
+		if allA2ATasksCompleted && len(toolResults) > 0 {
+			a.logger.Debug("all a2a tasks completed, generating final response", "iteration", iteration+1)
+
+			var combinedContent string
+			for i, result := range toolResults {
+				if i > 0 {
+					combinedContent += "\n\n"
+				}
+				combinedContent += result.Content
+			}
+
+			*response = providers.CreateChatCompletionResponse{
+				ID:      response.ID,
+				Object:  response.Object,
+				Created: response.Created,
+				Model:   response.Model,
+				Choices: []providers.ChatCompletionChoice{
+					{
+						Index: 0,
+						Message: providers.Message{
+							Role:    providers.MessageRoleAssistant,
+							Content: combinedContent,
+						},
+						FinishReason: providers.FinishReasonStop,
+					},
+				},
+			}
+			return nil
 		}
 
 		request.Model = *a.model
@@ -379,7 +421,6 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 
 	a.logger.Debug("submitting task to a2a agent", "agent_url", args.AgentURL, "task", args.TaskDescription)
 
-	// Create the task message with the task description
 	taskMessage := args.TaskDescription
 	if args.AdditionalContext != "" {
 		taskMessage += "\n\nAdditional context: " + args.AdditionalContext
@@ -411,56 +452,168 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 		},
 	}
 
-	task, err := a.a2aClient.SendMessageWithPolling(ctx, taskRequest, args.AgentURL)
+	response, err := a.a2aClient.SendMessage(ctx, taskRequest, args.AgentURL)
 	if err != nil {
 		return providers.Message{}, fmt.Errorf("failed to submit task to a2a agent: %w", err)
 	}
 
-	if task == nil {
-		return providers.Message{}, errors.New("task submission returned nil task")
+	a.logger.Debug("task submitted successfully", "task_id", response.Result, "agent_url", args.AgentURL)
+
+	resultBytes, err := json.Marshal(response.Result)
+	if err != nil {
+		return providers.Message{}, fmt.Errorf("failed to marshal response result: %w", err)
 	}
 
+	var task Task
+	if err := json.Unmarshal(resultBytes, &task); err != nil {
+		return providers.Message{}, fmt.Errorf("failed to unmarshal task from response: %w", err)
+	}
+
+	taskID := task.ID
+	a.logger.Debug("received task ID from agent", "task_id", taskID, "agent_url", args.AgentURL)
+
+	if task.Status.State == TaskStateCompleted {
+		a.logger.Info("task completed immediately", "task_id", taskID, "agent_url", args.AgentURL)
+		return a.extractTaskResponse(&task, toolCall.ID)
+	}
+
+	a.logger.Debug("task not completed immediately, starting polling", "task_id", taskID, "status", task.Status.State, "agent_url", args.AgentURL)
+
+	completedTask, err := a.pollTaskUntilCompletion(ctx, taskID, args.AgentURL)
+	if err != nil {
+		return providers.Message{}, fmt.Errorf("failed to poll task completion: %w", err)
+	}
+
+	a.logger.Info("task completed via polling", "task_id", taskID, "agent_url", args.AgentURL)
+	return a.extractTaskResponse(completedTask, toolCall.ID)
+}
+
+// extractTaskResponse extracts the text response from a completed task
+func (a *agentImpl) extractTaskResponse(task *Task, toolCallID string) (providers.Message, error) {
 	if task.Status.Message == nil {
-		return providers.Message{}, errors.New("task submission returned no message")
+		return providers.Message{}, errors.New("task completion returned no message")
 	}
-
-	a.logger.Debug("task submitted to a2a agent", "task_id", task.ID, "message_parts_count", len(task.Status.Message.Parts))
 
 	responseContent := "Task completed successfully"
-
 	message := task.Status.Message
+
 	if len(message.Parts) == 0 {
 		a.logger.Debug("no message parts found")
-		return providers.Message{}, errors.New("task submission returned no message parts")
+		return providers.Message{}, errors.New("task completion returned no message parts")
 	}
 
 	a.logger.Debug("processing message parts", "parts_count", len(message.Parts))
 	for i, part := range message.Parts {
 		a.logger.Debug("processing part", "part_index", i, "part_type", fmt.Sprintf("%T", part))
 
-		textPart, ok := part.(TextPart)
-		if !ok {
-			a.logger.Debug("part is not a text part", "actual_type", fmt.Sprintf("%T", part))
+		var textContent string
+
+		if textPart, ok := part.(TextPart); ok {
+			a.logger.Debug("found text part struct", "text_length", len(textPart.Text), "text_content", textPart.Text)
+			if textPart.Text == "" {
+				continue
+			}
+			textContent = textPart.Text
+		} else if partMap, ok := part.(map[string]interface{}); ok {
+			keys := make([]string, 0, len(partMap))
+			for k := range partMap {
+				keys = append(keys, k)
+			}
+			a.logger.Debug("found part map", "keys", keys)
+
+			kind, kindExists := partMap["kind"]
+			if !kindExists || kind != "text" {
+				continue
+			}
+
+			text, textExists := partMap["text"].(string)
+			if !textExists || text == "" {
+				continue
+			}
+
+			a.logger.Debug("extracted text from part map", "text_length", len(text), "text_content", text)
+			textContent = text
+		} else {
+			a.logger.Debug("part is not a recognized text type", "actual_type", fmt.Sprintf("%T", part))
 			continue
 		}
 
-		a.logger.Debug("found text part", "text_length", len(textPart.Text), "text_content", textPart.Text)
-		if textPart.Text == "" {
-			continue
-		}
-
-		responseContent = textPart.Text
-		a.logger.Debug("using text part as response content", "content", responseContent)
+		responseContent = textContent
+		a.logger.Debug("using text content as response", "content", responseContent)
 		break
 	}
 
-	a.logger.Debug("task submitted successfully", "response_content", responseContent)
+	a.logger.Debug("final task response", "response_content", responseContent, "task_status", task.Status.State)
 
 	return providers.Message{
 		Role:       providers.MessageRoleTool,
 		Content:    responseContent,
-		ToolCallId: &toolCall.ID,
+		ToolCallId: &toolCallID,
 	}, nil
+}
+
+// pollTaskUntilCompletion polls the task until it's completed and returns the final task
+func (a *agentImpl) pollTaskUntilCompletion(ctx context.Context, taskID, agentURL string) (*Task, error) {
+	ticker := time.NewTicker(a.a2aConfig.PollingInterval)
+	defer ticker.Stop()
+
+	maxAttempts := a.a2aConfig.MaxPollAttempts
+	attempts := 0
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			attempts++
+			if attempts > maxAttempts {
+				return nil, fmt.Errorf("task polling timeout after %d attempts", maxAttempts)
+			}
+
+			getTaskRequest := &GetTaskRequest{
+				JSONRPC: "2.0",
+				Method:  "task/get",
+				Params: TaskQueryParams{
+					ID: taskID,
+				},
+			}
+
+			response, err := a.a2aClient.GetTask(ctx, getTaskRequest, agentURL)
+			if err != nil {
+				a.logger.Debug("failed to get task status", "task_id", taskID, "agent_url", agentURL, "attempt", attempts, "error", err.Error())
+				continue
+			}
+
+			task := response.Result
+
+			a.logger.Debug("task status check",
+				"task_id", taskID,
+				"status", task.Status.State,
+				"agent_url", agentURL,
+				"attempt", attempts)
+
+			switch task.Status.State {
+			case TaskStateCompleted:
+				a.logger.Info("task completed successfully via polling", "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
+				return &task, nil
+			case TaskStateFailed:
+				a.logger.Error("task failed", fmt.Errorf("task failed"), "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
+				return &task, fmt.Errorf("task failed: %s", taskID)
+			case TaskStateCanceled:
+				a.logger.Info("task was canceled", "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
+				return &task, fmt.Errorf("task canceled: %s", taskID)
+			case TaskStateRejected:
+				a.logger.Error("task was rejected", fmt.Errorf("task rejected"), "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
+				return &task, fmt.Errorf("task rejected: %s", taskID)
+			case TaskStateSubmitted, TaskStateWorking, TaskStateInputRequired, TaskStateAuthRequired:
+				a.logger.Debug("task still in progress", "task_id", taskID, "status", task.Status.State, "agent_url", agentURL)
+				continue
+			default:
+				a.logger.Debug("unknown task state, continuing polling", "task_id", taskID, "state", task.Status.State, "agent_url", agentURL)
+				continue
+			}
+		}
+	}
 }
 
 // processStreamingResponse processes a streaming response and returns extracted tool calls

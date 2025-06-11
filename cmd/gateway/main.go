@@ -185,7 +185,7 @@ func main() {
 			logger.Info("a2a is enabled but no agents configured")
 		}
 
-		a2aAgent := a2a.NewAgent(logger, a2aClient)
+		a2aAgent := a2a.NewAgent(logger, a2aClient, cfg.A2A)
 		a2aMiddleware, err = middlewares.NewA2AMiddleware(providerRegistry, a2aClient, a2aAgent, logger, client, cfg)
 		if err != nil {
 			logger.Error("failed to initialize a2a middleware", err)

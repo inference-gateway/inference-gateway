@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
@@ -50,9 +49,6 @@ type A2AClientInterface interface {
 
 	// SendMessage sends a message to the specified agent (A2A's main task submission method)
 	SendMessage(ctx context.Context, request *SendMessageRequest, agentURL string) (*SendMessageSuccessResponse, error)
-
-	// SendMessageWithPolling sends a message and polls for task completion
-	SendMessageWithPolling(ctx context.Context, request *SendMessageRequest, agentURL string) (*Task, error)
 
 	// SendStreamingMessage sends a streaming message to the specified agent
 	SendStreamingMessage(ctx context.Context, request *SendStreamingMessageRequest, agentURL string) (<-chan []byte, error)
@@ -349,137 +345,6 @@ func (c *A2AClient) GetAgentSkills(agentURL string) ([]AgentSkill, error) {
 	}
 
 	return agentCard.Skills, nil
-}
-
-// SendMessageWithPolling sends a message and polls for task completion
-func (c *A2AClient) SendMessageWithPolling(ctx context.Context, request *SendMessageRequest, agentURL string) (*Task, error) {
-	if !c.IsInitialized() {
-		return nil, ErrClientNotInitialized
-	}
-
-	if !c.isValidAgentURL(agentURL) {
-		return nil, ErrAgentNotFound
-	}
-
-	if !c.Config.A2A.PollingEnable {
-		c.Logger.Debug("polling disabled, using synchronous submission", "agent_url", agentURL)
-		response, err := c.SendMessage(ctx, request, agentURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to submit task: %w", err)
-		}
-
-		resultBytes, err := json.Marshal(response.Result)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal response result: %w", err)
-		}
-
-		var task Task
-		if err := json.Unmarshal(resultBytes, &task); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal task from response: %w", err)
-		}
-
-		return &task, nil
-	}
-
-	c.Logger.Debug("submitting task to agent", "agent_url", agentURL)
-
-	response, err := c.SendMessage(ctx, request, agentURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit task: %w", err)
-	}
-
-	resultBytes, err := json.Marshal(response.Result)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal response result: %w", err)
-	}
-
-	var task Task
-	if err := json.Unmarshal(resultBytes, &task); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal task from response: %w", err)
-	}
-
-	taskID := task.ID
-	c.Logger.Debug("received task ID from agent", "task_id", taskID, "agent_url", agentURL)
-
-	if task.Status.State == TaskStateCompleted {
-		c.Logger.Info("task completed immediately", "task_id", taskID, "agent_url", agentURL)
-		return &task, nil
-	}
-
-	pollCtx, cancel := context.WithTimeout(ctx, c.Config.A2A.PollingTimeout)
-	defer cancel()
-
-	ticker := time.NewTicker(c.Config.A2A.PollingInterval)
-	defer ticker.Stop()
-
-	attempts := 0
-	maxAttempts := c.Config.A2A.MaxPollAttempts
-
-	c.Logger.Debug("starting task polling",
-		"task_id", taskID,
-		"agent_url", agentURL,
-		"polling_interval", c.Config.A2A.PollingInterval,
-		"polling_timeout", c.Config.A2A.PollingTimeout,
-		"max_attempts", maxAttempts)
-
-	for {
-		select {
-		case <-pollCtx.Done():
-			c.Logger.Warn("polling timeout reached", "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
-			return nil, fmt.Errorf("polling timeout reached after %v", c.Config.A2A.PollingTimeout)
-
-		case <-ticker.C:
-			attempts++
-
-			if attempts > maxAttempts {
-				c.Logger.Warn("max polling attempts reached", "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
-				return nil, fmt.Errorf("max polling attempts (%d) reached", maxAttempts)
-			}
-
-			getTaskRequest := &GetTaskRequest{
-				JSONRPC: "2.0",
-				Method:  "task/get",
-				Params: TaskQueryParams{
-					ID: taskID,
-				},
-			}
-
-			response, err := c.GetTask(pollCtx, getTaskRequest, agentURL)
-			if err != nil {
-				c.Logger.Debug("failed to get task status", "task_id", taskID, "agent_url", agentURL, "attempt", attempts, "error", err.Error())
-				continue
-			}
-
-			task := response.Result
-
-			c.Logger.Debug("task status check",
-				"task_id", taskID,
-				"status", task.Status.State,
-				"agent_url", agentURL,
-				"attempt", attempts)
-
-			switch task.Status.State {
-			case TaskStateCompleted:
-				c.Logger.Info("task completed successfully via polling", "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
-				return &task, nil
-			case TaskStateFailed:
-				c.Logger.Error("task failed", fmt.Errorf("task failed"), "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
-				return &task, fmt.Errorf("task failed: %s", taskID)
-			case TaskStateCanceled:
-				c.Logger.Info("task was canceled", "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
-				return &task, fmt.Errorf("task canceled: %s", taskID)
-			case TaskStateRejected:
-				c.Logger.Error("task was rejected", fmt.Errorf("task rejected"), "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
-				return &task, fmt.Errorf("task rejected: %s", taskID)
-			case TaskStateSubmitted, TaskStateWorking, TaskStateInputRequired, TaskStateAuthRequired:
-				c.Logger.Debug("task still in progress", "task_id", taskID, "status", task.Status.State, "agent_url", agentURL)
-				continue
-			default:
-				c.Logger.Debug("unknown task state, continuing polling", "task_id", taskID, "state", task.Status.State, "agent_url", agentURL)
-				continue
-			}
-		}
-	}
 }
 
 // makeJSONRPCRequest makes a JSON-RPC request to the specified agent
