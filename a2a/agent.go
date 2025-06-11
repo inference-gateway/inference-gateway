@@ -698,7 +698,6 @@ func (a *agentImpl) handleStreamingTaskSubmission(ctx context.Context, request *
 			lineStr := string(line)
 			a.logger.Debug("received streaming chunk from a2a agent", "agent_url", agentURL, "chunk", lineStr)
 
-			// Parse SSE data
 			if strings.HasPrefix(lineStr, "data: ") {
 				dataStr := strings.TrimPrefix(lineStr, "data: ")
 				dataStr = strings.TrimSpace(dataStr)
@@ -713,7 +712,6 @@ func (a *agentImpl) handleStreamingTaskSubmission(ctx context.Context, request *
 					continue
 				}
 
-				// Handle different types of SSE events according to A2A spec
 				if result, exists := sseEvent["result"].(map[string]interface{}); exists {
 					if kind, exists := result["kind"].(string); exists {
 						switch kind {
