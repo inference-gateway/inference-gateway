@@ -1043,7 +1043,7 @@ type OIDCAuthenticatorImpl struct {
 type OIDCAuthenticatorNoop struct{}
 
 func NewOIDCAuthenticatorMiddleware(logger *zap.Logger, cfg Config) (OIDCAuthenticator, error) {
-	if !cfg.EnableAuth {
+	if !cfg.AuthConfig.Enable {
 		return &OIDCAuthenticatorNoop{}, nil
 	}
 
