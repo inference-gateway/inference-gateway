@@ -237,9 +237,9 @@ func handleA2ARequest(c *gin.Context, logger *zap.Logger, client sdk.Client) {
 		handleMessageSend(c, req, logger, client)
 	case "message/stream":
 		handleMessageStream(c, req, logger, client)
-	case "task/get":
+	case "tasks/get":
 		handleTaskGet(c, req, logger, client)
-	case "task/cancel":
+	case "tasks/cancel":
 		handleTaskCancel(c, req, logger, client)
 	default:
 		logger.Warn("unknown method requested", zap.String("method", req.Method))
@@ -432,13 +432,13 @@ func handleMessageStream(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Log
 }
 
 func handleTaskGet(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
-	logger.Info("task/get not implemented yet")
-	sendError(c, req.ID, int(ErrServerError), "task/get not implemented", logger)
+	logger.Info("tasks/get not implemented yet")
+	sendError(c, req.ID, int(ErrServerError), "tasks/get not implemented", logger)
 }
 
 func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
-	logger.Info("task/cancel not implemented yet")
-	sendError(c, req.ID, int(ErrServerError), "task/cancel not implemented", logger)
+	logger.Info("tasks/cancel not implemented yet")
+	sendError(c, req.ID, int(ErrServerError), "tasks/cancel not implemented", logger)
 }
 
 func stringPtr(s string) *string {

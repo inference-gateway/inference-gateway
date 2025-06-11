@@ -25,20 +25,27 @@ import (
 var logger *zap.Logger
 
 type Config struct {
-	AgentName                     string        `env:"AGENT_NAME,default=weather-agent"`
-	AgentDescription              string        `env:"AGENT_DESCRIPTION,default=A weather information agent that provides current weather data using AI tools"`
-	AgentURL                      string        `env:"AGENT_URL,default=http://weather-agent:8080"`
-	AgentVersion                  string        `env:"AGENT_VERSION,default=1.0.0"`
-	Debug                         bool          `env:"DEBUG,default=false"`
-	Port                          string        `env:"PORT,default=8080"`
-	InferenceGatewayURL           string        `env:"INFERENCE_GATEWAY_URL,required"`
-	LLMProvider                   string        `env:"LLM_PROVIDER,default=deepseek"`
-	LLMModel                      string        `env:"LLM_MODEL,default=deepseek-chat"`
-	MaxChatCompletionIterations   int           `env:"MAX_CHAT_COMPLETION_ITERATIONS,default=10"`
-	StreamingStatusUpdateInterval time.Duration `env:"STREAMING_STATUS_UPDATE_INTERVAL,default=1s"`
-	TLSConfig                     *TLSConfig    `env:",prefix=TLS_"`
-	AuthConfig                    *AuthConfig   `env:",prefix=AUTH_"`
-	QueueConfig                   *QueueConfig  `env:",prefix=QUEUE_"`
+	AgentName                     string              `env:"AGENT_NAME,default=weather-agent"`
+	AgentDescription              string              `env:"AGENT_DESCRIPTION,default=A weather information agent that provides current weather data using AI tools"`
+	AgentURL                      string              `env:"AGENT_URL,default=http://weather-agent:8080"`
+	AgentVersion                  string              `env:"AGENT_VERSION,default=1.0.0"`
+	Debug                         bool                `env:"DEBUG,default=false"`
+	Port                          string              `env:"PORT,default=8080"`
+	InferenceGatewayURL           string              `env:"INFERENCE_GATEWAY_URL,required"`
+	LLMProvider                   string              `env:"LLM_PROVIDER,default=deepseek"`
+	LLMModel                      string              `env:"LLM_MODEL,default=deepseek-chat"`
+	MaxChatCompletionIterations   int                 `env:"MAX_CHAT_COMPLETION_ITERATIONS,default=10"`
+	StreamingStatusUpdateInterval time.Duration       `env:"STREAMING_STATUS_UPDATE_INTERVAL,default=1s"`
+	CapabilitiesConfig            *CapabilitiesConfig `env:",prefix=CAPABILITIES_"`
+	TLSConfig                     *TLSConfig          `env:",prefix=TLS_"`
+	AuthConfig                    *AuthConfig         `env:",prefix=AUTH_"`
+	QueueConfig                   *QueueConfig        `env:",prefix=QUEUE_"`
+}
+
+type CapabilitiesConfig struct {
+	Streaming              bool `env:"STREAMING,default=true" description:"Enable streaming support"`
+	PushNotifications      bool `env:"PUSH_NOTIFICATIONS,default=true" description:"Enable push notifications"`
+	StateTransitionHistory bool `env:"STATE_TRANSITION_HISTORY,default=false" description:"Enable state transition history"`
 }
 
 type TLSConfig struct {
@@ -110,6 +117,17 @@ type QueuedTask struct {
 	RequestID interface{}
 }
 
+type PushNotificationConfig struct {
+	URL   string                 `json:"url"`
+	Token string                 `json:"token,omitempty"`
+	Auth  map[string]interface{} `json:"authentication,omitempty"`
+}
+
+type TaskPushNotificationConfig struct {
+	TaskID                 string                  `json:"taskId"`
+	PushNotificationConfig *PushNotificationConfig `json:"pushNotificationConfig"`
+}
+
 var cfg Config
 
 func setupRouter(logger *zap.Logger, client sdk.Client, oidcAuthenticator OIDCAuthenticator) *gin.Engine {
@@ -127,9 +145,6 @@ func setupRouter(logger *zap.Logger, client sdk.Client, oidcAuthenticator OIDCAu
 
 	r.GET("/.well-known/agent.json", func(c *gin.Context) {
 		logger.Info("agent info requested")
-		streaming := true
-		pushNotifications := false
-		stateTransitionHistory := false
 
 		info := a2a.AgentCard{
 			Name:        cfg.AgentName,
@@ -137,9 +152,9 @@ func setupRouter(logger *zap.Logger, client sdk.Client, oidcAuthenticator OIDCAu
 			URL:         cfg.AgentURL,
 			Version:     cfg.AgentVersion,
 			Capabilities: a2a.AgentCapabilities{
-				Streaming:              &streaming,
-				PushNotifications:      &pushNotifications,
-				StateTransitionHistory: &stateTransitionHistory,
+				Streaming:              &cfg.CapabilitiesConfig.Streaming,
+				PushNotifications:      &cfg.CapabilitiesConfig.PushNotifications,
+				StateTransitionHistory: &cfg.CapabilitiesConfig.StateTransitionHistory,
 			},
 			DefaultInputModes:  []string{"text"},
 			DefaultOutputModes: []string{"text"},
@@ -253,10 +268,14 @@ func handleA2ARequest(c *gin.Context, logger *zap.Logger, client sdk.Client) {
 		handleMessageSend(c, req, logger, client)
 	case "message/stream":
 		handleMessageStream(c, req, logger, client)
-	case "task/get":
+	case "tasks/get":
 		handleTaskGet(c, req, logger, client)
-	case "task/cancel":
+	case "tasks/cancel":
 		handleTaskCancel(c, req, logger, client)
+	case "tasks/pushNotificationConfig/set":
+		handleSetPushNotificationConfig(c, req, logger, client)
+	case "tasks/pushNotificationConfig/get":
+		handleGetPushNotificationConfig(c, req, logger, client)
 	default:
 		logger.Warn("unknown method requested", zap.String("method", req.Method))
 		sendError(c, req.ID, int(ErrMethodNotFound), "method not found", logger)
@@ -508,7 +527,7 @@ func handleTaskGet(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, c
 	}
 
 	if err := json.Unmarshal(paramsBytes, &params); err != nil {
-		logger.Error("failed to parse task/get request", zap.Error(err))
+		logger.Error("failed to parse tasks/get request", zap.Error(err))
 		sendError(c, req.ID, int(ErrInvalidParams), "invalid request", logger)
 		return
 	}
@@ -541,7 +560,7 @@ func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger
 	}
 
 	if err := json.Unmarshal(paramsBytes, &params); err != nil {
-		logger.Error("failed to parse task/cancel request", zap.Error(err))
+		logger.Error("failed to parse tasks/cancel request", zap.Error(err))
 		sendError(c, req.ID, int(ErrInvalidParams), "invalid request", logger)
 		return
 	}
@@ -563,6 +582,7 @@ func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger
 
 	task.Status.State = a2a.TaskStateCanceled
 	storeTask(task)
+	sendPushNotification(task.ID, task, logger)
 	logger.Info("task canceled", zap.String("task_id", params.ID))
 
 	go func() {
@@ -575,6 +595,91 @@ func handleTaskCancel(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger
 		JSONRPC: "2.0",
 		ID:      req.ID,
 		Result:  *task,
+	})
+}
+
+func handleSetPushNotificationConfig(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
+	var params TaskPushNotificationConfig
+	paramsBytes, err := json.Marshal(req.Params)
+	if err != nil {
+		logger.Error("failed to marshal params", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid params", logger)
+		return
+	}
+
+	if err := json.Unmarshal(paramsBytes, &params); err != nil {
+		logger.Error("failed to parse push notification config request", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid request", logger)
+		return
+	}
+
+	logger.Info("setting push notification config", zap.String("task_id", params.TaskID))
+
+	_, exists := getTask(params.TaskID)
+	if !exists {
+		logger.Error("task not found for push notification config", zap.String("task_id", params.TaskID))
+		sendError(c, req.ID, int(ErrInvalidParams), "task not found", logger)
+		return
+	}
+
+	pushNotificationsMu.Lock()
+	pushNotifications[params.TaskID] = params.PushNotificationConfig
+	pushNotificationsMu.Unlock()
+
+	logger.Info("push notification config set successfully", zap.String("task_id", params.TaskID), zap.String("url", params.PushNotificationConfig.URL))
+
+	c.JSON(http.StatusOK, a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  params,
+	})
+}
+
+func handleGetPushNotificationConfig(c *gin.Context, req a2a.JSONRPCRequest, logger *zap.Logger, client sdk.Client) {
+	var params struct {
+		TaskID string `json:"taskId"`
+	}
+	paramsBytes, err := json.Marshal(req.Params)
+	if err != nil {
+		logger.Error("failed to marshal params", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid params", logger)
+		return
+	}
+
+	if err := json.Unmarshal(paramsBytes, &params); err != nil {
+		logger.Error("failed to parse get push notification config request", zap.Error(err))
+		sendError(c, req.ID, int(ErrInvalidParams), "invalid request", logger)
+		return
+	}
+
+	logger.Info("getting push notification config", zap.String("task_id", params.TaskID))
+
+	_, exists := getTask(params.TaskID)
+	if !exists {
+		logger.Error("task not found for push notification config", zap.String("task_id", params.TaskID))
+		sendError(c, req.ID, int(ErrInvalidParams), "task not found", logger)
+		return
+	}
+
+	pushNotificationsMu.RLock()
+	config, exists := pushNotifications[params.TaskID]
+	pushNotificationsMu.RUnlock()
+
+	if !exists {
+		logger.Info("no push notification config found", zap.String("task_id", params.TaskID))
+		sendError(c, req.ID, int(ErrInvalidParams), "no push notification config found", logger)
+		return
+	}
+
+	result := TaskPushNotificationConfig{
+		TaskID:                 params.TaskID,
+		PushNotificationConfig: config,
+	}
+
+	c.JSON(http.StatusOK, a2a.JSONRPCSuccessResponse{
+		JSONRPC: "2.0",
+		ID:      req.ID,
+		Result:  result,
 	})
 }
 
@@ -625,10 +730,65 @@ func fetchWeather(location string) *WeatherData {
 	return weather
 }
 
+func sendPushNotification(taskID string, task *a2a.Task, logger *zap.Logger) {
+	pushNotificationsMu.RLock()
+	config, exists := pushNotifications[taskID]
+	pushNotificationsMu.RUnlock()
+
+	if !exists {
+		logger.Debug("no push notification config for task", zap.String("task_id", taskID))
+		return
+	}
+
+	payload := map[string]interface{}{
+		"taskId": taskID,
+		"status": task.Status,
+		"task":   task,
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error("failed to marshal push notification payload", zap.Error(err), zap.String("task_id", taskID))
+		return
+	}
+
+	req, err := http.NewRequest("POST", config.URL, strings.NewReader(string(payloadBytes)))
+	if err != nil {
+		logger.Error("failed to create push notification request", zap.Error(err), zap.String("task_id", taskID))
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Add authentication if provided
+	if config.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+config.Token)
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("failed to send push notification", zap.Error(err), zap.String("task_id", taskID), zap.String("url", config.URL))
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		logger.Info("push notification sent successfully", zap.String("task_id", taskID), zap.String("url", config.URL), zap.Int("status", resp.StatusCode))
+	} else {
+		logger.Warn("push notification failed", zap.String("task_id", taskID), zap.String("url", config.URL), zap.Int("status", resp.StatusCode))
+	}
+}
+
 var (
-	taskQueue  chan *QueuedTask
-	allTasks   = make(map[string]*a2a.Task)
-	allTasksMu sync.RWMutex
+	taskQueue           chan *QueuedTask
+	allTasks            = make(map[string]*a2a.Task)
+	allTasksMu          sync.RWMutex
+	pushNotifications   = make(map[string]*PushNotificationConfig)
+	pushNotificationsMu sync.RWMutex
 )
 
 func startTaskProcessor(ctx context.Context, logger *zap.Logger, client sdk.Client) {
@@ -650,6 +810,7 @@ func processTaskAsync(queuedTask *QueuedTask, logger *zap.Logger, client sdk.Cli
 
 	queuedTask.Task.Status.State = a2a.TaskStateWorking
 	storeTask(queuedTask.Task)
+	sendPushNotification(queuedTask.Task.ID, queuedTask.Task, logger)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -807,6 +968,7 @@ func processTaskAsync(queuedTask *QueuedTask, logger *zap.Logger, client sdk.Cli
 	queuedTask.Task.Status.Message = resultMessage
 
 	storeTask(queuedTask.Task)
+	sendPushNotification(queuedTask.Task.ID, queuedTask.Task, logger)
 
 	logger.Info("task processing completed", zap.String("task_id", queuedTask.Task.ID))
 
@@ -822,6 +984,7 @@ func processTaskWithStreaming(task *a2a.Task, messages []sdk.Message, logger *za
 
 	task.Status.State = a2a.TaskStateWorking
 	storeTask(task)
+	sendPushNotification(task.ID, task, logger)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -982,6 +1145,7 @@ func processTaskWithStreaming(task *a2a.Task, messages []sdk.Message, logger *za
 	task.Status.Message = resultMessage
 
 	storeTask(task)
+	sendPushNotification(task.ID, task, logger)
 
 	logger.Info("streaming task processing completed", zap.String("task_id", task.ID))
 
@@ -1024,8 +1188,12 @@ func getTask(taskID string) (*a2a.Task, bool) {
 
 func removeTask(taskID string) {
 	allTasksMu.Lock()
-	defer allTasksMu.Unlock()
 	delete(allTasks, taskID)
+	allTasksMu.Unlock()
+
+	pushNotificationsMu.Lock()
+	delete(pushNotifications, taskID)
+	pushNotificationsMu.Unlock()
 }
 
 func failTaskWithCleanup(task *a2a.Task, errorMessage string, logger *zap.Logger) {
@@ -1043,6 +1211,7 @@ func failTaskWithCleanup(task *a2a.Task, errorMessage string, logger *zap.Logger
 	task.Status.State = a2a.TaskStateFailed
 	task.Status.Message = failureMessage
 	storeTask(task)
+	sendPushNotification(task.ID, task, logger)
 
 	go func() {
 		time.Sleep(cfg.QueueConfig.CleanupInterval)

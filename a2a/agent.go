@@ -523,7 +523,7 @@ func (a *agentImpl) pollTaskUntilCompletion(ctx context.Context, taskID, agentUR
 
 			getTaskRequest := &GetTaskRequest{
 				JSONRPC: "2.0",
-				Method:  "task/get",
+				Method:  "tasks/get",
 				Params: TaskQueryParams{
 					ID: taskID,
 				},
