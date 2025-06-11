@@ -1,4 +1,4 @@
-package core
+package adk
 
 // StringPtr returns a pointer to the given string
 func StringPtr(s string) *string {
