@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 
 	uuid "github.com/google/uuid"
-	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	adk "github.com/inference-gateway/a2a/adk"
 	zap "go.uber.org/zap"
-
-	adk "helloworld-agent/adk"
 )
 
 // GreetingData represents greeting information for a person
@@ -136,7 +134,7 @@ func NewGreetingTaskResultProcessor(logger *zap.Logger) adk.TaskResultProcessor 
 }
 
 // ProcessToolResult processes greeting tool call results and determines if the task should be completed
-func (p *GreetingTaskResultProcessor) ProcessToolResult(toolCallResult string) *a2a.Message {
+func (p *GreetingTaskResultProcessor) ProcessToolResult(toolCallResult string) *adk.Message {
 	var greetingData GreetingData
 	if err := json.Unmarshal([]byte(toolCallResult), &greetingData); err != nil {
 		p.logger.Debug("tool result is not greeting data, continuing task processing", zap.Error(err))
@@ -146,11 +144,11 @@ func (p *GreetingTaskResultProcessor) ProcessToolResult(toolCallResult string) *
 	p.logger.Info("greeting task completed", zap.String("greeting", greetingData.Greeting))
 
 	// Create completion message with the greeting text
-	return &a2a.Message{
+	return &adk.Message{
 		Kind:      "message",
 		MessageID: uuid.New().String(),
 		Role:      "assistant",
-		Parts: []a2a.Part{
+		Parts: []adk.Part{
 			map[string]interface{}{
 				"kind": "text",
 				"text": greetingData.Greeting,
@@ -172,20 +170,20 @@ func NewGreetingAgentInfoProvider(logger *zap.Logger) adk.AgentInfoProvider {
 }
 
 // GetAgentCard returns greeting-specific agent capabilities and metadata
-func (p *GreetingAgentInfoProvider) GetAgentCard(baseConfig adk.Config) a2a.AgentCard {
-	return a2a.AgentCard{
+func (p *GreetingAgentInfoProvider) GetAgentCard(baseConfig adk.Config) adk.AgentCard {
+	return adk.AgentCard{
 		Name:        baseConfig.AgentName,
 		Description: baseConfig.AgentDescription,
 		URL:         baseConfig.AgentURL,
 		Version:     baseConfig.AgentVersion,
-		Capabilities: a2a.AgentCapabilities{
+		Capabilities: adk.AgentCapabilities{
 			Streaming:              &baseConfig.CapabilitiesConfig.Streaming,
 			PushNotifications:      &baseConfig.CapabilitiesConfig.PushNotifications,
 			StateTransitionHistory: &baseConfig.CapabilitiesConfig.StateTransitionHistory,
 		},
 		DefaultInputModes:  []string{"text/plain"},
 		DefaultOutputModes: []string{"text/plain"},
-		Skills: []a2a.AgentSkill{
+		Skills: []adk.AgentSkill{
 			{
 				ID:          "greeting",
 				Name:        "Personalized Greetings",

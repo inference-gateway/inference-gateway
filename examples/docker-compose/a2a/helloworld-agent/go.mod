@@ -1,25 +1,24 @@
 module helloworld-agent
 
-go 1.24
+go 1.24.3
 
 require (
-	github.com/coreos/go-oidc/v3 v3.12.0
-	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.6.0
-	github.com/inference-gateway/inference-gateway v0.10.2
+	github.com/inference-gateway/a2a v0.1.2
 	github.com/inference-gateway/sdk v1.8.1
 	github.com/sethvargo/go-envconfig v1.2.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/oauth2 v0.25.0
 )
 
 require (
 	github.com/bytedance/sonic v1.12.7 // indirect
 	github.com/bytedance/sonic/loader v0.2.3 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
+	github.com/coreos/go-oidc/v3 v3.14.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/gin-contrib/sse v1.0.0 // indirect
+	github.com/gin-gonic/gin v1.10.1 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -41,6 +40,7 @@ require (
 	golang.org/x/arch v0.13.0 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 	google.golang.org/protobuf v1.36.3 // indirect

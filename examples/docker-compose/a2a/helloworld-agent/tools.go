@@ -1,9 +1,8 @@
 package main
 
 import (
+	adk "github.com/inference-gateway/a2a/adk"
 	sdk "github.com/inference-gateway/sdk"
-
-	adk "helloworld-agent/adk"
 )
 
 // GreetingToolProvider implements ToolProvider for greeting functionality

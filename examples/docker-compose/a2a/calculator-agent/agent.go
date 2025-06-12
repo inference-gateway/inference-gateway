@@ -4,9 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	adk "calculator-agent/adk"
-
-	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	adk "github.com/inference-gateway/a2a/adk"
 	sdk "github.com/inference-gateway/sdk"
 	zap "go.uber.org/zap"
 )
@@ -142,13 +140,13 @@ func NewCalculatorTaskResultProcessor(logger *zap.Logger) *CalculatorTaskResultP
 	}
 }
 
-func (p *CalculatorTaskResultProcessor) ProcessToolResult(toolCallResult string) *a2a.Message {
+func (p *CalculatorTaskResultProcessor) ProcessToolResult(toolCallResult string) *adk.Message {
 	p.logger.Debug("processing calculator task result", zap.String("result", toolCallResult))
 
 	// For calculator, we can complete the task immediately with the result
-	return &a2a.Message{
+	return &adk.Message{
 		Role:      "assistant",
-		Parts:     []a2a.Part{a2a.TextPart{Kind: "text", Text: toolCallResult}},
+		Parts:     []adk.Part{adk.TextPart{Kind: "text", Text: toolCallResult}},
 		MessageID: "calc_result_" + fmt.Sprintf("%d", time.Now().UnixNano()),
 	}
 }
@@ -164,20 +162,20 @@ func NewCalculatorAgentInfoProvider(logger *zap.Logger) *CalculatorAgentInfoProv
 	}
 }
 
-func (p *CalculatorAgentInfoProvider) GetAgentCard(baseConfig adk.Config) a2a.AgentCard {
-	return a2a.AgentCard{
+func (p *CalculatorAgentInfoProvider) GetAgentCard(baseConfig adk.Config) adk.AgentCard {
+	return adk.AgentCard{
 		Name:        baseConfig.AgentName,
 		Description: "A mathematical calculator agent that performs basic arithmetic operations using the A2A protocol",
 		URL:         "http://calculator-agent:8080",
 		Version:     baseConfig.AgentVersion,
-		Capabilities: a2a.AgentCapabilities{
+		Capabilities: adk.AgentCapabilities{
 			Streaming:              &[]bool{true}[0],
 			PushNotifications:      &[]bool{false}[0],
 			StateTransitionHistory: &[]bool{false}[0],
 		},
 		DefaultInputModes:  []string{"text/plain"},
 		DefaultOutputModes: []string{"text/plain"},
-		Skills: []a2a.AgentSkill{
+		Skills: []adk.AgentSkill{
 			{
 				ID:          "add",
 				Name:        "Add Numbers",

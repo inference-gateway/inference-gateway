@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	adk "weather-agent/adk"
-
-	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	adk "github.com/inference-gateway/a2a/adk"
 	sdk "github.com/inference-gateway/sdk"
 	zap "go.uber.org/zap"
 )
@@ -76,7 +74,7 @@ func NewWeatherTaskResultProcessor(logger *zap.Logger) *WeatherTaskResultProcess
 	}
 }
 
-func (p *WeatherTaskResultProcessor) ProcessToolResult(toolCallResult string) *a2a.Message {
+func (p *WeatherTaskResultProcessor) ProcessToolResult(toolCallResult string) *adk.Message {
 	p.logger.Debug("processing weather task result", zap.String("result", toolCallResult))
 
 	// Try to parse the result as weather data and format it nicely
@@ -89,9 +87,9 @@ func (p *WeatherTaskResultProcessor) ProcessToolResult(toolCallResult string) *a
 	}
 
 	// For weather, we can complete the task immediately with the result
-	return &a2a.Message{
+	return &adk.Message{
 		Role:      "assistant",
-		Parts:     []a2a.Part{a2a.TextPart{Kind: "text", Text: formattedResult}},
+		Parts:     []adk.Part{adk.TextPart{Kind: "text", Text: formattedResult}},
 		MessageID: "weather_result_" + fmt.Sprintf("%d", time.Now().UnixNano()),
 	}
 }
@@ -107,20 +105,20 @@ func NewWeatherAgentInfoProvider(logger *zap.Logger) *WeatherAgentInfoProvider {
 	}
 }
 
-func (p *WeatherAgentInfoProvider) GetAgentCard(baseConfig adk.Config) a2a.AgentCard {
-	return a2a.AgentCard{
+func (p *WeatherAgentInfoProvider) GetAgentCard(baseConfig adk.Config) adk.AgentCard {
+	return adk.AgentCard{
 		Name:        baseConfig.AgentName,
 		Description: "A weather information agent that provides current weather data for any location using the A2A protocol",
 		URL:         "http://weather-agent:8081",
 		Version:     baseConfig.AgentVersion,
-		Capabilities: a2a.AgentCapabilities{
+		Capabilities: adk.AgentCapabilities{
 			Streaming:              &[]bool{true}[0],
 			PushNotifications:      &[]bool{false}[0],
 			StateTransitionHistory: &[]bool{false}[0],
 		},
 		DefaultInputModes:  []string{"text/plain"},
 		DefaultOutputModes: []string{"text/plain", "application/json"},
-		Skills: []a2a.AgentSkill{
+		Skills: []adk.AgentSkill{
 			{
 				ID:          "fetch_weather",
 				Name:        "Weather Lookup",

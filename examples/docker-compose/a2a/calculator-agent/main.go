@@ -5,12 +5,10 @@ import (
 	"log"
 	"net/http"
 
+	adk "github.com/inference-gateway/a2a/adk"
 	sdk "github.com/inference-gateway/sdk"
 	envconfig "github.com/sethvargo/go-envconfig"
 	zap "go.uber.org/zap"
-
-	// TODO - move to a2a package
-	adk "calculator-agent/adk"
 )
 
 func main() {

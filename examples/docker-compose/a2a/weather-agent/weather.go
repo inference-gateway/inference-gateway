@@ -6,7 +6,7 @@ import (
 	"time"
 
 	sdk "github.com/inference-gateway/sdk"
-	"go.uber.org/zap"
+	zap "go.uber.org/zap"
 )
 
 // WeatherData represents weather information for a location
