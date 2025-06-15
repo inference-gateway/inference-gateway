@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	// MCPInternalHeader marks internal MCP requests to prevent middleware loops
-	MCPInternalHeader = "X-MCP-Bypass"
+	// MCPBypassHeader marks internal MCP requests to prevent middleware loops
+	MCPBypassHeader = "X-MCP-Bypass"
 
 	// MaxMCPAgentIterations limits the number of agent loop iterations
 	MaxMCPAgentIterations = 10
@@ -27,8 +27,8 @@ const (
 type mcpContextKey string
 
 const (
-	// mcpInternalKey is the context key for marking internal MCP requests
-	mcpInternalKey mcpContextKey = MCPInternalHeader
+	// mcpBypassKey is the context key for marking to bypass MCP middleware
+	mcpBypassKey mcpContextKey = MCPBypassHeader
 )
 
 // MCPProviderModelResult contains the result of provider and model determination
@@ -83,14 +83,12 @@ func (n *NoopMCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 // Middleware returns the MCP middleware handler
 func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Check if the request is marked as internal to prevent loops
-		if c.GetHeader(MCPInternalHeader) != "" {
-			m.logger.Debug("not an internal mcp call")
+		if c.GetHeader(MCPBypassHeader) != "" {
+			m.logger.Debug("skipping mcp middleware for internal call")
 			c.Next()
 			return
 		}
 
-		// Consider only the chat completions endpoint
 		if c.Request.URL.Path != ChatCompletionsPath {
 			c.Next()
 			return
@@ -105,11 +103,11 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Add MCP tools to the request if available
 		if !m.mcpClient.IsInitialized() {
 			c.Next()
 			return
 		}
+
 		availableTools := m.mcpClient.GetAllChatCompletionTools()
 		if len(availableTools) == 0 {
 			c.Next()
@@ -118,8 +116,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		m.logger.Debug("added mcp tools to request", "tool_count", len(availableTools))
 		originalRequestBody.Tools = &availableTools
 
-		// Mark the request as internal to prevent middleware loops
-		c.Set(string(mcpInternalKey), &originalRequestBody)
+		c.Set(MCPBypassHeader, &originalRequestBody)
 
 		result, err := m.getProviderAndModel(c, originalRequestBody.Model)
 		if err != nil {
@@ -138,7 +135,6 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			}
 		}
 
-		// Streaming response handling
 		if originalRequestBody.Stream != nil && *originalRequestBody.Stream {
 			m.logger.Debug("starting mcp streaming mode")
 			c.Header("Content-Type", "text/event-stream")
@@ -156,7 +152,6 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		// Non-streaming response handling
 		customWriter := &customResponseWriter{
 			ResponseWriter: c.Writer,
 			body:           &bytes.Buffer{},
@@ -300,7 +295,7 @@ func (m *MCPMiddlewareImpl) handleMCPToolCalls(c *gin.Context, response *provide
 
 // writeErrorResponse writes an error response to the client
 func (m *MCPMiddlewareImpl) writeErrorResponse(c *gin.Context, customWriter *customResponseWriter, message string, statusCode int) {
-	errorResponse := ErrorResponse{Error: message}
+	errorResponse := map[string]string{"error": message}
 	customWriter.statusCode = statusCode
 	m.writeResponse(c, customWriter, errorResponse)
 }
@@ -308,16 +303,6 @@ func (m *MCPMiddlewareImpl) writeErrorResponse(c *gin.Context, customWriter *cus
 // writeResponse writes the response to the client
 func (m *MCPMiddlewareImpl) writeResponse(c *gin.Context, customWriter *customResponseWriter, response interface{}) {
 	customWriter.writeToClient = true
-	customWriter.WriteHeader(customWriter.statusCode)
-
-	responseBytes, err := json.Marshal(response)
-	if err != nil {
-		m.logger.Error("failed to marshal final response", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
-		return
-	}
-
-	if _, err := customWriter.Write(responseBytes); err != nil {
-		m.logger.Error("failed to write response", err)
-	}
+	c.Writer = customWriter.ResponseWriter
+	c.JSON(customWriter.statusCode, response)
 }

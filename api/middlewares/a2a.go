@@ -16,17 +16,16 @@ import (
 )
 
 const (
-	// TODO - Rename this to X-A2A-Skip
-	// A2AInternalHeader marks internal A2A requests to prevent middleware loops
-	A2AInternalHeader = "X-A2A-Bypass"
+	// A2ABypassHeader marks internal A2A requests to prevent middleware loops
+	A2ABypassHeader = "X-A2A-Bypass"
 )
 
 // a2aContextKey is a custom type for context keys to avoid collisions
 type a2aContextKey string
 
 const (
-	// a2aInternalKey is the context key for marking internal A2A requests
-	a2aInternalKey a2aContextKey = A2AInternalHeader
+	// a2aBypassKey is the context key for marking to bypass A2A middleware
+	a2aBypassKey a2aContextKey = A2ABypassHeader
 )
 
 // A2AProviderModelResult contains the result of provider and model determination
@@ -80,7 +79,7 @@ func (n *NoopA2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 // Middleware returns the A2A middleware handler
 func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.GetHeader(A2AInternalHeader) != "" {
+		if c.GetHeader(A2ABypassHeader) != "" {
 			m.logger.Debug("internal a2a call, skipping middleware")
 			c.Next()
 			return
@@ -111,7 +110,7 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 		taskSubmissionTool := m.createTaskSubmissionTool()
 		m.addToolToRequest(&originalRequestBody, taskSubmissionTool)
 
-		c.Set(string(a2aInternalKey), &originalRequestBody)
+		c.Set(string(a2aBypassKey), &originalRequestBody)
 
 		result, err := m.getProviderAndModel(c, originalRequestBody.Model)
 		if err != nil {
