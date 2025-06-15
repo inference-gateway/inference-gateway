@@ -481,7 +481,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	var req providers.CreateChatCompletionRequest
 
-	if mcpRequest, exists := c.Get("X-MCP-Internal"); exists {
+	if mcpRequest, exists := c.Get("X-MCP-Bypass"); exists {
 		if parsedRequest, ok := mcpRequest.(*providers.CreateChatCompletionRequest); ok {
 			req = *parsedRequest
 		} else {

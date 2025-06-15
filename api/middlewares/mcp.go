@@ -17,7 +17,7 @@ import (
 
 const (
 	// MCPInternalHeader marks internal MCP requests to prevent middleware loops
-	MCPInternalHeader = "X-MCP-Internal"
+	MCPInternalHeader = "X-MCP-Bypass"
 
 	// MaxMCPAgentIterations limits the number of agent loop iterations
 	MaxMCPAgentIterations = 10

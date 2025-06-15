@@ -18,7 +18,7 @@ import (
 const (
 	// TODO - Rename this to X-A2A-Skip
 	// A2AInternalHeader marks internal A2A requests to prevent middleware loops
-	A2AInternalHeader = "X-A2A-Internal"
+	A2AInternalHeader = "X-A2A-Bypass"
 )
 
 // a2aContextKey is a custom type for context keys to avoid collisions

@@ -195,7 +195,7 @@ func TestA2AMiddleware_RequestWithA2AMiddlewareEnabled(t *testing.T) {
 			req := httptest.NewRequest("POST", tt.path, bytes.NewReader([]byte(tt.requestBody)))
 			req.Header.Set("Content-Type", "application/json")
 			if tt.hasInternalHeader {
-				req.Header.Set("X-A2A-Internal", "true")
+				req.Header.Set("X-A2A-Bypass", "true")
 			}
 			w := httptest.NewRecorder()
 

@@ -174,7 +174,7 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 			req := httptest.NewRequest(method, tt.path, strings.NewReader(`{"model":"gpt-4","messages":[]}`))
 			req.Header.Set("Content-Type", "application/json")
 			if tt.internalHeader != "" {
-				req.Header.Set("X-MCP-Internal", tt.internalHeader)
+				req.Header.Set("X-MCP-Bypass", tt.internalHeader)
 			}
 
 			router.ServeHTTP(w, req)
