@@ -116,7 +116,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		m.logger.Debug("added mcp tools to request", "tool_count", len(availableTools))
 		originalRequestBody.Tools = &availableTools
 
-		c.Set(MCPBypassHeader, &originalRequestBody)
+		c.Set(string(mcpBypassKey), &originalRequestBody)
 
 		result, err := m.getProviderAndModel(c, originalRequestBody.Model)
 		if err != nil {
