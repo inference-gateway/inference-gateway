@@ -302,10 +302,21 @@ The Inference Gateway can be configured using environment variables. The followi
 - Using [Docker Compose](examples/docker-compose/)
   - [Basic setup](examples/docker-compose/basic/) - Simple configuration with a single provider
   - [MCP Integration](examples/docker-compose/mcp/) - Model Context Protocol with multiple tool servers
+  - [A2A Integration](examples/docker-compose/a2a/) - Agent-to-Agent protocol integration
   - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers (cloud + local)
   - [Authentication](examples/docker-compose/authentication/) - OIDC authentication setup
+  - [Tools](examples/docker-compose/tools/) - Tool integration examples
   - [Web UI](examples/docker-compose/ui/) - Complete setup with web interface
 - Using [Kubernetes](examples/kubernetes/)
+  - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
+  - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in Kubernetes
+  - [A2A Integration](examples/kubernetes/a2a/) - Agent-to-Agent deployment
+  - [Agent deployment](examples/kubernetes/agent/) - Standalone agent deployment
+  - [Hybrid deployment](examples/kubernetes/hybrid/) - Multiple providers in Kubernetes
+  - [Authentication](examples/kubernetes/authentication/) - OIDC authentication in Kubernetes
+  - [Monitoring](examples/kubernetes/monitoring/) - Observability and monitoring setup
+  - [TLS setup](examples/kubernetes/tls/) - TLS/SSL configuration
+  - [Web UI](examples/kubernetes/ui/) - Complete setup with web interface
 - Using standard [REST endpoints](examples/rest-endpoints/)
 
 ## SDKs
