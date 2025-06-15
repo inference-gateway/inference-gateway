@@ -19,6 +19,11 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 
 - [Key Features](#key-features)
 - [Overview](#overview)
+- [Middleware Control and Bypass Mechanisms](#middleware-control-and-bypass-mechanisms)
+  - [Bypass Headers](#bypass-headers)
+  - [Client Control Examples](#client-control-examples)
+  - [When to Use Bypass Headers](#when-to-use-bypass-headers)
+  - [How It Works Internally](#how-it-works-internally)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
 - [Agent-to-Agent (A2A) Integration](#agent-to-agent-a2a-integration)
 - [Supported API's](#supported-apis)
@@ -155,6 +160,86 @@ Finally client receives:
 ```
 
 For streaming the tokens simply add to the request body `stream: true`.
+
+## Middleware Control and Bypass Mechanisms
+
+The Inference Gateway uses middleware to process requests and add capabilities like MCP (Model Context Protocol) and A2A (Agent-to-Agent) integrations. Clients can control which middlewares are active using bypass headers:
+
+### Bypass Headers
+
+- **`X-MCP-Bypass`**: Skip MCP middleware processing
+- **`X-A2A-Bypass`**: Skip A2A middleware processing
+
+### Client Control Examples
+
+```bash
+# Use only MCP capabilities (skip A2A)
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "X-A2A-Bypass: true" \
+  -d '{
+    "model": "openai/gpt-4",
+    "messages": [{"role": "user", "content": "Help me with file operations"}]
+  }'
+
+# Use only A2A capabilities (skip MCP)
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "X-MCP-Bypass: true" \
+  -d '{
+    "model": "anthropic/claude-3-haiku",
+    "messages": [{"role": "user", "content": "Connect to external agents"}]
+  }'
+
+# Skip both middlewares for direct provider access
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "X-MCP-Bypass: true" \
+  -H "X-A2A-Bypass: true" \
+  -d '{
+    "model": "groq/llama-3-8b",
+    "messages": [{"role": "user", "content": "Simple chat without tools"}]
+  }'
+```
+
+### When to Use Bypass Headers
+
+**For Performance:**
+
+- Skip middleware processing when you don't need tool capabilities
+- Reduce latency for simple chat interactions
+
+**For Selective Features:**
+
+- Use only MCP tools (skip A2A): Add `X-A2A-Bypass: true`
+- Use only A2A agents (skip MCP): Add `X-MCP-Bypass: true`
+- Direct provider access (skip both): Add both headers
+
+**For Development:**
+
+- Test middleware behavior in isolation
+- Debug tool integration issues
+- Ensure backward compatibility with existing applications
+
+**For Agent Communication:**
+
+- Prevent infinite loops when A2A agents make their own chat completion requests
+- Use `X-A2A-Bypass: true` to avoid triggering A2A servers recursively
+
+### How It Works Internally
+
+The middlewares use these same headers to prevent infinite loops during their operation:
+
+**MCP Processing:**
+
+- When tools are detected in a response, the MCP agent makes up to 10 follow-up requests
+- Each follow-up request includes `X-MCP-Bypass: true` to skip middleware re-processing
+- This allows the agent to iterate without creating circular calls
+
+**A2A Processing:**
+
+- When A2A agents execute skills, they may need to make their own chat requests
+- The `X-A2A-Bypass: true` header prevents these internal calls from triggering more A2A processing
+- This enables clean agent-to-agent communication
+
+> **Note**: These bypass headers only affect middleware processing. The core chat completions functionality remains available regardless of header values.
 
 ## Model Context Protocol (MCP) Integration
 
