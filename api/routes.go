@@ -702,8 +702,10 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 //	      "url": "https://agent1.example.com",
 //	      "version": "1.0.0",
 //	      "capabilities": {
-//	        "supportsStreaming": true,
-//	        "supportsTaskCancellation": false
+//	        "streaming": true,
+//	        "pushNotifications": false,
+//	        "stateTransitionHistory": false,
+//	        "extensions": []
 //	      },
 //	      "skills": [
 //	        {
