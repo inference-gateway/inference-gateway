@@ -690,8 +690,3 @@ func TestListAgentsHandler(t *testing.T) {
 		})
 	}
 }
-
-// Helper function to create string pointers
-func stringPtr(s string) *string {
-	return &s
-}
