@@ -8,17 +8,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/inference-gateway/inference-gateway/a2a"
-	"github.com/inference-gateway/inference-gateway/api"
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers"
+	gin "github.com/gin-gonic/gin"
+	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	api "github.com/inference-gateway/inference-gateway/api"
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	providers "github.com/inference-gateway/inference-gateway/providers"
 	a2amocks "github.com/inference-gateway/inference-gateway/tests/mocks/a2a"
 	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
+	assert "github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 )
 
 func init() {
@@ -469,7 +469,7 @@ func TestListAgentsHandler(t *testing.T) {
 		a2aClientNil         bool
 		a2aClientInitialized bool
 		agentURLs            []string
-		agentCards           map[string]*providers.A2AItem
+		agentCards           map[string]*a2a.AgentCard
 		agentCardErrors      map[string]error
 		expectedStatus       int
 		expectedError        string
@@ -513,12 +513,11 @@ func TestListAgentsHandler(t *testing.T) {
 			a2aExpose:            true,
 			a2aClientInitialized: true,
 			agentURLs:            []string{"https://agent1.example.com"},
-			agentCards: map[string]*providers.A2AItem{
+			agentCards: map[string]*a2a.AgentCard{
 				"https://agent1.example.com": {
-					ID:          "https://agent1.example.com",
 					Name:        "Calculator Agent",
-					Description: stringPtr("An agent that can perform mathematical calculations"),
-					Url:         stringPtr("https://agent1.example.com"),
+					Description: "An agent that can perform mathematical calculations",
+					URL:         "https://agent1.example.com",
 				},
 			},
 			expectedStatus:     http.StatusOK,
@@ -530,18 +529,16 @@ func TestListAgentsHandler(t *testing.T) {
 			a2aExpose:            true,
 			a2aClientInitialized: true,
 			agentURLs:            []string{"https://agent1.example.com", "https://agent2.example.com"},
-			agentCards: map[string]*providers.A2AItem{
+			agentCards: map[string]*a2a.AgentCard{
 				"https://agent1.example.com": {
-					ID:          "https://agent1.example.com",
 					Name:        "Calculator Agent",
-					Description: stringPtr("An agent that can perform mathematical calculations"),
-					Url:         stringPtr("https://agent1.example.com"),
+					Description: "An agent that can perform mathematical calculations",
+					URL:         "https://agent1.example.com",
 				},
 				"https://agent2.example.com": {
-					ID:          "https://agent2.example.com",
 					Name:        "Weather Agent",
-					Description: stringPtr("An agent that provides weather information"),
-					Url:         stringPtr("https://agent2.example.com"),
+					Description: "An agent that provides weather information",
+					URL:         "https://agent2.example.com",
 				},
 			},
 			expectedStatus:     http.StatusOK,
@@ -553,12 +550,11 @@ func TestListAgentsHandler(t *testing.T) {
 			a2aExpose:            true,
 			a2aClientInitialized: true,
 			agentURLs:            []string{"https://agent1.example.com", "https://agent2.example.com"},
-			agentCards: map[string]*providers.A2AItem{
+			agentCards: map[string]*a2a.AgentCard{
 				"https://agent1.example.com": {
-					ID:          "https://agent1.example.com",
 					Name:        "Calculator Agent",
-					Description: stringPtr("An agent that can perform mathematical calculations"),
-					Url:         stringPtr("https://agent1.example.com"),
+					Description: "An agent that can perform mathematical calculations",
+					URL:         "https://agent1.example.com",
 				},
 			},
 			agentCardErrors: map[string]error{
@@ -613,7 +609,7 @@ func TestListAgentsHandler(t *testing.T) {
 						if agentCard, exists := tt.agentCards[agentURL]; exists {
 							mockAgentCard := &a2a.AgentCard{
 								Name:        agentCard.Name,
-								Description: *agentCard.Description,
+								Description: agentCard.Description,
 							}
 							mockA2AClient.EXPECT().
 								GetAgentCard(gomock.Any(), agentURL).

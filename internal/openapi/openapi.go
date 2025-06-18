@@ -104,8 +104,8 @@ type OpenAPISchema struct {
 			MCPTool                               SchemaProperty `yaml:"MCPTool"`
 			MCPNotExposed                         SchemaProperty `yaml:"MCPNotExposed"`
 			ListAgentsResponse                    SchemaProperty `yaml:"ListAgentsResponse"`
-			A2AItem                               SchemaProperty `yaml:"A2AItem"`
 			A2ANotExposed                         SchemaProperty `yaml:"A2ANotExposed"`
+			A2AAgentCard                          SchemaProperty `yaml:"A2AAgentCard"`
 		}
 	}
 }

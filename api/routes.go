@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -31,6 +33,7 @@ type Router interface {
 	ChatCompletionsHandler(c *gin.Context)
 	ListToolsHandler(c *gin.Context)
 	ListAgentsHandler(c *gin.Context)
+	GetAgentHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
@@ -671,11 +674,13 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ListAgentsHandler implements an endpoint that returns available A2A agents
+// ListAgentsHandler implements an endpoint that returns complete A2A agent cards with all detailed information
 // when A2A_EXPOSE environment variable is enabled.
 //
 // This handler supports the Agent-to-Agent (A2A) protocol by exposing a list of
-// connected agents along with their metadata such as name, description, and URL.
+// connected agents along with their complete agent cards containing comprehensive
+// metadata such as name, description, URL, capabilities, skills, security schemes,
+// and supported input/output modes.
 //
 // The endpoint follows the OpenAI-compatible API format pattern used throughout
 // the gateway for consistency.
@@ -692,16 +697,31 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 //	  "object": "list",
 //	  "data": [
 //	    {
-//	      "id": "https://agent1.example.com",
 //	      "name": "Calculator Agent",
 //	      "description": "An agent that can perform mathematical calculations",
-//	      "url": "https://agent1.example.com"
-//	    },
-//	    {
-//	      "id": "https://agent2.example.com",
-//	      "name": "Weather Agent",
-//	      "description": "An agent that provides weather information",
-//	      "url": "https://agent2.example.com"
+//	      "url": "https://agent1.example.com",
+//	      "version": "1.0.0",
+//	      "capabilities": {
+//	        "supportsStreaming": true,
+//	        "supportsTaskCancellation": false
+//	      },
+//	      "skills": [
+//	        {
+//	          "id": "calculate",
+//	          "name": "Mathematical Calculation",
+//	          "description": "Perform basic and advanced mathematical operations",
+//	          "tags": ["math", "calculation"],
+//	          "examples": ["2 + 2", "sqrt(16)", "sin(pi/2)"]
+//	        }
+//	      ],
+//	      "defaultInputModes": ["text/plain"],
+//	      "defaultOutputModes": ["text/plain", "application/json"],
+//	      "provider": {
+//	        "organization": "Example Corp",
+//	        "url": "https://example.com"
+//	      },
+//	      "security": [],
+//	      "securitySchemes": {}
 //	    }
 //	  ]
 //	}
@@ -735,6 +755,10 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 //   - Requires authentication via Bearer token
 //   - Only exposes agents when explicitly configured via A2A_EXPOSE=true
 //   - Does not expose internal errors to clients
+//
+// Note: This endpoint now returns complete AgentCard objects instead of simplified
+// A2AItem objects, providing clients with full agent metadata including capabilities,
+// skills, security requirements, and supported modalities.
 func (router *RouterImpl) ListAgentsHandler(c *gin.Context) {
 	if !router.cfg.A2A.Expose {
 		router.logger.Error("a2a agents endpoint access attempted but not exposed", nil)
@@ -742,15 +766,15 @@ func (router *RouterImpl) ListAgentsHandler(c *gin.Context) {
 		return
 	}
 
-	var allAgents []providers.A2AItem
+	var allAgents []providers.A2AAgentCard
 
 	switch {
 	case router.a2aClient == nil:
 		router.logger.Debug("a2a client is nil, returning empty agents list")
-		allAgents = make([]providers.A2AItem, 0)
+		allAgents = make([]providers.A2AAgentCard, 0)
 	case !router.a2aClient.IsInitialized():
 		router.logger.Info("a2a client not initialized, no agents available")
-		allAgents = make([]providers.A2AItem, 0)
+		allAgents = make([]providers.A2AAgentCard, 0)
 	default:
 		agentURLs := router.a2aClient.GetAgents()
 
@@ -761,17 +785,13 @@ func (router *RouterImpl) ListAgentsHandler(c *gin.Context) {
 				continue
 			}
 
-			a2aAgent := providers.A2AItem{
-				ID:          agentURL,
-				Name:        agentCard.Name,
-				Description: &agentCard.Description,
-				Url:         &agentURL,
-			}
-			allAgents = append(allAgents, a2aAgent)
+			// TODO: refactor providers package to be able to use a2a.AgentCard directly, instead of copying fields
+			convertedCard := convertA2AAgentCard(*agentCard, agentURL)
+			allAgents = append(allAgents, convertedCard)
 		}
 
 		if allAgents == nil {
-			allAgents = make([]providers.A2AItem, 0)
+			allAgents = make([]providers.A2AAgentCard, 0)
 		}
 	}
 
@@ -781,6 +801,174 @@ func (router *RouterImpl) ListAgentsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// GetAgentHandler implements an endpoint that returns a specific A2A agent by ID
+//
+// This endpoint provides detailed information about a single A2A agent identified by its unique ID.
+// The ID is generated as a base64-encoded SHA256 hash of the agent's URL to ensure uniqueness
+// and deterministic identification across restarts.
+//
+// Request:
+//   - Method: GET
+//   - Path: /a2a/agents/{id}
+//   - Parameters:
+//   - id (path): The unique identifier of the agent (base64-encoded SHA256 hash of the agent URL)
+//
+// Response (200 OK):
+//   - Content-Type: application/json
+//   - Body: A2AAgentCard object containing complete agent information
+//
+// Response (404 Not Found):
+//   - When the specified agent ID does not exist
+//
+// Response (403 Forbidden):
+//   - When A2A_EXPOSE is not enabled
+//
+// Security:
+//   - Requires authentication via Bearer token
+//   - Only accessible when explicitly configured via A2A_EXPOSE=true
+//   - Does not expose internal errors to clients
+func (router *RouterImpl) GetAgentHandler(c *gin.Context) {
+	if !router.cfg.A2A.Expose {
+		router.logger.Error("a2a agent endpoint access attempted but not exposed", nil)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: "A2A agents endpoint is not exposed. Set A2A_EXPOSE=true to enable."})
+		return
+	}
+
+	agentID := c.Param("id")
+	if agentID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Agent ID is required"})
+		return
+	}
+
+	switch {
+	case router.a2aClient == nil:
+		router.logger.Debug("a2a client is nil")
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Agent not found"})
+		return
+	case !router.a2aClient.IsInitialized():
+		router.logger.Info("a2a client not initialized, no agents available")
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Agent not found"})
+		return
+	}
+
+	agentURLs := router.a2aClient.GetAgents()
+
+	for _, agentURL := range agentURLs {
+		if generateAgentID(agentURL) == agentID {
+			agentCard, err := router.a2aClient.GetAgentCard(c.Request.Context(), agentURL)
+			if err != nil {
+				router.logger.Error("failed to get agent card from a2a agent", err, "agent", agentURL)
+				c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to retrieve agent information"})
+				return
+			}
+
+			convertedCard := convertA2AAgentCard(*agentCard, agentURL)
+			c.JSON(http.StatusOK, convertedCard)
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Agent not found"})
+}
+
+// convertA2AAgentCard converts an a2a.AgentCard to providers.A2AAgentCard
+func convertA2AAgentCard(agentCard a2a.AgentCard, agentURL string) providers.A2AAgentCard {
+	capabilities := make(map[string]interface{})
+
+	if agentCard.Capabilities.Extensions != nil {
+		capabilities["extensions"] = agentCard.Capabilities.Extensions
+	} else {
+		capabilities["extensions"] = []a2a.AgentExtension{}
+	}
+
+	capabilities["pushNotifications"] = agentCard.Capabilities.PushNotifications
+	capabilities["stateTransitionHistory"] = agentCard.Capabilities.StateTransitionHistory
+	capabilities["streaming"] = agentCard.Capabilities.Streaming
+
+	var provider *map[string]interface{}
+	if agentCard.Provider != nil {
+		providerMap := make(map[string]interface{})
+		providerMap["organization"] = agentCard.Provider.Organization
+		providerMap["url"] = agentCard.Provider.URL
+		provider = &providerMap
+	}
+
+	var security *[]map[string]interface{}
+	if agentCard.Security != nil {
+		securitySlice := make([]map[string]interface{}, len(agentCard.Security))
+		for i, sec := range agentCard.Security {
+			securityMap := make(map[string]interface{})
+			for k, v := range sec {
+				securityMap[k] = v
+			}
+			securitySlice[i] = securityMap
+		}
+		security = &securitySlice
+	}
+
+	var securitySchemes *map[string]interface{}
+	if agentCard.SecuritySchemes != nil {
+		schemes := make(map[string]interface{})
+		for k, v := range agentCard.SecuritySchemes {
+			schemes[k] = v
+		}
+		securitySchemes = &schemes
+	}
+
+	skills := make([]map[string]interface{}, len(agentCard.Skills))
+	for i, skill := range agentCard.Skills {
+		skillMap := make(map[string]interface{})
+		skillMap["description"] = skill.Description
+
+		if skill.Examples != nil {
+			skillMap["examples"] = skill.Examples
+		} else {
+			skillMap["examples"] = []string{}
+		}
+
+		skillMap["id"] = skill.ID
+
+		if skill.InputModes != nil {
+			skillMap["inputModes"] = skill.InputModes
+		} else {
+			skillMap["inputModes"] = []string{}
+		}
+
+		skillMap["name"] = skill.Name
+		if skill.OutputModes != nil {
+			skillMap["outputModes"] = skill.OutputModes
+		} else {
+			skillMap["outputModes"] = []string{}
+		}
+
+		if skill.Tags != nil {
+			skillMap["tags"] = skill.Tags
+		} else {
+			skillMap["tags"] = []string{}
+		}
+
+		skills[i] = skillMap
+	}
+
+	return providers.A2AAgentCard{
+		Capabilities:                      capabilities,
+		Defaultinputmodes:                 agentCard.DefaultInputModes,
+		Defaultoutputmodes:                agentCard.DefaultOutputModes,
+		Description:                       agentCard.Description,
+		Documentationurl:                  agentCard.DocumentationURL,
+		Iconurl:                           agentCard.IconURL,
+		ID:                                generateAgentID(agentURL),
+		Name:                              agentCard.Name,
+		Provider:                          provider,
+		Security:                          security,
+		Securityschemes:                   securitySchemes,
+		Skills:                            skills,
+		Supportsauthenticatedextendedcard: agentCard.SupportsAuthenticatedExtendedCard,
+		Url:                               agentCard.URL,
+		Version:                           agentCard.Version,
+	}
 }
 
 // filterModelsByAllowList filters models based on the comma-separated ALLOWED_MODELS configuration.
@@ -855,4 +1043,11 @@ func (router *RouterImpl) isModelAllowed(modelID string, allowedModels string) b
 	}
 
 	return false
+}
+
+// generateAgentID creates a unique identifier for an agent based on its URL
+// Uses SHA256 hash of the URL encoded as base64 for deterministic, unique IDs
+func generateAgentID(agentURL string) string {
+	hash := sha256.Sum256([]byte(agentURL))
+	return base64.StdEncoding.EncodeToString(hash[:])
 }

@@ -52,6 +52,18 @@ func (mr *MockRouterMockRecorder) ChatCompletionsHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletionsHandler", reflect.TypeOf((*MockRouter)(nil).ChatCompletionsHandler), c)
 }
 
+// GetAgentHandler mocks base method.
+func (m *MockRouter) GetAgentHandler(c *gin.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetAgentHandler", c)
+}
+
+// GetAgentHandler indicates an expected call of GetAgentHandler.
+func (mr *MockRouterMockRecorder) GetAgentHandler(c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAgentHandler", reflect.TypeOf((*MockRouter)(nil).GetAgentHandler), c)
+}
+
 // HealthcheckHandler mocks base method.
 func (m *MockRouter) HealthcheckHandler(c *gin.Context) {
 	m.ctrl.T.Helper()

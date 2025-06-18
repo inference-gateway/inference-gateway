@@ -224,6 +224,7 @@ func main() {
 	{
 		v1.GET("/models", api.ListModelsHandler)
 		v1.GET("/a2a/agents", api.ListAgentsHandler)
+		v1.GET("/a2a/agents/:id", api.GetAgentHandler)
 		v1.GET("/mcp/tools", api.ListToolsHandler)
 		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 	}

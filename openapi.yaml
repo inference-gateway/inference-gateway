@@ -202,6 +202,42 @@ paths:
           $ref: "#/components/responses/A2ANotExposed"
         "500":
           $ref: "#/components/responses/InternalError"
+  /a2a/agents/{id}:
+    get:
+      operationId: getAgent
+      tags:
+        - A2A
+      description: |
+        Gets a specific A2A agent by its unique identifier. Only accessible when EXPOSE_A2A is enabled.
+      summary: Gets a specific A2A agent by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: The unique identifier of the agent
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/A2AAgentCard"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/A2ANotExposed"
+        "404":
+          description: Agent not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /proxy/{provider}/{path}:
     parameters:
       - name: provider
@@ -740,12 +776,92 @@ components:
         data:
           type: array
           items:
-            $ref: "#/components/schemas/A2AItem"
+            $ref: "#/components/schemas/A2AAgentCard"
           default: []
           description: Array of available A2A agents
       required:
         - object
         - data
+    A2AAgentCard:
+      description: |-
+        An AgentCard conveys key information:
+        - Overall details (version, name, description, uses)
+        - Skills: A set of capabilities the agent can perform
+        - Default modalities/content types supported by the agent.
+        - Authentication requirements
+      properties:
+        capabilities:
+          additionalProperties: true
+          description: Optional capabilities supported by the agent.
+        defaultInputModes:
+          description: |-
+            The set of interaction modes that the agent supports across all skills. This can be overridden per-skill.
+            Supported media types for input.
+          items:
+            type: string
+          type: array
+        defaultOutputModes:
+          description: Supported media types for output.
+          items:
+            type: string
+          type: array
+        description:
+          description: |-
+            A human-readable description of the agent. Used to assist users and
+            other agents in understanding what the agent can do.
+          type: string
+        documentationUrl:
+          description: A URL to documentation for the agent.
+          type: string
+        iconUrl:
+          description: A URL to an icon for the agent.
+          type: string
+        id:
+          description: Unique identifier for the agent (base64-encoded SHA256 hash of the agent URL).
+          type: string
+        name:
+          description: Human readable name of the agent.
+          type: string
+        provider:
+          additionalProperties: true
+          description: The service provider of the agent
+        security:
+          description: Security requirements for contacting the agent.
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+        securitySchemes:
+          additionalProperties: true
+          description: Security scheme details used for authenticating with this agent.
+          type: object
+        skills:
+          description: Skills are a unit of capability that an agent can perform.
+          items:
+            additionalProperties: true
+          type: array
+        supportsAuthenticatedExtendedCard:
+          description: |-
+            true if the agent supports providing an extended agent card when the user is authenticated.
+            Defaults to false if not specified.
+          type: boolean
+        url:
+          description: A URL to the address the agent is hosted at.
+          type: string
+        version:
+          description: The version of the agent - format is up to the provider.
+          type: string
+      required:
+        - capabilities
+        - defaultInputModes
+        - defaultOutputModes
+        - description
+        - id
+        - name
+        - skills
+        - url
+        - version
+      type: object
     MCPTool:
       type: object
       description: An MCP tool definition
@@ -777,26 +893,6 @@ components:
         - name
         - description
         - server
-    A2AItem:
-      type: object
-      description: An item in the A2A list
-      properties:
-        id:
-          type: string
-          description: The ID of the item
-        name:
-          type: string
-          description: The name of the item
-        description:
-          type: string
-          description: A description of the item
-        url:
-          type: string
-          format: uri
-          description: The URL of the item
-      required:
-        - id
-        - name
     FunctionObject:
       type: object
       properties:
