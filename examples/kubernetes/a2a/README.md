@@ -79,8 +79,8 @@ curl -X POST http://api.inference-gateway.local/chat/completions \
 ```
 
 7. If you view the logs of the gateway, you should see that the Gateway (as an A2A agent) queried the relevant agent for their card using `query_a2a_agent_card` tool call.
-8. Then it delegated the task to the correct agent using `submit_agent_task` tool call.
-9. The agent processed the request and returned the response to the Gateway, which then returned it to the user.
+8. Then it delegated the task to the correct agent using `submit_task_to_agent` tool call.
+9. The agent processed the request (with possible few iterations and internal tool calls) and returned the response to the Gateway, which then returned it to the user.
 
 ** If you send it as a streaming request with the headers `Accept: text/event-stream` and `Content-Type: application/json`, you will see the response in a streaming fashion. **
 
