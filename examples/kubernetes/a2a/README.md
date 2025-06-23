@@ -50,10 +50,39 @@ curl http://api.inference-gateway.local/v1/models
 kubectl apply -f agents/
 ```
 
-### Gateway Settings
+5. Let's view the agents cards:
 
-- Configured via helm values in Taskfile.yaml
-- No additional components required
+```bash
+curl http://api.inference-gateway.local/v1/agents
+```
+
+Or if you would like to get a specific agent:
+
+```bash
+curl http://api.inference-gateway.local/v1/agents/<agent_id>
+```
+
+6. To test the agents, we can send a general question that one of those agents can answer:
+
+```bash
+curl -X POST http://api.inference-gateway.local/chat/completions \
+-H "Content-Type: application/json" \
+-d '{
+    "model": "deepseek/deepseek-chat",
+    "messages": [
+        {
+            "role": "user",
+            "content": "Can you list my meetings for today?"
+        }
+    ]
+}'
+```
+
+7. If you view the logs of the gateway, you should see that the Gateway (as an A2A agent) queried the relevant agent for their card using `query_a2a_agent_card` tool call.
+8. Then it delegated the task to the correct agent using `submit_agent_task` tool call.
+9. The agent processed the request and returned the response to the Gateway, which then returned it to the user.
+
+** If you send it as a streaming request with the headers `Accept: text/event-stream` and `Content-Type: application/json`, you will see the response in a streaming fashion. **
 
 ## Cleanup
 
@@ -63,6 +92,9 @@ task clean
 
 ## References
 
-- [Inference Gateway Documentation](https://github.com/inference-gateway/docs)
+- [Inference Gateway Documentation](https://docs.inference-gateway.com/a2a)
 - [Awesome A2A Agents](https://github.com/inference-gateway/awesome-a2a)
-- [Kubernetes Documentation](https://kubernetes.io/docs/)
+
+## Notes
+
+Bare in mind that a2a is still relatively new and experimental feature. Some features may not work as expected, and we're actively working on improving the experience.
