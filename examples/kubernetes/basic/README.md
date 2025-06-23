@@ -15,7 +15,7 @@ This example demonstrates the simplest deployment of the Inference Gateway using
 
 ## Architecture
 
-- **Gateway**: Inference Gateway deployed via helm chart
+- **Gateway**: Inference Gateway deployed via inference gateway operator
 - **Ingress**: Basic ingress configuration
 
 ## Prerequisites
