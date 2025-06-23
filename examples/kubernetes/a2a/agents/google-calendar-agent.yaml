@@ -13,7 +13,7 @@ metadata:
   namespace: agents
 spec:
   image: "ghcr.io/inference-gateway/google-calendar-agent:latest"
-  timezone: "UTC"
+  timezone: "CET"
   port: 8080
   host: "0.0.0.0"
   readTimeout: "30s"

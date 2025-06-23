@@ -44,7 +44,7 @@ task deploy-inference-gateway
 curl http://api.inference-gateway.local/v1/models
 ```
 
-4. We told kubernetes where are agents discoverable, now let's deploy them:
+4. We told kubernetes where our agents are discoverable, now let's deploy them:
 
 ```bash
 kubectl apply -f agents/

@@ -13,7 +13,7 @@ metadata:
   namespace: agents
 spec:
   image: "ghcr.io/inference-gateway/email-agent:latest"
-  timezone: "UTC"
+  timezone: "CET"
   port: 8080
   host: "0.0.0.0"
   readTimeout: "30s"
@@ -51,7 +51,7 @@ spec:
       customHeaders:
         - name: "User-Agent"
           value: "Email Agent"
-      systemPrompt: "You are a helpful assistant for managing Email Agent events. You can create, read, update, and delete events, and you can also list upcoming events."
+      systemPrompt: "You are a helpful assistant for managing Email communications. You can send, read, and manage emails, and you can also handle attachments and email threads."
   card:
     name: "Email Agent"
     description: "A2A-compatible agent for Email sending emails"
