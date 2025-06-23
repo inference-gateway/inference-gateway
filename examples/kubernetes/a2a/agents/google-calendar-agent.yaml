@@ -63,7 +63,7 @@ spec:
     defaultOutputModes:
       - "text"
       - "voice"
-    documentationUrl: ""
+    documentationUrl: "https://github.com/inference-gateway/google-calendar-agent/blob/main/README.md"
     capabilities:
       streaming: true
       pushNotifications: true
