@@ -1,0 +1,136 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inference-gateway
+  labels:
+    inference-gateway.com/managed: "true"
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: Gateway
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: inference-gateway
+    app.kubernetes.io/instance: inference-gateway
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: inference-gateway
+    app.kubernetes.io/version: "0.12.0"
+spec:
+  environment: production
+  hpa:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+  image: "ghcr.io/inference-gateway/inference-gateway:0.12.0"
+  telemetry:
+    enabled: true
+    metrics:
+      enabled: true
+      port: 9464
+    tracing:
+      enabled: true
+      endpoint: "http://jaeger:14268/api/traces"
+  server:
+    host: "0.0.0.0"
+    timeouts:
+      read: "60s"
+      write: "60s"
+      idle: "300s"
+    tls:
+      enabled: false
+  auth:
+    enabled: true
+    provider: oidc
+    oidc:
+      issuerUrl: "https://keycloak.inference-gateway.local/realms/inference-gateway-realm"
+      clientId: "inference-gateway-client"
+      clientSecretRef:
+        name: inference-gateway-secrets
+        key: OIDC_CLIENT_SECRET
+  providers:
+    - name: openai
+      type: openai
+      config:
+        baseUrl: "https://api.openai.com/v1"
+        authType: bearer
+        tokenRef:
+          name: inference-gateway-secrets
+          key: OPENAI_API_KEY
+    - name: anthropic
+      type: anthropic
+      config:
+        baseUrl: "https://api.anthropic.com/v1"
+        authType: bearer
+        tokenRef:
+          name: inference-gateway-secrets
+          key: ANTHROPIC_API_KEY
+    - name: deepseek
+      type: deepseek
+      config:
+        tokenRef:
+          name: inference-gateway-secrets
+          key: DEEPSEEK_API_KEY
+  a2a:
+    enabled: true
+    expose: false
+    timeouts:
+      client: "60s"
+    polling:
+      enabled: true
+      interval: "2s"
+      timeout: "60s"
+      maxAttempts: 30
+    agents:
+      - name: google-calendar-agent
+        url: "http://google-calendar-agent.agents.svc.cluster.local:8080"
+        healthCheck:
+          enabled: true
+          path: "/health"
+          interval: "30s"
+      - name: email-agent
+        url: "http://email-agent.agents.svc.cluster.local:8080"
+        healthCheck:
+          enabled: true
+          path: "/health"
+          interval: "30s"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "1000m"
+      memory: "512Mi"
+  ingress:
+    enabled: true
+    host: "api.inference-gateway.local"
+    annotations:
+      cert-manager.io/cluster-issuer: "selfsigned-cluster-issuer"
+    tls:
+      enabled: true
+      secretName: inference-gateway-tls
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inference-gateway-secrets
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: inference-gateway
+    app.kubernetes.io/instance: inference-gateway
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: inference-gateway
+    app.kubernetes.io/version: "0.12.0"
+type: Opaque
+stringData:
+  OIDC_CLIENT_SECRET: ""
+
+  OPENAI_API_KEY: ""
+  ANTHROPIC_API_KEY: ""
+  GROQ_API_KEY: ""
+  COHERE_API_KEY: ""
+  CLOUDFLARE_API_KEY: ""
+  DEEPSEEK_API_KEY: ""
+  OLLAMA_API_KEY: ""

@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: agents
+  labels:
+    inference-gateway.com/managed: "true"
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: A2AServer
+metadata:
+  name: a2a-server-google-calendar-agent
+  namespace: agents
+spec:
+  image: "ghcr.io/inference-gateway/google-calendar-agent:latest"
+  timezone: "UTC"
+  port: 8080
+  host: "0.0.0.0"
+  readTimeout: "30s"
+  writeTimeout: "30s"
+  idleTimeout: "60s"
+  logging:
+    level: "info"
+    format: "json"
+  telemetry:
+    enabled: true
+    port: 9090
+  queue:
+    enabled: true
+    maxSize: 1000
+    cleanupInterval: "5m"
+  tls:
+    enabled: false
+    secretRef: ""
+  agent:
+    enabled: true
+    tls:
+      enabled: true
+      secretRef: ""
+    maxConversationHistory: 10
+    maxChatCompletionIterations: 5
+    maxRetries: 3
+    apiKey:
+      secretRef:
+        name: google-calendar-agent-secrets
+        key: DEEPSEEK_API_KEY
+    llm:
+      model: "deepseek/deepseek-agent"
+      maxTokens: 4096
+      temperature: 0.7
+      customHeaders:
+        - name: "User-Agent"
+          value: "Google Calendar Agent"
+      systemPrompt: "You are a helpful assistant for managing Google Calendar events. You can create, read, update, and delete events, and you can also list upcoming events."
+  card:
+    name: "Google Calendar Agent"
+    description: "A2A-compatible agent for Google Calendar integration with full CRUD operations and event management capabilities"
+    version: "0.1.0"
+    url: "http://google-calendar-agent.agents.svc.cluster.local:8080"
+    defaultInputModes:
+      - "text"
+      - "voice"
+    defaultOutputModes:
+      - "text"
+      - "voice"
+    documentationUrl: ""
+    capabilities:
+      streaming: true
+      pushNotifications: true
+      stateTransitionHistory: true
+    skills: []
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: google-calendar-agent-secrets
+  namespace: agents
+type: Opaque
+stringData:
+  DEEPSEEK_API_KEY: ""
