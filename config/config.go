@@ -89,6 +89,7 @@ type ClientConfig struct {
 	ExpectContinueTimeout time.Duration `env:"EXPECT_CONTINUE_TIMEOUT, default=1s" description:"Expect continue timeout"`
 }
 
+// Load is a convenience way to call Config.Load with a default os lookuper.
 func Load(lookuper envconfig.Lookuper) (Config, error) {
 	var config Config
 	cfg, err := config.Load(lookuper); 
