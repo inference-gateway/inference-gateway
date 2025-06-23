@@ -25,14 +25,6 @@ spec:
     maxReplicas: 10
     targetCPUUtilizationPercentage: 80
   image: "ghcr.io/inference-gateway/inference-gateway:0.12.0"
-  telemetry:
-    enabled: true
-    metrics:
-      enabled: true
-      port: 9464
-    tracing:
-      enabled: true
-      endpoint: "http://jaeger:14268/api/traces"
   server:
     host: "0.0.0.0"
     timeouts:
@@ -41,15 +33,6 @@ spec:
       idle: "300s"
     tls:
       enabled: false
-  auth:
-    enabled: true
-    provider: oidc
-    oidc:
-      issuerUrl: "https://keycloak.inference-gateway.local/realms/inference-gateway-realm"
-      clientId: "inference-gateway-client"
-      clientSecretRef:
-        name: inference-gateway-secrets
-        key: OIDC_CLIENT_SECRET
   providers:
     - name: openai
       type: openai
@@ -73,51 +56,6 @@ spec:
         tokenRef:
           name: inference-gateway-secrets
           key: DEEPSEEK_API_KEY
-  mcp:
-    enabled: true
-    expose: false
-    timeouts:
-      client: "10s"
-      dial: "5s"
-      tlsHandshake: "5s"
-      responseHeader: "5s"
-      request: "10s"
-    servers:
-      - name: filesystem-server
-        url: "http://mcp-filesystem.mcp.svc.cluster.local:8080"
-        healthCheck:
-          enabled: true
-          path: "/health"
-          interval: "30s"
-      - name: git-server
-        url: "http://mcp-git.mcp.svc.cluster.local:8080"
-        healthCheck:
-          enabled: true
-          path: "/health"
-          interval: "30s"
-  a2a:
-    enabled: true
-    expose: false
-    timeouts:
-      client: "60s"
-    polling:
-      enabled: true
-      interval: "2s"
-      timeout: "60s"
-      maxAttempts: 30
-    agents:
-      - name: google-calendar-agent
-        url: "http://google-calendar-agent.agents.svc.cluster.local:8080"
-        healthCheck:
-          enabled: true
-          path: "/health"
-          interval: "30s"
-      - name: email-agent
-        url: "http://email-agent.agents.svc.cluster.local:8080"
-        healthCheck:
-          enabled: true
-          path: "/health"
-          interval: "30s"
   resources:
     requests:
       cpu: "100m"
