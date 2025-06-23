@@ -30,13 +30,10 @@ spec:
     maxSize: 1000
     cleanupInterval: "5m"
   tls:
-    enabled: false
-    secretRef: ""
+    enabled: true
+    secretRef: "google-calendar-agent-tls"
   agent:
     enabled: true
-    tls:
-      enabled: true
-      secretRef: ""
     envFrom:
       - secretRef:
           name: google-calendar-agent-service-account
@@ -90,3 +87,20 @@ metadata:
 type: Opaque
 stringData:
   GOOGLE_CALENDAR_SA_JSON: ""
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: google-calendar-agent-tls
+  namespace: agents
+spec:
+  dnsNames:
+    - google-calendar-agent.agents.svc.cluster.local
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: selfsigned-cluster-issuer
+  secretName: google-calendar-agent-tls
+  usages:
+    - digital signature
+    - key encipherment
