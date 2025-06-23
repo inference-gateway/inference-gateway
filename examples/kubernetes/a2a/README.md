@@ -94,6 +94,7 @@ task clean
 
 - [Inference Gateway Documentation](https://docs.inference-gateway.com/a2a)
 - [Awesome A2A Agents](https://github.com/inference-gateway/awesome-a2a)
+- [Google Calendar Agent](https://github.com/inference-gateway/google-calendar-agent)
 
 ## Notes
 

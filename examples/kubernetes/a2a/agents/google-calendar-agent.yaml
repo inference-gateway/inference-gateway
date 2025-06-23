@@ -37,12 +37,15 @@ spec:
     tls:
       enabled: true
       secretRef: ""
+    envFrom:
+      - secretRef:
+          name: google-calendar-agent-service-account
     maxConversationHistory: 10
     maxChatCompletionIterations: 5
     maxRetries: 3
     apiKey:
       secretRef:
-        name: google-calendar-agent-secrets
+        name: google-calendar-internal-agent
         key: DEEPSEEK_API_KEY
     llm:
       model: "deepseek/deepseek-agent"
@@ -73,8 +76,17 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: google-calendar-agent-secrets
+  name: google-calendar-internal-agent
   namespace: agents
 type: Opaque
 stringData:
   DEEPSEEK_API_KEY: ""
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: google-calendar-agent-service-account
+  namespace: agents
+type: Opaque
+stringData:
+  GOOGLE_CALENDAR_SA_JSON: ""
