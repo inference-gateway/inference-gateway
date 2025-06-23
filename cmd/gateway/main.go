@@ -7,29 +7,33 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
 	gin "github.com/gin-gonic/gin"
-	"github.com/inference-gateway/inference-gateway/a2a"
+
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/mcp"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sethvargo/go-envconfig"
+	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
+	envconfig "github.com/sethvargo/go-envconfig"
+
+	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	mcp "github.com/inference-gateway/inference-gateway/mcp"
 )
 
 func main() {
-	var config config.Config
+	var configValue atomic.Value
 	cfg, err := config.Load(envconfig.OsLookuper())
 	if err != nil {
 		log.Printf("{\"error\": \"config load error: %v\"}", err)
 		return
 	}
+	configValue.Store(cfg)
 
 	// Initialize logger
 	var logger l.Logger
@@ -256,6 +260,24 @@ func main() {
 		}()
 	}
 
+	go func() {
+		hupChan := make(chan os.Signal, 1)
+		signal.Notify(hupChan, syscall.SIGHUP)
+
+		for {
+			<-hupChan
+			logger.Info("received SIGHUP signal, reloading config...")
+
+			newCfg, err := reloadConfig(logger)
+			if err != nil {
+				logger.Error("config reload failed", err)
+				continue
+			}
+
+			configValue.Store(newCfg)
+		}
+	}()
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
@@ -269,4 +291,15 @@ func main() {
 	} else {
 		logger.Info("server gracefully stopped")
 	}
+}
+
+func reloadConfig(logger l.Logger) (config.Config, error) {
+	cfg, err := config.Load(envconfig.OsLookuper())
+	if err != nil {
+		logger.Error("failed to reload config", err)
+		return config.Config{}, err
+	}
+	logger.Info("configuration reloaded via SIGHUP")
+	logger.Debug("new config", "config", cfg.String())
+	return cfg, nil
 }
