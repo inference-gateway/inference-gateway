@@ -293,6 +293,8 @@ func main() {
 	}
 }
 
+// reloadConfig reloads the configuration from environment variables
+// TODO - I need to allow also configurations from file, so I can mount a configmap to the container and reload it without restarting the container
 func reloadConfig(logger l.Logger) (config.Config, error) {
 	cfg, err := config.Load(envconfig.OsLookuper())
 	if err != nil {
