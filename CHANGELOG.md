@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.12.0...v0.13.0-rc.1) (2025-06-24)
+
+### ✨ Features
+
+* Add support for configuration file path and update related documentation ([e0bceb6](https://github.com/inference-gateway/inference-gateway/commit/e0bceb6042999cba3ee36923f86f42207af94237))
+* Implement SIGHUP signal handling for dynamic config reload ([470e7f3](https://github.com/inference-gateway/inference-gateway/commit/470e7f3992ae8799700a366f2cf233f7ad873c07))
+
+### 🔧 Miscellaneous
+
+* Add missing docblock ([f631edd](https://github.com/inference-gateway/inference-gateway/commit/f631edd8f7b98ea41aaec1cdb967bfa6da427890))
+* Add reloadConfig function to support dynamic configuration reload from environment variables ([4ae5667](https://github.com/inference-gateway/inference-gateway/commit/4ae5667addb666f749acd583492038ecac535020))
+
+### ✅ Miscellaneous
+
+* Add ConfigFilePath to test cases for environment variable configuration ([75ddc3b](https://github.com/inference-gateway/inference-gateway/commit/75ddc3bbc5e4084d24b98ca457ca5ac3833ffe59))
+
 ## [0.12.0](https://github.com/inference-gateway/inference-gateway/compare/v0.11.2...v0.12.0) (2025-06-18)
 
 ### ✨ Features
