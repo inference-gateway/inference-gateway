@@ -25,6 +25,7 @@ func TestLoad(t *testing.T) {
 				Environment:     "production",
 				EnableAuth:      false,
 				AllowedModels:   "",
+				ConfigFilePath:  "/app/.env",
 				MCP: &config.MCPConfig{
 					Enable:                false,
 					Expose:                false,
@@ -149,6 +150,7 @@ func TestLoad(t *testing.T) {
 			env: map[string]string{
 				"ENABLE_TELEMETRY":     "true",
 				"ENVIRONMENT":          "development",
+				"CONFIG_FILE_PATH":     "/.env",
 				"SERVER_HOST":          "localhost",
 				"SERVER_PORT":          "9090",
 				"SERVER_READ_TIMEOUT":  "60s",
@@ -163,6 +165,7 @@ func TestLoad(t *testing.T) {
 				Environment:     "development",
 				EnableAuth:      false,
 				AllowedModels:   "",
+				ConfigFilePath:  "/.env",
 				MCP: &config.MCPConfig{
 					Enable:                false,
 					Expose:                false,
@@ -289,6 +292,7 @@ func TestLoad(t *testing.T) {
 			env: map[string]string{
 				"ENABLE_TELEMETRY": "true",
 				"ENVIRONMENT":      "development",
+				"CONFIG_FILE_PATH": "/tmp/.env",
 				"OLLAMA_API_URL":   "http://custom-ollama:8080",
 			},
 			expectedCfg: config.Config{
@@ -296,6 +300,7 @@ func TestLoad(t *testing.T) {
 				Environment:     "development",
 				EnableAuth:      false,
 				AllowedModels:   "",
+				ConfigFilePath:  "/tmp/.env",
 				MCP: &config.MCPConfig{
 					Enable:                false,
 					Expose:                false,
