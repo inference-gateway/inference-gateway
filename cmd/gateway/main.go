@@ -268,7 +268,8 @@ func main() {
 			<-hupChan
 			logger.Info("received SIGHUP signal, reloading config...")
 
-			newCfg, err := reloadConfig(logger)
+			currentCfg := configValue.Load().(*config.Config)
+			newCfg, err := config.Reload(logger, currentCfg.ConfigFilePath)
 			if err != nil {
 				logger.Error("config reload failed", err)
 				continue
@@ -291,17 +292,4 @@ func main() {
 	} else {
 		logger.Info("server gracefully stopped")
 	}
-}
-
-// reloadConfig reloads the configuration from environment variables
-// TODO - I need to allow also configurations from file, so I can mount a configmap to the container and reload it without restarting the container
-func reloadConfig(logger l.Logger) (config.Config, error) {
-	cfg, err := config.Load(envconfig.OsLookuper())
-	if err != nil {
-		logger.Error("failed to reload config", err)
-		return config.Config{}, err
-	}
-	logger.Info("configuration reloaded via SIGHUP")
-	logger.Debug("new config", "config", cfg.String())
-	return cfg, nil
 }

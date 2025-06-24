@@ -1348,6 +1348,11 @@ components:
                   type: string
                   default: ""
                   description: "Comma-separated list of models to allow. If empty, all models will be available"
+                - name: config_file_path
+                  env: "CONFIG_FILE_PATH"
+                  type: string
+                  default: "/app/.env"
+                  description: "Path to the configuration file"
           - mcp:
               title: "Model Context Protocol (MCP)"
               settings:

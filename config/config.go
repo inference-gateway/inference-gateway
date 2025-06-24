@@ -2,12 +2,15 @@
 package config
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
 	"github.com/sethvargo/go-envconfig"
 )
@@ -19,6 +22,7 @@ type Config struct {
 	EnableTelemetry bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
 	EnableAuth      bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
 	AllowedModels   string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
+	ConfigFilePath  string `env:"CONFIG_FILE_PATH, default=/app/.env" description:"Path to the configuration file"`
 	// MCP settings
 	MCP *MCPConfig `env:", prefix=MCP_" description:"MCP configuration"`
 	// A2A settings
@@ -92,7 +96,7 @@ type ClientConfig struct {
 // Load is a convenience way to call Config.Load with a default os lookuper.
 func Load(lookuper envconfig.Lookuper) (Config, error) {
 	var config Config
-	cfg, err := config.Load(lookuper); 
+	cfg, err := config.Load(lookuper)
 	if err != nil {
 		return Config{}, fmt.Errorf("failed to load configuration: %w", err)
 	}
@@ -137,6 +141,28 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	return *cfg, nil
 }
 
+// TODO - move the logic of validation to this function and ensure this one is called - add it to the codgen after finalized
+func (cfg *Config) Validate() error {
+	// Validate MCP configuration
+	if cfg.MCP != nil {
+		if cfg.MCP.Enable && cfg.MCP.Servers == "" {
+			return fmt.Errorf("MCP servers must be specified when MCP is enabled")
+		}
+	}
+
+	// Validate A2A configuration
+	if cfg.A2A != nil && cfg.A2A.Enable && cfg.A2A.Agents == "" {
+		return fmt.Errorf("A2A agents must be specified when A2A is enabled")
+	}
+
+	// Validate OIDC configuration
+	if cfg.OIDC != nil && (cfg.OIDC.IssuerUrl == "" || cfg.OIDC.ClientId == "") {
+		return fmt.Errorf("OIDC issuer URL and client ID must be specified")
+	}
+
+	return nil
+}
+
 // The string representation of Config
 func (cfg *Config) String() string {
 	return fmt.Sprintf(
@@ -154,4 +180,67 @@ func (cfg *Config) String() string {
 		cfg.Client,
 		cfg.Providers,
 	)
+}
+
+// Reload reloads the configuration from environment variables and a given env file path
+func Reload(logger logger.Logger, envFilePath string) (Config, error) {
+	if envFilePath == "" {
+		envFilePath = ".env"
+	}
+	fileLookuper, err := NewFileLookuperFromEnvFile(envFilePath)
+	if err != nil {
+		panic(err)
+	}
+
+	cfg, err := Load(envconfig.MultiLookuper(
+		envconfig.OsLookuper(),
+		fileLookuper,
+	))
+
+	if err != nil {
+		logger.Error("failed to reload config", err)
+		return Config{}, err
+	}
+	logger.Info("configuration reloaded via SIGHUP")
+	logger.Debug("new config", "config", cfg.String())
+	return cfg, nil
+}
+
+type FileLookuper struct {
+	data map[string]string
+}
+
+// NewFileLookuperFromEnvFile creates a new envconfig.Lookuper that reads from a file
+func NewFileLookuperFromEnvFile(path string) (envconfig.Lookuper, error) {
+	data := map[string]string{}
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			val := strings.TrimSpace(parts[1])
+			data[key] = val
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return &FileLookuper{data: data}, nil
+}
+
+// Lookup retrieves the value for a given key from the file lookuper
+func (f *FileLookuper) Lookup(key string) (string, bool) {
+	v, ok := f.data[key]
+	return v, ok
 }

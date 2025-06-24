@@ -7,6 +7,7 @@
 | ENABLE_TELEMETRY | `false` | Enable telemetry |
 | ENABLE_AUTH | `false` | Enable authentication |
 | ALLOWED_MODELS | `""` | Comma-separated list of models to allow. If empty, all models will be available |
+| CONFIG_FILE_PATH | `/app/.env` | Path to the configuration file |
 
 
 ### Model Context Protocol (MCP)
