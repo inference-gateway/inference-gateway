@@ -104,12 +104,12 @@ type A2AClient struct {
 	AgentCards        map[string]*AgentCard
 	AgentCapabilities map[string]AgentCapabilities
 	Initialized       bool
-	
+
 	// Status tracking
-	AgentStatuses    map[string]AgentStatus
-	statusMutex      sync.RWMutex
-	pollingCancel    context.CancelFunc
-	pollingDone      chan struct{}
+	AgentStatuses map[string]AgentStatus
+	statusMutex   sync.RWMutex
+	pollingCancel context.CancelFunc
+	pollingDone   chan struct{}
 }
 
 // NewA2AClient creates a new A2A client instance
@@ -511,7 +511,7 @@ func (c *A2AClient) isValidAgentURL(agentURL string) bool {
 func (c *A2AClient) GetAgentStatus(agentURL string) AgentStatus {
 	c.statusMutex.RLock()
 	defer c.statusMutex.RUnlock()
-	
+
 	if status, exists := c.AgentStatuses[agentURL]; exists {
 		return status
 	}
@@ -522,7 +522,7 @@ func (c *A2AClient) GetAgentStatus(agentURL string) AgentStatus {
 func (c *A2AClient) GetAllAgentStatuses() map[string]AgentStatus {
 	c.statusMutex.RLock()
 	defer c.statusMutex.RUnlock()
-	
+
 	statusCopy := make(map[string]AgentStatus)
 	for url, status := range c.AgentStatuses {
 		statusCopy[url] = status
@@ -556,7 +556,7 @@ func (c *A2AClient) StopStatusPolling() {
 // statusPollingLoop continuously polls agent health status
 func (c *A2AClient) statusPollingLoop(ctx context.Context) {
 	defer close(c.pollingDone)
-	
+
 	ticker := time.NewTicker(c.Config.A2A.PollingInterval)
 	defer ticker.Stop()
 
@@ -579,14 +579,11 @@ func (c *A2AClient) pollAgentStatuses(ctx context.Context) {
 
 // checkAgentHealth checks the health of a single agent
 func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
-	// Create a timeout context for the health check
 	checkCtx, cancel := context.WithTimeout(ctx, c.Config.A2A.PollingTimeout)
 	defer cancel()
 
-	// Perform health check by trying to fetch the agent card
 	_, err := c.fetchAgentCardFromRemote(checkCtx, agentURL)
-	
-	// Update agent status based on health check result
+
 	newStatus := AgentStatusAvailable
 	if err != nil {
 		newStatus = AgentStatusUnavailable
@@ -595,13 +592,11 @@ func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
 		c.Logger.Debug("agent health check passed", "agentURL", agentURL, "component", "a2a_client")
 	}
 
-	// Update status with thread safety
 	c.statusMutex.Lock()
 	oldStatus := c.AgentStatuses[agentURL]
 	c.AgentStatuses[agentURL] = newStatus
 	c.statusMutex.Unlock()
 
-	// Log status changes
 	if oldStatus != newStatus {
 		c.Logger.Info("agent status changed", "agentURL", agentURL, "oldStatus", string(oldStatus), "newStatus", string(newStatus), "component", "a2a_client")
 	}

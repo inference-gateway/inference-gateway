@@ -181,7 +181,7 @@ func main() {
 				return
 			}
 			logger.Info("a2a client initialized successfully")
-			
+
 			// Start background status polling
 			a2aClient.StartStatusPolling(context.Background())
 		} else {

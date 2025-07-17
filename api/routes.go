@@ -1065,14 +1065,15 @@ func generateAgentID(agentURL string) string {
 //   - Method: GET
 //   - Path: /a2a/agents/{id}/status
 //   - Parameters:
-//     - id (path): The unique identifier of the agent (base64-encoded SHA256 hash of the agent URL)
+//   - id (path): The unique identifier of the agent (base64-encoded SHA256 hash of the agent URL)
 //
 // Response format (200 OK):
-//   {
-//     "id": "agent-id",
-//     "status": "available|unavailable|n/a",
-//     "url": "https://agent.example.com"
-//   }
+//
+//	{
+//	  "id": "agent-id",
+//	  "status": "available|unavailable|n/a",
+//	  "url": "https://agent.example.com"
+//	}
 //
 // Response (404 Not Found):
 //   - When the specified agent ID does not exist
@@ -1136,30 +1137,32 @@ func (router *RouterImpl) GetAgentStatusHandler(c *gin.Context) {
 //   - Path: /a2a/agents/status
 //
 // Response format (200 OK):
-//   {
-//     "object": "list",
-//     "data": [
-//       {
-//         "id": "agent-id-1",
-//         "status": "available",
-//         "url": "https://agent1.example.com"
-//       },
-//       {
-//         "id": "agent-id-2", 
-//         "status": "unavailable",
-//         "url": "https://agent2.example.com"
-//       }
-//     ]
-//   }
+//
+//	{
+//	  "object": "list",
+//	  "data": [
+//	    {
+//	      "id": "agent-id-1",
+//	      "status": "available",
+//	      "url": "https://agent1.example.com"
+//	    },
+//	    {
+//	      "id": "agent-id-2",
+//	      "status": "unavailable",
+//	      "url": "https://agent2.example.com"
+//	    }
+//	  ]
+//	}
 //
 // Response (403 Forbidden):
 //   - When A2A_EXPOSE is not enabled
 //
 // Response when no agents are configured:
-//   {
-//     "object": "list",
-//     "data": []
-//   }
+//
+//	{
+//	  "object": "list",
+//	  "data": []
+//	}
 //
 // Status values:
 //   - "available": Agent is responding to health checks
