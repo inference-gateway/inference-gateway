@@ -3,13 +3,13 @@ version: "3"
 
 tasks:
   deploy-infrastructure:
-    desc: "Deploy basic infrastructure"
+    desc: "Deploy Gateway with A2A infrastructure"
     cmds:
       - task: create-cluster
       - task: deploy-cert-manager
       - task: deploy-nginx-ingress
       - task: deploy-inference-gateway-operator
-      - echo "🚀 Basic infrastructure deployed successfully!"
+      - echo "🚀 A2A infrastructure deployed successfully!"
 
   create-cluster:
     desc: "Create a Kubernetes cluster using ctlptl"
@@ -52,6 +52,13 @@ tasks:
     cmds:
       - kubectl apply -f gateway.yaml
       - echo "🚪 Inference Gateway deployed successfully!"
+
+  deploy-a2a-agents:
+    desc: "Deploy A2A agents"
+    cmds:
+      - kubectl apply -f agents/google-calendar-agent.yaml
+      - kubectl apply -f agents/email-agent.yaml
+      - echo "🤖 A2A agents deployed successfully!"
 
   clean:
     desc: "Clean up the cluster"
