@@ -100,6 +100,20 @@ func (mr *MockA2AClientInterfaceMockRecorder) GetAgentSkills(agentURL any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAgentSkills", reflect.TypeOf((*MockA2AClientInterface)(nil).GetAgentSkills), agentURL)
 }
 
+// GetAgentStatus mocks base method.
+func (m *MockA2AClientInterface) GetAgentStatus(agentURL string) a2a.AgentStatus {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAgentStatus", agentURL)
+	ret0, _ := ret[0].(a2a.AgentStatus)
+	return ret0
+}
+
+// GetAgentStatus indicates an expected call of GetAgentStatus.
+func (mr *MockA2AClientInterfaceMockRecorder) GetAgentStatus(agentURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAgentStatus", reflect.TypeOf((*MockA2AClientInterface)(nil).GetAgentStatus), agentURL)
+}
+
 // GetAgents mocks base method.
 func (m *MockA2AClientInterface) GetAgents() []string {
 	m.ctrl.T.Helper()
@@ -112,6 +126,20 @@ func (m *MockA2AClientInterface) GetAgents() []string {
 func (mr *MockA2AClientInterfaceMockRecorder) GetAgents() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAgents", reflect.TypeOf((*MockA2AClientInterface)(nil).GetAgents))
+}
+
+// GetAllAgentStatuses mocks base method.
+func (m *MockA2AClientInterface) GetAllAgentStatuses() map[string]a2a.AgentStatus {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllAgentStatuses")
+	ret0, _ := ret[0].(map[string]a2a.AgentStatus)
+	return ret0
+}
+
+// GetAllAgentStatuses indicates an expected call of GetAllAgentStatuses.
+func (mr *MockA2AClientInterfaceMockRecorder) GetAllAgentStatuses() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAgentStatuses", reflect.TypeOf((*MockA2AClientInterface)(nil).GetAllAgentStatuses))
 }
 
 // GetTask mocks base method.
@@ -200,4 +228,28 @@ func (m *MockA2AClientInterface) SendStreamingMessage(ctx context.Context, reque
 func (mr *MockA2AClientInterfaceMockRecorder) SendStreamingMessage(ctx, request, agentURL any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendStreamingMessage", reflect.TypeOf((*MockA2AClientInterface)(nil).SendStreamingMessage), ctx, request, agentURL)
+}
+
+// StartStatusPolling mocks base method.
+func (m *MockA2AClientInterface) StartStatusPolling(ctx context.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StartStatusPolling", ctx)
+}
+
+// StartStatusPolling indicates an expected call of StartStatusPolling.
+func (mr *MockA2AClientInterfaceMockRecorder) StartStatusPolling(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartStatusPolling", reflect.TypeOf((*MockA2AClientInterface)(nil).StartStatusPolling), ctx)
+}
+
+// StopStatusPolling mocks base method.
+func (m *MockA2AClientInterface) StopStatusPolling() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StopStatusPolling")
+}
+
+// StopStatusPolling indicates an expected call of StopStatusPolling.
+func (mr *MockA2AClientInterfaceMockRecorder) StopStatusPolling() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopStatusPolling", reflect.TypeOf((*MockA2AClientInterface)(nil).StopStatusPolling))
 }
