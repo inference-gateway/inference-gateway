@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
@@ -29,6 +31,18 @@ var (
 
 	// ErrNoAgentsInitialized is returned when no agents could be initialized
 	ErrNoAgentsInitialized = errors.New("no a2a agents could be initialized")
+)
+
+// AgentStatus represents the status of an A2A agent
+type AgentStatus string
+
+const (
+	// AgentStatusNA indicates agent status is not available
+	AgentStatusNA AgentStatus = "n/a"
+	// AgentStatusAvailable indicates agent is available and responding
+	AgentStatusAvailable AgentStatus = "available"
+	// AgentStatusUnavailable indicates agent is not responding
+	AgentStatusUnavailable AgentStatus = "unavailable"
 )
 
 // A2AClientInterface defines the interface for A2A client implementations
@@ -67,6 +81,18 @@ type A2AClientInterface interface {
 
 	// GetAgentSkills returns the skills available for the specified agent
 	GetAgentSkills(agentURL string) ([]AgentSkill, error)
+
+	// GetAgentStatus returns the status of a specific agent
+	GetAgentStatus(agentURL string) AgentStatus
+
+	// GetAllAgentStatuses returns the status of all agents
+	GetAllAgentStatuses() map[string]AgentStatus
+
+	// StartStatusPolling starts the background status polling goroutine
+	StartStatusPolling(ctx context.Context)
+
+	// StopStatusPolling stops the background status polling goroutine
+	StopStatusPolling()
 }
 
 // A2AClient provides methods to interact with A2A agents
@@ -78,6 +104,12 @@ type A2AClient struct {
 	AgentCards        map[string]*AgentCard
 	AgentCapabilities map[string]AgentCapabilities
 	Initialized       bool
+	
+	// Status tracking
+	AgentStatuses    map[string]AgentStatus
+	statusMutex      sync.RWMutex
+	pollingCancel    context.CancelFunc
+	pollingDone      chan struct{}
 }
 
 // NewA2AClient creates a new A2A client instance
@@ -111,6 +143,8 @@ func NewA2AClient(cfg config.Config, log logger.Logger) *A2AClient {
 		AgentCards:        make(map[string]*AgentCard),
 		AgentCapabilities: make(map[string]AgentCapabilities),
 		Initialized:       false,
+		AgentStatuses:     make(map[string]AgentStatus),
+		pollingDone:       make(chan struct{}),
 	}
 }
 
@@ -139,6 +173,13 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 
 	var lastError error
 	successfulInitializations := 0
+
+	// Initialize all agent statuses to "n/a"
+	c.statusMutex.Lock()
+	for _, agentURL := range c.AgentURLs {
+		c.AgentStatuses[agentURL] = AgentStatusNA
+	}
+	c.statusMutex.Unlock()
 
 	for _, agentURL := range c.AgentURLs {
 		if err := c.initializeAgent(ctx, agentURL); err != nil {
@@ -464,4 +505,104 @@ func (c *A2AClient) isValidAgentURL(agentURL string) bool {
 		}
 	}
 	return false
+}
+
+// GetAgentStatus returns the status of a specific agent
+func (c *A2AClient) GetAgentStatus(agentURL string) AgentStatus {
+	c.statusMutex.RLock()
+	defer c.statusMutex.RUnlock()
+	
+	if status, exists := c.AgentStatuses[agentURL]; exists {
+		return status
+	}
+	return AgentStatusNA
+}
+
+// GetAllAgentStatuses returns the status of all agents
+func (c *A2AClient) GetAllAgentStatuses() map[string]AgentStatus {
+	c.statusMutex.RLock()
+	defer c.statusMutex.RUnlock()
+	
+	statusCopy := make(map[string]AgentStatus)
+	for url, status := range c.AgentStatuses {
+		statusCopy[url] = status
+	}
+	return statusCopy
+}
+
+// StartStatusPolling starts the background status polling goroutine
+func (c *A2AClient) StartStatusPolling(ctx context.Context) {
+	if !c.Config.A2A.Enable {
+		c.Logger.Debug("a2a status polling disabled, not starting background polling")
+		return
+	}
+
+	pollingCtx, cancel := context.WithCancel(ctx)
+	c.pollingCancel = cancel
+
+	go c.statusPollingLoop(pollingCtx)
+	c.Logger.Info("started a2a agent status polling", "interval", c.Config.A2A.PollingInterval, "component", "a2a_client")
+}
+
+// StopStatusPolling stops the background status polling goroutine
+func (c *A2AClient) StopStatusPolling() {
+	if c.pollingCancel != nil {
+		c.pollingCancel()
+		<-c.pollingDone
+		c.Logger.Info("stopped a2a agent status polling", "component", "a2a_client")
+	}
+}
+
+// statusPollingLoop continuously polls agent health status
+func (c *A2AClient) statusPollingLoop(ctx context.Context) {
+	defer close(c.pollingDone)
+	
+	ticker := time.NewTicker(c.Config.A2A.PollingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			c.pollAgentStatuses(ctx)
+		}
+	}
+}
+
+// pollAgentStatuses checks the health status of all agents
+func (c *A2AClient) pollAgentStatuses(ctx context.Context) {
+	for _, agentURL := range c.AgentURLs {
+		go c.checkAgentHealth(ctx, agentURL)
+	}
+}
+
+// checkAgentHealth checks the health of a single agent
+func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
+	// Create a timeout context for the health check
+	checkCtx, cancel := context.WithTimeout(ctx, c.Config.A2A.PollingTimeout)
+	defer cancel()
+
+	// Perform health check by trying to fetch the agent card
+	_, err := c.fetchAgentCardFromRemote(checkCtx, agentURL)
+	
+	// Update agent status based on health check result
+	newStatus := AgentStatusAvailable
+	if err != nil {
+		newStatus = AgentStatusUnavailable
+		c.Logger.Debug("agent health check failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+	} else {
+		c.Logger.Debug("agent health check passed", "agentURL", agentURL, "component", "a2a_client")
+	}
+
+	// Update status with thread safety
+	c.statusMutex.Lock()
+	oldStatus := c.AgentStatuses[agentURL]
+	c.AgentStatuses[agentURL] = newStatus
+	c.statusMutex.Unlock()
+
+	// Log status changes
+	if oldStatus != newStatus {
+		c.Logger.Info("agent status changed", "agentURL", agentURL, "oldStatus", string(oldStatus), "newStatus", string(newStatus), "component", "a2a_client")
+	}
 }
