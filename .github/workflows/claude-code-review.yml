@@ -10,11 +10,12 @@ jobs:
   claude-review:
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
-    
+      actions: read
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,6 +27,21 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          use_commit_signing: true
+          base_branch: main
+          branch_prefix: "claude/"
+          mcp_config: |
+            {
+              "mcpServers": {
+                "context7": {
+                  "command": "npx",
+                  "args": ["-y", "@upstash/context7-mcp@latest"],
+                  "env": {}
+                }
+              }
+            }
           direct_prompt: |
             Please review this pull request and provide feedback on:
             - Code quality and best practices
@@ -33,5 +49,9 @@ jobs:
             - Performance considerations
             - Security concerns
             - Test coverage
-            
+
             Be constructive and helpful in your feedback.
+          allowed_tools: |
+            Bash(task:*)
+            Bash(go:*)
+            Bash(gh:*)

@@ -24,9 +24,9 @@ jobs:
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
     runs-on: ubuntu-24.04
     permissions:
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       id-token: write
       actions: read
     steps:
@@ -40,3 +40,30 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          use_commit_signing: true
+          base_branch: main
+          branch_prefix: "claude/"
+          custom_instructions: |
+            IMPORTANT: You must NEVER push directly to the main branch. Always:
+            1. Create a new feature branch (claude/feature-name)
+            2. Make your changes on the feature branch
+            3. Open a pull request to main
+            4. Wait for review and approval before merging
+
+            Follow the development workflow specified in the coding instructions.
+          mcp_config: |
+            {
+              "mcpServers": {
+                "context7": {
+                  "command": "npx",
+                  "args": ["-y", "@upstash/context7-mcp@latest"],
+                  "env": {}
+                }
+              }
+            }
+          allowed_tools: |
+            Bash(task:*)
+            Bash(go:*)
+            Bash(gh:*)
