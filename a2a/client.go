@@ -210,7 +210,6 @@ func (c *A2AClient) IsInitialized() bool {
 
 // convertExternalAgentCard converts an external agent card to the internal format
 func (c *A2AClient) convertExternalAgentCard(external *adk.AgentCard) *AgentCard {
-	// Convert skills
 	skills := make([]AgentSkill, len(external.Skills))
 	for i, skill := range external.Skills {
 		skills[i] = AgentSkill{
@@ -224,7 +223,6 @@ func (c *A2AClient) convertExternalAgentCard(external *adk.AgentCard) *AgentCard
 		}
 	}
 
-	// Convert capabilities
 	capabilities := AgentCapabilities{
 		Streaming:              external.Capabilities.Streaming,
 		Extensions:             make([]AgentExtension, len(external.Capabilities.Extensions)),
@@ -241,7 +239,6 @@ func (c *A2AClient) convertExternalAgentCard(external *adk.AgentCard) *AgentCard
 		}
 	}
 
-	// Convert provider
 	var provider *AgentProvider
 	if external.Provider != nil {
 		provider = &AgentProvider{
