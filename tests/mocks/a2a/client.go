@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	adk "github.com/inference-gateway/a2a/adk"
 	a2a "github.com/inference-gateway/inference-gateway/a2a"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -42,10 +43,10 @@ func (m *MockA2AClientInterface) EXPECT() *MockA2AClientInterfaceMockRecorder {
 }
 
 // CancelTask mocks base method.
-func (m *MockA2AClientInterface) CancelTask(ctx context.Context, request *a2a.CancelTaskRequest, agentURL string) (*a2a.CancelTaskSuccessResponse, error) {
+func (m *MockA2AClientInterface) CancelTask(ctx context.Context, request *adk.CancelTaskRequest, agentURL string) (*adk.CancelTaskSuccessResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CancelTask", ctx, request, agentURL)
-	ret0, _ := ret[0].(*a2a.CancelTaskSuccessResponse)
+	ret0, _ := ret[0].(*adk.CancelTaskSuccessResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -57,10 +58,10 @@ func (mr *MockA2AClientInterfaceMockRecorder) CancelTask(ctx, request, agentURL 
 }
 
 // GetAgentCapabilities mocks base method.
-func (m *MockA2AClientInterface) GetAgentCapabilities() map[string]a2a.AgentCapabilities {
+func (m *MockA2AClientInterface) GetAgentCapabilities() map[string]adk.AgentCapabilities {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAgentCapabilities")
-	ret0, _ := ret[0].(map[string]a2a.AgentCapabilities)
+	ret0, _ := ret[0].(map[string]adk.AgentCapabilities)
 	return ret0
 }
 
@@ -71,10 +72,10 @@ func (mr *MockA2AClientInterfaceMockRecorder) GetAgentCapabilities() *gomock.Cal
 }
 
 // GetAgentCard mocks base method.
-func (m *MockA2AClientInterface) GetAgentCard(ctx context.Context, agentURL string) (*a2a.AgentCard, error) {
+func (m *MockA2AClientInterface) GetAgentCard(ctx context.Context, agentURL string) (*adk.AgentCard, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAgentCard", ctx, agentURL)
-	ret0, _ := ret[0].(*a2a.AgentCard)
+	ret0, _ := ret[0].(*adk.AgentCard)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,10 +87,10 @@ func (mr *MockA2AClientInterfaceMockRecorder) GetAgentCard(ctx, agentURL any) *g
 }
 
 // GetAgentSkills mocks base method.
-func (m *MockA2AClientInterface) GetAgentSkills(agentURL string) ([]a2a.AgentSkill, error) {
+func (m *MockA2AClientInterface) GetAgentSkills(agentURL string) ([]adk.AgentSkill, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAgentSkills", agentURL)
-	ret0, _ := ret[0].([]a2a.AgentSkill)
+	ret0, _ := ret[0].([]adk.AgentSkill)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -143,10 +144,10 @@ func (mr *MockA2AClientInterfaceMockRecorder) GetAllAgentStatuses() *gomock.Call
 }
 
 // GetTask mocks base method.
-func (m *MockA2AClientInterface) GetTask(ctx context.Context, request *a2a.GetTaskRequest, agentURL string) (*a2a.GetTaskSuccessResponse, error) {
+func (m *MockA2AClientInterface) GetTask(ctx context.Context, request *adk.GetTaskRequest, agentURL string) (*adk.GetTaskSuccessResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTask", ctx, request, agentURL)
-	ret0, _ := ret[0].(*a2a.GetTaskSuccessResponse)
+	ret0, _ := ret[0].(*adk.GetTaskSuccessResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -186,10 +187,10 @@ func (mr *MockA2AClientInterfaceMockRecorder) IsInitialized() *gomock.Call {
 }
 
 // RefreshAgentCard mocks base method.
-func (m *MockA2AClientInterface) RefreshAgentCard(ctx context.Context, agentURL string) (*a2a.AgentCard, error) {
+func (m *MockA2AClientInterface) RefreshAgentCard(ctx context.Context, agentURL string) (*adk.AgentCard, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RefreshAgentCard", ctx, agentURL)
-	ret0, _ := ret[0].(*a2a.AgentCard)
+	ret0, _ := ret[0].(*adk.AgentCard)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -201,10 +202,10 @@ func (mr *MockA2AClientInterfaceMockRecorder) RefreshAgentCard(ctx, agentURL any
 }
 
 // SendMessage mocks base method.
-func (m *MockA2AClientInterface) SendMessage(ctx context.Context, request *a2a.SendMessageRequest, agentURL string) (*a2a.SendMessageSuccessResponse, error) {
+func (m *MockA2AClientInterface) SendMessage(ctx context.Context, request *adk.SendMessageRequest, agentURL string) (*adk.SendMessageSuccessResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendMessage", ctx, request, agentURL)
-	ret0, _ := ret[0].(*a2a.SendMessageSuccessResponse)
+	ret0, _ := ret[0].(*adk.SendMessageSuccessResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -216,7 +217,7 @@ func (mr *MockA2AClientInterfaceMockRecorder) SendMessage(ctx, request, agentURL
 }
 
 // SendStreamingMessage mocks base method.
-func (m *MockA2AClientInterface) SendStreamingMessage(ctx context.Context, request *a2a.SendStreamingMessageRequest, agentURL string) (<-chan []byte, error) {
+func (m *MockA2AClientInterface) SendStreamingMessage(ctx context.Context, request *adk.SendStreamingMessageRequest, agentURL string) (<-chan []byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendStreamingMessage", ctx, request, agentURL)
 	ret0, _ := ret[0].(<-chan []byte)
