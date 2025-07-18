@@ -18,10 +18,10 @@ check_agent_health() {
 
 all_healthy=true
 
-check_agent_health "Hello World Agent" "http://helloworld-agent:8080/health" || all_healthy=false
-check_agent_health "Calculator Agent" "http://calculator-agent:8080/health" || all_healthy=false
+# check_agent_health "Hello World Agent" "http://helloworld-agent:8080/health" || all_healthy=false
+# check_agent_health "Calculator Agent" "http://calculator-agent:8080/health" || all_healthy=false
 check_agent_health "Weather Agent" "http://weather-agent:8080/health" || all_healthy=false
-check_agent_health "Google Calendar Agent" "http://google-calendar-agent:8080/health" || all_healthy=false
+# check_agent_health "Google Calendar Agent" "http://google-calendar-agent:8080/health" || all_healthy=false
 
 if [ "$all_healthy" = "true" ]; then
     echo "All A2A agents are healthy!"

@@ -357,10 +357,15 @@ func (c *A2AClient) GetTask(ctx context.Context, request *adk.GetTaskRequest, ag
 		return nil, err
 	}
 
+	var task adk.Task
+	if err := json.Unmarshal(response.Result.(json.RawMessage), &task); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal task result: %w", err)
+	}
+
 	return &adk.GetTaskSuccessResponse{
 		ID:      response.ID,
 		JSONRPC: response.JSONRPC,
-		Result:  response.Result.(adk.Task),
+		Result:  task,
 	}, nil
 }
 
@@ -384,10 +389,16 @@ func (c *A2AClient) CancelTask(ctx context.Context, request *adk.CancelTaskReque
 		return nil, err
 	}
 
+	// Unmarshal the Result field from json.RawMessage to adk.Task
+	var task adk.Task
+	if err := json.Unmarshal(response.Result.(json.RawMessage), &task); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal task result: %w", err)
+	}
+
 	return &adk.CancelTaskSuccessResponse{
 		ID:      response.ID,
 		JSONRPC: response.JSONRPC,
-		Result:  response.Result.(adk.Task),
+		Result:  task,
 	}, nil
 }
 
