@@ -420,119 +420,119 @@ func TestLoad(t *testing.T) {
 			env: map[string]string{
 				"SERVER_READ_TIMEOUT": "invalid",
 			},
-			expectedError: "Server: ReadTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "Server: ReadTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidServerWriteTimeout",
 			env: map[string]string{
 				"SERVER_WRITE_TIMEOUT": "invalid",
 			},
-			expectedError: "Server: WriteTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "Server: WriteTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidServerIdleTimeout",
 			env: map[string]string{
 				"SERVER_IDLE_TIMEOUT": "invalid",
 			},
-			expectedError: "Server: IdleTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "Server: IdleTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidClientTimeout",
 			env: map[string]string{
 				"CLIENT_TIMEOUT": "invalid",
 			},
-			expectedError: "Client: Timeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "Client: Timeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidClientIdleConnTimeout",
 			env: map[string]string{
 				"CLIENT_IDLE_CONN_TIMEOUT": "invalid",
 			},
-			expectedError: "Client: IdleConnTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "Client: IdleConnTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidClientResponseHeaderTimeout",
 			env: map[string]string{
 				"CLIENT_RESPONSE_HEADER_TIMEOUT": "invalid",
 			},
-			expectedError: "Client: ResponseHeaderTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "Client: ResponseHeaderTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidClientExpectContinueTimeout",
 			env: map[string]string{
 				"CLIENT_EXPECT_CONTINUE_TIMEOUT": "invalid",
 			},
-			expectedError: "Client: ExpectContinueTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "Client: ExpectContinueTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidMCPClientTimeout",
 			env: map[string]string{
 				"MCP_CLIENT_TIMEOUT": "invalid",
 			},
-			expectedError: "MCP: ClientTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "MCP: ClientTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidMCPDialTimeout",
 			env: map[string]string{
 				"MCP_DIAL_TIMEOUT": "invalid",
 			},
-			expectedError: "MCP: DialTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "MCP: DialTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidMCPTlsHandshakeTimeout",
 			env: map[string]string{
 				"MCP_TLS_HANDSHAKE_TIMEOUT": "invalid",
 			},
-			expectedError: "MCP: TlsHandshakeTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "MCP: TlsHandshakeTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidMCPResponseHeaderTimeout",
 			env: map[string]string{
 				"MCP_RESPONSE_HEADER_TIMEOUT": "invalid",
 			},
-			expectedError: "MCP: ResponseHeaderTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "MCP: ResponseHeaderTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidMCPExpectContinueTimeout",
 			env: map[string]string{
 				"MCP_EXPECT_CONTINUE_TIMEOUT": "invalid",
 			},
-			expectedError: "MCP: ExpectContinueTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "MCP: ExpectContinueTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidMCPRequestTimeout",
 			env: map[string]string{
 				"MCP_REQUEST_TIMEOUT": "invalid",
 			},
-			expectedError: "MCP: RequestTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "MCP: RequestTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidA2AClientTimeout",
 			env: map[string]string{
 				"A2A_CLIENT_TIMEOUT": "invalid",
 			},
-			expectedError: "A2A: ClientTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "A2A: ClientTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidA2APollingInterval",
 			env: map[string]string{
 				"A2A_POLLING_INTERVAL": "invalid",
 			},
-			expectedError: "A2A: PollingInterval(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "A2A: PollingInterval: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidA2APollingTimeout",
 			env: map[string]string{
 				"A2A_POLLING_TIMEOUT": "invalid",
 			},
-			expectedError: "A2A: PollingTimeout(\"invalid\"): time: invalid duration \"invalid\"",
+			expectedError: "A2A: PollingTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidA2AMaxPollAttempts",
 			env: map[string]string{
 				"A2A_MAX_POLL_ATTEMPTS": "invalid",
 			},
-			expectedError: "A2A: MaxPollAttempts(\"invalid\"): strconv.ParseInt: parsing \"invalid\": invalid syntax",
+			expectedError: "A2A: MaxPollAttempts: strconv.ParseInt: parsing \"invalid\": invalid syntax",
 		},
 	}
 
