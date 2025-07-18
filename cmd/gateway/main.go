@@ -182,7 +182,6 @@ func main() {
 			}
 			logger.Info("a2a client initialized successfully")
 
-			// Start background status polling
 			a2aClient.StartStatusPolling(context.Background())
 		} else {
 			logger.Info("a2a is enabled but no agents configured")
