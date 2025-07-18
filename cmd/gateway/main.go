@@ -266,7 +266,6 @@ func main() {
 	<-quit
 	logger.Info("shutting down server...")
 
-	// Stop A2A status polling if running
 	if cfg.A2A.Enable && a2aClient != nil {
 		a2aClient.StopStatusPolling()
 	}

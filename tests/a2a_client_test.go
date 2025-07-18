@@ -119,7 +119,6 @@ func TestA2AClient_AgentCardCaching(t *testing.T) {
 				assert.Equal(t, 1, requestCount, "subsequent GetAgentCard calls should use cache")
 
 			case "cache_miss_fetches_from_remote":
-				// Initialize the client to create external client instances
 				err := client.InitializeAll(ctx)
 				require.NoError(t, err)
 				assert.Equal(t, 1, requestCount, "initialization should make exactly one HTTP request")
@@ -243,7 +242,7 @@ func TestA2AClient_NetworkTimeout(t *testing.T) {
 	cfg := config.Config{
 		A2A: &config.A2AConfig{
 			Agents:        server.URL,
-			ClientTimeout: 100 * time.Millisecond, // Short timeout for test
+			ClientTimeout: 100 * time.Millisecond,
 		},
 		Client: &config.ClientConfig{
 			MaxIdleConns:          20,
@@ -263,7 +262,6 @@ func TestA2AClient_NetworkTimeout(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Initialize the client to create the external client instances
 	_ = client.InitializeAll(ctx)
 
 	_, err = client.GetAgentCard(ctx, server.URL)
@@ -300,12 +298,10 @@ func TestA2AClient_MalformedJSON(t *testing.T) {
 	client := a2a.NewA2AClient(cfg, log)
 	ctx := context.Background()
 
-	// Try to initialize the client - it should fail with JSON parsing error
 	err = client.InitializeAll(ctx)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get agent card")
 
-	// Since initialization failed but client was created, calls should return the same error
 	_, err = client.GetAgentCard(ctx, server.URL)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to decode agent card response")

@@ -1071,7 +1071,7 @@ func generateAgentID(agentURL string) string {
 //
 //	{
 //	  "id": "agent-id",
-//	  "status": "available|unavailable|n/a",
+//	  "status": "available|unavailable|unknown",
 //	  "url": "https://agent.example.com"
 //	}
 //
@@ -1084,7 +1084,7 @@ func generateAgentID(agentURL string) string {
 // Status values:
 //   - "available": Agent is responding to health checks
 //   - "unavailable": Agent is not responding to health checks
-//   - "n/a": Agent status is unknown or not yet determined
+//   - "unknown": Agent status is unknown or not yet determined
 func (router *RouterImpl) GetAgentStatusHandler(c *gin.Context) {
 	if !router.cfg.A2A.Expose {
 		router.logger.Error("a2a agent status endpoint access attempted but not exposed", nil)
@@ -1167,7 +1167,7 @@ func (router *RouterImpl) GetAgentStatusHandler(c *gin.Context) {
 // Status values:
 //   - "available": Agent is responding to health checks
 //   - "unavailable": Agent is not responding to health checks
-//   - "n/a": Agent status is unknown or not yet determined
+//   - "unknown": Agent status is unknown or not yet determined
 func (router *RouterImpl) GetAllAgentStatusesHandler(c *gin.Context) {
 	if !router.cfg.A2A.Expose {
 		router.logger.Error("a2a agent statuses endpoint access attempted but not exposed", nil)

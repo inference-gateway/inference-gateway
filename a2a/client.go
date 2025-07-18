@@ -33,8 +33,8 @@ var (
 type AgentStatus string
 
 const (
-	// AgentStatusNA indicates agent status is not available
-	AgentStatusNA AgentStatus = "n/a"
+	// AgentStatusUnknown indicates agent status is not available
+	AgentStatusUnknown AgentStatus = "unknown"
 	// AgentStatusAvailable indicates agent is available and responding
 	AgentStatusAvailable AgentStatus = "available"
 	// AgentStatusUnavailable indicates agent is not responding
@@ -151,10 +151,9 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 	var lastError error
 	successfulInitializations := 0
 
-	// Initialize all agent statuses to "n/a"
 	c.statusMutex.Lock()
 	for _, agentURL := range c.AgentURLs {
-		c.AgentStatuses[agentURL] = AgentStatusNA
+		c.AgentStatuses[agentURL] = AgentStatusUnknown
 	}
 	c.statusMutex.Unlock()
 
@@ -557,7 +556,7 @@ func (c *A2AClient) GetAgentStatus(agentURL string) AgentStatus {
 	if status, exists := c.AgentStatuses[agentURL]; exists {
 		return status
 	}
-	return AgentStatusNA
+	return AgentStatusUnknown
 }
 
 // GetAllAgentStatuses returns the status of all agents
