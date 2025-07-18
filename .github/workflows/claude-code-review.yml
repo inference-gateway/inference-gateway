@@ -54,7 +54,3 @@ jobs:
             - Test coverage
 
             Be constructive and helpful in your feedback.
-          allowed_tools: |
-            Bash(task:*)
-            Bash(go:*)
-            Bash(gh:*)
