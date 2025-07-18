@@ -207,7 +207,6 @@ func (c *A2AClient) IsInitialized() bool {
 	return c.Initialized
 }
 
-
 // GetAgentCard retrieves an agent card from the specified agent URL
 // First checks the cache, then fetches from remote if not found
 func (c *A2AClient) GetAgentCard(ctx context.Context, agentURL string) (*adk.AgentCard, error) {
@@ -285,8 +284,6 @@ func (c *A2AClient) SendMessage(ctx context.Context, request *adk.SendMessageReq
 		Result:  response.Result,
 	}, nil
 }
-
-
 
 // SendStreamingMessage sends a streaming message to the specified agent using the external client
 func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *adk.SendStreamingMessageRequest, agentURL string) (<-chan []byte, error) {
