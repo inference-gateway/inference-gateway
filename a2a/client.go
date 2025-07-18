@@ -183,7 +183,6 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 
 // initializeAgent initializes a single agent using the external client library
 func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error {
-	// Create external client for this agent
 	config := &client.Config{
 		BaseURL: agentURL,
 		Timeout: c.Config.A2A.ClientTimeout,
@@ -192,13 +191,11 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 	agentClient := client.NewClientWithConfig(config)
 	c.AgentClients[agentURL] = agentClient
 
-	// Get agent card using external client
 	externalAgentCard, err := agentClient.GetAgentCard(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get agent card: %w", err)
 	}
 
-	// Convert external agent card to internal format
 	agentCard := c.convertExternalAgentCard(externalAgentCard)
 	c.AgentCards[agentURL] = agentCard
 	c.AgentCapabilities[agentURL] = agentCard.Capabilities
@@ -629,10 +626,8 @@ func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
 		return
 	}
 
-	// Use GetHealth if available, otherwise fall back to GetAgentCard
 	_, err := agentClient.GetHealth(checkCtx)
 	if err != nil {
-		// Fall back to GetAgentCard if GetHealth fails
 		_, err = agentClient.GetAgentCard(checkCtx)
 	}
 

@@ -216,12 +216,10 @@ func TestA2AClient_HTTPError(t *testing.T) {
 	client := a2a.NewA2AClient(cfg, log)
 	ctx := context.Background()
 
-	// Try to initialize the client - it should fail with HTTP 500
 	err = client.InitializeAll(ctx)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get agent card")
 
-	// Since initialization failed but client was created, calls should return the same error
 	_, err = client.GetAgentCard(ctx, server.URL)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unexpected status code for agent card: 500")
