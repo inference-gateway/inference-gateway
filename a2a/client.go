@@ -272,7 +272,6 @@ func (c *A2AClient) SendMessage(ctx context.Context, request *adk.SendMessageReq
 		return nil, ErrAgentNotFound
 	}
 
-	// Use the external client to send the task directly
 	response, err := agentClient.SendTask(ctx, request.Params)
 	if err != nil {
 		return nil, err
@@ -300,13 +299,10 @@ func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *adk.SendS
 		return nil, ErrAgentNotFound
 	}
 
-	// Create a channel to receive streaming events from the external client
 	eventChan := make(chan interface{}, 100)
 
-	// Create a channel to send byte data to the caller
 	stream := make(chan []byte, 100)
 
-	// Start the streaming task using the external client
 	go func() {
 		defer close(eventChan)
 		err := agentClient.SendTaskStreaming(ctx, request.Params, eventChan)
@@ -315,7 +311,6 @@ func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *adk.SendS
 		}
 	}()
 
-	// Convert external streaming events to byte stream
 	go func() {
 		defer close(stream)
 		for {
@@ -324,7 +319,6 @@ func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *adk.SendS
 				if !ok {
 					return
 				}
-				// Convert event to bytes
 				if eventBytes, err := json.Marshal(event); err == nil {
 					select {
 					case stream <- eventBytes:
