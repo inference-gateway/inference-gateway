@@ -3,7 +3,7 @@ module helloworld-agent
 go 1.24.3
 
 require (
-	github.com/inference-gateway/a2a v0.6.0
+	github.com/inference-gateway/a2a v0.6.1
 	github.com/sethvargo/go-envconfig v1.3.0
 	go.uber.org/zap v1.27.0
 )
@@ -28,7 +28,7 @@ require (
 	github.com/go-resty/resty/v2 v2.16.3 // indirect
 	github.com/goccy/go-json v0.10.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/inference-gateway/sdk v1.8.1 // indirect
+	github.com/inference-gateway/sdk v1.9.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
