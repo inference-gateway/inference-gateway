@@ -57,6 +57,12 @@ type A2AConfig struct {
 	PollingInterval time.Duration `env:"POLLING_INTERVAL, default=1s" description:"Interval between polling requests"`
 	PollingTimeout  time.Duration `env:"POLLING_TIMEOUT, default=30s" description:"Maximum time to wait for task completion"`
 	MaxPollAttempts int           `env:"MAX_POLL_ATTEMPTS, default=30" description:"Maximum number of polling attempts"`
+	// Connection retry configuration
+	MaxRetries       int           `env:"MAX_RETRIES, default=3" description:"Maximum number of connection retry attempts"`
+	RetryInterval    time.Duration `env:"RETRY_INTERVAL, default=5s" description:"Interval between connection retry attempts"`
+	InitialBackoff   time.Duration `env:"INITIAL_BACKOFF, default=1s" description:"Initial backoff duration for exponential backoff retry"`
+	EnableReconnect  bool          `env:"ENABLE_RECONNECT, default=true" description:"Enable automatic reconnection for failed agents"`
+	ReconnectInterval time.Duration `env:"RECONNECT_INTERVAL, default=30s" description:"Interval between reconnection attempts"`
 }
 
 // OIDC configuration

@@ -150,6 +150,7 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 
 	var lastError error
 	successfulInitializations := 0
+	failedAgents := make([]string, 0)
 
 	c.statusMutex.Lock()
 	for _, agentURL := range c.AgentURLs {
@@ -161,6 +162,7 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 		if err := c.initializeAgent(ctx, agentURL); err != nil {
 			c.Logger.Error("failed to initialize a2a agent", err, "agentURL", agentURL, "component", "a2a_client")
 			lastError = err
+			failedAgents = append(failedAgents, agentURL)
 			continue
 		}
 
@@ -168,20 +170,45 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 		c.Logger.Info("successfully initialized a2a agent", "agentURL", agentURL, "component", "a2a_client")
 	}
 
+	// Always mark as initialized to enable the middleware, even if some agents failed
+	// The background reconnection will continue trying to connect failed agents
+	c.Initialized = true
+	
 	if successfulInitializations == 0 {
+		c.Logger.Warn("no agents successfully initialized, but enabling A2A with background reconnection", 
+			"total_agents", len(c.AgentURLs), 
+			"failed_agents", len(failedAgents),
+			"component", "a2a_client")
+		
+		// Start background reconnection immediately for failed agents
+		if c.Config.A2A.EnableReconnect && len(failedAgents) > 0 {
+			go c.startBackgroundReconnection(ctx, failedAgents)
+		}
+		
 		if lastError != nil {
 			return fmt.Errorf("%w: %v", ErrNoAgentsInitialized, lastError)
 		}
 		return ErrNoAgentsInitialized
 	}
 
-	c.Initialized = true
-	c.Logger.Info("a2a client initialization completed", "successful_agents", successfulInitializations, "total_agents", len(c.AgentURLs), "component", "a2a_client")
+	c.Logger.Info("a2a client initialization completed", 
+		"successful_agents", successfulInitializations, 
+		"failed_agents", len(failedAgents),
+		"total_agents", len(c.AgentURLs), 
+		"component", "a2a_client")
+
+	// Start background reconnection for any failed agents
+	if c.Config.A2A.EnableReconnect && len(failedAgents) > 0 {
+		c.Logger.Info("starting background reconnection for failed agents", 
+			"failed_agents", failedAgents,
+			"component", "a2a_client")
+		go c.startBackgroundReconnection(ctx, failedAgents)
+	}
 
 	return nil
 }
 
-// initializeAgent initializes a single agent using the external client library
+// initializeAgent initializes a single agent using the external client library with retry logic
 func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error {
 	config := &client.Config{
 		BaseURL: agentURL,
@@ -191,16 +218,73 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 	agentClient := client.NewClientWithConfig(config)
 	c.AgentClients[agentURL] = agentClient
 
-	externalAgentCard, err := agentClient.GetAgentCard(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get agent card: %w", err)
+	maxRetries := c.Config.A2A.MaxRetries
+	initialBackoff := c.Config.A2A.InitialBackoff
+	var lastErr error
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			// Calculate exponential backoff delay
+			backoffDelay := time.Duration(float64(initialBackoff) * float64(1<<(attempt-1)))
+			if backoffDelay > c.Config.A2A.RetryInterval {
+				backoffDelay = c.Config.A2A.RetryInterval
+			}
+			
+			c.Logger.Debug("retrying agent initialization", 
+				"agentURL", agentURL, 
+				"attempt", attempt+1, 
+				"max_attempts", maxRetries+1,
+				"backoff_delay", backoffDelay,
+				"component", "a2a_client")
+			
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(backoffDelay):
+				// Continue with retry
+			}
+		}
+
+		externalAgentCard, err := agentClient.GetAgentCard(ctx)
+		if err != nil {
+			lastErr = fmt.Errorf("failed to get agent card: %w", err)
+			c.Logger.Debug("agent initialization attempt failed", 
+				"agentURL", agentURL, 
+				"attempt", attempt+1, 
+				"error", err,
+				"component", "a2a_client")
+			
+			// Update status to show retry in progress
+			c.statusMutex.Lock()
+			c.AgentStatuses[agentURL] = AgentStatusUnavailable
+			c.statusMutex.Unlock()
+			
+			continue
+		}
+
+		// Success - store agent card and capabilities
+		agentCard := c.convertExternalAgentCard(externalAgentCard)
+		c.AgentCards[agentURL] = agentCard
+		c.AgentCapabilities[agentURL] = agentCard.Capabilities
+		
+		// Update status to available
+		c.statusMutex.Lock()
+		c.AgentStatuses[agentURL] = AgentStatusAvailable
+		c.statusMutex.Unlock()
+
+		c.Logger.Info("agent initialized successfully", 
+			"agentURL", agentURL, 
+			"attempts_used", attempt+1,
+			"component", "a2a_client")
+		return nil
 	}
 
-	agentCard := c.convertExternalAgentCard(externalAgentCard)
-	c.AgentCards[agentURL] = agentCard
-	c.AgentCapabilities[agentURL] = agentCard.Capabilities
-
-	return nil
+	// All retry attempts failed
+	c.statusMutex.Lock()
+	c.AgentStatuses[agentURL] = AgentStatusUnavailable
+	c.statusMutex.Unlock()
+	
+	return fmt.Errorf("failed to initialize agent after %d attempts: %w", maxRetries+1, lastErr)
 }
 
 // IsInitialized returns whether the client has been successfully initialized
@@ -632,6 +716,16 @@ func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
 	if err != nil {
 		newStatus = AgentStatusUnavailable
 		c.Logger.Debug("agent health check failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+		
+		// If agent became unavailable and reconnection is enabled, trigger reconnection
+		c.statusMutex.RLock()
+		oldStatus := c.AgentStatuses[agentURL]
+		c.statusMutex.RUnlock()
+		
+		if oldStatus == AgentStatusAvailable && c.Config.A2A.EnableReconnect {
+			c.Logger.Info("agent became unavailable, scheduling reconnection", "agentURL", agentURL, "component", "a2a_client")
+			go c.attemptAgentReconnection(ctx, agentURL)
+		}
 	} else {
 		c.Logger.Debug("agent health check passed", "agentURL", agentURL, "component", "a2a_client")
 	}
@@ -644,4 +738,70 @@ func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
 	if oldStatus != newStatus {
 		c.Logger.Info("agent status changed", "agentURL", agentURL, "oldStatus", string(oldStatus), "newStatus", string(newStatus), "component", "a2a_client")
 	}
+}
+
+// startBackgroundReconnection starts a background goroutine to reconnect failed agents
+func (c *A2AClient) startBackgroundReconnection(ctx context.Context, failedAgents []string) {
+	c.Logger.Info("starting background reconnection for failed agents", 
+		"agents", failedAgents, 
+		"interval", c.Config.A2A.ReconnectInterval,
+		"component", "a2a_client")
+
+	ticker := time.NewTicker(c.Config.A2A.ReconnectInterval)
+	defer ticker.Stop()
+
+	reconnectingAgents := make(map[string]bool)
+	for _, agent := range failedAgents {
+		reconnectingAgents[agent] = true
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			c.Logger.Info("background reconnection stopped due to context cancellation", "component", "a2a_client")
+			return
+		case <-ticker.C:
+			// Check which agents are still unavailable and need reconnection
+			c.statusMutex.RLock()
+			agentsToReconnect := make([]string, 0)
+			for agentURL := range reconnectingAgents {
+				if status, exists := c.AgentStatuses[agentURL]; exists && status == AgentStatusUnavailable {
+					agentsToReconnect = append(agentsToReconnect, agentURL)
+				} else if status == AgentStatusAvailable {
+					// Agent is now available, remove from reconnection list
+					delete(reconnectingAgents, agentURL)
+					c.Logger.Info("agent successfully reconnected, removing from background reconnection", 
+						"agentURL", agentURL, "component", "a2a_client")
+				}
+			}
+			c.statusMutex.RUnlock()
+
+			// Exit if all agents have been successfully reconnected
+			if len(reconnectingAgents) == 0 {
+				c.Logger.Info("all agents successfully reconnected, stopping background reconnection", "component", "a2a_client")
+				return
+			}
+
+			// Attempt to reconnect each failed agent
+			for _, agentURL := range agentsToReconnect {
+				go c.attemptAgentReconnection(ctx, agentURL)
+			}
+		}
+	}
+}
+
+// attemptAgentReconnection attempts to reconnect a single failed agent
+func (c *A2AClient) attemptAgentReconnection(ctx context.Context, agentURL string) {
+	c.Logger.Debug("attempting agent reconnection", "agentURL", agentURL, "component", "a2a_client")
+
+	// Use a shorter timeout for reconnection attempts to avoid blocking
+	reconnectCtx, cancel := context.WithTimeout(ctx, c.Config.A2A.ClientTimeout)
+	defer cancel()
+
+	if err := c.initializeAgent(reconnectCtx, agentURL); err != nil {
+		c.Logger.Debug("agent reconnection failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+		return
+	}
+
+	c.Logger.Info("agent successfully reconnected", "agentURL", agentURL, "component", "a2a_client")
 }

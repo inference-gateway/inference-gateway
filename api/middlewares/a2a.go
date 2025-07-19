@@ -104,6 +104,23 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
+		// Check if any agents are currently available
+		agentStatuses := m.a2aClient.GetAllAgentStatuses()
+		hasAvailableAgents := false
+		for _, status := range agentStatuses {
+			if status == a2a.AgentStatusAvailable {
+				hasAvailableAgents = true
+				break
+			}
+		}
+
+		// If no agents are available, continue without A2A tools but log for debugging
+		if !hasAvailableAgents {
+			m.logger.Debug("no a2a agents currently available, skipping a2a tool injection")
+			c.Next()
+			return
+		}
+
 		agentQueryTool := m.createAgentQueryTool()
 		m.addToolToRequest(&originalRequestBody, agentQueryTool)
 
