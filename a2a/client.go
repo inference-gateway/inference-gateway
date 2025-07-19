@@ -651,13 +651,13 @@ func (c *A2AClient) startBackgroundReconnection(ctx context.Context, failedAgent
 
 // attemptAgentReconnection attempts to reconnect a single failed agent
 func (c *A2AClient) attemptAgentReconnection(ctx context.Context, agentURL string) {
-	c.Logger.Debug("attempting agent reconnection", "agentURL", agentURL, "component", "a2a_client")
+	c.Logger.Info("attempting agent reconnection", "agentURL", agentURL, "component", "a2a_client")
 
 	reconnectCtx, cancel := context.WithTimeout(ctx, c.Config.A2A.ClientTimeout)
 	defer cancel()
 
 	if err := c.initializeAgent(reconnectCtx, agentURL); err != nil {
-		c.Logger.Debug("agent reconnection failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+		c.Logger.Info("agent reconnection failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
 		return
 	}
 
