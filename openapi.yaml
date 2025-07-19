@@ -1437,6 +1437,31 @@ components:
                   type: int
                   default: "30"
                   description: "Maximum number of polling attempts"
+                - name: a2a_max_retries
+                  env: "A2A_MAX_RETRIES"
+                  type: int
+                  default: "3"
+                  description: "Maximum number of connection retry attempts"
+                - name: a2a_retry_interval
+                  env: "A2A_RETRY_INTERVAL"
+                  type: time.Duration
+                  default: "5s"
+                  description: "Interval between connection retry attempts"
+                - name: a2a_initial_backoff
+                  env: "A2A_INITIAL_BACKOFF"
+                  type: time.Duration
+                  default: "1s"
+                  description: "Initial backoff duration for exponential backoff retry"
+                - name: a2a_enable_reconnect
+                  env: "A2A_ENABLE_RECONNECT"
+                  type: bool
+                  default: "true"
+                  description: "Enable automatic reconnection for failed agents"
+                - name: a2a_reconnect_interval
+                  env: "A2A_RECONNECT_INTERVAL"
+                  type: time.Duration
+                  default: "30s"
+                  description: "Interval between reconnection attempts"
           - oidc:
               title: "OpenID Connect"
               settings:

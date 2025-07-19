@@ -34,6 +34,11 @@
 | A2A_POLLING_INTERVAL | `1s` | Interval between polling requests |
 | A2A_POLLING_TIMEOUT | `30s` | Maximum time to wait for task completion |
 | A2A_MAX_POLL_ATTEMPTS | `30` | Maximum number of polling attempts |
+| A2A_MAX_RETRIES | `3` | Maximum number of connection retry attempts |
+| A2A_RETRY_INTERVAL | `5s` | Interval between connection retry attempts |
+| A2A_INITIAL_BACKOFF | `1s` | Initial backoff duration for exponential backoff retry |
+| A2A_ENABLE_RECONNECT | `true` | Enable automatic reconnection for failed agents |
+| A2A_RECONNECT_INTERVAL | `30s` | Interval between reconnection attempts |
 
 
 ### OpenID Connect
