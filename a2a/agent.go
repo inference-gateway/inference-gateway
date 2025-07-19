@@ -451,15 +451,24 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 // extractTaskResponse extracts the text response from a completed task
 func (a *agentImpl) extractTaskResponse(task *adk.Task, toolCallID string) (providers.Message, error) {
 	if task.Status.Message == nil {
-		return providers.Message{}, errors.New("task completion returned no message")
+		a.logger.Debug("task completed with no message, using default response", "task_id", task.ID, "status", task.Status.State)
+		return providers.Message{
+			Role:       providers.MessageRoleTool,
+			Content:    "Task completed successfully",
+			ToolCallId: &toolCallID,
+		}, nil
 	}
 
 	responseContent := "Task completed successfully"
 	message := task.Status.Message
 
 	if len(message.Parts) == 0 {
-		a.logger.Debug("no message parts found")
-		return providers.Message{}, errors.New("task completion returned no message parts")
+		a.logger.Debug("no message parts found, using default response", "task_id", task.ID)
+		return providers.Message{
+			Role:       providers.MessageRoleTool,
+			Content:    responseContent,
+			ToolCallId: &toolCallID,
+		}, nil
 	}
 
 	a.logger.Debug("processing message parts", "parts_count", len(message.Parts))

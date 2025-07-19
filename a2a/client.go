@@ -579,7 +579,9 @@ func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
 	newStatus := AgentStatusAvailable
 	if err != nil {
 		newStatus = AgentStatusUnavailable
-		c.Logger.Debug("agent health check failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+		if !c.Config.A2A.DisableHealthcheckLogs {
+			c.Logger.Debug("agent health check failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+		}
 
 		c.statusMutex.RLock()
 		oldStatus := c.AgentStatuses[agentURL]
@@ -589,7 +591,7 @@ func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
 			c.Logger.Info("agent became unavailable, scheduling reconnection", "agentURL", agentURL, "component", "a2a_client")
 			go c.attemptAgentReconnection(ctx, agentURL)
 		}
-	} else {
+	} else if !c.Config.A2A.DisableHealthcheckLogs {
 		c.Logger.Debug("agent health check passed", "agentURL", agentURL, "component", "a2a_client")
 	}
 

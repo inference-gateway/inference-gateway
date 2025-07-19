@@ -39,6 +39,7 @@
 | A2A_INITIAL_BACKOFF | `1s` | Initial backoff duration for exponential backoff retry |
 | A2A_ENABLE_RECONNECT | `true` | Enable automatic reconnection for failed agents |
 | A2A_RECONNECT_INTERVAL | `30s` | Interval between reconnection attempts |
+| A2A_DISABLE_HEALTHCHECK_LOGS | `true` | Disable health check log messages to reduce noise |
 
 
 ### OpenID Connect
