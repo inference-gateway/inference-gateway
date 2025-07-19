@@ -49,14 +49,19 @@ type MCPConfig struct {
 
 // A2A configuration
 type A2AConfig struct {
-	Enable          bool          `env:"ENABLE, default=false" description:"Enable A2A protocol support"`
-	Expose          bool          `env:"EXPOSE, default=false" description:"Expose A2A agents list cards endpoint"`
-	Agents          string        `env:"AGENTS" description:"Comma-separated list of A2A agent URLs"`
-	ClientTimeout   time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"A2A client timeout"`
-	PollingEnable   bool          `env:"POLLING_ENABLE, default=true" description:"Enable task status polling"`
-	PollingInterval time.Duration `env:"POLLING_INTERVAL, default=1s" description:"Interval between polling requests"`
-	PollingTimeout  time.Duration `env:"POLLING_TIMEOUT, default=30s" description:"Maximum time to wait for task completion"`
-	MaxPollAttempts int           `env:"MAX_POLL_ATTEMPTS, default=30" description:"Maximum number of polling attempts"`
+	Enable            bool          `env:"ENABLE, default=false" description:"Enable A2A protocol support"`
+	Expose            bool          `env:"EXPOSE, default=false" description:"Expose A2A agents list cards endpoint"`
+	Agents            string        `env:"AGENTS" description:"Comma-separated list of A2A agent URLs"`
+	ClientTimeout     time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"A2A client timeout"`
+	PollingEnable     bool          `env:"POLLING_ENABLE, default=true" description:"Enable task status polling"`
+	PollingInterval   time.Duration `env:"POLLING_INTERVAL, default=1s" description:"Interval between polling requests"`
+	PollingTimeout    time.Duration `env:"POLLING_TIMEOUT, default=30s" description:"Maximum time to wait for task completion"`
+	MaxPollAttempts   int           `env:"MAX_POLL_ATTEMPTS, default=30" description:"Maximum number of polling attempts"`
+	MaxRetries        int           `env:"MAX_RETRIES, default=3" description:"Maximum number of connection retry attempts"`
+	RetryInterval     time.Duration `env:"RETRY_INTERVAL, default=5s" description:"Interval between connection retry attempts"`
+	InitialBackoff    time.Duration `env:"INITIAL_BACKOFF, default=1s" description:"Initial backoff duration for exponential backoff retry"`
+	EnableReconnect   bool          `env:"ENABLE_RECONNECT, default=true" description:"Enable automatic reconnection for failed agents"`
+	ReconnectInterval time.Duration `env:"RECONNECT_INTERVAL, default=30s" description:"Interval between reconnection attempts"`
 }
 
 // OIDC configuration

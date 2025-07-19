@@ -60,6 +60,10 @@ jobs:
             3. Open a pull request to main
             4. Wait for review and approval before merging
 
+            COMMIT MESSAGE FORMAT: Always use conventional commits with capital letters. 
+            Follow the format: "type(scope): Description" where the description starts with a capital letter.
+            Examples: "feat(a2a): Add retry mechanism for agent connections", "fix(auth): Resolve token validation issue"
+
             Follow the development workflow specified in the coding instructions.
           mcp_config: |
             {

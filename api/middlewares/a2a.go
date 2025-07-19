@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	// A2ABypassHeader marks internal A2A requests to prevent middleware loops
 	A2ABypassHeader = "X-A2A-Bypass"
 )
 
@@ -24,7 +23,6 @@ const (
 type a2aContextKey string
 
 const (
-	// a2aBypassKey is the context key for marking to bypass A2A middleware
 	a2aBypassKey a2aContextKey = A2ABypassHeader
 )
 
@@ -100,6 +98,23 @@ func (m *A2AMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		if !m.a2aClient.IsInitialized() {
+			c.Next()
+			return
+		}
+
+		// Check if any agents are currently available
+		agentStatuses := m.a2aClient.GetAllAgentStatuses()
+		hasAvailableAgents := false
+		for _, status := range agentStatuses {
+			if status == a2a.AgentStatusAvailable {
+				hasAvailableAgents = true
+				break
+			}
+		}
+
+		// If no agents are available, continue without A2A tools but log for debugging
+		if !hasAvailableAgents {
+			m.logger.Debug("no a2a agents currently available, skipping a2a tool injection")
 			c.Next()
 			return
 		}
