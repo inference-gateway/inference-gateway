@@ -11,7 +11,7 @@ services:
     environment:
       A2A_ENABLE: "true"
       A2A_EXPOSE: "true"
-      A2A_AGENTS: "http://weather-agent:8080,http://helloworld-agent:8080,http://calculator-agent:8080"
+      A2A_AGENTS: "http://weather-agent:8080,http://helloworld-agent:8080,http://calculator-agent:8080,http://google-calendar-agent:8080"
     networks:
       - a2a-network
 
@@ -21,9 +21,6 @@ services:
       dockerfile: Dockerfile
     environment:
       DEBUG: "false"
-      AGENT_NAME: "helloworld-agent"
-      AGENT_DESCRIPTION: "A simple greeting agent"
-      AGENT_VERSION: "1.0.0"
       AGENT_CLIENT_PROVIDER: "cohere"
       AGENT_CLIENT_MODEL: "command-r"
       AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
@@ -40,9 +37,6 @@ services:
       dockerfile: Dockerfile
     environment:
       DEBUG: "false"
-      AGENT_NAME: "calculator-agent"
-      AGENT_DESCRIPTION: "A mathematical calculation agent"
-      AGENT_VERSION: "1.0.0"
       AGENT_CLIENT_PROVIDER: "deepseek"
       AGENT_CLIENT_MODEL: "deepseek-chat"
       AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
@@ -59,9 +53,10 @@ services:
       dockerfile: Dockerfile
     environment:
       DEBUG: "true"
-      AGENT_NAME: "weather-agent"
-      AGENT_DESCRIPTION: "A weather information agent"
-      AGENT_VERSION: "1.0.0"
+      AGENT_CLIENT_PROVIDER: "deepseek"
+      AGENT_CLIENT_MODEL: "deepseek-chat"
+      AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
+      AGENT_CLIENT_API_KEY: "dummy-key-for-local-testing"
       CAPABILITIES_STREAMING: "true"
     ports:
       - "8083:8080"
@@ -73,9 +68,6 @@ services:
   #   pull_policy: always
   #   environment:
   #     DEBUG: "false"
-  #     AGENT_NAME: "google-calendar-agent"
-  #     AGENT_DESCRIPTION: "Google Calendar integration agent"
-  #     AGENT_VERSION: "1.0.0"
   #     AGENT_CLIENT_PROVIDER: "deepseek"
   #     AGENT_CLIENT_MODEL: "deepseek-chat"
   #     AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
