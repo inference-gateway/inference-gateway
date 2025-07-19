@@ -167,6 +167,9 @@ func TestA2AMiddleware_RequestWithA2AMiddlewareEnabled(t *testing.T) {
 
 			if tt.expectA2AProcessing {
 				mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
+				mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+					"http://agent1.example.com": a2a.AgentStatusAvailable,
+				}).AnyTimes()
 				mockA2AClient.EXPECT().GetAgents().Return([]string{}).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 			} else if tt.path == "/v1/chat/completions" && !tt.hasInternalHeader {
@@ -272,6 +275,9 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 
 			mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
 			if tt.a2aClientInitialized {
+				mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+					"http://agent1.example.com": a2a.AgentStatusAvailable,
+				}).AnyTimes()
 				mockA2AClient.EXPECT().GetAgents().Return(tt.agents).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 				mockA2AAgent.EXPECT().SetProvider(mockProvider).AnyTimes()
@@ -532,6 +538,9 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 			mockLogger.EXPECT().Info(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
+			mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+				"http://agent1.example.com": a2a.AgentStatusAvailable,
+			}).AnyTimes()
 			mockA2AClient.EXPECT().GetAgents().Return(tt.availableAgents).AnyTimes()
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 			mockA2AAgent.EXPECT().SetProvider(mockProvider).AnyTimes()
@@ -676,6 +685,9 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			mockLogger.EXPECT().Warn(gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
+			mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+				"http://agent1.example.com": a2a.AgentStatusAvailable,
+			}).AnyTimes()
 			mockA2AClient.EXPECT().GetAgents().Return([]string{"http://agent1.example.com"}).AnyTimes()
 
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
@@ -867,6 +879,9 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 			mockLogger.EXPECT().Warn(gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
+			mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+				"http://agent1.example.com": a2a.AgentStatusAvailable,
+			}).AnyTimes()
 			mockA2AClient.EXPECT().GetAgents().Return([]string{"http://agent1.example.com"}).AnyTimes()
 
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
