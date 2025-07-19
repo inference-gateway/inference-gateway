@@ -16,16 +16,9 @@ import (
 )
 
 var (
-	// ErrClientNotInitialized is returned when a client method is called before initialization
 	ErrClientNotInitialized = errors.New("a2a client not initialized")
-
-	// ErrAgentNotFound is returned when trying to use an agent that doesn't exist
 	ErrAgentNotFound = errors.New("a2a agent not found")
-
-	// ErrNoAgentURLs is returned when trying to initialize without any agent URLs
 	ErrNoAgentURLs = errors.New("no a2a agent urls provided")
-
-	// ErrNoAgentsInitialized is returned when no agents could be initialized
 	ErrNoAgentsInitialized = errors.New("no a2a agents could be initialized")
 )
 
@@ -33,11 +26,8 @@ var (
 type AgentStatus string
 
 const (
-	// AgentStatusUnknown indicates agent status is not available
 	AgentStatusUnknown AgentStatus = "unknown"
-	// AgentStatusAvailable indicates agent is available and responding
 	AgentStatusAvailable AgentStatus = "available"
-	// AgentStatusUnavailable indicates agent is not responding
 	AgentStatusUnavailable AgentStatus = "unavailable"
 )
 
@@ -100,8 +90,6 @@ type A2AClient struct {
 	AgentCards        map[string]*AgentCard
 	AgentCapabilities map[string]AgentCapabilities
 	Initialized       bool
-
-	// Status tracking
 	AgentStatuses map[string]AgentStatus
 	statusMutex   sync.RWMutex
 	pollingCancel context.CancelFunc
@@ -170,8 +158,6 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 		c.Logger.Info("successfully initialized a2a agent", "agentURL", agentURL, "component", "a2a_client")
 	}
 
-	// Always mark as initialized to enable the middleware, even if some agents failed
-	// The background reconnection will continue trying to connect failed agents
 	c.Initialized = true
 	
 	if successfulInitializations == 0 {
@@ -180,7 +166,6 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 			"failed_agents", len(failedAgents),
 			"component", "a2a_client")
 		
-		// Start background reconnection immediately for failed agents
 		if c.Config.A2A.EnableReconnect && len(failedAgents) > 0 {
 			go c.startBackgroundReconnection(ctx, failedAgents)
 		}
@@ -197,7 +182,6 @@ func (c *A2AClient) InitializeAll(ctx context.Context) error {
 		"total_agents", len(c.AgentURLs), 
 		"component", "a2a_client")
 
-	// Start background reconnection for any failed agents
 	if c.Config.A2A.EnableReconnect && len(failedAgents) > 0 {
 		c.Logger.Info("starting background reconnection for failed agents", 
 			"failed_agents", failedAgents,
@@ -224,8 +208,7 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
-			// Calculate exponential backoff delay
-			backoffDelay := time.Duration(float64(initialBackoff) * float64(1<<(attempt-1)))
+			backoffDelay := time.Duration(float64(initialBackoff) * float64(uint(1)<<uint(attempt-1)))
 			if backoffDelay > c.Config.A2A.RetryInterval {
 				backoffDelay = c.Config.A2A.RetryInterval
 			}
@@ -241,7 +224,6 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 			case <-ctx.Done():
 				return ctx.Err()
 			case <-time.After(backoffDelay):
-				// Continue with retry
 			}
 		}
 
@@ -254,7 +236,6 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 				"error", err,
 				"component", "a2a_client")
 			
-			// Update status to show retry in progress
 			c.statusMutex.Lock()
 			c.AgentStatuses[agentURL] = AgentStatusUnavailable
 			c.statusMutex.Unlock()
@@ -262,12 +243,10 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 			continue
 		}
 
-		// Success - store agent card and capabilities
 		agentCard := c.convertExternalAgentCard(externalAgentCard)
 		c.AgentCards[agentURL] = agentCard
 		c.AgentCapabilities[agentURL] = agentCard.Capabilities
 		
-		// Update status to available
 		c.statusMutex.Lock()
 		c.AgentStatuses[agentURL] = AgentStatusAvailable
 		c.statusMutex.Unlock()
@@ -279,7 +258,6 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 		return nil
 	}
 
-	// All retry attempts failed
 	c.statusMutex.Lock()
 	c.AgentStatuses[agentURL] = AgentStatusUnavailable
 	c.statusMutex.Unlock()

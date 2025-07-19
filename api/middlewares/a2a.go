@@ -16,7 +16,6 @@ import (
 )
 
 const (
-	// A2ABypassHeader marks internal A2A requests to prevent middleware loops
 	A2ABypassHeader = "X-A2A-Bypass"
 )
 
@@ -24,7 +23,6 @@ const (
 type a2aContextKey string
 
 const (
-	// a2aBypassKey is the context key for marking to bypass A2A middleware
 	a2aBypassKey a2aContextKey = A2ABypassHeader
 )
 
