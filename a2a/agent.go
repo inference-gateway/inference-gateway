@@ -451,7 +451,46 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 // extractTaskResponse extracts the text response from a completed task
 func (a *agentImpl) extractTaskResponse(task *adk.Task, toolCallID string) (providers.Message, error) {
 	if task.Status.Message == nil {
-		a.logger.Debug("task completed with no message, using default response", "task_id", task.ID, "status", task.Status.State)
+		a.logger.Debug("task completed with no message in status, checking history", "task_id", task.ID, "status", task.Status.State)
+
+		if len(task.History) > 0 {
+			for i := len(task.History) - 1; i >= 0; i-- {
+				message := task.History[i]
+				if message.Role == "assistant" && len(message.Parts) > 0 {
+					a.logger.Debug("found assistant message in history", "message_index", i, "parts_count", len(message.Parts))
+
+					for _, part := range message.Parts {
+						var textContent string
+
+						if textPart, ok := part.(adk.TextPart); ok {
+							a.logger.Debug("found text part in history", "text", textPart.Text)
+							if textPart.Text != "" {
+								textContent = textPart.Text
+							}
+						} else if partMap, ok := part.(map[string]interface{}); ok {
+							kind, kindExists := partMap["kind"]
+							if kindExists && kind == "text" {
+								if text, textExists := partMap["text"].(string); textExists && text != "" {
+									a.logger.Debug("found text in part map from history", "text", text)
+									textContent = text
+								}
+							}
+						}
+
+						if textContent != "" {
+							a.logger.Debug("extracted response from task history", "content", textContent)
+							return providers.Message{
+								Role:       providers.MessageRoleTool,
+								Content:    textContent,
+								ToolCallId: &toolCallID,
+							}, nil
+						}
+					}
+				}
+			}
+		}
+
+		a.logger.Debug("no assistant response found in history, using default response", "task_id", task.ID)
 		return providers.Message{
 			Role:       providers.MessageRoleTool,
 			Content:    "Task completed successfully",
