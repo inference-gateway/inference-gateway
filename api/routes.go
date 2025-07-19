@@ -18,6 +18,7 @@ import (
 
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
+	"github.com/inference-gateway/a2a/adk"
 	"github.com/inference-gateway/inference-gateway/a2a"
 	"github.com/inference-gateway/inference-gateway/mcp"
 
@@ -877,14 +878,14 @@ func (router *RouterImpl) GetAgentHandler(c *gin.Context) {
 	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Agent not found"})
 }
 
-// convertA2AAgentCard converts an a2a.AgentCard to providers.A2AAgentCard
-func convertA2AAgentCard(agentCard a2a.AgentCard, agentURL string) providers.A2AAgentCard {
+// convertA2AAgentCard converts an adk.AgentCard to providers.A2AAgentCard
+func convertA2AAgentCard(agentCard adk.AgentCard, agentURL string) providers.A2AAgentCard {
 	capabilities := make(map[string]interface{})
 
 	if agentCard.Capabilities.Extensions != nil {
 		capabilities["extensions"] = agentCard.Capabilities.Extensions
 	} else {
-		capabilities["extensions"] = []a2a.AgentExtension{}
+		capabilities["extensions"] = []adk.AgentExtension{}
 	}
 
 	capabilities["pushNotifications"] = agentCard.Capabilities.PushNotifications

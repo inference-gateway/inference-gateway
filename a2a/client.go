@@ -42,31 +42,31 @@ type A2AClientInterface interface {
 	IsInitialized() bool
 
 	// GetAgentCard retrieves an agent card from the specified agent URL
-	GetAgentCard(ctx context.Context, agentURL string) (*AgentCard, error)
+	GetAgentCard(ctx context.Context, agentURL string) (*adk.AgentCard, error)
 
 	// RefreshAgentCard forces a refresh of an agent card from the remote source
-	RefreshAgentCard(ctx context.Context, agentURL string) (*AgentCard, error)
+	RefreshAgentCard(ctx context.Context, agentURL string) (*adk.AgentCard, error)
 
 	// SendMessage sends a message to the specified agent (A2A's main task submission method)
-	SendMessage(ctx context.Context, request *SendMessageRequest, agentURL string) (*SendMessageSuccessResponse, error)
+	SendMessage(ctx context.Context, request *adk.SendMessageRequest, agentURL string) (*adk.SendMessageSuccessResponse, error)
 
 	// SendStreamingMessage sends a streaming message to the specified agent
-	SendStreamingMessage(ctx context.Context, request *SendStreamingMessageRequest, agentURL string) (<-chan []byte, error)
+	SendStreamingMessage(ctx context.Context, request *adk.SendStreamingMessageRequest, agentURL string) (<-chan []byte, error)
 
 	// GetTask retrieves the status of a task
-	GetTask(ctx context.Context, request *GetTaskRequest, agentURL string) (*GetTaskSuccessResponse, error)
+	GetTask(ctx context.Context, request *adk.GetTaskRequest, agentURL string) (*adk.GetTaskSuccessResponse, error)
 
 	// CancelTask cancels a running task
-	CancelTask(ctx context.Context, request *CancelTaskRequest, agentURL string) (*CancelTaskSuccessResponse, error)
+	CancelTask(ctx context.Context, request *adk.CancelTaskRequest, agentURL string) (*adk.CancelTaskSuccessResponse, error)
 
 	// GetAgents returns the list of A2A agent URLs
 	GetAgents() []string
 
 	// GetAgentCapabilities returns the agent capabilities map
-	GetAgentCapabilities() map[string]AgentCapabilities
+	GetAgentCapabilities() map[string]adk.AgentCapabilities
 
 	// GetAgentSkills returns the skills available for the specified agent
-	GetAgentSkills(agentURL string) ([]AgentSkill, error)
+	GetAgentSkills(agentURL string) ([]adk.AgentSkill, error)
 
 	// GetAgentStatus returns the status of a specific agent
 	GetAgentStatus(agentURL string) AgentStatus
@@ -87,8 +87,8 @@ type A2AClient struct {
 	Logger            logger.Logger
 	Config            config.Config
 	AgentClients      map[string]client.A2AClient
-	AgentCards        map[string]*AgentCard
-	AgentCapabilities map[string]AgentCapabilities
+	AgentCards        map[string]*adk.AgentCard
+	AgentCapabilities map[string]adk.AgentCapabilities
 	Initialized       bool
 	AgentStatuses     map[string]AgentStatus
 	statusMutex       sync.RWMutex
@@ -105,8 +105,8 @@ func NewA2AClient(cfg config.Config, log logger.Logger) *A2AClient {
 		Logger:            log,
 		Config:            cfg,
 		AgentClients:      make(map[string]client.A2AClient),
-		AgentCards:        make(map[string]*AgentCard),
-		AgentCapabilities: make(map[string]AgentCapabilities),
+		AgentCards:        make(map[string]*adk.AgentCard),
+		AgentCapabilities: make(map[string]adk.AgentCapabilities),
 		Initialized:       false,
 		AgentStatuses:     make(map[string]AgentStatus),
 		pollingDone:       make(chan struct{}),
@@ -227,23 +227,17 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 			}
 		}
 
-		externalAgentCard, err := agentClient.GetAgentCard(ctx)
+		agentCard, err := agentClient.GetAgentCard(ctx)
 		if err != nil {
 			lastErr = fmt.Errorf("failed to get agent card: %w", err)
-			c.Logger.Debug("agent initialization attempt failed",
+			c.Logger.Debug("failed to get agent card",
 				"agentURL", agentURL,
 				"attempt", attempt+1,
 				"error", err,
 				"component", "a2a_client")
-
-			c.statusMutex.Lock()
-			c.AgentStatuses[agentURL] = AgentStatusUnavailable
-			c.statusMutex.Unlock()
-
 			continue
 		}
 
-		agentCard := c.convertExternalAgentCard(externalAgentCard)
 		c.AgentCards[agentURL] = agentCard
 		c.AgentCapabilities[agentURL] = agentCard.Capabilities
 
@@ -255,6 +249,7 @@ func (c *A2AClient) initializeAgent(ctx context.Context, agentURL string) error 
 			"agentURL", agentURL,
 			"attempts_used", attempt+1,
 			"component", "a2a_client")
+
 		return nil
 	}
 
@@ -270,66 +265,9 @@ func (c *A2AClient) IsInitialized() bool {
 	return c.Initialized
 }
 
-// convertExternalAgentCard converts an external agent card to the internal format
-func (c *A2AClient) convertExternalAgentCard(external *adk.AgentCard) *AgentCard {
-	skills := make([]AgentSkill, len(external.Skills))
-	for i, skill := range external.Skills {
-		skills[i] = AgentSkill{
-			ID:          skill.ID,
-			Name:        skill.Name,
-			Description: skill.Description,
-			Tags:        skill.Tags,
-			Examples:    skill.Examples,
-			InputModes:  skill.InputModes,
-			OutputModes: skill.OutputModes,
-		}
-	}
-
-	capabilities := AgentCapabilities{
-		Streaming:              external.Capabilities.Streaming,
-		Extensions:             make([]AgentExtension, len(external.Capabilities.Extensions)),
-		PushNotifications:      external.Capabilities.PushNotifications,
-		StateTransitionHistory: external.Capabilities.StateTransitionHistory,
-	}
-
-	for i, ext := range external.Capabilities.Extensions {
-		capabilities.Extensions[i] = AgentExtension{
-			URI:         ext.URI,
-			Description: ext.Description,
-			Required:    ext.Required,
-			Params:      ext.Params,
-		}
-	}
-
-	var provider *AgentProvider
-	if external.Provider != nil {
-		provider = &AgentProvider{
-			Organization: external.Provider.Organization,
-			URL:          external.Provider.URL,
-		}
-	}
-
-	return &AgentCard{
-		Name:                              external.Name,
-		Version:                           external.Version,
-		Description:                       external.Description,
-		URL:                               external.URL,
-		Skills:                            skills,
-		Capabilities:                      capabilities,
-		Provider:                          provider,
-		DocumentationURL:                  external.DocumentationURL,
-		IconURL:                           external.IconURL,
-		DefaultInputModes:                 external.DefaultInputModes,
-		DefaultOutputModes:                external.DefaultOutputModes,
-		SecuritySchemes:                   make(map[string]SecurityScheme),
-		Security:                          external.Security,
-		SupportsAuthenticatedExtendedCard: external.SupportsAuthenticatedExtendedCard,
-	}
-}
-
 // GetAgentCard retrieves an agent card from the specified agent URL
 // First checks the cache, then fetches from remote if not found
-func (c *A2AClient) GetAgentCard(ctx context.Context, agentURL string) (*AgentCard, error) {
+func (c *A2AClient) GetAgentCard(ctx context.Context, agentURL string) (*adk.AgentCard, error) {
 	if !c.isValidAgentURL(agentURL) {
 		return nil, ErrAgentNotFound
 	}
@@ -344,12 +282,11 @@ func (c *A2AClient) GetAgentCard(ctx context.Context, agentURL string) (*AgentCa
 		return nil, ErrAgentNotFound
 	}
 
-	externalAgentCard, err := agentClient.GetAgentCard(ctx)
+	agentCard, err := agentClient.GetAgentCard(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	agentCard := c.convertExternalAgentCard(externalAgentCard)
 	c.AgentCards[agentURL] = agentCard
 	c.AgentCapabilities[agentURL] = agentCard.Capabilities
 
@@ -357,7 +294,7 @@ func (c *A2AClient) GetAgentCard(ctx context.Context, agentURL string) (*AgentCa
 }
 
 // RefreshAgentCard forces a refresh of an agent card from the remote source using the external client
-func (c *A2AClient) RefreshAgentCard(ctx context.Context, agentURL string) (*AgentCard, error) {
+func (c *A2AClient) RefreshAgentCard(ctx context.Context, agentURL string) (*adk.AgentCard, error) {
 	if !c.isValidAgentURL(agentURL) {
 		return nil, ErrAgentNotFound
 	}
@@ -367,12 +304,11 @@ func (c *A2AClient) RefreshAgentCard(ctx context.Context, agentURL string) (*Age
 		return nil, ErrAgentNotFound
 	}
 
-	externalAgentCard, err := agentClient.GetAgentCard(ctx)
+	agentCard, err := agentClient.GetAgentCard(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	agentCard := c.convertExternalAgentCard(externalAgentCard)
 	c.AgentCards[agentURL] = agentCard
 	c.AgentCapabilities[agentURL] = agentCard.Capabilities
 
@@ -380,7 +316,7 @@ func (c *A2AClient) RefreshAgentCard(ctx context.Context, agentURL string) (*Age
 }
 
 // SendMessage sends a message to the specified agent using the external client library
-func (c *A2AClient) SendMessage(ctx context.Context, request *SendMessageRequest, agentURL string) (*SendMessageSuccessResponse, error) {
+func (c *A2AClient) SendMessage(ctx context.Context, request *adk.SendMessageRequest, agentURL string) (*adk.SendMessageSuccessResponse, error) {
 	if !c.Initialized {
 		return nil, ErrClientNotInitialized
 	}
@@ -394,63 +330,20 @@ func (c *A2AClient) SendMessage(ctx context.Context, request *SendMessageRequest
 		return nil, ErrAgentNotFound
 	}
 
-	// Convert internal request to external format
-	externalParams := c.convertToExternalMessageSendParams(request.Params)
-
-	// Use the external client to send the task
-	response, err := agentClient.SendTask(ctx, externalParams)
+	response, err := agentClient.SendTask(ctx, request.Params)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convert response back to internal format
-	return &SendMessageSuccessResponse{
+	return &adk.SendMessageSuccessResponse{
 		ID:      response.ID,
 		JSONRPC: response.JSONRPC,
 		Result:  response.Result,
 	}, nil
 }
 
-// convertToExternalMessageSendParams converts internal MessageSendParams to external format
-func (c *A2AClient) convertToExternalMessageSendParams(params MessageSendParams) adk.MessageSendParams {
-	// Convert message
-	externalMessage := adk.Message{
-		MessageID:        params.Message.MessageID,
-		Kind:             params.Message.Kind,
-		Role:             params.Message.Role,
-		Parts:            c.convertParts(params.Message.Parts),
-		TaskID:           params.Message.TaskID,
-		ContextID:        params.Message.ContextID,
-		ReferenceTaskIds: params.Message.ReferenceTaskIds,
-		Extensions:       params.Message.Extensions,
-		Metadata:         params.Message.Metadata,
-	}
-
-	// Convert configuration if present
-	var externalConfig *adk.MessageSendConfiguration
-	if params.Configuration != nil {
-		externalConfig = &adk.MessageSendConfiguration{
-			AcceptedOutputModes: params.Configuration.AcceptedOutputModes,
-			Blocking:            params.Configuration.Blocking,
-		}
-	}
-
-	return adk.MessageSendParams{
-		Message:       externalMessage,
-		Configuration: externalConfig,
-		Metadata:      params.Metadata,
-	}
-}
-
-// convertParts converts internal Parts to external format
-func (c *A2AClient) convertParts(parts []Part) []adk.Part {
-	// This is a simplified conversion - in reality, you'd need to handle different Part types
-	// For now, we'll return an empty slice and handle the conversion later
-	return []adk.Part{}
-}
-
 // SendStreamingMessage sends a streaming message to the specified agent using the external client
-func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *SendStreamingMessageRequest, agentURL string) (<-chan []byte, error) {
+func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *adk.SendStreamingMessageRequest, agentURL string) (<-chan []byte, error) {
 	if !c.Initialized {
 		return nil, ErrClientNotInitialized
 	}
@@ -464,25 +357,18 @@ func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *SendStrea
 		return nil, ErrAgentNotFound
 	}
 
-	// Convert internal request to external format
-	externalParams := c.convertToExternalMessageSendParams(request.Params)
-
-	// Create a channel to receive streaming events from the external client
 	eventChan := make(chan interface{}, 100)
 
-	// Create a channel to send byte data to the caller
 	stream := make(chan []byte, 100)
 
-	// Start the streaming task using the external client
 	go func() {
 		defer close(eventChan)
-		err := agentClient.SendTaskStreaming(ctx, externalParams, eventChan)
+		err := agentClient.SendTaskStreaming(ctx, request.Params, eventChan)
 		if err != nil {
 			c.Logger.Error("streaming task failed", err, "agent_url", agentURL)
 		}
 	}()
 
-	// Convert external streaming events to byte stream
 	go func() {
 		defer close(stream)
 		for {
@@ -491,7 +377,6 @@ func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *SendStrea
 				if !ok {
 					return
 				}
-				// Convert event to bytes (this is a simplified conversion)
 				if eventBytes, err := json.Marshal(event); err == nil {
 					select {
 					case stream <- eventBytes:
@@ -511,7 +396,7 @@ func (c *A2AClient) SendStreamingMessage(ctx context.Context, request *SendStrea
 }
 
 // GetTask retrieves the status of a task using the external client
-func (c *A2AClient) GetTask(ctx context.Context, request *GetTaskRequest, agentURL string) (*GetTaskSuccessResponse, error) {
+func (c *A2AClient) GetTask(ctx context.Context, request *adk.GetTaskRequest, agentURL string) (*adk.GetTaskSuccessResponse, error) {
 	if !c.Initialized {
 		return nil, ErrClientNotInitialized
 	}
@@ -525,25 +410,25 @@ func (c *A2AClient) GetTask(ctx context.Context, request *GetTaskRequest, agentU
 		return nil, ErrAgentNotFound
 	}
 
-	// Convert internal request to external format
-	externalParams := adk.TaskQueryParams{
-		ID: request.Params.ID,
-	}
-
-	response, err := agentClient.GetTask(ctx, externalParams)
+	response, err := agentClient.GetTask(ctx, request.Params)
 	if err != nil {
 		return nil, err
 	}
 
-	return &GetTaskSuccessResponse{
+	var task adk.Task
+	if err := json.Unmarshal(response.Result.(json.RawMessage), &task); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal task result: %w", err)
+	}
+
+	return &adk.GetTaskSuccessResponse{
 		ID:      response.ID,
 		JSONRPC: response.JSONRPC,
-		Result:  response.Result.(Task),
+		Result:  task,
 	}, nil
 }
 
 // CancelTask cancels a running task using the external client
-func (c *A2AClient) CancelTask(ctx context.Context, request *CancelTaskRequest, agentURL string) (*CancelTaskSuccessResponse, error) {
+func (c *A2AClient) CancelTask(ctx context.Context, request *adk.CancelTaskRequest, agentURL string) (*adk.CancelTaskSuccessResponse, error) {
 	if !c.Initialized {
 		return nil, ErrClientNotInitialized
 	}
@@ -557,20 +442,21 @@ func (c *A2AClient) CancelTask(ctx context.Context, request *CancelTaskRequest, 
 		return nil, ErrAgentNotFound
 	}
 
-	// Convert internal request to external format
-	externalParams := adk.TaskIdParams{
-		ID: request.Params.ID,
-	}
-
-	response, err := agentClient.CancelTask(ctx, externalParams)
+	response, err := agentClient.CancelTask(ctx, request.Params)
 	if err != nil {
 		return nil, err
 	}
 
-	return &CancelTaskSuccessResponse{
+	// Unmarshal the Result field from json.RawMessage to adk.Task
+	var task adk.Task
+	if err := json.Unmarshal(response.Result.(json.RawMessage), &task); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal task result: %w", err)
+	}
+
+	return &adk.CancelTaskSuccessResponse{
 		ID:      response.ID,
 		JSONRPC: response.JSONRPC,
-		Result:  response.Result.(Task),
+		Result:  task,
 	}, nil
 }
 
@@ -580,12 +466,12 @@ func (c *A2AClient) GetAgents() []string {
 }
 
 // GetAgentCapabilities returns the agent capabilities map
-func (c *A2AClient) GetAgentCapabilities() map[string]AgentCapabilities {
+func (c *A2AClient) GetAgentCapabilities() map[string]adk.AgentCapabilities {
 	return c.AgentCapabilities
 }
 
 // GetAgentSkills returns the skills available for the specified agent
-func (c *A2AClient) GetAgentSkills(agentURL string) ([]AgentSkill, error) {
+func (c *A2AClient) GetAgentSkills(agentURL string) ([]adk.AgentSkill, error) {
 	agentCard, exists := c.AgentCards[agentURL]
 	if !exists {
 		return nil, ErrAgentNotFound
@@ -693,9 +579,10 @@ func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
 	newStatus := AgentStatusAvailable
 	if err != nil {
 		newStatus = AgentStatusUnavailable
-		c.Logger.Debug("agent health check failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+		if !c.Config.A2A.DisableHealthcheckLogs {
+			c.Logger.Debug("agent health check failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+		}
 
-		// If agent became unavailable and reconnection is enabled, trigger reconnection
 		c.statusMutex.RLock()
 		oldStatus := c.AgentStatuses[agentURL]
 		c.statusMutex.RUnlock()
@@ -704,7 +591,7 @@ func (c *A2AClient) checkAgentHealth(ctx context.Context, agentURL string) {
 			c.Logger.Info("agent became unavailable, scheduling reconnection", "agentURL", agentURL, "component", "a2a_client")
 			go c.attemptAgentReconnection(ctx, agentURL)
 		}
-	} else {
+	} else if !c.Config.A2A.DisableHealthcheckLogs {
 		c.Logger.Debug("agent health check passed", "agentURL", agentURL, "component", "a2a_client")
 	}
 
@@ -739,14 +626,12 @@ func (c *A2AClient) startBackgroundReconnection(ctx context.Context, failedAgent
 			c.Logger.Info("background reconnection stopped due to context cancellation", "component", "a2a_client")
 			return
 		case <-ticker.C:
-			// Check which agents are still unavailable and need reconnection
 			c.statusMutex.RLock()
 			agentsToReconnect := make([]string, 0)
 			for agentURL := range reconnectingAgents {
 				if status, exists := c.AgentStatuses[agentURL]; exists && status == AgentStatusUnavailable {
 					agentsToReconnect = append(agentsToReconnect, agentURL)
 				} else if status == AgentStatusAvailable {
-					// Agent is now available, remove from reconnection list
 					delete(reconnectingAgents, agentURL)
 					c.Logger.Info("agent successfully reconnected, removing from background reconnection",
 						"agentURL", agentURL, "component", "a2a_client")
@@ -754,13 +639,11 @@ func (c *A2AClient) startBackgroundReconnection(ctx context.Context, failedAgent
 			}
 			c.statusMutex.RUnlock()
 
-			// Exit if all agents have been successfully reconnected
 			if len(reconnectingAgents) == 0 {
 				c.Logger.Info("all agents successfully reconnected, stopping background reconnection", "component", "a2a_client")
 				return
 			}
 
-			// Attempt to reconnect each failed agent
 			for _, agentURL := range agentsToReconnect {
 				go c.attemptAgentReconnection(ctx, agentURL)
 			}
@@ -770,14 +653,13 @@ func (c *A2AClient) startBackgroundReconnection(ctx context.Context, failedAgent
 
 // attemptAgentReconnection attempts to reconnect a single failed agent
 func (c *A2AClient) attemptAgentReconnection(ctx context.Context, agentURL string) {
-	c.Logger.Debug("attempting agent reconnection", "agentURL", agentURL, "component", "a2a_client")
+	c.Logger.Info("attempting agent reconnection", "agentURL", agentURL, "component", "a2a_client")
 
-	// Use a shorter timeout for reconnection attempts to avoid blocking
 	reconnectCtx, cancel := context.WithTimeout(ctx, c.Config.A2A.ClientTimeout)
 	defer cancel()
 
 	if err := c.initializeAgent(reconnectCtx, agentURL); err != nil {
-		c.Logger.Debug("agent reconnection failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
+		c.Logger.Info("agent reconnection failed", "agentURL", agentURL, "error", err, "component", "a2a_client")
 		return
 	}
 

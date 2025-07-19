@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
+	"github.com/inference-gateway/a2a/adk"
 	"github.com/inference-gateway/inference-gateway/a2a"
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/tests/mocks"
@@ -30,13 +31,13 @@ func TestA2AAgent_StreamingCapabilityDetection(t *testing.T) {
 
 	tests := []struct {
 		name                 string
-		agentCapabilities    map[string]a2a.AgentCapabilities
+		agentCapabilities    map[string]adk.AgentCapabilities
 		expectedStreamingURL string
 		shouldUseStreaming   bool
 	}{
 		{
 			name: "Agent with streaming capability",
-			agentCapabilities: map[string]a2a.AgentCapabilities{
+			agentCapabilities: map[string]adk.AgentCapabilities{
 				"http://streaming-agent.com": {
 					Streaming: boolPtr(true),
 				},
@@ -46,7 +47,7 @@ func TestA2AAgent_StreamingCapabilityDetection(t *testing.T) {
 		},
 		{
 			name: "Agent without streaming capability",
-			agentCapabilities: map[string]a2a.AgentCapabilities{
+			agentCapabilities: map[string]adk.AgentCapabilities{
 				"http://non-streaming-agent.com": {
 					Streaming: boolPtr(false),
 				},
@@ -56,7 +57,7 @@ func TestA2AAgent_StreamingCapabilityDetection(t *testing.T) {
 		},
 		{
 			name: "Agent with nil streaming capability",
-			agentCapabilities: map[string]a2a.AgentCapabilities{
+			agentCapabilities: map[string]adk.AgentCapabilities{
 				"http://unknown-streaming-agent.com": {
 					Streaming: nil,
 				},
@@ -66,7 +67,7 @@ func TestA2AAgent_StreamingCapabilityDetection(t *testing.T) {
 		},
 		{
 			name:                 "Agent with no capabilities",
-			agentCapabilities:    map[string]a2a.AgentCapabilities{},
+			agentCapabilities:    map[string]adk.AgentCapabilities{},
 			expectedStreamingURL: "http://no-capabilities-agent.com",
 			shouldUseStreaming:   false,
 		},
@@ -105,17 +106,17 @@ func TestA2AAgent_StreamingFallback(t *testing.T) {
 	agent := a2a.NewAgent(mockLogger, mockA2AClient, a2aConfig)
 
 	t.Run("SendStreamingMessage method exists and can be called", func(t *testing.T) {
-		streamingRequest := &a2a.SendStreamingMessageRequest{
+		streamingRequest := &adk.SendStreamingMessageRequest{
 			ID:      "test-stream-1",
 			JSONRPC: "2.0",
 			Method:  "message/stream",
-			Params: a2a.MessageSendParams{
-				Message: a2a.Message{
+			Params: adk.MessageSendParams{
+				Message: adk.Message{
 					Kind:      "message",
 					MessageID: "test-msg-1",
 					Role:      "user",
-					Parts: []a2a.Part{
-						a2a.TextPart{
+					Parts: []adk.Part{
+						adk.TextPart{
 							Kind: "text",
 							Text: "Test streaming message",
 						},

@@ -34,6 +34,7 @@ data:
   A2A_INITIAL_BACKOFF: {{ .Values.config.A2A_INITIAL_BACKOFF | quote }}
   A2A_ENABLE_RECONNECT: {{ .Values.config.A2A_ENABLE_RECONNECT | quote }}
   A2A_RECONNECT_INTERVAL: {{ .Values.config.A2A_RECONNECT_INTERVAL | quote }}
+  A2A_DISABLE_HEALTHCHECK_LOGS: {{ .Values.config.A2A_DISABLE_HEALTHCHECK_LOGS | quote }}
   # OpenID Connect
   OIDC_ISSUER_URL: {{ .Values.config.OIDC_ISSUER_URL | quote }}
   # Server settings

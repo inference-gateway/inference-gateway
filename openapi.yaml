@@ -1462,6 +1462,11 @@ components:
                   type: time.Duration
                   default: "30s"
                   description: "Interval between reconnection attempts"
+                - name: a2a_disable_healthcheck_logs
+                  env: "A2A_DISABLE_HEALTHCHECK_LOGS"
+                  type: bool
+                  default: "true"
+                  description: "Disable health check log messages to reduce noise"
           - oidc:
               title: "OpenID Connect"
               settings:

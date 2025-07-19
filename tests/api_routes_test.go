@@ -9,6 +9,7 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
+	adk "github.com/inference-gateway/a2a/adk"
 	a2a "github.com/inference-gateway/inference-gateway/a2a"
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -607,7 +608,7 @@ func TestListAgentsHandler(t *testing.T) {
 
 					for _, agentURL := range tt.agentURLs {
 						if agentCard, exists := tt.agentCards[agentURL]; exists {
-							mockAgentCard := &a2a.AgentCard{
+							mockAgentCard := &adk.AgentCard{
 								Name:        agentCard.Name,
 								Description: agentCard.Description,
 							}
