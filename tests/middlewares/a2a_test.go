@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/inference-gateway/a2a/adk"
+	"github.com/inference-gateway/inference-gateway/a2a"
 	"github.com/inference-gateway/inference-gateway/api/middlewares"
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/providers"
