@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +11,8 @@ import (
 	"github.com/inference-gateway/a2a/adk/server/config"
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
+
+	"helloworld-agent/tools"
 )
 
 type Config struct {
@@ -49,44 +50,8 @@ func main() {
 	// Create toolbox with greeting tool
 	toolBox := server.NewDefaultToolBox()
 
-	// Add a greeting tool
-	greetingTool := server.NewBasicTool(
-		"greet_user",
-		"Generate a personalized greeting",
-		map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"name": map[string]interface{}{
-					"type":        "string",
-					"description": "The name of the person to greet",
-				},
-				"language": map[string]interface{}{
-					"type":        "string",
-					"description": "The language for the greeting (e.g., 'english', 'spanish', 'french')",
-				},
-			},
-			"required": []string{"name"},
-		},
-		func(ctx context.Context, args map[string]interface{}) (string, error) {
-			name := args["name"].(string)
-			language := "english"
-			if lang, ok := args["language"].(string); ok {
-				language = lang
-			}
-
-			var greeting string
-			switch language {
-			case "spanish":
-				greeting = fmt.Sprintf("¡Hola, %s! ¿Cómo estás?", name)
-			case "french":
-				greeting = fmt.Sprintf("Bonjour, %s! Comment allez-vous?", name)
-			default:
-				greeting = fmt.Sprintf("Hello, %s! Nice to meet you!", name)
-			}
-
-			return fmt.Sprintf(`{"greeting": "%s", "language": "%s"}`, greeting, language), nil
-		},
-	)
+	// Add greeting tool from tools package
+	greetingTool := tools.NewGreetUserTool()
 	toolBox.AddTool(greetingTool)
 
 	// Create A2A server with agent

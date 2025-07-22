@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +11,8 @@ import (
 	"github.com/inference-gateway/a2a/adk/server/config"
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
+
+	"calculator-agent/tools"
 )
 
 type Config struct {
@@ -49,113 +50,11 @@ func main() {
 	// Create toolbox with calculator tools
 	toolBox := server.NewDefaultToolBox()
 
-	// Add calculation tools
-	addTool := server.NewBasicTool(
-		"add",
-		"Add two numbers together",
-		map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"a": map[string]interface{}{
-					"type":        "number",
-					"description": "First number to add",
-				},
-				"b": map[string]interface{}{
-					"type":        "number",
-					"description": "Second number to add",
-				},
-			},
-			"required": []string{"a", "b"},
-		},
-		func(ctx context.Context, args map[string]interface{}) (string, error) {
-			a, _ := args["a"].(float64)
-			b, _ := args["b"].(float64)
-			result := a + b
-			return fmt.Sprintf(`{"result": %f, "operation": "addition"}`, result), nil
-		},
-	)
-	toolBox.AddTool(addTool)
-
-	subtractTool := server.NewBasicTool(
-		"subtract",
-		"Subtract one number from another",
-		map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"a": map[string]interface{}{
-					"type":        "number",
-					"description": "Number to subtract from",
-				},
-				"b": map[string]interface{}{
-					"type":        "number",
-					"description": "Number to subtract",
-				},
-			},
-			"required": []string{"a", "b"},
-		},
-		func(ctx context.Context, args map[string]interface{}) (string, error) {
-			a, _ := args["a"].(float64)
-			b, _ := args["b"].(float64)
-			result := a - b
-			return fmt.Sprintf(`{"result": %f, "operation": "subtraction"}`, result), nil
-		},
-	)
-	toolBox.AddTool(subtractTool)
-
-	multiplyTool := server.NewBasicTool(
-		"multiply",
-		"Multiply two numbers together",
-		map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"a": map[string]interface{}{
-					"type":        "number",
-					"description": "First number to multiply",
-				},
-				"b": map[string]interface{}{
-					"type":        "number",
-					"description": "Second number to multiply",
-				},
-			},
-			"required": []string{"a", "b"},
-		},
-		func(ctx context.Context, args map[string]interface{}) (string, error) {
-			a, _ := args["a"].(float64)
-			b, _ := args["b"].(float64)
-			result := a * b
-			return fmt.Sprintf(`{"result": %f, "operation": "multiplication"}`, result), nil
-		},
-	)
-	toolBox.AddTool(multiplyTool)
-
-	divideTool := server.NewBasicTool(
-		"divide",
-		"Divide one number by another",
-		map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"a": map[string]interface{}{
-					"type":        "number",
-					"description": "Number to divide (dividend)",
-				},
-				"b": map[string]interface{}{
-					"type":        "number",
-					"description": "Number to divide by (divisor)",
-				},
-			},
-			"required": []string{"a", "b"},
-		},
-		func(ctx context.Context, args map[string]interface{}) (string, error) {
-			a, _ := args["a"].(float64)
-			b, _ := args["b"].(float64)
-			if b == 0 {
-				return `{"error": "Division by zero is not allowed"}`, fmt.Errorf("division by zero")
-			}
-			result := a / b
-			return fmt.Sprintf(`{"result": %f, "operation": "division"}`, result), nil
-		},
-	)
-	toolBox.AddTool(divideTool)
+	// Add calculation tools from tools package
+	toolBox.AddTool(tools.NewAddTool())
+	toolBox.AddTool(tools.NewSubtractTool())
+	toolBox.AddTool(tools.NewMultiplyTool())
+	toolBox.AddTool(tools.NewDivideTool())
 
 	// Create A2A server with agent
 	var a2aServer server.A2AServer
