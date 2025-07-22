@@ -20,11 +20,11 @@ services:
       context: ./helloworld-agent
       dockerfile: Dockerfile
     environment:
-      A2A_AGENT_CLIENT_PROVIDER: "cohere"
-      A2A_AGENT_CLIENT_MODEL: "command-r"
+      A2A_DEBUG: "true"
+      A2A_AGENT_URL: "http://helloworld-agent:8080"
+      A2A_AGENT_CLIENT_PROVIDER: "deepseek"
+      A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
       A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
-      A2A_AGENT_CLIENT_API_KEY: "dummy-key-for-local-testing"
-      A2A_CAPABILITIES_STREAMING: "true"
     ports:
       - "8081:8080"
     networks:
@@ -35,11 +35,10 @@ services:
       context: ./calculator-agent
       dockerfile: Dockerfile
     environment:
+      A2A_AGENT_URL: "http://calculator-agent:8080"
       A2A_AGENT_CLIENT_PROVIDER: "deepseek"
       A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
       A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
-      A2A_AGENT_CLIENT_API_KEY: "dummy-key-for-local-testing"
-      A2A_CAPABILITIES_STREAMING: "true"
     ports:
       - "8082:8080"
     networks:
@@ -50,11 +49,10 @@ services:
       context: ./weather-agent
       dockerfile: Dockerfile
     environment:
+      A2A_AGENT_URL: "http://weather-agent:8080"
       A2A_AGENT_CLIENT_PROVIDER: "deepseek"
       A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
       A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
-      A2A_AGENT_CLIENT_API_KEY: "dummy-key-for-local-testing"
-      A2A_CAPABILITIES_STREAMING: "true"
     ports:
       - "8083:8080"
     networks:
@@ -68,8 +66,6 @@ services:
       A2A_AGENT_CLIENT_PROVIDER: "deepseek"
       A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
       A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
-      A2A_AGENT_CLIENT_API_KEY: "dummy-key-for-local-testing"
-      A2A_CAPABILITIES_STREAMING: "true"
     env_file:
       - .env.google
     ports:
