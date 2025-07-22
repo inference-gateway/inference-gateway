@@ -57,53 +57,25 @@ func main() {
 	toolBox.AddTool(weatherTool)
 
 	// Create A2A server with agent
-	var a2aServer server.A2AServer
+	agent, err := server.NewAgentBuilder(logger).
+		WithConfig(&cfg.A2A.AgentConfig).
+		WithToolBox(toolBox).
+		Build()
+	if err != nil {
+		log.Fatal("failed to create agent:", err)
+	}
 
-	// Check if we have LLM configuration, otherwise create a tool-only agent
-	if cfg.A2A.AgentConfig.APIKey != "" {
-		// Create agent with LLM capabilities
-		agent, err := server.NewAgentBuilder(logger).
-			WithConfig(&cfg.A2A.AgentConfig).
-			WithToolBox(toolBox).
-			Build()
-		if err != nil {
-			log.Fatal("failed to create agent:", err)
-		}
-
-		a2aServer, err = server.NewA2AServerBuilder(cfg.A2A, logger).
-			WithAgent(agent).
-			WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
-				"name":        AgentName,
-				"version":     Version,
-				"description": AgentDescription,
-				"url":         cfg.A2A.AgentURL,
-			}).
-			Build()
-		if err != nil {
-			log.Fatal("failed to create A2A server:", err)
-		}
-	} else {
-		// Create tool-only agent without LLM (mock mode)
-		logger.Info("creating tool-only agent without LLM")
-		agent, err := server.NewAgentBuilder(logger).
-			WithToolBox(toolBox).
-			Build()
-		if err != nil {
-			log.Fatal("failed to create agent:", err)
-		}
-
-		a2aServer, err = server.NewA2AServerBuilder(cfg.A2A, logger).
-			WithAgent(agent).
-			WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
-				"name":        AgentName,
-				"version":     Version,
-				"description": AgentDescription,
-				"url":         cfg.A2A.AgentURL,
-			}).
-			Build()
-		if err != nil {
-			log.Fatal("failed to create A2A server:", err)
-		}
+	a2aServer, err := server.NewA2AServerBuilder(cfg.A2A, logger).
+		WithAgent(agent).
+		WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
+			"name":        AgentName,
+			"version":     Version,
+			"description": AgentDescription,
+			"url":         cfg.A2A.AgentURL,
+		}).
+		Build()
+	if err != nil {
+		log.Fatal("failed to create A2A server:", err)
 	}
 
 	// Start server

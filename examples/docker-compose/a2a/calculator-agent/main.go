@@ -59,51 +59,26 @@ func main() {
 	toolBox.AddTool(tools.NewDivideTool())
 
 	// Create A2A server with agent
-	var a2aServer server.A2AServer
-	if cfg.A2A.AgentConfig.APIKey != "" {
-		// With LLM agent
-		agent, err := server.NewAgentBuilder(logger).
-			WithConfig(&cfg.A2A.AgentConfig).
-			WithToolBox(toolBox).
-			WithSystemPrompt("You are a mathematical calculation assistant. Use the available math tools (add, subtract, multiply, divide) to help users perform calculations. Always show your work and explain the results.").
-			Build()
-		if err != nil {
-			log.Fatal("failed to create agent:", err)
-		}
+	agent, err := server.NewAgentBuilder(logger).
+		WithConfig(&cfg.A2A.AgentConfig).
+		WithToolBox(toolBox).
+		WithSystemPrompt("You are a mathematical calculation assistant. Use the available math tools (add, subtract, multiply, divide) to help users perform calculations. Always show your work and explain the results.").
+		Build()
+	if err != nil {
+		log.Fatal("failed to create agent:", err)
+	}
 
-		a2aServer, err = server.NewA2AServerBuilder(cfg.A2A, logger).
-			WithAgent(agent).
-			WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
-				"name":        AgentName,
-				"version":     Version,
-				"description": AgentDescription,
-				"url":         cfg.A2A.AgentURL,
-			}).
-			Build()
-		if err != nil {
-			log.Fatal("failed to create A2A server:", err)
-		}
-	} else {
-		// Mock mode without LLM
-		agent, err := server.NewAgentBuilder(logger).
-			WithToolBox(toolBox).
-			Build()
-		if err != nil {
-			log.Fatal("failed to create agent:", err)
-		}
-
-		a2aServer, err = server.NewA2AServerBuilder(cfg.A2A, logger).
-			WithAgent(agent).
-			WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
-				"name":        AgentName,
-				"version":     Version,
-				"description": AgentDescription,
-				"url":         cfg.A2A.AgentURL,
-			}).
-			Build()
-		if err != nil {
-			log.Fatal("failed to create A2A server:", err)
-		}
+	a2aServer, err := server.NewA2AServerBuilder(cfg.A2A, logger).
+		WithAgent(agent).
+		WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
+			"name":        AgentName,
+			"version":     Version,
+			"description": AgentDescription,
+			"url":         cfg.A2A.AgentURL,
+		}).
+		Build()
+	if err != nil {
+		log.Fatal("failed to create A2A server:", err)
 	}
 
 	// Start server

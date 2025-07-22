@@ -20,7 +20,6 @@ services:
       context: ./helloworld-agent
       dockerfile: Dockerfile
     environment:
-      A2A_DEBUG: "true"
       A2A_AGENT_URL: "http://helloworld-agent:8080"
       A2A_AGENT_CLIENT_PROVIDER: "deepseek"
       A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
@@ -70,6 +69,23 @@ services:
       - .env.google
     ports:
       - "8084:8080"
+    networks:
+      - a2a-network
+
+  a2a-debugger:
+    image: ghcr.io/inference-gateway/a2a-debugger:latest
+    pull_policy: always
+    entrypoint:
+      - /a2a
+      - --config
+      - /config/.a2a.yaml
+    command:
+      - config
+      - set
+      - server-url
+      - http://helloworld-agent:8080
+    volumes:
+      - ./config:/config
     networks:
       - a2a-network
 
