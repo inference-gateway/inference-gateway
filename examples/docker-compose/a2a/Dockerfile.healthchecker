@@ -1,5 +1,0 @@
-FROM alpine:latest
-RUN apk add --no-cache curl
-COPY healthcheck.sh /healthcheck.sh
-RUN chmod +x /healthcheck.sh
-CMD ["sleep", "infinity"]

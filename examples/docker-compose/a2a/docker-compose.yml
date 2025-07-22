@@ -11,10 +11,7 @@ services:
     environment:
       A2A_ENABLE: "true"
       A2A_EXPOSE: "true"
-      A2A_AGENTS: "http://helloworld-agent:8080,http://calculator-agent:8080,http://weather-agent:8080,http://google-calendar-agent:8080"
-    depends_on:
-      healthchecker:
-        condition: service_healthy
+      A2A_AGENTS: "http://weather-agent:8080,http://helloworld-agent:8080,http://calculator-agent:8080,http://google-calendar-agent:8080"
     networks:
       - a2a-network
 
@@ -23,10 +20,10 @@ services:
       context: ./helloworld-agent
       dockerfile: Dockerfile
     environment:
-      DEBUG: "true"
-      INFERENCE_GATEWAY_URL: "http://inference-gateway:8080/v1"
-      LLM_PROVIDER: "cohere"
-      LLM_MODEL: "command-r"
+      A2A_AGENT_URL: "http://helloworld-agent:8080"
+      A2A_AGENT_CLIENT_PROVIDER: "deepseek"
+      A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
+      A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
     ports:
       - "8081:8080"
     networks:
@@ -37,10 +34,10 @@ services:
       context: ./calculator-agent
       dockerfile: Dockerfile
     environment:
-      DEBUG: "true"
-      INFERENCE_GATEWAY_URL: "http://inference-gateway:8080/v1"
-      LLM_PROVIDER: "deepseek"
-      LLM_MODEL: "deepseek-chat"
+      A2A_AGENT_URL: "http://calculator-agent:8080"
+      A2A_AGENT_CLIENT_PROVIDER: "deepseek"
+      A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
+      A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
     ports:
       - "8082:8080"
     networks:
@@ -51,10 +48,10 @@ services:
       context: ./weather-agent
       dockerfile: Dockerfile
     environment:
-      DEBUG: "true"
-      INFERENCE_GATEWAY_URL: "http://inference-gateway:8080/v1"
-      LLM_PROVIDER: "deepseek"
-      LLM_MODEL: "deepseek-chat"
+      A2A_AGENT_URL: "http://weather-agent:8080"
+      A2A_AGENT_CLIENT_PROVIDER: "deepseek"
+      A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
+      A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
     ports:
       - "8083:8080"
     networks:
@@ -63,32 +60,32 @@ services:
   google-calendar-agent:
     image: ghcr.io/inference-gateway/google-calendar-agent:latest
     pull_policy: always
+    environment:
+      A2A_AGENT_URL: "http://google-calendar-agent:8080"
+      A2A_AGENT_CLIENT_PROVIDER: "deepseek"
+      A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
+      A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
     env_file:
       - .env.google
+    ports:
+      - "8084:8080"
     networks:
       - a2a-network
 
-  healthchecker:
-    build:
-      context: .
-      dockerfile: Dockerfile.healthchecker
-    depends_on:
-      helloworld-agent:
-        condition: service_started
-      calculator-agent:
-        condition: service_started
-      weather-agent:
-        condition: service_started
-      google-calendar-agent:
-        condition: service_started
-    healthcheck:
-      test:
-        - CMD
-        - "/healthcheck.sh"
-      interval: 300s
-      timeout: 15s
-      retries: 3
-      start_period: 60s
+  a2a-debugger:
+    image: ghcr.io/inference-gateway/a2a-debugger:latest
+    pull_policy: always
+    entrypoint:
+      - /a2a
+      - --config
+      - /config/.a2a.yaml
+    command:
+      - config
+      - set
+      - server-url
+      - http://helloworld-agent:8080
+    volumes:
+      - ./config:/config
     networks:
       - a2a-network
 

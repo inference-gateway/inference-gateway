@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/inference-gateway/a2a/adk"
 	"github.com/inference-gateway/inference-gateway/a2a"
 	"github.com/inference-gateway/inference-gateway/api/middlewares"
 	"github.com/inference-gateway/inference-gateway/config"
@@ -167,6 +168,9 @@ func TestA2AMiddleware_RequestWithA2AMiddlewareEnabled(t *testing.T) {
 
 			if tt.expectA2AProcessing {
 				mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
+				mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+					"http://agent1.example.com": a2a.AgentStatusAvailable,
+				}).AnyTimes()
 				mockA2AClient.EXPECT().GetAgents().Return([]string{}).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 			} else if tt.path == "/v1/chat/completions" && !tt.hasInternalHeader {
@@ -212,7 +216,7 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 		name                 string
 		a2aClientInitialized bool
 		agents               []string
-		agentSkills          map[string][]a2a.AgentSkill
+		agentSkills          map[string][]adk.AgentSkill
 		expectToolsAdded     bool
 		expectedToolCount    int
 	}{
@@ -220,7 +224,7 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 			name:                 "No agents available - only agent query tool added",
 			a2aClientInitialized: true,
 			agents:               []string{},
-			agentSkills:          map[string][]a2a.AgentSkill{},
+			agentSkills:          map[string][]adk.AgentSkill{},
 			expectToolsAdded:     true,
 			expectedToolCount:    2,
 		},
@@ -228,7 +232,7 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 			name:                 "Single agent with skills - only query tool added initially",
 			a2aClientInitialized: true,
 			agents:               []string{"http://agent1.example.com"},
-			agentSkills: map[string][]a2a.AgentSkill{
+			agentSkills: map[string][]adk.AgentSkill{
 				"http://agent1.example.com": {
 					{ID: "add", Name: "Add Numbers", Description: "Add two numbers"},
 					{ID: "multiply", Name: "Multiply Numbers", Description: "Multiply two numbers"},
@@ -241,7 +245,7 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 			name:                 "Multiple agents with skills - only query tool added initially",
 			a2aClientInitialized: true,
 			agents:               []string{"http://agent1.example.com", "http://agent2.example.com"},
-			agentSkills: map[string][]a2a.AgentSkill{
+			agentSkills: map[string][]adk.AgentSkill{
 				"http://agent1.example.com": {
 					{ID: "calculate", Name: "Calculate", Description: "Mathematical calculations"},
 				},
@@ -272,6 +276,9 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 
 			mockA2AClient.EXPECT().IsInitialized().Return(tt.a2aClientInitialized)
 			if tt.a2aClientInitialized {
+				mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+					"http://agent1.example.com": a2a.AgentStatusAvailable,
+				}).AnyTimes()
 				mockA2AClient.EXPECT().GetAgents().Return(tt.agents).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 				mockA2AAgent.EXPECT().SetProvider(mockProvider).AnyTimes()
@@ -357,12 +364,12 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 		name                  string
 		toolCalls             []providers.ChatCompletionMessageToolCall
 		availableAgents       []string
-		agentSkills           map[string][]a2a.AgentSkill
-		agentCard             *a2a.AgentCard
-		agentCapabilities     map[string]a2a.AgentCapabilities
-		sendMessageResp       *a2a.Task
+		agentSkills           map[string][]adk.AgentSkill
+		agentCard             *adk.AgentCard
+		agentCapabilities     map[string]adk.AgentCapabilities
+		sendMessageResp       *adk.Task
 		sendMessageError      error
-		getTaskResp           *a2a.Task
+		getTaskResp           *adk.Task
 		getTaskError          error
 		expectAgentCardCall   bool
 		expectSendMessageCall bool
@@ -381,20 +388,20 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				},
 			},
 			availableAgents: []string{"http://agent1.example.com"},
-			agentSkills: map[string][]a2a.AgentSkill{
+			agentSkills: map[string][]adk.AgentSkill{
 				"http://agent1.example.com": {
 					{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
 				},
 			},
-			agentCard: &a2a.AgentCard{
+			agentCard: &adk.AgentCard{
 				Name:        "Test Agent",
 				Description: "Test Description",
 				Version:     "1.0",
-				Skills: []a2a.AgentSkill{
+				Skills: []adk.AgentSkill{
 					{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
 				},
 			},
-			agentCapabilities: map[string]a2a.AgentCapabilities{
+			agentCapabilities: map[string]adk.AgentCapabilities{
 				"http://agent1.example.com": {
 					PushNotifications:      boolPtr(false),
 					StateTransitionHistory: boolPtr(false),
@@ -418,32 +425,32 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				},
 			},
 			availableAgents: []string{"http://agent1.example.com"},
-			agentSkills: map[string][]a2a.AgentSkill{
+			agentSkills: map[string][]adk.AgentSkill{
 				"http://agent1.example.com": {
 					{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
 				},
 			},
-			sendMessageResp: &a2a.Task{
+			sendMessageResp: &adk.Task{
 				ID: "task-123",
-				Status: a2a.TaskStatus{
-					State: a2a.TaskStateCompleted,
-					Message: &a2a.Message{
+				Status: adk.TaskStatus{
+					State: adk.TaskStateCompleted,
+					Message: &adk.Message{
 						Kind:      "message",
 						MessageID: "msg-123",
 						Role:      "assistant",
-						Parts:     []a2a.Part{},
+						Parts:     []adk.Part{},
 					},
 				},
 			},
-			getTaskResp: &a2a.Task{
+			getTaskResp: &adk.Task{
 				ID: "task-123",
-				Status: a2a.TaskStatus{
-					State: a2a.TaskStateCompleted,
-					Message: &a2a.Message{
+				Status: adk.TaskStatus{
+					State: adk.TaskStateCompleted,
+					Message: &adk.Message{
 						Kind:      "message",
 						MessageID: "msg-123",
 						Role:      "assistant",
-						Parts:     []a2a.Part{},
+						Parts:     []adk.Part{},
 					},
 				},
 			},
@@ -464,7 +471,7 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				},
 			},
 			availableAgents: []string{"http://agent1.example.com"},
-			agentSkills: map[string][]a2a.AgentSkill{
+			agentSkills: map[string][]adk.AgentSkill{
 				"http://agent1.example.com": {
 					{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
 				},
@@ -487,15 +494,15 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				},
 			},
 			availableAgents: []string{"http://agent1.example.com"},
-			agentSkills: map[string][]a2a.AgentSkill{
+			agentSkills: map[string][]adk.AgentSkill{
 				"http://agent1.example.com": {
 					{ID: "calculate", Name: "Calculator", Description: "Mathematical calculations"},
 				},
 			},
-			sendMessageResp: &a2a.Task{
+			sendMessageResp: &adk.Task{
 				ID: "task-456",
-				Status: a2a.TaskStatus{
-					State: a2a.TaskStateSubmitted,
+				Status: adk.TaskStatus{
+					State: adk.TaskStateSubmitted,
 				},
 			},
 			getTaskError:          fmt.Errorf("polling failed"),
@@ -532,6 +539,9 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 			mockLogger.EXPECT().Info(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
+			mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+				"http://agent1.example.com": a2a.AgentStatusAvailable,
+			}).AnyTimes()
 			mockA2AClient.EXPECT().GetAgents().Return(tt.availableAgents).AnyTimes()
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
 			mockA2AAgent.EXPECT().SetProvider(mockProvider).AnyTimes()
@@ -553,7 +563,7 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				if tt.sendMessageError != nil {
 					mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, tt.sendMessageError).AnyTimes()
 				} else if tt.sendMessageResp != nil {
-					sendMessageResp := &a2a.SendMessageSuccessResponse{
+					sendMessageResp := &adk.SendMessageSuccessResponse{
 						JSONRPC: "2.0",
 						Result:  tt.sendMessageResp,
 					}
@@ -565,7 +575,7 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				if tt.getTaskError != nil {
 					mockA2AClient.EXPECT().GetTask(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, tt.getTaskError).AnyTimes()
 				} else if tt.getTaskResp != nil {
-					getTaskResp := &a2a.GetTaskSuccessResponse{
+					getTaskResp := &adk.GetTaskSuccessResponse{
 						JSONRPC: "2.0",
 						Result:  *tt.getTaskResp,
 					}
@@ -641,7 +651,7 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			name:               "Synchronous task execution success",
 			isStreaming:        false,
 			taskID:             "task_123",
-			taskStatus:         string(a2a.TaskStateCompleted),
+			taskStatus:         string(adk.TaskStateCompleted),
 			taskResult:         "Result: 8",
 			expectStreamEvents: false,
 		},
@@ -649,7 +659,7 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			name:               "Asynchronous task execution with streaming",
 			isStreaming:        true,
 			taskID:             "task_456",
-			taskStatus:         string(a2a.TaskStateCompleted),
+			taskStatus:         string(adk.TaskStateCompleted),
 			taskResult:         "Result: 15",
 			expectStreamEvents: true,
 		},
@@ -676,6 +686,9 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 			mockLogger.EXPECT().Warn(gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
+			mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+				"http://agent1.example.com": a2a.AgentStatusAvailable,
+			}).AnyTimes()
 			mockA2AClient.EXPECT().GetAgents().Return([]string{"http://agent1.example.com"}).AnyTimes()
 
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
@@ -692,28 +705,28 @@ func TestA2AMiddleware_TaskSuccessfulExecution(t *testing.T) {
 				mockA2AAgent.EXPECT().Run(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 			}
 
-			sendMessageTask := &a2a.Task{
+			sendMessageTask := &adk.Task{
 				ID: tt.taskID,
-				Status: a2a.TaskStatus{
-					State: a2a.TaskStateCompleted,
-					Message: &a2a.Message{
+				Status: adk.TaskStatus{
+					State: adk.TaskStateCompleted,
+					Message: &adk.Message{
 						Kind:      "message",
 						MessageID: "msg-123",
 						Role:      "assistant",
-						Parts:     []a2a.Part{},
+						Parts:     []adk.Part{},
 					},
 				},
 			}
 
 			// Mock SendMessage returning task ID
-			sendMessageResp := &a2a.SendMessageSuccessResponse{
+			sendMessageResp := &adk.SendMessageSuccessResponse{
 				JSONRPC: "2.0",
 				Result:  sendMessageTask,
 			}
 			mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageResp, nil).AnyTimes()
 
 			// Mock GetTask returning completed task (for polling)
-			getTaskResp := &a2a.GetTaskSuccessResponse{
+			getTaskResp := &adk.GetTaskSuccessResponse{
 				JSONRPC: "2.0",
 				Result:  *sendMessageTask,
 			}
@@ -817,28 +830,28 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 		{
 			name:               "Task execution fails with timeout",
 			taskFailure:        "polling_timeout",
-			taskStatus:         string(a2a.TaskStateFailed),
+			taskStatus:         string(adk.TaskStateFailed),
 			expectedStatus:     http.StatusOK,
 			expectErrorMessage: true,
 		},
 		{
 			name:               "Task execution fails with failed state",
 			taskFailure:        "task_failed",
-			taskStatus:         string(a2a.TaskStateFailed),
+			taskStatus:         string(adk.TaskStateFailed),
 			expectedStatus:     http.StatusOK,
 			expectErrorMessage: true,
 		},
 		{
 			name:               "Task execution fails with rejected state",
 			taskFailure:        "task_rejected",
-			taskStatus:         string(a2a.TaskStateRejected),
+			taskStatus:         string(adk.TaskStateRejected),
 			expectedStatus:     http.StatusOK,
 			expectErrorMessage: true,
 		},
 		{
 			name:               "Task execution fails with canceled state",
 			taskFailure:        "task_canceled",
-			taskStatus:         string(a2a.TaskStateCanceled),
+			taskStatus:         string(adk.TaskStateCanceled),
 			expectedStatus:     http.StatusOK,
 			expectErrorMessage: true,
 		},
@@ -867,6 +880,9 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 			mockLogger.EXPECT().Warn(gomock.Any(), gomock.Any()).AnyTimes()
 
 			mockA2AClient.EXPECT().IsInitialized().Return(true)
+			mockA2AClient.EXPECT().GetAllAgentStatuses().Return(map[string]a2a.AgentStatus{
+				"http://agent1.example.com": a2a.AgentStatusAvailable,
+			}).AnyTimes()
 			mockA2AClient.EXPECT().GetAgents().Return([]string{"http://agent1.example.com"}).AnyTimes()
 
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockInferenceClient).Return(mockProvider, nil)
@@ -878,28 +894,28 @@ func TestA2AMiddleware_TaskFailedExecution(t *testing.T) {
 			if tt.sendMessageError != nil {
 				mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(nil, tt.sendMessageError).AnyTimes()
 			} else {
-				sendMessageTask := &a2a.Task{
+				sendMessageTask := &adk.Task{
 					ID: "task_failed_123",
-					Status: a2a.TaskStatus{
-						State: a2a.TaskState(tt.taskStatus),
-						Message: &a2a.Message{
+					Status: adk.TaskStatus{
+						State: adk.TaskState(tt.taskStatus),
+						Message: &adk.Message{
 							Kind:      "message",
 							MessageID: "msg-123",
 							Role:      "assistant",
-							Parts:     []a2a.Part{},
+							Parts:     []adk.Part{},
 						},
 					},
 				}
 
 				// Mock SendMessage returning task ID
-				sendMessageResp := &a2a.SendMessageSuccessResponse{
+				sendMessageResp := &adk.SendMessageSuccessResponse{
 					JSONRPC: "2.0",
 					Result:  sendMessageTask,
 				}
 				mockA2AClient.EXPECT().SendMessage(gomock.Any(), gomock.Any(), "http://agent1.example.com").Return(sendMessageResp, nil).AnyTimes()
 
 				// Mock GetTask returning task with specified status (for polling)
-				getTaskResp := &a2a.GetTaskSuccessResponse{
+				getTaskResp := &adk.GetTaskSuccessResponse{
 					JSONRPC: "2.0",
 					Result:  *sendMessageTask,
 				}

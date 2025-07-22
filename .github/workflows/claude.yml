@@ -1,0 +1,82 @@
+name: Claude Code
+
+on:
+  issue_comment:
+    types:
+      - created
+  pull_request_review_comment:
+    types:
+      - created
+  issues:
+    types:
+      - opened
+      - assigned
+  pull_request_review:
+    types:
+      - submitted
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') && !contains(github.event.comment.body, '@claude /review')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude') && !contains(github.event.comment.body, '@claude /review')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude') && !contains(github.event.review.body, '@claude /review')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.1.6
+
+      - name: Install task
+        run: |
+          curl -s https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin v3.43.3
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@beta
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          use_commit_signing: true
+          base_branch: main
+          branch_prefix: "claude/"
+          custom_instructions: |
+            IMPORTANT: You must NEVER push directly to the main branch. Always:
+            1. Create a new feature branch (claude/feature-name)
+            2. Make your changes on the feature branch
+            3. Open a pull request to main
+            4. Wait for review and approval before merging
+
+            COMMIT MESSAGE FORMAT: Always use conventional commits with capital letters. 
+            Follow the format: "type(scope): Description" where the description starts with a capital letter.
+            Examples: "feat(a2a): Add retry mechanism for agent connections", "fix(auth): Resolve token validation issue"
+
+            Follow the development workflow specified in the coding instructions.
+          mcp_config: |
+            {
+              "mcpServers": {
+                "context7": {
+                  "command": "npx",
+                  "args": ["-y", "@upstash/context7-mcp@latest"],
+                  "env": {}
+                }
+              }
+            }
+          allowed_tools: |
+            Bash(task:*)
+            Bash(go:*)
+            Bash(gh:*)
+            Bash(git:*)

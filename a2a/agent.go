@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/inference-gateway/a2a/adk"
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/providers"
@@ -448,17 +449,65 @@ func (a *agentImpl) handleTaskSubmissionTool(ctx context.Context, request *provi
 }
 
 // extractTaskResponse extracts the text response from a completed task
-func (a *agentImpl) extractTaskResponse(task *Task, toolCallID string) (providers.Message, error) {
+func (a *agentImpl) extractTaskResponse(task *adk.Task, toolCallID string) (providers.Message, error) {
 	if task.Status.Message == nil {
-		return providers.Message{}, errors.New("task completion returned no message")
+		a.logger.Debug("task completed with no message in status, checking history", "task_id", task.ID, "status", task.Status.State)
+
+		if len(task.History) > 0 {
+			for i := len(task.History) - 1; i >= 0; i-- {
+				message := task.History[i]
+				if message.Role == "assistant" && len(message.Parts) > 0 {
+					a.logger.Debug("found assistant message in history", "message_index", i, "parts_count", len(message.Parts))
+
+					for _, part := range message.Parts {
+						var textContent string
+
+						if textPart, ok := part.(adk.TextPart); ok {
+							a.logger.Debug("found text part in history", "text", textPart.Text)
+							if textPart.Text != "" {
+								textContent = textPart.Text
+							}
+						} else if partMap, ok := part.(map[string]interface{}); ok {
+							kind, kindExists := partMap["kind"]
+							if kindExists && kind == "text" {
+								if text, textExists := partMap["text"].(string); textExists && text != "" {
+									a.logger.Debug("found text in part map from history", "text", text)
+									textContent = text
+								}
+							}
+						}
+
+						if textContent != "" {
+							a.logger.Debug("extracted response from task history", "content", textContent)
+							return providers.Message{
+								Role:       providers.MessageRoleTool,
+								Content:    textContent,
+								ToolCallId: &toolCallID,
+							}, nil
+						}
+					}
+				}
+			}
+		}
+
+		a.logger.Debug("no assistant response found in history, using default response", "task_id", task.ID)
+		return providers.Message{
+			Role:       providers.MessageRoleTool,
+			Content:    "Task completed successfully",
+			ToolCallId: &toolCallID,
+		}, nil
 	}
 
 	responseContent := "Task completed successfully"
 	message := task.Status.Message
 
 	if len(message.Parts) == 0 {
-		a.logger.Debug("no message parts found")
-		return providers.Message{}, errors.New("task completion returned no message parts")
+		a.logger.Debug("no message parts found, using default response", "task_id", task.ID)
+		return providers.Message{
+			Role:       providers.MessageRoleTool,
+			Content:    responseContent,
+			ToolCallId: &toolCallID,
+		}, nil
 	}
 
 	a.logger.Debug("processing message parts", "parts_count", len(message.Parts))
@@ -467,7 +516,7 @@ func (a *agentImpl) extractTaskResponse(task *Task, toolCallID string) (provider
 
 		var textContent string
 
-		if textPart, ok := part.(TextPart); ok {
+		if textPart, ok := part.(adk.TextPart); ok {
 			a.logger.Debug("found text part struct", "text_length", len(textPart.Text), "text_content", textPart.Text)
 			if textPart.Text == "" {
 				continue
@@ -512,7 +561,7 @@ func (a *agentImpl) extractTaskResponse(task *Task, toolCallID string) (provider
 }
 
 // pollTaskUntilCompletion polls the task until it's completed and returns the final task
-func (a *agentImpl) pollTaskUntilCompletion(ctx context.Context, taskID, agentURL string) (*Task, error) {
+func (a *agentImpl) pollTaskUntilCompletion(ctx context.Context, taskID, agentURL string) (*adk.Task, error) {
 	ticker := time.NewTicker(a.a2aConfig.PollingInterval)
 	defer ticker.Stop()
 
@@ -529,10 +578,10 @@ func (a *agentImpl) pollTaskUntilCompletion(ctx context.Context, taskID, agentUR
 				return nil, fmt.Errorf("task polling timeout after %d attempts", maxAttempts)
 			}
 
-			getTaskRequest := &GetTaskRequest{
+			getTaskRequest := &adk.GetTaskRequest{
 				JSONRPC: "2.0",
 				Method:  "tasks/get",
-				Params: TaskQueryParams{
+				Params: adk.TaskQueryParams{
 					ID: taskID,
 				},
 			}
@@ -552,19 +601,19 @@ func (a *agentImpl) pollTaskUntilCompletion(ctx context.Context, taskID, agentUR
 				"attempt", attempts)
 
 			switch task.Status.State {
-			case TaskStateCompleted:
+			case adk.TaskStateCompleted:
 				a.logger.Info("task completed successfully via polling", "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
 				return &task, nil
-			case TaskStateFailed:
+			case adk.TaskStateFailed:
 				a.logger.Error("task failed", fmt.Errorf("task failed"), "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
 				return &task, fmt.Errorf("task failed: %s", taskID)
-			case TaskStateCanceled:
+			case adk.TaskStateCanceled:
 				a.logger.Info("task was canceled", "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
 				return &task, fmt.Errorf("task canceled: %s", taskID)
-			case TaskStateRejected:
+			case adk.TaskStateRejected:
 				a.logger.Error("task was rejected", fmt.Errorf("task rejected"), "task_id", taskID, "agent_url", agentURL, "attempts", attempts)
 				return &task, fmt.Errorf("task rejected: %s", taskID)
-			case TaskStateSubmitted, TaskStateWorking, TaskStateInputRequired, TaskStateAuthRequired:
+			case adk.TaskStateSubmitted, adk.TaskStateWorking, adk.TaskStateInputRequired, adk.TaskStateAuthRequired:
 				a.logger.Debug("task still in progress", "task_id", taskID, "status", task.Status.State, "agent_url", agentURL)
 				continue
 			default:
@@ -660,17 +709,17 @@ func (a *agentImpl) processStreamingResponse(streamCh <-chan []byte, middlewareS
 
 // handleStreamingTaskSubmission handles task submission using streaming A2A communication
 func (a *agentImpl) handleStreamingTaskSubmission(ctx context.Context, request *providers.CreateChatCompletionRequest, toolCall providers.ChatCompletionMessageToolCall, agentURL, taskMessage string) (providers.Message, error) {
-	streamingRequest := &SendStreamingMessageRequest{
+	streamingRequest := &adk.SendStreamingMessageRequest{
 		ID:      "stream-task-" + fmt.Sprintf("%d", len(request.Messages)),
 		JSONRPC: "2.0",
 		Method:  "message/stream",
-		Params: MessageSendParams{
-			Message: Message{
+		Params: adk.MessageSendParams{
+			Message: adk.Message{
 				Kind:      "message",
 				MessageID: fmt.Sprintf("stream-msg-%d", len(request.Messages)),
 				Role:      "user",
-				Parts: []Part{
-					TextPart{
+				Parts: []adk.Part{
+					adk.TextPart{
 						Kind: "text",
 						Text: taskMessage,
 					},
@@ -776,17 +825,17 @@ ProcessComplete:
 
 // handleNonStreamingTaskSubmission handles task submission using traditional blocking A2A communication
 func (a *agentImpl) handleNonStreamingTaskSubmission(ctx context.Context, request *providers.CreateChatCompletionRequest, toolCall providers.ChatCompletionMessageToolCall, agentURL, taskMessage string) (providers.Message, error) {
-	taskRequest := &SendMessageRequest{
+	taskRequest := &adk.SendMessageRequest{
 		ID:      "task-" + fmt.Sprintf("%d", len(request.Messages)),
 		JSONRPC: "2.0",
 		Method:  "message/send",
-		Params: MessageSendParams{
-			Message: Message{
+		Params: adk.MessageSendParams{
+			Message: adk.Message{
 				Kind:      "message",
 				MessageID: fmt.Sprintf("msg-%d", len(request.Messages)),
 				Role:      "user",
-				Parts: []Part{
-					TextPart{
+				Parts: []adk.Part{
+					adk.TextPart{
 						Kind: "text",
 						Text: taskMessage,
 					},
@@ -814,7 +863,7 @@ func (a *agentImpl) handleNonStreamingTaskSubmission(ctx context.Context, reques
 		return providers.Message{}, fmt.Errorf("failed to marshal response result: %w", err)
 	}
 
-	var task Task
+	var task adk.Task
 	if err := json.Unmarshal(resultBytes, &task); err != nil {
 		return providers.Message{}, fmt.Errorf("failed to unmarshal task from response: %w", err)
 	}
@@ -822,7 +871,7 @@ func (a *agentImpl) handleNonStreamingTaskSubmission(ctx context.Context, reques
 	taskID := task.ID
 	a.logger.Debug("received task ID from agent", "task_id", taskID, "agent_url", agentURL)
 
-	if task.Status.State == TaskStateCompleted {
+	if task.Status.State == adk.TaskStateCompleted {
 		a.logger.Info("task completed immediately", "task_id", taskID, "agent_url", agentURL)
 		return a.extractTaskResponse(&task, toolCall.ID)
 	}

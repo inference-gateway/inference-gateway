@@ -1,0 +1,4 @@
+debug: false
+insecure: false
+server-url: http://helloworld-agent:8080
+timeout: 30s

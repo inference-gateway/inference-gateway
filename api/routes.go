@@ -18,6 +18,7 @@ import (
 
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
+	"github.com/inference-gateway/a2a/adk"
 	"github.com/inference-gateway/inference-gateway/a2a"
 	"github.com/inference-gateway/inference-gateway/mcp"
 
@@ -34,6 +35,8 @@ type Router interface {
 	ListToolsHandler(c *gin.Context)
 	ListAgentsHandler(c *gin.Context)
 	GetAgentHandler(c *gin.Context)
+	GetAgentStatusHandler(c *gin.Context)
+	GetAllAgentStatusesHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
@@ -875,14 +878,14 @@ func (router *RouterImpl) GetAgentHandler(c *gin.Context) {
 	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Agent not found"})
 }
 
-// convertA2AAgentCard converts an a2a.AgentCard to providers.A2AAgentCard
-func convertA2AAgentCard(agentCard a2a.AgentCard, agentURL string) providers.A2AAgentCard {
+// convertA2AAgentCard converts an adk.AgentCard to providers.A2AAgentCard
+func convertA2AAgentCard(agentCard adk.AgentCard, agentURL string) providers.A2AAgentCard {
 	capabilities := make(map[string]interface{})
 
 	if agentCard.Capabilities.Extensions != nil {
 		capabilities["extensions"] = agentCard.Capabilities.Extensions
 	} else {
-		capabilities["extensions"] = []a2a.AgentExtension{}
+		capabilities["extensions"] = []adk.AgentExtension{}
 	}
 
 	capabilities["pushNotifications"] = agentCard.Capabilities.PushNotifications
@@ -1052,4 +1055,156 @@ func (router *RouterImpl) isModelAllowed(modelID string, allowedModels string) b
 func generateAgentID(agentURL string) string {
 	hash := sha256.Sum256([]byte(agentURL))
 	return base64.StdEncoding.EncodeToString(hash[:])
+}
+
+// GetAgentStatusHandler implements an endpoint that returns the status of a specific A2A agent
+//
+// This endpoint provides the current status of a single A2A agent identified by its unique ID.
+// The status indicates whether the agent is available, unavailable, or in an unknown state.
+//
+// Request:
+//   - Method: GET
+//   - Path: /a2a/agents/{id}/status
+//   - Parameters:
+//   - id (path): The unique identifier of the agent (base64-encoded SHA256 hash of the agent URL)
+//
+// Response format (200 OK):
+//
+//	{
+//	  "id": "agent-id",
+//	  "status": "available|unavailable|unknown",
+//	  "url": "https://agent.example.com"
+//	}
+//
+// Response (404 Not Found):
+//   - When the specified agent ID does not exist
+//
+// Response (403 Forbidden):
+//   - When A2A_EXPOSE is not enabled
+//
+// Status values:
+//   - "available": Agent is responding to health checks
+//   - "unavailable": Agent is not responding to health checks
+//   - "unknown": Agent status is unknown or not yet determined
+func (router *RouterImpl) GetAgentStatusHandler(c *gin.Context) {
+	if !router.cfg.A2A.Expose {
+		router.logger.Error("a2a agent status endpoint access attempted but not exposed", nil)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: "A2A agents endpoint is not exposed. Set A2A_EXPOSE=true to enable."})
+		return
+	}
+
+	agentID := c.Param("id")
+	if agentID == "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Agent ID is required"})
+		return
+	}
+
+	switch {
+	case router.a2aClient == nil:
+		router.logger.Debug("a2a client is nil")
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Agent not found"})
+		return
+	case !router.a2aClient.IsInitialized():
+		router.logger.Info("a2a client not initialized, no agents available")
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Agent not found"})
+		return
+	}
+
+	agentURLs := router.a2aClient.GetAgents()
+
+	for _, agentURL := range agentURLs {
+		if generateAgentID(agentURL) == agentID {
+			status := router.a2aClient.GetAgentStatus(agentURL)
+			response := map[string]interface{}{
+				"id":     agentID,
+				"status": string(status),
+				"url":    agentURL,
+			}
+			c.JSON(http.StatusOK, response)
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Agent not found"})
+}
+
+// GetAllAgentStatusesHandler implements an endpoint that returns the status of all A2A agents
+//
+// This endpoint provides the current status of all configured A2A agents.
+// The status indicates whether each agent is available, unavailable, or in an unknown state.
+//
+// Request:
+//   - Method: GET
+//   - Path: /a2a/agents/status
+//
+// Response format (200 OK):
+//
+//	{
+//	  "object": "list",
+//	  "data": [
+//	    {
+//	      "id": "agent-id-1",
+//	      "status": "available",
+//	      "url": "https://agent1.example.com"
+//	    },
+//	    {
+//	      "id": "agent-id-2",
+//	      "status": "unavailable",
+//	      "url": "https://agent2.example.com"
+//	    }
+//	  ]
+//	}
+//
+// Response (403 Forbidden):
+//   - When A2A_EXPOSE is not enabled
+//
+// Response when no agents are configured:
+//
+//	{
+//	  "object": "list",
+//	  "data": []
+//	}
+//
+// Status values:
+//   - "available": Agent is responding to health checks
+//   - "unavailable": Agent is not responding to health checks
+//   - "unknown": Agent status is unknown or not yet determined
+func (router *RouterImpl) GetAllAgentStatusesHandler(c *gin.Context) {
+	if !router.cfg.A2A.Expose {
+		router.logger.Error("a2a agent statuses endpoint access attempted but not exposed", nil)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: "A2A agents endpoint is not exposed. Set A2A_EXPOSE=true to enable."})
+		return
+	}
+
+	var statusList []map[string]interface{}
+
+	switch {
+	case router.a2aClient == nil:
+		router.logger.Debug("a2a client is nil, returning empty status list")
+		statusList = make([]map[string]interface{}, 0)
+	case !router.a2aClient.IsInitialized():
+		router.logger.Info("a2a client not initialized, no agents available")
+		statusList = make([]map[string]interface{}, 0)
+	default:
+		agentURLs := router.a2aClient.GetAgents()
+		allStatuses := router.a2aClient.GetAllAgentStatuses()
+
+		statusList = make([]map[string]interface{}, 0, len(agentURLs))
+		for _, agentURL := range agentURLs {
+			status := allStatuses[agentURL]
+			statusInfo := map[string]interface{}{
+				"id":     generateAgentID(agentURL),
+				"status": string(status),
+				"url":    agentURL,
+			}
+			statusList = append(statusList, statusInfo)
+		}
+	}
+
+	response := map[string]interface{}{
+		"object": "list",
+		"data":   statusList,
+	}
+
+	c.JSON(http.StatusOK, response)
 }

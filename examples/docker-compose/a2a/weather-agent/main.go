@@ -3,25 +3,41 @@ package main
 import (
 	"context"
 	"log"
-	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
-	adk "github.com/inference-gateway/a2a/adk"
-	sdk "github.com/inference-gateway/sdk"
-	envconfig "github.com/sethvargo/go-envconfig"
-	zap "go.uber.org/zap"
+	"github.com/inference-gateway/a2a/adk/server"
+	"github.com/inference-gateway/a2a/adk/server/config"
+	"github.com/sethvargo/go-envconfig"
+	"go.uber.org/zap"
+
+	"weather-agent/tools"
+)
+
+type Config struct {
+	A2A config.Config `env:",prefix=A2A_"`
+}
+
+var (
+	Version          = "unknown"
+	AgentName        = "unknown"
+	AgentDescription = "unknown"
 )
 
 func main() {
-	ctx := context.Background()
+	// Load configuration from environment first
+	var cfg Config
 
-	var cfg adk.Config
+	ctx := context.Background()
 	if err := envconfig.Process(ctx, &cfg); err != nil {
-		log.Fatal("failed to process configuration:", err)
+		log.Fatal("failed to load config:", err)
 	}
 
+	// Initialize logger based on DEBUG environment variable
 	var logger *zap.Logger
 	var err error
-	if cfg.Debug {
+	if cfg.A2A.Debug {
 		logger, err = zap.NewDevelopment()
 	} else {
 		logger, err = zap.NewProduction()
@@ -29,73 +45,53 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to initialize logger:", err)
 	}
-	defer func() {
-		if syncErr := logger.Sync(); syncErr != nil {
-			log.Printf("failed to sync logger: %v", syncErr)
+	defer logger.Sync()
+
+	logger.Debug("loaded configuration", zap.Any("config", cfg))
+
+	// Create toolbox with weather tool
+	toolBox := server.NewDefaultToolBox()
+
+	// Add weather tool from tools package
+	weatherTool := tools.NewGetWeatherTool()
+	toolBox.AddTool(weatherTool)
+
+	// Create A2A server with agent
+	agent, err := server.NewAgentBuilder(logger).
+		WithConfig(&cfg.A2A.AgentConfig).
+		WithToolBox(toolBox).
+		Build()
+	if err != nil {
+		log.Fatal("failed to create agent:", err)
+	}
+
+	a2aServer, err := server.NewA2AServerBuilder(cfg.A2A, logger).
+		WithAgent(agent).
+		WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
+			"name":        AgentName,
+			"version":     Version,
+			"description": AgentDescription,
+			"url":         cfg.A2A.AgentURL,
+		}).
+		Build()
+	if err != nil {
+		log.Fatal("failed to create A2A server:", err)
+	}
+
+	// Start server
+	go func() {
+		if err := a2aServer.Start(ctx); err != nil {
+			log.Fatal("server failed to start:", err)
 		}
 	}()
 
-	client := sdk.NewClient(&sdk.ClientOptions{
-		BaseURL: cfg.InferenceGatewayURL,
-	})
+	logger.Info("weather agent running", zap.String("port", cfg.A2A.ServerConfig.Port))
 
-	weatherService := NewMockWeatherService(logger)
-	weatherToolHandler := NewWeatherToolHandler(weatherService, logger)
-	weatherToolProvider := NewWeatherToolProvider(weatherToolHandler)
+	// Wait for shutdown signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
 
-	toolsHandler := adk.NewToolsHandler(logger, weatherToolProvider)
-
-	agent := adk.NewA2AAgent(cfg, logger, client, toolsHandler)
-
-	weatherTaskProcessor := NewWeatherTaskResultProcessor(logger)
-	weatherInfoProvider := NewWeatherAgentInfoProvider(logger)
-
-	agent.SetTaskResultProcessor(weatherTaskProcessor)
-	agent.SetAgentInfoProvider(weatherInfoProvider)
-
-	oidcAuthenticator, err := adk.NewOIDCAuthenticatorMiddleware(logger, cfg)
-	if err != nil {
-		logger.Fatal("failed to initialize oidc authenticator", zap.Error(err))
-	}
-
-	logger.Info("starting agent",
-		zap.String("name", cfg.AgentName),
-		zap.String("version", cfg.AgentVersion),
-		zap.String("port", cfg.Port),
-		zap.String("inference_gateway_url", cfg.InferenceGatewayURL),
-		zap.String("llm_provider", cfg.LLMProvider),
-		zap.String("llm_model", cfg.LLMModel),
-		zap.Bool("debug_mode", cfg.Debug),
-		zap.Bool("enable_auth", cfg.AuthConfig.Enable),
-		zap.Bool("tls_enabled", cfg.TLSConfig.Enable),
-		zap.Duration("cleanup_completed_task_interval", cfg.QueueConfig.CleanupInterval),
-		zap.Int("max_queue_size", cfg.QueueConfig.MaxSize),
-		zap.Duration("streaming_status_update_interval", cfg.StreamingStatusUpdateInterval),
-		zap.Duration("server_read_timeout", cfg.ServerConfig.ReadTimeout),
-		zap.Duration("server_write_timeout", cfg.ServerConfig.WriteTimeout),
-		zap.Duration("server_idle_timeout", cfg.ServerConfig.IdleTimeout))
-
-	go agent.StartTaskProcessor(ctx)
-
-	router := agent.SetupRouter(oidcAuthenticator)
-
-	server := &http.Server{
-		Addr:         ":" + cfg.Port,
-		Handler:      router,
-		ReadTimeout:  cfg.ServerConfig.ReadTimeout,
-		WriteTimeout: cfg.ServerConfig.WriteTimeout,
-		IdleTimeout:  cfg.ServerConfig.IdleTimeout,
-	}
-
-	if cfg.TLSConfig.Enable {
-		logger.Info("agent starting with tls", zap.String("agent", cfg.AgentName), zap.String("port", cfg.Port))
-		if err := server.ListenAndServeTLS(cfg.TLSConfig.CertPath, cfg.TLSConfig.KeyPath); err != nil {
-			logger.Fatal("failed to start server with tls", zap.Error(err))
-		}
-	} else {
-		logger.Info("agent starting", zap.String("agent", cfg.AgentName), zap.String("port", cfg.Port))
-		if err := server.ListenAndServe(); err != nil {
-			logger.Fatal("failed to start server", zap.Error(err))
-		}
-	}
+	logger.Info("shutting down server...")
+	a2aServer.Stop(ctx)
 }
