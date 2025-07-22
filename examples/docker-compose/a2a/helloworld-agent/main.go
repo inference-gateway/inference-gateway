@@ -16,7 +16,7 @@ import (
 )
 
 type Config struct {
-	A2A config.Config `prefix:"A2A_"`
+	A2A config.Config `env:",prefix=A2A_"`
 }
 
 var (
@@ -46,6 +46,8 @@ func main() {
 		log.Fatal("failed to initialize logger:", err)
 	}
 	defer logger.Sync()
+
+	logger.Debug("loaded configuration", zap.Any("config", cfg))
 
 	// Create toolbox with greeting tool
 	toolBox := server.NewDefaultToolBox()
