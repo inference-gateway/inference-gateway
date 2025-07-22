@@ -63,22 +63,23 @@ services:
     networks:
       - a2a-network
 
-  # google-calendar-agent:
-  #   image: ghcr.io/inference-gateway/google-calendar-agent:latest
-  #   pull_policy: always
-  #   environment:
-  #     DEBUG: "false"
-  #     AGENT_CLIENT_PROVIDER: "deepseek"
-  #     AGENT_CLIENT_MODEL: "deepseek-chat"
-  #     AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
-  #     AGENT_CLIENT_API_KEY: "dummy-key-for-local-testing"
-  #     CAPABILITIES_STREAMING: "true"
-  #   env_file:
-  #     - .env.google
-  #   ports:
-  #     - "8084:8080"
-  #   networks:
-  #     - a2a-network
+  google-calendar-agent:
+    image: ghcr.io/inference-gateway/google-calendar-agent:latest
+    pull_policy: always
+    environment:
+      A2A_AGENT_URL: "http://google-calendar-agent:8080"
+      A2A_AGENT_CLIENT_PROVIDER: "deepseek"
+      A2A_AGENT_CLIENT_MODEL: "deepseek-chat"
+      A2A_AGENT_CLIENT_BASE_URL: "http://inference-gateway:8080/v1"
+      A2A_AGENT_CLIENT_API_KEY: "dummy-key-for-local-testing"
+      A2A_CAPABILITIES_STREAMING: "true"
+      A2A_SERVER_DISABLE_HEALTH_LOGS: "true"
+    env_file:
+      - .env.google
+    ports:
+      - "8084:8080"
+    networks:
+      - a2a-network
 
 networks:
   a2a-network:
