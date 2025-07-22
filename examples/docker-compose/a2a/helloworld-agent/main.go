@@ -14,15 +14,21 @@ import (
 	"go.uber.org/zap"
 )
 
-func main() {
-	// Load configuration from environment first
-	cfg := config.Config{
-		AgentName:        "helloworld-agent",
-		AgentDescription: "A simple greeting agent",
-		Port:             "8080",
-	}
+type Config struct {
+	A2A config.Config `prefix:"A2A_"`
+}
 
+var (
+	Version          = "unknown"
+	AgentName        = "unknown"
+	AgentDescription = "unknown"
+)
+
+func main() {
 	ctx := context.Background()
+
+	// Load configuration from environment first
+	var cfg Config
 	if err := envconfig.Process(ctx, &cfg); err != nil {
 		log.Fatal("failed to load config:", err)
 	}
@@ -30,7 +36,7 @@ func main() {
 	// Initialize logger based on DEBUG environment variable
 	var logger *zap.Logger
 	var err error
-	if cfg.Debug {
+	if cfg.A2A.Debug {
 		logger, err = zap.NewDevelopment()
 	} else {
 		logger, err = zap.NewProduction()
@@ -85,10 +91,10 @@ func main() {
 
 	// Create A2A server with agent
 	var a2aServer server.A2AServer
-	if cfg.AgentConfig.APIKey != "" {
+	if cfg.A2A.AgentConfig.APIKey != "" {
 		// With LLM agent
 		agent, err := server.NewAgentBuilder(logger).
-			WithConfig(&cfg.AgentConfig).
+			WithConfig(&cfg.A2A.AgentConfig).
 			WithToolBox(toolBox).
 			WithSystemPrompt("You are a friendly greeting assistant. Use the greet_user tool to create personalized greetings for users.").
 			Build()
@@ -96,9 +102,18 @@ func main() {
 			log.Fatal("failed to create agent:", err)
 		}
 
-		a2aServer = server.NewA2AServerBuilder(cfg, logger).
+		a2aServer, err = server.NewA2AServerBuilder(cfg.A2A, logger).
 			WithAgent(agent).
+			WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
+				"name":        AgentName,
+				"version":     Version,
+				"description": AgentDescription,
+				"url":         cfg.A2A.AgentURL,
+			}).
 			Build()
+		if err != nil {
+			log.Fatal("failed to create A2A server:", err)
+		}
 	} else {
 		// Mock mode without LLM
 		agent, err := server.NewAgentBuilder(logger).
@@ -108,9 +123,18 @@ func main() {
 			log.Fatal("failed to create agent:", err)
 		}
 
-		a2aServer = server.NewA2AServerBuilder(cfg, logger).
+		a2aServer, err = server.NewA2AServerBuilder(cfg.A2A, logger).
 			WithAgent(agent).
+			WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
+				"name":        AgentName,
+				"version":     Version,
+				"description": AgentDescription,
+				"url":         cfg.A2A.AgentURL,
+			}).
 			Build()
+		if err != nil {
+			log.Fatal("failed to create A2A server:", err)
+		}
 	}
 
 	// Start server
@@ -120,7 +144,7 @@ func main() {
 		}
 	}()
 
-	logger.Info("helloworld agent running", zap.String("port", cfg.Port))
+	logger.Info("helloworld agent running", zap.String("port", cfg.A2A.ServerConfig.Port))
 
 	// Wait for shutdown signal
 	quit := make(chan os.Signal, 1)

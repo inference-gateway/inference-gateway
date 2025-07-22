@@ -14,17 +14,19 @@ import (
 	"go.uber.org/zap"
 )
 
+type Config struct {
+	A2A config.Config `prefix:"A2A_"`
+}
+
+var (
+	Version          = "unknown"
+	AgentName        = "unknown"
+	AgentDescription = "unknown"
+)
+
 func main() {
 	// Load configuration from environment first
-	cfg := config.Config{
-		AgentName:        "weather-agent",
-		AgentDescription: "A weather information agent",
-		Port:             "8080",
-		AgentConfig: config.AgentConfig{
-			Provider: "deepseek",
-			Model:    "deepseek-chat",
-		},
-	}
+	var cfg Config
 
 	ctx := context.Background()
 	if err := envconfig.Process(ctx, &cfg); err != nil {
@@ -34,7 +36,7 @@ func main() {
 	// Initialize logger based on DEBUG environment variable
 	var logger *zap.Logger
 	var err error
-	if cfg.Debug {
+	if cfg.A2A.Debug {
 		logger, err = zap.NewDevelopment()
 	} else {
 		logger, err = zap.NewProduction()
@@ -127,19 +129,28 @@ func main() {
 	var a2aServer server.A2AServer
 
 	// Check if we have LLM configuration, otherwise create a tool-only agent
-	if cfg.AgentConfig.APIKey != "" {
+	if cfg.A2A.AgentConfig.APIKey != "" {
 		// Create agent with LLM capabilities
 		agent, err := server.NewAgentBuilder(logger).
-			WithConfig(&cfg.AgentConfig).
+			WithConfig(&cfg.A2A.AgentConfig).
 			WithToolBox(toolBox).
 			Build()
 		if err != nil {
 			log.Fatal("failed to create agent:", err)
 		}
 
-		a2aServer = server.NewA2AServerBuilder(cfg, logger).
+		a2aServer, err = server.NewA2AServerBuilder(cfg.A2A, logger).
 			WithAgent(agent).
+			WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
+				"name":        AgentName,
+				"version":     Version,
+				"description": AgentDescription,
+				"url":         cfg.A2A.AgentURL,
+			}).
 			Build()
+		if err != nil {
+			log.Fatal("failed to create A2A server:", err)
+		}
 	} else {
 		// Create tool-only agent without LLM (mock mode)
 		logger.Info("creating tool-only agent without LLM")
@@ -150,9 +161,18 @@ func main() {
 			log.Fatal("failed to create agent:", err)
 		}
 
-		a2aServer = server.NewA2AServerBuilder(cfg, logger).
+		a2aServer, err = server.NewA2AServerBuilder(cfg.A2A, logger).
 			WithAgent(agent).
+			WithAgentCardFromFile("./.well-known/agent.json", map[string]interface{}{
+				"name":        AgentName,
+				"version":     Version,
+				"description": AgentDescription,
+				"url":         cfg.A2A.AgentURL,
+			}).
 			Build()
+		if err != nil {
+			log.Fatal("failed to create A2A server:", err)
+		}
 	}
 
 	// Start server
@@ -162,7 +182,7 @@ func main() {
 		}
 	}()
 
-	logger.Info("weather agent running", zap.String("port", cfg.Port))
+	logger.Info("weather agent running", zap.String("port", cfg.A2A.ServerConfig.Port))
 
 	// Wait for shutdown signal
 	quit := make(chan os.Signal, 1)

@@ -3,7 +3,7 @@ module weather-agent
 go 1.24.3
 
 require (
-	github.com/inference-gateway/a2a v0.6.2
+	github.com/inference-gateway/a2a v0.7.3
 	github.com/sethvargo/go-envconfig v1.3.0
 	go.uber.org/zap v1.27.0
 )

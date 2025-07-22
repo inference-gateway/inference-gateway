@@ -1,0 +1,32 @@
+{
+  "name": "<Build flag AgentName>",
+  "version": "<Build flag Version>",
+  "description": "<Build flag AgentDescription>",
+  "url": "<Get URL from environment variable>",
+  "provider": {
+    "organization": "Inference Gateway",
+    "url": "https://github.com/inference-gateway"
+  },
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/plain", "application/json"],
+  "skills": [
+    {
+      "id": "basic-math",
+      "name": "Basic Mathematics",
+      "description": "Perform basic arithmetic operations including addition, subtraction, multiplication, and division with detailed explanations.",
+      "tags": ["mathematics", "arithmetic", "calculation", "computation"],
+      "examples": [
+        "Add 15 and 27",
+        "What is 144 divided by 12?",
+        "Calculate 8 times 9",
+        "Subtract 23 from 100",
+        "Perform complex calculations like (10 + 5) * 3 / 2"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "name": "<Build flag AgentName>",
+  "version": "<Build flag Version>",
+  "description": "<Build flag AgentDescription>",
+  "url": "<Get URL from environment variable>",
+  "provider": {
+    "organization": "Inference Gateway",
+    "url": "https://github.com/inference-gateway"
+  },
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": false,
+    "stateTransitionHistory": false
+  },
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/plain", "application/json"],
+  "skills": [
+    {
+      "id": "personalized-greeting",
+      "name": "Personalized Greeting",
+      "description": "Generate friendly, personalized greetings in multiple languages including English, Spanish, and French.",
+      "tags": ["greeting", "multilingual", "personalization", "communication"],
+      "examples": [
+        "Greet John in English",
+        "Say hello to Maria in Spanish",
+        "Create a French greeting for Pierre",
+        "Generate a personalized greeting for Sarah",
+        "Greet someone named Alex in their preferred language"
+      ]
+    }
+  ]
+}
