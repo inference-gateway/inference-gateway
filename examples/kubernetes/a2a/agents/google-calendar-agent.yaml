@@ -52,23 +52,6 @@ spec:
         - name: "User-Agent"
           value: "Google Calendar Agent"
       systemPrompt: "You are a helpful assistant for managing Google Calendar events. You can create, read, update, and delete events, and you can also list upcoming events."
-  card:
-    name: "Google Calendar Agent"
-    description: "A2A-compatible agent for Google Calendar integration with full CRUD operations and event management capabilities"
-    version: "0.1.0"
-    url: "https://google-calendar-agent.agents.svc.cluster.local:8080"
-    defaultInputModes:
-      - "text"
-      - "voice"
-    defaultOutputModes:
-      - "text"
-      - "voice"
-    documentationUrl: "https://github.com/inference-gateway/google-calendar-agent/blob/main/README.md"
-    capabilities:
-      streaming: true
-      pushNotifications: true
-      stateTransitionHistory: true
-    skills: []
 ---
 apiVersion: v1
 kind: Secret
