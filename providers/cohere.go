@@ -1,6 +1,9 @@
 package providers
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type ModelCohere struct {
 	Name             string   `json:"name,omitempty"`
@@ -22,8 +25,12 @@ func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
 	models := make([]Model, len(l.Models))
 	created := time.Now().Unix()
 	for i, model := range l.Models {
+		modelID := model.Name
+		if !strings.Contains(modelID, "/") {
+			modelID = string(provider) + "/" + modelID
+		}
 		models[i] = Model{
-			ID:       string(provider) + "/" + model.Name,
+			ID:       modelID,
 			Object:   "model",
 			Created:  created,
 			OwnedBy:  string(provider),

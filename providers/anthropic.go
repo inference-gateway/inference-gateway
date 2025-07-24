@@ -1,6 +1,7 @@
 package providers
 
 import (
+	"strings"
 	"time"
 )
 
@@ -30,8 +31,12 @@ func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
 			created = t.Unix()
 		}
 
+		modelID := model.ID
+		if !strings.Contains(modelID, "/") {
+			modelID = string(provider) + "/" + modelID
+		}
 		models = append(models, Model{
-			ID:       string(provider) + "/" + model.ID,
+			ID:       modelID,
 			Object:   "model",
 			Created:  created,
 			OwnedBy:  string(provider),
