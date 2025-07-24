@@ -1,3 +1,4 @@
+// Code generated from OpenAPI schema. DO NOT EDIT.
 package providers
 
 import (
@@ -97,6 +98,16 @@ var Registry = map[Provider]*Config{
 			Chat:   CohereChatEndpoint,
 		},
 	},
+	DeepseekID: {
+		ID:       DeepseekID,
+		Name:     DeepseekDisplayName,
+		URL:      DeepseekDefaultBaseURL,
+		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			Models: DeepseekModelsEndpoint,
+			Chat:   DeepseekChatEndpoint,
+		},
+	},
 	GroqID: {
 		ID:       GroqID,
 		Name:     GroqDisplayName,
@@ -125,16 +136,6 @@ var Registry = map[Provider]*Config{
 		Endpoints: Endpoints{
 			Models: OpenaiModelsEndpoint,
 			Chat:   OpenaiChatEndpoint,
-		},
-	},
-	DeepseekID: {
-		ID:       DeepseekID,
-		Name:     DeepseekDisplayName,
-		URL:      DeepseekDefaultBaseURL,
-		AuthType: AuthTypeBearer,
-		Endpoints: Endpoints{
-			Models: DeepseekModelsEndpoint,
-			Chat:   DeepseekChatEndpoint,
 		},
 	},
 }

@@ -86,6 +86,20 @@ func main() {
 			fmt.Printf("Error generating Helm values: %v\n", err)
 			os.Exit(1)
 		}
+	case "Providers":
+		fmt.Printf("Generating provider files to %s\n", output)
+		err := codegen.GenerateProviders(output, "openapi.yaml")
+		if err != nil {
+			fmt.Printf("Error generating providers: %v\n", err)
+			os.Exit(1)
+		}
+	case "ProviderRegistry":
+		fmt.Printf("Generating provider registry to %s\n", output)
+		err := codegen.GenerateProviderRegistry(output, "openapi.yaml")
+		if err != nil {
+			fmt.Printf("Error generating provider registry: %v\n", err)
+			os.Exit(1)
+		}
 	default:
 		fmt.Println("Invalid type specified")
 		os.Exit(1)

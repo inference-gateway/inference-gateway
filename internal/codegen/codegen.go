@@ -637,3 +637,407 @@ func generateTag(field string, prop openapi.Property, requiredFields []string) t
 
 	return template.HTML("")
 }
+
+// GenerateProviders generates individual provider files based on their configuration
+func GenerateProviders(outputDir string, oas string) error {
+	schema, err := openapi.Read(oas)
+	if err != nil {
+		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
+	}
+
+	if len(schema.Components.Schemas.Provider.XProviderConfigs) == 0 {
+		return fmt.Errorf("no provider configurations found in OpenAPI spec")
+	}
+
+	caser := cases.Title(language.English)
+
+	funcMap := template.FuncMap{
+		"title": caser.String,
+		"pascalCase": func(s string) string {
+			if strings.ToLower(s) == "id" {
+				return "ID"
+			}
+			parts := strings.Split(s, "_")
+			for i, part := range parts {
+				parts[i] = cases.Title(language.English).String(strings.ToLower(part))
+			}
+			return strings.Join(parts, "")
+		},
+	}
+
+	// Template for OpenAI-compatible providers
+	openaiCompatibleTemplate := `package providers
+
+type ListModelsResponse{{.ProviderName}} struct {
+	Object string  ` + "`json:\"object\"`" + `
+	Data   []Model ` + "`json:\"data\"`" + `
+}
+
+func (l *ListModelsResponse{{.ProviderName}}) Transform() ListModelsResponse {
+	provider := {{.ProviderName}}ID
+	models := make([]Model, len(l.Data))
+	for i, model := range l.Data {
+		model.ServedBy = provider
+		model.ID = string(provider) + "/" + model.ID
+		models[i] = model
+	}
+
+	return ListModelsResponse{
+		Provider: &provider,
+		Object:   l.Object,
+		Data:     models,
+	}
+}
+`
+
+	// Template for Anthropic provider (custom format)
+	anthropicTemplate := `package providers
+
+import (
+	"time"
+)
+
+type AnthropicModel struct {
+	Type        string ` + "`json:\"type\"`" + `
+	ID          string ` + "`json:\"id\"`" + `
+	DisplayName string ` + "`json:\"display_name\"`" + `
+	CreatedAt   string ` + "`json:\"created_at\"`" + `
+}
+
+type ListModelsResponseAnthropic struct {
+	Data    []AnthropicModel ` + "`json:\"data\"`" + `
+	HasMore bool             ` + "`json:\"has_more\"`" + `
+	FirstID string           ` + "`json:\"first_id\"`" + `
+	LastID  string           ` + "`json:\"last_id\"`" + `
+}
+
+func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
+	provider := AnthropicID
+	var models []Model
+	for _, model := range l.Data {
+		t, err := time.Parse(time.RFC3339, model.CreatedAt)
+		var created int64
+		if err != nil {
+			created = 0
+		} else {
+			created = t.Unix()
+		}
+
+		models = append(models, Model{
+			ID:       string(provider) + "/" + model.ID,
+			Object:   "model",
+			Created:  created,
+			OwnedBy:  string(provider),
+			ServedBy: provider,
+		})
+	}
+	return ListModelsResponse{
+		Object:   "list",
+		Provider: &provider,
+		Data:     models,
+	}
+}
+`
+
+	// Template for Cohere provider (custom format)
+	cohereTemplate := `package providers
+
+import "time"
+
+type ModelCohere struct {
+	Name             string   ` + "`json:\"name,omitempty\"`" + `
+	Endpoints        []string ` + "`json:\"endpoints,omitempty\"`" + `
+	Finetuned        bool     ` + "`json:\"finetuned,omitempty\"`" + `
+	ContextLenght    int32    ` + "`json:\"context_length,omitempty\"`" + `
+	TokenizerURL     string   ` + "`json:\"tokenizer_url,omitempty\"`" + `
+	SupportsVision   bool     ` + "`json:\"supports_vision,omitempty\"`" + `
+	DefaultEndpoints []string ` + "`json:\"default_endpoints,omitempty\"`" + `
+}
+
+type ListModelsResponseCohere struct {
+	NextPageToken string         ` + "`json:\"next_page_token,omitempty\"`" + `
+	Models        []*ModelCohere ` + "`json:\"models,omitempty\"`" + `
+}
+
+func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
+	provider := CohereID
+	models := make([]Model, len(l.Models))
+	created := time.Now().Unix()
+	for i, model := range l.Models {
+		models[i] = Model{
+			ID:       string(provider) + "/" + model.Name,
+			Object:   "model",
+			Created:  created, // Cohere does not provide creation time
+			OwnedBy:  string(provider),
+			ServedBy: provider,
+		}
+	}
+
+	return ListModelsResponse{
+		Provider: &provider,
+		Object:   "list",
+		Data:     models,
+	}
+}
+`
+
+	// Template for Cloudflare provider (custom format)
+	cloudflareTemplate := `package providers
+
+import "time"
+
+type ModelCloudflare struct {
+	ID          string ` + "`json:\"id,omitempty\"`" + `
+	Name        string ` + "`json:\"name,omitempty\"`" + `
+	Description string ` + "`json:\"description,omitempty\"`" + `
+	CreatedAt   string ` + "`json:\"created_at,omitempty\"`" + `
+	ModifiedAt  string ` + "`json:\"modified_at,omitempty\"`" + `
+	Public      int8   ` + "`json:\"public,omitempty\"`" + `
+	Model       string ` + "`json:\"model,omitempty\"`" + `
+}
+
+type ListModelsResponseCloudflare struct {
+	Success bool               ` + "`json:\"success,omitempty\"`" + `
+	Result  []*ModelCloudflare ` + "`json:\"result,omitempty\"`" + `
+}
+
+func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
+	provider := CloudflareID
+	models := make([]Model, len(l.Result))
+	for i, model := range l.Result {
+		created := time.Now().Unix()
+		if model.CreatedAt != "" {
+			createdAt, err := time.Parse("2006-01-02 15:04:05.999", model.CreatedAt)
+			if err == nil {
+				created = createdAt.Unix()
+			}
+		}
+		models[i] = Model{
+			ID:       string(provider) + "/" + model.Name,
+			Object:   "model",
+			Created:  created,
+			OwnedBy:  string(provider),
+			ServedBy: provider,
+		}
+	}
+
+	return ListModelsResponse{
+		Provider: &provider,
+		Object:   "list",
+		Data:     models,
+	}
+}
+`
+
+	// Generate files for each provider
+	for providerName, config := range schema.Components.Schemas.Provider.XProviderConfigs {
+		var templateContent string
+		var filename string
+
+		switch strings.ToLower(providerName) {
+		case "anthropic":
+			templateContent = anthropicTemplate
+		case "cohere":
+			templateContent = cohereTemplate
+		case "cloudflare":
+			templateContent = cloudflareTemplate
+		default:
+			// OpenAI-compatible providers
+			templateContent = openaiCompatibleTemplate
+		}
+
+		filename = fmt.Sprintf("%s/%s.go", outputDir, strings.ToLower(providerName))
+
+		tmpl, err := template.New(providerName).Funcs(funcMap).Parse(templateContent)
+		if err != nil {
+			return fmt.Errorf("failed to parse template for %s: %w", providerName, err)
+		}
+
+		data := struct {
+			ProviderName string
+			Config       openapi.ProviderConfig
+		}{
+			ProviderName: caser.String(providerName),
+			Config:       config,
+		}
+
+		f, err := os.Create(filename)
+		if err != nil {
+			return fmt.Errorf("failed to create %s: %w", filename, err)
+		}
+		defer f.Close()
+
+		if err := tmpl.Execute(f, data); err != nil {
+			return fmt.Errorf("failed to execute template for %s: %w", providerName, err)
+		}
+
+		// Format the generated file
+		cmd := exec.Command("go", "fmt", filename)
+		if err := cmd.Run(); err != nil {
+			fmt.Printf("Warning: Failed to format %s: %v\n", filename, err)
+		}
+
+		fmt.Printf("Generated %s\n", filename)
+	}
+
+	return nil
+}
+
+// GenerateProviderRegistry generates the provider registry based on provider configurations
+func GenerateProviderRegistry(destination string, oas string) error {
+	schema, err := openapi.Read(oas)
+	if err != nil {
+		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
+	}
+
+	if len(schema.Components.Schemas.Provider.XProviderConfigs) == 0 {
+		return fmt.Errorf("no provider configurations found in OpenAPI spec")
+	}
+
+	caser := cases.Title(language.English)
+
+	funcMap := template.FuncMap{
+		"title": caser.String,
+		"pascalCase": func(s string) string {
+			if strings.ToLower(s) == "id" {
+				return "ID"
+			}
+			parts := strings.Split(s, "_")
+			for i, part := range parts {
+				parts[i] = cases.Title(language.English).String(strings.ToLower(part))
+			}
+			return strings.Join(parts, "")
+		},
+		"getAuthType": func(authType string) string {
+			switch authType {
+			case "bearer":
+				return "AuthTypeBearer"
+			case "xheader":
+				return "AuthTypeXheader"
+			case "query":
+				return "AuthTypeQuery"
+			case "none":
+				return "AuthTypeNone"
+			default:
+				return "AuthTypeBearer"
+			}
+		},
+	}
+
+	registryTemplate := `// Code generated from OpenAPI schema. DO NOT EDIT.
+package providers
+
+import (
+	"fmt"
+
+	"github.com/inference-gateway/inference-gateway/logger"
+)
+
+// Base provider configuration
+type Config struct {
+	ID           Provider
+	Name         string
+	URL          string
+	Token        string
+	AuthType     string
+	ExtraHeaders map[string][]string
+	Endpoints    Endpoints
+}
+
+//go:generate mockgen -source=registry.go -destination=../tests/mocks/providers/registry.go -package=providersmocks
+type ProviderRegistry interface {
+	GetProviders() map[Provider]*Config
+	BuildProvider(providerID Provider, client Client) (IProvider, error)
+}
+
+type ProviderRegistryImpl struct {
+	cfg    map[Provider]*Config
+	logger logger.Logger
+}
+
+func NewProviderRegistry(cfg map[Provider]*Config, logger logger.Logger) ProviderRegistry {
+	return &ProviderRegistryImpl{
+		cfg:    cfg,
+		logger: logger,
+	}
+}
+
+func (p *ProviderRegistryImpl) GetProviders() map[Provider]*Config {
+	return p.cfg
+}
+
+func (p *ProviderRegistryImpl) BuildProvider(providerID Provider, client Client) (IProvider, error) {
+	provider, ok := p.cfg[providerID]
+	if !ok {
+		return nil, fmt.Errorf("provider %s not found", providerID)
+	}
+
+	if provider.AuthType != AuthTypeNone && provider.Token == "" {
+		return nil, fmt.Errorf("provider %s token not configured", providerID)
+	}
+
+	return &ProviderImpl{
+		id:           &provider.ID,
+		name:         provider.Name,
+		url:          provider.URL,
+		token:        provider.Token,
+		authType:     provider.AuthType,
+		extraHeaders: provider.ExtraHeaders,
+		endpoints:    provider.Endpoints,
+		logger:       p.logger,
+		client:       client,
+	}, nil
+}
+
+// The registry of all providers
+var Registry = map[Provider]*Config{
+	{{- range $name, $config := .Providers }}
+	{{title $name}}ID: {
+		ID:       {{title $name}}ID,
+		Name:     {{title $name}}DisplayName,
+		URL:      {{title $name}}DefaultBaseURL,
+		AuthType: {{getAuthType $config.AuthType}},
+		{{- if eq $name "anthropic" }}
+		ExtraHeaders: map[string][]string{
+			"anthropic-version": {"2023-06-01"},
+		},
+		{{- end }}
+		Endpoints: Endpoints{
+			Models: {{title $name}}ModelsEndpoint,
+			Chat:   {{title $name}}ChatEndpoint,
+		},
+	},
+	{{- end }}
+}
+`
+
+	tmpl, err := template.New("registry").Funcs(funcMap).Parse(registryTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse registry template: %w", err)
+	}
+
+	data := struct {
+		Providers map[string]openapi.ProviderConfig
+	}{
+		Providers: schema.Components.Schemas.Provider.XProviderConfigs,
+	}
+
+	f, err := os.Create(destination)
+	if err != nil {
+		return fmt.Errorf("failed to create registry file: %w", err)
+	}
+	defer f.Close()
+
+	if err := tmpl.Execute(f, data); err != nil {
+		return fmt.Errorf("failed to execute registry template: %w", err)
+	}
+
+	// Format the generated file
+	cmd := exec.Command("go", "fmt", destination)
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
+	}
+
+	fmt.Printf("Generated provider registry: %s\n", destination)
+	return nil
+}

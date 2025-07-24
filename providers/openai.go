@@ -17,6 +17,6 @@ func (l *ListModelsResponseOpenai) Transform() ListModelsResponse {
 	return ListModelsResponse{
 		Provider: &provider,
 		Object:   l.Object,
-		Data:     l.Data,
+		Data:     models,
 	}
 }

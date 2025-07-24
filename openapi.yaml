@@ -526,7 +526,7 @@ components:
         anthropic:
           id: "anthropic"
           url: "https://api.anthropic.com/v1"
-          auth_type: "bearer"
+          auth_type: "xheader"
           endpoints:
             models:
               name: "list_models"
