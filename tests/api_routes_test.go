@@ -28,87 +28,95 @@ func init() {
 
 func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 	tests := []struct {
-		name           string
-		allowedModels  string
-		mockModels     []providers.Model
-		expectedModels []string
-		description    string
+		name                         string
+		allowedModels                string
+		mockModels                   []providers.Model
+		expectedModelsSingleProvider []string
+		expectedModelsAllProviders   []string
+		description                  string
 	}{
 		{
 			name:          "Empty ALLOWED_MODELS returns all models",
 			allowedModels: "",
 			mockModels: []providers.Model{
-				{ID: "openai/gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "openai/gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "anthropic/claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModels: []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "anthropic/claude-3"},
-			description:    "When MODELS_LIST is empty, all models should be returned",
+			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "openai/claude-3"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "openai/claude-3", "anthropic/gpt-4", "anthropic/gpt-3.5-turbo", "anthropic/claude-3"},
+			description:                  "When MODELS_LIST is empty, all models should be returned",
 		},
 		{
 			name:          "Filter by exact model ID",
 			allowedModels: "openai/gpt-4",
 			mockModels: []providers.Model{
-				{ID: "openai/gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "openai/gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "anthropic/claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModels: []string{"openai/gpt-4"},
-			description:    "Should return only the exact model ID match",
+			expectedModelsSingleProvider: []string{"openai/gpt-4"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4"},
+			description:                  "Should return only the exact model ID match",
 		},
 		{
 			name:          "Filter by model name without provider prefix",
 			allowedModels: "gpt-4,claude-3",
 			mockModels: []providers.Model{
-				{ID: "openai/gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "openai/gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "anthropic/claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModels: []string{"openai/gpt-4", "anthropic/claude-3"},
-			description:    "Should match models by name without provider prefix",
+			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/claude-3"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/claude-3", "anthropic/gpt-4", "anthropic/claude-3"},
+			description:                  "Should match models by name without provider prefix",
 		},
 		{
 			name:          "Case insensitive matching",
 			allowedModels: "GPT-4,CLAUDE-3",
 			mockModels: []providers.Model{
-				{ID: "openai/gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "openai/gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "anthropic/claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModels: []string{"openai/gpt-4", "anthropic/claude-3"},
-			description:    "Should match models in a case-insensitive manner",
+			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/claude-3"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/claude-3", "anthropic/gpt-4", "anthropic/claude-3"},
+			description:                  "Should match models in a case-insensitive manner",
 		},
 		{
 			name:          "Trim whitespace in ALLOWED_MODELS",
 			allowedModels: " gpt-4 , claude-3 ",
 			mockModels: []providers.Model{
-				{ID: "openai/gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "openai/gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "anthropic/claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModels: []string{"openai/gpt-4", "anthropic/claude-3"},
-			description:    "Should handle whitespace correctly in the models list",
+			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/claude-3"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/claude-3", "anthropic/gpt-4", "anthropic/claude-3"},
+			description:                  "Should handle whitespace correctly in the models list",
 		},
 		{
 			name:          "No matches returns empty list",
 			allowedModels: "nonexistent-model",
 			mockModels: []providers.Model{
-				{ID: "openai/gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "openai/gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
 			},
-			expectedModels: []string{},
-			description:    "Should return empty list when no models match the filter",
+			expectedModelsSingleProvider: []string{},
+			expectedModelsAllProviders:   []string{},
+			description:                  "Should return empty list when no models match the filter",
 		},
 		{
 			name:          "Mixed exact ID and name matching",
 			allowedModels: "openai/gpt-4,claude-3",
 			mockModels: []providers.Model{
-				{ID: "openai/gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "openai/gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "anthropic/claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModels: []string{"openai/gpt-4", "anthropic/claude-3"},
-			description:    "Should handle mix of exact ID and name-only matching",
+			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/claude-3"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/claude-3", "anthropic/claude-3"},
+			description:                  "Should handle mix of exact ID and name-only matching",
 		},
 	}
 
@@ -155,6 +163,16 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 						Models: providers.OpenaiModelsEndpoint,
 					},
 				},
+				providers.AnthropicID: {
+					ID:       providers.AnthropicID,
+					Name:     providers.AnthropicDisplayName,
+					URL:      server.URL,
+					Token:    "test-token",
+					AuthType: providers.AuthTypeXheader,
+					Endpoints: providers.Endpoints{
+						Models: providers.AnthropicModelsEndpoint,
+					},
+				},
 			}
 
 			registry := providers.NewProviderRegistry(providerCfg, log)
@@ -187,14 +205,14 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 				require.NoError(t, err)
 
 				assert.Equal(t, "list", response.Object)
-				assert.Equal(t, len(tt.expectedModels), len(response.Data))
+				assert.Equal(t, len(tt.expectedModelsSingleProvider), len(response.Data))
 
 				actualModelIDs := make([]string, len(response.Data))
 				for i, model := range response.Data {
 					actualModelIDs[i] = model.ID
 				}
 
-				for _, expectedID := range tt.expectedModels {
+				for _, expectedID := range tt.expectedModelsSingleProvider {
 					assert.Contains(t, actualModelIDs, expectedID, "Expected model %s not found in response", expectedID)
 				}
 			})
@@ -213,14 +231,14 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 				require.NoError(t, err)
 
 				assert.Equal(t, "list", response.Object)
-				assert.Equal(t, len(tt.expectedModels), len(response.Data))
+				assert.Equal(t, len(tt.expectedModelsAllProviders), len(response.Data))
 
 				actualModelIDs := make([]string, len(response.Data))
 				for i, model := range response.Data {
 					actualModelIDs[i] = model.ID
 				}
 
-				for _, expectedID := range tt.expectedModels {
+				for _, expectedID := range tt.expectedModelsAllProviders {
 					assert.Contains(t, actualModelIDs, expectedID, "Expected model %s not found in response", expectedID)
 				}
 			})

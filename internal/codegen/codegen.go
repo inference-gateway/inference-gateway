@@ -638,7 +638,33 @@ func generateTag(field string, prop openapi.Property, requiredFields []string) t
 	return template.HTML("")
 }
 
+// readIgnoreFile reads the .openapi-ignore file and returns a set of ignored files
+func readIgnoreFile(ignoreFilePath string) (map[string]bool, error) {
+	ignored := make(map[string]bool)
+
+	data, err := os.ReadFile(ignoreFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// If ignore file doesn't exist, return empty set
+			return ignored, nil
+		}
+		return nil, fmt.Errorf("failed to read ignore file: %w", err)
+	}
+
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		// Skip empty lines and comments
+		if line != "" && !strings.HasPrefix(line, "#") {
+			ignored[line] = true
+		}
+	}
+
+	return ignored, nil
+}
+
 // GenerateProviders generates individual provider files based on their configuration
+// Only generates files not listed in .openapi-ignore and uses only the OpenAI template
 func GenerateProviders(outputDir string, oas string) error {
 	schema, err := openapi.Read(oas)
 	if err != nil {
@@ -647,6 +673,13 @@ func GenerateProviders(outputDir string, oas string) error {
 
 	if len(schema.Components.Schemas.Provider.XProviderConfigs) == 0 {
 		return fmt.Errorf("no provider configurations found in OpenAPI spec")
+	}
+
+	// Read ignore file
+	ignoreFilePath := ".openapi-ignore"
+	ignored, err := readIgnoreFile(ignoreFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read ignore file: %w", err)
 	}
 
 	caser := cases.Title(language.English)
@@ -665,7 +698,7 @@ func GenerateProviders(outputDir string, oas string) error {
 		},
 	}
 
-	// Template for OpenAI-compatible providers
+	// Only use OpenAI-compatible template for all providers
 	openaiCompatibleTemplate := `package providers
 
 type ListModelsResponse{{.ProviderName}} struct {
@@ -678,7 +711,10 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() ListModelsResponse {
 	models := make([]Model, len(l.Data))
 	for i, model := range l.Data {
 		model.ServedBy = provider
-		model.ID = string(provider) + "/" + model.ID
+		// Check if model ID already has provider prefix to avoid duplicates
+		if !strings.HasPrefix(model.ID, string(provider)+"/") {
+			model.ID = string(provider) + "/" + model.ID
+		}
 		models[i] = model
 	}
 
@@ -690,165 +726,19 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() ListModelsResponse {
 }
 `
 
-	// Template for Anthropic provider (custom format)
-	anthropicTemplate := `package providers
-
-import (
-	"time"
-)
-
-type AnthropicModel struct {
-	Type        string ` + "`json:\"type\"`" + `
-	ID          string ` + "`json:\"id\"`" + `
-	DisplayName string ` + "`json:\"display_name\"`" + `
-	CreatedAt   string ` + "`json:\"created_at\"`" + `
-}
-
-type ListModelsResponseAnthropic struct {
-	Data    []AnthropicModel ` + "`json:\"data\"`" + `
-	HasMore bool             ` + "`json:\"has_more\"`" + `
-	FirstID string           ` + "`json:\"first_id\"`" + `
-	LastID  string           ` + "`json:\"last_id\"`" + `
-}
-
-func (l *ListModelsResponseAnthropic) Transform() ListModelsResponse {
-	provider := AnthropicID
-	var models []Model
-	for _, model := range l.Data {
-		t, err := time.Parse(time.RFC3339, model.CreatedAt)
-		var created int64
-		if err != nil {
-			created = 0
-		} else {
-			created = t.Unix()
-		}
-
-		models = append(models, Model{
-			ID:       string(provider) + "/" + model.ID,
-			Object:   "model",
-			Created:  created,
-			OwnedBy:  string(provider),
-			ServedBy: provider,
-		})
-	}
-	return ListModelsResponse{
-		Object:   "list",
-		Provider: &provider,
-		Data:     models,
-	}
-}
-`
-
-	// Template for Cohere provider (custom format)
-	cohereTemplate := `package providers
-
-import "time"
-
-type ModelCohere struct {
-	Name             string   ` + "`json:\"name,omitempty\"`" + `
-	Endpoints        []string ` + "`json:\"endpoints,omitempty\"`" + `
-	Finetuned        bool     ` + "`json:\"finetuned,omitempty\"`" + `
-	ContextLenght    int32    ` + "`json:\"context_length,omitempty\"`" + `
-	TokenizerURL     string   ` + "`json:\"tokenizer_url,omitempty\"`" + `
-	SupportsVision   bool     ` + "`json:\"supports_vision,omitempty\"`" + `
-	DefaultEndpoints []string ` + "`json:\"default_endpoints,omitempty\"`" + `
-}
-
-type ListModelsResponseCohere struct {
-	NextPageToken string         ` + "`json:\"next_page_token,omitempty\"`" + `
-	Models        []*ModelCohere ` + "`json:\"models,omitempty\"`" + `
-}
-
-func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
-	provider := CohereID
-	models := make([]Model, len(l.Models))
-	created := time.Now().Unix()
-	for i, model := range l.Models {
-		models[i] = Model{
-			ID:       string(provider) + "/" + model.Name,
-			Object:   "model",
-			Created:  created, // Cohere does not provide creation time
-			OwnedBy:  string(provider),
-			ServedBy: provider,
-		}
-	}
-
-	return ListModelsResponse{
-		Provider: &provider,
-		Object:   "list",
-		Data:     models,
-	}
-}
-`
-
-	// Template for Cloudflare provider (custom format)
-	cloudflareTemplate := `package providers
-
-import "time"
-
-type ModelCloudflare struct {
-	ID          string ` + "`json:\"id,omitempty\"`" + `
-	Name        string ` + "`json:\"name,omitempty\"`" + `
-	Description string ` + "`json:\"description,omitempty\"`" + `
-	CreatedAt   string ` + "`json:\"created_at,omitempty\"`" + `
-	ModifiedAt  string ` + "`json:\"modified_at,omitempty\"`" + `
-	Public      int8   ` + "`json:\"public,omitempty\"`" + `
-	Model       string ` + "`json:\"model,omitempty\"`" + `
-}
-
-type ListModelsResponseCloudflare struct {
-	Success bool               ` + "`json:\"success,omitempty\"`" + `
-	Result  []*ModelCloudflare ` + "`json:\"result,omitempty\"`" + `
-}
-
-func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
-	provider := CloudflareID
-	models := make([]Model, len(l.Result))
-	for i, model := range l.Result {
-		created := time.Now().Unix()
-		if model.CreatedAt != "" {
-			createdAt, err := time.Parse("2006-01-02 15:04:05.999", model.CreatedAt)
-			if err == nil {
-				created = createdAt.Unix()
-			}
-		}
-		models[i] = Model{
-			ID:       string(provider) + "/" + model.Name,
-			Object:   "model",
-			Created:  created,
-			OwnedBy:  string(provider),
-			ServedBy: provider,
-		}
-	}
-
-	return ListModelsResponse{
-		Provider: &provider,
-		Object:   "list",
-		Data:     models,
-	}
-}
-`
-
 	// Generate files for each provider
 	for providerName, config := range schema.Components.Schemas.Provider.XProviderConfigs {
-		var templateContent string
-		var filename string
+		filename := fmt.Sprintf("%s.go", strings.ToLower(providerName))
 
-		switch strings.ToLower(providerName) {
-		case "anthropic":
-			templateContent = anthropicTemplate
-		case "cohere":
-			templateContent = cohereTemplate
-		case "cloudflare":
-			templateContent = cloudflareTemplate
-		default:
-			// OpenAI-compatible providers
-			templateContent = openaiCompatibleTemplate
+		// Skip if file is in ignore list
+		if ignored[filename] {
+			fmt.Printf("Skipping %s (found in .openapi-ignore)\n", filename)
+			continue
 		}
 
-		filename = fmt.Sprintf("%s/%s.go", outputDir, strings.ToLower(providerName))
+		fullPath := fmt.Sprintf("%s/%s", outputDir, filename)
 
-		tmpl, err := template.New(providerName).Funcs(funcMap).Parse(templateContent)
+		tmpl, err := template.New(providerName).Funcs(funcMap).Parse(openaiCompatibleTemplate)
 		if err != nil {
 			return fmt.Errorf("failed to parse template for %s: %w", providerName, err)
 		}
@@ -861,9 +751,9 @@ func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 			Config:       config,
 		}
 
-		f, err := os.Create(filename)
+		f, err := os.Create(fullPath)
 		if err != nil {
-			return fmt.Errorf("failed to create %s: %w", filename, err)
+			return fmt.Errorf("failed to create %s: %w", fullPath, err)
 		}
 		defer f.Close()
 
@@ -872,12 +762,12 @@ func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 		}
 
 		// Format the generated file
-		cmd := exec.Command("go", "fmt", filename)
+		cmd := exec.Command("go", "fmt", fullPath)
 		if err := cmd.Run(); err != nil {
-			fmt.Printf("Warning: Failed to format %s: %v\n", filename, err)
+			fmt.Printf("Warning: Failed to format %s: %v\n", fullPath, err)
 		}
 
-		fmt.Printf("Generated %s\n", filename)
+		fmt.Printf("Generated %s\n", fullPath)
 	}
 
 	return nil
