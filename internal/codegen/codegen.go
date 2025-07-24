@@ -645,7 +645,6 @@ func readIgnoreFile(ignoreFilePath string) (map[string]bool, error) {
 	data, err := os.ReadFile(ignoreFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// If ignore file doesn't exist, return empty set
 			return ignored, nil
 		}
 		return nil, fmt.Errorf("failed to read ignore file: %w", err)
@@ -654,7 +653,6 @@ func readIgnoreFile(ignoreFilePath string) (map[string]bool, error) {
 	lines := strings.Split(string(data), "\n")
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		// Skip empty lines and comments
 		if line != "" && !strings.HasPrefix(line, "#") {
 			ignored[line] = true
 		}
@@ -675,7 +673,6 @@ func GenerateProviders(outputDir string, oas string) error {
 		return fmt.Errorf("no provider configurations found in OpenAPI spec")
 	}
 
-	// Read ignore file
 	ignoreFilePath := ".openapi-ignore"
 	ignored, err := readIgnoreFile(ignoreFilePath)
 	if err != nil {
@@ -698,7 +695,6 @@ func GenerateProviders(outputDir string, oas string) error {
 		},
 	}
 
-	// Only use OpenAI-compatible template for all providers
 	openaiCompatibleTemplate := `package providers
 
 type ListModelsResponse{{.ProviderName}} struct {
@@ -711,10 +707,7 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() ListModelsResponse {
 	models := make([]Model, len(l.Data))
 	for i, model := range l.Data {
 		model.ServedBy = provider
-		// Check if model ID already has provider prefix to avoid duplicates
-		if !strings.HasPrefix(model.ID, string(provider)+"/") {
-			model.ID = string(provider) + "/" + model.ID
-		}
+		model.ID = string(provider) + "/" + model.ID
 		models[i] = model
 	}
 
@@ -726,17 +719,16 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() ListModelsResponse {
 }
 `
 
-	// Generate files for each provider
 	for providerName, config := range schema.Components.Schemas.Provider.XProviderConfigs {
 		filename := fmt.Sprintf("%s.go", strings.ToLower(providerName))
+		fullPath := fmt.Sprintf("%s/%s", outputDir, filename)
 
-		// Skip if file is in ignore list
-		if ignored[filename] {
-			fmt.Printf("Skipping %s (found in .openapi-ignore)\n", filename)
+		relativePath := fmt.Sprintf("%s/%s", strings.TrimPrefix(outputDir, "./"), filename)
+
+		if ignored[relativePath] {
+			fmt.Printf("Skipping %s (found in .openapi-ignore)\n", relativePath)
 			continue
 		}
-
-		fullPath := fmt.Sprintf("%s/%s", outputDir, filename)
 
 		tmpl, err := template.New(providerName).Funcs(funcMap).Parse(openaiCompatibleTemplate)
 		if err != nil {
@@ -761,7 +753,6 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() ListModelsResponse {
 			return fmt.Errorf("failed to execute template for %s: %w", providerName, err)
 		}
 
-		// Format the generated file
 		cmd := exec.Command("go", "fmt", fullPath)
 		if err := cmd.Run(); err != nil {
 			fmt.Printf("Warning: Failed to format %s: %v\n", fullPath, err)

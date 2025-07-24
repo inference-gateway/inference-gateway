@@ -1,8 +1,10 @@
 # This file lists provider files that should not be overwritten by code generation
 # These are custom providers with specific implementation details
 
-anthropic.go
-cohere.go
-cloudflare.go
-ollama.go
-openai.go
+providers/anthropic.go
+providers/cohere.go
+providers/cloudflare.go
+providers/ollama.go
+providers/openai.go
+providers/deepseek.go
+providers/groq.go

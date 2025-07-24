@@ -25,7 +25,7 @@ func (l *ListModelsResponseCohere) Transform() ListModelsResponse {
 		models[i] = Model{
 			ID:       string(provider) + "/" + model.Name,
 			Object:   "model",
-			Created:  created, // Cohere does not provide creation time
+			Created:  created,
 			OwnedBy:  string(provider),
 			ServedBy: provider,
 		}
