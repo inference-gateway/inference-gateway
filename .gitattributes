@@ -2,7 +2,10 @@
 examples/** linguist-vendored=true
 
 config/config.go linguist-generated=true
+
 providers/common_types.go linguist-generated=true
+providers/registry.go linguist-generated=true
+
 mcp/generated_types.go linguist-generated=true
 a2a/generated_types.go linguist-generated=true
 

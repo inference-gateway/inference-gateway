@@ -913,7 +913,6 @@ var Registry = map[Provider]*Config{
 		return fmt.Errorf("failed to execute registry template: %w", err)
 	}
 
-	// Format the generated file
 	cmd := exec.Command("go", "fmt", destination)
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
