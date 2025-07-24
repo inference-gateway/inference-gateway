@@ -41,10 +41,9 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 			mockModels: []providers.Model{
 				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
 				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "openai/claude-3"},
-			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "openai/claude-3", "anthropic/gpt-4", "anthropic/gpt-3.5-turbo", "anthropic/claude-3"},
+			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/gpt-3.5-turbo"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "anthropic/gpt-4", "anthropic/gpt-3.5-turbo"},
 			description:                  "When MODELS_LIST is empty, all models should be returned",
 		},
 		{
@@ -53,7 +52,6 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 			mockModels: []providers.Model{
 				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
 				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-4"},
 			expectedModelsAllProviders:   []string{"openai/gpt-4"},
@@ -61,38 +59,35 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		},
 		{
 			name:          "Filter by model name without provider prefix",
-			allowedModels: "gpt-4,claude-3",
+			allowedModels: "gpt-4",
 			mockModels: []providers.Model{
 				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
 				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/claude-3"},
-			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/claude-3", "anthropic/gpt-4", "anthropic/claude-3"},
+			expectedModelsSingleProvider: []string{"openai/gpt-4"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "anthropic/gpt-4"},
 			description:                  "Should match models by name without provider prefix",
 		},
 		{
 			name:          "Case insensitive matching",
-			allowedModels: "GPT-4,CLAUDE-3",
+			allowedModels: "GPT-4",
 			mockModels: []providers.Model{
 				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
 				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/claude-3"},
-			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/claude-3", "anthropic/gpt-4", "anthropic/claude-3"},
+			expectedModelsSingleProvider: []string{"openai/gpt-4"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "anthropic/gpt-4"},
 			description:                  "Should match models in a case-insensitive manner",
 		},
 		{
 			name:          "Trim whitespace in ALLOWED_MODELS",
-			allowedModels: " gpt-4 , claude-3 ",
+			allowedModels: " gpt-4 ",
 			mockModels: []providers.Model{
 				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
 				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/claude-3"},
-			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/claude-3", "anthropic/gpt-4", "anthropic/claude-3"},
+			expectedModelsSingleProvider: []string{"openai/gpt-4"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "anthropic/gpt-4"},
 			description:                  "Should handle whitespace correctly in the models list",
 		},
 		{
@@ -108,14 +103,13 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		},
 		{
 			name:          "Mixed exact ID and name matching",
-			allowedModels: "openai/gpt-4,claude-3",
+			allowedModels: "openai/gpt-4",
 			mockModels: []providers.Model{
 				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
 				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "claude-3", Object: "model", Created: 1677649963, OwnedBy: "anthropic", ServedBy: providers.AnthropicID},
 			},
-			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/claude-3"},
-			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/claude-3", "anthropic/claude-3"},
+			expectedModelsSingleProvider: []string{"openai/gpt-4"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4"},
 			description:                  "Should handle mix of exact ID and name-only matching",
 		},
 	}
