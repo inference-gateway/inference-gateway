@@ -7,7 +7,7 @@ metadata:
 data:
   # General settings
   ENVIRONMENT: {{ .Values.config.ENVIRONMENT | quote }}
-  ENABLE_TELEMETRY: {{ .Values.config.ENABLE_TELEMETRY | quote }}
+  TELEMETRY_ENABLE: {{ .Values.config.TELEMETRY_ENABLE | quote }}
   ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
   TELEMETRY_METRICS_PORT: {{ .Values.config.TELEMETRY_METRICS_PORT | quote }}
   ALLOWED_MODELS: {{ .Values.config.ALLOWED_MODELS | quote }}

@@ -139,7 +139,7 @@ extraEnv: []
 config:
   # General settings
   ENVIRONMENT: "production"
-  ENABLE_TELEMETRY: "false"
+  TELEMETRY_ENABLE: "false"
   ENABLE_AUTH: "false"
   TELEMETRY_METRICS_PORT: "9464"
   ALLOWED_MODELS: ""

@@ -1334,7 +1334,7 @@ components:
                   default: "production"
                   description: "The environment"
                 - name: enable_telemetry
-                  env: "ENABLE_TELEMETRY"
+                  env: "TELEMETRY_ENABLE"
                   type: bool
                   default: "false"
                   description: "Enable telemetry"

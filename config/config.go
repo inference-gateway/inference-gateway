@@ -16,7 +16,7 @@ import (
 type Config struct {
 	// General settings
 	Environment          string `env:"ENVIRONMENT, default=production" description:"The environment"`
-	EnableTelemetry      bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
+	EnableTelemetry      bool   `env:"TELEMETRY_ENABLE, default=false" description:"Enable telemetry"`
 	EnableAuth           bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
 	TelemetryMetricsPort string `env:"TELEMETRY_METRICS_PORT, default=9464" description:"Port for telemetry metrics server"`
 	AllowedModels        string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`

@@ -154,7 +154,7 @@ func TestLoad(t *testing.T) {
 		{
 			name: "Success_AllEnvVariablesSet",
 			env: map[string]string{
-				"ENABLE_TELEMETRY":     "true",
+				"TELEMETRY_ENABLE":     "true",
 				"ENVIRONMENT":          "development",
 				"SERVER_HOST":          "localhost",
 				"SERVER_PORT":          "9090",
@@ -301,7 +301,7 @@ func TestLoad(t *testing.T) {
 		{
 			name: "PartialEnvVariables",
 			env: map[string]string{
-				"ENABLE_TELEMETRY": "true",
+				"TELEMETRY_ENABLE": "true",
 				"ENVIRONMENT":      "development",
 				"OLLAMA_API_URL":   "http://custom-ollama:8080",
 			},
