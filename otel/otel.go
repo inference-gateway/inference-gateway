@@ -20,7 +20,7 @@ type OpenTelemetry interface {
 	// Application level metrics
 	RecordTokenUsage(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64)
 
-	// TODO - implement the usage of this metric probably possible to get a similar metrics from the general infrastructure request response metrics
+	// Latency metrics
 	RecordLatency(ctx context.Context, provider, model string, queueTime, promptTime, completionTime, totalTime float64)
 	RecordRequestCount(ctx context.Context, provider, requestType string)
 	RecordResponseStatus(ctx context.Context, provider, requestType, requestPath string, statusCode int)
