@@ -335,7 +335,6 @@ func (a *agentImpl) processToolCall(ctx context.Context, request *providers.Crea
 	var result providers.Message
 	var err error
 
-	// Record metrics for tool call
 	providerName := "unknown"
 	modelName := "unknown"
 	if a.provider != nil {
