@@ -176,12 +176,43 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			}
 		}
 
+		// Track tool calls in response
+		var toolCallCount int
+		if requestBody.Stream != nil && *requestBody.Stream {
+			// For streaming responses, parse tool calls from the final chunks
+			responseStr := w.body.String()
+			chunks := strings.Split(responseStr, "\n\n")
+			for _, chunk := range chunks {
+				if strings.HasPrefix(chunk, "data: ") {
+					chunk = strings.TrimPrefix(chunk, "data: ")
+					if chunk == "[DONE]" {
+						continue
+					}
+					var streamResponse providers.CreateChatCompletionStreamResponse
+					if err := json.Unmarshal([]byte(chunk), &streamResponse); err == nil {
+						if len(streamResponse.Choices) > 0 && streamResponse.Choices[0].Delta.ToolCalls != nil {
+							toolCallCount += len(*streamResponse.Choices[0].Delta.ToolCalls)
+						}
+					}
+				}
+			}
+		} else {
+			// For non-streaming responses, parse tool calls directly
+			var chatCompletionResponse providers.CreateChatCompletionResponse
+			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionResponse); err == nil {
+				if len(chatCompletionResponse.Choices) > 0 && chatCompletionResponse.Choices[0].Message.ToolCalls != nil {
+					toolCallCount = len(*chatCompletionResponse.Choices[0].Message.ToolCalls)
+				}
+			}
+		}
+
 		t.logger.Debug("token usage recorded",
 			"provider", provider,
 			"model", model,
 			"prompt_tokens", promptTokens,
 			"completion_tokens", completionTokens,
 			"total_tokens", totalTokens,
+			"tool_calls", toolCallCount,
 			"duration_ms", duration,
 			"status_code", statusCode,
 		)
@@ -194,5 +225,12 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			completionTokens,
 			totalTokens,
 		)
+
+		// Record tool call requests from LLM responses
+		if toolCallCount > 0 {
+			for i := 0; i < toolCallCount; i++ {
+				t.telemetry.RecordToolCallCount(c.Request.Context(), provider, model, "llm_response", "generic_tool_call")
+			}
+		}
 	}
 }

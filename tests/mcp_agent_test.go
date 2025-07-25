@@ -50,7 +50,7 @@ func TestNewAgent(t *testing.T) {
 			mockLogger := mocks.NewMockLogger(ctrl)
 			mockMCPClient := mcpmocks.NewMockMCPClientInterface(ctrl)
 
-			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
+			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient, nil)
 
 			if tt.expectAgent {
 				assert.NotNil(t, agentInstance)
@@ -264,7 +264,7 @@ func TestAgent_Run(t *testing.T) {
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
-			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
+			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient, nil)
 			agentInstance.SetProvider(mockProvider)
 			agentInstance.SetModel(&tt.request.Model)
 
@@ -487,7 +487,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
-			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
+			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient, nil)
 
 			results, err := agentInstance.ExecuteTools(context.Background(), tt.toolCalls)
 
@@ -876,7 +876,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
-			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
+			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient, nil)
 			agentInstance.SetProvider(mockProvider)
 			agentInstance.SetModel(&tt.request.Model)
 

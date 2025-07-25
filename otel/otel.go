@@ -25,6 +25,13 @@ type OpenTelemetry interface {
 	RecordRequestCount(ctx context.Context, provider, requestType string)
 	RecordResponseStatus(ctx context.Context, provider, requestType, requestPath string, statusCode int)
 	RecordRequestDuration(ctx context.Context, provider, requestType, requestPath string, durationMs float64)
+
+	// Function/Tool call metrics
+	RecordToolCallCount(ctx context.Context, provider, model, toolType, toolName string)
+	RecordToolCallSuccess(ctx context.Context, provider, model, toolType, toolName string)
+	RecordToolCallFailure(ctx context.Context, provider, model, toolType, toolName, errorType string)
+	RecordToolCallDuration(ctx context.Context, provider, model, toolType, toolName string, durationMs float64)
+
 	ShutDown(ctx context.Context) error
 }
 
@@ -46,6 +53,12 @@ type OpenTelemetryImpl struct {
 	requestCounter           metric.Int64Counter
 	responseStatusCounter    metric.Int64Counter
 	requestDurationHistogram metric.Float64Histogram
+
+	// Function/Tool call metrics
+	toolCallCounter           metric.Int64Counter
+	toolCallSuccessCounter    metric.Int64Counter
+	toolCallFailureCounter    metric.Int64Counter
+	toolCallDurationHistogram metric.Float64Histogram
 }
 
 func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
@@ -113,7 +126,7 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 
 	// Initialize metrics
 	o.logger.Debug("initializing opentelemetry metrics")
-	var err1, err2, err3, err4, err5, err6, err7, err8, err9, err10 error
+	var err1, err2, err3, err4, err5, err6, err7, err8, err9, err10, err11, err12, err13, err14 error
 
 	o.promptTokensCounter, err1 = o.meter.Int64Counter("llm_usage_prompt_tokens",
 		metric.WithDescription("Number of prompt tokens used"))
@@ -150,13 +163,28 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 		metric.WithDescription("End-to-end request duration"),
 		metric.WithUnit("ms"))
 
+	// Function/Tool call metrics
+	o.toolCallCounter, err11 = o.meter.Int64Counter("llm_tool_calls_total",
+		metric.WithDescription("Total number of function/tool calls executed"))
+
+	o.toolCallSuccessCounter, err12 = o.meter.Int64Counter("llm_tool_calls_success_total",
+		metric.WithDescription("Total number of successful function/tool calls"))
+
+	o.toolCallFailureCounter, err13 = o.meter.Int64Counter("llm_tool_calls_failure_total",
+		metric.WithDescription("Total number of failed function/tool calls"))
+
+	o.toolCallDurationHistogram, err14 = o.meter.Float64Histogram("llm_tool_call_duration",
+		metric.WithDescription("Function/tool call execution duration"),
+		metric.WithUnit("ms"))
+
 	// Check for errors
-	for i, err := range []error{err1, err2, err3, err4, err5, err6, err7, err8, err9, err10} {
+	for i, err := range []error{err1, err2, err3, err4, err5, err6, err7, err8, err9, err10, err11, err12, err13, err14} {
 		if err != nil {
 			metricNames := []string{
 				"llm_usage_prompt_tokens", "llm_usage_completion_tokens", "llm_usage_total_tokens",
 				"llm_latency_queue_time", "llm_latency_prompt_time", "llm_latency_completion_time",
 				"llm_latency_total_time", "llm_requests_total", "llm_responses_total", "llm_request_duration",
+				"llm_tool_calls_total", "llm_tool_calls_success_total", "llm_tool_calls_failure_total", "llm_tool_call_duration",
 			}
 			o.logger.Error("failed to create metric", err, "metric_name", metricNames[i])
 			return err
@@ -164,7 +192,7 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 	}
 
 	o.logger.Info("opentelemetry initialization completed successfully",
-		"metrics_initialized", 7, // Only counting non-commented metrics
+		"metrics_initialized", 11, // Only counting non-commented metrics (7 existing + 4 new tool call metrics)
 		"prometheus_endpoint", "/metrics")
 
 	return nil
@@ -221,6 +249,51 @@ func (o *OpenTelemetryImpl) RecordRequestDuration(ctx context.Context, provider,
 	}
 
 	o.requestDurationHistogram.Record(ctx, durationMs, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordToolCallCount(ctx context.Context, provider, model, toolType, toolName string) {
+	attributes := []attribute.KeyValue{
+		attribute.String("provider", provider),
+		attribute.String("model", model),
+		attribute.String("tool_type", toolType),
+		attribute.String("tool_name", toolName),
+	}
+
+	o.toolCallCounter.Add(ctx, 1, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordToolCallSuccess(ctx context.Context, provider, model, toolType, toolName string) {
+	attributes := []attribute.KeyValue{
+		attribute.String("provider", provider),
+		attribute.String("model", model),
+		attribute.String("tool_type", toolType),
+		attribute.String("tool_name", toolName),
+	}
+
+	o.toolCallSuccessCounter.Add(ctx, 1, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordToolCallFailure(ctx context.Context, provider, model, toolType, toolName, errorType string) {
+	attributes := []attribute.KeyValue{
+		attribute.String("provider", provider),
+		attribute.String("model", model),
+		attribute.String("tool_type", toolType),
+		attribute.String("tool_name", toolName),
+		attribute.String("error_type", errorType),
+	}
+
+	o.toolCallFailureCounter.Add(ctx, 1, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordToolCallDuration(ctx context.Context, provider, model, toolType, toolName string, durationMs float64) {
+	attributes := []attribute.KeyValue{
+		attribute.String("provider", provider),
+		attribute.String("model", model),
+		attribute.String("tool_type", toolType),
+		attribute.String("tool_name", toolName),
+	}
+
+	o.toolCallDurationHistogram.Record(ctx, durationMs, metric.WithAttributes(attributes...))
 }
 
 func (o *OpenTelemetryImpl) ShutDown(ctx context.Context) error {

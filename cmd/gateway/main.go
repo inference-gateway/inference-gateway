@@ -151,11 +151,11 @@ func main() {
 			}
 			logger.Info("mcp client initialized successfully")
 			// Create MCP agent with the initialized client
-			mcpAgent = mcp.NewAgent(logger, mcpClient)
+			mcpAgent = mcp.NewAgent(logger, mcpClient, telemetryImpl)
 			logger.Info("mcp agent created successfully")
 		} else {
 			logger.Info("mcp is enabled but no servers configured, using no-op middleware")
-			mcpAgent = mcp.NewAgent(logger, mcpClient)
+			mcpAgent = mcp.NewAgent(logger, mcpClient, telemetryImpl)
 		}
 		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, mcpAgent, logger, cfg)
 		if err != nil {
@@ -187,7 +187,7 @@ func main() {
 			logger.Info("a2a is enabled but no agents configured")
 		}
 
-		a2aAgent := a2a.NewAgent(logger, a2aClient, cfg.A2A)
+		a2aAgent := a2a.NewAgent(logger, a2aClient, cfg.A2A, telemetryImpl)
 		a2aMiddleware, err = middlewares.NewA2AMiddleware(providerRegistry, a2aClient, a2aAgent, logger, client, cfg)
 		if err != nil {
 			logger.Error("failed to initialize a2a middleware", err)

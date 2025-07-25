@@ -12,6 +12,7 @@ import (
 	"github.com/inference-gateway/a2a/adk"
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
+	"github.com/inference-gateway/inference-gateway/otel"
 	"github.com/inference-gateway/inference-gateway/providers"
 )
 
@@ -44,16 +45,18 @@ type agentImpl struct {
 	provider  providers.IProvider
 	model     *string
 	a2aConfig *config.A2AConfig
+	telemetry otel.OpenTelemetry
 }
 
 // NewAgent creates a new Agent instance
-func NewAgent(logger logger.Logger, a2aClient A2AClientInterface, a2aConfig *config.A2AConfig) Agent {
+func NewAgent(logger logger.Logger, a2aClient A2AClientInterface, a2aConfig *config.A2AConfig, telemetry otel.OpenTelemetry) Agent {
 	return &agentImpl{
 		a2aClient: a2aClient,
 		logger:    logger,
 		provider:  nil,
 		model:     nil,
 		a2aConfig: a2aConfig,
+		telemetry: telemetry,
 	}
 }
 
@@ -332,6 +335,21 @@ func (a *agentImpl) processToolCall(ctx context.Context, request *providers.Crea
 	var result providers.Message
 	var err error
 
+	// Record metrics for tool call
+	providerName := "unknown"
+	modelName := "unknown"
+	if a.provider != nil {
+		providerName = a.provider.GetName()
+	}
+	if a.model != nil {
+		modelName = *a.model
+	}
+
+	startTime := time.Now()
+	if a.telemetry != nil {
+		a.telemetry.RecordToolCallCount(ctx, providerName, modelName, "a2a", toolCall.Function.Name)
+	}
+
 	switch toolCall.Function.Name {
 	case ToolQueryAgentCard:
 		result, err = a.handleAgentQueryTool(ctx, toolCall)
@@ -347,13 +365,23 @@ func (a *agentImpl) processToolCall(ctx context.Context, request *providers.Crea
 		return result
 	}
 
+	duration := float64(time.Since(startTime).Milliseconds())
+	if a.telemetry != nil {
+		a.telemetry.RecordToolCallDuration(ctx, providerName, modelName, "a2a", toolCall.Function.Name, duration)
+	}
+
 	if err != nil {
 		a.logger.Error("failed to process tool call", err, "function_name", toolCall.Function.Name)
+		if a.telemetry != nil {
+			a.telemetry.RecordToolCallFailure(ctx, providerName, modelName, "a2a", toolCall.Function.Name, "processing_error")
+		}
 		result = providers.Message{
 			Role:       providers.MessageRoleTool,
 			Content:    fmt.Sprintf("Error processing %s: %s", toolCall.Function.Name, err.Error()),
 			ToolCallId: &toolCall.ID,
 		}
+	} else if a.telemetry != nil {
+		a.telemetry.RecordToolCallSuccess(ctx, providerName, modelName, "a2a", toolCall.Function.Name)
 	}
 
 	return result
