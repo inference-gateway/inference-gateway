@@ -2,20 +2,14 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
-
 scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
 
-  # Inference Gateway metrics
-  - job_name: 'inference-gateway'
+  - job_name: "inference-gateway"
     static_configs:
-      - targets: ['inference-gateway:9464']
+      - targets: ["inference-gateway:9464"]
     scrape_interval: 5s
     metrics_path: /metrics
-    scrape_timeout: 10s
+    scrape_timeout: 4s

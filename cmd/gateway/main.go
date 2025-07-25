@@ -150,7 +150,6 @@ func main() {
 				return
 			}
 			logger.Info("mcp client initialized successfully")
-			// Create MCP agent with the initialized client
 			mcpAgent = mcp.NewAgent(logger, mcpClient, telemetryImpl)
 			logger.Info("mcp agent created successfully")
 		} else {

@@ -63,9 +63,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -130,9 +128,7 @@
       "options": {
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -200,9 +196,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -270,9 +264,7 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "mean"
-          ],
+          "calcs": ["mean"],
           "fields": "",
           "values": false
         },
@@ -358,11 +350,7 @@
       "id": 24,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ],
+          "calcs": ["mean", "max", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -454,11 +442,7 @@
       "id": 25,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "p95"
-          ],
+          "calcs": ["mean", "max", "p95"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -687,12 +671,7 @@
       "id": 13,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "p95",
-            "lastNotNull"
-          ],
+          "calcs": ["mean", "max", "p95", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -789,11 +768,7 @@
       "id": 12,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ],
+          "calcs": ["mean", "max", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -912,11 +887,7 @@
       "id": 11,
       "options": {
         "legend": {
-          "calcs": [
-            "mean",
-            "max",
-            "lastNotNull"
-          ],
+          "calcs": ["mean", "max", "lastNotNull"],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true
@@ -1075,9 +1046,7 @@
       "options": {
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+          "calcs": ["lastNotNull"],
           "fields": "",
           "values": false
         },
@@ -1208,13 +1177,7 @@
   "refresh": "5s",
   "schemaVersion": 38,
   "style": "dark",
-  "tags": [
-    "inference-gateway",
-    "llm",
-    "monitoring",
-    "function-calls",
-    "tools"
-  ],
+  "tags": ["inference-gateway", "llm", "monitoring", "function-calls", "tools"],
   "templating": {
     "list": [
       {
@@ -1270,8 +1233,8 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Inference Gateway - Enhanced Metrics with Function/Tool Calls",
-  "uid": "inference-gateway-enhanced",
+  "title": "Inference Gateway - Metrics with Function/Tool Calls",
+  "uid": "inference-gateway",
   "version": 1,
   "weekStart": ""
 }

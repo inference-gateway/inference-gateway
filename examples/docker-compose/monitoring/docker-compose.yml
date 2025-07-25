@@ -1,13 +1,12 @@
 ---
 services:
-  # Inference Gateway
   inference-gateway:
     image: ghcr.io/inference-gateway/inference-gateway:latest
     env_file:
       - .env
     ports:
       - "8080:8080"
-      - "9464:9464"  # Metrics endpoint
+      - "9464:9464"
     environment:
       - TELEMETRY_ENABLE=true
       - TELEMETRY_METRICS_PORT=9464
@@ -24,7 +23,6 @@ services:
     networks:
       - monitoring
 
-  # Prometheus for metrics collection
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -33,17 +31,16 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
     restart: unless-stopped
     networks:
       - monitoring
 
-  # Grafana for visualization
   grafana:
     image: grafana/grafana:latest
     ports:

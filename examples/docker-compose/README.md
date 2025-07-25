@@ -15,6 +15,7 @@ This directory contains examples that demonstrate how to use the Inference Gatew
 - [Tools](tools/README.md) - Function calling and tool usage examples
 - [Authentication](authentication/README.md) - Adding authentication to your gateway
 - [UI](ui/README.md) - Setting up a user interface for the gateway
+- [Monitoring](monitoring/README.md) - Metrics collection and visualization with Prometheus and Grafana
 
 ## Quick Start
 
