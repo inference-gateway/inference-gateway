@@ -58,7 +58,7 @@ func main() {
 		logger.Info("telemetry initialized successfully")
 
 		metricsServer := &http.Server{
-			Addr:         ":9464",
+			Addr:         ":" + cfg.TelemetryMetricsPort,
 			Handler:      metricsMux,
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
@@ -66,7 +66,7 @@ func main() {
 		}
 
 		go func() {
-			logger.Info("starting metrics server", "port", "9464")
+			logger.Info("starting metrics server", "port", cfg.TelemetryMetricsPort)
 			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				logger.Error("metrics server failed", err)
 			}

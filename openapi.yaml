@@ -1343,6 +1343,11 @@ components:
                   type: bool
                   default: "false"
                   description: "Enable authentication"
+                - name: telemetry_metrics_port
+                  env: "TELEMETRY_METRICS_PORT"
+                  type: string
+                  default: "9464"
+                  description: "Port for telemetry metrics server"
                 - name: allowed_models
                   env: "ALLOWED_MODELS"
                   type: string
