@@ -68,6 +68,8 @@ To add a new provider, follow these simple steps:
 
 Add your new provider to the `openapi.yaml` file under the `Provider` schema. For example, to add a new provider called "newai":
 
+> **Important**: Provider names must be valid Go identifiers. Use only lowercase letters, and camel-case if really needed (recommended: one word for example 'newai').
+
 ```yaml
 Provider:
   type: string
