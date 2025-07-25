@@ -52,7 +52,7 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace inference-gateway \
-          --set config.ENABLE_TELEMETRY=true \
+          --set config.TELEMETRY_ENABLE=true \
           --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
           --set monitoring.enabled=true \
           --set ingress.enabled=true \

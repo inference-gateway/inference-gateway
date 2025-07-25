@@ -15,11 +15,11 @@ import (
 // Config holds the configuration for the Inference Gateway
 type Config struct {
 	// General settings
-	Environment          string `env:"ENVIRONMENT, default=production" description:"The environment"`
-	EnableTelemetry      bool   `env:"ENABLE_TELEMETRY, default=false" description:"Enable telemetry"`
-	EnableAuth           bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
-	TelemetryMetricsPort string `env:"TELEMETRY_METRICS_PORT, default=9464" description:"Port for telemetry metrics server"`
-	AllowedModels        string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
+	Environment   string `env:"ENVIRONMENT, default=production" description:"The environment"`
+	EnableAuth    bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
+	AllowedModels string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
+	// Telemetry settings
+	Telemetry *TelemetryConfig `env:", prefix=TELEMETRY_" description:"Telemetry configuration"`
 	// MCP settings
 	MCP *MCPConfig `env:", prefix=MCP_" description:"MCP configuration"`
 	// A2A settings
@@ -33,6 +33,12 @@ type Config struct {
 
 	// Providers map
 	Providers map[providers.Provider]*providers.Config
+}
+
+// Telemetry configuration
+type TelemetryConfig struct {
+	Enable      bool   `env:"ENABLE, default=false" description:"Enable telemetry"`
+	MetricsPort string `env:"METRICS_PORT, default=9464" description:"Port for telemetry metrics server"`
 }
 
 // MCP configuration
@@ -136,12 +142,12 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 // The string representation of Config
 func (cfg *Config) String() string {
 	return fmt.Sprintf(
-		"Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
+		"Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, EnableAuth:%t, "+
 			"MCP:%+v, A2A:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
 		APPLICATION_NAME,
 		VERSION,
 		cfg.Environment,
-		cfg.EnableTelemetry,
+		cfg.Telemetry,
 		cfg.EnableAuth,
 		cfg.MCP,
 		cfg.A2A,

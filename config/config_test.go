@@ -21,11 +21,13 @@ func TestLoad(t *testing.T) {
 			name: "Success_Defaults",
 			env:  map[string]string{},
 			expectedCfg: config.Config{
-				EnableTelemetry:      false,
-				Environment:          "production",
-				EnableAuth:           false,
-				TelemetryMetricsPort: "9464",
-				AllowedModels:        "",
+				Environment:   "production",
+				EnableAuth:    false,
+				AllowedModels: "",
+				Telemetry: &config.TelemetryConfig{
+					Enable:      false,
+					MetricsPort: "9464",
+				},
 				MCP: &config.MCPConfig{
 					Enable:                false,
 					Expose:                false,
@@ -154,7 +156,7 @@ func TestLoad(t *testing.T) {
 		{
 			name: "Success_AllEnvVariablesSet",
 			env: map[string]string{
-				"ENABLE_TELEMETRY":     "true",
+				"TELEMETRY_ENABLE":     "true",
 				"ENVIRONMENT":          "development",
 				"SERVER_HOST":          "localhost",
 				"SERVER_PORT":          "9090",
@@ -166,11 +168,13 @@ func TestLoad(t *testing.T) {
 				"OPENAI_API_KEY":       "openai123",
 			},
 			expectedCfg: config.Config{
-				EnableTelemetry:      true,
-				Environment:          "development",
-				EnableAuth:           false,
-				TelemetryMetricsPort: "9464",
-				AllowedModels:        "",
+				Environment:   "development",
+				EnableAuth:    false,
+				AllowedModels: "",
+				Telemetry: &config.TelemetryConfig{
+					Enable:      true,
+					MetricsPort: "9464",
+				},
 				MCP: &config.MCPConfig{
 					Enable:                false,
 					Expose:                false,
@@ -301,16 +305,18 @@ func TestLoad(t *testing.T) {
 		{
 			name: "PartialEnvVariables",
 			env: map[string]string{
-				"ENABLE_TELEMETRY": "true",
+				"TELEMETRY_ENABLE": "true",
 				"ENVIRONMENT":      "development",
 				"OLLAMA_API_URL":   "http://custom-ollama:8080",
 			},
 			expectedCfg: config.Config{
-				EnableTelemetry:      true,
-				Environment:          "development",
-				EnableAuth:           false,
-				TelemetryMetricsPort: "9464",
-				AllowedModels:        "",
+				Environment:   "development",
+				EnableAuth:    false,
+				AllowedModels: "",
+				Telemetry: &config.TelemetryConfig{
+					Enable:      true,
+					MetricsPort: "9464",
+				},
 				MCP: &config.MCPConfig{
 					Enable:                false,
 					Expose:                false,

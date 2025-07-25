@@ -4,10 +4,15 @@
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 | ENVIRONMENT | `production` | The environment |
-| ENABLE_TELEMETRY | `false` | Enable telemetry |
 | ENABLE_AUTH | `false` | Enable authentication |
-| TELEMETRY_METRICS_PORT | `9464` | Port for telemetry metrics server |
 | ALLOWED_MODELS | `""` | Comma-separated list of models to allow. If empty, all models will be available |
+
+
+### Telemetry
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| TELEMETRY_ENABLE | `false` | Enable telemetry |
+| TELEMETRY_METRICS_PORT | `9464` | Port for telemetry metrics server |
 
 
 ### Model Context Protocol (MCP)
