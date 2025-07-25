@@ -98,10 +98,10 @@ function createMcpServer(): McpServer {
 
   // Single tool: get top pizzas
   server.tool(
-    "get-top-pizzas",
+    "get_top_pizzas",
     "Get information about the top 5 pizzas in the world",
     async () => {
-      console.log("🍕 get-top-pizzas tool called!");
+      console.log("🍕 get_top_pizzas tool called!");
 
       const result = {
         content: [
