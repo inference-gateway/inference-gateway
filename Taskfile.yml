@@ -106,6 +106,20 @@ tasks:
     cmds:
       - go test -bench=. -run=^$ -benchmem -benchtime=100x -count=20 ./tests/...
 
+  pre-commit:install:
+    desc: "Install pre-commit hooks"
+    cmds:
+      - echo "Installing pre-commit checks..."
+      - ln -sf ../../scripts/pre-commit-check.sh .git/hooks/pre-commit
+      - chmod +x .git/hooks/pre-commit
+      - echo "✅ Pre-commit hook installed successfully!"
+
+  pre-commit:uninstall:
+    desc: "Uninstall pre-commit hooks"
+    cmds:
+      - rm -f .git/hooks/pre-commit
+      - echo "✅ Pre-commit hook uninstalled successfully!"
+
   package:
     desc: "Package the gateway"
     cmds:
