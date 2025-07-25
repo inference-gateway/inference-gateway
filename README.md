@@ -59,7 +59,11 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 
 ## Overview
 
-You can horizontally scale the Inference Gateway to handle multiple requests from clients. The Inference Gateway will forward the requests to the respective provider and return the response to the client. The following diagram illustrates the flow:
+You can horizontally scale the Inference Gateway to handle multiple requests from clients. The Inference Gateway will forward the requests to the respective provider and return the response to the client.
+
+**Note**: Both A2A and MCP middleware components can be easily toggled on/off via environment variables (`A2A_ENABLE`, `MCP_ENABLE`) or bypassed per-request using headers (`X-A2A-Bypass`, `X-MCP-Bypass`), giving you full control over which capabilities are active.
+
+The following diagram illustrates the flow:
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#326CE5', 'primaryTextColor': '#fff', 'lineColor': '#5D8AA8', 'secondaryColor': '#006100' }, 'fontFamily': 'Arial', 'flowchart': {'nodeSpacing': 50, 'rankSpacing': 70, 'padding': 15}}}%%
@@ -80,14 +84,32 @@ graph TD
     IG2["🖥️ Inference Gateway"] --> P
     IG3["🖥️ Inference Gateway"] --> P
 
-    %% MCP Layer
-    P["🔌 Proxy Gateway"] --> MCP["🌐 MCP"]
-    P --> Direct["Direct Providers"]
+    %% Middleware Processing (Sequential) and Direct Routing
+    P["🔌 Proxy Gateway"] --> A2A["🤝 A2A Middleware"]
+    P --> |"Direct routing bypassing middleware"| Direct["🔌 Direct Providers"]
+    A2A --> |"If A2A bypassed or complete"| MCP["🌐 MCP Middleware"]
+    MCP --> |"Middleware chain complete"| Providers["🤖 LLM Providers"]
 
-    %% Providers
-    MCP --> C["🦙 Ollama"]
-    MCP --> D["🚀 Groq"]
-    MCP --> E["☁️ OpenAI"]
+    %% A2A External Agents (First Layer)
+    A2A --> A2A1["📅 Calendar Agent"]
+    A2A --> A2A2["🧮 Calculator Agent"]
+    A2A --> A2A3["🌤️ Weather Agent"]
+    A2A --> A2A4["✈️ Booking Agent"]
+
+    %% MCP Tool Servers (Second Layer)
+    MCP --> MCP1["📁 File System Server"]
+    MCP --> MCP2["🔍 Search Server"]
+    MCP --> MCP3["🌐 Web Server"]
+
+    %% LLM Providers (Middleware Enhanced)
+    Providers --> C1["🦙 Ollama"]
+    Providers --> D1["🚀 Groq"]
+    Providers --> E1["☁️ OpenAI"]
+
+    %% Direct Providers (Bypass Middleware)
+    Direct --> C["🦙 Ollama"]
+    Direct --> D["🚀 Groq"]
+    Direct --> E["☁️ OpenAI"]
     Direct --> G["⚡ Cloudflare"]
     Direct --> H1["💬 Cohere"]
     Direct --> H2["🧠 Anthropic"]
@@ -99,14 +121,17 @@ graph TD
     classDef gateway fill:#326CE5,stroke:#fff,stroke-width:1px,color:white;
     classDef provider fill:#32CD32,stroke:#333,stroke-width:1px,color:white;
     classDef ui fill:#FF6B6B,stroke:#333,stroke-width:1px,color:white;
+    classDef mcp fill:#FF69B4,stroke:#333,stroke-width:1px,color:white;
+    classDef a2a fill:#FFA500,stroke:#333,stroke-width:1px,color:white;
 
     %% Apply styles
     class A client;
     class UI ui;
     class Auth auth;
     class IG1,IG2,IG3,P gateway;
-    class C,D,E,G,H1,H2,H3 provider;
-    class MCP mcp;
+    class C,D,E,G,H1,H2,H3,C1,D1,E1,Providers provider;
+    class MCP,MCP1,MCP2,MCP3 mcp;
+    class A2A,A2A1,A2A2,A2A3,A2A4 a2a;
     class Direct direct;
 ```
 
