@@ -7,7 +7,6 @@ metadata:
 data:
   # General settings
   ENVIRONMENT: {{ .Values.config.ENVIRONMENT | quote }}
-  ENABLE_AUTH: {{ .Values.config.ENABLE_AUTH | quote }}
   ALLOWED_MODELS: {{ .Values.config.ALLOWED_MODELS | quote }}
   # Telemetry
   TELEMETRY_ENABLE: {{ .Values.config.TELEMETRY_ENABLE | quote }}
@@ -37,8 +36,9 @@ data:
   A2A_ENABLE_RECONNECT: {{ .Values.config.A2A_ENABLE_RECONNECT | quote }}
   A2A_RECONNECT_INTERVAL: {{ .Values.config.A2A_RECONNECT_INTERVAL | quote }}
   A2A_DISABLE_HEALTHCHECK_LOGS: {{ .Values.config.A2A_DISABLE_HEALTHCHECK_LOGS | quote }}
-  # OpenID Connect
-  OIDC_ISSUER_URL: {{ .Values.config.OIDC_ISSUER_URL | quote }}
+  # Authentication
+  AUTH_ENABLE: {{ .Values.config.AUTH_ENABLE | quote }}
+  AUTH_OIDC_ISSUER: {{ .Values.config.AUTH_OIDC_ISSUER | quote }}
   # Server settings
   SERVER_HOST: {{ .Values.config.SERVER_HOST | quote }}
   SERVER_PORT: {{ .Values.config.SERVER_PORT | quote }}

@@ -16,7 +16,6 @@ import (
 type Config struct {
 	// General settings
 	Environment   string `env:"ENVIRONMENT, default=production" description:"The environment"`
-	EnableAuth    bool   `env:"ENABLE_AUTH, default=false" description:"Enable authentication"`
 	AllowedModels string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
 	// Telemetry settings
 	Telemetry *TelemetryConfig `env:", prefix=TELEMETRY_" description:"Telemetry configuration"`
@@ -24,8 +23,8 @@ type Config struct {
 	MCP *MCPConfig `env:", prefix=MCP_" description:"MCP configuration"`
 	// A2A settings
 	A2A *A2AConfig `env:", prefix=A2A_" description:"A2A configuration"`
-	// OIDC settings
-	OIDC *OIDC `env:", prefix=OIDC_" description:"OIDC configuration"`
+	// Authentication settings
+	Auth *AuthConfig `env:", prefix=AUTH_" description:"Authentication configuration"`
 	// Server settings
 	Server *ServerConfig `env:", prefix=SERVER_" description:"Server configuration"`
 	// Client settings
@@ -72,11 +71,12 @@ type A2AConfig struct {
 	DisableHealthcheckLogs bool          `env:"DISABLE_HEALTHCHECK_LOGS, default=true" description:"Disable health check log messages to reduce noise"`
 }
 
-// OIDC configuration
-type OIDC struct {
-	IssuerUrl    string `env:"ISSUER_URL, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
-	ClientId     string `env:"CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
-	ClientSecret string `env:"CLIENT_SECRET" type:"secret" description:"OIDC client secret"`
+// Authentication configuration
+type AuthConfig struct {
+	Enable           bool   `env:"ENABLE, default=false" description:"Enable authentication"`
+	OidcIssuer       string `env:"OIDC_ISSUER, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
+	OidcClientId     string `env:"OIDC_CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
+	OidcClientSecret string `env:"OIDC_CLIENT_SECRET" type:"secret" description:"OIDC client secret"`
 }
 
 // Server configuration
@@ -142,16 +142,15 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 // The string representation of Config
 func (cfg *Config) String() string {
 	return fmt.Sprintf(
-		"Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, EnableAuth:%t, "+
-			"MCP:%+v, A2A:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
+		"Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, "+
+			"MCP:%+v, A2A:%+v, Auth:%+v, Server:%+v, Client:%+v, Providers:%+v}",
 		APPLICATION_NAME,
 		VERSION,
 		cfg.Environment,
 		cfg.Telemetry,
-		cfg.EnableAuth,
 		cfg.MCP,
 		cfg.A2A,
-		cfg.OIDC,
+		cfg.Auth,
 		cfg.Server,
 		cfg.Client,
 		cfg.Providers,

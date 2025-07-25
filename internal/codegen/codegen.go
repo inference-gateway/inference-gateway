@@ -66,9 +66,9 @@ type Config struct {
 	{{- else if eq $name "a2a" }}
 	// A2A settings
 	A2A *A2AConfig ` + "`env:\", prefix=A2A_\" description:\"A2A configuration\"`" + `
-	{{- else if eq $name "oidc" }}
-	// OIDC settings
-	OIDC *OIDC ` + "`env:\", prefix=OIDC_\" description:\"OIDC configuration\"`" + `
+	{{- else if eq $name "auth" }}
+	// Authentication settings
+	Auth *AuthConfig ` + "`env:\", prefix=AUTH_\" description:\"Authentication configuration\"`" + `
 	{{- else if eq $name "server" }}
 	// Server settings
 	Server *ServerConfig ` + "`env:\", prefix=SERVER_\" description:\"Server configuration\"`" + `
@@ -109,12 +109,12 @@ type A2AConfig struct {
 	{{ pascalCase (trimPrefix $field.Env "A2A_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"A2A_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
 }
-{{- else if eq $name "oidc" }}
+{{- else if eq $name "auth" }}
 
-// OIDC configuration
-type OIDC struct {
+// Authentication configuration
+type AuthConfig struct {
 	{{- range $field := $section.Settings }}
-	{{ pascalCase (trimPrefix $field.Env "OIDC_") }} string ` + "`env:\"{{ trimPrefix $field.Env \"OIDC_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\"{{if $field.Secret}} type:\"secret\"{{end}} description:\"{{$field.Description}}\"`" + `
+	{{ pascalCase (trimPrefix $field.Env "AUTH_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"AUTH_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\"{{if $field.Secret}} type:\"secret\"{{end}} description:\"{{$field.Description}}\"`" + `
 	{{- end }}
 }
 {{- else if eq $name "server" }}
@@ -177,16 +177,15 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 // The string representation of Config
 func (cfg *Config) String() string {
     return fmt.Sprintf(
-        "Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, EnableAuth:%t, "+
-            "MCP:%+v, A2A:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
+        "Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, "+
+            "MCP:%+v, A2A:%+v, Auth:%+v, Server:%+v, Client:%+v, Providers:%+v}",
         APPLICATION_NAME,
         VERSION,
         cfg.Environment,
         cfg.Telemetry,
-        cfg.EnableAuth,
         cfg.MCP,
         cfg.A2A,
-        cfg.OIDC,
+        cfg.Auth,
         cfg.Server,
         cfg.Client,
         cfg.Providers,

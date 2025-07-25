@@ -496,7 +496,7 @@ components:
       bearerFormat: JWT
       description: |
         Authentication is optional by default.
-        To enable authentication, set ENABLE_AUTH to true.
+        To enable authentication, set AUTH_ENABLE to true.
         When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
     Provider:
@@ -1333,11 +1333,6 @@ components:
                   type: string
                   default: "production"
                   description: "The environment"
-                - name: enable_auth
-                  env: "ENABLE_AUTH"
-                  type: bool
-                  default: "false"
-                  description: "Enable authentication"
                 - name: allowed_models
                   env: "ALLOWED_MODELS"
                   type: string
@@ -1475,22 +1470,27 @@ components:
                   type: bool
                   default: "true"
                   description: "Disable health check log messages to reduce noise"
-          - oidc:
-              title: "OpenID Connect"
+          - auth:
+              title: "Authentication"
               settings:
-                - name: issuer_url
-                  env: "OIDC_ISSUER_URL"
+                - name: auth_enable
+                  env: "AUTH_ENABLE"
+                  type: bool
+                  default: "false"
+                  description: "Enable authentication"
+                - name: auth_oidc_issuer
+                  env: "AUTH_OIDC_ISSUER"
                   type: string
                   default: "http://keycloak:8080/realms/inference-gateway-realm"
                   description: "OIDC issuer URL"
-                - name: client_id
-                  env: "OIDC_CLIENT_ID"
+                - name: auth_oidc_client_id
+                  env: "AUTH_OIDC_CLIENT_ID"
                   type: string
                   default: "inference-gateway-client"
                   description: "OIDC client ID"
                   secret: true
-                - name: client_secret
-                  env: "OIDC_CLIENT_SECRET"
+                - name: auth_oidc_client_secret
+                  env: "AUTH_OIDC_CLIENT_SECRET"
                   type: string
                   description: "OIDC client secret"
                   secret: true

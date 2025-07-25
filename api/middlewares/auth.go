@@ -33,25 +33,25 @@ type OIDCAuthenticatorNoop struct{}
 
 // NewOIDCAuthenticatorMiddleware creates a new OIDCAuthenticator instance
 func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OIDCAuthenticator, error) {
-	if !cfg.EnableAuth {
+	if !cfg.Auth.Enable {
 		return &OIDCAuthenticatorNoop{}, nil
 	}
 
-	provider, err := oidcV3.NewProvider(context.Background(), cfg.OIDC.IssuerUrl)
+	provider, err := oidcV3.NewProvider(context.Background(), cfg.Auth.OidcIssuer)
 	if err != nil {
 		return nil, err
 	}
 
 	oidcConfig := &oidcV3.Config{
-		ClientID: cfg.OIDC.ClientId,
+		ClientID: cfg.Auth.OidcClientId,
 	}
 
 	return &OIDCAuthenticatorImpl{
 		logger:   logger,
 		verifier: provider.Verifier(oidcConfig),
 		config: oauth2.Config{
-			ClientID:     cfg.OIDC.ClientId,
-			ClientSecret: cfg.OIDC.ClientSecret,
+			ClientID:     cfg.Auth.OidcClientId,
+			ClientSecret: cfg.Auth.OidcClientSecret,
 			Endpoint:     provider.Endpoint(),
 			Scopes:       []string{oidcV3.ScopeOpenID, "profile", "email"},
 		},

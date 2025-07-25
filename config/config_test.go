@@ -22,7 +22,6 @@ func TestLoad(t *testing.T) {
 			env:  map[string]string{},
 			expectedCfg: config.Config{
 				Environment:   "production",
-				EnableAuth:    false,
 				AllowedModels: "",
 				Telemetry: &config.TelemetryConfig{
 					Enable:      false,
@@ -54,10 +53,11 @@ func TestLoad(t *testing.T) {
 					ReconnectInterval:      30 * time.Second,
 					DisableHealthcheckLogs: true,
 				},
-				OIDC: &config.OIDC{
-					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",
-					ClientId:     "inference-gateway-client",
-					ClientSecret: "",
+				Auth: &config.AuthConfig{
+					Enable:           false,
+					OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
+					OidcClientId:     "inference-gateway-client",
+					OidcClientSecret: "",
 				},
 				Server: &config.ServerConfig{
 					Host:         "0.0.0.0",
@@ -169,7 +169,6 @@ func TestLoad(t *testing.T) {
 			},
 			expectedCfg: config.Config{
 				Environment:   "development",
-				EnableAuth:    false,
 				AllowedModels: "",
 				Telemetry: &config.TelemetryConfig{
 					Enable:      true,
@@ -201,10 +200,11 @@ func TestLoad(t *testing.T) {
 					ReconnectInterval:      30 * time.Second,
 					DisableHealthcheckLogs: true,
 				},
-				OIDC: &config.OIDC{
-					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",
-					ClientId:     "inference-gateway-client",
-					ClientSecret: "",
+				Auth: &config.AuthConfig{
+					Enable:           false,
+					OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
+					OidcClientId:     "inference-gateway-client",
+					OidcClientSecret: "",
 				},
 				Server: &config.ServerConfig{
 					Host:         "localhost",
@@ -311,7 +311,6 @@ func TestLoad(t *testing.T) {
 			},
 			expectedCfg: config.Config{
 				Environment:   "development",
-				EnableAuth:    false,
 				AllowedModels: "",
 				Telemetry: &config.TelemetryConfig{
 					Enable:      true,
@@ -343,10 +342,11 @@ func TestLoad(t *testing.T) {
 					ReconnectInterval:      30 * time.Second,
 					DisableHealthcheckLogs: true,
 				},
-				OIDC: &config.OIDC{
-					IssuerUrl:    "http://keycloak:8080/realms/inference-gateway-realm",
-					ClientId:     "inference-gateway-client",
-					ClientSecret: "",
+				Auth: &config.AuthConfig{
+					Enable:           false,
+					OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
+					OidcClientId:     "inference-gateway-client",
+					OidcClientSecret: "",
 				},
 				Server: &config.ServerConfig{
 					Host:         "0.0.0.0",

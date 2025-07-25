@@ -4,7 +4,6 @@
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
 | ENVIRONMENT | `production` | The environment |
-| ENABLE_AUTH | `false` | Enable authentication |
 | ALLOWED_MODELS | `""` | Comma-separated list of models to allow. If empty, all models will be available |
 
 
@@ -48,12 +47,13 @@
 | A2A_DISABLE_HEALTHCHECK_LOGS | `true` | Disable health check log messages to reduce noise |
 
 
-### OpenID Connect
+### Authentication
 | Environment Variable | Default Value | Description |
 |---------------------|---------------|-------------|
-| OIDC_ISSUER_URL | `http://keycloak:8080/realms/inference-gateway-realm` | OIDC issuer URL |
-| OIDC_CLIENT_ID | `inference-gateway-client` | OIDC client ID |
-| OIDC_CLIENT_SECRET | `""` | OIDC client secret |
+| AUTH_ENABLE | `false` | Enable authentication |
+| AUTH_OIDC_ISSUER | `http://keycloak:8080/realms/inference-gateway-realm` | OIDC issuer URL |
+| AUTH_OIDC_CLIENT_ID | `inference-gateway-client` | OIDC client ID |
+| AUTH_OIDC_CLIENT_SECRET | `""` | OIDC client secret |
 
 
 ### Server settings
