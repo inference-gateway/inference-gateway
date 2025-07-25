@@ -166,18 +166,16 @@ func TestProviderListModels(t *testing.T) {
             "object": "list",
             "data": [
                 {
-                    "id": "openai/gpt-3.5-turbo",
+                    "id": "gpt-3.5-turbo",
                     "object": "model",
                     "created": 1677610602,
-                    "owned_by": "openai",
-                    "served_by": "openai"
+                    "owned_by": "openai"
                 },
                 {
-                    "id": "openai/gpt-4",
+                    "id": "gpt-4",
                     "object": "model",
                     "created": 1677649963,
-                    "owned_by": "openai",
-                    "served_by": "openai"
+                    "owned_by": "openai"
                 }
             ]
         }`))
