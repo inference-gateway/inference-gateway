@@ -104,7 +104,7 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "with tool calls",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1) // Once for setup
+				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", 1, "tool_calls", 1).Times(1)
