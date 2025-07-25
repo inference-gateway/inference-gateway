@@ -318,7 +318,7 @@ func (m *A2AMiddlewareImpl) createAgentQueryTool() providers.ChatCompletionTool 
 	return providers.ChatCompletionTool{
 		Type: providers.ChatCompletionToolTypeFunction,
 		Function: providers.FunctionObject{
-			Name:        "a2a_query_agent_card",
+			Name:        a2a.ToolQueryAgentCard,
 			Description: &description,
 			Parameters: &providers.FunctionParameters{
 				"type": "object",
@@ -349,7 +349,7 @@ func (m *A2AMiddlewareImpl) createTaskSubmissionTool() providers.ChatCompletionT
 	return providers.ChatCompletionTool{
 		Type: providers.ChatCompletionToolTypeFunction,
 		Function: providers.FunctionObject{
-			Name:        "a2a_submit_task_to_agent",
+			Name:        a2a.ToolSubmitTaskToAgent,
 			Description: &description,
 			Parameters: &providers.FunctionParameters{
 				"type": "object",
