@@ -322,10 +322,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 		}
 
 		startTime := time.Now()
-		if a.telemetry != nil {
-			a.telemetry.RecordToolCallCount(ctx, providerName, modelName, "mcp", toolCall.Function.Name)
-		}
-
 		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
 		duration := float64(time.Since(startTime).Milliseconds())
 

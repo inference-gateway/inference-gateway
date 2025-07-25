@@ -345,9 +345,6 @@ func (a *agentImpl) processToolCall(ctx context.Context, request *providers.Crea
 	}
 
 	startTime := time.Now()
-	if a.telemetry != nil {
-		a.telemetry.RecordToolCallCount(ctx, providerName, modelName, "a2a", toolCall.Function.Name)
-	}
 
 	switch toolCall.Function.Name {
 	case ToolQueryAgentCard:

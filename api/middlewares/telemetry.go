@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"strings"
@@ -223,10 +224,136 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			totalTokens,
 		)
 
-		if toolCallCount > 0 {
-			for i := 0; i < toolCallCount; i++ {
-				t.telemetry.RecordToolCallCount(c.Request.Context(), provider, model, "llm_response", "generic_tool_call")
+		// Record comprehensive tool call metrics by parsing request and response
+		t.recordToolCallMetrics(c.Request.Context(), provider, model, &requestBody, w.body.Bytes())
+	}
+}
+
+// recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
+func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, model string, request *providers.CreateChatCompletionRequest, responseBytes []byte) {
+	// Build available tools map for classification
+	availableTools := make(map[string]string) // tool_name -> tool_type
+	if request.Tools != nil {
+		for _, tool := range *request.Tools {
+			toolType := t.classifyToolType(tool.Function.Name)
+			availableTools[tool.Function.Name] = toolType
+		}
+	}
+
+	// Parse response to find actual tool calls made
+	var actualToolCalls []providers.ChatCompletionMessageToolCall
+	if request.Stream != nil && *request.Stream {
+		actualToolCalls = t.parseStreamingToolCalls(responseBytes)
+	} else {
+		actualToolCalls = t.parseNonStreamingToolCalls(responseBytes)
+	}
+
+	// Record metrics for each tool call
+	for _, toolCall := range actualToolCalls {
+		toolType, exists := availableTools[toolCall.Function.Name]
+		if !exists {
+			// Fallback classification if tool wasn't in request (shouldn't happen normally)
+			toolType = t.classifyToolType(toolCall.Function.Name)
+		}
+
+		// Record the tool call count only - success/failure tracking is handled by agents
+		// since they have access to individual execution results
+		t.telemetry.RecordToolCallCount(ctx, provider, model, toolType, toolCall.Function.Name)
+
+		// Note: Individual tool execution metrics (duration, success/failure) are recorded
+		// by the respective agents (MCP, A2A) since the middleware only sees the final
+		// aggregated response, not individual tool execution results.
+	}
+}
+
+// classifyToolType determines the tool type based on the tool name
+func (t *TelemetryImpl) classifyToolType(toolName string) string {
+	// A2A tool detection
+	if toolName == "a2a_query_agent_card" || toolName == "a2a_submit_task_to_agent" {
+		return "a2a"
+	}
+
+	// MCP tools typically have specific patterns or are from MCP servers
+	// For now, we'll classify anything that's not A2A as MCP if it looks like a tool,
+	// otherwise fall back to "llm_response" for generic tool calls
+	if strings.Contains(toolName, "_") || len(toolName) > 3 {
+		return "mcp"
+	}
+
+	return "llm_response"
+}
+
+// parseStreamingToolCalls extracts tool calls from streaming response
+func (t *TelemetryImpl) parseStreamingToolCalls(responseBytes []byte) []providers.ChatCompletionMessageToolCall {
+	responseStr := string(responseBytes)
+	chunks := strings.Split(responseStr, "\n\n")
+	toolCallsMap := make(map[int]*providers.ChatCompletionMessageToolCall)
+
+	for _, chunk := range chunks {
+		if !strings.HasPrefix(chunk, "data: ") {
+			continue
+		}
+		chunk = strings.TrimPrefix(chunk, "data: ")
+		if chunk == "[DONE]" || chunk == "" {
+			continue
+		}
+
+		var streamResponse providers.CreateChatCompletionStreamResponse
+		if err := json.Unmarshal([]byte(chunk), &streamResponse); err != nil {
+			continue
+		}
+
+		if len(streamResponse.Choices) == 0 || streamResponse.Choices[0].Delta.ToolCalls == nil {
+			continue
+		}
+
+		// Reconstruct tool calls from streaming chunks
+		for _, toolCallChunk := range *streamResponse.Choices[0].Delta.ToolCalls {
+			index := toolCallChunk.Index
+			if _, exists := toolCallsMap[index]; !exists {
+				toolCallsMap[index] = &providers.ChatCompletionMessageToolCall{
+					ID:       "",
+					Type:     providers.ChatCompletionToolTypeFunction,
+					Function: providers.ChatCompletionMessageToolCallFunction{Name: "", Arguments: ""},
+				}
+			}
+
+			toolCall := toolCallsMap[index]
+			if toolCallChunk.ID != nil {
+				toolCall.ID = *toolCallChunk.ID
+			}
+			if toolCallChunk.Function != nil {
+				if toolCallChunk.Function.Name != "" {
+					toolCall.Function.Name = toolCallChunk.Function.Name
+				}
+				if toolCallChunk.Function.Arguments != "" {
+					toolCall.Function.Arguments += toolCallChunk.Function.Arguments
+				}
 			}
 		}
 	}
+
+	// Convert map to slice
+	var toolCalls []providers.ChatCompletionMessageToolCall
+	for i := 0; i < len(toolCallsMap); i++ {
+		if toolCall, exists := toolCallsMap[i]; exists && toolCall.Function.Name != "" {
+			toolCalls = append(toolCalls, *toolCall)
+		}
+	}
+
+	return toolCalls
+}
+
+// parseNonStreamingToolCalls extracts tool calls from non-streaming response
+func (t *TelemetryImpl) parseNonStreamingToolCalls(responseBytes []byte) []providers.ChatCompletionMessageToolCall {
+	var chatCompletionResponse providers.CreateChatCompletionResponse
+	if err := json.Unmarshal(responseBytes, &chatCompletionResponse); err != nil {
+		return nil
+	}
+
+	if len(chatCompletionResponse.Choices) == 0 || chatCompletionResponse.Choices[0].Message.ToolCalls == nil {
+		return nil
+	}
+
+	return *chatCompletionResponse.Choices[0].Message.ToolCalls
 }
