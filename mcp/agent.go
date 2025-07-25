@@ -292,24 +292,28 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 		}
 
 		var server string
-		if mcpServer, ok := args["mcpServer"].(string); ok && mcpServer != "" {
-			server = mcpServer
+		toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
+		server, err := a.mcpClient.GetServerForTool(toolName)
+		if err != nil {
+			a.logger.Error("failed to find server for tool", err, "tool", toolCall.Function.Name, "tool_name", toolName)
+			results = append(results, providers.Message{
+				Role:       providers.MessageRoleTool,
+				Content:    fmt.Sprintf("Error: %v", err),
+				ToolCallId: &toolCall.ID,
+			})
+			continue
 		}
-
-		delete(args, "mcpServer")
 
 		mcpRequest := Request{
 			Method: "tools/call",
 			Params: map[string]interface{}{
-				"name":      toolCall.Function.Name,
+				"name":      toolName,
 				"arguments": args,
 			},
 		}
 
-		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
-
+		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s mcp_name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, toolName, args, server))
 		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
-
 		if err != nil {
 			a.logger.Error("failed to execute tool call", err, "tool", toolCall.Function.Name, "server", server)
 			results = append(results, providers.Message{

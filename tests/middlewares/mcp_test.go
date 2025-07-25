@@ -199,7 +199,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 				{
 					Type: providers.ChatCompletionToolTypeFunction,
 					Function: providers.FunctionObject{
-						Name: "test_tool",
+						Name: "mcp_test_tool",
 					},
 				},
 			},
@@ -383,7 +383,6 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			for _, toolCall := range tt.toolCalls {
 				var args map[string]interface{}
 				if json.Unmarshal([]byte(toolCall.Function.Arguments), &args) == nil {
-					delete(args, "mcpServer")
 					mcpRequest := mcp.Request{
 						Method: "tools/call",
 						Params: map[string]interface{}{
@@ -611,7 +610,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 					{
 						Type: providers.ChatCompletionToolTypeFunction,
 						Function: providers.FunctionObject{
-							Name: "test_tool",
+							Name: "mcp_test_tool",
 						},
 					},
 				}).AnyTimes()
@@ -631,7 +630,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 					{
 						Type: providers.ChatCompletionToolTypeFunction,
 						Function: providers.FunctionObject{
-							Name: "test_tool",
+							Name: "mcp_test_tool",
 						},
 					},
 				}).AnyTimes()
@@ -743,12 +742,12 @@ func TestParseStreamingToolCalls(t *testing.T) {
 	}{
 		{
 			name: "Parse tool call from streaming chunks",
-			streamResponse: `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_123","type":"function","function":{"name":"test_tool"}}]}}]}
+			streamResponse: `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_123","type":"function","function":{"name":"mcp_test_tool"}}]}}]}
 data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"arg1\""}}]}}]}
 data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":":\"value1\",\"arg2\":42}"}}]}}]}
 data: [DONE]`,
 			expectedLen:  1,
-			expectedName: "test_tool",
+			expectedName: "mcp_test_tool",
 			expectedArgs: `{"arg1":"value1","arg2":42}`,
 		},
 		{
@@ -798,6 +797,8 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		mockRegistry.EXPECT().BuildProvider(providers.GroqID, mockClient).Return(mockProvider, nil).AnyTimes()
 		mockProvider.EXPECT().GetName().Return("groq").AnyTimes()
 
+		mockMCPClient.EXPECT().GetServerForTool("get-pizza-info").Return("http://mcp-pizza-server:8084/mcp", nil).AnyTimes()
+
 		mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "http://mcp-pizza-server:8084/mcp").Return(&mcp.CallToolResult{
 			Content: []interface{}{
 				map[string]interface{}{
@@ -822,7 +823,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" get"},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" pizza"},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" info"},"finish_reason":null}]}`,
-				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw1","type":"function","function":{"name":"get-pizza-info","arguments":"{\"mcpServer\":\"http://mcp-pizza-server:8084/mcp\"}"},"index":0}]},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw1","type":"function","function":{"name":"get-pizza-info","arguments":"{}"},"index":0}]},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
 			}
 			for _, chunk := range chunks {
@@ -840,7 +841,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" me"},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" get"},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" more"},"finish_reason":null}]}`,
-				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw2","type":"function","function":{"name":"get-pizza-info","arguments":"{\"mcpServer\":\"http://mcp-pizza-server:8084/mcp\"}"},"index":0}]},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw2","type":"function","function":{"name":"get-pizza-info","arguments":"{}"},"index":0}]},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
 			}
 			for _, chunk := range chunks {

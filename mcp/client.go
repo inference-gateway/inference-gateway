@@ -61,6 +61,9 @@ type MCPClientInterface interface {
 	// ConvertMCPToolsToChatCompletionTools converts MCP server tools to chat completion tools
 	ConvertMCPToolsToChatCompletionTools([]Tool) []providers.ChatCompletionTool
 
+	// GetServerForTool returns the server URL that provides the specified tool
+	GetServerForTool(toolName string) (string, error)
+
 	// BuildSSEFallbackURL creates an SSE fallback URL from the main server URL (exposed for testing)
 	BuildSSEFallbackURL(serverURL string) string
 }
@@ -476,7 +479,6 @@ func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, 
 			enhancedDesc = new(string)
 			*enhancedDesc = ""
 		}
-		*enhancedDesc += fmt.Sprintf(" [IMPORTANT: Must specify mcpServer=\"%s\" when calling this tool]", serverURL)
 
 		inputSchema := make(map[string]interface{})
 		if tool.InputSchema != nil {
@@ -537,41 +539,10 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 			inputSchema = make(map[string]interface{})
 		}
 
-		props, ok := inputSchema["properties"].(map[string]interface{})
-		if !ok {
-			props = make(map[string]interface{})
-			inputSchema["properties"] = props
-		}
-
-		if _, exists := props["mcpServer"]; !exists {
-			props["mcpServer"] = map[string]interface{}{
-				"type":        "string",
-				"description": "Required. The MCP server URL to use for this tool call. Analyze the tool description to determine which server to use.",
-			}
-		}
-
-		required, ok := inputSchema["required"].([]interface{})
-		if !ok {
-			required = []interface{}{}
-		}
-
-		mcpServerRequired := false
-		for _, req := range required {
-			if reqStr, ok := req.(string); ok && reqStr == "mcpServer" {
-				mcpServerRequired = true
-				break
-			}
-		}
-
-		if !mcpServerRequired {
-			required = append(required, "mcpServer")
-			inputSchema["required"] = required
-		}
-
 		tools = append(tools, providers.ChatCompletionTool{
 			Type: "function",
 			Function: providers.FunctionObject{
-				Name:        tool.Name,
+				Name:        "mcp_" + tool.Name,
 				Description: description,
 				Parameters:  (*providers.FunctionParameters)(&inputSchema),
 			},
@@ -579,6 +550,23 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 	}
 
 	return tools
+}
+
+// GetServerForTool returns the server URL that provides the specified tool
+func (mc *MCPClient) GetServerForTool(toolName string) (string, error) {
+	if !mc.Initialized {
+		return "", fmt.Errorf("mcp client not initialized")
+	}
+
+	for serverURL, serverTools := range mc.ServerTools {
+		for _, tool := range serverTools {
+			if tool.Name == toolName {
+				return serverURL, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("tool %s not found on any server", toolName)
 }
 
 // GetAllChatCompletionTools returns all pre-converted chat completion tools from all servers
