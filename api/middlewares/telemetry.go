@@ -257,7 +257,7 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, mod
 
 // classifyToolType determines the tool type based on the tool name
 func (t *TelemetryImpl) classifyToolType(toolName string) string {
-	if toolName == "a2a_query_agent_card" || toolName == "a2a_submit_task_to_agent" {
+	if strings.HasPrefix(toolName, "a2a_") {
 		return "a2a"
 	}
 
