@@ -26,6 +26,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
   - [How It Works Internally](#how-it-works-internally)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
 - [Agent-to-Agent (A2A) Integration](#agent-to-agent-a2a-integration)
+- [Metrics and Observability](#metrics-and-observability)
 - [Supported API's](#supported-apis)
 - [Configuration](#configuration)
 - [Examples](#examples)
@@ -307,6 +308,151 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 The gateway automatically discovers agent skills, converts them to chat completion tools, and handles skill execution, enabling seamless collaboration between LLMs and external agents.
 
 > **Learn more**: [A2A Protocol Documentation](a2a/README.md) | [A2A Integration Example](examples/docker-compose/a2a/) | [Curated A2A Agents](https://github.com/inference-gateway/awesome-a2a)
+
+## Metrics and Observability
+
+The Inference Gateway provides comprehensive OpenTelemetry metrics for monitoring performance, usage, and function/tool call activity. Metrics are automatically exported to Prometheus format and available on port 9464 by default.
+
+### Enabling Metrics
+
+```bash
+# Enable telemetry and set metrics port (default: 9464)
+export TELEMETRY_ENABLE=true
+export TELEMETRY_METRICS_PORT=9464
+
+# Access metrics endpoint
+curl http://localhost:9464/metrics
+```
+
+### Available Metrics
+
+#### **Token Usage Metrics**
+
+Track token consumption across different providers and models:
+
+- **`llm_usage_prompt_tokens_total`** - Counter for prompt tokens consumed
+- **`llm_usage_completion_tokens_total`** - Counter for completion tokens generated  
+- **`llm_usage_total_tokens_total`** - Counter for total token usage
+
+**Labels**: `provider`, `model`
+
+```promql
+# Total tokens used by OpenAI models in the last hour
+sum(increase(llm_usage_total_tokens_total{provider="openai"}[1h])) by (model)
+```
+
+#### **Request/Response Metrics**
+
+Monitor API performance and reliability:
+
+- **`llm_requests_total`** - Counter for total requests processed
+- **`llm_responses_total`** - Counter for responses by HTTP status code
+- **`llm_request_duration`** - Histogram for end-to-end request duration (milliseconds)
+
+**Labels**: `provider`, `request_method`, `request_path`, `status_code` (responses only)
+
+```promql
+# 95th percentile request latency by provider
+histogram_quantile(0.95, sum(rate(llm_request_duration_bucket{provider=~"openai|anthropic"}[5m])) by (provider, le))
+
+# Error rate percentage by provider
+100 * sum(rate(llm_responses_total{status_code!~"2.."}[5m])) by (provider) / sum(rate(llm_responses_total[5m])) by (provider)
+```
+
+#### **Function/Tool Call Metrics**
+
+Comprehensive tracking of tool executions for MCP, A2A, and standard function calls:
+
+- **`llm_tool_calls_total`** - Counter for total function/tool calls executed
+- **`llm_tool_calls_success_total`** - Counter for successful tool executions
+- **`llm_tool_calls_failure_total`** - Counter for failed tool executions
+- **`llm_tool_call_duration`** - Histogram for tool execution duration (milliseconds)
+
+**Labels**: `provider`, `model`, `tool_type`, `tool_name`, `error_type` (failures only)
+
+**Tool Types**:
+- `mcp` - Model Context Protocol tools (prefix: `mcp_`)
+- `a2a` - Agent-to-Agent tools (prefix: `a2a_`)  
+- `standard_tool_use` - Other function calls
+
+```promql
+# Tool call success rate by type
+100 * sum(rate(llm_tool_calls_success_total[5m])) by (tool_type) / sum(rate(llm_tool_calls_total[5m])) by (tool_type)
+
+# Average tool execution time by provider
+sum(rate(llm_tool_call_duration_sum[5m])) by (provider) / sum(rate(llm_tool_call_duration_count[5m])) by (provider)
+
+# Most frequently used tools
+topk(10, sum(increase(llm_tool_calls_total[1h])) by (tool_name))
+```
+
+### Monitoring Setup
+
+#### **Docker Compose Example**
+
+Complete monitoring stack with Grafana dashboards:
+
+```bash
+cd examples/docker-compose/monitoring/
+cp .env.example .env  # Configure your API keys
+docker compose up -d
+
+# Access Grafana at http://localhost:3000 (admin/admin)
+```
+
+#### **Kubernetes Example**
+
+Production-ready monitoring with Prometheus Operator:
+
+```bash
+cd examples/kubernetes/monitoring/
+task deploy-infrastructure
+task deploy-inference-gateway
+
+# Access via port-forward or ingress
+kubectl port-forward svc/grafana-service 3000:3000
+```
+
+### Histogram Boundaries
+
+Request and tool call duration histograms use optimized boundaries for millisecond precision:
+
+```
+[1, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000] ms
+```
+
+### Grafana Dashboard
+
+The included Grafana dashboard provides:
+
+- **Real-time Metrics**: 5-second refresh rate for immediate feedback
+- **Tool Call Analytics**: Success rates, duration analysis, and failure tracking
+- **Provider Comparison**: Performance metrics across all supported providers  
+- **Usage Insights**: Token consumption patterns and cost analysis
+- **Error Monitoring**: Failed requests and tool call error classification
+
+### Prometheus Configuration
+
+The gateway exposes metrics compatible with Prometheus scraping:
+
+```yaml
+scrape_configs:
+  - job_name: 'inference-gateway'
+    static_configs:
+      - targets: ['localhost:9464']
+    scrape_interval: 5s
+    scrape_timeout: 4s
+```
+
+### Provider Detection
+
+Metrics automatically detect providers from:
+- **Model prefixes**: `openai/gpt-4`, `anthropic/claude-3-haiku`, `groq/llama-3-8b`
+- **URL parameters**: `?provider=openai`
+
+**Supported providers**: `openai`, `anthropic`, `groq`, `cohere`, `ollama`, `cloudflare`, `deepseek`
+
+> **Learn more**: [Docker Compose Monitoring](examples/docker-compose/monitoring/) | [Kubernetes Monitoring](examples/kubernetes/monitoring/) | [OpenTelemetry Documentation](https://opentelemetry.io/)
 
 ## Supported API's
 
