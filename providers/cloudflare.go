@@ -1,7 +1,6 @@
 package providers
 
 import (
-	"strings"
 	"time"
 )
 
@@ -31,12 +30,9 @@ func (l *ListModelsResponseCloudflare) Transform() ListModelsResponse {
 				created = createdAt.Unix()
 			}
 		}
-		modelID := model.Name
-		if !strings.Contains(modelID, "/") {
-			modelID = string(provider) + "/" + modelID
-		}
+
 		models[i] = Model{
-			ID:       modelID,
+			ID:       string(provider) + "/" + model.ID,
 			Object:   "model",
 			Created:  created,
 			OwnedBy:  string(provider),
