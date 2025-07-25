@@ -104,7 +104,7 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "with tool calls",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
+				mockProvider.EXPECT().GetName().Return("test-provider").Times(2) // Once for setup, once for telemetry
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", 1, "tool_calls", 1).Times(1)
@@ -180,7 +180,7 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "max iterations reached",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
+				mockProvider.EXPECT().GetName().Return("test-provider").Times(11) // Once for setup, 10 times for telemetry
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", gomock.Any(), "tool_calls", 1).Times(10) // MaxAgentIterations
@@ -669,7 +669,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 		{
 			name: "executing multiple mcp tools",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
+				mockProvider.EXPECT().GetName().Return("test-provider").Times(3) // Once for setup, twice for telemetry
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				firstStreamCh := make(chan []byte, 15)
