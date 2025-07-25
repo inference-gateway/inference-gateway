@@ -261,7 +261,6 @@ func (t *TelemetryImpl) classifyToolType(toolName string) string {
 		return "a2a"
 	}
 
-	// TODO - implement a prefix identifier for MCP tools
 	if strings.HasPrefix(toolName, "mcp_") {
 		return "mcp"
 	}
