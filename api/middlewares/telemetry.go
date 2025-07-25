@@ -39,6 +39,14 @@ type responseBodyWriter struct {
 	body *bytes.Buffer
 }
 
+// responseData holds all information extracted from a single response parse
+type responseData struct {
+	PromptTokens     int64
+	CompletionTokens int64
+	TotalTokens      int64
+	ToolCalls        []providers.ChatCompletionMessageToolCall
+}
+
 // Write captures the response body
 func (w *responseBodyWriter) Write(b []byte) (int, error) {
 	w.body.Write(b)
@@ -120,89 +128,13 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		t.telemetry.RecordResponseStatus(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, statusCode)
 		t.telemetry.RecordRequestDuration(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, duration)
 
-		var promptTokens int64
-		var completionTokens int64
-		var totalTokens int64
-		if requestBody.Stream != nil && *requestBody.Stream {
-			responseStr := w.body.String()
-			chunks := strings.Split(responseStr, "\n\n")
+		// Parse response once to extract all needed data
+		respData := t.parseResponseData(w.body.Bytes(), requestBody.Stream != nil && *requestBody.Stream, provider, model)
 
-			if len(chunks) > 4 {
-				chunks = chunks[len(chunks)-4:]
-			}
-
-			var chatCompletionStreamResponse providers.CreateChatCompletionStreamResponse
-			for _, chunk := range chunks {
-				if chunk == "" {
-					continue
-				}
-
-				if strings.HasPrefix(chunk, "data: ") {
-					chunk = strings.TrimPrefix(chunk, "data: ")
-
-					if chunk == "[DONE]" {
-						break
-					}
-
-					if err := json.Unmarshal([]byte(chunk), &chatCompletionStreamResponse); err != nil {
-						t.logger.Error("failed to unmarshal streaming response chunk", err,
-							"provider", provider,
-							"model", model,
-							"chunk_length", len(chunk))
-						break
-					}
-
-					if chatCompletionStreamResponse.Usage != nil {
-						promptTokens = chatCompletionStreamResponse.Usage.PromptTokens
-						completionTokens = chatCompletionStreamResponse.Usage.CompletionTokens
-						totalTokens = chatCompletionStreamResponse.Usage.TotalTokens
-						break
-					}
-				}
-			}
-		} else {
-			var chatCompletionResponse providers.CreateChatCompletionResponse
-			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionResponse); err != nil {
-				t.logger.Error("failed to unmarshal non-streaming response", err,
-					"provider", provider,
-					"model", model,
-					"response_length", w.body.Len(),
-					"status_code", statusCode)
-			}
-
-			if chatCompletionResponse.Usage != nil {
-				promptTokens = chatCompletionResponse.Usage.PromptTokens
-				completionTokens = chatCompletionResponse.Usage.CompletionTokens
-				totalTokens = chatCompletionResponse.Usage.TotalTokens
-			}
-		}
-
-		var toolCallCount int
-		if requestBody.Stream != nil && *requestBody.Stream {
-			responseStr := w.body.String()
-			chunks := strings.Split(responseStr, "\n\n")
-			for _, chunk := range chunks {
-				if strings.HasPrefix(chunk, "data: ") {
-					chunk = strings.TrimPrefix(chunk, "data: ")
-					if chunk == "[DONE]" {
-						continue
-					}
-					var streamResponse providers.CreateChatCompletionStreamResponse
-					if err := json.Unmarshal([]byte(chunk), &streamResponse); err == nil {
-						if len(streamResponse.Choices) > 0 && streamResponse.Choices[0].Delta.ToolCalls != nil {
-							toolCallCount += len(*streamResponse.Choices[0].Delta.ToolCalls)
-						}
-					}
-				}
-			}
-		} else {
-			var chatCompletionResponse providers.CreateChatCompletionResponse
-			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionResponse); err == nil {
-				if len(chatCompletionResponse.Choices) > 0 && chatCompletionResponse.Choices[0].Message.ToolCalls != nil {
-					toolCallCount = len(*chatCompletionResponse.Choices[0].Message.ToolCalls)
-				}
-			}
-		}
+		promptTokens := respData.PromptTokens
+		completionTokens := respData.CompletionTokens
+		totalTokens := respData.TotalTokens
+		toolCallCount := len(respData.ToolCalls)
 
 		t.logger.Debug("token usage recorded",
 			"provider", provider,
@@ -224,56 +156,63 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			totalTokens,
 		)
 
-		t.recordToolCallMetrics(c.Request.Context(), provider, model, &requestBody, w.body.Bytes())
+		t.recordToolCallMetrics(c.Request.Context(), provider, model, &requestBody, respData)
 	}
 }
 
-// recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
-func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, model string, request *providers.CreateChatCompletionRequest, responseBytes []byte) {
-	availableTools := make(map[string]string) // tool_name -> tool_type
-	if request.Tools != nil {
-		for _, tool := range *request.Tools {
-			toolType := t.classifyToolType(tool.Function.Name)
-			availableTools[tool.Function.Name] = toolType
-		}
-	}
+// parseResponseData extracts all needed information from response in a single pass
+func (t *TelemetryImpl) parseResponseData(responseBytes []byte, isStreaming bool, provider, model string) *responseData {
+	data := &responseData{}
 
-	var actualToolCalls []providers.ChatCompletionMessageToolCall
-	if request.Stream != nil && *request.Stream {
-		actualToolCalls = t.parseStreamingToolCalls(responseBytes)
+	if isStreaming {
+		data.ToolCalls = t.parseStreamingResponse(responseBytes, &data.PromptTokens, &data.CompletionTokens, &data.TotalTokens, provider, model)
 	} else {
-		actualToolCalls = t.parseNonStreamingToolCalls(responseBytes)
+		data.ToolCalls = t.parseNonStreamingResponse(responseBytes, &data.PromptTokens, &data.CompletionTokens, &data.TotalTokens, provider, model)
 	}
 
-	for _, toolCall := range actualToolCalls {
-		toolType, exists := availableTools[toolCall.Function.Name]
-		if !exists {
-			toolType = t.classifyToolType(toolCall.Function.Name)
-		}
-
-		t.telemetry.RecordToolCallCount(ctx, provider, model, toolType, toolCall.Function.Name)
-	}
+	return data
 }
 
-// classifyToolType determines the tool type based on the tool name
-func (t *TelemetryImpl) classifyToolType(toolName string) string {
-	if strings.HasPrefix(toolName, "a2a_") {
-		return "a2a"
-	}
-
-	if strings.HasPrefix(toolName, "mcp_") {
-		return "mcp"
-	}
-
-	return "llm_response"
-}
-
-// parseStreamingToolCalls extracts tool calls from streaming response
-func (t *TelemetryImpl) parseStreamingToolCalls(responseBytes []byte) []providers.ChatCompletionMessageToolCall {
+// parseStreamingResponse handles streaming response parsing for both tokens and tool calls
+func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []providers.ChatCompletionMessageToolCall {
 	responseStr := string(responseBytes)
 	chunks := strings.Split(responseStr, "\n\n")
 	toolCallsMap := make(map[int]*providers.ChatCompletionMessageToolCall)
 
+	// Look for usage info in the last few chunks
+	usageChunks := chunks
+	if len(chunks) > 4 {
+		usageChunks = chunks[len(chunks)-4:]
+	}
+
+	for _, chunk := range usageChunks {
+		if chunk == "" || !strings.HasPrefix(chunk, "data: ") {
+			continue
+		}
+
+		chunk = strings.TrimPrefix(chunk, "data: ")
+		if chunk == "[DONE]" {
+			continue
+		}
+
+		var streamResponse providers.CreateChatCompletionStreamResponse
+		if err := json.Unmarshal([]byte(chunk), &streamResponse); err != nil {
+			t.logger.Error("failed to unmarshal streaming response chunk", err,
+				"provider", provider,
+				"model", model,
+				"chunk_length", len(chunk))
+			continue
+		}
+
+		// Extract usage information
+		if streamResponse.Usage != nil {
+			*promptTokens = streamResponse.Usage.PromptTokens
+			*completionTokens = streamResponse.Usage.CompletionTokens
+			*totalTokens = streamResponse.Usage.TotalTokens
+		}
+	}
+
+	// Parse all chunks for tool calls
 	for _, chunk := range chunks {
 		if !strings.HasPrefix(chunk, "data: ") {
 			continue
@@ -327,16 +266,61 @@ func (t *TelemetryImpl) parseStreamingToolCalls(responseBytes []byte) []provider
 	return toolCalls
 }
 
-// parseNonStreamingToolCalls extracts tool calls from non-streaming response
-func (t *TelemetryImpl) parseNonStreamingToolCalls(responseBytes []byte) []providers.ChatCompletionMessageToolCall {
+// parseNonStreamingResponse handles non-streaming response parsing for both tokens and tool calls
+func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []providers.ChatCompletionMessageToolCall {
 	var chatCompletionResponse providers.CreateChatCompletionResponse
 	if err := json.Unmarshal(responseBytes, &chatCompletionResponse); err != nil {
+		t.logger.Error("failed to unmarshal non-streaming response", err,
+			"provider", provider,
+			"model", model,
+			"response_length", len(responseBytes))
 		return nil
 	}
 
+	// Extract usage information
+	if chatCompletionResponse.Usage != nil {
+		*promptTokens = chatCompletionResponse.Usage.PromptTokens
+		*completionTokens = chatCompletionResponse.Usage.CompletionTokens
+		*totalTokens = chatCompletionResponse.Usage.TotalTokens
+	}
+
+	// Extract tool calls
 	if len(chatCompletionResponse.Choices) == 0 || chatCompletionResponse.Choices[0].Message.ToolCalls == nil {
 		return nil
 	}
 
 	return *chatCompletionResponse.Choices[0].Message.ToolCalls
+}
+
+// recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
+func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, model string, request *providers.CreateChatCompletionRequest, respData *responseData) {
+	availableTools := make(map[string]string) // tool_name -> tool_type
+	if request.Tools != nil {
+		for _, tool := range *request.Tools {
+			toolType := t.classifyToolType(tool.Function.Name)
+			availableTools[tool.Function.Name] = toolType
+		}
+	}
+
+	for _, toolCall := range respData.ToolCalls {
+		toolType, exists := availableTools[toolCall.Function.Name]
+		if !exists {
+			toolType = t.classifyToolType(toolCall.Function.Name)
+		}
+
+		t.telemetry.RecordToolCallCount(ctx, provider, model, toolType, toolCall.Function.Name)
+	}
+}
+
+// classifyToolType determines the tool type based on the tool name
+func (t *TelemetryImpl) classifyToolType(toolName string) string {
+	if strings.HasPrefix(toolName, "a2a_") {
+		return "a2a"
+	}
+
+	if strings.HasPrefix(toolName, "mcp_") {
+		return "mcp"
+	}
+
+	return "llm_response"
 }
