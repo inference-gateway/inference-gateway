@@ -3,23 +3,15 @@
 This example demonstrates comprehensive monitoring setup for the Inference Gateway using:
 
 - **Prometheus** for metrics collection
-- **Grafana** for visualization with enhanced dashboards  
+- **Grafana** for visualization with enhanced dashboards
 - **Function/Tool Call Metrics** tracking MCP and A2A tool executions
-
-## 🎯 What's New
-
-This monitoring setup includes the new function/tool call metrics added in [PR #148](https://github.com/inference-gateway/inference-gateway/pull/148):
-
-- `llm_tool_calls_total` - Counter for total function/tool calls
-- `llm_tool_calls_success_total` - Counter for successful tool calls
-- `llm_tool_calls_failure_total` - Counter for failed tool calls
-- `llm_tool_call_duration` - Histogram for tool call execution duration
 
 ## 📊 Dashboard Features
 
 The enhanced Grafana dashboard provides:
 
 ### Function/Tool Call Metrics
+
 - **Total Tool Calls** - Real-time count of all function/tool executions
 - **Tool Call Success Rate** - Percentage of successful tool calls with thresholds
 - **Failed Tool Calls** - Count of failures for quick issue identification
@@ -30,6 +22,7 @@ The enhanced Grafana dashboard provides:
 - **Tool Failures by Error Type** - Detailed failure analysis
 
 ### Traditional LLM Metrics
+
 - **Request Latency by Provider** - End-to-end request performance
 - **Tokens per Second by Provider** - Throughput monitoring
 - **API Error Rate by Provider** - Success/failure rates
@@ -40,17 +33,20 @@ The enhanced Grafana dashboard provides:
 ## 🚀 Quick Start
 
 1. **Create environment file:**
+
    ```bash
    cp .env.example .env
    # Edit .env with your provider API keys
    ```
 
 2. **Start the monitoring stack:**
+
    ```bash
    docker compose up -d
    ```
 
 3. **Access services:**
+
    - **Inference Gateway**: http://localhost:8080
    - **Prometheus**: http://localhost:9090
    - **Grafana**: http://localhost:3000 (admin/admin)
@@ -62,7 +58,9 @@ The enhanced Grafana dashboard provides:
 ## 🔧 Configuration
 
 ### Gateway Configuration
+
 The gateway is configured with telemetry enabled:
+
 ```yaml
 environment:
   - TELEMETRY_ENABLE=true
@@ -70,15 +68,18 @@ environment:
 ```
 
 ### Prometheus Configuration
+
 Scrapes gateway metrics every 5 seconds:
+
 ```yaml
-- job_name: 'inference-gateway'
+- job_name: "inference-gateway"
   static_configs:
-    - targets: ['inference-gateway:9464']
+    - targets: ["inference-gateway:9464"]
   scrape_interval: 5s
 ```
 
 ### Grafana Configuration
+
 - Automatically provisions Prometheus as datasource
 - Pre-loads enhanced dashboard with function/tool call metrics
 - Configured with 5-second refresh rate for real-time monitoring
@@ -86,11 +87,12 @@ Scrapes gateway metrics every 5 seconds:
 ## 🧪 Testing Function/Tool Call Metrics
 
 ### Example MCP Tool Call Request
+
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt-3.5-turbo",
+    "model": "deepseek/deepseek-chat",
     "messages": [
       {"role": "user", "content": "What files are in the current directory?"}
     ],
@@ -107,6 +109,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 ```
 
 ### Example A2A Agent Request
+
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
@@ -121,7 +124,9 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 ## 📈 Metrics Details
 
 ### Function/Tool Call Metrics Labels
+
 All tool call metrics include rich labeling:
+
 - `provider` - LLM provider (openai, anthropic, etc.)
 - `model` - Model name (gpt-4, claude-3-sonnet, etc.)
 - `tool_type` - Tool type (mcp, a2a, native)
@@ -129,39 +134,48 @@ All tool call metrics include rich labeling:
 - `error_type` - Error classification (for failures only)
 
 ### Metric Types
+
 - **Counters**: `llm_tool_calls_total`, `llm_tool_calls_success_total`, `llm_tool_calls_failure_total`
-- **Histograms**: `llm_tool_call_duration` (includes _bucket, _sum, _count)
+- **Histograms**: `llm_tool_call_duration` (includes \_bucket, \_sum, \_count)
 
 ## 🎛️ Customization
 
 ### Adding Custom Dashboards
+
 1. Create JSON dashboard file in `grafana/dashboards/`
 2. Restart Grafana container: `docker compose restart grafana`
 
 ### Modifying Metrics Collection
+
 Edit `prometheus.yml` to:
+
 - Adjust scrape intervals
 - Add additional targets
 - Configure recording rules
 
 ### Dashboard Variables
+
 The dashboard supports provider filtering via `$provider` variable:
+
 - Select specific providers or "All"
 - Dynamically populated from metrics
 
 ## 🐛 Troubleshooting
 
 ### No Metrics Showing
+
 1. Verify gateway is exposing metrics: `curl http://localhost:9464/metrics`
 2. Check Prometheus targets: http://localhost:9090/targets
 3. Ensure gateway has telemetry enabled in environment
 
 ### Tool Call Metrics Empty
+
 1. Send requests that actually trigger tool calls
 2. Verify MCP or A2A middleware is enabled
 3. Check gateway logs for tool execution
 
 ### Dashboard Not Loading
+
 1. Verify Grafana provisioning: `docker compose logs grafana`
 2. Check dashboard JSON syntax
 3. Restart Grafana: `docker compose restart grafana`
