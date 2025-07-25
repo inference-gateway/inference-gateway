@@ -312,7 +312,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 
 		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
 
-		// Record metrics for tool call
 		providerName := "unknown"
 		modelName := "unknown"
 		if a.provider != nil {
