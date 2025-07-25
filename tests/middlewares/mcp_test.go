@@ -199,7 +199,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 				{
 					Type: providers.ChatCompletionToolTypeFunction,
 					Function: providers.FunctionObject{
-						Name: "test_tool",
+						Name: "mcp_test_tool",
 					},
 				},
 			},
@@ -611,7 +611,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 					{
 						Type: providers.ChatCompletionToolTypeFunction,
 						Function: providers.FunctionObject{
-							Name: "test_tool",
+							Name: "mcp_test_tool",
 						},
 					},
 				}).AnyTimes()
@@ -631,7 +631,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 					{
 						Type: providers.ChatCompletionToolTypeFunction,
 						Function: providers.FunctionObject{
-							Name: "test_tool",
+							Name: "mcp_test_tool",
 						},
 					},
 				}).AnyTimes()
@@ -743,12 +743,12 @@ func TestParseStreamingToolCalls(t *testing.T) {
 	}{
 		{
 			name: "Parse tool call from streaming chunks",
-			streamResponse: `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_123","type":"function","function":{"name":"test_tool"}}]}}]}
+			streamResponse: `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_123","type":"function","function":{"name":"mcp_test_tool"}}]}}]}
 data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\"arg1\""}}]}}]}
 data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":":\"value1\",\"arg2\":42}"}}]}}]}
 data: [DONE]`,
 			expectedLen:  1,
-			expectedName: "test_tool",
+			expectedName: "mcp_test_tool",
 			expectedArgs: `{"arg1":"value1","arg2":42}`,
 		},
 		{

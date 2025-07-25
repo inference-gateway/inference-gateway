@@ -476,7 +476,6 @@ func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, 
 			enhancedDesc = new(string)
 			*enhancedDesc = ""
 		}
-		*enhancedDesc += fmt.Sprintf(" [IMPORTANT: Must specify mcpServer=\"%s\" when calling this tool]", serverURL)
 
 		inputSchema := make(map[string]interface{})
 		if tool.InputSchema != nil {
@@ -571,7 +570,7 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 		tools = append(tools, providers.ChatCompletionTool{
 			Type: "function",
 			Function: providers.FunctionObject{
-				Name:        tool.Name,
+				Name:        "mcp_" + tool.Name,
 				Description: description,
 				Parameters:  (*providers.FunctionParameters)(&inputSchema),
 			},

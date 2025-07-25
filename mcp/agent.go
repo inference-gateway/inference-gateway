@@ -298,15 +298,17 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 
 		delete(args, "mcpServer")
 
+		toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
+
 		mcpRequest := Request{
 			Method: "tools/call",
 			Params: map[string]interface{}{
-				"name":      toolCall.Function.Name,
+				"name":      toolName,
 				"arguments": args,
 			},
 		}
 
-		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
+		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s mcp_name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, toolName, args, server))
 		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
 		if err != nil {
 			a.logger.Error("failed to execute tool call", err, "tool", toolCall.Function.Name, "server", server)
