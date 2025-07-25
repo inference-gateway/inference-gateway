@@ -1,7 +1,8 @@
 # Custom Instructions for Copilot
 
-Today is June 9, 2025.
+Today is July 26, 2025.
 
+- Always run `task pre-commit:install` before starting any development work to ensure code quality checks are in place.
 - Always use context7 to check for the latest updates, features, or best practices of a library relevant to the task at hand.
 - Always prefer Table-Driven Testing: When writing tests.
 - Always use Early Returns: Favor early returns to simplify logic and avoid deep nesting with if-else structures.
@@ -18,6 +19,7 @@ Today is June 9, 2025.
 
 ## Development Workflow
 
+0. Run `task pre-commit:install` to install pre-commit hooks for automatic code quality checks.
 1. Run `task mcp-schema-download` to download the latest MCP schema - when working on MCP.
 2. Run `task a2a-schema-download` to download the latest A2A schema - when working on A2A.
 3. Update `openapi.yaml` with the new configuration fields in the appropriate section.

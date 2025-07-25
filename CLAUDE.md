@@ -8,22 +8,30 @@ The Inference Gateway is a multi-provider LLM proxy server written in Go that su
 
 ## Common Commands
 
+### Development Setup
+
+- `task pre-commit:install` - Install pre-commit hooks for automatic code quality checks
+
 ### Essential Development Commands
+
 - `task build` - Build the gateway binary (`go build -o bin/inference-gateway cmd/gateway/main.go`)
 - `task run` - Run the gateway locally (`go run cmd/gateway/main.go`)
 - `task test` - Run all tests (`go test -v ./...`)
 - `task lint` - Run Go linting (`golangci-lint run`)
 
 ### Schema and Code Generation
+
 - `task generate` - Generate all code from OpenAPI spec and schemas
 - `task mcp-schema-download` - Download latest MCP schema when working on MCP features
 - `task a2a-schema-download` - Download latest A2A schema when working on A2A features
 
 ### Running Single Tests
+
 - `go test -v ./tests/api_routes_test.go` - Run specific test file
 - `go test -v -run TestChatCompletions ./tests/` - Run specific test function
 
 ### Container and Deployment
+
 - `task build:container` - Build Docker container
 - `task package` - Package the gateway (builds container)
 
@@ -40,8 +48,9 @@ The Inference Gateway is a multi-provider LLM proxy server written in Go that su
 **Provider System**: `providers/` - Abstracted provider implementations with a registry pattern supporting multiple LLM providers
 
 **Middleware Stack**: `api/middlewares/` - Request processing pipeline including:
+
 - MCP middleware for tool injection and execution
-- A2A middleware for agent skill integration  
+- A2A middleware for agent skill integration
 - Authentication (OIDC), logging, and telemetry
 
 ### Key Architectural Patterns
@@ -55,6 +64,7 @@ The Inference Gateway is a multi-provider LLM proxy server written in Go that su
 ## MCP (Model Context Protocol) Integration
 
 MCP enables automatic tool discovery and injection. When enabled:
+
 - Tools are automatically discovered from configured MCP servers
 - The MCP middleware injects available tools into chat completion requests
 - Tool calls are executed automatically and results fed back to the LLM
@@ -64,6 +74,7 @@ MCP enables automatic tool discovery and injection. When enabled:
 ## A2A (Agent-to-Agent) Integration
 
 A2A enables connecting to external agents and exposing their skills as tools:
+
 - Agent skills are automatically discovered and converted to OpenAI tool format
 - Skills can be executed by LLMs through the standard tool calling mechanism
 - Supports agent card retrieval and skill execution
@@ -72,7 +83,13 @@ A2A enables connecting to external agents and exposing their skills as tools:
 
 ## Development Best Practices
 
+### Development Setup
+
+- **Always run `task pre-commit:install` before starting any development work** to ensure code quality checks are in place
+- The pre-commit hook automatically runs code generation, linting, building, and testing before each commit
+
 ### Code Style
+
 - Use table-driven testing for comprehensive test coverage
 - Prefer early returns to avoid deep nesting
 - Use switch statements over if-else chains for multiple conditions
@@ -80,11 +97,13 @@ A2A enables connecting to external agents and exposing their skills as tools:
 - Use lowercase log messages for consistency
 
 ### Testing Patterns
+
 - Each test case should have isolated mock dependencies
 - Use `go generate` to generate mocks from interfaces
 - Tests are located in `tests/` directory with comprehensive coverage
 
 ### Schema Management
+
 - OpenAPI specification in `openapi.yaml` defines all configuration
 - Run `task generate` after modifying schemas to update generated code
 - MCP and A2A schemas are downloaded and converted to Go types
@@ -92,12 +111,14 @@ A2A enables connecting to external agents and exposing their skills as tools:
 ## Configuration System
 
 Configuration is environment-based using structured config types:
+
 - `Config` struct in `config/config.go` defines all settings
 - Provider-specific config in `providers/` package
 - Environment variables follow structured naming (e.g., `MCP_ENABLE`, `A2A_AGENTS`)
 
 ## Important Notes
 
+- Always run `task pre-commit:install` before starting development to set up automatic code quality checks
 - Always run `task lint` before committing code
 - Always run `task build` and `task test` to verify changes
 - When working on MCP: run `task mcp-schema-download` and `task generate` to update types
@@ -107,19 +128,23 @@ Configuration is environment-based using structured config types:
 ## Related Repositories
 
 ### Core Inference Gateway
+
 - **[Main Repository](https://github.com/inference-gateway)** - The main inference gateway org
 - **[Documentation](https://github.com/inference-gateway/docs)** - Official documentation and guides
 - **[UI](https://github.com/inference-gateway/ui)** - Web interface for the inference gateway
 
 ### SDKs & Client Libraries
+
 - **[Go SDK](https://github.com/inference-gateway/go-sdk)** - Go client library
-- **[Rust SDK](https://github.com/inference-gateway/rust-sdk)** - Rust client library  
+- **[Rust SDK](https://github.com/inference-gateway/rust-sdk)** - Rust client library
 - **[TypeScript SDK](https://github.com/inference-gateway/typescript-sdk)** - TypeScript/JavaScript client library
 - **[Python SDK](https://github.com/inference-gateway/python-sdk)** - Python client library
 
 ### A2A (Agent-to-Agent) Ecosystem
+
 - **[Awesome A2A](https://github.com/inference-gateway/awesome-a2a)** - Curated list of A2A-compatible agents
 - **[Google Calendar Agent](https://github.com/inference-gateway/google-calendar-agent)** - Agent for Google Calendar integration
 
 ### Internal Tools
+
 - **[Internal Tools](https://github.com/inference-gateway/tools)** - Collection of internal tools and utilities

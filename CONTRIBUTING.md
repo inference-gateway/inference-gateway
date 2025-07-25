@@ -10,6 +10,7 @@ Thank you for considering contributing to Inference Gateway! We welcome contribu
     - [Reporting Bugs](#reporting-bugs)
     - [Requesting Features](#requesting-features)
     - [Code Contributions](#code-contributions)
+    - [Development Setup](#development-setup)
     - [Code Style](#code-style)
   - [Adding New Providers](#adding-new-providers)
     - [Quick Start](#quick-start)
@@ -37,10 +38,29 @@ We welcome feature requests! Please create an issue on GitHub with a clear descr
 
 1. Fork the repository.
 2. Create a new branch for your feature or bug fix.
-3. Write your code and tests.
-4. Run the tests to ensure everything works.
-5. Commit your changes and push your branch to your fork.
-6. Create a pull request on GitHub.
+3. **Set up development environment** by running `task pre-commit:install` to install pre-commit hooks for automatic code quality checks.
+4. Write your code and tests.
+5. Run the tests to ensure everything works.
+6. Commit your changes and push your branch to your fork.
+7. Create a pull request on GitHub.
+
+### Development Setup
+
+Before starting development, it's essential to set up your development environment properly:
+
+```bash
+# Install pre-commit hooks for automatic code quality checks
+task pre-commit:install
+```
+
+This will install a pre-commit hook that automatically runs:
+
+- Code generation (`task generate`)
+- Linting (`task lint` and `task openapi-lint`)
+- Building (`task build`)
+- Testing (`task test`)
+
+The pre-commit hook ensures code quality and prevents commits that would break the build or introduce inconsistencies.
 
 ### Code Style
 
