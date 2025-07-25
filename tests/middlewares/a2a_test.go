@@ -345,10 +345,10 @@ func TestA2AMiddleware_AgentsAreInjectedAsTools(t *testing.T) {
 				foundAgentQueryTool := false
 				foundTaskSubmissionTool := false
 				for _, tool := range *capturedRequest.Tools {
-					if tool.Function.Name == "query_a2a_agent_card" {
+					if tool.Function.Name == a2a.ToolQueryAgentCard {
 						foundAgentQueryTool = true
 					}
-					if tool.Function.Name == "submit_task_to_agent" {
+					if tool.Function.Name == a2a.ToolSubmitTaskToAgent {
 						foundTaskSubmissionTool = true
 					}
 				}
@@ -382,7 +382,7 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				{
 					ID: "call_1",
 					Function: providers.ChatCompletionMessageToolCallFunction{
-						Name:      "query_a2a_agent_card",
+						Name:      a2a.ToolQueryAgentCard,
 						Arguments: `{"agent_url": "http://agent1.example.com"}`,
 					},
 				},
@@ -414,12 +414,12 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 			expectedStatus:        http.StatusOK,
 		},
 		{
-			name: "LLM calls submit_task_to_agent tool - successful execution",
+			name: "LLM calls a2a_submit_task_to_agent tool - successful execution",
 			toolCalls: []providers.ChatCompletionMessageToolCall{
 				{
 					ID: "call_2",
 					Function: providers.ChatCompletionMessageToolCallFunction{
-						Name:      "submit_task_to_agent",
+						Name:      a2a.ToolSubmitTaskToAgent,
 						Arguments: `{"agent_url": "http://agent1.example.com", "task_description": "Calculate 5+3"}`,
 					},
 				},
@@ -465,7 +465,7 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				{
 					ID: "call_3",
 					Function: providers.ChatCompletionMessageToolCallFunction{
-						Name:      "submit_task_to_agent",
+						Name:      a2a.ToolSubmitTaskToAgent,
 						Arguments: `{"agent_url": "http://agent1.example.com", "task_description": "Calculate 5+3"}`,
 					},
 				},
@@ -488,7 +488,7 @@ func TestA2AMiddleware_LLMDecisionToSubmitTask(t *testing.T) {
 				{
 					ID: "call_4",
 					Function: providers.ChatCompletionMessageToolCallFunction{
-						Name:      "submit_task_to_agent",
+						Name:      a2a.ToolSubmitTaskToAgent,
 						Arguments: `{"agent_url": "http://agent1.example.com", "task_description": "Calculate 5+3"}`,
 					},
 				},
