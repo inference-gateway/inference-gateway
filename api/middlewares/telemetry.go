@@ -176,10 +176,8 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			}
 		}
 
-		// Track tool calls in response
 		var toolCallCount int
 		if requestBody.Stream != nil && *requestBody.Stream {
-			// For streaming responses, parse tool calls from the final chunks
 			responseStr := w.body.String()
 			chunks := strings.Split(responseStr, "\n\n")
 			for _, chunk := range chunks {
@@ -197,7 +195,6 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 				}
 			}
 		} else {
-			// For non-streaming responses, parse tool calls directly
 			var chatCompletionResponse providers.CreateChatCompletionResponse
 			if err := json.Unmarshal(w.body.Bytes(), &chatCompletionResponse); err == nil {
 				if len(chatCompletionResponse.Choices) > 0 && chatCompletionResponse.Choices[0].Message.ToolCalls != nil {
@@ -226,7 +223,6 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			totalTokens,
 		)
 
-		// Record tool call requests from LLM responses
 		if toolCallCount > 0 {
 			for i := 0; i < toolCallCount; i++ {
 				t.telemetry.RecordToolCallCount(c.Request.Context(), provider, model, "llm_response", "generic_tool_call")
