@@ -20,8 +20,8 @@ const MaxAgentIterations = 10
 
 // Supported A2A tool function names
 const (
-	ToolQueryAgentCard    = "query_a2a_agent_card"
-	ToolSubmitTaskToAgent = "submit_task_to_agent"
+	ToolQueryAgentCard    = "a2a_query_agent_card"
+	ToolSubmitTaskToAgent = "a2a_submit_task_to_agent"
 )
 
 // Agent defines the interface for running agent operations
