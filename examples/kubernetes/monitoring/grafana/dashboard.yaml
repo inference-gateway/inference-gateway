@@ -43,6 +43,604 @@ spec:
           "fieldConfig": {
             "defaults": {
               "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "id": 20,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.5.2",
+          "title": "Total Tool Calls",
+          "description": "Total number of function/tool calls executed across all providers",
+          "type": "stat",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(increase(llm_tool_calls_total{provider=~\"$provider\"}[$__range]))",
+              "refId": "A",
+              "legendFormat": "Total Tool Calls"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 80
+                  },
+                  {
+                    "color": "green",
+                    "value": 95
+                  }
+                ]
+              },
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "id": 21,
+          "options": {
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true
+          },
+          "pluginVersion": "9.5.2",
+          "title": "Tool Call Success Rate",
+          "description": "Percentage of successful tool calls",
+          "type": "gauge",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "100 * sum(increase(llm_tool_calls_success_total{provider=~\"$provider\"}[$__range])) / sum(increase(llm_tool_calls_total{provider=~\"$provider\"}[$__range]))",
+              "refId": "A",
+              "legendFormat": "Success Rate"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 10
+                  },
+                  {
+                    "color": "red",
+                    "value": 50
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "id": 22,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.5.2",
+          "title": "Failed Tool Calls",
+          "description": "Total number of failed function/tool calls",
+          "type": "stat",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(increase(llm_tool_calls_failure_total{provider=~\"$provider\"}[$__range]))",
+              "refId": "A",
+              "legendFormat": "Failed Calls"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1000
+                  },
+                  {
+                    "color": "red",
+                    "value": 5000
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 6,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "id": 23,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "mean"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "text": {},
+            "textMode": "auto"
+          },
+          "pluginVersion": "9.5.2",
+          "title": "Avg Tool Call Duration",
+          "description": "Average tool call execution duration",
+          "type": "stat",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(rate(llm_tool_call_duration_sum{provider=~\"$provider\"}[5m])) / sum(rate(llm_tool_call_duration_count{provider=~\"$provider\"}[5m]))",
+              "refId": "A",
+              "legendFormat": "Avg Duration"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Calls/sec",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0.2,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 6
+          },
+          "id": 24,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "title": "Tool Call Rate by Type",
+          "description": "Rate of tool calls per second by tool type",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(tool_type) (rate(llm_tool_calls_total{provider=~\"$provider\"}[1m]))",
+              "refId": "A",
+              "legendFormat": "{{tool_type}}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "Duration (ms)",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 0.2,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "smooth",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 5000
+                  }
+                ]
+              },
+              "unit": "ms"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 6
+          },
+          "id": 25,
+          "options": {
+            "legend": {
+              "calcs": [
+                "mean",
+                "max",
+                "p95"
+              ],
+              "displayMode": "table",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "title": "Tool Call Duration by Provider",
+          "description": "Tool call execution latency by provider",
+          "type": "timeseries",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum by(le, provider) (rate(llm_tool_call_duration_bucket{provider=~\"$provider\"}[1m])))",
+              "refId": "A",
+              "legendFormat": "{{provider}} - p95"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(provider) (rate(llm_tool_call_duration_sum{provider=~\"$provider\"}[1m])) / sum by(provider) (rate(llm_tool_call_duration_count{provider=~\"$provider\"}[1m]))",
+              "refId": "B",
+              "legendFormat": "{{provider}} - avg"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "displayMode": "gradient",
+                "fillOpacity": 70
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 14
+          },
+          "id": 26,
+          "options": {
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "text": {}
+          },
+          "pluginVersion": "9.5.2",
+          "title": "Top Tool Names by Usage",
+          "description": "Most frequently called tools",
+          "type": "bargauge",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "topk(10, sum by(tool_name) (increase(llm_tool_calls_total{provider=~\"$provider\"}[$__range])))",
+              "refId": "A",
+              "legendFormat": "{{tool_name}}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "displayMode": "gradient",
+                "fillOpacity": 70
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "red",
+                    "value": null
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 14
+          },
+          "id": 27,
+          "options": {
+            "displayMode": "gradient",
+            "minVizHeight": 10,
+            "minVizWidth": 0,
+            "orientation": "horizontal",
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "showUnfilled": true,
+            "text": {}
+          },
+          "pluginVersion": "9.5.2",
+          "title": "Tool Failures by Error Type",
+          "description": "Distribution of tool call failures by error type",
+          "type": "bargauge",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(error_type) (increase(llm_tool_calls_failure_total{provider=~\"$provider\"}[$__range]))",
+              "refId": "A",
+              "legendFormat": "{{error_type}}"
+            }
+          ]
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "color": {
                 "mode": "palette-classic"
               },
               "custom": {
@@ -97,7 +695,7 @@ spec:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 3
+            "y": 22
           },
           "id": 13,
           "options": {
@@ -126,7 +724,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.95, sum by(le, provider) (rate(llm_request_duration_milliseconds_sum{provider=~\"$provider\"}[1m])))",
+              "expr": "histogram_quantile(0.95, sum by(le, provider) (rate(llm_request_duration_bucket{provider=~\"$provider\"}[1m])))",
               "refId": "A",
               "legendFormat": "{{provider}} - p95"
             },
@@ -135,7 +733,7 @@ spec:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum by(provider) (rate(llm_request_duration_milliseconds_sum{provider=~\"$provider\"}[1m])) / sum by(provider) (rate(llm_request_duration_milliseconds_count{provider=~\"$provider\"}[1m]))",
+              "expr": "sum by(provider) (rate(llm_request_duration_sum{provider=~\"$provider\"}[1m])) / sum by(provider) (rate(llm_request_duration_count{provider=~\"$provider\"}[1m]))",
               "refId": "B",
               "legendFormat": "{{provider}} - avg"
             }
@@ -199,7 +797,7 @@ spec:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 1
+            "y": 30
           },
           "id": 12,
           "options": {
@@ -229,8 +827,7 @@ spec:
               },
               "expr": "sum by(provider) (rate(llm_usage_total_tokens_total{provider=~\"$provider\"}[1m]))",
               "refId": "A",
-              "legendFormat": "{{provider}} - Total Tokens",
-              "editorMode": "builder"
+              "legendFormat": "{{provider}} - Total Tokens"
             },
             {
               "datasource": {
@@ -239,8 +836,7 @@ spec:
               },
               "expr": "sum by(provider) (rate(llm_usage_completion_tokens_total{provider=~\"$provider\"}[1m]))",
               "refId": "B",
-              "legendFormat": "{{provider}} - Completion Tokens",
-              "editorMode": "builder"
+              "legendFormat": "{{provider}} - Completion Tokens"
             }
           ]
         },
@@ -324,7 +920,7 @@ spec:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 0
+            "y": 38
           },
           "id": 11,
           "options": {
@@ -345,14 +941,14 @@ spec:
           },
           "title": "API Error Rate by Provider",
           "description": "Error rate as percentage of total requests by provider",
-          "type": "gauge",
+          "type": "timeseries",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum by(provider) (rate(llm_responses_total{status_code=~\"[45].*\", provider=~\"$provider\"}[5m]) or vector(0)) / clamp_min(sum by(provider) (rate(llm_responses_total{provider=~\"$provider\"}[5m]) or vector(0)), 0.001) * 100",
+              "expr": "100 * sum by(provider) (rate(llm_responses_total{status_code=~\"[45].*\", provider=~\"$provider\"}[5m]) or vector(0)) / clamp_min(sum by(provider) (rate(llm_responses_total{provider=~\"$provider\"}[5m]) or vector(0)), 0.001)",
               "refId": "A",
               "legendFormat": "{{provider}} error rate"
             }
@@ -409,7 +1005,7 @@ spec:
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 8
+            "y": 46
           },
           "id": 1,
           "options": {
@@ -486,7 +1082,7 @@ spec:
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 16
+            "y": 54
           },
           "id": 5,
           "options": {
@@ -573,7 +1169,7 @@ spec:
             "h": 8,
             "w": 16,
             "x": 8,
-            "y": 16
+            "y": 54
           },
           "id": 6,
           "options": {
@@ -628,7 +1224,9 @@ spec:
       "tags": [
         "inference-gateway",
         "llm",
-        "monitoring"
+        "monitoring",
+        "function-calls",
+        "tools"
       ],
       "templating": {
         "list": [
@@ -685,7 +1283,7 @@ spec:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "Inference Gateway Metrics",
+      "title": "Inference Gateway - Enhanced Metrics with Function/Tool Calls",
       "uid": "inference-gateway",
       "version": 1,
       "weekStart": ""
