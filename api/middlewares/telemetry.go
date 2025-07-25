@@ -224,14 +224,12 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			totalTokens,
 		)
 
-		// Record comprehensive tool call metrics by parsing request and response
 		t.recordToolCallMetrics(c.Request.Context(), provider, model, &requestBody, w.body.Bytes())
 	}
 }
 
 // recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
 func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, model string, request *providers.CreateChatCompletionRequest, responseBytes []byte) {
-	// Build available tools map for classification
 	availableTools := make(map[string]string) // tool_name -> tool_type
 	if request.Tools != nil {
 		for _, tool := range *request.Tools {
@@ -240,7 +238,6 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, mod
 		}
 	}
 
-	// Parse response to find actual tool calls made
 	var actualToolCalls []providers.ChatCompletionMessageToolCall
 	if request.Stream != nil && *request.Stream {
 		actualToolCalls = t.parseStreamingToolCalls(responseBytes)
@@ -248,35 +245,24 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, mod
 		actualToolCalls = t.parseNonStreamingToolCalls(responseBytes)
 	}
 
-	// Record metrics for each tool call
 	for _, toolCall := range actualToolCalls {
 		toolType, exists := availableTools[toolCall.Function.Name]
 		if !exists {
-			// Fallback classification if tool wasn't in request (shouldn't happen normally)
 			toolType = t.classifyToolType(toolCall.Function.Name)
 		}
 
-		// Record the tool call count only - success/failure tracking is handled by agents
-		// since they have access to individual execution results
 		t.telemetry.RecordToolCallCount(ctx, provider, model, toolType, toolCall.Function.Name)
-
-		// Note: Individual tool execution metrics (duration, success/failure) are recorded
-		// by the respective agents (MCP, A2A) since the middleware only sees the final
-		// aggregated response, not individual tool execution results.
 	}
 }
 
 // classifyToolType determines the tool type based on the tool name
 func (t *TelemetryImpl) classifyToolType(toolName string) string {
-	// A2A tool detection
 	if toolName == "a2a_query_agent_card" || toolName == "a2a_submit_task_to_agent" {
 		return "a2a"
 	}
 
-	// MCP tools typically have specific patterns or are from MCP servers
-	// For now, we'll classify anything that's not A2A as MCP if it looks like a tool,
-	// otherwise fall back to "llm_response" for generic tool calls
-	if strings.Contains(toolName, "_") || len(toolName) > 3 {
+	// TODO - implement a prefix identifier for MCP tools
+	if strings.HasPrefix(toolName, "mcp_") {
 		return "mcp"
 	}
 
@@ -307,7 +293,6 @@ func (t *TelemetryImpl) parseStreamingToolCalls(responseBytes []byte) []provider
 			continue
 		}
 
-		// Reconstruct tool calls from streaming chunks
 		for _, toolCallChunk := range *streamResponse.Choices[0].Delta.ToolCalls {
 			index := toolCallChunk.Index
 			if _, exists := toolCallsMap[index]; !exists {
@@ -333,7 +318,6 @@ func (t *TelemetryImpl) parseStreamingToolCalls(responseBytes []byte) []provider
 		}
 	}
 
-	// Convert map to slice
 	var toolCalls []providers.ChatCompletionMessageToolCall
 	for i := 0; i < len(toolCallsMap); i++ {
 		if toolCall, exists := toolCallsMap[i]; exists && toolCall.Function.Name != "" {
