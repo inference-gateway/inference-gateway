@@ -17,6 +17,7 @@ import (
 // OpenTelemetry defines the operations for telemetry
 type OpenTelemetry interface {
 	Init(config config.Config, logger logger.Logger) error
+
 	// Application level metrics
 	RecordTokenUsage(ctx context.Context, provider, model string, promptTokens, completionTokens, totalTokens int64)
 
@@ -69,7 +70,6 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 		"version", config.VERSION,
 		"environment", cfg.Environment)
 
-	// Create a Prometheus exporter
 	exporter, err := prometheus.New()
 	if err != nil {
 		o.logger.Error("failed to create prometheus exporter", err)
@@ -78,7 +78,6 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 
 	o.logger.Debug("prometheus exporter created successfully")
 
-	// Create resource with service information
 	res := resource.NewWithAttributes(
 		semconv.SchemaURL,
 		semconv.ServiceName(config.APPLICATION_NAME),
@@ -90,10 +89,8 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 		"service_name", config.APPLICATION_NAME,
 		"service_version", config.VERSION)
 
-	// Define histogram boundaries for metrics
 	histogramBoundaries := []float64{1, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000}
 
-	// Create a view to customize histogram boundaries
 	latencyView := sdkmetric.NewView(
 		sdkmetric.Instrument{
 			Kind: sdkmetric.InstrumentKindHistogram,
@@ -107,24 +104,20 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 
 	o.logger.Debug("histogram boundaries configured", "boundaries", histogramBoundaries)
 
-	// Create meter provider with the Prometheus exporter
 	o.meterProvider = sdkmetric.NewMeterProvider(
 		sdkmetric.WithResource(res),
 		sdkmetric.WithReader(exporter),
 		sdkmetric.WithView(latencyView),
 	)
 
-	// Set global meter provider
 	otel.SetMeterProvider(o.meterProvider)
 
 	o.logger.Debug("meter provider created and set globally")
 
-	// Create meter
 	o.meter = o.meterProvider.Meter(config.APPLICATION_NAME)
 
 	o.logger.Debug("meter created", "name", config.APPLICATION_NAME)
 
-	// Initialize metrics
 	o.logger.Debug("initializing opentelemetry metrics")
 	var err1, err2, err3, err4, err5, err6, err7, err8, err9, err10, err11, err12, err13, err14 error
 
@@ -177,7 +170,6 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 		metric.WithDescription("Function/tool call execution duration"),
 		metric.WithUnit("ms"))
 
-	// Check for errors
 	for i, err := range []error{err1, err2, err3, err4, err5, err6, err7, err8, err9, err10, err11, err12, err13, err14} {
 		if err != nil {
 			metricNames := []string{
@@ -192,7 +184,7 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 	}
 
 	o.logger.Info("opentelemetry initialization completed successfully",
-		"metrics_initialized", 11, // Only counting non-commented metrics (7 existing + 4 new tool call metrics)
+		"metrics_initialized", 11,
 		"prometheus_endpoint", "/metrics")
 
 	return nil
