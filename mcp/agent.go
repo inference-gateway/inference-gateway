@@ -6,11 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/otel"
 	"github.com/inference-gateway/inference-gateway/providers"
 )
 
@@ -37,17 +35,15 @@ type agentImpl struct {
 	mcpClient MCPClientInterface
 	provider  providers.IProvider
 	model     *string
-	telemetry otel.OpenTelemetry
 }
 
 // NewAgent creates a new Agent instance
-func NewAgent(logger logger.Logger, mcpClient MCPClientInterface, telemetry otel.OpenTelemetry) Agent {
+func NewAgent(logger logger.Logger, mcpClient MCPClientInterface) Agent {
 	return &agentImpl{
 		mcpClient: mcpClient,
 		logger:    logger,
 		provider:  nil,
 		model:     nil,
-		telemetry: telemetry,
 	}
 }
 
@@ -312,38 +308,16 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 
 		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, args, server))
 
-		providerName := "unknown"
-		modelName := "unknown"
-		if a.provider != nil {
-			providerName = a.provider.GetName()
-		}
-		if a.model != nil {
-			modelName = *a.model
-		}
-
-		startTime := time.Now()
 		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
-		duration := float64(time.Since(startTime).Milliseconds())
-
-		if a.telemetry != nil {
-			a.telemetry.RecordToolCallDuration(ctx, providerName, modelName, "mcp", toolCall.Function.Name, duration)
-		}
 
 		if err != nil {
 			a.logger.Error("failed to execute tool call", err, "tool", toolCall.Function.Name, "server", server)
-			if a.telemetry != nil {
-				a.telemetry.RecordToolCallFailure(ctx, providerName, modelName, "mcp", toolCall.Function.Name, "execution_error")
-			}
 			results = append(results, providers.Message{
 				Role:       providers.MessageRoleTool,
 				Content:    fmt.Sprintf("Error: %v", err),
 				ToolCallId: &toolCall.ID,
 			})
 			continue
-		}
-
-		if a.telemetry != nil {
-			a.telemetry.RecordToolCallSuccess(ctx, providerName, modelName, "mcp", toolCall.Function.Name)
 		}
 
 		var resultStr string

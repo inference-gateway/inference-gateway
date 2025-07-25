@@ -82,7 +82,7 @@ func TestNewMCPMiddleware(t *testing.T) {
 				mockLogger.EXPECT().Info("mcp client is nil, using no-op middleware")
 			}
 
-			mcpAgent := mcp.NewAgent(mockLogger, tt.mcpClient, nil)
+			mcpAgent := mcp.NewAgent(mockLogger, tt.mcpClient)
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, tt.mcpClient, mcpAgent, mockLogger, cfg)
 
 			if tt.expectError {
@@ -149,7 +149,7 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 				tt.setupMocks(mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider)
 			}
 
-			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
@@ -267,7 +267,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 
 			requestBody, _ := json.Marshal(requestData)
 
-			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 			router := gin.New()
@@ -446,7 +446,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 
 			requestBody, _ := json.Marshal(requestData)
 
-			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
@@ -558,7 +558,7 @@ data: [DONE]`,
 
 			requestBody, _ := json.Marshal(requestData)
 
-			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
@@ -654,7 +654,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 
 			tt.setupMocks(mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider)
 
-			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
@@ -727,7 +727,7 @@ func TestParseStreamingToolCalls(t *testing.T) {
 	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 	mockLogger.EXPECT().Info(gomock.Any(), gomock.Any()).AnyTimes()
 
-	mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+	mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
 	middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 	assert.NoError(t, err)
 
@@ -807,7 +807,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 			},
 		}, nil).AnyTimes()
 
-		agentImpl := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+		agentImpl := mcp.NewAgent(mockLogger, mockMCPClient)
 
 		agentImpl.SetProvider(mockProvider)
 		model := "groq/meta-llama/llama-4-scout-17b-instruct"

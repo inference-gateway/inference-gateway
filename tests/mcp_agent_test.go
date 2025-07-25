@@ -50,7 +50,7 @@ func TestNewAgent(t *testing.T) {
 			mockLogger := mocks.NewMockLogger(ctrl)
 			mockMCPClient := mcpmocks.NewMockMCPClientInterface(ctrl)
 
-			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
 
 			if tt.expectAgent {
 				assert.NotNil(t, agentInstance)
@@ -104,7 +104,7 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "with tool calls",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(2) // Once for setup, once for telemetry
+				mockProvider.EXPECT().GetName().Return("test-provider").Times(1) // Once for setup
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", 1, "tool_calls", 1).Times(1)
@@ -180,7 +180,7 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "max iterations reached",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(11)
+				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", gomock.Any(), "tool_calls", 1).Times(10)
@@ -264,7 +264,7 @@ func TestAgent_Run(t *testing.T) {
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
-			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
 			agentInstance.SetProvider(mockProvider)
 			agentInstance.SetModel(&tt.request.Model)
 
@@ -487,7 +487,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
-			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
 
 			results, err := agentInstance.ExecuteTools(context.Background(), tt.toolCalls)
 
@@ -669,7 +669,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 		{
 			name: "executing multiple mcp tools",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(3)
+				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
 				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				firstStreamCh := make(chan []byte, 15)
@@ -876,7 +876,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
-			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient, nil)
+			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
 			agentInstance.SetProvider(mockProvider)
 			agentInstance.SetModel(&tt.request.Model)
 

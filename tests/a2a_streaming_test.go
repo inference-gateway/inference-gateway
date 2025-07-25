@@ -75,7 +75,7 @@ func TestA2AAgent_StreamingCapabilityDetection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			agent := a2a.NewAgent(mockLogger, mockA2AClient, a2aConfig, nil)
+			agent := a2a.NewAgent(mockLogger, mockA2AClient, a2aConfig)
 
 			mockA2AClient.EXPECT().GetAgentCapabilities().Return(tt.agentCapabilities).Times(1)
 
@@ -103,7 +103,7 @@ func TestA2AAgent_StreamingFallback(t *testing.T) {
 		PollingTimeout:  time.Second * 10,
 	}
 
-	agent := a2a.NewAgent(mockLogger, mockA2AClient, a2aConfig, nil)
+	agent := a2a.NewAgent(mockLogger, mockA2AClient, a2aConfig)
 
 	t.Run("SendStreamingMessage method exists and can be called", func(t *testing.T) {
 		streamingRequest := &adk.SendStreamingMessageRequest{
