@@ -166,12 +166,12 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 // The string representation of Config
 func (cfg *Config) String() string {
     return fmt.Sprintf(
-        "Config{ApplicationName:%s, Version:%s Environment:%s, EnableTelemetry:%t, EnableAuth:%t, "+
+        "Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, EnableAuth:%t, "+
             "MCP:%+v, A2A:%+v, OIDC:%+v, Server:%+v, Client:%+v, Providers:%+v}",
         APPLICATION_NAME,
         VERSION,
         cfg.Environment,
-        cfg.EnableTelemetry,
+        cfg.Telemetry,
         cfg.EnableAuth,
         cfg.MCP,
         cfg.A2A,

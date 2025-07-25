@@ -44,7 +44,7 @@ func main() {
 
 	// Initialize OpenTelemetry Prometheus exporter Server
 	var telemetryImpl otel.OpenTelemetry
-	if cfg.EnableTelemetry {
+	if cfg.Telemetry.Enable {
 		telemetryImpl = &otel.OpenTelemetryImpl{}
 		err := telemetryImpl.Init(cfg, logger)
 		if err != nil {
@@ -58,7 +58,7 @@ func main() {
 		logger.Info("telemetry initialized successfully")
 
 		metricsServer := &http.Server{
-			Addr:         ":" + cfg.TelemetryMetricsPort,
+			Addr:         ":" + cfg.Telemetry.MetricsPort,
 			Handler:      metricsMux,
 			ReadTimeout:  10 * time.Second,
 			WriteTimeout: 10 * time.Second,
@@ -66,7 +66,7 @@ func main() {
 		}
 
 		go func() {
-			logger.Info("starting metrics server", "port", cfg.TelemetryMetricsPort)
+			logger.Info("starting metrics server", "port", cfg.Telemetry.MetricsPort)
 			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				logger.Error("metrics server failed", err)
 			}
@@ -102,7 +102,7 @@ func main() {
 
 	// Initialize telemetry middleware
 	var telemetry middlewares.Telemetry
-	if cfg.EnableTelemetry {
+	if cfg.Telemetry.Enable {
 		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, logger)
 		if err != nil {
 			logger.Error("failed to initialize telemetry middleware", err)
@@ -203,7 +203,7 @@ func main() {
 	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient, a2aClient)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
-	if cfg.EnableTelemetry {
+	if cfg.Telemetry.Enable {
 		r.Use(telemetry.Middleware())
 	}
 	r.Use(oidcAuthenticator.Middleware())
