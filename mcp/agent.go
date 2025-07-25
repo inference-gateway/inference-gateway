@@ -292,13 +292,17 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 		}
 
 		var server string
-		if mcpServer, ok := args["mcpServer"].(string); ok && mcpServer != "" {
-			server = mcpServer
-		}
-
-		delete(args, "mcpServer")
-
 		toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
+		server, err := a.mcpClient.GetServerForTool(toolName)
+		if err != nil {
+			a.logger.Error("failed to find server for tool", err, "tool", toolCall.Function.Name, "tool_name", toolName)
+			results = append(results, providers.Message{
+				Role:       providers.MessageRoleTool,
+				Content:    fmt.Sprintf("Error: %v", err),
+				ToolCallId: &toolCall.ID,
+			})
+			continue
+		}
 
 		mcpRequest := Request{
 			Method: "tools/call",

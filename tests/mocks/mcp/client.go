@@ -113,6 +113,21 @@ func (mr *MockMCPClientInterfaceMockRecorder) GetServerCapabilities() *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerCapabilities", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerCapabilities))
 }
 
+// GetServerForTool mocks base method.
+func (m *MockMCPClientInterface) GetServerForTool(toolName string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetServerForTool", toolName)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetServerForTool indicates an expected call of GetServerForTool.
+func (mr *MockMCPClientInterfaceMockRecorder) GetServerForTool(toolName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerForTool", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerForTool), toolName)
+}
+
 // GetServerTools mocks base method.
 func (m *MockMCPClientInterface) GetServerTools(serverURL string) ([]mcp.Tool, error) {
 	m.ctrl.T.Helper()
