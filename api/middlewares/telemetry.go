@@ -128,7 +128,6 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		t.telemetry.RecordResponseStatus(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, statusCode)
 		t.telemetry.RecordRequestDuration(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, duration)
 
-		// Parse response once to extract all needed data
 		respData := t.parseResponseData(w.body.Bytes(), requestBody.Stream != nil && *requestBody.Stream, provider, model)
 
 		promptTokens := respData.PromptTokens
@@ -179,7 +178,6 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 	chunks := strings.Split(responseStr, "\n\n")
 	toolCallsMap := make(map[int]*providers.ChatCompletionMessageToolCall)
 
-	// Look for usage info in the last few chunks
 	usageChunks := chunks
 	if len(chunks) > 4 {
 		usageChunks = chunks[len(chunks)-4:]
@@ -204,7 +202,6 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 			continue
 		}
 
-		// Extract usage information
 		if streamResponse.Usage != nil {
 			*promptTokens = streamResponse.Usage.PromptTokens
 			*completionTokens = streamResponse.Usage.CompletionTokens
@@ -212,7 +209,6 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 		}
 	}
 
-	// Parse all chunks for tool calls
 	for _, chunk := range chunks {
 		if !strings.HasPrefix(chunk, "data: ") {
 			continue
@@ -277,14 +273,12 @@ func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, promptTo
 		return nil
 	}
 
-	// Extract usage information
 	if chatCompletionResponse.Usage != nil {
 		*promptTokens = chatCompletionResponse.Usage.PromptTokens
 		*completionTokens = chatCompletionResponse.Usage.CompletionTokens
 		*totalTokens = chatCompletionResponse.Usage.TotalTokens
 	}
 
-	// Extract tool calls
 	if len(chatCompletionResponse.Choices) == 0 || chatCompletionResponse.Choices[0].Message.ToolCalls == nil {
 		return nil
 	}
@@ -322,5 +316,5 @@ func (t *TelemetryImpl) classifyToolType(toolName string) string {
 		return "mcp"
 	}
 
-	return "llm_response"
+	return "standard_tool_use"
 }
