@@ -57,6 +57,9 @@ type Config struct {
 	{{- range $field := $section.Settings }}
 	{{ pascalCase $field.Env }} {{ $field.Type }} ` + "`env:\"{{ $field.Env }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
+	{{- else if eq $name "telemetry" }}
+	// Telemetry settings
+	Telemetry *TelemetryConfig ` + "`env:\", prefix=TELEMETRY_\" description:\"Telemetry configuration\"`" + `
 	{{- else if eq $name "mcp" }}
 	// MCP settings
 	MCP *MCPConfig ` + "`env:\", prefix=MCP_\" description:\"MCP configuration\"`" + `
@@ -82,7 +85,15 @@ type Config struct {
 
 {{- range $section := .Sections }}
 {{- range $name, $section := $section }}
-{{- if eq $name "mcp" }}
+{{- if eq $name "telemetry" }}
+
+// Telemetry configuration
+type TelemetryConfig struct {
+	{{- range $field := $section.Settings }}
+	{{ pascalCase (trimPrefix $field.Env "TELEMETRY_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"TELEMETRY_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+	{{- end }}
+}
+{{- else if eq $name "mcp" }}
 
 // MCP configuration
 type MCPConfig struct {
