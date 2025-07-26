@@ -64,25 +64,24 @@ type MCPConfig struct {
 
 // A2A configuration
 type A2AConfig struct {
-	Enable                 bool          `env:"ENABLE, default=false" description:"Enable A2A protocol support"`
-	Expose                 bool          `env:"EXPOSE, default=false" description:"Expose A2A agents list cards endpoint"`
-	Agents                 string        `env:"AGENTS" description:"Comma-separated list of A2A agent URLs"`
-	ClientTimeout          time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"A2A client timeout"`
-	PollingEnable          bool          `env:"POLLING_ENABLE, default=true" description:"Enable task status polling"`
-	PollingInterval        time.Duration `env:"POLLING_INTERVAL, default=1s" description:"Interval between polling requests"`
-	PollingTimeout         time.Duration `env:"POLLING_TIMEOUT, default=30s" description:"Maximum time to wait for task completion"`
-	MaxPollAttempts        int           `env:"MAX_POLL_ATTEMPTS, default=30" description:"Maximum number of polling attempts"`
-	MaxRetries             int           `env:"MAX_RETRIES, default=3" description:"Maximum number of connection retry attempts"`
-	RetryInterval          time.Duration `env:"RETRY_INTERVAL, default=5s" description:"Interval between connection retry attempts"`
-	InitialBackoff         time.Duration `env:"INITIAL_BACKOFF, default=1s" description:"Initial backoff duration for exponential backoff retry"`
-	EnableReconnect        bool          `env:"ENABLE_RECONNECT, default=true" description:"Enable automatic reconnection for failed agents"`
-	ReconnectInterval      time.Duration `env:"RECONNECT_INTERVAL, default=30s" description:"Interval between reconnection attempts"`
-	DisableHealthcheckLogs bool          `env:"DISABLE_HEALTHCHECK_LOGS, default=true" description:"Disable health check log messages to reduce noise"`
-	// Service Discovery configuration
-	ServiceDiscoveryEnable           bool          `env:"SERVICE_DISCOVERY_ENABLE" description:"Enable Kubernetes service discovery for A2A agents"`
-	ServiceDiscoveryNamespace        string        `env:"SERVICE_DISCOVERY_NAMESPACE" description:"Kubernetes namespace to search for A2A services (empty means current namespace)"`
-	ServiceDiscoveryLabelSelector    string        `env:"SERVICE_DISCOVERY_LABEL_SELECTOR" description:"Label selector for discovering A2A services"`
-	ServiceDiscoveryPollingInterval  time.Duration `env:"SERVICE_DISCOVERY_POLLING_INTERVAL" description:"Interval between service discovery polling requests"`
+	Enable                          bool          `env:"ENABLE, default=false" description:"Enable A2A protocol support"`
+	Expose                          bool          `env:"EXPOSE, default=false" description:"Expose A2A agents list cards endpoint"`
+	Agents                          string        `env:"AGENTS" description:"Comma-separated list of A2A agent URLs"`
+	ClientTimeout                   time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"A2A client timeout"`
+	PollingEnable                   bool          `env:"POLLING_ENABLE, default=true" description:"Enable task status polling"`
+	PollingInterval                 time.Duration `env:"POLLING_INTERVAL, default=1s" description:"Interval between polling requests"`
+	PollingTimeout                  time.Duration `env:"POLLING_TIMEOUT, default=30s" description:"Maximum time to wait for task completion"`
+	MaxPollAttempts                 int           `env:"MAX_POLL_ATTEMPTS, default=30" description:"Maximum number of polling attempts"`
+	MaxRetries                      int           `env:"MAX_RETRIES, default=3" description:"Maximum number of connection retry attempts"`
+	RetryInterval                   time.Duration `env:"RETRY_INTERVAL, default=5s" description:"Interval between connection retry attempts"`
+	InitialBackoff                  time.Duration `env:"INITIAL_BACKOFF, default=1s" description:"Initial backoff duration for exponential backoff retry"`
+	EnableReconnect                 bool          `env:"ENABLE_RECONNECT, default=true" description:"Enable automatic reconnection for failed agents"`
+	ReconnectInterval               time.Duration `env:"RECONNECT_INTERVAL, default=30s" description:"Interval between reconnection attempts"`
+	DisableHealthcheckLogs          bool          `env:"DISABLE_HEALTHCHECK_LOGS, default=true" description:"Disable health check log messages to reduce noise"`
+	ServiceDiscoveryEnable          bool          `env:"SERVICE_DISCOVERY_ENABLE, default=false" description:"Enable Kubernetes service discovery for A2A agents"`
+	ServiceDiscoveryNamespace       string        `env:"SERVICE_DISCOVERY_NAMESPACE" description:"Kubernetes namespace to search for A2A services (empty means current namespace)"`
+	ServiceDiscoveryLabelSelector   string        `env:"SERVICE_DISCOVERY_LABEL_SELECTOR" description:"Label selector for discovering A2A services"`
+	ServiceDiscoveryPollingInterval time.Duration `env:"SERVICE_DISCOVERY_POLLING_INTERVAL, default=30s" description:"Interval between service discovery polling requests"`
 }
 
 // Authentication configuration

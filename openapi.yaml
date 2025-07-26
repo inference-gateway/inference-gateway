@@ -1529,6 +1529,24 @@ components:
                   type: bool
                   default: 'true'
                   description: 'Disable health check log messages to reduce noise'
+                - name: a2a_service_discovery_enable
+                  env: 'A2A_SERVICE_DISCOVERY_ENABLE'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable Kubernetes service discovery for A2A agents'
+                - name: a2a_service_discovery_namespace
+                  env: 'A2A_SERVICE_DISCOVERY_NAMESPACE'
+                  type: string
+                  description: 'Kubernetes namespace to search for A2A services (empty means current namespace)'
+                - name: a2a_service_discovery_label_selector
+                  env: 'A2A_SERVICE_DISCOVERY_LABEL_SELECTOR'
+                  type: string
+                  description: 'Label selector for discovering A2A services'
+                - name: a2a_service_discovery_polling_interval
+                  env: 'A2A_SERVICE_DISCOVERY_POLLING_INTERVAL'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Interval between service discovery polling requests'
           - auth:
               title: 'Authentication'
               settings:
