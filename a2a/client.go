@@ -94,23 +94,50 @@ type A2AClient struct {
 	statusMutex       sync.RWMutex
 	pollingCancel     context.CancelFunc
 	pollingDone       chan struct{}
+	// Service Discovery
+	serviceDiscovery       *KubernetesServiceDiscovery
+	discoveredAgents       map[string]bool // tracks which agents were discovered vs static
+	discoveryPollingCancel context.CancelFunc
+	discoveryPollingDone   chan struct{}
 }
 
 // NewA2AClient creates a new A2A client instance using the external client library
 func NewA2AClient(cfg config.Config, log logger.Logger) *A2AClient {
 	agentURLs := parseAgentURLs(cfg.A2A.Agents)
 
-	return &A2AClient{
-		AgentURLs:         agentURLs,
-		Logger:            log,
-		Config:            cfg,
-		AgentClients:      make(map[string]client.A2AClient),
-		AgentCards:        make(map[string]*adk.AgentCard),
-		AgentCapabilities: make(map[string]adk.AgentCapabilities),
-		Initialized:       false,
-		AgentStatuses:     make(map[string]AgentStatus),
-		pollingDone:       make(chan struct{}),
+	client := &A2AClient{
+		AgentURLs:            agentURLs,
+		Logger:               log,
+		Config:               cfg,
+		AgentClients:         make(map[string]client.A2AClient),
+		AgentCards:           make(map[string]*adk.AgentCard),
+		AgentCapabilities:    make(map[string]adk.AgentCapabilities),
+		Initialized:          false,
+		AgentStatuses:        make(map[string]AgentStatus),
+		pollingDone:          make(chan struct{}),
+		discoveredAgents:     make(map[string]bool),
+		discoveryPollingDone: make(chan struct{}),
 	}
+
+	// Initialize service discovery if enabled and in Kubernetes environment
+	if cfg.A2A.ServiceDiscoveryEnable {
+		if IsKubernetesEnvironment() {
+			serviceDiscovery, err := NewKubernetesServiceDiscovery(cfg.A2A, log)
+			if err != nil {
+				log.Error("failed to initialize kubernetes service discovery", err, "component", "a2a_client")
+			} else {
+				client.serviceDiscovery = serviceDiscovery
+				log.Info("kubernetes service discovery initialized",
+					"namespace", serviceDiscovery.GetNamespace(),
+					"label_selector", serviceDiscovery.GetLabelSelector(),
+					"component", "a2a_client")
+			}
+		} else {
+			log.Warn("service discovery enabled but not running in kubernetes environment", "component", "a2a_client")
+		}
+	}
+
+	return client
 }
 
 // parseAgentURLs splits the comma-separated agent URLs string
@@ -132,6 +159,14 @@ func parseAgentURLs(agents string) []string {
 
 // InitializeAll discovers and connects to A2A agents using the external client library
 func (c *A2AClient) InitializeAll(ctx context.Context) error {
+	// Perform service discovery if enabled
+	if c.serviceDiscovery != nil {
+		if err := c.performServiceDiscovery(ctx); err != nil {
+			c.Logger.Error("failed to perform initial service discovery", err, "component", "a2a_client")
+			// Continue with static agents even if service discovery fails
+		}
+	}
+
 	if len(c.AgentURLs) == 0 {
 		return ErrNoAgentURLs
 	}
@@ -525,6 +560,11 @@ func (c *A2AClient) StartStatusPolling(ctx context.Context) {
 
 	go c.statusPollingLoop(pollingCtx)
 	c.Logger.Info("started a2a agent status polling", "interval", c.Config.A2A.PollingInterval, "component", "a2a_client")
+
+	// Start service discovery polling if enabled
+	if c.serviceDiscovery != nil {
+		c.StartServiceDiscoveryPolling(ctx)
+	}
 }
 
 // StopStatusPolling stops the background status polling goroutine
@@ -533,6 +573,11 @@ func (c *A2AClient) StopStatusPolling() {
 		c.pollingCancel()
 		<-c.pollingDone
 		c.Logger.Info("stopped a2a agent status polling", "component", "a2a_client")
+	}
+
+	// Stop service discovery polling if enabled
+	if c.discoveryPollingCancel != nil {
+		c.StopServiceDiscoveryPolling()
 	}
 }
 
@@ -664,4 +709,154 @@ func (c *A2AClient) attemptAgentReconnection(ctx context.Context, agentURL strin
 	}
 
 	c.Logger.Info("agent successfully reconnected", "agentURL", agentURL, "component", "a2a_client")
+}
+
+// performServiceDiscovery performs a single service discovery operation
+func (c *A2AClient) performServiceDiscovery(ctx context.Context) error {
+	if c.serviceDiscovery == nil {
+		return fmt.Errorf("service discovery not initialized")
+	}
+
+	discoveredURLs, err := c.serviceDiscovery.DiscoverA2AServices(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to discover services: %w", err)
+	}
+
+	// Merge discovered agents with static configuration
+	c.mergeDiscoveredAgents(discoveredURLs)
+	return nil
+}
+
+// mergeDiscoveredAgents merges discovered agents with the existing agent list
+func (c *A2AClient) mergeDiscoveredAgents(discoveredURLs []string) {
+	// Start with static agents from configuration
+	staticAgents := parseAgentURLs(c.Config.A2A.Agents)
+	allAgents := make(map[string]bool)
+
+	// Add static agents
+	for _, url := range staticAgents {
+		allAgents[url] = true
+		c.discoveredAgents[url] = false // mark as static
+	}
+
+	// Add discovered agents
+	for _, url := range discoveredURLs {
+		if !allAgents[url] {
+			allAgents[url] = true
+			c.discoveredAgents[url] = true // mark as discovered
+			c.Logger.Info("new a2a agent discovered", "url", url, "component", "a2a_client")
+		}
+	}
+
+	// Remove agents that are no longer discovered (but keep static ones)
+	newAgentURLs := make([]string, 0, len(allAgents))
+	for url := range allAgents {
+		// Keep agent if it's static or still being discovered
+		isStatic := !c.discoveredAgents[url]
+		isStillDiscovered := false
+		for _, discoveredURL := range discoveredURLs {
+			if discoveredURL == url {
+				isStillDiscovered = true
+				break
+			}
+		}
+
+		if isStatic || isStillDiscovered {
+			newAgentURLs = append(newAgentURLs, url)
+		} else {
+			// Agent was discovered before but not anymore, remove it
+			c.Logger.Info("a2a agent no longer discovered, removing", "url", url, "component", "a2a_client")
+			delete(c.discoveredAgents, url)
+			// Also clean up client resources
+			delete(c.AgentClients, url)
+			delete(c.AgentCards, url)
+			delete(c.AgentCapabilities, url)
+			c.statusMutex.Lock()
+			delete(c.AgentStatuses, url)
+			c.statusMutex.Unlock()
+		}
+	}
+
+	c.AgentURLs = newAgentURLs
+}
+
+// StartServiceDiscoveryPolling starts the background service discovery polling goroutine
+func (c *A2AClient) StartServiceDiscoveryPolling(ctx context.Context) {
+	if c.serviceDiscovery == nil {
+		c.Logger.Debug("service discovery not initialized, skipping polling")
+		return
+	}
+
+	discoveryCtx, cancel := context.WithCancel(ctx)
+	c.discoveryPollingCancel = cancel
+
+	go c.serviceDiscoveryPollingLoop(discoveryCtx)
+	
+	pollingInterval := c.Config.A2A.ServiceDiscoveryPollingInterval
+	if pollingInterval == 0 {
+		pollingInterval = 30 * time.Second
+	}
+	
+	c.Logger.Info("started a2a service discovery polling",
+		"interval", pollingInterval,
+		"namespace", c.serviceDiscovery.GetNamespace(),
+		"label_selector", c.serviceDiscovery.GetLabelSelector(),
+		"component", "a2a_client")
+}
+
+// StopServiceDiscoveryPolling stops the background service discovery polling goroutine
+func (c *A2AClient) StopServiceDiscoveryPolling() {
+	if c.discoveryPollingCancel != nil {
+		c.discoveryPollingCancel()
+		<-c.discoveryPollingDone
+		c.Logger.Info("stopped a2a service discovery polling", "component", "a2a_client")
+	}
+}
+
+// serviceDiscoveryPollingLoop continuously polls for new A2A services
+func (c *A2AClient) serviceDiscoveryPollingLoop(ctx context.Context) {
+	defer close(c.discoveryPollingDone)
+
+	pollingInterval := c.Config.A2A.ServiceDiscoveryPollingInterval
+	if pollingInterval == 0 {
+		pollingInterval = 30 * time.Second // Default to 30 seconds
+	}
+
+	ticker := time.NewTicker(pollingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := c.performServiceDiscovery(ctx); err != nil {
+				c.Logger.Error("service discovery polling failed", err, "component", "a2a_client")
+			} else {
+				// Initialize any newly discovered agents
+				c.initializeNewlyDiscoveredAgents(ctx)
+			}
+		}
+	}
+}
+
+// initializeNewlyDiscoveredAgents initializes any newly discovered agents that haven't been initialized yet
+func (c *A2AClient) initializeNewlyDiscoveredAgents(ctx context.Context) {
+	for _, agentURL := range c.AgentURLs {
+		// Check if agent is already initialized
+		c.statusMutex.RLock()
+		status, exists := c.AgentStatuses[agentURL]
+		c.statusMutex.RUnlock()
+
+		// Initialize if not tracked or in unknown state
+		if !exists || status == AgentStatusUnknown {
+			go func(url string) {
+				if err := c.initializeAgent(ctx, url); err != nil {
+					c.Logger.Error("failed to initialize newly discovered agent", err, "agentURL", url, "component", "a2a_client")
+				} else {
+					c.Logger.Info("successfully initialized newly discovered agent", "agentURL", url, "component", "a2a_client")
+				}
+			}(agentURL)
+		}
+	}
 }
