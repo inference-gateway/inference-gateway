@@ -328,10 +328,10 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 				},
 			},
 			toolResponse: &mcp.CallToolResult{
-				Content: []interface{}{
-					map[string]interface{}{
-						"type": "text",
-						"text": "Tool executed successfully",
+				Content: []mcp.ContentBlock{
+					mcp.TextContent{
+						Type: "text",
+						Text: "Tool executed successfully",
 					},
 				},
 			},
@@ -530,10 +530,10 @@ data: [DONE]`,
 
 			if tt.expectToolCalls {
 				mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "").Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{
-							"type": "text",
-							"text": "Tool result",
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{
+							Type: "text",
+							Text: "Tool result",
 						},
 					},
 				}, nil).AnyTimes()
@@ -800,10 +800,10 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		mockMCPClient.EXPECT().GetServerForTool("get-pizza-info").Return("http://mcp-pizza-server:8084/mcp", nil).AnyTimes()
 
 		mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "http://mcp-pizza-server:8084/mcp").Return(&mcp.CallToolResult{
-			Content: []interface{}{
-				map[string]interface{}{
-					"type": "text",
-					"text": "Top pizzas: Margherita, Pepperoni, Hawaiian",
+			Content: []mcp.ContentBlock{
+				mcp.TextContent{
+					Type: "text",
+					Text: "Top pizzas: Margherita, Pepperoni, Hawaiian",
 				},
 			},
 		}, nil).AnyTimes()

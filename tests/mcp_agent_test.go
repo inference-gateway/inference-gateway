@@ -124,10 +124,10 @@ func TestAgent_Run(t *testing.T) {
 					},
 					"http://test-server:8080/mcp",
 				).Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{
-							"type": "text",
-							"text": "Tool executed successfully",
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{
+							Type: "text",
+							Text: "Tool executed successfully",
 						},
 					},
 				}, nil).Times(1)
@@ -192,8 +192,8 @@ func TestAgent_Run(t *testing.T) {
 
 				mockMCPClient.EXPECT().GetServerForTool(gomock.Any()).Return("http://test-server:8080/mcp", nil).Times(10)
 				mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), gomock.Any()).Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{"type": "text", "text": "Tool result"},
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{Type: "text", Text: "Tool result"},
 					},
 				}, nil).Times(10)
 
@@ -310,10 +310,10 @@ func TestAgent_ExecuteTools(t *testing.T) {
 					},
 					"http://test-server:8080/mcp",
 				).Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{
-							"type": "text",
-							"text": "Tool executed successfully",
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{
+							Type: "text",
+							Text: "Tool executed successfully",
 						},
 					},
 				}, nil).Times(1)
@@ -350,10 +350,10 @@ func TestAgent_ExecuteTools(t *testing.T) {
 					},
 					"http://custom-server:8080",
 				).Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{
-							"type": "text",
-							"text": "Server tool executed",
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{
+							Type: "text",
+							Text: "Server tool executed",
 						},
 					},
 				}, nil).Times(1)
@@ -433,10 +433,10 @@ func TestAgent_ExecuteTools(t *testing.T) {
 					},
 					"http://test-server:8080/mcp",
 				).Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{
-							"type": "text",
-							"text": "First tool executed successfully",
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{
+							Type: "text",
+							Text: "First tool executed successfully",
 						},
 					},
 				}, nil).Times(1)
@@ -452,10 +452,10 @@ func TestAgent_ExecuteTools(t *testing.T) {
 					},
 					"http://test-server:8080/mcp",
 				).Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{
-							"type": "text",
-							"text": "Second tool executed successfully",
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{
+							Type: "text",
+							Text: "Second tool executed successfully",
 						},
 					},
 				}, nil).Times(1)
@@ -790,10 +790,10 @@ func TestAgent_RunWithStream(t *testing.T) {
 					},
 					"http://test-server:8080/mcp",
 				).Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{
-							"type": "text",
-							"text": "First tool executed successfully",
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{
+							Type: "text",
+							Text: "First tool executed successfully",
 						},
 					},
 				}, nil).Times(1)
@@ -809,10 +809,10 @@ func TestAgent_RunWithStream(t *testing.T) {
 					},
 					"http://test-server:8080/mcp",
 				).Return(&mcp.CallToolResult{
-					Content: []interface{}{
-						map[string]interface{}{
-							"type": "text",
-							"text": "Second tool executed successfully",
+					Content: []mcp.ContentBlock{
+						mcp.TextContent{
+							Type: "text",
+							Text: "Second tool executed successfully",
 						},
 					},
 				}, nil).Times(1)

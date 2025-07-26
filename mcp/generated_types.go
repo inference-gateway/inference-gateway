@@ -30,22 +30,31 @@ const (
 
 // Optional annotations for the client. The client can use annotations to inform how objects are used or displayed
 type Annotations struct {
-	Audience []Role   `json:"audience,omitempty"`
-	Priority *float64 `json:"priority,omitempty"`
+	Audience     []Role   `json:"audience,omitempty"`
+	LastModified *string  `json:"lastModified,omitempty"`
+	Priority     *float64 `json:"priority,omitempty"`
 }
 
 // Audio provided to or from an LLM.
 type AudioContent struct {
-	Annotations *Annotations `json:"annotations,omitempty"`
-	Data        []byte       `json:"data"`
-	MIMEType    string       `json:"mimeType"`
-	Type        string       `json:"type"`
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Annotations *Annotations           `json:"annotations,omitempty"`
+	Data        []byte                 `json:"data"`
+	MIMEType    string                 `json:"mimeType"`
+	Type        string                 `json:"type"`
+}
+
+// Base interface for metadata with name (identifier) and title (display name) properties.
+type BaseMetadata struct {
+	Name  string  `json:"name"`
+	Title *string `json:"title,omitempty"`
 }
 
 type BlobResourceContents struct {
-	Blob     []byte  `json:"blob"`
-	MIMEType *string `json:"mimeType,omitempty"`
-	URI      string  `json:"uri"`
+	Meta     map[string]interface{} `json:"_meta,omitempty"`
+	Blob     []byte                 `json:"blob"`
+	MIMEType *string                `json:"mimeType,omitempty"`
+	URI      string                 `json:"uri"`
 }
 
 type BooleanSchema struct {
@@ -64,7 +73,7 @@ type CallToolRequest struct {
 // The server's response to a tool call.
 type CallToolResult struct {
 	Meta              map[string]interface{} `json:"_meta,omitempty"`
-	Content           []interface{}          `json:"content"`
+	Content           []ContentBlock         `json:"content"`
 	IsError           *bool                  `json:"isError,omitempty"`
 	StructuredContent map[string]interface{} `json:"structuredContent,omitempty"`
 }
@@ -107,6 +116,8 @@ type CompleteResult struct {
 	Completion map[string]interface{} `json:"completion"`
 }
 
+type ContentBlock interface{}
+
 // A request from the server to sample an LLM via the client. The client has full discretion over which model to select. The client should also inform the user before beginning sampling, to allow them to inspect the request (human in the loop) and decide whether to approve it.
 type CreateMessageRequest struct {
 	Method string                 `json:"method"`
@@ -144,9 +155,10 @@ type ElicitResult struct {
 // It is up to the client how best to render embedded resources for the benefit
 // of the LLM and/or the user.
 type EmbeddedResource struct {
-	Annotations *Annotations `json:"annotations,omitempty"`
-	Resource    interface{}  `json:"resource"`
-	Type        string       `json:"type"`
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Annotations *Annotations           `json:"annotations,omitempty"`
+	Resource    interface{}            `json:"resource"`
+	Type        string                 `json:"type"`
 }
 
 type EmptyResult struct {
@@ -175,16 +187,18 @@ type GetPromptResult struct {
 
 // An image provided to or from an LLM.
 type ImageContent struct {
-	Annotations *Annotations `json:"annotations,omitempty"`
-	Data        []byte       `json:"data"`
-	MIMEType    string       `json:"mimeType"`
-	Type        string       `json:"type"`
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Annotations *Annotations           `json:"annotations,omitempty"`
+	Data        []byte                 `json:"data"`
+	MIMEType    string                 `json:"mimeType"`
+	Type        string                 `json:"type"`
 }
 
-// Describes the name and version of an MCP implementation.
+// Describes the name and version of an MCP implementation, with an optional title for UI representation.
 type Implementation struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
+	Name    string  `json:"name"`
+	Title   *string `json:"title,omitempty"`
+	Version string  `json:"version"`
 }
 
 // This request is sent from the client to the server when it first connects, asking it to begin initialization.
@@ -206,14 +220,6 @@ type InitializeResult struct {
 type InitializedNotification struct {
 	Method string                 `json:"method"`
 	Params map[string]interface{} `json:"params,omitempty"`
-}
-
-// A JSON-RPC batch request, as described in https://www.jsonrpc.org/specification#batch.
-type JSONRPCBatchRequest struct {
-}
-
-// A JSON-RPC batch response, as described in https://www.jsonrpc.org/specification#batch.
-type JSONRPCBatchResponse struct {
 }
 
 // A response to a request that indicates an error occurred.
@@ -397,9 +403,11 @@ type ProgressToken struct {
 
 // A prompt or prompt template that the server offers.
 type Prompt struct {
-	Arguments   []PromptArgument `json:"arguments,omitempty"`
-	Description *string          `json:"description,omitempty"`
-	Name        string           `json:"name"`
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Arguments   []PromptArgument       `json:"arguments,omitempty"`
+	Description *string                `json:"description,omitempty"`
+	Name        string                 `json:"name"`
+	Title       *string                `json:"title,omitempty"`
 }
 
 // Describes an argument that a prompt can accept.
@@ -407,6 +415,7 @@ type PromptArgument struct {
 	Description *string `json:"description,omitempty"`
 	Name        string  `json:"name"`
 	Required    *bool   `json:"required,omitempty"`
+	Title       *string `json:"title,omitempty"`
 }
 
 // An optional notification from the server to the client, informing it that the list of prompts it offers has changed. This may be issued by servers without any previous subscription from the client.
@@ -420,14 +429,15 @@ type PromptListChangedNotification struct {
 // This is similar to `SamplingMessage`, but also supports the embedding of
 // resources from the MCP server.
 type PromptMessage struct {
-	Content interface{} `json:"content"`
-	Role    Role        `json:"role"`
+	Content ContentBlock `json:"content"`
+	Role    Role         `json:"role"`
 }
 
 // Identifies a prompt.
 type PromptReference struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name  string  `json:"name"`
+	Title *string `json:"title,omitempty"`
+	Type  string  `json:"type"`
 }
 
 // Sent from the client to the server, to read a specific resource URI.
@@ -453,18 +463,36 @@ type RequestId struct {
 
 // A known resource that the server is capable of reading.
 type Resource struct {
-	Annotations *Annotations `json:"annotations,omitempty"`
-	Description *string      `json:"description,omitempty"`
-	MIMEType    *string      `json:"mimeType,omitempty"`
-	Name        string       `json:"name"`
-	Size        *int         `json:"size,omitempty"`
-	URI         string       `json:"uri"`
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Annotations *Annotations           `json:"annotations,omitempty"`
+	Description *string                `json:"description,omitempty"`
+	MIMEType    *string                `json:"mimeType,omitempty"`
+	Name        string                 `json:"name"`
+	Size        *int                   `json:"size,omitempty"`
+	Title       *string                `json:"title,omitempty"`
+	URI         string                 `json:"uri"`
 }
 
 // The contents of a specific resource or sub-resource.
 type ResourceContents struct {
-	MIMEType *string `json:"mimeType,omitempty"`
-	URI      string  `json:"uri"`
+	Meta     map[string]interface{} `json:"_meta,omitempty"`
+	MIMEType *string                `json:"mimeType,omitempty"`
+	URI      string                 `json:"uri"`
+}
+
+// A resource that the server is capable of reading, included in a prompt or tool call result.
+//
+// Note: resource links returned by tools are not guaranteed to appear in the results of `resources/list` requests.
+type ResourceLink struct {
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Annotations *Annotations           `json:"annotations,omitempty"`
+	Description *string                `json:"description,omitempty"`
+	MIMEType    *string                `json:"mimeType,omitempty"`
+	Name        string                 `json:"name"`
+	Size        *int                   `json:"size,omitempty"`
+	Title       *string                `json:"title,omitempty"`
+	Type        string                 `json:"type"`
+	URI         string                 `json:"uri"`
 }
 
 // An optional notification from the server to the client, informing it that the list of resources it can read from has changed. This may be issued by servers without any previous subscription from the client.
@@ -473,19 +501,21 @@ type ResourceListChangedNotification struct {
 	Params map[string]interface{} `json:"params,omitempty"`
 }
 
-// A reference to a resource or resource template definition.
-type ResourceReference struct {
-	Type string `json:"type"`
-	URI  string `json:"uri"`
-}
-
 // A template description for resources available on the server.
 type ResourceTemplate struct {
-	Annotations *Annotations `json:"annotations,omitempty"`
-	Description *string      `json:"description,omitempty"`
-	MIMEType    *string      `json:"mimeType,omitempty"`
-	Name        string       `json:"name"`
-	URITemplate string       `json:"uriTemplate"`
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Annotations *Annotations           `json:"annotations,omitempty"`
+	Description *string                `json:"description,omitempty"`
+	MIMEType    *string                `json:"mimeType,omitempty"`
+	Name        string                 `json:"name"`
+	Title       *string                `json:"title,omitempty"`
+	URITemplate string                 `json:"uriTemplate"`
+}
+
+// A reference to a resource or resource template definition.
+type ResourceTemplateReference struct {
+	Type string `json:"type"`
+	URI  string `json:"uri"`
 }
 
 // A notification from the server to the client, informing it that a resource has changed and may need to be read again. This should only be sent if the client previously sent a resources/subscribe request.
@@ -500,8 +530,9 @@ type Result struct {
 
 // Represents a root directory or file that the server can operate on.
 type Root struct {
-	Name *string `json:"name,omitempty"`
-	URI  string  `json:"uri"`
+	Meta map[string]interface{} `json:"_meta,omitempty"`
+	Name *string                `json:"name,omitempty"`
+	URI  string                 `json:"uri"`
 }
 
 // A notification from the client to the server, informing it that the list of roots has changed.
@@ -557,24 +588,28 @@ type SubscribeRequest struct {
 
 // Text provided to or from an LLM.
 type TextContent struct {
-	Annotations *Annotations `json:"annotations,omitempty"`
-	Text        string       `json:"text"`
-	Type        string       `json:"type"`
+	Meta        map[string]interface{} `json:"_meta,omitempty"`
+	Annotations *Annotations           `json:"annotations,omitempty"`
+	Text        string                 `json:"text"`
+	Type        string                 `json:"type"`
 }
 
 type TextResourceContents struct {
-	MIMEType *string `json:"mimeType,omitempty"`
-	Text     string  `json:"text"`
-	URI      string  `json:"uri"`
+	Meta     map[string]interface{} `json:"_meta,omitempty"`
+	MIMEType *string                `json:"mimeType,omitempty"`
+	Text     string                 `json:"text"`
+	URI      string                 `json:"uri"`
 }
 
 // Definition for a tool the client can call.
 type Tool struct {
+	Meta         map[string]interface{} `json:"_meta,omitempty"`
 	Annotations  *ToolAnnotations       `json:"annotations,omitempty"`
 	Description  *string                `json:"description,omitempty"`
 	InputSchema  map[string]interface{} `json:"inputSchema"`
 	Name         string                 `json:"name"`
 	OutputSchema map[string]interface{} `json:"outputSchema,omitempty"`
+	Title        *string                `json:"title,omitempty"`
 }
 
 // Additional properties describing a Tool to clients.

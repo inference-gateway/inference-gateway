@@ -316,7 +316,7 @@ func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL
 	}
 
 	response := CallToolResult{
-		Content: make([]interface{}, len(result.Content)),
+		Content: make([]ContentBlock, len(result.Content)),
 	}
 
 	for i, content := range result.Content {

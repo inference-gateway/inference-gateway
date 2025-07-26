@@ -12,12 +12,14 @@ tasks:
     cmds:
       - curl -o mcp/mcp-schema.json https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.json
       - curl -o mcp/mcp-schema.yaml https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.yaml
+      - task: format
 
   a2a:schema:download:
     desc: 'Download the latest A2A schema'
     cmds:
       - curl -o a2a/a2a-schema.json https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/a2a/a2a-schema.json
       - curl -o a2a/a2a-schema.yaml https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/a2a/a2a-schema.yaml
+      - task: format
 
   install:generator:
     desc: 'Install the generator tool'
