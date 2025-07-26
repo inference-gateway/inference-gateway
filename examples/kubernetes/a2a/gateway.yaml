@@ -83,7 +83,7 @@ spec:
       interval: '2s'
       timeout: '60s'
       maxAttempts: 30
-    serviceDiscovery:
+    serviceDiscovery: # TODO - need to be implemented on the operator
       enabled: true
       namespace: 'agents'
       labelSelector: 'inference-gateway.com/a2a-agent=true'
