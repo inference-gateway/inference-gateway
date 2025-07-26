@@ -176,8 +176,8 @@ config:
   A2A_RECONNECT_INTERVAL: '30s'
   A2A_DISABLE_HEALTHCHECK_LOGS: 'true'
   A2A_SERVICE_DISCOVERY_ENABLE: 'false'
-  A2A_SERVICE_DISCOVERY_NAMESPACE: ''
-  A2A_SERVICE_DISCOVERY_LABEL_SELECTOR: ''
+  A2A_SERVICE_DISCOVERY_NAMESPACE: 'agents'  # Example: namespace where A2A agents are deployed
+  A2A_SERVICE_DISCOVERY_LABEL_SELECTOR: 'inference-gateway.ai/a2a-agent=true'  # Example: label selector for A2A services
   A2A_SERVICE_DISCOVERY_POLLING_INTERVAL: '30s'
   # Authentication
   AUTH_ENABLE: 'false'

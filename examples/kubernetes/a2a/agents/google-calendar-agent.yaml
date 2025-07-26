@@ -11,6 +11,11 @@ kind: A2AServer
 metadata:
   name: a2a-server-google-calendar-agent
   namespace: agents
+  labels:
+    inference-gateway.ai/a2a-agent: 'true'
+  annotations:
+    inference-gateway.ai/agent-type: 'google-calendar'
+    inference-gateway.ai/service-labels: 'inference-gateway.ai/a2a-agent=true'
 spec:
   image: 'ghcr.io/inference-gateway/google-calendar-agent:latest'
   timezone: 'CET'

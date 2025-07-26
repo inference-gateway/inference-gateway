@@ -21,7 +21,9 @@ The A2A example demonstrates how to deploy and connect multiple agents using Kub
 
 ## Architecture
 
-- **Gateway**: Inference Gateway deployed via inference gateway operator
+- **Gateway**: Inference Gateway deployed via inference gateway operator with A2A service discovery enabled
+- **Agents**: A2A agents deployed in the `agents` namespace and automatically discovered by the gateway
+- **Service Discovery**: Kubernetes-native agent discovery using label selectors instead of manual URL configuration
 - **Ingress**: Basic ingress configuration
 
 ## Quick Start
@@ -44,7 +46,7 @@ task deploy-inference-gateway
 curl http://api.inference-gateway.local/v1/models
 ```
 
-4. We told kubernetes where our agents are discoverable, now let's deploy them:
+4. Deploy the A2A agents (they will be automatically discovered by the gateway):
 
 ```bash
 kubectl apply -f agents/
@@ -83,6 +85,44 @@ curl -X POST http://api.inference-gateway.local/chat/completions \
 9. The agent processed the request (with possible few iterations and internal tool calls) and returned the response to the Gateway, which then returned it to the user.
 
 ** If you send it as a streaming request with the headers `Accept: text/event-stream` and `Content-Type: application/json`, you will see the response in a streaming fashion. **
+
+## A2A Service Discovery
+
+This example demonstrates the new **Kubernetes Service Discovery** feature for A2A agents. Instead of manually configuring agent URLs, the gateway automatically discovers agents using Kubernetes label selectors.
+
+### How it works
+
+1. **Agent Labeling**: A2AServer resources are labeled with `inference-gateway.ai/a2a-agent=true`
+2. **Service Discovery**: The gateway periodically scans the `agents` namespace for services with this label
+3. **Automatic Registration**: Discovered agents are automatically registered and made available for delegation
+4. **Dynamic Updates**: New agents are discovered and unavailable agents are removed automatically
+
+### Configuration
+
+The gateway uses these service discovery settings (configured in `gateway.yaml`):
+
+```yaml
+a2a:
+  serviceDiscovery:
+    enabled: true
+    namespace: 'agents'                                    # Namespace to scan for agents
+    labelSelector: 'inference-gateway.ai/a2a-agent=true'   # Label selector for agent services
+    pollingInterval: '30s'                                 # How often to check for new agents
+```
+
+### Agent Requirements
+
+For agents to be discoverable, they must:
+- Be deployed in the configured namespace (`agents` in this example)
+- Have services labeled with the discovery label (`inference-gateway.ai/a2a-agent=true`)
+- Expose their A2A API on a standard port (8080, or annotated with `inference-gateway.ai/a2a-port`)
+
+### Benefits
+
+- **Zero Configuration**: No need to manually specify agent URLs
+- **Dynamic Discovery**: New agents are automatically available
+- **Kubernetes Native**: Uses standard Kubernetes service discovery mechanisms
+- **Scalable**: Supports dynamic scaling of agent instances
 
 ## Cleanup
 

@@ -83,19 +83,25 @@ spec:
       interval: '2s'
       timeout: '60s'
       maxAttempts: 30
-    agents:
-      - name: google-calendar-agent
-        url: 'http://google-calendar-agent.agents.svc.cluster.local:8080'
-        healthCheck:
-          enabled: true
-          path: '/health'
-          interval: '30s'
-      - name: email-agent
-        url: 'http://email-agent.agents.svc.cluster.local:8080'
-        healthCheck:
-          enabled: true
-          path: '/health'
-          interval: '30s'
+    serviceDiscovery:
+      enabled: true
+      namespace: 'agents'
+      labelSelector: 'inference-gateway.ai/a2a-agent=true'
+      pollingInterval: '30s'
+    # Legacy manual agent configuration (now replaced by service discovery)
+    # agents:
+    #   - name: google-calendar-agent
+    #     url: 'http://google-calendar-agent.agents.svc.cluster.local:8080'
+    #     healthCheck:
+    #       enabled: true
+    #       path: '/health'
+    #       interval: '30s'
+    #   - name: email-agent
+    #     url: 'http://email-agent.agents.svc.cluster.local:8080'
+    #     healthCheck:
+    #       enabled: true
+    #       path: '/health'
+    #       interval: '30s'
   resources:
     requests:
       cpu: '100m'
