@@ -243,19 +243,6 @@ app.post('/messages', async (req: Request, res: Response) => {
   }
 });
 
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.json({
-    status: 'healthy',
-    server: 'Pizza Demo MCP Server',
-    version: '1.0.0',
-    timestamp: new Date().toISOString(),
-    activeConnections: {
-      streamable: Object.keys(transports.streamable).length,
-      sse: Object.keys(transports.sse).length,
-    },
-  });
-});
 
 // Info endpoint
 app.get('/', (req: Request, res: Response) => {
@@ -267,7 +254,6 @@ app.get('/', (req: Request, res: Response) => {
       mcp: '/mcp (Streamable HTTP - GET/POST/DELETE)',
       sse: '/sse (Legacy SSE - GET)',
       messages: '/messages (Legacy SSE Messages - POST)',
-      health: '/health',
       info: '/',
     },
     capabilities: {
@@ -288,7 +274,6 @@ app.listen(PORT, () => {
   console.log(`📍 Endpoints:`);
   console.log(`   • Streamable HTTP: http://localhost:${PORT}/mcp`);
   console.log(`   • Legacy SSE: http://localhost:${PORT}/sse`);
-  console.log(`   • Health Check: http://localhost:${PORT}/health`);
   console.log(`   • Info: http://localhost:${PORT}/`);
   console.log(`🔧 Built with official @modelcontextprotocol/sdk`);
 });

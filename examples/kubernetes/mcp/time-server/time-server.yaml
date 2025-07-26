@@ -31,24 +31,6 @@ spec:
           env:
             - name: PORT
               value: '8081'
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 8081
-              scheme: HTTP
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 8081
-              scheme: HTTP
-            initialDelaySeconds: 10
-            periodSeconds: 5
-            timeoutSeconds: 3
-            failureThreshold: 3
           resources:
             requests:
               memory: '64Mi'

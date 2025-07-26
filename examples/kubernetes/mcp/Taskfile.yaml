@@ -289,30 +289,17 @@ tasks:
       - echo "🚀 MCP integration is working correctly in Kubernetes!"
 
   test:health:
-    desc: 'Test Gateway and MCP servers health'
+    desc: 'Test Gateway health'
     cmds:
       - echo "🔍 Testing Inference Gateway health..."
       - |
         kubectl delete pod test-pod-01 --ignore-not-found=true -n {{.NAMESPACE}}
-        kubectl delete pod test-pod-02 --ignore-not-found=true -n {{.NAMESPACE}}
-        kubectl delete pod test-pod-03 --ignore-not-found=true -n {{.NAMESPACE}}
-        kubectl delete pod test-pod-04 --ignore-not-found=true -n {{.NAMESPACE}}
       - |
         kubectl run test-pod-01 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -f http://{{.RELEASE_NAME}}:8080/health
       - echo "✅ Gateway is healthy"
       - echo ""
-      - echo "🔍 Testing MCP servers health..."
-      - |
-        kubectl run test-pod-02 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
-          curl -f http://mcp-time-server:8081/health
-      - |
-        kubectl run test-pod-03 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
-          curl -f http://mcp-search-server:8082/health
-      - |
-        kubectl run test-pod-04 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
-          curl -f http://mcp-filesystem-server:8083/health
-      - echo "✅ All MCP servers are healthy"
+      - echo "ℹ️  MCP server health is now handled by the Gateway's internal health check system"
 
   test:mcp-tools:
     desc: 'Test MCP tools discovery endpoint'

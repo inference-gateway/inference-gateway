@@ -12,14 +12,10 @@ services:
       MCP_EXPOSE: ${MCP_EXPOSE:-true}
       MCP_SERVERS: ${MCP_SERVERS:-http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp,http://mcp-pizza-server:8084/mcp}
     depends_on:
-      mcp-time-server:
-        condition: service_healthy
-      mcp-search-server:
-        condition: service_healthy
-      mcp-filesystem-server:
-        condition: service_healthy
-      mcp-pizza-server:
-        condition: service_healthy
+      - mcp-time-server
+      - mcp-search-server
+      - mcp-filesystem-server
+      - mcp-pizza-server
     networks:
       - mcp-network
 
@@ -38,25 +34,15 @@ services:
     networks:
       - mcp-network
     depends_on:
-      mcp-time-server:
-        condition: service_healthy
-      mcp-search-server:
-        condition: service_healthy
-      mcp-filesystem-server:
-        condition: service_healthy
-      mcp-pizza-server:
-        condition: service_healthy
+      - mcp-time-server
+      - mcp-search-server
+      - mcp-filesystem-server
+      - mcp-pizza-server
 
   mcp-time-server:
     build:
       context: ./time-server
       dockerfile: Dockerfile
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8081/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     networks:
       - mcp-network
 
@@ -64,12 +50,6 @@ services:
     build:
       context: ./search-server
       dockerfile: Dockerfile
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8082/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     networks:
       - mcp-network
 
@@ -79,12 +59,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./filesystem-data:/tmp/mcp-files
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8083/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     networks:
       - mcp-network
 
@@ -92,18 +66,6 @@ services:
     build:
       context: ./pizza-server
       dockerfile: Dockerfile
-    healthcheck:
-      test:
-        - CMD
-        - wget
-        - --no-verbose
-        - --tries=1
-        - --spider
-        - http://localhost:8084/health
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
     networks:
       - mcp-network
 

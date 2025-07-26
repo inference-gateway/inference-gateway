@@ -217,12 +217,6 @@ func main() {
 	// Add the traditional MCP endpoint
 	r.POST("/mcp", transport.Handler())
 
-	// Add a health check endpoint
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status": "ok",
-		})
-	})
 
 	// Add capabilities endpoint
 	r.GET("/capabilities", func(c *gin.Context) {
@@ -251,7 +245,6 @@ func main() {
 	log.Println("  - POST /mcp (traditional MCP)")
 	log.Println("  - GET  /mcp/stream (SSE stream)")
 	log.Println("  - POST /mcp/stream/search (SSE search)")
-	log.Println("  - GET  /health (health check)")
 	log.Println("  - GET  /capabilities (server info)")
 	if err := r.Run(":8082"); err != nil {
 		log.Fatalf("Server error: %v", err)
