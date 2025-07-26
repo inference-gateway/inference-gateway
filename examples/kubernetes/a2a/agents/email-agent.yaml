@@ -12,10 +12,10 @@ metadata:
   name: a2a-server-email-agent
   namespace: agents
   labels:
-    inference-gateway.ai/a2a-agent: 'true'
+    inference-gateway.com/a2a-agent: 'true'
   annotations:
-    inference-gateway.ai/agent-type: 'email'
-    inference-gateway.ai/service-labels: 'inference-gateway.ai/a2a-agent=true'
+    inference-gateway.com/agent-type: 'email'
+    inference-gateway.com/service-labels: 'inference-gateway.com/a2a-agent=true'
 spec:
   image: 'ghcr.io/inference-gateway/email-agent:latest'
   timezone: 'CET'

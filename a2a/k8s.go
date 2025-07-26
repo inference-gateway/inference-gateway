@@ -82,7 +82,7 @@ func NewKubernetesServiceDiscovery(cfg *config.A2AConfig, logger logger.Logger) 
 
 	labelSelector := cfg.ServiceDiscoveryLabelSelector
 	if labelSelector == "" {
-		labelSelector = "inference-gateway.ai/a2a-agent=true"
+		labelSelector = "inference-gateway.com/a2a-agent=true"
 	}
 
 	return &KubernetesServiceDiscovery{
@@ -166,7 +166,7 @@ func (k *KubernetesServiceDiscovery) buildServiceURL(service *corev1.Service) st
 	}
 
 	// Check for custom URL annotation first
-	if customURL, exists := service.Annotations["inference-gateway.ai/a2a-url"]; exists && customURL != "" {
+	if customURL, exists := service.Annotations["inference-gateway.com/a2a-url"]; exists && customURL != "" {
 		return customURL
 	}
 
@@ -211,7 +211,7 @@ func (k *KubernetesServiceDiscovery) findA2APort(service *corev1.Service) int32 
 	}
 
 	// Look for port with A2A annotation
-	if portStr, exists := service.Annotations["inference-gateway.ai/a2a-port"]; exists {
+	if portStr, exists := service.Annotations["inference-gateway.com/a2a-port"]; exists {
 		for _, port := range service.Spec.Ports {
 			if fmt.Sprintf("%d", port.Port) == portStr {
 				return port.Port
