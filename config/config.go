@@ -42,15 +42,24 @@ type TelemetryConfig struct {
 
 // MCP configuration
 type MCPConfig struct {
-	Enable                bool          `env:"ENABLE, default=false" description:"Enable MCP"`
-	Expose                bool          `env:"EXPOSE, default=false" description:"Expose MCP tools endpoint"`
-	Servers               string        `env:"SERVERS" description:"List of MCP servers"`
-	ClientTimeout         time.Duration `env:"CLIENT_TIMEOUT, default=5s" description:"MCP client HTTP timeout"`
-	DialTimeout           time.Duration `env:"DIAL_TIMEOUT, default=3s" description:"MCP client dial timeout"`
-	TlsHandshakeTimeout   time.Duration `env:"TLS_HANDSHAKE_TIMEOUT, default=3s" description:"MCP client TLS handshake timeout"`
-	ResponseHeaderTimeout time.Duration `env:"RESPONSE_HEADER_TIMEOUT, default=3s" description:"MCP client response header timeout"`
-	ExpectContinueTimeout time.Duration `env:"EXPECT_CONTINUE_TIMEOUT, default=1s" description:"MCP client expect continue timeout"`
-	RequestTimeout        time.Duration `env:"REQUEST_TIMEOUT, default=5s" description:"MCP client request timeout for initialize and tool calls"`
+	Enable                 bool          `env:"ENABLE, default=false" description:"Enable MCP"`
+	Expose                 bool          `env:"EXPOSE, default=false" description:"Expose MCP tools endpoint"`
+	Servers                string        `env:"SERVERS" description:"List of MCP servers"`
+	ClientTimeout          time.Duration `env:"CLIENT_TIMEOUT, default=5s" description:"MCP client HTTP timeout"`
+	DialTimeout            time.Duration `env:"DIAL_TIMEOUT, default=3s" description:"MCP client dial timeout"`
+	TlsHandshakeTimeout    time.Duration `env:"TLS_HANDSHAKE_TIMEOUT, default=3s" description:"MCP client TLS handshake timeout"`
+	ResponseHeaderTimeout  time.Duration `env:"RESPONSE_HEADER_TIMEOUT, default=3s" description:"MCP client response header timeout"`
+	ExpectContinueTimeout  time.Duration `env:"EXPECT_CONTINUE_TIMEOUT, default=1s" description:"MCP client expect continue timeout"`
+	RequestTimeout         time.Duration `env:"REQUEST_TIMEOUT, default=5s" description:"MCP client request timeout for initialize and tool calls"`
+	MaxRetries             int           `env:"MAX_RETRIES, default=3" description:"Maximum number of connection retry attempts"`
+	RetryInterval          time.Duration `env:"RETRY_INTERVAL, default=5s" description:"Interval between connection retry attempts"`
+	InitialBackoff         time.Duration `env:"INITIAL_BACKOFF, default=1s" description:"Initial backoff duration for exponential backoff retry"`
+	EnableReconnect        bool          `env:"ENABLE_RECONNECT, default=true" description:"Enable automatic reconnection for failed servers"`
+	ReconnectInterval      time.Duration `env:"RECONNECT_INTERVAL, default=30s" description:"Interval between reconnection attempts"`
+	PollingEnable          bool          `env:"POLLING_ENABLE, default=true" description:"Enable health check polling"`
+	PollingInterval        time.Duration `env:"POLLING_INTERVAL, default=30s" description:"Interval between health check polling requests"`
+	PollingTimeout         time.Duration `env:"POLLING_TIMEOUT, default=5s" description:"Timeout for individual health check requests"`
+	DisableHealthcheckLogs bool          `env:"DISABLE_HEALTHCHECK_LOGS, default=true" description:"Disable health check log messages to reduce noise"`
 }
 
 // A2A configuration

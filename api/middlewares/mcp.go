@@ -108,6 +108,23 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
+		// Check if any servers are currently available
+		serverStatuses := m.mcpClient.GetAllServerStatuses()
+		hasAvailableServers := false
+		for _, status := range serverStatuses {
+			if status == mcp.ServerStatusAvailable {
+				hasAvailableServers = true
+				break
+			}
+		}
+
+		// If no servers are available, continue without MCP tools but log for debugging
+		if !hasAvailableServers {
+			m.logger.Debug("no mcp servers currently available, skipping mcp tool injection")
+			c.Next()
+			return
+		}
+
 		availableTools := m.mcpClient.GetAllChatCompletionTools()
 		if len(availableTools) == 0 {
 			c.Next()

@@ -150,6 +150,8 @@ func main() {
 				return
 			}
 			logger.Info("mcp client initialized successfully")
+
+			mcpClient.StartStatusPolling(context.Background())
 			mcpAgent = mcp.NewAgent(logger, mcpClient)
 			logger.Info("mcp agent created successfully")
 		} else {
@@ -266,6 +268,10 @@ func main() {
 
 	if cfg.A2A.Enable && a2aClient != nil {
 		a2aClient.StopStatusPolling()
+	}
+
+	if cfg.MCP.Enable && mcpClient != nil {
+		mcpClient.StopStatusPolling()
 	}
 
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)

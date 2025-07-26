@@ -129,6 +129,7 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 			path: "/v1/chat/completions",
 			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+				mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
 				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -246,6 +247,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 
 			mockMCPClient.EXPECT().IsInitialized().Return(tt.isInitialized).AnyTimes()
 			if tt.isInitialized {
+				mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
 				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return(tt.mcpTools).AnyTimes()
 			}
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
@@ -376,6 +378,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			cfg := createTestConfig()
 
 			mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+			mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
 			mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
@@ -520,6 +523,7 @@ data: [DONE]`,
 			cfg := createTestConfig()
 
 			mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+			mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
 			mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -606,6 +610,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			requestBody: `{"model":"unsupported/model","messages":[]}`,
 			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+				mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
 				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
 					{
 						Type: providers.ChatCompletionToolTypeFunction,
@@ -626,6 +631,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			requestBody: `{"model":"openai/gpt-3.5-turbo","messages":[]}`,
 			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+				mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
 				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
 					{
 						Type: providers.ChatCompletionToolTypeFunction,
@@ -776,6 +782,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		defer ctrl.Finish()
 
 		mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+		mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
 		mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
 			{
 				Type: providers.ChatCompletionToolTypeFunction,

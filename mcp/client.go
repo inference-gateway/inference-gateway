@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/inference-gateway/inference-gateway/config"
@@ -31,6 +32,15 @@ var (
 
 	// ErrNoClientsInitialized is returned when no clients could be initialized
 	ErrNoClientsInitialized = errors.New("no mcp clients could be initialized")
+)
+
+// ServerStatus represents the status of an MCP server
+type ServerStatus string
+
+const (
+	ServerStatusUnknown     ServerStatus = "unknown"
+	ServerStatusAvailable   ServerStatus = "available"
+	ServerStatusUnavailable ServerStatus = "unavailable"
 )
 
 // MCPClientInterface defines the interface for MCP client implementations
@@ -66,6 +76,18 @@ type MCPClientInterface interface {
 
 	// BuildSSEFallbackURL creates an SSE fallback URL from the main server URL (exposed for testing)
 	BuildSSEFallbackURL(serverURL string) string
+
+	// GetServerStatus returns the status of a specific server
+	GetServerStatus(serverURL string) ServerStatus
+
+	// GetAllServerStatuses returns the status of all servers
+	GetAllServerStatuses() map[string]ServerStatus
+
+	// StartStatusPolling starts the background status polling goroutine
+	StartStatusPolling(ctx context.Context)
+
+	// StopStatusPolling stops the background status polling goroutine
+	StopStatusPolling()
 }
 
 // MCPClient provides methods to interact with MCP servers
@@ -78,6 +100,10 @@ type MCPClient struct {
 	ServerTools         map[string][]Tool
 	ChatCompletionTools []providers.ChatCompletionTool
 	Initialized         bool
+	ServerStatuses      map[string]ServerStatus
+	statusMutex         sync.RWMutex
+	pollingCancel       context.CancelFunc
+	pollingDone         chan struct{}
 }
 
 // TransportMode represents the type of transport being used
@@ -293,6 +319,8 @@ func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) 
 		ServerTools:         make(map[string][]Tool),
 		ChatCompletionTools: make([]providers.ChatCompletionTool, 0),
 		Initialized:         false,
+		ServerStatuses:      make(map[string]ServerStatus),
+		pollingDone:         make(chan struct{}),
 	}
 }
 
@@ -349,34 +377,43 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		return ErrNoServerURLs
 	}
 
-	for _, url := range mc.ServerURLs {
-		mc.Logger.Debug("initializing client with transport fallback", "server", url)
+	var lastError error
+	successfulInitializations := 0
+	failedServers := make([]string, 0)
 
-		client, err := mc.initializeClientWithTransport(ctx, url, TransportModeStreamableHTTP)
-		if err != nil {
-			mc.Logger.Debug("streamable http failed, attempting sse fallback", "server", url, "error", err.Error())
+	mc.statusMutex.Lock()
+	for _, serverURL := range mc.ServerURLs {
+		mc.ServerStatuses[serverURL] = ServerStatusUnknown
+	}
+	mc.statusMutex.Unlock()
 
-			client, err = mc.initializeClientWithTransport(ctx, url, TransportModeSSE)
-			if err != nil {
-				mc.Logger.Error("both streamable http and sse transports failed", err, "server", url)
-				continue
-			}
-			mc.Logger.Info("successfully connected using sse transport fallback", "server", url)
-		} else {
-			mc.Logger.Debug("successfully connected using streamable http transport", "server", url)
-		}
-
-		mc.Clients[url] = client
-
-		if err := mc.discoverServerCapabilities(ctx, client, url); err != nil {
-			mc.Logger.Error("failed to discover server capabilities", err, "server", url)
+	for _, serverURL := range mc.ServerURLs {
+		if err := mc.initializeServer(ctx, serverURL); err != nil {
+			mc.Logger.Error("failed to initialize mcp server", err, "server", serverURL, "component", "mcp_client")
+			lastError = err
+			failedServers = append(failedServers, serverURL)
 			continue
 		}
 
-		mc.Logger.Debug("mcp client initialized successfully", "server", url)
+		successfulInitializations++
+		mc.Logger.Info("successfully initialized mcp server", "server", serverURL, "component", "mcp_client")
 	}
 
-	if len(mc.Clients) == 0 {
+	mc.Initialized = true
+
+	if successfulInitializations == 0 {
+		mc.Logger.Warn("no servers successfully initialized, but enabling MCP with background reconnection",
+			"total_servers", len(mc.ServerURLs),
+			"failed_servers", len(failedServers),
+			"component", "mcp_client")
+
+		if mc.Config.MCP.EnableReconnect && len(failedServers) > 0 {
+			go mc.startBackgroundReconnection(ctx, failedServers)
+		}
+
+		if lastError != nil {
+			return fmt.Errorf("%w: %v", ErrNoClientsInitialized, lastError)
+		}
 		return ErrNoClientsInitialized
 	}
 
@@ -404,9 +441,97 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	mc.ChatCompletionTools = allChatCompletionTools
 	mc.Logger.Debug("total pre-converted tools", "count", len(mc.ChatCompletionTools))
 
-	mc.Initialized = true
-	mc.Logger.Info("client initialization completed", "successfulServers", len(mc.Clients), "totalServers", len(mc.ServerURLs))
+	mc.Logger.Info("mcp client initialization completed",
+		"successful_servers", successfulInitializations,
+		"failed_servers", len(failedServers),
+		"total_servers", len(mc.ServerURLs),
+		"component", "mcp_client")
+
+	if mc.Config.MCP.EnableReconnect && len(failedServers) > 0 {
+		mc.Logger.Info("starting background reconnection for failed servers",
+			"failed_servers", failedServers,
+			"component", "mcp_client")
+		go mc.startBackgroundReconnection(ctx, failedServers)
+	}
+
 	return nil
+}
+
+// initializeServer initializes a single server with retry logic
+func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) error {
+	maxRetries := mc.Config.MCP.MaxRetries
+	initialBackoff := mc.Config.MCP.InitialBackoff
+	var lastErr error
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			backoffDelay := time.Duration(float64(initialBackoff) * float64(uint(1)<<uint(attempt-1)))
+			if backoffDelay > mc.Config.MCP.RetryInterval {
+				backoffDelay = mc.Config.MCP.RetryInterval
+			}
+
+			mc.Logger.Debug("retrying server initialization",
+				"server", serverURL,
+				"attempt", attempt+1,
+				"max_attempts", maxRetries+1,
+				"backoff_delay", backoffDelay,
+				"component", "mcp_client")
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(backoffDelay):
+			}
+		}
+
+		client, err := mc.initializeClientWithTransport(ctx, serverURL, TransportModeStreamableHTTP)
+		if err != nil {
+			mc.Logger.Debug("streamable http failed, attempting sse fallback", "server", serverURL, "error", err.Error())
+
+			client, err = mc.initializeClientWithTransport(ctx, serverURL, TransportModeSSE)
+			if err != nil {
+				lastErr = fmt.Errorf("both streamable http and sse transports failed: %w", err)
+				mc.Logger.Debug("failed to initialize server",
+					"server", serverURL,
+					"attempt", attempt+1,
+					"error", err,
+					"component", "mcp_client")
+				continue
+			}
+			mc.Logger.Info("successfully connected using sse transport fallback", "server", serverURL)
+		} else {
+			mc.Logger.Debug("successfully connected using streamable http transport", "server", serverURL)
+		}
+
+		mc.Clients[serverURL] = client
+
+		if err := mc.discoverServerCapabilities(ctx, client, serverURL); err != nil {
+			lastErr = fmt.Errorf("failed to discover server capabilities: %w", err)
+			mc.Logger.Debug("failed to discover capabilities",
+				"server", serverURL,
+				"attempt", attempt+1,
+				"error", err,
+				"component", "mcp_client")
+			continue
+		}
+
+		mc.statusMutex.Lock()
+		mc.ServerStatuses[serverURL] = ServerStatusAvailable
+		mc.statusMutex.Unlock()
+
+		mc.Logger.Info("server initialized successfully",
+			"server", serverURL,
+			"attempts_used", attempt+1,
+			"component", "mcp_client")
+
+		return nil
+	}
+
+	mc.statusMutex.Lock()
+	mc.ServerStatuses[serverURL] = ServerStatusUnavailable
+	mc.statusMutex.Unlock()
+
+	return fmt.Errorf("failed to initialize server after %d attempts: %w", maxRetries+1, lastErr)
 }
 
 // initializeClientWithTransport attempts to initialize a client with a specific transport
@@ -580,4 +705,179 @@ func (mc *MCPClient) GetAllChatCompletionTools() []providers.ChatCompletionTool 
 // IsInitialized implements MCPClientInterface.
 func (mc *MCPClient) IsInitialized() bool {
 	return mc.Initialized
+}
+
+// GetServerStatus returns the status of a specific server
+func (mc *MCPClient) GetServerStatus(serverURL string) ServerStatus {
+	mc.statusMutex.RLock()
+	defer mc.statusMutex.RUnlock()
+
+	if status, exists := mc.ServerStatuses[serverURL]; exists {
+		return status
+	}
+	return ServerStatusUnknown
+}
+
+// GetAllServerStatuses returns the status of all servers
+func (mc *MCPClient) GetAllServerStatuses() map[string]ServerStatus {
+	mc.statusMutex.RLock()
+	defer mc.statusMutex.RUnlock()
+
+	statusCopy := make(map[string]ServerStatus)
+	for url, status := range mc.ServerStatuses {
+		statusCopy[url] = status
+	}
+	return statusCopy
+}
+
+// StartStatusPolling starts the background status polling goroutine
+func (mc *MCPClient) StartStatusPolling(ctx context.Context) {
+	if !mc.Config.MCP.PollingEnable {
+		mc.Logger.Debug("mcp status polling disabled, not starting background polling")
+		return
+	}
+
+	pollingCtx, cancel := context.WithCancel(ctx)
+	mc.pollingCancel = cancel
+
+	go mc.statusPollingLoop(pollingCtx)
+	mc.Logger.Info("started mcp server status polling", "interval", mc.Config.MCP.PollingInterval, "component", "mcp_client")
+}
+
+// StopStatusPolling stops the background status polling goroutine
+func (mc *MCPClient) StopStatusPolling() {
+	if mc.pollingCancel != nil {
+		mc.pollingCancel()
+		<-mc.pollingDone
+		mc.Logger.Info("stopped mcp server status polling", "component", "mcp_client")
+	}
+}
+
+// statusPollingLoop continuously polls server health status
+func (mc *MCPClient) statusPollingLoop(ctx context.Context) {
+	defer close(mc.pollingDone)
+
+	ticker := time.NewTicker(mc.Config.MCP.PollingInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			mc.pollServerStatuses(ctx)
+		}
+	}
+}
+
+// pollServerStatuses checks the health status of all servers
+func (mc *MCPClient) pollServerStatuses(ctx context.Context) {
+	for _, serverURL := range mc.ServerURLs {
+		go mc.checkServerHealth(ctx, serverURL)
+	}
+}
+
+// checkServerHealth checks the health of a single server
+func (mc *MCPClient) checkServerHealth(ctx context.Context, serverURL string) {
+	checkCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.PollingTimeout)
+	defer cancel()
+
+	client, exists := mc.Clients[serverURL]
+	if !exists {
+		mc.Logger.Debug("server client not found for health check", "server", serverURL, "component", "mcp_client")
+		return
+	}
+
+	// Try to list tools as a health check (similar to how it works in initialization)
+	var cursor *string
+	_, err := client.ListTools(checkCtx, cursor)
+
+	newStatus := ServerStatusAvailable
+	if err != nil {
+		newStatus = ServerStatusUnavailable
+		if !mc.Config.MCP.DisableHealthcheckLogs {
+			mc.Logger.Debug("server health check failed", "server", serverURL, "error", err, "component", "mcp_client")
+		}
+
+		mc.statusMutex.RLock()
+		oldStatus := mc.ServerStatuses[serverURL]
+		mc.statusMutex.RUnlock()
+
+		if oldStatus == ServerStatusAvailable && mc.Config.MCP.EnableReconnect {
+			mc.Logger.Info("server became unavailable, scheduling reconnection", "server", serverURL, "component", "mcp_client")
+			go mc.attemptServerReconnection(ctx, serverURL)
+		}
+	} else if !mc.Config.MCP.DisableHealthcheckLogs {
+		mc.Logger.Debug("server health check passed", "server", serverURL, "component", "mcp_client")
+	}
+
+	mc.statusMutex.Lock()
+	oldStatus := mc.ServerStatuses[serverURL]
+	mc.ServerStatuses[serverURL] = newStatus
+	mc.statusMutex.Unlock()
+
+	if oldStatus != newStatus {
+		mc.Logger.Info("server status changed", "server", serverURL, "oldStatus", string(oldStatus), "newStatus", string(newStatus), "component", "mcp_client")
+	}
+}
+
+// startBackgroundReconnection starts a background goroutine to reconnect failed servers
+func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServers []string) {
+	mc.Logger.Info("starting background reconnection for failed servers",
+		"servers", failedServers,
+		"interval", mc.Config.MCP.ReconnectInterval,
+		"component", "mcp_client")
+
+	ticker := time.NewTicker(mc.Config.MCP.ReconnectInterval)
+	defer ticker.Stop()
+
+	reconnectingServers := make(map[string]bool)
+	for _, server := range failedServers {
+		reconnectingServers[server] = true
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			mc.Logger.Info("background reconnection stopped due to context cancellation", "component", "mcp_client")
+			return
+		case <-ticker.C:
+			mc.statusMutex.RLock()
+			serversToReconnect := make([]string, 0)
+			for serverURL := range reconnectingServers {
+				if status, exists := mc.ServerStatuses[serverURL]; exists && status == ServerStatusUnavailable {
+					serversToReconnect = append(serversToReconnect, serverURL)
+				} else if status == ServerStatusAvailable {
+					delete(reconnectingServers, serverURL)
+					mc.Logger.Info("server successfully reconnected, removing from background reconnection",
+						"server", serverURL, "component", "mcp_client")
+				}
+			}
+			mc.statusMutex.RUnlock()
+
+			if len(reconnectingServers) == 0 {
+				mc.Logger.Info("all servers successfully reconnected, stopping background reconnection", "component", "mcp_client")
+				return
+			}
+
+			for _, serverURL := range serversToReconnect {
+				go mc.attemptServerReconnection(ctx, serverURL)
+			}
+		}
+	}
+}
+
+// attemptServerReconnection attempts to reconnect a single failed server
+func (mc *MCPClient) attemptServerReconnection(ctx context.Context, serverURL string) {
+	mc.Logger.Info("attempting server reconnection", "server", serverURL, "component", "mcp_client")
+
+	reconnectCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.ClientTimeout)
+	defer cancel()
+
+	if err := mc.initializeServer(reconnectCtx, serverURL); err != nil {
+		mc.Logger.Info("server reconnection failed", "server", serverURL, "error", err, "component", "mcp_client")
+		return
+	}
+
+	mc.Logger.Info("server successfully reconnected", "server", serverURL, "component", "mcp_client")
 }
