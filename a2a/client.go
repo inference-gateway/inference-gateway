@@ -791,12 +791,12 @@ func (c *A2AClient) StartServiceDiscoveryPolling(ctx context.Context) {
 	c.discoveryPollingCancel = cancel
 
 	go c.serviceDiscoveryPollingLoop(discoveryCtx)
-	
+
 	pollingInterval := c.Config.A2A.ServiceDiscoveryPollingInterval
 	if pollingInterval == 0 {
 		pollingInterval = 30 * time.Second
 	}
-	
+
 	c.Logger.Info("started a2a service discovery polling",
 		"interval", pollingInterval,
 		"namespace", c.serviceDiscovery.GetNamespace(),
