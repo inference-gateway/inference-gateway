@@ -509,6 +509,7 @@ components:
         - cohere
         - anthropic
         - deepseek
+        - google
       x-provider-configs:
         ollama:
           id: "ollama"
@@ -591,6 +592,19 @@ components:
         deepseek:
           id: "deepseek"
           url: "https://api.deepseek.com"
+          auth_type: "bearer"
+          endpoints:
+            models:
+              name: "list_models"
+              method: "GET"
+              endpoint: "/models"
+            chat:
+              name: "chat_completions"
+              method: "POST"
+              endpoint: "/chat/completions"
+        google:
+          id: "google"
+          url: "https://generativelanguage.googleapis.com/v1beta/openai"
           auth_type: "bearer"
           endpoints:
             models:

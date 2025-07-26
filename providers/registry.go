@@ -108,6 +108,16 @@ var Registry = map[Provider]*Config{
 			Chat:   DeepseekChatEndpoint,
 		},
 	},
+	GoogleID: {
+		ID:       GoogleID,
+		Name:     GoogleDisplayName,
+		URL:      GoogleDefaultBaseURL,
+		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			Models: GoogleModelsEndpoint,
+			Chat:   GoogleChatEndpoint,
+		},
+	},
 	GroqID: {
 		ID:       GroqID,
 		Name:     GroqDisplayName,

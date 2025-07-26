@@ -150,6 +150,16 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.DeepseekChatEndpoint,
 						},
 					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.GoogleModelsEndpoint,
+							Chat:   providers.GoogleChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -299,6 +309,16 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.DeepseekChatEndpoint,
 						},
 					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.GoogleModelsEndpoint,
+							Chat:   providers.GoogleChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -437,6 +457,16 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.DeepseekModelsEndpoint,
 							Chat:   providers.DeepseekChatEndpoint,
+						},
+					},
+					providers.GoogleID: {
+						ID:       providers.GoogleID,
+						Name:     providers.GoogleDisplayName,
+						URL:      providers.GoogleDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.GoogleModelsEndpoint,
+							Chat:   providers.GoogleChatEndpoint,
 						},
 					},
 				},
