@@ -1660,3 +1660,13 @@ components:
                   type: string
                   description: "DeepSeek API Key"
                   secret: true
+                - name: google_api_url
+                  env: "GOOGLE_API_URL"
+                  type: string
+                  default: "https://generativelanguage.googleapis.com/v1beta/openai"
+                  description: "Google API URL"
+                - name: google_api_key
+                  env: "GOOGLE_API_KEY"
+                  type: string
+                  description: "Google API Key"
+                  secret: true

@@ -196,3 +196,4 @@ config:
   OLLAMA_API_URL: "http://ollama:8080/v1"
   OPENAI_API_URL: "https://api.openai.com/v1"
   DEEPSEEK_API_URL: "https://api.deepseek.com"
+  GOOGLE_API_URL: "https://generativelanguage.googleapis.com/v1beta/openai"

@@ -98,4 +98,6 @@
 | OPENAI_API_KEY | `""` | OpenAI API Key |
 | DEEPSEEK_API_URL | `https://api.deepseek.com` | DeepSeek API URL |
 | DEEPSEEK_API_KEY | `""` | DeepSeek API Key |
+| GOOGLE_API_URL | `https://generativelanguage.googleapis.com/v1beta/openai` | Google API URL |
+| GOOGLE_API_KEY | `""` | Google API Key |
 
