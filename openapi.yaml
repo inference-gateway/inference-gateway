@@ -1412,6 +1412,51 @@ components:
                   type: time.Duration
                   default: '5s'
                   description: 'MCP client request timeout for initialize and tool calls'
+                - name: mcp_max_retries
+                  env: 'MCP_MAX_RETRIES'
+                  type: int
+                  default: '3'
+                  description: 'Maximum number of connection retry attempts'
+                - name: mcp_retry_interval
+                  env: 'MCP_RETRY_INTERVAL'
+                  type: time.Duration
+                  default: '5s'
+                  description: 'Interval between connection retry attempts'
+                - name: mcp_initial_backoff
+                  env: 'MCP_INITIAL_BACKOFF'
+                  type: time.Duration
+                  default: '1s'
+                  description: 'Initial backoff duration for exponential backoff retry'
+                - name: mcp_enable_reconnect
+                  env: 'MCP_ENABLE_RECONNECT'
+                  type: bool
+                  default: 'true'
+                  description: 'Enable automatic reconnection for failed servers'
+                - name: mcp_reconnect_interval
+                  env: 'MCP_RECONNECT_INTERVAL'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Interval between reconnection attempts'
+                - name: mcp_polling_enable
+                  env: 'MCP_POLLING_ENABLE'
+                  type: bool
+                  default: 'true'
+                  description: 'Enable health check polling'
+                - name: mcp_polling_interval
+                  env: 'MCP_POLLING_INTERVAL'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Interval between health check polling requests'
+                - name: mcp_polling_timeout
+                  env: 'MCP_POLLING_TIMEOUT'
+                  type: time.Duration
+                  default: '5s'
+                  description: 'Timeout for individual health check requests'
+                - name: mcp_disable_healthcheck_logs
+                  env: 'MCP_DISABLE_HEALTHCHECK_LOGS'
+                  type: bool
+                  default: 'true'
+                  description: 'Disable health check log messages to reduce noise'
           - a2a:
               title: 'Agent-to-Agent (A2A) Protocol'
               settings:
