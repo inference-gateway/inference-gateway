@@ -58,6 +58,16 @@ spec:
         secretKeyRef:
           name: 'google-calendar-agent-service-account'
           key: 'GOOGLE_CALENDAR_SA_JSON'
+    - name: 'DEMO_MODE'
+      valueFrom:
+        configMapKeyRef:
+          name: 'a2a-google-calendar-agent-config'
+          key: 'DEMO_MODE'
+    - name: 'A2A_AGENT_URL'
+      valueFrom:
+        configMapKeyRef:
+          name: 'a2a-google-calendar-agent-config'
+          key: 'A2A_AGENT_URL'
 ---
 apiVersion: v1
 kind: Secret
@@ -93,3 +103,12 @@ spec:
   usages:
     - digital signature
     - key encipherment
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: a2a-google-calendar-agent-config
+  namespace: agents
+data:
+  DEMO_MODE: 'true'
+  A2A_AGENT_URL: 'http://google-calendar-agent.agents.svc.cluster.local:8080'
