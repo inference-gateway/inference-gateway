@@ -528,3 +528,5 @@ Please read the [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 ## Motivation
 
 My motivation is to build AI Agents without being tied to a single vendor. By avoiding vendor lock-in and supporting self-hosted LLMs from a single interface, organizations gain both portability and data privacy. You can choose to consume LLMs from a cloud provider or run them entirely offline with Ollama.
+
+Note: This project is independently developed and is not backed by any venture capital or corporate interests, ensuring that Inference Gateway remains focused on developer needs rather than investor demands.
