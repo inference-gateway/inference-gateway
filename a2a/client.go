@@ -129,7 +129,6 @@ func NewA2AClient(cfg config.Config, log logger.Logger) *A2AClient {
 				client.serviceDiscovery = serviceDiscovery
 				log.Info("kubernetes service discovery initialized",
 					"namespace", serviceDiscovery.GetNamespace(),
-					"label_selector", serviceDiscovery.GetLabelSelector(),
 					"component", "a2a_client")
 			}
 		} else {
@@ -800,7 +799,6 @@ func (c *A2AClient) StartServiceDiscoveryPolling(ctx context.Context) {
 	c.Logger.Info("started a2a service discovery polling",
 		"interval", pollingInterval,
 		"namespace", c.serviceDiscovery.GetNamespace(),
-		"label_selector", c.serviceDiscovery.GetLabelSelector(),
 		"component", "a2a_client")
 }
 

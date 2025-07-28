@@ -80,7 +80,6 @@ type A2AConfig struct {
 	DisableHealthcheckLogs          bool          `env:"DISABLE_HEALTHCHECK_LOGS, default=true" description:"Disable health check log messages to reduce noise"`
 	ServiceDiscoveryEnable          bool          `env:"SERVICE_DISCOVERY_ENABLE, default=false" description:"Enable Kubernetes service discovery for A2A agents"`
 	ServiceDiscoveryNamespace       string        `env:"SERVICE_DISCOVERY_NAMESPACE" description:"Kubernetes namespace to search for A2A services (empty means current namespace)"`
-	ServiceDiscoveryLabelSelector   string        `env:"SERVICE_DISCOVERY_LABEL_SELECTOR" description:"Label selector for discovering A2A services"`
 	ServiceDiscoveryPollingInterval time.Duration `env:"SERVICE_DISCOVERY_POLLING_INTERVAL, default=30s" description:"Interval between service discovery polling requests"`
 }
 

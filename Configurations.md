@@ -57,7 +57,6 @@
 | A2A_DISABLE_HEALTHCHECK_LOGS           | `true`        | Disable health check log messages to reduce noise                               |
 | A2A_SERVICE_DISCOVERY_ENABLE           | `false`       | Enable Kubernetes service discovery for A2A agents                              |
 | A2A_SERVICE_DISCOVERY_NAMESPACE        | `""`          | Kubernetes namespace to search for A2A services (empty means current namespace) |
-| A2A_SERVICE_DISCOVERY_LABEL_SELECTOR   | `""`          | Label selector for discovering A2A services                                     |
 | A2A_SERVICE_DISCOVERY_POLLING_INTERVAL | `30s`         | Interval between service discovery polling requests                             |
 
 ### Authentication

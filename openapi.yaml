@@ -1538,10 +1538,6 @@ components:
                   env: 'A2A_SERVICE_DISCOVERY_NAMESPACE'
                   type: string
                   description: 'Kubernetes namespace to search for A2A services (empty means current namespace)'
-                - name: a2a_service_discovery_label_selector
-                  env: 'A2A_SERVICE_DISCOVERY_LABEL_SELECTOR'
-                  type: string
-                  description: 'Label selector for discovering A2A services'
                 - name: a2a_service_discovery_polling_interval
                   env: 'A2A_SERVICE_DISCOVERY_POLLING_INTERVAL'
                   type: time.Duration

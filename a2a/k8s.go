@@ -7,45 +7,43 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
+	dynamic "k8s.io/client-go/dynamic"
+	kubernetes "k8s.io/client-go/kubernetes"
+	rest "k8s.io/client-go/rest"
+	clientcmd "k8s.io/client-go/tools/clientcmd"
 )
 
 // KubernetesServiceDiscovery handles Kubernetes-based service discovery for A2A agents
 type KubernetesServiceDiscovery struct {
 	client        kubernetes.Interface
+	dynamicClient dynamic.Interface
 	namespace     string
-	labelSelector string
 	logger        logger.Logger
 	config        *config.A2AConfig
 }
 
 // IsKubernetesEnvironment detects if the application is running in a Kubernetes environment
 func IsKubernetesEnvironment() bool {
-	// Check for service account token (most reliable indicator)
 	if _, err := os.Stat("/var/run/secrets/kubernetes.io/serviceaccount/token"); err == nil {
 		return true
 	}
 
-	// Check for KUBERNETES_SERVICE_HOST environment variable
 	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
 		return true
 	}
 
-	// Check for kubeconfig file (development/external usage)
 	if kubeconfig := os.Getenv("KUBECONFIG"); kubeconfig != "" {
 		if _, err := os.Stat(kubeconfig); err == nil {
 			return true
 		}
 	}
 
-	// Check for default kubeconfig location
 	homeDir, err := os.UserHomeDir()
 	if err == nil {
 		defaultKubeconfig := filepath.Join(homeDir, ".kube", "config")
@@ -68,27 +66,26 @@ func NewKubernetesServiceDiscovery(cfg *config.A2AConfig, logger logger.Logger) 
 		return nil, fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
 
+	dynamicClient, err := createDynamicClient()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dynamic client: %w", err)
+	}
+
 	namespace := cfg.ServiceDiscoveryNamespace
 	if namespace == "" {
-		// Try to get current namespace from service account
 		if namespaceBytes, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
 			namespace = strings.TrimSpace(string(namespaceBytes))
 		}
-		// Default to "default" namespace if still empty
+
 		if namespace == "" {
 			namespace = "default"
 		}
 	}
 
-	labelSelector := cfg.ServiceDiscoveryLabelSelector
-	if labelSelector == "" {
-		labelSelector = "inference-gateway.com/a2a-agent=true"
-	}
-
 	return &KubernetesServiceDiscovery{
 		client:        client,
+		dynamicClient: dynamicClient,
 		namespace:     namespace,
-		labelSelector: labelSelector,
 		logger:        logger,
 		config:        cfg,
 	}, nil
@@ -96,10 +93,38 @@ func NewKubernetesServiceDiscovery(cfg *config.A2AConfig, logger logger.Logger) 
 
 // createKubernetesClient creates a Kubernetes client using in-cluster config or kubeconfig
 func createKubernetesClient() (kubernetes.Interface, error) {
-	// Try in-cluster config first (for pods running in Kubernetes)
+	config, err := getKubernetesConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Kubernetes client: %w", err)
+	}
+
+	return client, nil
+}
+
+// createDynamicClient creates a dynamic client using in-cluster config or kubeconfig
+func createDynamicClient() (dynamic.Interface, error) {
+	config, err := getKubernetesConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create dynamic client: %w", err)
+	}
+
+	return client, nil
+}
+
+// getKubernetesConfig gets the Kubernetes configuration
+func getKubernetesConfig() (*rest.Config, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		// Fall back to kubeconfig (for development/external usage)
 		kubeconfig := os.Getenv("KUBECONFIG")
 		if kubeconfig == "" {
 			homeDir, err := os.UserHomeDir()
@@ -114,29 +139,41 @@ func createKubernetesClient() (kubernetes.Interface, error) {
 		}
 	}
 
-	client, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Kubernetes client: %w", err)
-	}
-
-	return client, nil
+	return config, nil
 }
 
-// DiscoverA2AServices discovers A2A services in the Kubernetes cluster
+// DiscoverA2AServices discovers A2A services in the Kubernetes cluster using A2A CRDs
 func (k *KubernetesServiceDiscovery) DiscoverA2AServices(ctx context.Context) ([]string, error) {
-	services, err := k.client.CoreV1().Services(k.namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: k.labelSelector,
-	})
+	a2aGVR := schema.GroupVersionResource{
+		Group:    "core.inference-gateway.com",
+		Version:  "v1alpha1",
+		Resource: "a2as",
+	}
+
+	a2aList, err := k.dynamicClient.Resource(a2aGVR).Namespace(k.namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list services: %w", err)
+		return nil, fmt.Errorf("failed to list A2A resources: %w", err)
 	}
 
 	var agentURLs []string
-	for _, service := range services.Items {
-		agentURL := k.buildServiceURL(&service)
+	for _, a2a := range a2aList.Items {
+		a2aName := a2a.GetName()
+
+		service, err := k.client.CoreV1().Services(k.namespace).Get(ctx, a2aName, metav1.GetOptions{})
+		if err != nil {
+			k.logger.Warn("failed to get service for A2A resource",
+				"a2a", a2aName,
+				"namespace", k.namespace,
+				"error", err,
+				"component", "k8s_service_discovery")
+			continue
+		}
+
+		agentURL := k.buildServiceURL(service)
 		if agentURL != "" {
 			agentURLs = append(agentURLs, agentURL)
 			k.logger.Debug("discovered a2a service",
+				"a2a", a2aName,
 				"service", service.Name,
 				"namespace", service.Namespace,
 				"url", agentURL,
@@ -146,7 +183,7 @@ func (k *KubernetesServiceDiscovery) DiscoverA2AServices(ctx context.Context) ([
 
 	k.logger.Info("kubernetes service discovery completed",
 		"namespace", k.namespace,
-		"label_selector", k.labelSelector,
+		"discovered_a2a_resources", len(a2aList.Items),
 		"discovered_services", len(agentURLs),
 		"component", "k8s_service_discovery")
 
@@ -155,7 +192,6 @@ func (k *KubernetesServiceDiscovery) DiscoverA2AServices(ctx context.Context) ([
 
 // buildServiceURL constructs the URL for an A2A service based on Kubernetes service information
 func (k *KubernetesServiceDiscovery) buildServiceURL(service *corev1.Service) string {
-	// Determine the appropriate port for A2A communication
 	port := k.findA2APort(service)
 	if port == 0 {
 		k.logger.Warn("no suitable port found for a2a service",
@@ -165,21 +201,12 @@ func (k *KubernetesServiceDiscovery) buildServiceURL(service *corev1.Service) st
 		return ""
 	}
 
-	// Check for custom URL annotation first
-	if customURL, exists := service.Annotations["inference-gateway.com/a2a-url"]; exists && customURL != "" {
-		return customURL
-	}
-
-	// Build URL based on service type and configuration
 	switch service.Spec.Type {
 	case corev1.ServiceTypeClusterIP, "":
-		// Use internal cluster DNS name
 		return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, port)
 	case corev1.ServiceTypeNodePort:
-		// For NodePort, we need the node IP or can use the service DNS name with the port
 		return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, port)
 	case corev1.ServiceTypeLoadBalancer:
-		// For LoadBalancer, try to use the external IP if available
 		if len(service.Status.LoadBalancer.Ingress) > 0 {
 			ingress := service.Status.LoadBalancer.Ingress[0]
 			if ingress.IP != "" {
@@ -189,7 +216,6 @@ func (k *KubernetesServiceDiscovery) buildServiceURL(service *corev1.Service) st
 				return fmt.Sprintf("http://%s:%d", ingress.Hostname, port)
 			}
 		}
-		// Fall back to cluster DNS if external IP not available yet
 		return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, port)
 	default:
 		k.logger.Warn("unsupported service type for a2a discovery",
@@ -202,7 +228,6 @@ func (k *KubernetesServiceDiscovery) buildServiceURL(service *corev1.Service) st
 
 // findA2APort finds the appropriate port for A2A communication from the service spec
 func (k *KubernetesServiceDiscovery) findA2APort(service *corev1.Service) int32 {
-	// Look for port with specific name patterns
 	for _, port := range service.Spec.Ports {
 		portName := strings.ToLower(port.Name)
 		if portName == "a2a" || portName == "agent" || portName == "http" {
@@ -210,21 +235,10 @@ func (k *KubernetesServiceDiscovery) findA2APort(service *corev1.Service) int32 
 		}
 	}
 
-	// Look for port with A2A annotation
-	if portStr, exists := service.Annotations["inference-gateway.com/a2a-port"]; exists {
-		for _, port := range service.Spec.Ports {
-			if fmt.Sprintf("%d", port.Port) == portStr {
-				return port.Port
-			}
-		}
-	}
-
-	// Fall back to the first port if only one port is defined
 	if len(service.Spec.Ports) == 1 {
 		return service.Spec.Ports[0].Port
 	}
 
-	// Default to common A2A port (8080) if it exists
 	for _, port := range service.Spec.Ports {
 		if port.Port == 8080 {
 			return port.Port
@@ -237,9 +251,4 @@ func (k *KubernetesServiceDiscovery) findA2APort(service *corev1.Service) int32 
 // GetNamespace returns the namespace being monitored for service discovery
 func (k *KubernetesServiceDiscovery) GetNamespace() string {
 	return k.namespace
-}
-
-// GetLabelSelector returns the label selector used for service discovery
-func (k *KubernetesServiceDiscovery) GetLabelSelector() string {
-	return k.labelSelector
 }

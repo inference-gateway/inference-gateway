@@ -64,7 +64,6 @@ func TestLoad(t *testing.T) {
 					DisableHealthcheckLogs:          true,
 					ServiceDiscoveryEnable:          false,
 					ServiceDiscoveryNamespace:       "",
-					ServiceDiscoveryLabelSelector:   "",
 					ServiceDiscoveryPollingInterval: 30 * time.Second,
 				},
 				Auth: &config.AuthConfig{
@@ -235,7 +234,6 @@ func TestLoad(t *testing.T) {
 					DisableHealthcheckLogs:          true,
 					ServiceDiscoveryEnable:          false,
 					ServiceDiscoveryNamespace:       "",
-					ServiceDiscoveryLabelSelector:   "",
 					ServiceDiscoveryPollingInterval: 30 * time.Second,
 				},
 				Auth: &config.AuthConfig{
@@ -401,7 +399,6 @@ func TestLoad(t *testing.T) {
 					DisableHealthcheckLogs:          true,
 					ServiceDiscoveryEnable:          false,
 					ServiceDiscoveryNamespace:       "",
-					ServiceDiscoveryLabelSelector:   "",
 					ServiceDiscoveryPollingInterval: 30 * time.Second,
 				},
 				Auth: &config.AuthConfig{
