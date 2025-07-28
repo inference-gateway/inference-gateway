@@ -79,7 +79,6 @@ spec:
     serviceDiscovery:
       enabled: true
       namespace: 'agents'
-      labelSelector: 'inference-gateway.com/a2a-agent=true'
       pollingInterval: '30s'
     # Legacy manual agent configuration (now replaced by service discovery)
     # agents:
