@@ -18,21 +18,25 @@ metadata:
     app.kubernetes.io/part-of: inference-gateway
     app.kubernetes.io/version: '0.12.0'
 spec:
+  image: 'ghcr.io/inference-gateway/inference-gateway:0.12.0'
   environment: production
   hpa:
     enabled: true
-    minReplicas: 3
-    maxReplicas: 10
-    targetCPUUtilizationPercentage: 80
-  image: 'ghcr.io/inference-gateway/inference-gateway:0.12.0'
+    config:
+      minReplicas: 3
+      maxReplicas: 10
+      metrics:
+        - type: Resource
+          resource:
+            name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 80
   telemetry:
     enabled: true
     metrics:
       enabled: true
       port: 9464
-    tracing:
-      enabled: true
-      endpoint: 'http://jaeger:14268/api/traces'
   server:
     host: '0.0.0.0'
     timeouts:
@@ -42,7 +46,7 @@ spec:
     tls:
       enabled: false
   auth:
-    enabled: true
+    enabled: false
     provider: oidc
     oidc:
       issuerUrl: 'https://keycloak.inference-gateway.local/realms/inference-gateway-realm'
@@ -51,28 +55,23 @@ spec:
         name: inference-gateway-secrets
         key: AUTH_OIDC_CLIENT_SECRET
   providers:
-    - name: openai
-      type: openai
-      config:
-        baseUrl: 'https://api.openai.com/v1'
-        authType: bearer
-        tokenRef:
-          name: inference-gateway-secrets
-          key: OPENAI_API_KEY
-    - name: anthropic
-      type: anthropic
-      config:
-        baseUrl: 'https://api.anthropic.com/v1'
-        authType: bearer
-        tokenRef:
-          name: inference-gateway-secrets
-          key: ANTHROPIC_API_KEY
-    - name: deepseek
-      type: deepseek
-      config:
-        tokenRef:
-          name: inference-gateway-secrets
-          key: DEEPSEEK_API_KEY
+    - name: OpenAI
+      env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: inference-gateway-secrets
+              key: OPENAI_API_KEY
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: inference-gateway-secrets
+              key: ANTHROPIC_API_KEY
+        - name: DEEPSEEK_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: inference-gateway-secrets
+              key: DEEPSEEK_API_KEY
   a2a:
     enabled: true
     expose: false
