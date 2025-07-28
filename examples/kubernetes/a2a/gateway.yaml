@@ -116,12 +116,6 @@ kind: Secret
 metadata:
   name: inference-gateway-secrets
   namespace: inference-gateway
-  labels:
-    app.kubernetes.io/name: inference-gateway
-    app.kubernetes.io/instance: inference-gateway
-    app.kubernetes.io/component: secrets
-    app.kubernetes.io/part-of: inference-gateway
-    app.kubernetes.io/version: '0.12.0'
 type: Opaque
 stringData:
   AUTH_OIDC_CLIENT_SECRET: ''
