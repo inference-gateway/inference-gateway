@@ -51,7 +51,7 @@ tasks:
       - echo "🛠️ Inference Gateway operator deployed successfully!"
 
   deploy-inference-gateway:
-    desc: 'Deploy inference-gateway with helm'
+    desc: 'Deploy inference-gateway'
     cmds:
       - kubectl apply -f gateway.yaml
       - echo "🚪 Inference Gateway deployed successfully!"

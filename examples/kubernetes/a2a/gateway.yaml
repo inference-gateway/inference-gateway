@@ -11,15 +11,9 @@ kind: Gateway
 metadata:
   name: inference-gateway
   namespace: inference-gateway
-  labels:
-    app.kubernetes.io/name: inference-gateway
-    app.kubernetes.io/instance: inference-gateway
-    app.kubernetes.io/component: api-gateway
-    app.kubernetes.io/part-of: inference-gateway
-    app.kubernetes.io/version: '0.12.0'
 spec:
-  image: 'ghcr.io/inference-gateway/inference-gateway:0.12.0'
-  environment: production
+  image: ghcr.io/inference-gateway/inference-gateway:0.16.1
+  environment: development
   hpa:
     enabled: true
     config:
@@ -74,7 +68,7 @@ spec:
               key: DEEPSEEK_API_KEY
   a2a:
     enabled: true
-    expose: false
+    expose: true
     timeouts:
       client: '60s'
     polling:

@@ -43,7 +43,7 @@ task deploy-inference-gateway
 3. Test the gateway:
 
 ```bash
-curl http://api.inference-gateway.local/v1/models
+curl -L -k https://api.inference-gateway.local/v1/models
 ```
 
 4. Deploy the A2A agents (they will be automatically discovered by the gateway):
@@ -55,13 +55,13 @@ kubectl apply -f agents/
 5. Let's view the agents cards:
 
 ```bash
-curl http://api.inference-gateway.local/v1/agents
+ curl -L -k https://api.inference-gateway.local/v1/a2a/agents
 ```
 
 Or if you would like to get a specific agent:
 
 ```bash
-curl http://api.inference-gateway.local/v1/agents/<agent_id>
+curl -L -k https://api.inference-gateway.local/v1/a2a/agents/<agent_id>
 ```
 
 6. To test the agents, we can send a general question that one of those agents can answer:

@@ -12,7 +12,7 @@ metadata:
   name: a2a-google-calendar-agent
   namespace: agents
 spec:
-  image: 'ghcr.io/inference-gateway/google-calendar-agent:latest'
+  image: ghcr.io/inference-gateway/google-calendar-agent:latest
   timezone: 'UTC'
   port: 8080
   host: '0.0.0.0'
