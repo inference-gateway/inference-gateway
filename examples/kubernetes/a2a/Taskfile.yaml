@@ -53,7 +53,7 @@ tasks:
   deploy-inference-gateway:
     desc: 'Deploy inference-gateway'
     cmds:
-      - kubectl apply -f gateway.yaml
+      - kubectl apply -f gateway/
       - echo "🚪 Inference Gateway deployed successfully!"
 
   deploy-a2a-agents:
