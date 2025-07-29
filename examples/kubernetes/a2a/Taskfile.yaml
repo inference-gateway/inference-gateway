@@ -60,7 +60,6 @@ tasks:
     desc: 'Deploy A2A agents'
     cmds:
       - kubectl apply -f agents/google-calendar-agent.yaml
-      - kubectl apply -f agents/email-agent.yaml
       - echo "🤖 A2A agents deployed successfully!"
 
   clean:
