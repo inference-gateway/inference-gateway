@@ -119,7 +119,6 @@ func NewA2AClient(cfg config.Config, log logger.Logger) *A2AClient {
 		discoveryPollingDone: make(chan struct{}),
 	}
 
-	// Initialize service discovery if enabled and in Kubernetes environment
 	if cfg.A2A.ServiceDiscoveryEnable {
 		if IsKubernetesEnvironment() {
 			serviceDiscovery, err := NewKubernetesServiceDiscovery(cfg.A2A, log)
@@ -127,6 +126,7 @@ func NewA2AClient(cfg config.Config, log logger.Logger) *A2AClient {
 				log.Error("failed to initialize kubernetes service discovery", err, "component", "a2a_client")
 			} else {
 				client.serviceDiscovery = serviceDiscovery
+				client.Initialized = true
 				log.Info("kubernetes service discovery initialized",
 					"namespace", serviceDiscovery.GetNamespace(),
 					"component", "a2a_client")

@@ -169,23 +169,27 @@ func main() {
 	var a2aClient a2a.A2AClientInterface
 	var a2aMiddleware middlewares.A2AMiddleware
 	if cfg.A2A.Enable {
-		if cfg.A2A.Agents != "" {
+		if cfg.A2A.Agents != "" || cfg.A2A.ServiceDiscoveryEnable {
 			a2aClient = a2a.NewA2AClient(cfg, logger)
 
 			initCtx, cancel := context.WithTimeout(context.Background(), cfg.A2A.ClientTimeout)
 			defer cancel()
 
-			logger.Info("starting a2a client initialization", "timeout", cfg.A2A.ClientTimeout.String())
-			initErr := a2aClient.InitializeAll(initCtx)
-			if initErr != nil {
-				logger.Error("failed to initialize a2a client", initErr)
-				return
+			if cfg.A2A.Agents != "" {
+				logger.Info("starting a2a client initialization with static agents", "timeout", cfg.A2A.ClientTimeout.String())
+				initErr := a2aClient.InitializeAll(initCtx)
+				if initErr != nil {
+					logger.Error("failed to initialize a2a client", initErr)
+					return
+				}
+				logger.Info("a2a client initialized successfully")
+			} else if cfg.A2A.ServiceDiscoveryEnable {
+				logger.Info("starting a2a client with service discovery enabled", "namespace", cfg.A2A.ServiceDiscoveryNamespace)
 			}
-			logger.Info("a2a client initialized successfully")
 
 			a2aClient.StartStatusPolling(context.Background())
 		} else {
-			logger.Info("a2a is enabled but no agents configured")
+			logger.Info("a2a is enabled but no agents configured and service discovery is disabled")
 		}
 
 		a2aAgent := a2a.NewAgent(logger, a2aClient, cfg.A2A)
