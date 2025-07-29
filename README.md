@@ -305,6 +305,7 @@ The gateway automatically injects available tools into requests and handles tool
 Enable A2A to connect with external agents and expose their skills as tools:
 
 **Manual Configuration:**
+
 ```bash
 # Enable A2A and connect to agent endpoints
 export A2A_ENABLE=true
@@ -312,6 +313,7 @@ export A2A_AGENTS="http://booking-agent:3001,http://calculator-agent:3002"
 ```
 
 **Kubernetes Service Discovery:**
+
 ```bash
 # Enable A2A with automatic Kubernetes service discovery
 export A2A_ENABLE=true

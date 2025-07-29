@@ -46,6 +46,7 @@ export A2A_SERVICE_DISCOVERY_POLLING_INTERVAL=30s  # Optional: defaults to 30s
 ```
 
 With service discovery enabled, the gateway will automatically:
+
 - Discover agents deployed as `A2AServer` CRDs in the specified namespace
 - Register new agents as they become available
 - Remove agents that become unavailable
