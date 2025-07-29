@@ -158,11 +158,9 @@ func parseAgentURLs(agents string) []string {
 
 // InitializeAll discovers and connects to A2A agents using the external client library
 func (c *A2AClient) InitializeAll(ctx context.Context) error {
-	// Perform service discovery if enabled
 	if c.serviceDiscovery != nil {
 		if err := c.performServiceDiscovery(ctx); err != nil {
 			c.Logger.Error("failed to perform initial service discovery", err, "component", "a2a_client")
-			// Continue with static agents even if service discovery fails
 		}
 	}
 
@@ -560,7 +558,6 @@ func (c *A2AClient) StartStatusPolling(ctx context.Context) {
 	go c.statusPollingLoop(pollingCtx)
 	c.Logger.Info("started a2a agent status polling", "interval", c.Config.A2A.PollingInterval, "component", "a2a_client")
 
-	// Start service discovery polling if enabled
 	if c.serviceDiscovery != nil {
 		c.StartServiceDiscoveryPolling(ctx)
 	}
@@ -574,7 +571,6 @@ func (c *A2AClient) StopStatusPolling() {
 		c.Logger.Info("stopped a2a agent status polling", "component", "a2a_client")
 	}
 
-	// Stop service discovery polling if enabled
 	if c.discoveryPollingCancel != nil {
 		c.StopServiceDiscoveryPolling()
 	}
@@ -721,36 +717,31 @@ func (c *A2AClient) performServiceDiscovery(ctx context.Context) error {
 		return fmt.Errorf("failed to discover services: %w", err)
 	}
 
-	// Merge discovered agents with static configuration
 	c.mergeDiscoveredAgents(discoveredURLs)
 	return nil
 }
 
 // mergeDiscoveredAgents merges discovered agents with the existing agent list
 func (c *A2AClient) mergeDiscoveredAgents(discoveredURLs []string) {
-	// Start with static agents from configuration
 	staticAgents := parseAgentURLs(c.Config.A2A.Agents)
 	allAgents := make(map[string]bool)
 
-	// Add static agents
 	for _, url := range staticAgents {
 		allAgents[url] = true
-		c.discoveredAgents[url] = false // mark as static
+		c.discoveredAgents[url] = false
 	}
 
 	// Add discovered agents
 	for _, url := range discoveredURLs {
 		if !allAgents[url] {
 			allAgents[url] = true
-			c.discoveredAgents[url] = true // mark as discovered
+			c.discoveredAgents[url] = true
 			c.Logger.Info("new a2a agent discovered", "url", url, "component", "a2a_client")
 		}
 	}
 
-	// Remove agents that are no longer discovered (but keep static ones)
 	newAgentURLs := make([]string, 0, len(allAgents))
 	for url := range allAgents {
-		// Keep agent if it's static or still being discovered
 		isStatic := !c.discoveredAgents[url]
 		isStillDiscovered := false
 		for _, discoveredURL := range discoveredURLs {
@@ -763,10 +754,8 @@ func (c *A2AClient) mergeDiscoveredAgents(discoveredURLs []string) {
 		if isStatic || isStillDiscovered {
 			newAgentURLs = append(newAgentURLs, url)
 		} else {
-			// Agent was discovered before but not anymore, remove it
 			c.Logger.Info("a2a agent no longer discovered, removing", "url", url, "component", "a2a_client")
 			delete(c.discoveredAgents, url)
-			// Also clean up client resources
 			delete(c.AgentClients, url)
 			delete(c.AgentCards, url)
 			delete(c.AgentCapabilities, url)
@@ -831,7 +820,6 @@ func (c *A2AClient) serviceDiscoveryPollingLoop(ctx context.Context) {
 			if err := c.performServiceDiscovery(ctx); err != nil {
 				c.Logger.Error("service discovery polling failed", err, "component", "a2a_client")
 			} else {
-				// Initialize any newly discovered agents
 				c.initializeNewlyDiscoveredAgents(ctx)
 			}
 		}
@@ -841,12 +829,10 @@ func (c *A2AClient) serviceDiscoveryPollingLoop(ctx context.Context) {
 // initializeNewlyDiscoveredAgents initializes any newly discovered agents that haven't been initialized yet
 func (c *A2AClient) initializeNewlyDiscoveredAgents(ctx context.Context) {
 	for _, agentURL := range c.AgentURLs {
-		// Check if agent is already initialized
 		c.statusMutex.RLock()
 		status, exists := c.AgentStatuses[agentURL]
 		c.statusMutex.RUnlock()
 
-		// Initialize if not tracked or in unknown state
 		if !exists || status == AgentStatusUnknown {
 			go func(url string) {
 				if err := c.initializeAgent(ctx, url); err != nil {
