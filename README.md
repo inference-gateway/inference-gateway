@@ -304,11 +304,22 @@ The gateway automatically injects available tools into requests and handles tool
 
 Enable A2A to connect with external agents and expose their skills as tools:
 
+**Manual Configuration:**
 ```bash
 # Enable A2A and connect to agent endpoints
 export A2A_ENABLE=true
 export A2A_AGENTS="http://booking-agent:3001,http://calculator-agent:3002"
+```
 
+**Kubernetes Service Discovery:**
+```bash
+# Enable A2A with automatic Kubernetes service discovery
+export A2A_ENABLE=true
+export A2A_SERVICE_DISCOVERY_ENABLE=true
+export A2A_SERVICE_DISCOVERY_NAMESPACE=agents  # Optional: defaults to current namespace
+```
+
+```bash
 # LLMs will automatically discover and use agent skills
 curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{
@@ -317,7 +328,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   }'
 ```
 
-The gateway automatically discovers agent skills, converts them to chat completion tools, and handles skill execution, enabling seamless collaboration between LLMs and external agents.
+The gateway automatically discovers agent skills, converts them to chat completion tools, and handles skill execution, enabling seamless collaboration between LLMs and external agents. In Kubernetes environments, agents deployed with the inference-gateway operator are automatically discovered without manual configuration.
 
 > **Learn more**: [A2A Protocol Documentation](a2a/README.md) | [A2A Integration Example](examples/docker-compose/a2a/) | [Curated A2A Agents](https://github.com/inference-gateway/awesome-a2a)
 
