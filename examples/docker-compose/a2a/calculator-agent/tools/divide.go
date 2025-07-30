@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inference-gateway/a2a/adk/server"
+	"github.com/inference-gateway/adk/server"
 )
 
 // NewDivideTool creates a new division tool that divides one number by another

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inference-gateway/a2a/adk/server"
+	"github.com/inference-gateway/adk/server"
 )
 
 // NewGetWeatherTool creates a new weather tool that gets current weather information for a location

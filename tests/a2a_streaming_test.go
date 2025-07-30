@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"github.com/inference-gateway/a2a/adk"
-	"github.com/inference-gateway/inference-gateway/a2a"
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/tests/mocks"
+	adk "github.com/inference-gateway/adk/types"
+	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	config "github.com/inference-gateway/inference-gateway/config"
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
 	a2amocks "github.com/inference-gateway/inference-gateway/tests/mocks/a2a"
 )

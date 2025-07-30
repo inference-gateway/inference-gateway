@@ -9,17 +9,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/inference-gateway/a2a/adk"
-	"github.com/inference-gateway/inference-gateway/a2a"
-	"github.com/inference-gateway/inference-gateway/api/middlewares"
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/providers"
-	"github.com/inference-gateway/inference-gateway/tests/mocks"
+	gin "github.com/gin-gonic/gin"
+	adk "github.com/inference-gateway/adk/types"
+	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
+	config "github.com/inference-gateway/inference-gateway/config"
+	providers "github.com/inference-gateway/inference-gateway/providers"
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 	a2amocks "github.com/inference-gateway/inference-gateway/tests/mocks/a2a"
 	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/mock/gomock"
+	assert "github.com/stretchr/testify/assert"
+	gomock "go.uber.org/mock/gomock"
 )
 
 // closeNotifierRecorder implements http.CloseNotifier for testing

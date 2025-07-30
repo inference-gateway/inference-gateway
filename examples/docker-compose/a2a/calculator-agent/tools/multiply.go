@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inference-gateway/a2a/adk/server"
+	"github.com/inference-gateway/adk/server"
 )
 
 // NewMultiplyTool creates a new multiplication tool that multiplies two numbers together

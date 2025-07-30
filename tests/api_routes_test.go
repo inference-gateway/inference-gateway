@@ -9,7 +9,7 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
-	adk "github.com/inference-gateway/a2a/adk"
+	adk "github.com/inference-gateway/adk/types"
 	a2a "github.com/inference-gateway/inference-gateway/a2a"
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"

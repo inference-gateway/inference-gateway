@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inference-gateway/a2a/adk"
-	"github.com/inference-gateway/a2a/adk/client"
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
+	client "github.com/inference-gateway/adk/client"
+	adk "github.com/inference-gateway/adk/types"
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 )
 
 var (

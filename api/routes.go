@@ -18,9 +18,9 @@ import (
 
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 
-	"github.com/inference-gateway/a2a/adk"
-	"github.com/inference-gateway/inference-gateway/a2a"
-	"github.com/inference-gateway/inference-gateway/mcp"
+	adk "github.com/inference-gateway/adk/types"
+	a2a "github.com/inference-gateway/inference-gateway/a2a"
+	mcp "github.com/inference-gateway/inference-gateway/mcp"
 
 	gin "github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"

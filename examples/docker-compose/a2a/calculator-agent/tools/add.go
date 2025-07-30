@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inference-gateway/a2a/adk/server"
+	"github.com/inference-gateway/adk/server"
 )
 
 // NewAddTool creates a new addition tool that adds two numbers together

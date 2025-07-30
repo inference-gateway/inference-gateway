@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/inference-gateway/a2a/adk/server"
-	"github.com/inference-gateway/a2a/adk/server/config"
+	"github.com/inference-gateway/adk/server"
+	"github.com/inference-gateway/adk/server/config"
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/zap"
 

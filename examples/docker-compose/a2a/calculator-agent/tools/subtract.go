@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/inference-gateway/a2a/adk/server"
+	"github.com/inference-gateway/adk/server"
 )
 
 // NewSubtractTool creates a new subtraction tool that subtracts one number from another

@@ -3,7 +3,7 @@ module calculator-agent
 go 1.24.3
 
 require (
-	github.com/inference-gateway/a2a v0.7.3
+	github.com/inference-gateway/adk v0.7.4
 	github.com/sethvargo/go-envconfig v1.3.0
 	go.uber.org/zap v1.27.0
 )

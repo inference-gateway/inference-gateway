@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/inference-gateway/a2a/adk"
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers"
+	gin "github.com/gin-gonic/gin"
+	adk "github.com/inference-gateway/adk/types"
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	providers "github.com/inference-gateway/inference-gateway/providers"
 )
 
 // MaxAgentIterations limits the number of agent loop iterations
