@@ -7,7 +7,7 @@ metadata:
     inference-gateway.com/managed: 'true'
 ---
 apiVersion: core.inference-gateway.com/v1alpha1
-kind: A2A
+kind: Agent
 metadata:
   name: a2a-google-calendar-agent
   namespace: agents
