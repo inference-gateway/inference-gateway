@@ -47,7 +47,7 @@ tasks:
   deploy-inference-gateway-operator:
     desc: 'Deploy inference-gateway operator with helm'
     cmds:
-      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/v0.12.0/install.yaml
+      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/v0.12.1/install.yaml
       - echo "🛠️ Inference Gateway operator deployed successfully!"
 
   deploy-inference-gateway:
