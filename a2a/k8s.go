@@ -19,7 +19,7 @@ import (
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 )
 
-// KubernetesServiceDiscovery handles Kubernetes-based service discovery for A2A agents
+// KubernetesServiceDiscovery handles Kubernetes-based service discovery for Agent resources
 type KubernetesServiceDiscovery struct {
 	client        kubernetes.Interface
 	dynamicClient dynamic.Interface
@@ -142,27 +142,27 @@ func getKubernetesConfig() (*rest.Config, error) {
 	return config, nil
 }
 
-// DiscoverA2AServices discovers A2A services in the Kubernetes cluster using A2A CRDs
+// DiscoverA2AServices discovers Agent services in the Kubernetes cluster using Agent CRDs
 func (k *KubernetesServiceDiscovery) DiscoverA2AServices(ctx context.Context) ([]string, error) {
-	a2aGVR := schema.GroupVersionResource{
+	agentGVR := schema.GroupVersionResource{
 		Group:    "core.inference-gateway.com",
 		Version:  "v1alpha1",
-		Resource: "a2as",
+		Resource: "agents",
 	}
 
-	a2aList, err := k.dynamicClient.Resource(a2aGVR).Namespace(k.namespace).List(ctx, metav1.ListOptions{})
+	agentList, err := k.dynamicClient.Resource(agentGVR).Namespace(k.namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list A2A resources: %w", err)
+		return nil, fmt.Errorf("failed to list Agent resources: %w", err)
 	}
 
 	var agentURLs []string
-	for _, a2a := range a2aList.Items {
-		a2aName := a2a.GetName()
+	for _, agent := range agentList.Items {
+		agentName := agent.GetName()
 
-		service, err := k.client.CoreV1().Services(k.namespace).Get(ctx, a2aName, metav1.GetOptions{})
+		service, err := k.client.CoreV1().Services(k.namespace).Get(ctx, agentName, metav1.GetOptions{})
 		if err != nil {
-			k.logger.Warn("failed to get service for A2A resource",
-				"a2a", a2aName,
+			k.logger.Warn("failed to get service for Agent resource",
+				"agent", agentName,
 				"namespace", k.namespace,
 				"error", err,
 				"component", "k8s_service_discovery")
@@ -172,8 +172,8 @@ func (k *KubernetesServiceDiscovery) DiscoverA2AServices(ctx context.Context) ([
 		agentURL := k.buildServiceURL(service)
 		if agentURL != "" {
 			agentURLs = append(agentURLs, agentURL)
-			k.logger.Debug("discovered a2a service",
-				"a2a", a2aName,
+			k.logger.Debug("discovered agent service",
+				"agent", agentName,
 				"service", service.Name,
 				"namespace", service.Namespace,
 				"url", agentURL,
@@ -183,18 +183,18 @@ func (k *KubernetesServiceDiscovery) DiscoverA2AServices(ctx context.Context) ([
 
 	k.logger.Info("kubernetes service discovery completed",
 		"namespace", k.namespace,
-		"discovered_a2a_resources", len(a2aList.Items),
+		"discovered_agent_resources", len(agentList.Items),
 		"discovered_services", len(agentURLs),
 		"component", "k8s_service_discovery")
 
 	return agentURLs, nil
 }
 
-// buildServiceURL constructs the URL for an A2A service based on Kubernetes service information
+// buildServiceURL constructs the URL for an Agent service based on Kubernetes service information
 func (k *KubernetesServiceDiscovery) buildServiceURL(service *corev1.Service) string {
 	port := k.findA2APort(service)
 	if port == 0 {
-		k.logger.Warn("no suitable port found for a2a service",
+		k.logger.Warn("no suitable port found for agent service",
 			"service", service.Name,
 			"namespace", service.Namespace,
 			"component", "k8s_service_discovery")
@@ -218,7 +218,7 @@ func (k *KubernetesServiceDiscovery) buildServiceURL(service *corev1.Service) st
 		}
 		return fmt.Sprintf("http://%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, port)
 	default:
-		k.logger.Warn("unsupported service type for a2a discovery",
+		k.logger.Warn("unsupported service type for agent discovery",
 			"service", service.Name,
 			"type", service.Spec.Type,
 			"component", "k8s_service_discovery")
@@ -226,7 +226,7 @@ func (k *KubernetesServiceDiscovery) buildServiceURL(service *corev1.Service) st
 	}
 }
 
-// findA2APort finds the appropriate port for A2A communication from the service spec
+// findA2APort finds the appropriate port for Agent communication from the service spec
 func (k *KubernetesServiceDiscovery) findA2APort(service *corev1.Service) int32 {
 	for _, port := range service.Spec.Ports {
 		portName := strings.ToLower(port.Name)

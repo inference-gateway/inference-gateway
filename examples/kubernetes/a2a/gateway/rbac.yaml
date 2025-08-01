@@ -9,7 +9,7 @@ rules:
   - apiGroups:
       - core.inference-gateway.com
     resources:
-      - a2as
+      - agents
     verbs:
       - get
       - list

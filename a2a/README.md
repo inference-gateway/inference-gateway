@@ -47,7 +47,7 @@ export A2A_SERVICE_DISCOVERY_POLLING_INTERVAL=30s  # Optional: defaults to 30s
 
 With service discovery enabled, the gateway will automatically:
 
-- Discover agents deployed as `A2AServer` CRDs in the specified namespace
+- Discover agents deployed as `Agent` CRDs in the specified namespace
 - Register new agents as they become available
 - Remove agents that become unavailable
 - Handle agent scaling automatically
@@ -90,7 +90,7 @@ The Inference Gateway supports automatic discovery of A2A agents in Kubernetes e
 #### How Service Discovery Works
 
 1. **Environment Detection**: The gateway automatically detects if it's running in a Kubernetes environment
-2. **CRD Discovery**: Scans the configured namespace for `A2AServer` custom resources
+2. **CRD Discovery**: Scans the configured namespace for `Agent` custom resources
 3. **Service Resolution**: Finds corresponding Kubernetes services for each A2A resource
 4. **URL Construction**: Builds internal cluster URLs (e.g., `http://agent.namespace.svc.cluster.local:8080`)
 5. **Dynamic Updates**: Continuously polls for new agents and removes unavailable ones
@@ -99,7 +99,7 @@ The Inference Gateway supports automatic discovery of A2A agents in Kubernetes e
 
 For agents to be discoverable:
 
-- Must be deployed using the inference-gateway operator with `A2AServer` CRDs
+- Must be deployed using the inference-gateway operator with `Agent` CRDs
 - Services must be accessible within the Kubernetes cluster
 - Must expose A2A API on standard ports (8080, or ports named "a2a", "agent", or "http")
 
