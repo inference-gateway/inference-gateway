@@ -1352,6 +1352,16 @@ components:
                   type: string
                   default: ''
                   description: 'Comma-separated list of models to allow. If empty, all models will be available'
+                - name: debug_content_truncate_words
+                  env: 'DEBUG_CONTENT_TRUNCATE_WORDS'
+                  type: int
+                  default: '10'
+                  description: 'Number of words to truncate per content section in debug logs (development mode only)'
+                - name: debug_max_messages
+                  env: 'DEBUG_MAX_MESSAGES'
+                  type: int
+                  default: '100'
+                  description: 'Maximum number of messages to show in debug logs (development mode only)'
           - telemetry:
               title: 'Telemetry'
               settings:

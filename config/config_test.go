@@ -21,8 +21,10 @@ func TestLoad(t *testing.T) {
 			name: "Success_Defaults",
 			env:  map[string]string{},
 			expectedCfg: config.Config{
-				Environment:   "production",
-				AllowedModels: "",
+				Environment:               "production",
+				AllowedModels:             "",
+				DebugContentTruncateWords: 10,
+				DebugMaxMessages:          100,
 				Telemetry: &config.TelemetryConfig{
 					Enable:      false,
 					MetricsPort: "9464",
@@ -191,8 +193,10 @@ func TestLoad(t *testing.T) {
 				"OPENAI_API_KEY":       "openai123",
 			},
 			expectedCfg: config.Config{
-				Environment:   "development",
-				AllowedModels: "",
+				Environment:               "development",
+				AllowedModels:             "",
+				DebugContentTruncateWords: 10,
+				DebugMaxMessages:          100,
 				Telemetry: &config.TelemetryConfig{
 					Enable:      true,
 					MetricsPort: "9464",
@@ -356,8 +360,10 @@ func TestLoad(t *testing.T) {
 				"OLLAMA_API_URL":   "http://custom-ollama:8080",
 			},
 			expectedCfg: config.Config{
-				Environment:   "development",
-				AllowedModels: "",
+				Environment:               "development",
+				AllowedModels:             "",
+				DebugContentTruncateWords: 10,
+				DebugMaxMessages:          100,
 				Telemetry: &config.TelemetryConfig{
 					Enable:      true,
 					MetricsPort: "9464",

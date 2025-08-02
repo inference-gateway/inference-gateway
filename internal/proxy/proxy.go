@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
+	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
+	"github.com/inference-gateway/inference-gateway/providers"
 )
 
 // RequestModifier defines interface for modifying proxy requests
@@ -23,6 +27,7 @@ type ResponseModifier interface {
 // DevRequestModifier implements request modification for development
 type DevRequestModifier struct {
 	logger logger.Logger
+	cfg    *config.Config
 }
 
 // DevResponseModifier implements response modification for development
@@ -31,9 +36,10 @@ type DevResponseModifier struct {
 }
 
 // NewDevRequestModifier creates a new DevRequestModifier
-func NewDevRequestModifier(l logger.Logger) RequestModifier {
+func NewDevRequestModifier(l logger.Logger, cfg *config.Config) RequestModifier {
 	return &DevRequestModifier{
 		logger: l,
+		cfg:    cfg,
 	}
 }
 
@@ -57,10 +63,7 @@ func (m *DevRequestModifier) Modify(req *http.Request) error {
 
 	bodyBuffer := bytes.NewBuffer(body)
 
-	bodyPreview := string(body)
-	if len(bodyPreview) > 1024 {
-		bodyPreview = bodyPreview[:1024] + "... (truncated)"
-	}
+	bodyPreview := m.createSmartBodyPreview(body)
 
 	m.logger.Debug("proxy request",
 		"method", req.Method,
@@ -73,6 +76,69 @@ func (m *DevRequestModifier) Modify(req *http.Request) error {
 	req.ContentLength = int64(bodyBuffer.Len())
 
 	return nil
+}
+
+// truncateWords truncates text to the specified number of words
+func (m *DevRequestModifier) truncateWords(text string, maxWords int) string {
+	if maxWords <= 0 {
+		return ""
+	}
+
+	words := strings.Fields(text)
+	if len(words) <= maxWords {
+		return text
+	}
+
+	return strings.Join(words[:maxWords], " ") + "..."
+}
+
+// createSmartBodyPreview creates an intelligent preview of the request body
+func (m *DevRequestModifier) createSmartBodyPreview(body []byte) string {
+	var chatReq providers.CreateChatCompletionRequest
+	if err := json.Unmarshal(body, &chatReq); err != nil {
+		bodyPreview := string(body)
+		if len(bodyPreview) > 1024 {
+			bodyPreview = bodyPreview[:1024] + "... (truncated)"
+		}
+		return bodyPreview
+	}
+
+	return m.truncateChatCompletionRequest(chatReq)
+}
+
+// truncateChatCompletionRequest applies smart truncation to chat completion requests
+func (m *DevRequestModifier) truncateChatCompletionRequest(req providers.CreateChatCompletionRequest) string {
+	maxWords := m.cfg.DebugContentTruncateWords
+	maxMessages := m.cfg.DebugMaxMessages
+
+	displayReq := req
+
+	if len(displayReq.Messages) > maxMessages {
+		displayReq.Messages = displayReq.Messages[:maxMessages]
+	}
+
+	for i := range displayReq.Messages {
+		if displayReq.Messages[i].Content != "" {
+			displayReq.Messages[i].Content = m.truncateWords(displayReq.Messages[i].Content, maxWords)
+		}
+	}
+
+	truncatedBytes, err := json.Marshal(displayReq)
+	if err != nil {
+		bodyPreview := fmt.Sprintf("%+v", req)
+		if len(bodyPreview) > 1024 {
+			bodyPreview = bodyPreview[:1024] + "... (truncated)"
+		}
+		return bodyPreview
+	}
+
+	preview := string(truncatedBytes)
+	if len(displayReq.Messages) < len(req.Messages) {
+		preview = strings.TrimSuffix(preview, "}") +
+			fmt.Sprintf(",\"_truncated\":\"showing %d of %d messages\"}", len(displayReq.Messages), len(req.Messages))
+	}
+
+	return preview
 }
 
 func (m *DevResponseModifier) Modify(resp *http.Response) error {
