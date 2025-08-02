@@ -271,7 +271,7 @@ func handleProxyRequest(c *gin.Context, provider providers.IProvider, router *Ro
 		req.URL.RawQuery = fullURL.RawQuery
 
 		if router.cfg.Environment == "development" {
-			reqModifier := proxymodifier.NewDevRequestModifier(router.logger)
+			reqModifier := proxymodifier.NewDevRequestModifier(router.logger, &router.cfg)
 			if err := reqModifier.Modify(req); err != nil {
 				router.logger.Error("failed to modify request", err)
 				return

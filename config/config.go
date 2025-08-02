@@ -15,8 +15,10 @@ import (
 // Config holds the configuration for the Inference Gateway
 type Config struct {
 	// General settings
-	Environment   string `env:"ENVIRONMENT, default=production" description:"The environment"`
-	AllowedModels string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
+	Environment               string `env:"ENVIRONMENT, default=production" description:"The environment"`
+	AllowedModels             string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
+	DebugContentTruncateWords int    `env:"DEBUG_CONTENT_TRUNCATE_WORDS, default=10" description:"Number of words to truncate per content section in debug logs (development mode only)"`
+	DebugMaxMessages          int    `env:"DEBUG_MAX_MESSAGES, default=100" description:"Maximum number of messages to show in debug logs (development mode only)"`
 	// Telemetry settings
 	Telemetry *TelemetryConfig `env:", prefix=TELEMETRY_" description:"Telemetry configuration"`
 	// MCP settings
