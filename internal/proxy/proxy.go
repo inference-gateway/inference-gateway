@@ -63,7 +63,6 @@ func (m *DevRequestModifier) Modify(req *http.Request) error {
 
 	bodyBuffer := bytes.NewBuffer(body)
 
-	// Try to parse as JSON and apply smart truncation for chat completion requests
 	bodyPreview := m.createSmartBodyPreview(body)
 
 	m.logger.Debug("proxy request",
@@ -95,10 +94,8 @@ func (m *DevRequestModifier) truncateWords(text string, maxWords int) string {
 
 // createSmartBodyPreview creates an intelligent preview of the request body
 func (m *DevRequestModifier) createSmartBodyPreview(body []byte) string {
-	// Try to parse as chat completion request
 	var chatReq providers.CreateChatCompletionRequest
 	if err := json.Unmarshal(body, &chatReq); err != nil {
-		// Not a chat completion request, fall back to simple truncation
 		bodyPreview := string(body)
 		if len(bodyPreview) > 1024 {
 			bodyPreview = bodyPreview[:1024] + "... (truncated)"
@@ -106,7 +103,6 @@ func (m *DevRequestModifier) createSmartBodyPreview(body []byte) string {
 		return bodyPreview
 	}
 
-	// Apply smart truncation to chat completion request
 	return m.truncateChatCompletionRequest(chatReq)
 }
 
@@ -115,25 +111,20 @@ func (m *DevRequestModifier) truncateChatCompletionRequest(req providers.CreateC
 	maxWords := m.cfg.DebugContentTruncateWords
 	maxMessages := m.cfg.DebugMaxMessages
 
-	// Create a copy to modify for display
 	displayReq := req
 
-	// Limit number of messages
 	if len(displayReq.Messages) > maxMessages {
 		displayReq.Messages = displayReq.Messages[:maxMessages]
 	}
 
-	// Truncate content in each message
 	for i := range displayReq.Messages {
 		if displayReq.Messages[i].Content != "" {
 			displayReq.Messages[i].Content = m.truncateWords(displayReq.Messages[i].Content, maxWords)
 		}
 	}
 
-	// Convert back to JSON for display
 	truncatedBytes, err := json.Marshal(displayReq)
 	if err != nil {
-		// Fall back to original string representation if marshaling fails
 		bodyPreview := fmt.Sprintf("%+v", req)
 		if len(bodyPreview) > 1024 {
 			bodyPreview = bodyPreview[:1024] + "... (truncated)"
