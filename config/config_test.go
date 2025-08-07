@@ -175,6 +175,16 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.GoogleChatEndpoint,
 						},
 					},
+					providers.MistralID: {
+						ID:       providers.MistralID,
+						Name:     providers.MistralDisplayName,
+						URL:      providers.MistralDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.MistralModelsEndpoint,
+							Chat:   providers.MistralChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -349,6 +359,16 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.GoogleChatEndpoint,
 						},
 					},
+					providers.MistralID: {
+						ID:       providers.MistralID,
+						Name:     providers.MistralDisplayName,
+						URL:      providers.MistralDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.MistralModelsEndpoint,
+							Chat:   providers.MistralChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -512,6 +532,16 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.GoogleModelsEndpoint,
 							Chat:   providers.GoogleChatEndpoint,
+						},
+					},
+					providers.MistralID: {
+						ID:       providers.MistralID,
+						Name:     providers.MistralDisplayName,
+						URL:      providers.MistralDefaultBaseURL,
+						AuthType: providers.AuthTypeBearer,
+						Endpoints: providers.Endpoints{
+							Models: providers.MistralModelsEndpoint,
+							Chat:   providers.MistralChatEndpoint,
 						},
 					},
 				},
