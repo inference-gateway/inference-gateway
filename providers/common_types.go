@@ -17,6 +17,7 @@ const (
 	DeepseekDefaultBaseURL   = "https://api.deepseek.com"
 	GoogleDefaultBaseURL     = "https://generativelanguage.googleapis.com/v1beta/openai"
 	GroqDefaultBaseURL       = "https://api.groq.com/openai/v1"
+	MistralDefaultBaseURL    = "https://api.mistral.ai/v1"
 	OllamaDefaultBaseURL     = "http://ollama:8080/v1"
 	OpenaiDefaultBaseURL     = "https://api.openai.com/v1"
 )
@@ -35,6 +36,8 @@ const (
 	GoogleChatEndpoint       = "/chat/completions"
 	GroqModelsEndpoint       = "/models"
 	GroqChatEndpoint         = "/chat/completions"
+	MistralModelsEndpoint    = "/models"
+	MistralChatEndpoint      = "/chat/completions"
 	OllamaModelsEndpoint     = "/models"
 	OllamaChatEndpoint       = "/chat/completions"
 	OpenaiModelsEndpoint     = "/models"
@@ -51,6 +54,7 @@ const (
 	DeepseekID   Provider = "deepseek"
 	GoogleID     Provider = "google"
 	GroqID       Provider = "groq"
+	MistralID    Provider = "mistral"
 	OllamaID     Provider = "ollama"
 	OpenaiID     Provider = "openai"
 )
@@ -63,6 +67,7 @@ const (
 	DeepseekDisplayName   = "Deepseek"
 	GoogleDisplayName     = "Google"
 	GroqDisplayName       = "Groq"
+	MistralDisplayName    = "Mistral"
 	OllamaDisplayName     = "Ollama"
 	OpenaiDisplayName     = "Openai"
 )

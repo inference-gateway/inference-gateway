@@ -128,6 +128,16 @@ var Registry = map[Provider]*Config{
 			Chat:   GroqChatEndpoint,
 		},
 	},
+	MistralID: {
+		ID:       MistralID,
+		Name:     MistralDisplayName,
+		URL:      MistralDefaultBaseURL,
+		AuthType: AuthTypeBearer,
+		Endpoints: Endpoints{
+			Models: MistralModelsEndpoint,
+			Chat:   MistralChatEndpoint,
+		},
+	},
 	OllamaID: {
 		ID:       OllamaID,
 		Name:     OllamaDisplayName,

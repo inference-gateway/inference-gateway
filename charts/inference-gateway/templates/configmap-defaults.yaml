@@ -79,3 +79,4 @@ data:
   OPENAI_API_URL: {{ .Values.config.OPENAI_API_URL | quote }}
   DEEPSEEK_API_URL: {{ .Values.config.DEEPSEEK_API_URL | quote }}
   GOOGLE_API_URL: {{ .Values.config.GOOGLE_API_URL | quote }}
+  MISTRAL_API_URL: {{ .Values.config.MISTRAL_API_URL | quote }}

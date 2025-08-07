@@ -96,6 +96,11 @@ paths:
                         created: 1718441600
                         owned_by: 'ollama'
                         served_by: 'ollama'
+                      - id: 'mistral/mistral-large-latest'
+                        object: 'model'
+                        created: 1698019200
+                        owned_by: 'mistral'
+                        served_by: 'mistral'
                 singleProvider:
                   summary: Models from a specific provider
                   value:
@@ -415,6 +420,14 @@ components:
                   - role: 'user'
                     content: 'Explain quantum computing'
                 temperature: 0.5
+            mistral:
+              summary: Mistral AI request
+              value:
+                model: 'mistral-large-latest'
+                messages:
+                  - role: 'user'
+                    content: 'Write a Python function to calculate fibonacci numbers'
+                temperature: 0.3
     CreateChatCompletionRequest:
       required: true
       description: |
@@ -489,6 +502,27 @@ components:
                       },
                     ],
                 }
+            mistral:
+              summary: Mistral AI response
+              value:
+                {
+                  'id': 'cmpl-123',
+                  'object': 'chat.completion',
+                  'created': 1677652288,
+                  'model': 'mistral-large-latest',
+                  'choices':
+                    [
+                      {
+                        'index': 0,
+                        'message':
+                          {
+                            'role': 'assistant',
+                            'content': 'def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)',
+                          },
+                        'finish_reason': 'stop',
+                      },
+                    ],
+                }
   securitySchemes:
     bearerAuth:
       type: http
@@ -510,6 +544,7 @@ components:
         - anthropic
         - deepseek
         - google
+        - mistral
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -605,6 +640,19 @@ components:
         google:
           id: 'google'
           url: 'https://generativelanguage.googleapis.com/v1beta/openai'
+          auth_type: 'bearer'
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        mistral:
+          id: 'mistral'
+          url: 'https://api.mistral.ai/v1'
           auth_type: 'bearer'
           endpoints:
             models:
@@ -1738,4 +1786,14 @@ components:
                   env: 'GOOGLE_API_KEY'
                   type: string
                   description: 'Google API Key'
+                  secret: true
+                - name: mistral_api_url
+                  env: 'MISTRAL_API_URL'
+                  type: string
+                  default: 'https://api.mistral.ai/v1'
+                  description: 'Mistral API URL'
+                - name: mistral_api_key
+                  env: 'MISTRAL_API_KEY'
+                  type: string
+                  description: 'Mistral API Key'
                   secret: true

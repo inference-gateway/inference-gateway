@@ -36,6 +36,17 @@ func TestProviderRegistry(t *testing.T) {
 				Chat:   providers.OpenaiChatEndpoint,
 			},
 		},
+		providers.MistralID: {
+			ID:       providers.MistralID,
+			Name:     providers.MistralDisplayName,
+			URL:      providers.MistralDefaultBaseURL,
+			Token:    "test-token",
+			AuthType: providers.AuthTypeBearer,
+			Endpoints: providers.Endpoints{
+				Models: providers.MistralModelsEndpoint,
+				Chat:   providers.MistralChatEndpoint,
+			},
+		},
 		providers.OllamaID: {
 			ID:       providers.OllamaID,
 			Name:     providers.OllamaDisplayName,
@@ -53,6 +64,7 @@ func TestProviderRegistry(t *testing.T) {
 	providerConfigs := registry.GetProviders()
 	assert.Equal(t, len(cfg), len(providerConfigs))
 	assert.Equal(t, cfg[providers.OpenaiID], providerConfigs[providers.OpenaiID])
+	assert.Equal(t, cfg[providers.MistralID], providerConfigs[providers.MistralID])
 	assert.Equal(t, cfg[providers.OllamaID], providerConfigs[providers.OllamaID])
 
 	ctrl := gomock.NewController(t)
@@ -251,6 +263,12 @@ func TestDifferentAuthTypes(t *testing.T) {
 			},
 		},
 		{
+			name:       "Mistral Bearer Auth",
+			providerId: providers.MistralID,
+			authType:   providers.AuthTypeBearer,
+			token:      "mistral-api-key",
+		},
+		{
 			name:       "No Auth",
 			providerId: providers.OllamaID,
 			authType:   providers.AuthTypeNone,
@@ -433,6 +451,14 @@ func BenchmarkProviderTransformations(b *testing.B) {
 		},
 	}
 
+	mistralData := &providers.ListModelsResponseMistral{
+		Object: "list",
+		Data: []providers.Model{
+			{ID: "mistral-large-latest"},
+			{ID: "mistral-small-latest"},
+		},
+	}
+
 	b.Run("OllamaTransform", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_ = ollamaData.Transform()
@@ -442,6 +468,12 @@ func BenchmarkProviderTransformations(b *testing.B) {
 	b.Run("OpenAITransform", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_ = openaiData.Transform()
+		}
+	})
+
+	b.Run("MistralTransform", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = mistralData.Transform()
 		}
 	})
 }
