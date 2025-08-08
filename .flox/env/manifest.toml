@@ -8,7 +8,7 @@ GO111MODULE = "on"
 CGO_ENABLED = "1"
 
 PROJECT_NAME = "inference-gateway"
-PROJECT_DESCRIPTION = "Multi-provider LLM proxy server with OpenAI-compatible APIs"
+PROJECT_DESCRIPTION = "An open-source, high-performance gateway unifying multiple LLM providers, from local solutions like Ollama to major cloud providers such as OpenAI, Groq, Cohere, Anthropic, Cloudflare, DeepSeek and more."
 
 [install]
 go.pkg-path = "go"
