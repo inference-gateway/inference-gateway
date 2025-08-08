@@ -41,6 +41,12 @@ The Inference Gateway is a proxy server designed to facilitate access to various
   - [Provider Detection](#provider-detection)
 - [Supported API's](#supported-apis)
 - [Configuration](#configuration)
+- [Development Environment](#development-environment)
+  - [Prerequisites](#prerequisites)
+  - [Quick Start](#quick-start)
+  - [Available Tools](#available-tools)
+  - [Common Commands](#common-commands)
+  - [Environment Details](#environment-details)
 - [Examples](#examples)
 - [SDKs](#sdks)
 - [License](#license)
@@ -492,6 +498,159 @@ Metrics automatically detect providers from:
 - [DeepSeek](https://api-docs.deepseek.com/)
 - [Google](https://aistudio.google.com/)
 - [Mistral](https://mistral.ai/)
+
+## Development Environment
+
+The Inference Gateway uses [Flox](https://flox.dev/) to provide a reproducible, cross-platform development environment. Flox eliminates the need to manually install and manage development tools, ensuring all developers have the same setup regardless of their operating system.
+
+### Prerequisites
+
+- **Flox**: Install Flox by following the [official installation guide](https://flox.dev/docs/install-flox/)
+- **Git**: For cloning the repository
+
+### Quick Start
+
+1. **Clone the repository:**
+
+   ```bash
+   git clone https://github.com/inference-gateway/inference-gateway.git
+   cd inference-gateway
+   ```
+
+2. **Activate the development environment:**
+
+   ```bash
+   flox activate
+   ```
+
+   This command will:
+   - ✅ Install all required development tools with pinned versions
+   - ✅ Set up Go environment variables and paths
+   - ✅ Download Go dependencies automatically
+   - ✅ Configure shell aliases for common commands
+   - ✅ Display helpful getting started information
+
+3. **Install git hooks (recommended):**
+
+   ```bash
+   task pre-commit:install
+   ```
+
+4. **Build and test:**
+   ```bash
+   task build
+   task test
+   ```
+
+### Available Tools
+
+The Flox environment provides all necessary development tools with pinned versions for reproducibility:
+
+| Tool               | Version | Purpose                               |
+| ------------------ | ------- | ------------------------------------- |
+| **Go**             | 1.24.5  | Primary language runtime              |
+| **Task**           | 3.44.0  | Task runner and build automation      |
+| **Docker**         | 28.3.2  | Container runtime                     |
+| **Docker Compose** | 2.38.1  | Multi-container orchestration         |
+| **golangci-lint**  | 2.3.0   | Go code linting                       |
+| **mockgen**        | 0.5.2   | Go mock generation                    |
+| **Node.js**        | 22.17.0 | JavaScript runtime (for npm tools)    |
+| **Prettier**       | 3.6.2   | Code formatting                       |
+| **Spectral**       | 6.15.0  | OpenAPI/JSON Schema linting (via npx) |
+| **curl**           | 8.14.1  | HTTP client for testing               |
+| **jq**             | 1.8.1   | JSON processing                       |
+| **kubectl**        | 1.33.3  | Kubernetes CLI                        |
+| **Helm**           | 3.18.4  | Kubernetes package manager            |
+
+### Common Commands
+
+The environment provides convenient aliases for frequently used commands:
+
+| Alias   | Command                       | Description                |
+| ------- | ----------------------------- | -------------------------- |
+| `build` | `task build`                  | Build the gateway binary   |
+| `test`  | `task test`                   | Run all tests              |
+| `lint`  | `task lint`                   | Run code linting           |
+| `gen`   | `task generate`               | Generate code from schemas |
+| `spec`  | `npx @stoplight/spectral-cli` | Lint OpenAPI specs         |
+| `gs`    | `git status`                  | Git status                 |
+| `gl`    | `git log --oneline -10`       | Git log (last 10 commits)  |
+| `gd`    | `git diff`                    | Git diff                   |
+
+**Task Commands:**
+
+```bash
+task --list                    # Show all available tasks
+task build                     # Build the gateway
+task run                       # Run the gateway locally
+task test                      # Run tests
+task lint                      # Run linting
+task generate                  # Generate code from schemas
+task pre-commit:install        # Install git hooks
+task mcp:schema:download       # Download latest MCP schema
+task a2a:schema:download       # Download latest A2A schema
+```
+
+**Development Workflow:**
+
+```bash
+# Lint OpenAPI specifications
+spec lint openapi.yaml
+
+# Format code
+prettier --write .
+
+# Generate mocks
+mockgen -source=internal/provider.go -destination=mocks/provider.go
+
+# Test with curl
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": "Hello"}]}'
+```
+
+### Environment Details
+
+**Cross-Platform Support:**
+
+- ✅ macOS (ARM64 & x86_64)
+- ✅ Linux (ARM64 & x86_64)
+- ✅ Automatic nvm compatibility (no conflicts)
+
+**Environment Variables:**
+
+- `GOPATH`: `$HOME/go`
+- `GOPROXY`: `https://proxy.golang.org,direct`
+- `GOSUMDB`: `sum.golang.org`
+- `GO111MODULE`: `on`
+- `CGO_ENABLED`: `1`
+
+**Path Configuration:**
+
+- Go binaries: `$GOPATH/bin`
+- Project binaries: `./bin`
+- npm packages: Handled automatically via npx
+
+**Shell Integration:**
+
+- Bash and Zsh completion support
+- Custom aliases for productivity
+- Automatic tool availability detection
+
+**Reproducibility:**
+
+- All tools use pinned versions
+- Consistent environment across team members
+- No manual tool installation required
+- Isolated from system packages
+
+To exit the development environment, simply run:
+
+```bash
+exit
+```
+
+**For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md).**
 
 ## Configuration
 

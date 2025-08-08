@@ -46,14 +46,35 @@ We welcome feature requests! Please create an issue on GitHub with a clear descr
 
 ### Development Setup
 
-Before starting development, it's essential to set up your development environment properly:
+The project uses [Flox](https://flox.dev/) for development environment management. This ensures all contributors have identical tooling and configurations.
 
-```bash
-# Install pre-commit hooks for automatic code quality checks
-task pre-commit:install
-```
+**Quick Start:**
 
-This will install a pre-commit hook that automatically runs:
+1. **Install Flox** following the [official guide](https://flox.dev/docs/install-flox/)
+
+2. **Clone and activate environment:**
+
+   ```bash
+   git clone https://github.com/inference-gateway/inference-gateway.git
+   cd inference-gateway
+   flox activate
+   ```
+
+3. **Install pre-commit hooks:**
+   ```bash
+   task pre-commit:install
+   ```
+
+The Flox environment provides all necessary development tools with pinned versions:
+
+- Go 1.24.5, Task, Docker, Docker Compose
+- golangci-lint, mockgen, Spectral (OpenAPI linting)
+- kubectl, Helm (for Kubernetes examples)
+- And many more utilities
+
+For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+**Pre-commit Hook:** The installed pre-commit hook automatically runs:
 
 - Code generation (`task generate`)
 - Linting (`task lint` and `task openapi:lint`)
