@@ -1,0 +1,123 @@
+version = 1
+
+[vars]
+GOPATH = "$HOME/go"
+GOPROXY = "https://proxy.golang.org,direct"
+GOSUMDB = "sum.golang.org"
+GO111MODULE = "on"
+CGO_ENABLED = "1"
+
+PROJECT_NAME = "inference-gateway"
+PROJECT_DESCRIPTION = "Multi-provider LLM proxy server with OpenAI-compatible APIs"
+
+[install]
+go.pkg-path = "go"
+go.version = "1.24.5"
+
+go-task.pkg-path = "go-task"
+go-task.version = "3.44.0"
+
+docker.pkg-path = "docker"
+docker.version = "28.3.2"
+
+docker-compose.pkg-path = "docker-compose"
+docker-compose.version = "2.38.1"
+
+golangci-lint.pkg-path = "golangci-lint"
+golangci-lint.version = "2.3.0"
+
+curl.pkg-path = "curl"
+curl.version = "8.14.1"
+
+jq.pkg-path = "jq" 
+jq.version = "1.8.1"
+
+git.pkg-path = "git"
+git.version = "2.50.1"
+
+kubectl.pkg-path = "kubectl"
+kubectl.version = "1.33.3"
+
+kubernetes-helm.pkg-path = "kubernetes-helm"
+kubernetes-helm.version = "3.18.4"
+
+mockgen.pkg-path = "mockgen"
+mockgen.version = "v0.5.2"
+
+nodejs.pkg-path = "nodejs"
+nodejs.version = "22.17.0"
+
+prettier.pkg-path = "prettier"
+prettier.version = "3.6.2"
+
+[hook]
+on-activate = """
+  echo "🚀 Welcome to $PROJECT_NAME development environment!"
+  echo "📝 $PROJECT_DESCRIPTION"
+  echo ""
+  echo "📦 Available tools and commands:"
+  echo "  task --list             # Show all available tasks"
+  echo "  task build              # Build the gateway"
+  echo "  task run                # Run the gateway locally"
+  echo "  task test               # Run tests"
+  echo "  task lint               # Run linting"
+  echo "  task generate           # Generate code from schemas"
+  echo "  task pre-commit:install # Install git hooks"
+  echo "  spec lint <file>        # Lint OpenAPI/JSON Schema files"
+  echo ""
+  echo "🔧 Getting started checklist:"
+  echo "  1. Run 'task pre-commit:install' to set up git hooks"
+  echo "  2. Run 'task build' to build the project"
+  echo "  3. Run 'task test' to verify everything works"
+  echo ""
+  
+  mkdir -p "$GOPATH/bin"
+  export PATH="$GOPATH/bin:$PATH"
+  
+  mkdir -p bin
+  
+  export GOENV="$FLOX_ENV_CACHE/goenv"
+
+  if [ -f go.mod ]; then
+    echo "📥 Installing Go dependencies..."
+    go mod download
+    echo "✅ Go dependencies installed"
+  fi
+"""
+
+[profile]
+common = '''
+  export PATH="$GOPATH/bin:$PATH"
+  
+  alias gs="git status"
+  alias gl="git log --oneline -10"
+  alias gd="git diff"
+  
+  alias build="task build"
+  alias test="task test"
+  alias lint="task lint"
+  alias gen="task generate"
+  alias spec="npx @stoplight/spectral-cli"
+'''
+
+zsh = '''
+  if command -v go >/dev/null 2>&1; then
+    autoload -U compinit
+    compinit
+  fi
+'''
+
+bash = '''
+  if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+    . /etc/bash_completion
+  fi
+'''
+
+[options]
+systems = [
+  "aarch64-darwin",
+  "aarch64-linux", 
+  "x86_64-darwin",
+  "x86_64-linux",
+]
+cuda-detection = false

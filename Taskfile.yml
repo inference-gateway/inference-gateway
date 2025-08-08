@@ -90,7 +90,7 @@ tasks:
   openapi:lint:
     desc: 'Lint OpenAPI spec'
     cmds:
-      - spectral lint --verbose openapi.yaml
+      - npx @stoplight/spectral@6.5.0 lint --verbose openapi.yaml
 
   openapi:download:
     desc: 'Download the latest OpenAPI Spec'
