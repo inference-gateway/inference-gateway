@@ -650,8 +650,6 @@ To exit the development environment, simply run:
 exit
 ```
 
-**For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md).**
-
 ## Configuration
 
 The Inference Gateway can be configured using environment variables. The following [environment variables](./Configurations.md) are supported.
