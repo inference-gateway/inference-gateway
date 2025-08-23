@@ -169,3 +169,18 @@ func (mr *MockIProviderMockRecorder) StreamChatCompletions(ctx, clientReq any) *
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StreamChatCompletions", reflect.TypeOf((*MockIProvider)(nil).StreamChatCompletions), ctx, clientReq)
 }
+
+// SupportsVision mocks base method.
+func (m *MockIProvider) SupportsVision(ctx context.Context, model string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SupportsVision", ctx, model)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SupportsVision indicates an expected call of SupportsVision.
+func (mr *MockIProviderMockRecorder) SupportsVision(ctx, model any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SupportsVision", reflect.TypeOf((*MockIProvider)(nil).SupportsVision), ctx, model)
+}

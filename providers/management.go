@@ -79,7 +79,7 @@ type IProvider interface {
 	ListModels(ctx context.Context) (ListModelsResponse, error)
 	ChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (CreateChatCompletionResponse, error)
 	StreamChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (<-chan []byte, error)
-	
+
 	// Vision support
 	SupportsVision(ctx context.Context, model string) (bool, error)
 }
@@ -350,18 +350,18 @@ func (p *ProviderImpl) SupportsVision(ctx context.Context, model string) (bool, 
 		return false, nil
 	case OpenaiID:
 		// OpenAI GPT-4 Vision models support images
-		return strings.Contains(strings.ToLower(model), "gpt-4") && 
-			   (strings.Contains(strings.ToLower(model), "vision") || 
-			    strings.Contains(strings.ToLower(model), "turbo") ||
-			    strings.Contains(strings.ToLower(model), "gpt-4o")), nil
+		return strings.Contains(strings.ToLower(model), "gpt-4") &&
+			(strings.Contains(strings.ToLower(model), "vision") ||
+				strings.Contains(strings.ToLower(model), "turbo") ||
+				strings.Contains(strings.ToLower(model), "gpt-4o")), nil
 	case AnthropicID:
 		// Claude 3+ models support images
-		return strings.Contains(strings.ToLower(model), "claude-3") || 
-			   strings.Contains(strings.ToLower(model), "claude-4"), nil
+		return strings.Contains(strings.ToLower(model), "claude-3") ||
+			strings.Contains(strings.ToLower(model), "claude-4"), nil
 	case GroqID, DeepseekID, GoogleID, MistralID:
 		// Check for vision-specific model names
 		return strings.Contains(strings.ToLower(model), "vision") ||
-			   strings.Contains(strings.ToLower(model), "multimodal"), nil
+			strings.Contains(strings.ToLower(model), "multimodal"), nil
 	default:
 		// Default to no vision support for unknown providers
 		return false, nil

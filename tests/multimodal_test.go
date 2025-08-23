@@ -7,7 +7,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 )
 
-
 func TestMessage_HasImageContent(t *testing.T) {
 	tests := []struct {
 		name     string

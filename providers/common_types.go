@@ -272,37 +272,6 @@ type MCPTool struct {
 	Server      string                  `json:"server"`
 }
 
-// ContentPart represents a content part within a multimodal message
-type ContentPart interface {
-	GetType() string
-}
-
-// TextContentPart represents a text content part
-type TextContentPart struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
-}
-
-func (t TextContentPart) GetType() string {
-	return t.Type
-}
-
-// ImageContentPart represents an image content part
-type ImageContentPart struct {
-	Type     string   `json:"type"`
-	ImageURL ImageURL `json:"image_url"`
-}
-
-func (i ImageContentPart) GetType() string {
-	return i.Type
-}
-
-// ImageURL represents image URL configuration
-type ImageURL struct {
-	URL    string `json:"url"`
-	Detail string `json:"detail,omitempty"`
-}
-
 // Message represents a Message in the API
 type Message struct {
 	Content          interface{}                      `json:"content"`
@@ -320,6 +289,39 @@ type Model struct {
 	Object   string   `json:"object"`
 	OwnedBy  string   `json:"owned_by"`
 	ServedBy Provider `json:"served_by"`
+}
+
+// ContentPart represents a content part within a multimodal message
+type ContentPart interface {
+	GetType() string
+}
+
+// TextContentPart represents a text content part
+type TextContentPart struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+// GetType returns the content type for TextContentPart
+func (t TextContentPart) GetType() string {
+	return t.Type
+}
+
+// ImageContentPart represents an image content part
+type ImageContentPart struct {
+	Type     string   `json:"type"`
+	ImageURL ImageURL `json:"image_url"`
+}
+
+// GetType returns the content type for ImageContentPart
+func (i ImageContentPart) GetType() string {
+	return i.Type
+}
+
+// ImageURL represents an image URL with optional detail level
+type ImageURL struct {
+	URL    string  `json:"url"`
+	Detail *string `json:"detail,omitempty"`
 }
 
 // Transform converts provider-specific response to common format
