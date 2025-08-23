@@ -272,9 +272,40 @@ type MCPTool struct {
 	Server      string                  `json:"server"`
 }
 
+// ContentPart represents a content part within a multimodal message
+type ContentPart interface {
+	GetType() string
+}
+
+// TextContentPart represents a text content part
+type TextContentPart struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+func (t TextContentPart) GetType() string {
+	return t.Type
+}
+
+// ImageContentPart represents an image content part
+type ImageContentPart struct {
+	Type     string   `json:"type"`
+	ImageURL ImageURL `json:"image_url"`
+}
+
+func (i ImageContentPart) GetType() string {
+	return i.Type
+}
+
+// ImageURL represents image URL configuration
+type ImageURL struct {
+	URL    string `json:"url"`
+	Detail string `json:"detail,omitempty"`
+}
+
 // Message represents a Message in the API
 type Message struct {
-	Content          string                           `json:"content"`
+	Content          interface{}                      `json:"content"`
 	Reasoning        *string                          `json:"reasoning,omitempty"`
 	ReasoningContent *string                          `json:"reasoning_content,omitempty"`
 	Role             MessageRole                      `json:"role"`
@@ -294,4 +325,56 @@ type Model struct {
 // Transform converts provider-specific response to common format
 func (p *CreateChatCompletionResponse) Transform() CreateChatCompletionResponse {
 	return *p
+}
+
+// HasImageContent checks if the message contains image content
+func (m *Message) HasImageContent() bool {
+	switch content := m.Content.(type) {
+	case string:
+		return false
+	case []interface{}:
+		for _, part := range content {
+			if partMap, ok := part.(map[string]interface{}); ok {
+				if contentType, exists := partMap["type"]; exists && contentType == "image_url" {
+					return true
+				}
+			}
+		}
+	case []ContentPart:
+		for _, part := range content {
+			if part.GetType() == "image_url" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// GetTextContent extracts text content from a message, regardless of format
+func (m *Message) GetTextContent() string {
+	switch content := m.Content.(type) {
+	case string:
+		return content
+	case []interface{}:
+		var textParts []string
+		for _, part := range content {
+			if partMap, ok := part.(map[string]interface{}); ok {
+				if contentType, exists := partMap["type"]; exists && contentType == "text" {
+					if text, textExists := partMap["text"].(string); textExists {
+						textParts = append(textParts, text)
+					}
+				}
+			}
+		}
+		if len(textParts) > 0 {
+			return textParts[0] // Return first text part for simplicity
+		}
+	case []ContentPart:
+		for _, part := range content {
+			if textPart, ok := part.(TextContentPart); ok {
+				return textPart.Text
+			}
+		}
+	}
+	return ""
 }

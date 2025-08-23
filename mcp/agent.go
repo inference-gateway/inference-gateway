@@ -204,7 +204,12 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				choice := resp.Choices[0]
 
 				if choice.Delta.Content != "" {
-					assistantMessage.Content += choice.Delta.Content
+					// Handle content concatenation based on type
+					if currentContent, ok := assistantMessage.Content.(string); ok {
+						assistantMessage.Content = currentContent + choice.Delta.Content
+					} else {
+						assistantMessage.Content = choice.Delta.Content
+					}
 				}
 
 				if choice.Delta.ToolCalls != nil && len(*choice.Delta.ToolCalls) > 0 {

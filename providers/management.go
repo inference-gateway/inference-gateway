@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	l "github.com/inference-gateway/inference-gateway/logger"
 )
@@ -78,6 +79,9 @@ type IProvider interface {
 	ListModels(ctx context.Context) (ListModelsResponse, error)
 	ChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (CreateChatCompletionResponse, error)
 	StreamChatCompletions(ctx context.Context, clientReq CreateChatCompletionRequest) (<-chan []byte, error)
+	
+	// Vision support
+	SupportsVision(ctx context.Context, model string) (bool, error)
 }
 
 type ProviderImpl struct {
@@ -322,4 +326,44 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 	}()
 
 	return stream, nil
+}
+
+// SupportsVision checks if the provider and model support vision/image processing
+func (p *ProviderImpl) SupportsVision(ctx context.Context, model string) (bool, error) {
+	// For now, we'll implement basic vision support detection by provider
+	// Future enhancement: check specific model capabilities via API
+	switch *p.id {
+	case CohereID:
+		// Cohere provider models have SupportsVision field in metadata
+		// This would require calling ListModels and checking the specific model
+		models, err := p.ListModels(ctx)
+		if err != nil {
+			return false, err
+		}
+		for _, m := range models.Data {
+			if m.ID == model || strings.HasSuffix(m.ID, "/"+model) {
+				// For now, assume vision support is available for certain Cohere models
+				// This should be enhanced to check actual model metadata
+				return strings.Contains(strings.ToLower(model), "vision"), nil
+			}
+		}
+		return false, nil
+	case OpenaiID:
+		// OpenAI GPT-4 Vision models support images
+		return strings.Contains(strings.ToLower(model), "gpt-4") && 
+			   (strings.Contains(strings.ToLower(model), "vision") || 
+			    strings.Contains(strings.ToLower(model), "turbo") ||
+			    strings.Contains(strings.ToLower(model), "gpt-4o")), nil
+	case AnthropicID:
+		// Claude 3+ models support images
+		return strings.Contains(strings.ToLower(model), "claude-3") || 
+			   strings.Contains(strings.ToLower(model), "claude-4"), nil
+	case GroqID, DeepseekID, GoogleID, MistralID:
+		// Check for vision-specific model names
+		return strings.Contains(strings.ToLower(model), "vision") ||
+			   strings.Contains(strings.ToLower(model), "multimodal"), nil
+	default:
+		// Default to no vision support for unknown providers
+		return false, nil
+	}
 }

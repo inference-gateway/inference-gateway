@@ -166,7 +166,7 @@ func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatComple
 				if i > 0 {
 					combinedContent += "\n\n"
 				}
-				combinedContent += result.Content
+				combinedContent += result.GetTextContent()
 			}
 
 			*response = providers.CreateChatCompletionResponse{

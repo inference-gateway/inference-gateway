@@ -118,8 +118,9 @@ func (m *DevRequestModifier) truncateChatCompletionRequest(req providers.CreateC
 	}
 
 	for i := range displayReq.Messages {
-		if displayReq.Messages[i].Content != "" {
-			displayReq.Messages[i].Content = m.truncateWords(displayReq.Messages[i].Content, maxWords)
+		textContent := displayReq.Messages[i].GetTextContent()
+		if textContent != "" {
+			displayReq.Messages[i].Content = m.truncateWords(textContent, maxWords)
 		}
 	}
 
