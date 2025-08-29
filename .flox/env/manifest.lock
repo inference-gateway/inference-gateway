@@ -62,7 +62,7 @@
       "GOPATH": "$HOME/go",
       "GOPROXY": "https://proxy.golang.org,direct",
       "GOSUMDB": "sum.golang.org",
-      "PROJECT_DESCRIPTION": "Multi-provider LLM proxy server with OpenAI-compatible APIs",
+      "PROJECT_DESCRIPTION": "An open-source, high-performance gateway unifying multiple LLM providers, from local solutions like Ollama to major cloud providers such as OpenAI, Groq, Cohere, Anthropic, Cloudflare, DeepSeek and more.",
       "PROJECT_NAME": "inference-gateway"
     },
     "hook": {

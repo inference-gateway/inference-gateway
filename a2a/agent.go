@@ -790,7 +790,23 @@ func (a *agentImpl) handleStreamingTaskSubmission(ctx context.Context, request *
 							if status, exists := result["status"].(map[string]interface{}); exists {
 								if state, exists := status["state"].(string); exists {
 									a.logger.Debug("task status update", "state", state, "agent_url", agentURL)
+
 									if state == "completed" {
+										if message, exists := status["message"].(map[string]interface{}); exists {
+											if parts, exists := message["parts"].([]interface{}); exists {
+												for _, part := range parts {
+													if partMap, ok := part.(map[string]interface{}); ok {
+														if kind, exists := partMap["kind"].(string); exists && kind == "text" {
+															if text, exists := partMap["text"].(string); exists {
+																responseContent.Reset()
+																responseContent.WriteString(text)
+															}
+														}
+													}
+												}
+											}
+										}
+
 										if final, exists := result["final"].(bool); exists && final {
 											goto ProcessComplete
 										}
