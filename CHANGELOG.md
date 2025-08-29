@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.2-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.19.2-rc.1...v0.19.2-rc.2) (2025-08-29)
+
+### 🐛 Bug Fixes
+
+* **a2a:** Improve handleStreamingTaskSubmission to support both SSE and raw JSON formats for event parsing ([26dd6e5](https://github.com/inference-gateway/inference-gateway/commit/26dd6e5a65bcba1abb31678ca27958ffb68bd969))
+
 ## [0.19.2-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.19.1...v0.19.2-rc.1) (2025-08-29)
 
 ### 🐛 Bug Fixes
