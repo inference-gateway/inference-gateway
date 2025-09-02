@@ -24,6 +24,25 @@ const (
 	ToolSubmitTaskToAgent = "a2a_submit_task_to_agent"
 )
 
+// A2A event types and field names
+const (
+	EventTypeStatusUpdate   = "status-update"
+	EventTypeArtifactUpdate = "artifact-update"
+
+	FieldKind     = "kind"
+	FieldStatus   = "status"
+	FieldState    = "state"
+	FieldMessage  = "message"
+	FieldParts    = "parts"
+	FieldText     = "text"
+	FieldFinal    = "final"
+	FieldResult   = "result"
+	FieldArtifact = "artifact"
+
+	StateCompleted = "completed"
+	PartTypeText   = "text"
+)
+
 // Agent defines the interface for running agent operations
 //
 //go:generate mockgen -source=agent.go -destination=../tests/mocks/a2a/agent.go -package=a2amocks
@@ -755,6 +774,10 @@ func (a *agentImpl) handleStreamingTaskSubmission(ctx context.Context, request *
 			lineStr := string(line)
 			a.logger.Debug("received streaming chunk from a2a agent", "agent_url", agentURL, "chunk", lineStr)
 
+			var event map[string]interface{}
+			var err error
+
+			// Handle both SSE format (data: {...}) and raw JSON format
 			if strings.HasPrefix(lineStr, "data: ") {
 				dataStr := strings.TrimPrefix(lineStr, "data: ")
 				dataStr = strings.TrimSpace(dataStr)
@@ -763,37 +786,67 @@ func (a *agentImpl) handleStreamingTaskSubmission(ctx context.Context, request *
 					continue
 				}
 
-				var sseEvent map[string]interface{}
-				if err := json.Unmarshal([]byte(dataStr), &sseEvent); err != nil {
-					a.logger.Debug("failed to parse SSE event", "data", dataStr, "error", err.Error())
-					continue
-				}
+				err = json.Unmarshal([]byte(dataStr), &event)
+			} else {
+				err = json.Unmarshal(line, &event)
+			}
 
-				if result, exists := sseEvent["result"].(map[string]interface{}); exists {
-					if kind, exists := result["kind"].(string); exists {
-						switch kind {
-						case "artifact-update":
-							if artifact, exists := result["artifact"].(map[string]interface{}); exists {
-								if parts, exists := artifact["parts"].([]interface{}); exists {
-									for _, part := range parts {
-										if partMap, ok := part.(map[string]interface{}); ok {
-											if partType, exists := partMap["type"].(string); exists && partType == "text" {
-												if text, exists := partMap["text"].(string); exists {
-													responseContent.WriteString(text)
-												}
-											}
+			if err != nil {
+				a.logger.Debug("failed to parse event", "chunk", lineStr, "error", err.Error())
+				continue
+			}
+
+			var actualEvent map[string]interface{}
+			if result, exists := event[FieldResult].(map[string]interface{}); exists {
+				actualEvent = result
+			} else {
+				actualEvent = event
+			}
+
+			if kind, exists := actualEvent[FieldKind].(string); exists {
+				switch kind {
+				case EventTypeArtifactUpdate:
+					if artifact, exists := actualEvent[FieldArtifact].(map[string]interface{}); exists {
+						if parts, exists := artifact[FieldParts].([]interface{}); exists {
+							for _, part := range parts {
+								if partMap, ok := part.(map[string]interface{}); ok {
+									if partType, exists := partMap["type"].(string); exists && partType == PartTypeText {
+										if text, exists := partMap[FieldText].(string); exists {
+											responseContent.WriteString(text)
 										}
 									}
 								}
 							}
-						case "status-update":
-							if status, exists := result["status"].(map[string]interface{}); exists {
-								if state, exists := status["state"].(string); exists {
-									a.logger.Debug("task status update", "state", state, "agent_url", agentURL)
-									if state == "completed" {
-										if final, exists := result["final"].(bool); exists && final {
-											goto ProcessComplete
+						}
+					}
+				case EventTypeStatusUpdate:
+					if status, exists := actualEvent[FieldStatus].(map[string]interface{}); exists {
+						if state, exists := status[FieldState].(string); exists {
+							a.logger.Debug("task status update", "state", state, "agent_url", agentURL)
+
+							if state == StateCompleted {
+								a.logger.Debug("processing completed task, extracting text", "agent_url", agentURL)
+								if message, exists := status[FieldMessage].(map[string]interface{}); exists {
+									if parts, exists := message[FieldParts].([]interface{}); exists {
+										for _, part := range parts {
+											if partMap, ok := part.(map[string]interface{}); ok {
+												if kind, exists := partMap[FieldKind].(string); exists && kind == PartTypeText {
+													if text, exists := partMap[FieldText].(string); exists {
+														preview := text
+														if len(text) > 50 {
+															preview = text[:50] + "..."
+														}
+														a.logger.Debug("extracted text from A2A response", "agent_url", agentURL, "text_length", len(text), "text_preview", preview)
+														responseContent.Reset()
+														responseContent.WriteString(text)
+													}
+												}
+											}
 										}
+									}
+
+									if final, exists := actualEvent[FieldFinal].(bool); exists && final {
+										goto ProcessComplete
 									}
 								}
 							}

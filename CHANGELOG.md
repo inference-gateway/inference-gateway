@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.2-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.19.2-rc.1...v0.19.2-rc.2) (2025-08-29)
+
+### 🐛 Bug Fixes
+
+* **a2a:** Improve handleStreamingTaskSubmission to support both SSE and raw JSON formats for event parsing ([26dd6e5](https://github.com/inference-gateway/inference-gateway/commit/26dd6e5a65bcba1abb31678ca27958ffb68bd969))
+
+## [0.19.2-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.19.1...v0.19.2-rc.1) (2025-08-29)
+
+### 🐛 Bug Fixes
+
+* **a2a:** Improve handleStreamingTaskSubmission to process text parts from task status updates ([2ea7276](https://github.com/inference-gateway/inference-gateway/commit/2ea72761f07cd95bf0de63f095b7bbc124ab592d))
+
+### 🔧 Miscellaneous
+
+* **cli:** Set owner to 'inference-gateway' in config.yaml ([3b1d35e](https://github.com/inference-gateway/inference-gateway/commit/3b1d35e7d0dc636b424f0c794fec02ffec6bf4c0))
+* **config:** Update protected paths to include all env files ([83d1c2a](https://github.com/inference-gateway/inference-gateway/commit/83d1c2a6faee455e9a89ac5a1d1ccab374b75b41))
+
 ## [0.19.1](https://github.com/inference-gateway/inference-gateway/compare/v0.19.0...v0.19.1) (2025-08-23)
 
 ### 👷 CI
