@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.2](https://github.com/inference-gateway/inference-gateway/compare/v0.19.1...v0.19.2) (2025-09-02)
+
+### 🐛 Bug Fixes
+
+* **a2a:** Improve handleStreamingTaskSubmission to process text parts ([#180](https://github.com/inference-gateway/inference-gateway/issues/180)) ([a02db25](https://github.com/inference-gateway/inference-gateway/commit/a02db2597eae918fc60911d92bd9def02f84d4f4))
+
+### 🔧 Miscellaneous
+
+* **cli:** Set owner to 'inference-gateway' in config.yaml ([3b1d35e](https://github.com/inference-gateway/inference-gateway/commit/3b1d35e7d0dc636b424f0c794fec02ffec6bf4c0))
+* **config:** Update protected paths to include all env files ([83d1c2a](https://github.com/inference-gateway/inference-gateway/commit/83d1c2a6faee455e9a89ac5a1d1ccab374b75b41))
+
 ## [0.19.2-rc.2](https://github.com/inference-gateway/inference-gateway/compare/v0.19.2-rc.1...v0.19.2-rc.2) (2025-08-29)
 
 ### 🐛 Bug Fixes
