@@ -757,7 +757,13 @@ components:
         role:
           $ref: '#/components/schemas/MessageRole'
         content:
-          type: string
+          oneOf:
+            - type: string
+              description: Text content (backward compatibility)
+            - type: array
+              items:
+                $ref: '#/components/schemas/ContentPart'
+              description: Array of content parts for multimodal messages
         tool_calls:
           type: array
           items:
@@ -773,6 +779,53 @@ components:
       required:
         - role
         - content
+    ContentPart:
+      type: object
+      description: A content part within a multimodal message
+      oneOf:
+        - $ref: '#/components/schemas/TextContentPart'
+        - $ref: '#/components/schemas/ImageContentPart'
+    TextContentPart:
+      type: object
+      description: Text content part
+      properties:
+        type:
+          type: string
+          enum: [text]
+          description: Content type identifier
+        text:
+          type: string
+          description: The text content
+      required:
+        - type
+        - text
+    ImageContentPart:
+      type: object
+      description: Image content part
+      properties:
+        type:
+          type: string
+          enum: [image_url]
+          description: Content type identifier
+        image_url:
+          $ref: '#/components/schemas/ImageURL'
+      required:
+        - type
+        - image_url
+    ImageURL:
+      type: object
+      description: Image URL configuration
+      properties:
+        url:
+          type: string
+          description: URL of the image (data URLs supported)
+        detail:
+          type: string
+          enum: [auto, low, high]
+          default: auto
+          description: Image detail level for vision processing
+      required:
+        - url
     Model:
       type: object
       description: Common model information

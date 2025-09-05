@@ -538,10 +538,33 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
-
+	// Check for image content in messages and validate vision support
 	ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout)
 	defer cancel()
+
+	hasImageContent := false
+	for _, message := range req.Messages {
+		if message.HasImageContent() {
+			hasImageContent = true
+			break
+		}
+	}
+
+	if hasImageContent {
+		supportsVision, err := provider.SupportsVision(ctx, req.Model)
+		if err != nil {
+			router.logger.Error("failed to check vision support", err, "provider", providerID, "model", req.Model)
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to check model capabilities"})
+			return
+		}
+		if !supportsVision {
+			router.logger.Error("image content sent to non-vision model", nil, "provider", providerID, "model", req.Model)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Model %s does not support image content. Please use a vision-capable model.", req.Model)})
+			return
+		}
+	}
+
+	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
 
 	// Streaming response
 	if req.Stream != nil && *req.Stream {
