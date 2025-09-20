@@ -50,6 +50,9 @@ nodejs.version = "22.17.0"
 prettier.pkg-path = "prettier"
 prettier.version = "3.6.2"
 
+claude-code.pkg-path = "claude-code"
+claude-code.version = "^1.0.65"
+
 [hook]
 on-activate = """
   echo "🚀 Welcome to $PROJECT_NAME development environment!"

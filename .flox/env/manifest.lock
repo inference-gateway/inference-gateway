@@ -3,6 +3,10 @@
   "manifest": {
     "version": 1,
     "install": {
+      "claude-code": {
+        "pkg-path": "claude-code",
+        "version": "^1.0.65"
+      },
       "curl": {
         "pkg-path": "curl",
         "version": "8.14.1"
@@ -62,7 +66,7 @@
       "GOPATH": "$HOME/go",
       "GOPROXY": "https://proxy.golang.org,direct",
       "GOSUMDB": "sum.golang.org",
-      "PROJECT_DESCRIPTION": "Multi-provider LLM proxy server with OpenAI-compatible APIs",
+      "PROJECT_DESCRIPTION": "An open-source, high-performance gateway unifying multiple LLM providers, from local solutions like Ollama to major cloud providers such as OpenAI, Groq, Cohere, Anthropic, Cloudflare, DeepSeek and more.",
       "PROJECT_NAME": "inference-gateway"
     },
     "hook": {
@@ -84,6 +88,122 @@
     }
   },
   "packages": [
+    {
+      "attr_path": "claude-code",
+      "broken": false,
+      "derivation": "/nix/store/5cylbzk75lsx50gpm3acjk075hhi79g9-claude-code-1.0.65.drv",
+      "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
+      "install_id": "claude-code",
+      "license": "Unfree",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=5b09dc45f24cf32316283e62aec81ffee3c3e376",
+      "name": "claude-code-1.0.65",
+      "pname": "claude-code",
+      "rev": "5b09dc45f24cf32316283e62aec81ffee3c3e376",
+      "rev_count": 838708,
+      "rev_date": "2025-08-03T09:47:33Z",
+      "scrape_date": "2025-08-05T00:29:20.769387Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": true,
+      "version": "1.0.65",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/k9plndkra1kqb4i79vrri5bmzh3akk4k-claude-code-1.0.65"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "claude-code",
+      "broken": false,
+      "derivation": "/nix/store/aw2ms942bi4xp8vgac5z575mkfld0jar-claude-code-1.0.65.drv",
+      "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
+      "install_id": "claude-code",
+      "license": "Unfree",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=5b09dc45f24cf32316283e62aec81ffee3c3e376",
+      "name": "claude-code-1.0.65",
+      "pname": "claude-code",
+      "rev": "5b09dc45f24cf32316283e62aec81ffee3c3e376",
+      "rev_count": 838708,
+      "rev_date": "2025-08-03T09:47:33Z",
+      "scrape_date": "2025-08-05T00:49:14.720218Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": true,
+      "version": "1.0.65",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/5mrnfls4vvl5c7qcjzl5gplzb25wv2dl-claude-code-1.0.65"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "claude-code",
+      "broken": false,
+      "derivation": "/nix/store/brycndk5dqyqv4sjy6lf7qc19xch93qb-claude-code-1.0.65.drv",
+      "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
+      "install_id": "claude-code",
+      "license": "Unfree",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=5b09dc45f24cf32316283e62aec81ffee3c3e376",
+      "name": "claude-code-1.0.65",
+      "pname": "claude-code",
+      "rev": "5b09dc45f24cf32316283e62aec81ffee3c3e376",
+      "rev_count": 838708,
+      "rev_date": "2025-08-03T09:47:33Z",
+      "scrape_date": "2025-08-05T01:08:48.928034Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": true,
+      "version": "1.0.65",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/3ka3yz7vk1ncmh6vs7p6gcyf1rzj6gj2-claude-code-1.0.65"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "claude-code",
+      "broken": false,
+      "derivation": "/nix/store/9ckp2iyrb2sks49ivm2d8rarzrx2n1bj-claude-code-1.0.65.drv",
+      "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
+      "install_id": "claude-code",
+      "license": "Unfree",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=5b09dc45f24cf32316283e62aec81ffee3c3e376",
+      "name": "claude-code-1.0.65",
+      "pname": "claude-code",
+      "rev": "5b09dc45f24cf32316283e62aec81ffee3c3e376",
+      "rev_count": 838708,
+      "rev_date": "2025-08-03T09:47:33Z",
+      "scrape_date": "2025-08-05T01:32:57.514785Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": true,
+      "version": "1.0.65",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/6az2kacav2wcqw7dsla169yzx492dzlj-claude-code-1.0.65"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
     {
       "attr_path": "curl",
       "broken": false,

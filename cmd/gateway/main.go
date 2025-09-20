@@ -179,10 +179,10 @@ func main() {
 				logger.Info("starting a2a client initialization with static agents", "timeout", cfg.A2A.ClientTimeout.String())
 				initErr := a2aClient.InitializeAll(initCtx)
 				if initErr != nil {
-					logger.Error("failed to initialize a2a client", initErr)
-					return
+					logger.Warn("a2a client initialization failed, but continuing gateway startup - background reconnection enabled", "error", initErr)
+				} else {
+					logger.Info("a2a client initialized successfully")
 				}
-				logger.Info("a2a client initialized successfully")
 			} else if cfg.A2A.ServiceDiscoveryEnable {
 				logger.Info("starting a2a client with service discovery enabled", "namespace", cfg.A2A.ServiceDiscoveryNamespace)
 			}
