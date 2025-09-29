@@ -7,6 +7,10 @@
         "pkg-path": "claude-code",
         "version": "^1.0.123"
       },
+      "ctlptl": {
+        "pkg-path": "ctlptl",
+        "version": "^0.8.43"
+      },
       "curl": {
         "pkg-path": "curl",
         "version": "^8.14.1"
@@ -18,6 +22,10 @@
       "docker-compose": {
         "pkg-path": "docker-compose",
         "version": "^2.39.1"
+      },
+      "gh": {
+        "pkg-path": "gh",
+        "version": "^2.80.0"
       },
       "git": {
         "pkg-path": "git",
@@ -74,7 +82,7 @@
       "PROJECT_NAME": "inference-gateway"
     },
     "hook": {
-      "on-activate": "  echo \"🚀 Welcome to $PROJECT_NAME development environment!\"\n  echo \"📝 $PROJECT_DESCRIPTION\"\n  echo \"\"\n  echo \"📦 Available tools and commands:\"\n  echo \"  task --list             # Show all available tasks\"\n  echo \"  task build              # Build the gateway\"\n  echo \"  task run                # Run the gateway locally\"\n  echo \"  task test               # Run tests\"\n  echo \"  task lint               # Run linting\"\n  echo \"  task generate           # Generate code from schemas\"\n  echo \"  task pre-commit:install # Install git hooks\"\n  echo \"  spec lint <file>        # Lint OpenAPI/JSON Schema files\"\n  echo \"\"\n  echo \"🔧 Getting started checklist:\"\n  echo \"  1. Run 'task pre-commit:install' to set up git hooks\"\n  echo \"  2. Run 'task build' to build the project\"\n  echo \"  3. Run 'task test' to verify everything works\"\n  echo \"\"\n  \n  mkdir -p \"$GOPATH/bin\"\n  \n  mkdir -p bin\n  \n  export GOENV=\"$FLOX_ENV_CACHE/goenv\"\n\n  if [ -f go.mod ]; then\n    echo \"📥 Installing Go dependencies...\"\n    go mod download\n    echo \"✅ Go dependencies installed\"\n  fi\n"
+      "on-activate": "  echo \"🚀 Welcome to $PROJECT_NAME development environment!\"\n  echo \"📝 $PROJECT_DESCRIPTION\"\n  echo \"\"\n  echo \"📦 Available tools and commands:\"\n  echo \"  task --list             # Show all available tasks\"\n  echo \"  task build              # Build the gateway\"\n  echo \"  task run                # Run the gateway locally\"\n  echo \"  task test               # Run tests\"\n  echo \"  task lint               # Run linting\"\n  echo \"  task generate           # Generate code from schemas\"\n  echo \"  task pre-commit:install # Install git hooks\"\n  echo \"  spec lint <file>        # Lint OpenAPI/JSON Schema files\"\n  echo \"\"\n  echo \"🔧 Getting started checklist:\"\n  echo \"  1. Run 'task pre-commit:install' to set up git hooks\"\n  echo \"  2. Run 'task build' to build the project\"\n  echo \"  3. Run 'task test' to verify everything works\"\n  echo \"\"\n  \n  mkdir -p \"$GOPATH/bin\"\n  \n  mkdir -p bin\n  \n  export GOENV=\"$FLOX_ENV_CACHE/goenv\"\n\n  if [ -f go.mod ]; then\n    echo \"📥 Installing Go dependencies...\"\n    go mod download\n    echo \"✅ Go dependencies installed\"\n  fi\n\n  # Install infer CLI if not already installed\n  if ! command -v infer >/dev/null 2>&1; then\n    echo \"📥 Installing infer CLI...\"\n    curl -fsSL https://raw.githubusercontent.com/inference-gateway/cli/main/install.sh | bash -s -- --install-dir $HOME/.local/bin\n    echo \"✅ infer CLI installed\"\n  else\n    echo \"✅ infer CLI already installed\"\n  fi\n"
     },
     "profile": {
       "common": "  alias gs=\"git status\"\n  alias gl=\"git log --oneline -10\"\n  alias gd=\"git diff\"\n  \n  alias build=\"task build\"\n  alias test=\"task test\"\n  alias lint=\"task lint\"\n  alias gen=\"task generate\"\n  alias spec=\"npx @stoplight/spectral-cli\"\n",
@@ -207,6 +215,126 @@
       ],
       "outputs": {
         "out": "/nix/store/hrchzgcfkdp7xjj7lxaz4fchgcka2cg3-claude-code-1.0.123"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ctlptl",
+      "broken": false,
+      "derivation": "/nix/store/x2jm6ivq9mw3d5mfjw8vxnd2lfvz5x2b-ctlptl-0.8.43.drv",
+      "description": "CLI for declaratively setting up local Kubernetes clusters",
+      "install_id": "ctlptl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e643668fd71b949c53f8626614b21ff71a07379d",
+      "name": "ctlptl-0.8.43",
+      "pname": "ctlptl",
+      "rev": "e643668fd71b949c53f8626614b21ff71a07379d",
+      "rev_count": 866707,
+      "rev_date": "2025-09-24T05:06:22Z",
+      "scrape_date": "2025-09-26T03:42:35.044849Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.8.43",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/jzk600x9l72mv5cck9jkysaz97izg1q8-ctlptl-0.8.43"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ctlptl",
+      "broken": false,
+      "derivation": "/nix/store/h4jix3vb3gd68g32y70vdhwpga5rv5qb-ctlptl-0.8.43.drv",
+      "description": "CLI for declaratively setting up local Kubernetes clusters",
+      "install_id": "ctlptl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e643668fd71b949c53f8626614b21ff71a07379d",
+      "name": "ctlptl-0.8.43",
+      "pname": "ctlptl",
+      "rev": "e643668fd71b949c53f8626614b21ff71a07379d",
+      "rev_count": 866707,
+      "rev_date": "2025-09-24T05:06:22Z",
+      "scrape_date": "2025-09-26T04:11:33.072833Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.8.43",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/fyi3iqk6fb7dpb8kdq6dsbg0cwly4n8n-ctlptl-0.8.43"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ctlptl",
+      "broken": false,
+      "derivation": "/nix/store/aw71lx15ax52jnc6lkcgc27j4rv2pgiq-ctlptl-0.8.43.drv",
+      "description": "CLI for declaratively setting up local Kubernetes clusters",
+      "install_id": "ctlptl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e643668fd71b949c53f8626614b21ff71a07379d",
+      "name": "ctlptl-0.8.43",
+      "pname": "ctlptl",
+      "rev": "e643668fd71b949c53f8626614b21ff71a07379d",
+      "rev_count": 866707,
+      "rev_date": "2025-09-24T05:06:22Z",
+      "scrape_date": "2025-09-26T04:39:32.336388Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.8.43",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/lnhksn69p6scfvplnmnm053wih5535xq-ctlptl-0.8.43"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "ctlptl",
+      "broken": false,
+      "derivation": "/nix/store/14x32gzgfds2gspl8xp07wa6dcq93fsz-ctlptl-0.8.43.drv",
+      "description": "CLI for declaratively setting up local Kubernetes clusters",
+      "install_id": "ctlptl",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e643668fd71b949c53f8626614b21ff71a07379d",
+      "name": "ctlptl-0.8.43",
+      "pname": "ctlptl",
+      "rev": "e643668fd71b949c53f8626614b21ff71a07379d",
+      "rev_count": 866707,
+      "rev_date": "2025-09-24T05:06:22Z",
+      "scrape_date": "2025-09-26T05:10:35.257716Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.8.43",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/8jivpdnifwzdj4bmhhn20shi105c6qcf-ctlptl-0.8.43"
       },
       "system": "x86_64-linux",
       "group": "toplevel",
@@ -589,6 +717,126 @@
       ],
       "outputs": {
         "out": "/nix/store/ysvfla1awr4faiqc0mw27rcdkww8j6cn-docker-compose-2.39.1"
+      },
+      "system": "x86_64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "gh",
+      "broken": false,
+      "derivation": "/nix/store/w94bswaj3r50sk5cxjj10ygy28mdanzs-gh-2.80.0.drv",
+      "description": "GitHub CLI tool",
+      "install_id": "gh",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e643668fd71b949c53f8626614b21ff71a07379d",
+      "name": "gh-2.80.0",
+      "pname": "gh",
+      "rev": "e643668fd71b949c53f8626614b21ff71a07379d",
+      "rev_count": 866707,
+      "rev_date": "2025-09-24T05:06:22Z",
+      "scrape_date": "2025-09-26T03:42:35.645653Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.80.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/1fsinhpdgma3zgnvxiwli35nvqhvi6lp-gh-2.80.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "gh",
+      "broken": false,
+      "derivation": "/nix/store/1ar98d8yk83nfjg51139bfrjxzaw0yaj-gh-2.80.0.drv",
+      "description": "GitHub CLI tool",
+      "install_id": "gh",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e643668fd71b949c53f8626614b21ff71a07379d",
+      "name": "gh-2.80.0",
+      "pname": "gh",
+      "rev": "e643668fd71b949c53f8626614b21ff71a07379d",
+      "rev_count": 866707,
+      "rev_date": "2025-09-24T05:06:22Z",
+      "scrape_date": "2025-09-26T04:11:33.992198Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.80.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/5axlijv771vdz6k63vp52g70da0vvkpc-gh-2.80.0"
+      },
+      "system": "aarch64-linux",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "gh",
+      "broken": false,
+      "derivation": "/nix/store/9996afyzdkf5f57487cdi14xl3c6gv9k-gh-2.80.0.drv",
+      "description": "GitHub CLI tool",
+      "install_id": "gh",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e643668fd71b949c53f8626614b21ff71a07379d",
+      "name": "gh-2.80.0",
+      "pname": "gh",
+      "rev": "e643668fd71b949c53f8626614b21ff71a07379d",
+      "rev_count": 866707,
+      "rev_date": "2025-09-24T05:06:22Z",
+      "scrape_date": "2025-09-26T04:39:32.915858Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.80.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/fgawnm7xp41pmj063bywk4k019nckvlz-gh-2.80.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "attr_path": "gh",
+      "broken": false,
+      "derivation": "/nix/store/cp47mdhirw7yc058rwsn9x28msb9gdnx-gh-2.80.0.drv",
+      "description": "GitHub CLI tool",
+      "install_id": "gh",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=e643668fd71b949c53f8626614b21ff71a07379d",
+      "name": "gh-2.80.0",
+      "pname": "gh",
+      "rev": "e643668fd71b949c53f8626614b21ff71a07379d",
+      "rev_count": 866707,
+      "rev_date": "2025-09-24T05:06:22Z",
+      "scrape_date": "2025-09-26T05:10:36.285722Z",
+      "stabilities": [
+        "staging",
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "2.80.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/hzxndxvi2zwv0bljyqxz6bm85725vjky-gh-2.80.0"
       },
       "system": "x86_64-linux",
       "group": "toplevel",
