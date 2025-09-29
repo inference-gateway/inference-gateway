@@ -1,7 +1,5 @@
 # Custom Instructions for Copilot
 
-Today is July 26, 2025.
-
 - Always run `task pre-commit:install` before starting any development work to ensure code quality checks are in place.
 - Always use context7 to check for the latest updates, features, or best practices of a library relevant to the task at hand.
 - Always prefer Table-Driven Testing: When writing tests.
@@ -19,9 +17,8 @@ Today is July 26, 2025.
 
 ## Development Workflow
 
-0. Run `task pre-commit:install` to install pre-commit hooks for automatic code quality checks.
-1. Run `task mcp:schema:download` to download the latest MCP schema - when working on MCP.
-2. Run `task a2a:schema:download` to download the latest A2A schema - when working on A2A.
+1. Run `task pre-commit:install` to install pre-commit hooks for automatic code quality checks.
+2. Run `task mcp:schema:download` to download the latest MCP schema - when working on MCP.
 3. Update `openapi.yaml` with the new configuration fields in the appropriate section.
 4. Run `task generate` If added new Schemas to openapi.yaml, update internal/openapi/schemas.go to include the new schemas.
 5. Run `task lint` to ensure code quality.
@@ -51,6 +48,9 @@ Today is July 26, 2025.
 
 - **[Awesome A2A](https://github.com/inference-gateway/awesome-a2a)** - Curated list of A2A-compatible agents
 - **[Google Calendar Agent](https://github.com/inference-gateway/google-calendar-agent)** - Agent for Google Calendar integration
+- **[Browser Agent](https://github.com/inference-gateway/browser-agent)** - Agent for Browser automation
+- **[Documentation Agent](https://github.com/inference-gateway/documentation-agent)** - Agent for Context7 documentation
+- **[N8N Agent](https://github.com/inference-gateway/n8n-agent)** - Agent for n8n workflows automation
 
 ### Internal Tools
 

@@ -4,7 +4,7 @@ This example demonstrates comprehensive monitoring setup for the Inference Gatew
 
 - **Prometheus** for metrics collection
 - **Grafana** for visualization with enhanced dashboards
-- **Function/Tool Call Metrics** tracking MCP and A2A tool executions
+- **Function/Tool Call Metrics** tracking MCP tool executions
 
 ## 📊 Dashboard Features
 
@@ -16,7 +16,7 @@ The enhanced Grafana dashboard provides:
 - **Tool Call Success Rate** - Percentage of successful tool calls with thresholds
 - **Failed Tool Calls** - Count of failures for quick issue identification
 - **Average Tool Call Duration** - Performance monitoring for tool execution
-- **Tool Call Rate by Type** - Breakdown by MCP, A2A, and other tool types
+- **Tool Call Rate by Type** - Breakdown by MCP and other tool types
 - **Tool Call Duration by Provider** - Latency analysis across providers
 - **Top Tool Names by Usage** - Most frequently called tools
 - **Tool Failures by Error Type** - Detailed failure analysis
@@ -107,19 +107,6 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   }'
 ```
 
-### Example A2A Agent Request
-
-```bash
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4",
-    "messages": [
-      {"role": "user", "content": "Calculate 15 + 25 using the calculator agent"}
-    ]
-  }'
-```
-
 ## 📈 Metrics Details
 
 ### Function/Tool Call Metrics Labels
@@ -128,7 +115,7 @@ All tool call metrics include rich labeling:
 
 - `provider` - LLM provider (openai, anthropic, etc.)
 - `model` - Model name (gpt-4, claude-3-sonnet, etc.)
-- `tool_type` - Tool type (mcp, a2a, native)
+- `tool_type` - Tool type (mcp, native)
 - `tool_name` - Specific tool name (list_files, calculator, etc.)
 - `error_type` - Error classification (for failures only)
 
@@ -170,7 +157,7 @@ The dashboard supports provider filtering via `$provider` variable:
 ### Tool Call Metrics Empty
 
 1. Send requests that actually trigger tool calls
-2. Verify MCP or A2A middleware is enabled
+2. Verify MCP middleware is enabled
 3. Check gateway logs for tool execution
 
 ### Dashboard Not Loading
@@ -183,7 +170,6 @@ The dashboard supports provider filtering via `$provider` variable:
 
 - [Main Repository](https://github.com/inference-gateway/inference-gateway)
 - [MCP Integration Guide](../../mcp/README.md)
-- [A2A Integration Guide](../../a2a/README.md)
 - [Kubernetes Monitoring Example](../../kubernetes/monitoring/README.md)
 
 ## 🧹 Cleanup
