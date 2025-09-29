@@ -29,7 +29,7 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.4.0
 
       - name: Install Mockgen
-        run: go install go.uber.org/mock/mockgen@v0.5.0
+        run: go install go.uber.org/mock/mockgen@v0.6.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4.4.0

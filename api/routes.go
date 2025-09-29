@@ -666,8 +666,6 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-
-
 // filterModelsByAllowList filters models based on the comma-separated ALLOWED_MODELS configuration.
 // If allowedModels is empty, all models are returned. Otherwise, only models matching
 // the allowed list are returned. The matching is done using case-insensitive comparison.
@@ -741,4 +739,3 @@ func (router *RouterImpl) isModelAllowed(modelID string, allowedModels string) b
 
 	return false
 }
-

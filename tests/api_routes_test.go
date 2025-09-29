@@ -471,4 +471,3 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 		})
 	}
 }
-

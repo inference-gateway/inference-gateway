@@ -6,7 +6,7 @@ project_name: inference-gateway
 
 before:
   hooks:
-    - go install go.uber.org/mock/mockgen@v0.5.0
+    - go install go.uber.org/mock/mockgen@v0.6.0
     - go mod tidy
     - go generate ./providers/... ./api/... ./otel/...
 

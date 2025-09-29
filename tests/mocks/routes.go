@@ -52,42 +52,6 @@ func (mr *MockRouterMockRecorder) ChatCompletionsHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletionsHandler", reflect.TypeOf((*MockRouter)(nil).ChatCompletionsHandler), c)
 }
 
-// GetAgentHandler mocks base method.
-func (m *MockRouter) GetAgentHandler(c *gin.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAgentHandler", c)
-}
-
-// GetAgentHandler indicates an expected call of GetAgentHandler.
-func (mr *MockRouterMockRecorder) GetAgentHandler(c any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAgentHandler", reflect.TypeOf((*MockRouter)(nil).GetAgentHandler), c)
-}
-
-// GetAgentStatusHandler mocks base method.
-func (m *MockRouter) GetAgentStatusHandler(c *gin.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAgentStatusHandler", c)
-}
-
-// GetAgentStatusHandler indicates an expected call of GetAgentStatusHandler.
-func (mr *MockRouterMockRecorder) GetAgentStatusHandler(c any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAgentStatusHandler", reflect.TypeOf((*MockRouter)(nil).GetAgentStatusHandler), c)
-}
-
-// GetAllAgentStatusesHandler mocks base method.
-func (m *MockRouter) GetAllAgentStatusesHandler(c *gin.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "GetAllAgentStatusesHandler", c)
-}
-
-// GetAllAgentStatusesHandler indicates an expected call of GetAllAgentStatusesHandler.
-func (mr *MockRouterMockRecorder) GetAllAgentStatusesHandler(c any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllAgentStatusesHandler", reflect.TypeOf((*MockRouter)(nil).GetAllAgentStatusesHandler), c)
-}
-
 // HealthcheckHandler mocks base method.
 func (m *MockRouter) HealthcheckHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
@@ -98,18 +62,6 @@ func (m *MockRouter) HealthcheckHandler(c *gin.Context) {
 func (mr *MockRouterMockRecorder) HealthcheckHandler(c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HealthcheckHandler", reflect.TypeOf((*MockRouter)(nil).HealthcheckHandler), c)
-}
-
-// ListAgentsHandler mocks base method.
-func (m *MockRouter) ListAgentsHandler(c *gin.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ListAgentsHandler", c)
-}
-
-// ListAgentsHandler indicates an expected call of ListAgentsHandler.
-func (mr *MockRouterMockRecorder) ListAgentsHandler(c any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAgentsHandler", reflect.TypeOf((*MockRouter)(nil).ListAgentsHandler), c)
 }
 
 // ListModelsHandler mocks base method.

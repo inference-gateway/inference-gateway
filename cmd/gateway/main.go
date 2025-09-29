@@ -164,7 +164,6 @@ func main() {
 		}
 	}
 
-
 	// Set GIN mode based on environment
 	if cfg.Environment != "development" {
 		gin.SetMode(gin.ReleaseMode)
@@ -177,7 +176,6 @@ func main() {
 		r.Use(telemetry.Middleware())
 	}
 	r.Use(oidcAuthenticator.Middleware())
-
 
 	// Add MCP middleware if enabled
 	if cfg.MCP.Enable {
@@ -225,7 +223,6 @@ func main() {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 	logger.Info("shutting down server...")
-
 
 	if cfg.MCP.Enable && mcpClient != nil {
 		mcpClient.StopStatusPolling()
