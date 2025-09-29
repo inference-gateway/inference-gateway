@@ -25,7 +25,6 @@ The Inference Gateway is a proxy server designed to facilitate access to various
   - [When to Use Bypass Headers](#when-to-use-bypass-headers)
   - [How It Works Internally](#how-it-works-internally)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
-- [Agent-to-Agent (A2A) Integration](#agent-to-agent-a2a-integration)
 - [Metrics and Observability](#metrics-and-observability)
   - [Enabling Metrics](#enabling-metrics)
   - [Available Metrics](#available-metrics)
@@ -67,7 +66,6 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
 - 🔧 **Tool-use Support**: Enable function calling capabilities across supported providers with a unified API.
 - 🌐 **MCP Support**: Full Model Context Protocol integration - automatically discover and expose tools from MCP servers to LLMs without client-side tool management.
-- 🤝 **A2A Support**: Agent-to-Agent protocol integration - connect to external A2A-compliant agents and automatically expose their skills as tools.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
 - 🖥️ **Web Interface**: Access through a modern web UI for easy interaction and management.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
@@ -88,7 +86,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 
 You can horizontally scale the Inference Gateway to handle multiple requests from clients. The Inference Gateway will forward the requests to the respective provider and return the response to the client.
 
-**Note**: Both A2A and MCP middleware components can be easily toggled on/off via environment variables (`A2A_ENABLE`, `MCP_ENABLE`) or bypassed per-request using headers (`X-A2A-Bypass`, `X-MCP-Bypass`), giving you full control over which capabilities are active.
+**Note**: MCP middleware components can be easily toggled on/off via environment variables (`MCP_ENABLE`) or bypassed per-request using headers (`X-MCP-Bypass`), giving you full control over which capabilities are active.
 
 The following diagram illustrates the flow:
 
@@ -111,19 +109,12 @@ graph TD
     IG2["🖥️ Inference Gateway"] --> P
     IG3["🖥️ Inference Gateway"] --> P
 
-    %% Middleware Processing (Sequential) and Direct Routing
-    P["🔌 Proxy Gateway"] --> A2A["🤝 A2A Middleware"]
+    %% Middleware Processing and Direct Routing
+    P["🔌 Proxy Gateway"] --> MCP["🌐 MCP Middleware"]
     P --> |"Direct routing bypassing middleware"| Direct["🔌 Direct Providers"]
-    A2A --> |"If A2A bypassed or complete"| MCP["🌐 MCP Middleware"]
     MCP --> |"Middleware chain complete"| Providers["🤖 LLM Providers"]
 
-    %% A2A External Agents (First Layer)
-    A2A --> A2A1["📅 Calendar Agent"]
-    A2A --> A2A2["🧮 Calculator Agent"]
-    A2A --> A2A3["🌤️ Weather Agent"]
-    A2A --> A2A4["✈️ Booking Agent"]
-
-    %% MCP Tool Servers (Second Layer)
+    %% MCP Tool Servers
     MCP --> MCP1["📁 File System Server"]
     MCP --> MCP2["🔍 Search Server"]
     MCP --> MCP3["🌐 Web Server"]
@@ -149,7 +140,6 @@ graph TD
     classDef provider fill:#32CD32,stroke:#333,stroke-width:1px,color:white;
     classDef ui fill:#FF6B6B,stroke:#333,stroke-width:1px,color:white;
     classDef mcp fill:#FF69B4,stroke:#333,stroke-width:1px,color:white;
-    classDef a2a fill:#FFA500,stroke:#333,stroke-width:1px,color:white;
 
     %% Apply styles
     class A client;
@@ -158,7 +148,6 @@ graph TD
     class IG1,IG2,IG3,P gateway;
     class C,D,E,G,H1,H2,H3,C1,D1,E1,Providers provider;
     class MCP,MCP1,MCP2,MCP3 mcp;
-    class A2A,A2A1,A2A2,A2A3,A2A4 a2a;
     class Direct direct;
 ```
 
@@ -215,25 +204,16 @@ For streaming the tokens simply add to the request body `stream: true`.
 
 ## Middleware Control and Bypass Mechanisms
 
-The Inference Gateway uses middleware to process requests and add capabilities like MCP (Model Context Protocol) and A2A (Agent-to-Agent) integrations. Clients can control which middlewares are active using bypass headers:
+The Inference Gateway uses middleware to process requests and add capabilities like MCP (Model Context Protocol). Clients can control which middlewares are active using bypass headers:
 
 ### Bypass Headers
 
 - **`X-MCP-Bypass`**: Skip MCP middleware processing
-- **`X-A2A-Bypass`**: Skip A2A middleware processing
 
 ### Client Control Examples
 
 ```bash
-# Use only MCP capabilities (skip A2A)
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "X-A2A-Bypass: true" \
-  -d '{
-    "model": "openai/gpt-4",
-    "messages": [{"role": "user", "content": "Help me with file operations"}]
-  }'
-
-# Use only A2A capabilities (skip MCP)
+# Use only standard tool calls (skip MCP)
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "X-MCP-Bypass: true" \
   -d '{
@@ -244,7 +224,6 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 # Skip both middlewares for direct provider access
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "X-MCP-Bypass: true" \
-  -H "X-A2A-Bypass: true" \
   -d '{
     "model": "groq/llama-3-8b",
     "messages": [{"role": "user", "content": "Simple chat without tools"}]
@@ -260,20 +239,14 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 **For Selective Features:**
 
-- Use only MCP tools (skip A2A): Add `X-A2A-Bypass: true`
-- Use only A2A agents (skip MCP): Add `X-MCP-Bypass: true`
-- Direct provider access (skip both): Add both headers
+- Use only standard tool calls (skip MCP): Add `X-MCP-Bypass: true`
+- Direct provider access
 
 **For Development:**
 
 - Test middleware behavior in isolation
 - Debug tool integration issues
 - Ensure backward compatibility with existing applications
-
-**For Agent Communication:**
-
-- Prevent infinite loops when A2A agents make their own chat completion requests
-- Use `X-A2A-Bypass: true` to avoid triggering A2A servers recursively
 
 ### How It Works Internally
 
@@ -284,12 +257,6 @@ The middlewares use these same headers to prevent infinite loops during their op
 - When tools are detected in a response, the MCP agent makes up to 10 follow-up requests
 - Each follow-up request includes `X-MCP-Bypass: true` to skip middleware re-processing
 - This allows the agent to iterate without creating circular calls
-
-**A2A Processing:**
-
-- When A2A agents execute skills, they may need to make their own chat requests
-- The `X-A2A-Bypass: true` header prevents these internal calls from triggering more A2A processing
-- This enables clean agent-to-agent communication
 
 > **Note**: These bypass headers only affect middleware processing. The core chat completions functionality remains available regardless of header values.
 
@@ -313,40 +280,6 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 The gateway automatically injects available tools into requests and handles tool execution, making external capabilities seamlessly available to any LLM.
 
 > **Learn more**: [Model Context Protocol Documentation](https://modelcontextprotocol.io/) | [MCP Integration Example](examples/docker-compose/mcp/)
-
-## Agent-to-Agent (A2A) Integration
-
-Enable A2A to connect with external agents and expose their skills as tools:
-
-**Manual Configuration:**
-
-```bash
-# Enable A2A and connect to agent endpoints
-export A2A_ENABLE=true
-export A2A_AGENTS="http://booking-agent:3001,http://calculator-agent:3002"
-```
-
-**Kubernetes Service Discovery:**
-
-```bash
-# Enable A2A with automatic Kubernetes service discovery
-export A2A_ENABLE=true
-export A2A_SERVICE_DISCOVERY_ENABLE=true
-export A2A_SERVICE_DISCOVERY_NAMESPACE=agents  # Optional: defaults to current namespace
-```
-
-```bash
-# LLMs will automatically discover and use agent skills
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -d '{
-    "model": "openai/gpt-4",
-    "messages": [{"role": "user", "content": "Book a flight to New York and calculate the cost"}]
-  }'
-```
-
-The gateway automatically discovers agent skills, converts them to chat completion tools, and handles skill execution, enabling seamless collaboration between LLMs and external agents. In Kubernetes environments, agents deployed with the inference-gateway operator are automatically discovered without manual configuration.
-
-> **Learn more**: [A2A Protocol Documentation](a2a/README.md) | [A2A Integration Example](examples/docker-compose/a2a/) | [Curated A2A Agents](https://github.com/inference-gateway/awesome-a2a)
 
 ## Metrics and Observability
 
@@ -400,7 +333,7 @@ histogram_quantile(0.95, sum(rate(llm_request_duration_bucket{provider=~"openai|
 
 #### Function/Tool Call Metrics
 
-Comprehensive tracking of tool executions for MCP, A2A, and standard function calls:
+Comprehensive tracking of tool executions for MCP, and standard function calls:
 
 - **`llm_tool_calls_total`** - Counter for total function/tool calls executed
 - **`llm_tool_calls_success_total`** - Counter for successful tool executions
@@ -412,7 +345,6 @@ Comprehensive tracking of tool executions for MCP, A2A, and standard function ca
 **Tool Types**:
 
 - `mcp` - Model Context Protocol tools (prefix: `mcp_`)
-- `a2a` - Agent-to-Agent tools (prefix: `a2a_`)
 - `standard_tool_use` - Other function calls
 
 ```promql
@@ -556,19 +488,19 @@ The Flox environment provides all necessary development tools with pinned versio
 
 | Tool               | Version | Purpose                               |
 | ------------------ | ------- | ------------------------------------- |
-| **Go**             | 1.24.5  | Primary language runtime              |
-| **Task**           | 3.44.0  | Task runner and build automation      |
-| **Docker**         | 28.3.2  | Container runtime                     |
-| **Docker Compose** | 2.38.1  | Multi-container orchestration         |
-| **golangci-lint**  | 2.3.0   | Go code linting                       |
-| **mockgen**        | 0.5.2   | Go mock generation                    |
+| **Go**             | 1.25.0  | Primary language runtime              |
+| **Task**           | 3.44.1  | Task runner and build automation      |
+| **Docker**         | 28.4.0  | Container runtime                     |
+| **Docker Compose** | 2.39.1  | Multi-container orchestration         |
+| **golangci-lint**  | 2.5.0   | Go code linting                       |
+| **mockgen**        | 0.6.0   | Go mock generation                    |
 | **Node.js**        | 22.17.0 | JavaScript runtime (for npm tools)    |
 | **Prettier**       | 3.6.2   | Code formatting                       |
 | **Spectral**       | 6.15.0  | OpenAPI/JSON Schema linting (via npx) |
 | **curl**           | 8.14.1  | HTTP client for testing               |
 | **jq**             | 1.8.1   | JSON processing                       |
-| **kubectl**        | 1.33.3  | Kubernetes CLI                        |
-| **Helm**           | 3.18.4  | Kubernetes package manager            |
+| **kubectl**        | 1.34.0  | Kubernetes CLI                        |
+| **Helm**           | 3.19.0  | Kubernetes package manager            |
 
 ### Common Commands
 
@@ -596,7 +528,6 @@ task lint                      # Run linting
 task generate                  # Generate code from schemas
 task pre-commit:install        # Install git hooks
 task mcp:schema:download       # Download latest MCP schema
-task a2a:schema:download       # Download latest A2A schema
 ```
 
 **Development Workflow:**
@@ -667,7 +598,6 @@ The Inference Gateway can be configured using environment variables. The followi
 - Using [Docker Compose](examples/docker-compose/)
   - [Basic setup](examples/docker-compose/basic/) - Simple configuration with a single provider
   - [MCP Integration](examples/docker-compose/mcp/) - Model Context Protocol with multiple tool servers
-  - [A2A Integration](examples/docker-compose/a2a/) - Agent-to-Agent protocol integration
   - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers (cloud + local)
   - [Authentication](examples/docker-compose/authentication/) - OIDC authentication setup
   - [Tools](examples/docker-compose/tools/) - Tool integration examples
@@ -675,7 +605,6 @@ The Inference Gateway can be configured using environment variables. The followi
 - Using [Kubernetes](examples/kubernetes/)
   - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
   - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in Kubernetes
-  - [A2A Integration](examples/kubernetes/a2a/) - Agent-to-Agent deployment
   - [Agent deployment](examples/kubernetes/agent/) - Standalone agent deployment
   - [Hybrid deployment](examples/kubernetes/hybrid/) - Multiple providers in Kubernetes
   - [Authentication](examples/kubernetes/authentication/) - OIDC authentication in Kubernetes

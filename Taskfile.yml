@@ -14,17 +14,10 @@ tasks:
       - curl -o mcp/mcp-schema.yaml https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.yaml
       - task: format
 
-  a2a:schema:download:
-    desc: 'Download the latest A2A schema'
-    cmds:
-      - curl -o a2a/a2a-schema.json https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/a2a/a2a-schema.json
-      - curl -o a2a/a2a-schema.yaml https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/a2a/a2a-schema.yaml
-      - task: format
-
   install:generator:
     desc: 'Install the generator tool'
     cmds:
-      - go install github.com/inference-gateway/tools/cmd/generator@v0.1.1
+      - GOBIN=${PWD}/bin go install github.com/inference-gateway/tools/cmd/generator@v0.1.2
 
   generate:
     desc: 'Generate the gateway from OpenAPI Spec'
@@ -48,11 +41,9 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/ui/.env.backend.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/a2a/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/monitoring/.env.example
-      - generator -generator jsonrpc -package a2a a2a/a2a-schema.yaml a2a/generated_types.go
-      - generator -generator jsonrpc -package mcp mcp/mcp-schema.yaml mcp/generated_types.go
-      - go generate ./providers/... ./api/... ./otel/... ./logger/...  ./mcp/... ./a2a/...
+      - ./bin/generator -generator jsonrpc -package mcp mcp/mcp-schema.yaml mcp/generated_types.go
+      - go generate ./providers/... ./api/... ./otel/... ./logger/...  ./mcp/...
       - task: format
       - echo "✅ Codegen completed successfully!"
 

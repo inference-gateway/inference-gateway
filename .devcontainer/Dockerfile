@@ -1,17 +1,17 @@
 # Multi-stage build for better caching and smaller final image
-FROM mcr.microsoft.com/devcontainers/go:1-1.24-bookworm AS base
+FROM mcr.microsoft.com/devcontainers/go:2-1.25-bookworm AS base
 
 ENV TASK_VERSION=v3.44.1 \
     CTLPTL_VERSION=0.8.42 \
     K3D_VERSION=v5.8.3 \
-    KUBECTL_VERSION=v1.32.3 \
-    HELM_VERSION=v3.18.2 \
+    KUBECTL_VERSION=v1.34.0 \
+    HELM_VERSION=v3.19.0 \
     GORELEASER_VERSION=v2.11.2 \
-    GOLANG_CI_LINT_VERSION=v2.4.0 \
-    GITHUB_CLI_VERSION=2.78.0 \
+    GOLANG_CI_LINT_VERSION=v2.5.0 \
+    GITHUB_CLI_VERSION=2.80.0 \
     NODE_VERSION=lts \
-    SEMANTIC_RELEASE_VERSION=v24.2.7 \
-    INFERENCE_GATEWAY_CLI=v0.36.0
+    SEMANTIC_RELEASE_VERSION=v24.2.9 \
+    INFERENCE_GATEWAY_CLI=v0.51.3
 
 # Determine architecture once and store as build arg
 RUN architecture=$(uname -m) && \
@@ -90,8 +90,8 @@ FROM base AS development
 
 USER vscode
 
-RUN go install go.uber.org/mock/mockgen@v0.5.0 && \
-    go install github.com/inference-gateway/tools/cmd/generator@v0.1.1
+RUN go install go.uber.org/mock/mockgen@v0.6.0 && \
+    go install github.com/inference-gateway/tools/cmd/generator@v0.1.2
 
 # Use Powerlevel10k theme
 RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /home/vscode/.powerlevel10k

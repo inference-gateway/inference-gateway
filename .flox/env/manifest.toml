@@ -12,46 +12,55 @@ PROJECT_DESCRIPTION = "An open-source, high-performance gateway unifying multipl
 
 [install]
 go.pkg-path = "go"
-go.version = "1.24.5"
-
-go-task.pkg-path = "go-task"
-go-task.version = "3.44.0"
+go.version = "^1.25.0"
 
 docker.pkg-path = "docker"
-docker.version = "28.3.2"
+docker.version = "^28.4.0"
 
 docker-compose.pkg-path = "docker-compose"
-docker-compose.version = "2.38.1"
+docker-compose.version = "^2.39.1"
+
+go-task.pkg-path = "go-task"
+go-task.version = "^3.44.1"
 
 golangci-lint.pkg-path = "golangci-lint"
-golangci-lint.version = "2.3.0"
+golangci-lint.version = "^2.5.0"
 
 curl.pkg-path = "curl"
-curl.version = "8.14.1"
+curl.version = "^8.14.1"
 
 jq.pkg-path = "jq" 
-jq.version = "1.8.1"
+jq.version = "^1.8.1"
 
 git.pkg-path = "git"
-git.version = "2.50.1"
+git.version = "^2.51.0"
+
+gh.pkg-path = "gh"
+gh.version = "^2.80.0"
 
 kubectl.pkg-path = "kubectl"
-kubectl.version = "1.33.3"
+kubectl.version = "^1.34.0"
 
 kubernetes-helm.pkg-path = "kubernetes-helm"
-kubernetes-helm.version = "3.18.4"
+kubernetes-helm.version = "^3.19.0"
+
+ctlptl.pkg-path = "ctlptl"
+ctlptl.version = "^0.8.43"
+
+k3d.pkg-path = "k3d"
+k3d.version = "^5.8.3"
 
 mockgen.pkg-path = "mockgen"
-mockgen.version = "v0.5.2"
+mockgen.version = "v0.6.0"
 
 nodejs.pkg-path = "nodejs"
-nodejs.version = "22.17.0"
+nodejs.version = "^22.17.0"
 
 prettier.pkg-path = "prettier"
-prettier.version = "3.6.2"
+prettier.version = "^3.6.2"
 
 claude-code.pkg-path = "claude-code"
-claude-code.version = "^1.0.65"
+claude-code.version = "^1.0.123"
 
 [hook]
 on-activate = """
@@ -75,7 +84,6 @@ on-activate = """
   echo ""
   
   mkdir -p "$GOPATH/bin"
-  export PATH="$GOPATH/bin:$PATH"
   
   mkdir -p bin
   
@@ -86,12 +94,19 @@ on-activate = """
     go mod download
     echo "✅ Go dependencies installed"
   fi
+
+  # Install infer CLI if not already installed
+  if ! command -v infer >/dev/null 2>&1; then
+    echo "📥 Installing infer CLI..."
+    curl -fsSL https://raw.githubusercontent.com/inference-gateway/cli/main/install.sh | bash -s -- --install-dir $HOME/.local/bin
+    echo "✅ infer CLI installed"
+  else
+    echo "✅ infer CLI already installed"
+  fi
 """
 
 [profile]
 common = '''
-  export PATH="$GOPATH/bin:$PATH"
-  
   alias gs="git status"
   alias gl="git log --oneline -10"
   alias gd="git diff"

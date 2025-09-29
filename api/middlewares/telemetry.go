@@ -308,10 +308,6 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, mod
 
 // classifyToolType determines the tool type based on the tool name
 func (t *TelemetryImpl) classifyToolType(toolName string) string {
-	if strings.HasPrefix(toolName, "a2a_") {
-		return "a2a"
-	}
-
 	if strings.HasPrefix(toolName, "mcp_") {
 		return "mcp"
 	}

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
-	"github.com/inference-gateway/inference-gateway/a2a"
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -165,59 +164,18 @@ func main() {
 		}
 	}
 
-	// Initialize A2A client if enabled
-	var a2aClient a2a.A2AClientInterface
-	var a2aMiddleware middlewares.A2AMiddleware
-	if cfg.A2A.Enable {
-		if cfg.A2A.Agents != "" || cfg.A2A.ServiceDiscoveryEnable {
-			a2aClient = a2a.NewA2AClient(cfg, logger)
-
-			initCtx, cancel := context.WithTimeout(context.Background(), cfg.A2A.ClientTimeout)
-			defer cancel()
-
-			if cfg.A2A.Agents != "" {
-				logger.Info("starting a2a client initialization with static agents", "timeout", cfg.A2A.ClientTimeout.String())
-				initErr := a2aClient.InitializeAll(initCtx)
-				if initErr != nil {
-					logger.Warn("a2a client initialization failed, but continuing gateway startup - background reconnection enabled", "error", initErr)
-				} else {
-					logger.Info("a2a client initialized successfully")
-				}
-			} else if cfg.A2A.ServiceDiscoveryEnable {
-				logger.Info("starting a2a client with service discovery enabled", "namespace", cfg.A2A.ServiceDiscoveryNamespace)
-			}
-
-			a2aClient.StartStatusPolling(context.Background())
-		} else {
-			logger.Info("a2a is enabled but no agents configured and service discovery is disabled")
-		}
-
-		a2aAgent := a2a.NewAgent(logger, a2aClient, cfg.A2A)
-		a2aMiddleware, err = middlewares.NewA2AMiddleware(providerRegistry, a2aClient, a2aAgent, logger, client, cfg)
-		if err != nil {
-			logger.Error("failed to initialize a2a middleware", err)
-			return
-		}
-	}
-
 	// Set GIN mode based on environment
 	if cfg.Environment != "development" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient, a2aClient)
+	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.Telemetry.Enable {
 		r.Use(telemetry.Middleware())
 	}
 	r.Use(oidcAuthenticator.Middleware())
-
-	// Add A2A middleware if enabled
-	if cfg.A2A.Enable {
-		r.Use(a2aMiddleware.Middleware())
-		logger.Info("a2a middleware added to request pipeline")
-	}
 
 	// Add MCP middleware if enabled
 	if cfg.MCP.Enable {
@@ -230,10 +188,6 @@ func main() {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/models", api.ListModelsHandler)
-		v1.GET("/a2a/agents", api.ListAgentsHandler)
-		v1.GET("/a2a/agents/:id", api.GetAgentHandler)
-		v1.GET("/a2a/agents/status", api.GetAllAgentStatusesHandler)
-		v1.GET("/a2a/agents/:id/status", api.GetAgentStatusHandler)
 		v1.GET("/mcp/tools", api.ListToolsHandler)
 		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 	}
@@ -269,10 +223,6 @@ func main() {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 	logger.Info("shutting down server...")
-
-	if cfg.A2A.Enable && a2aClient != nil {
-		a2aClient.StopStatusPolling()
-	}
 
 	if cfg.MCP.Enable && mcpClient != nil {
 		mcpClient.StopStatusPolling()

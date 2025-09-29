@@ -107,25 +107,6 @@ type ListModelsTransformer interface {
 	Transform() ListModelsResponse
 }
 
-// A2AAgentCard represents a A2AAgentCard in the API
-type A2AAgentCard struct {
-	Capabilities                      map[string]interface{}    `json:"capabilities"`
-	Defaultinputmodes                 []string                  `json:"defaultInputModes"`
-	Defaultoutputmodes                []string                  `json:"defaultOutputModes"`
-	Description                       string                    `json:"description"`
-	Documentationurl                  *string                   `json:"documentationUrl,omitempty"`
-	Iconurl                           *string                   `json:"iconUrl,omitempty"`
-	ID                                string                    `json:"id"`
-	Name                              string                    `json:"name"`
-	Provider                          *map[string]interface{}   `json:"provider,omitempty"`
-	Security                          *[]map[string]interface{} `json:"security,omitempty"`
-	Securityschemes                   *map[string]interface{}   `json:"securitySchemes,omitempty"`
-	Skills                            []map[string]interface{}  `json:"skills"`
-	Supportsauthenticatedextendedcard *bool                     `json:"supportsAuthenticatedExtendedCard,omitempty"`
-	Url                               string                    `json:"url"`
-	Version                           string                    `json:"version"`
-}
-
 // ChatCompletionChoice represents a ChatCompletionChoice in the API
 type ChatCompletionChoice struct {
 	FinishReason FinishReason `json:"finish_reason"`
@@ -245,12 +226,6 @@ type FunctionObject struct {
 // FunctionParameters represents a FunctionParameters in the API
 type FunctionParameters map[string]interface{}
 
-// ListAgentsResponse represents a ListAgentsResponse in the API
-type ListAgentsResponse struct {
-	Data   []A2AAgentCard `json:"data"`
-	Object string         `json:"object"`
-}
-
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {
 	Data     []Model   `json:"data"`
@@ -291,92 +266,7 @@ type Model struct {
 	ServedBy Provider `json:"served_by"`
 }
 
-// ContentPart represents a content part within a multimodal message
-type ContentPart interface {
-	GetType() string
-}
-
-// TextContentPart represents a text content part
-type TextContentPart struct {
-	Type string `json:"type"`
-	Text string `json:"text"`
-}
-
-// GetType returns the content type for TextContentPart
-func (t TextContentPart) GetType() string {
-	return t.Type
-}
-
-// ImageContentPart represents an image content part
-type ImageContentPart struct {
-	Type     string   `json:"type"`
-	ImageURL ImageURL `json:"image_url"`
-}
-
-// GetType returns the content type for ImageContentPart
-func (i ImageContentPart) GetType() string {
-	return i.Type
-}
-
-// ImageURL represents an image URL with optional detail level
-type ImageURL struct {
-	URL    string  `json:"url"`
-	Detail *string `json:"detail,omitempty"`
-}
-
 // Transform converts provider-specific response to common format
 func (p *CreateChatCompletionResponse) Transform() CreateChatCompletionResponse {
 	return *p
-}
-
-// HasImageContent checks if the message contains image content
-func (m *Message) HasImageContent() bool {
-	switch content := m.Content.(type) {
-	case string:
-		return false
-	case []interface{}:
-		for _, part := range content {
-			if partMap, ok := part.(map[string]interface{}); ok {
-				if contentType, exists := partMap["type"]; exists && contentType == "image_url" {
-					return true
-				}
-			}
-		}
-	case []ContentPart:
-		for _, part := range content {
-			if part.GetType() == "image_url" {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// GetTextContent extracts text content from a message, regardless of format
-func (m *Message) GetTextContent() string {
-	switch content := m.Content.(type) {
-	case string:
-		return content
-	case []interface{}:
-		var textParts []string
-		for _, part := range content {
-			if partMap, ok := part.(map[string]interface{}); ok {
-				if contentType, exists := partMap["type"]; exists && contentType == "text" {
-					if text, textExists := partMap["text"].(string); textExists {
-						textParts = append(textParts, text)
-					}
-				}
-			}
-		}
-		if len(textParts) > 0 {
-			return textParts[0] // Return first text part for simplicity
-		}
-	case []ContentPart:
-		for _, part := range content {
-			if textPart, ok := part.(TextContentPart); ok {
-				return textPart.Text
-			}
-		}
-	}
-	return ""
 }

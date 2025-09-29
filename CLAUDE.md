@@ -2,149 +2,164 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Common Development Commands
 
-The Inference Gateway is a multi-provider LLM proxy server written in Go that supports OpenAI-compatible APIs. It provides a unified interface for accessing various language model providers (OpenAI, Anthropic, Groq, Ollama, etc.) and includes advanced features like Model Context Protocol (MCP) and Agent-to-Agent (A2A) integrations.
+### Building and Running
 
-## Common Commands
+```bash
+# Build the gateway binary
+task build
 
-### Development Setup
+# Run the gateway locally
+task run
 
-- `task pre-commit:install` - Install pre-commit hooks for automatic code quality checks
+# Build Docker container
+task build:container
+```
 
-### Essential Development Commands
+### Testing and Quality
 
-- `task build` - Build the gateway binary (`go build -o bin/inference-gateway cmd/gateway/main.go`)
-- `task run` - Run the gateway locally (`go run cmd/gateway/main.go`)
-- `task test` - Run all tests (`go test -v ./...`)
-- `task lint` - Run Go linting (`golangci-lint run`)
+```bash
+# Run all tests
+task test
 
-### Schema and Code Generation
+# Run linting (golangci-lint)
+task lint
 
-- `task generate` - Generate all code from OpenAPI spec and schemas
-- `task mcp:schema:download` - Download latest MCP schema when working on MCP features
-- `task a2a:schema:download` - Download latest A2A schema when working on A2A features
+# Lint OpenAPI spec
+task openapi:lint
 
-### Running Single Tests
+# Format code (prettier + go fmt)
+task format
 
-- `go test -v ./tests/api_routes_test.go` - Run specific test file
-- `go test -v -run TestChatCompletions ./tests/` - Run specific test function
+# Install pre-commit hooks (recommended)
+task pre-commit:install
 
-### Container and Deployment
+# Run benchmarks
+task benchmark
+```
 
-- `task build:container` - Build Docker container
-- `task package` - Package the gateway (builds container)
+### Code Generation
 
-## Architecture Overview
+```bash
+# Generate all code from OpenAPI spec (providers, config, types, etc.)
+task generate
+
+# Download latest MCP schema before working on MCP features
+task mcp:schema:download
+
+# Download latest OpenAPI spec
+task openapi:download
+```
+
+### Testing Individual Components
+
+```bash
+# Run tests for a specific package
+go test -v ./providers/...
+go test -v ./api/...
+go test -v ./mcp/...
+
+# Run tests with coverage
+go test -v -cover ./...
+
+# Run a specific test
+go test -v -run TestSpecificName ./path/to/package
+```
+
+## High-Level Architecture
 
 ### Core Components
 
-**Entry Point**: `cmd/gateway/main.go` - Main application entry point that initializes all components and starts the HTTP server
+**Gateway Server** (`cmd/gateway/main.go`)
 
-**Configuration**: `config/` - Environment-based configuration using `go-envconfig` with support for all providers and features
+- Entry point that initializes configuration, logger, telemetry, and HTTP server
+- Uses Gin framework for HTTP routing
+- Supports graceful shutdown with context cancellation
 
-**API Layer**: `api/routes.go` - HTTP handlers implementing OpenAI-compatible endpoints (`/v1/chat/completions`, `/v1/models`, etc.)
+**API Layer** (`api/`)
 
-**Provider System**: `providers/` - Abstracted provider implementations with a registry pattern supporting multiple LLM providers
+- `routes.go`: Defines main request handlers (ChatCompletionsHandler, ListModelsHandler, ProxyHandler)
+- `middlewares/`: Contains auth (OIDC), logging, telemetry, and MCP middleware
+- Handles streaming and non-streaming responses
+- Routes requests to appropriate providers based on model prefix or URL parameter
 
-**Middleware Stack**: `api/middlewares/` - Request processing pipeline including:
+**Providers** (`providers/`)
 
-- MCP middleware for tool injection and execution
-- A2A middleware for agent skill integration
-- Authentication (OIDC), logging, and telemetry
+- Each provider (OpenAI, Anthropic, Groq, Ollama, etc.) implements a common interface
+- `registry.go`: Central registry for provider management
+- `client.go`: HTTP client configuration for making provider requests
+- `model_mapping.go`: Maps model names to provider endpoints
+- Provider detection via model prefix (e.g., "openai/gpt-4") or explicit `?provider=` parameter
 
-### Key Architectural Patterns
+**MCP (Model Context Protocol)** (`mcp/`)
 
-**Provider Registry Pattern**: All LLM providers implement the `IProvider` interface and are registered in a central registry for consistent access
+- `client.go`: MCP client for connecting to tool servers
+- `agent.go`: Handles tool execution and response processing
+- `generated_types.go`: Auto-generated types from MCP schema
+- Middleware can be bypassed with `X-MCP-Bypass` header
+- Supports up to 10 follow-up tool calls per request
 
-**Middleware Pipeline**: Requests flow through configurable middleware that can inject tools, handle authentication, and process responses
+**Configuration** (`config/`)
 
-**Interface-Based Design**: Most components are interface-based (`Router`, `ProviderRegistry`, `MCPClientInterface`, `A2AClientInterface`) enabling easy mocking and testing
+- Environment-based configuration using `sethvargo/go-envconfig`
+- All settings documented in `Configurations.md` (auto-generated)
+- Supports provider API keys, URLs, timeouts, and feature flags
 
-## MCP (Model Context Protocol) Integration
+**Middleware Flow**
 
-MCP enables automatic tool discovery and injection. When enabled:
+1. Request → Authentication (optional OIDC) → Logging → Telemetry
+2. MCP middleware (if enabled) injects available tools
+3. Provider routing and proxying
+4. Tool execution handling (if tools in response)
+5. Response streaming or standard JSON response
 
-- Tools are automatically discovered from configured MCP servers
-- The MCP middleware injects available tools into chat completion requests
-- Tool calls are executed automatically and results fed back to the LLM
+### Code Generation Workflow
 
-**Key files**: `mcp/agent.go`, `mcp/client.go`, `api/middlewares/mcp.go`
+The project uses extensive code generation from `openapi.yaml`:
 
-## A2A (Agent-to-Agent) Integration
+1. Update `openapi.yaml` with new schemas/configurations
+2. Run `task generate` to regenerate:
+   - Provider implementations
+   - Configuration structures
+   - Helm charts values
+   - Docker Compose `.env` examples
+   - Documentation
 
-A2A enables connecting to external agents and exposing their skills as tools:
+### Testing Strategy
 
-- Agent skills are automatically discovered and converted to OpenAI tool format
-- Skills can be executed by LLMs through the standard tool calling mechanism
-- Supports agent card retrieval and skill execution
+- **Unit Tests**: Table-driven tests for individual components
+- **Mock Generation**: Uses `mockgen` for interface mocking
+- **Integration Tests**: Test full request flow with mock providers
+- **Benchmarks**: Performance testing in `tests/` directory
 
-**Key files**: `a2a/agent.go`, `a2a/client.go`, `api/middlewares/a2a.go`
+### Development Best Practices
 
-## Development Best Practices
+From `.github/copilot-instructions.md`:
 
-### Development Setup
+- Use early returns to avoid deep nesting
+- Prefer switch statements over if-else chains
+- Use table-driven testing
+- Code to interfaces for easier mocking
+- Use lowercase log messages
+- Ensure type safety with strong typing
+- Each test should have isolated mock dependencies
 
-- **Always run `task pre-commit:install` before starting any development work** to ensure code quality checks are in place
-- The pre-commit hook automatically runs code generation, linting, building, and testing before each commit
+### Provider Addition
 
-### Code Style
+When adding a new provider:
 
-- Use table-driven testing for comprehensive test coverage
-- Prefer early returns to avoid deep nesting
-- Use switch statements over if-else chains for multiple conditions
-- Code to interfaces for easier mocking and testing
-- Use lowercase log messages for consistency
+1. Add configuration to `openapi.yaml`
+2. Run `task generate`
+3. Implement provider-specific logic if needed
+4. Add environment variables for API keys/URLs
+5. Test with both streaming and non-streaming requests
 
-### Testing Patterns
+### Streaming Implementation
 
-- Each test case should have isolated mock dependencies
-- Use `go generate` to generate mocks from interfaces
-- Tests are located in `tests/` directory with comprehensive coverage
+The gateway supports Server-Sent Events (SSE) streaming:
 
-### Schema Management
-
-- OpenAPI specification in `openapi.yaml` defines all configuration
-- Run `task generate` after modifying schemas to update generated code
-- MCP and A2A schemas are downloaded and converted to Go types
-
-## Configuration System
-
-Configuration is environment-based using structured config types:
-
-- `Config` struct in `config/config.go` defines all settings
-- Provider-specific config in `providers/` package
-- Environment variables follow structured naming (e.g., `MCP_ENABLE`, `A2A_AGENTS`)
-
-## Important Notes
-
-- Always run `task pre-commit:install` before starting development to set up automatic code quality checks
-- Always run `task lint` before committing code
-- Always run `task build` and `task test` to verify changes
-- When working on MCP: run `task mcp:schema:download` and `task generate` to update types
-- When working on A2A: run `task a2a:schema:download` and `task generate` to update types
-- The gateway serves on port 8080 by default with metrics on port 9464
-
-## Related Repositories
-
-### Core Inference Gateway
-
-- **[Main Repository](https://github.com/inference-gateway)** - The main inference gateway org
-- **[Documentation](https://github.com/inference-gateway/docs)** - Official documentation and guides
-- **[UI](https://github.com/inference-gateway/ui)** - Web interface for the inference gateway
-
-### SDKs & Client Libraries
-
-- **[Go SDK](https://github.com/inference-gateway/go-sdk)** - Go client library
-- **[Rust SDK](https://github.com/inference-gateway/rust-sdk)** - Rust client library
-- **[TypeScript SDK](https://github.com/inference-gateway/typescript-sdk)** - TypeScript/JavaScript client library
-- **[Python SDK](https://github.com/inference-gateway/python-sdk)** - Python client library
-
-### A2A (Agent-to-Agent) Ecosystem
-
-- **[Awesome A2A](https://github.com/inference-gateway/awesome-a2a)** - Curated list of A2A-compatible agents
-- **[Google Calendar Agent](https://github.com/inference-gateway/google-calendar-agent)** - Agent for Google Calendar integration
-
-### Internal Tools
-
-- **[Internal Tools](https://github.com/inference-gateway/tools)** - Collection of internal tools and utilities
+- Detects `stream: true` in request body
+- Forwards streaming responses chunk by chunk
+- Handles both data-only and data: prefixed chunks
+- Properly manages connection lifecycle and error handling

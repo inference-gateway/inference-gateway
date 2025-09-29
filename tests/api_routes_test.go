@@ -9,13 +9,10 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
-	adk "github.com/inference-gateway/adk/types"
-	a2a "github.com/inference-gateway/inference-gateway/a2a"
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	providers "github.com/inference-gateway/inference-gateway/providers"
-	a2amocks "github.com/inference-gateway/inference-gateway/tests/mocks/a2a"
 	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
@@ -179,7 +176,7 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -277,7 +274,7 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 				},
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -431,7 +428,7 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -470,235 +467,6 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 			} else {
 				assert.Equal(t, "chat.completion", response["object"])
 				assert.NotEmpty(t, response["model"])
-			}
-		})
-	}
-}
-
-func TestListAgentsHandler(t *testing.T) {
-	tests := []struct {
-		name                 string
-		a2aExpose            bool
-		a2aClientNil         bool
-		a2aClientInitialized bool
-		agentURLs            []string
-		agentCards           map[string]*a2a.AgentCard
-		agentCardErrors      map[string]error
-		expectedStatus       int
-		expectedError        string
-		expectedAgentCount   int
-		description          string
-	}{
-		{
-			name:           "A2A not exposed returns 403",
-			a2aExpose:      false,
-			expectedStatus: http.StatusForbidden,
-			expectedError:  "A2A agents endpoint is not exposed",
-			description:    "When A2A_EXPOSE is false, should return 403 Forbidden",
-		},
-		{
-			name:               "A2A client nil returns empty list",
-			a2aExpose:          true,
-			a2aClientNil:       true,
-			expectedStatus:     http.StatusOK,
-			expectedAgentCount: 0,
-			description:        "When A2A client is nil, should return empty agents list",
-		},
-		{
-			name:                 "A2A client not initialized returns empty list",
-			a2aExpose:            true,
-			a2aClientInitialized: false,
-			expectedStatus:       http.StatusOK,
-			expectedAgentCount:   0,
-			description:          "When A2A client is not initialized, should return empty agents list",
-		},
-		{
-			name:                 "No agents configured returns empty list",
-			a2aExpose:            true,
-			a2aClientInitialized: true,
-			agentURLs:            []string{},
-			expectedStatus:       http.StatusOK,
-			expectedAgentCount:   0,
-			description:          "When no agents are configured, should return empty agents list",
-		},
-		{
-			name:                 "Single agent returns successfully",
-			a2aExpose:            true,
-			a2aClientInitialized: true,
-			agentURLs:            []string{"https://agent1.example.com"},
-			agentCards: map[string]*a2a.AgentCard{
-				"https://agent1.example.com": {
-					Name:        "Calculator Agent",
-					Description: "An agent that can perform mathematical calculations",
-					URL:         "https://agent1.example.com",
-				},
-			},
-			expectedStatus:     http.StatusOK,
-			expectedAgentCount: 1,
-			description:        "Single agent should be returned successfully",
-		},
-		{
-			name:                 "Multiple agents return successfully",
-			a2aExpose:            true,
-			a2aClientInitialized: true,
-			agentURLs:            []string{"https://agent1.example.com", "https://agent2.example.com"},
-			agentCards: map[string]*a2a.AgentCard{
-				"https://agent1.example.com": {
-					Name:        "Calculator Agent",
-					Description: "An agent that can perform mathematical calculations",
-					URL:         "https://agent1.example.com",
-				},
-				"https://agent2.example.com": {
-					Name:        "Weather Agent",
-					Description: "An agent that provides weather information",
-					URL:         "https://agent2.example.com",
-				},
-			},
-			expectedStatus:     http.StatusOK,
-			expectedAgentCount: 2,
-			description:        "Multiple agents should be returned successfully",
-		},
-		{
-			name:                 "Failed agent card retrieval skips agent",
-			a2aExpose:            true,
-			a2aClientInitialized: true,
-			agentURLs:            []string{"https://agent1.example.com", "https://agent2.example.com"},
-			agentCards: map[string]*a2a.AgentCard{
-				"https://agent1.example.com": {
-					Name:        "Calculator Agent",
-					Description: "An agent that can perform mathematical calculations",
-					URL:         "https://agent1.example.com",
-				},
-			},
-			agentCardErrors: map[string]error{
-				"https://agent2.example.com": assert.AnError,
-			},
-			expectedStatus:     http.StatusOK,
-			expectedAgentCount: 1,
-			description:        "Should skip agents with card retrieval errors and continue with successful ones",
-		},
-		{
-			name:                 "All agents fail to retrieve cards returns empty list",
-			a2aExpose:            true,
-			a2aClientInitialized: true,
-			agentURLs:            []string{"https://agent1.example.com", "https://agent2.example.com"},
-			agentCardErrors: map[string]error{
-				"https://agent1.example.com": assert.AnError,
-				"https://agent2.example.com": assert.AnError,
-			},
-			expectedStatus:     http.StatusOK,
-			expectedAgentCount: 0,
-			description:        "Should return empty list when all agent card retrievals fail",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			mockRegistry := providersmocks.NewMockProviderRegistry(ctrl)
-			mockClient := providersmocks.NewMockClient(ctrl)
-			var mockA2AClient *a2amocks.MockA2AClientInterface
-
-			log, err := logger.NewLogger("test")
-			require.NoError(t, err)
-
-			if !tt.a2aClientNil {
-				mockA2AClient = a2amocks.NewMockA2AClientInterface(ctrl)
-
-				mockA2AClient.EXPECT().
-					IsInitialized().
-					Return(tt.a2aClientInitialized).
-					AnyTimes()
-
-				if tt.a2aClientInitialized {
-					mockA2AClient.EXPECT().
-						GetAgents().
-						Return(tt.agentURLs).
-						AnyTimes()
-
-					for _, agentURL := range tt.agentURLs {
-						if agentCard, exists := tt.agentCards[agentURL]; exists {
-							mockAgentCard := &adk.AgentCard{
-								Name:        agentCard.Name,
-								Description: agentCard.Description,
-							}
-							mockA2AClient.EXPECT().
-								GetAgentCard(gomock.Any(), agentURL).
-								Return(mockAgentCard, nil).
-								Times(1)
-						} else if err, hasError := tt.agentCardErrors[agentURL]; hasError {
-							mockA2AClient.EXPECT().
-								GetAgentCard(gomock.Any(), agentURL).
-								Return(nil, err).
-								Times(1)
-						}
-					}
-				}
-			}
-
-			cfg := config.Config{
-				A2A: &config.A2AConfig{
-					Expose: tt.a2aExpose,
-				},
-				Server: &config.ServerConfig{
-					ReadTimeout: time.Duration(5000) * time.Millisecond,
-				},
-			}
-
-			var router api.Router
-			if tt.a2aClientNil {
-				router = api.NewRouter(cfg, log, mockRegistry, mockClient, nil, nil)
-			} else {
-				router = api.NewRouter(cfg, log, mockRegistry, mockClient, nil, mockA2AClient)
-			}
-
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
-			r.GET("/a2a/agents", router.ListAgentsHandler)
-
-			w := httptest.NewRecorder()
-			req, err := http.NewRequest("GET", "/a2a/agents", nil)
-			require.NoError(t, err)
-
-			r.ServeHTTP(w, req)
-
-			assert.Equal(t, tt.expectedStatus, w.Code, "HTTP status code should match expected")
-
-			var response map[string]interface{}
-			err = json.Unmarshal(w.Body.Bytes(), &response)
-			require.NoError(t, err, "Response should be valid JSON")
-
-			if tt.expectedError != "" {
-				errorMsg, exists := response["error"]
-				assert.True(t, exists, "Response should contain error field")
-				assert.Contains(t, errorMsg.(string), tt.expectedError, "Error message should contain expected text")
-			} else {
-				assert.Equal(t, "list", response["object"], "Response object should be 'list'")
-
-				data, exists := response["data"]
-				assert.True(t, exists, "Response should contain data field")
-
-				dataArray, ok := data.([]interface{})
-				assert.True(t, ok, "Data field should be an array")
-				assert.Equal(t, tt.expectedAgentCount, len(dataArray), "Number of agents should match expected")
-
-				if tt.expectedAgentCount > 0 {
-					for i, agentInterface := range dataArray {
-						agent, ok := agentInterface.(map[string]interface{})
-						assert.True(t, ok, "Agent should be an object")
-
-						assert.NotEmpty(t, agent["id"], "Agent %d should have non-empty id", i)
-						assert.NotEmpty(t, agent["name"], "Agent %d should have non-empty name", i)
-
-						_, hasDescription := agent["description"]
-						assert.True(t, hasDescription, "Agent %d should have description field", i)
-
-						_, hasUrl := agent["url"]
-						assert.True(t, hasUrl, "Agent %d should have url field", i)
-					}
-				}
 			}
 		})
 	}

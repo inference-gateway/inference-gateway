@@ -5,7 +5,7 @@ This example demonstrates monitoring integration with the Inference Gateway usin
 - **Prometheus** for metrics collection
 - **Grafana** for visualization with enhanced dashboards
 - **Helm chart** for gateway deployment with monitoring enabled
-- **Function/Tool Call Metrics** tracking MCP and A2A tool executions
+- **Function/Tool Call Metrics** tracking MCP tool executions
 
 ## Table of Contents
 

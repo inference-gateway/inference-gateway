@@ -14,25 +14,25 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v5.5.0
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.24'
+          go-version-file: 'go.mod'
           cache: true
 
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.4.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.5.0
 
       - name: Install Mockgen
-        run: go install go.uber.org/mock/mockgen@v0.5.0
+        run: go install go.uber.org/mock/mockgen@v0.6.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v5
         with:
           node-version: 22
 

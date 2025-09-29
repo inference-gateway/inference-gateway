@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.3](https://github.com/inference-gateway/inference-gateway/compare/v0.19.2...v0.19.3) (2025-09-29)
+
+### ♻️ Improvements
+
+* **a2a:** Remove A2A middleware and all related components ([#183](https://github.com/inference-gateway/inference-gateway/issues/183)) ([a32c7e4](https://github.com/inference-gateway/inference-gateway/commit/a32c7e4a08eae01868b645dc93521130db79de17))
+
+### 🐛 Bug Fixes
+
+* **a2a:** Prevent gateway crash when A2A agents fail to initialize ([#179](https://github.com/inference-gateway/inference-gateway/issues/179)) ([c44a211](https://github.com/inference-gateway/inference-gateway/commit/c44a211908c6078cbb1cfd41e983b6ff473c46bc)), closes [#178](https://github.com/inference-gateway/inference-gateway/issues/178)
+
+### 🔧 Miscellaneous
+
+* **flox:** Add claude-code package with version 1.0.65 ([594573a](https://github.com/inference-gateway/inference-gateway/commit/594573a5a1befe04098d5da9eb559873e9e454a6))
+
 ## [0.19.2](https://github.com/inference-gateway/inference-gateway/compare/v0.19.1...v0.19.2) (2025-09-02)
 
 ### 🐛 Bug Fixes

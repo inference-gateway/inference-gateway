@@ -37,11 +37,11 @@ jobs:
 
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.4.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.5.0
 
       - name: Install task
         run: |
-          curl -s https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin v3.43.3
+          curl -s https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin v3.44.1
 
       - name: Run Claude Code
         id: claude
@@ -62,7 +62,7 @@ jobs:
 
             COMMIT MESSAGE FORMAT: Always use conventional commits with capital letters. 
             Follow the format: "type(scope): Description" where the description starts with a capital letter.
-            Examples: "feat(a2a): Add retry mechanism for agent connections", "fix(auth): Resolve token validation issue"
+            Examples: "feat(mcp): Add retry mechanism for agent connections", "fix(auth): Resolve token validation issue"
 
             Follow the development workflow specified in the coding instructions.
           mcp_config: |
