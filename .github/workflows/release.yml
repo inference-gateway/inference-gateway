@@ -17,7 +17,7 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
     steps:
-      - uses: actions/create-github-app-token@v2.0.6
+      - uses: actions/create-github-app-token@v2.1.4
         id: app-token
         with:
           app-id: ${{ secrets.BOT_GH_APP_ID }}
@@ -40,7 +40,7 @@ jobs:
           git config --global commit.signoff true
 
       - name: Checkout code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
@@ -48,13 +48,13 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4.4.0
+        uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 'lts/*'
 
       - name: Install semantic release and plugins
         run: |
-          npm install -g semantic-release@v24.2.5 \
+          npm install -g semantic-release@v24.2.9 \
             conventional-changelog-cli \
             conventional-changelog-conventionalcommits \
             @semantic-release/changelog \

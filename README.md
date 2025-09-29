@@ -488,19 +488,19 @@ The Flox environment provides all necessary development tools with pinned versio
 
 | Tool               | Version | Purpose                               |
 | ------------------ | ------- | ------------------------------------- |
-| **Go**             | 1.24.5  | Primary language runtime              |
-| **Task**           | 3.44.0  | Task runner and build automation      |
-| **Docker**         | 28.3.2  | Container runtime                     |
-| **Docker Compose** | 2.38.1  | Multi-container orchestration         |
-| **golangci-lint**  | 2.3.0   | Go code linting                       |
-| **mockgen**        | 0.5.2   | Go mock generation                    |
+| **Go**             | 1.25.0  | Primary language runtime              |
+| **Task**           | 3.44.1  | Task runner and build automation      |
+| **Docker**         | 28.4.0  | Container runtime                     |
+| **Docker Compose** | 2.39.1  | Multi-container orchestration         |
+| **golangci-lint**  | 2.5.0   | Go code linting                       |
+| **mockgen**        | 0.6.0   | Go mock generation                    |
 | **Node.js**        | 22.17.0 | JavaScript runtime (for npm tools)    |
 | **Prettier**       | 3.6.2   | Code formatting                       |
 | **Spectral**       | 6.15.0  | OpenAPI/JSON Schema linting (via npx) |
 | **curl**           | 8.14.1  | HTTP client for testing               |
 | **jq**             | 1.8.1   | JSON processing                       |
-| **kubectl**        | 1.33.3  | Kubernetes CLI                        |
-| **Helm**           | 3.18.4  | Kubernetes package manager            |
+| **kubectl**        | 1.34.0  | Kubernetes CLI                        |
+| **Helm**           | 3.19.0  | Kubernetes package manager            |
 
 ### Common Commands
 

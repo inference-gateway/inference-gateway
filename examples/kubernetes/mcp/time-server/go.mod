@@ -1,6 +1,6 @@
 module github.com/inference-gateway/inference-gateway/examples/docker-compose/mcp/time-server
 
-go 1.24
+go 1.25.0
 
 require (
 	github.com/gin-gonic/gin v1.9.1
