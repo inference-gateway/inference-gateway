@@ -249,7 +249,7 @@ type MCPTool struct {
 
 // Message represents a Message in the API
 type Message struct {
-	Content          string                           `json:"content"`
+	Content          interface{}                      `json:"content"`
 	Reasoning        *string                          `json:"reasoning,omitempty"`
 	ReasoningContent *string                          `json:"reasoning_content,omitempty"`
 	Role             MessageRole                      `json:"role"`
