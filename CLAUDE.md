@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Development Commands
 
 ### Building and Running
+
 ```bash
 # Build the gateway binary
 task build
@@ -17,6 +18,7 @@ task build:container
 ```
 
 ### Testing and Quality
+
 ```bash
 # Run all tests
 task test
@@ -38,6 +40,7 @@ task benchmark
 ```
 
 ### Code Generation
+
 ```bash
 # Generate all code from OpenAPI spec (providers, config, types, etc.)
 task generate
@@ -50,6 +53,7 @@ task openapi:download
 ```
 
 ### Testing Individual Components
+
 ```bash
 # Run tests for a specific package
 go test -v ./providers/...
@@ -68,17 +72,20 @@ go test -v -run TestSpecificName ./path/to/package
 ### Core Components
 
 **Gateway Server** (`cmd/gateway/main.go`)
+
 - Entry point that initializes configuration, logger, telemetry, and HTTP server
 - Uses Gin framework for HTTP routing
 - Supports graceful shutdown with context cancellation
 
 **API Layer** (`api/`)
+
 - `routes.go`: Defines main request handlers (ChatCompletionsHandler, ListModelsHandler, ProxyHandler)
 - `middlewares/`: Contains auth (OIDC), logging, telemetry, and MCP middleware
 - Handles streaming and non-streaming responses
 - Routes requests to appropriate providers based on model prefix or URL parameter
 
 **Providers** (`providers/`)
+
 - Each provider (OpenAI, Anthropic, Groq, Ollama, etc.) implements a common interface
 - `registry.go`: Central registry for provider management
 - `client.go`: HTTP client configuration for making provider requests
@@ -86,6 +93,7 @@ go test -v -run TestSpecificName ./path/to/package
 - Provider detection via model prefix (e.g., "openai/gpt-4") or explicit `?provider=` parameter
 
 **MCP (Model Context Protocol)** (`mcp/`)
+
 - `client.go`: MCP client for connecting to tool servers
 - `agent.go`: Handles tool execution and response processing
 - `generated_types.go`: Auto-generated types from MCP schema
@@ -93,11 +101,13 @@ go test -v -run TestSpecificName ./path/to/package
 - Supports up to 10 follow-up tool calls per request
 
 **Configuration** (`config/`)
+
 - Environment-based configuration using `sethvargo/go-envconfig`
 - All settings documented in `Configurations.md` (auto-generated)
 - Supports provider API keys, URLs, timeouts, and feature flags
 
 **Middleware Flow**
+
 1. Request → Authentication (optional OIDC) → Logging → Telemetry
 2. MCP middleware (if enabled) injects available tools
 3. Provider routing and proxying
@@ -107,6 +117,7 @@ go test -v -run TestSpecificName ./path/to/package
 ### Code Generation Workflow
 
 The project uses extensive code generation from `openapi.yaml`:
+
 1. Update `openapi.yaml` with new schemas/configurations
 2. Run `task generate` to regenerate:
    - Provider implementations
@@ -125,6 +136,7 @@ The project uses extensive code generation from `openapi.yaml`:
 ### Development Best Practices
 
 From `.github/copilot-instructions.md`:
+
 - Use early returns to avoid deep nesting
 - Prefer switch statements over if-else chains
 - Use table-driven testing
@@ -136,6 +148,7 @@ From `.github/copilot-instructions.md`:
 ### Provider Addition
 
 When adding a new provider:
+
 1. Add configuration to `openapi.yaml`
 2. Run `task generate`
 3. Implement provider-specific logic if needed
@@ -145,6 +158,7 @@ When adding a new provider:
 ### Streaming Implementation
 
 The gateway supports Server-Sent Events (SSE) streaming:
+
 - Detects `stream: true` in request body
 - Forwards streaming responses chunk by chunk
 - Handles both data-only and data: prefixed chunks
