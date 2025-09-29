@@ -24,7 +24,7 @@ tasks:
   install:generator:
     desc: 'Install the generator tool'
     cmds:
-      - go install github.com/inference-gateway/tools/cmd/generator@v0.1.2
+      - GOBIN=${PWD}/bin go install github.com/inference-gateway/tools/cmd/generator@v0.1.2
 
   generate:
     desc: 'Generate the gateway from OpenAPI Spec'
@@ -49,7 +49,7 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/monitoring/.env.example
-      - generator -generator jsonrpc -package mcp mcp/mcp-schema.yaml mcp/generated_types.go
+      - ./bin/generator -generator jsonrpc -package mcp mcp/mcp-schema.yaml mcp/generated_types.go
       - go generate ./providers/... ./api/... ./otel/... ./logger/...  ./mcp/...
       - task: format
       - echo "✅ Codegen completed successfully!"

@@ -39,28 +39,6 @@
 | MCP_POLLING_TIMEOUT          | `5s`          | Timeout for individual health check requests             |
 | MCP_DISABLE_HEALTHCHECK_LOGS | `true`        | Disable health check log messages to reduce noise        |
 
-### Agent-to-Agent (A2A) Protocol
-
-| Environment Variable                   | Default Value | Description                                                                     |
-| -------------------------------------- | ------------- | ------------------------------------------------------------------------------- |
-| A2A_ENABLE                             | `false`       | Enable A2A protocol support                                                     |
-| A2A_EXPOSE                             | `false`       | Expose A2A agents list cards endpoint                                           |
-| A2A_AGENTS                             | `""`          | Comma-separated list of A2A agent URLs                                          |
-| A2A_CLIENT_TIMEOUT                     | `30s`         | A2A client timeout                                                              |
-| A2A_POLLING_ENABLE                     | `true`        | Enable task status polling                                                      |
-| A2A_POLLING_INTERVAL                   | `1s`          | Interval between polling requests                                               |
-| A2A_POLLING_TIMEOUT                    | `30s`         | Maximum time to wait for task completion                                        |
-| A2A_MAX_POLL_ATTEMPTS                  | `30`          | Maximum number of polling attempts                                              |
-| A2A_MAX_RETRIES                        | `3`           | Maximum number of connection retry attempts                                     |
-| A2A_RETRY_INTERVAL                     | `5s`          | Interval between connection retry attempts                                      |
-| A2A_INITIAL_BACKOFF                    | `1s`          | Initial backoff duration for exponential backoff retry                          |
-| A2A_ENABLE_RECONNECT                   | `true`        | Enable automatic reconnection for failed agents                                 |
-| A2A_RECONNECT_INTERVAL                 | `30s`         | Interval between reconnection attempts                                          |
-| A2A_DISABLE_HEALTHCHECK_LOGS           | `true`        | Disable health check log messages to reduce noise                               |
-| A2A_SERVICE_DISCOVERY_ENABLE           | `false`       | Enable Kubernetes service discovery for A2A agents                              |
-| A2A_SERVICE_DISCOVERY_NAMESPACE        | `""`          | Kubernetes namespace to search for A2A services (empty means current namespace) |
-| A2A_SERVICE_DISCOVERY_POLLING_INTERVAL | `30s`         | Interval between service discovery polling requests                             |
-
 ### Authentication
 
 | Environment Variable    | Default Value                                         | Description           |

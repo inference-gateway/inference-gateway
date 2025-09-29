@@ -107,25 +107,6 @@ type ListModelsTransformer interface {
 	Transform() ListModelsResponse
 }
 
-// A2AAgentCard represents a A2AAgentCard in the API
-type A2AAgentCard struct {
-	Capabilities                      map[string]interface{}    `json:"capabilities"`
-	Defaultinputmodes                 []string                  `json:"defaultInputModes"`
-	Defaultoutputmodes                []string                  `json:"defaultOutputModes"`
-	Description                       string                    `json:"description"`
-	Documentationurl                  *string                   `json:"documentationUrl,omitempty"`
-	Iconurl                           *string                   `json:"iconUrl,omitempty"`
-	ID                                string                    `json:"id"`
-	Name                              string                    `json:"name"`
-	Provider                          *map[string]interface{}   `json:"provider,omitempty"`
-	Security                          *[]map[string]interface{} `json:"security,omitempty"`
-	Securityschemes                   *map[string]interface{}   `json:"securitySchemes,omitempty"`
-	Skills                            []map[string]interface{}  `json:"skills"`
-	Supportsauthenticatedextendedcard *bool                     `json:"supportsAuthenticatedExtendedCard,omitempty"`
-	Url                               string                    `json:"url"`
-	Version                           string                    `json:"version"`
-}
-
 // ChatCompletionChoice represents a ChatCompletionChoice in the API
 type ChatCompletionChoice struct {
 	FinishReason FinishReason `json:"finish_reason"`
@@ -244,12 +225,6 @@ type FunctionObject struct {
 
 // FunctionParameters represents a FunctionParameters in the API
 type FunctionParameters map[string]interface{}
-
-// ListAgentsResponse represents a ListAgentsResponse in the API
-type ListAgentsResponse struct {
-	Data   []A2AAgentCard `json:"data"`
-	Object string         `json:"object"`
-}
 
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {

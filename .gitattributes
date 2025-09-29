@@ -7,7 +7,6 @@ providers/common_types.go linguist-generated=true
 providers/registry.go linguist-generated=true
 
 mcp/generated_types.go linguist-generated=true
-a2a/generated_types.go linguist-generated=true
 
 tests/mocks/* linguist-generated=true
 

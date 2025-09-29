@@ -31,8 +31,6 @@ tags:
     description: Generate completions from the models.
   - name: MCP
     description: List and manage MCP tools.
-  - name: A2A
-    description: List and manage A2A agents.
   - name: Proxy
     description: Proxy requests to provider endpoints.
   - name: Health
@@ -182,65 +180,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/MCPNotExposed'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /a2a/agents:
-    get:
-      operationId: listAgents
-      tags:
-        - A2A
-      description: |
-        Lists the currently available A2A agents. Only accessible when EXPOSE_A2A is enabled.
-      summary: Lists the currently available A2A agents
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListAgentsResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/A2ANotExposed'
-        '500':
-          $ref: '#/components/responses/InternalError'
-  /a2a/agents/{id}:
-    get:
-      operationId: getAgent
-      tags:
-        - A2A
-      description: |
-        Gets a specific A2A agent by its unique identifier. Only accessible when EXPOSE_A2A is enabled.
-      summary: Gets a specific A2A agent by ID
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-          description: The unique identifier of the agent
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/A2AAgentCard'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/A2ANotExposed'
-        '404':
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/InternalError'
   /proxy/{provider}/{path}:
@@ -464,14 +403,6 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: 'MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable.'
-    A2ANotExposed:
-      description: A2A agents endpoint is not exposed
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Error'
-          example:
-            error: 'A2A agents endpoint is not exposed. Set EXPOSE_A2A=true to enable.'
     ProviderResponse:
       description: |
         ProviderResponse depends on the specific provider and endpoint being called
@@ -827,103 +758,6 @@ components:
       required:
         - object
         - data
-    ListAgentsResponse:
-      type: object
-      description: Response structure for listing A2A agents
-      properties:
-        object:
-          type: string
-          description: Always "list"
-          example: 'list'
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/A2AAgentCard'
-          default: []
-          description: Array of available A2A agents
-      required:
-        - object
-        - data
-    A2AAgentCard:
-      description: |-
-        An AgentCard conveys key information:
-        - Overall details (version, name, description, uses)
-        - Skills: A set of capabilities the agent can perform
-        - Default modalities/content types supported by the agent.
-        - Authentication requirements
-      properties:
-        capabilities:
-          additionalProperties: true
-          description: Optional capabilities supported by the agent.
-        defaultInputModes:
-          description: |-
-            The set of interaction modes that the agent supports across all skills. This can be overridden per-skill.
-            Supported media types for input.
-          items:
-            type: string
-          type: array
-        defaultOutputModes:
-          description: Supported media types for output.
-          items:
-            type: string
-          type: array
-        description:
-          description: |-
-            A human-readable description of the agent. Used to assist users and
-            other agents in understanding what the agent can do.
-          type: string
-        documentationUrl:
-          description: A URL to documentation for the agent.
-          type: string
-        iconUrl:
-          description: A URL to an icon for the agent.
-          type: string
-        id:
-          description: Unique identifier for the agent (base64-encoded SHA256 hash of the agent URL).
-          type: string
-        name:
-          description: Human readable name of the agent.
-          type: string
-        provider:
-          additionalProperties: true
-          description: The service provider of the agent
-        security:
-          description: Security requirements for contacting the agent.
-          items:
-            additionalProperties: true
-            type: object
-          type: array
-        securitySchemes:
-          additionalProperties: true
-          description: Security scheme details used for authenticating with this agent.
-          type: object
-        skills:
-          description: Skills are a unit of capability that an agent can perform.
-          items:
-            additionalProperties: true
-          type: array
-        supportsAuthenticatedExtendedCard:
-          description: |-
-            true if the agent supports providing an extended agent card when the user is authenticated.
-            Defaults to false if not specified.
-          type: boolean
-        url:
-          description: A URL to the address the agent is hosted at.
-          type: string
-        version:
-          description: The version of the agent - format is up to the provider.
-          type: string
-      required:
-        - capabilities
-        - defaultInputModes
-        - defaultOutputModes
-        - description
-        - id
-        - name
-        - skills
-        - url
-        - version
-      type: object
     MCPTool:
       type: object
       description: An MCP tool definition
@@ -1515,92 +1349,6 @@ components:
                   type: bool
                   default: 'true'
                   description: 'Disable health check log messages to reduce noise'
-          - a2a:
-              title: 'Agent-to-Agent (A2A) Protocol'
-              settings:
-                - name: a2a_enable
-                  env: 'A2A_ENABLE'
-                  type: bool
-                  default: 'false'
-                  description: 'Enable A2A protocol support'
-                - name: a2a_expose
-                  env: 'A2A_EXPOSE'
-                  type: bool
-                  default: 'false'
-                  description: 'Expose A2A agents list cards endpoint'
-                - name: a2a_agents
-                  env: 'A2A_AGENTS'
-                  type: string
-                  description: 'Comma-separated list of A2A agent URLs'
-                - name: a2a_client_timeout
-                  env: 'A2A_CLIENT_TIMEOUT'
-                  type: time.Duration
-                  default: '30s'
-                  description: 'A2A client timeout'
-                - name: a2a_polling_enable
-                  env: 'A2A_POLLING_ENABLE'
-                  type: bool
-                  default: 'true'
-                  description: 'Enable task status polling'
-                - name: a2a_polling_interval
-                  env: 'A2A_POLLING_INTERVAL'
-                  type: time.Duration
-                  default: '1s'
-                  description: 'Interval between polling requests'
-                - name: a2a_polling_timeout
-                  env: 'A2A_POLLING_TIMEOUT'
-                  type: time.Duration
-                  default: '30s'
-                  description: 'Maximum time to wait for task completion'
-                - name: a2a_max_poll_attempts
-                  env: 'A2A_MAX_POLL_ATTEMPTS'
-                  type: int
-                  default: '30'
-                  description: 'Maximum number of polling attempts'
-                - name: a2a_max_retries
-                  env: 'A2A_MAX_RETRIES'
-                  type: int
-                  default: '3'
-                  description: 'Maximum number of connection retry attempts'
-                - name: a2a_retry_interval
-                  env: 'A2A_RETRY_INTERVAL'
-                  type: time.Duration
-                  default: '5s'
-                  description: 'Interval between connection retry attempts'
-                - name: a2a_initial_backoff
-                  env: 'A2A_INITIAL_BACKOFF'
-                  type: time.Duration
-                  default: '1s'
-                  description: 'Initial backoff duration for exponential backoff retry'
-                - name: a2a_enable_reconnect
-                  env: 'A2A_ENABLE_RECONNECT'
-                  type: bool
-                  default: 'true'
-                  description: 'Enable automatic reconnection for failed agents'
-                - name: a2a_reconnect_interval
-                  env: 'A2A_RECONNECT_INTERVAL'
-                  type: time.Duration
-                  default: '30s'
-                  description: 'Interval between reconnection attempts'
-                - name: a2a_disable_healthcheck_logs
-                  env: 'A2A_DISABLE_HEALTHCHECK_LOGS'
-                  type: bool
-                  default: 'true'
-                  description: 'Disable health check log messages to reduce noise'
-                - name: a2a_service_discovery_enable
-                  env: 'A2A_SERVICE_DISCOVERY_ENABLE'
-                  type: bool
-                  default: 'false'
-                  description: 'Enable Kubernetes service discovery for A2A agents'
-                - name: a2a_service_discovery_namespace
-                  env: 'A2A_SERVICE_DISCOVERY_NAMESPACE'
-                  type: string
-                  description: 'Kubernetes namespace to search for A2A services (empty means current namespace)'
-                - name: a2a_service_discovery_polling_interval
-                  env: 'A2A_SERVICE_DISCOVERY_POLLING_INTERVAL'
-                  type: time.Duration
-                  default: '30s'
-                  description: 'Interval between service discovery polling requests'
           - auth:
               title: 'Authentication'
               settings:
