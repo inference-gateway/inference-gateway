@@ -20,6 +20,7 @@ client:
       - 504
 logging:
   debug: false
+  dir: ''
 tools:
   enabled: true
   sandbox:
@@ -29,7 +30,7 @@ tools:
     protected_paths:
       - .infer/
       - .git/
-      - '*.env*'
+      - '*.env'
   bash:
     enabled: true
     whitelist:
@@ -110,14 +111,15 @@ tools:
 compact:
   output_dir: .infer
   summary_model: 'deepseek/deepseek-chat'
-chat: {}
 agent:
   model: 'deepseek/deepseek-chat'
   system_prompt: |
     Autonomous software engineering agent. Execute tasks iteratively until completion.
 
     IMPORTANT: You NEVER push to main or master or to the current branch - instead you create a branch and push to a branch.
-    IMPORTANT: You NEVER read all the README.md - start by reading 300 lines
+    IMPORTANT: You ALWAYS prefer to search for specific matches in a file rather than reading it all - prefer to use Grep tool over Read tool for efficiency.
+    IMPORTANT: You ALWAYS prefer to see AGENTS.md before README.md files.
+    IMPORTANT: When reading project documentation, prefer AGENTS.md if available, otherwise fallback to README.md - start by Using Grep tool and read all the headings followed by '^##' - found the section you were looking for? great - use Read tool. You didn't find anything? continue to see '^###'
 
     RULES:
     - Security: Defensive only (analysis, detection, docs)
@@ -125,7 +127,14 @@ agent:
     - Code: Follow existing patterns, check deps, no secrets
     - Tasks: Use TodoWrite, mark progress immediately
     - Chat exports: Read only "## Summary" to "---" section
-    - Tools: Batch calls, prefer Grep for search
+    - Tools: ALWAYS use parallel execution when possible - batch multiple tool calls in a single response to improve efficiency
+    - Tools: Prefer Grep for search, Read for specific files
+
+    PARALLEL TOOL EXECUTION:
+    - When you need to perform multiple operations, make ALL tool calls in a single response
+    - Examples: Read multiple files, search multiple patterns, execute multiple commands
+    - The system supports up to 5 concurrent tool executions by default
+    - This reduces back-and-forth communication and significantly improves performance
 
     WORKFLOW:
     When asked to implement features or fix issues:
@@ -159,9 +168,88 @@ agent:
   verbose_tools: false
   max_turns: 50
   max_tokens: 4096
+  max_concurrent_tools: 5
   optimization:
+    enabled: false
+    model: ''
+    min_messages: 10
+    buffer_size: 2
+git:
+  commit_message:
+    model: ''
+    system_prompt: |-
+      Generate a concise git commit message following conventional commit format.
+
+      REQUIREMENTS:
+      - MUST use format: "type: Brief description"
+      - MUST be under 50 characters total
+      - MUST use imperative mood (e.g., "Add", "Fix", "Update")
+      - Types: feat, fix, docs, style, refactor, test, chore
+
+      EXAMPLES:
+      - "feat: Add git shortcut with AI commits"
+      - "fix: Resolve build error in container"
+      - "docs: Update README installation guide"
+      - "refactor: Simplify error handling"
+
+      Respond with ONLY the commit message, no quotes or explanation.
+storage:
+  enabled: true
+  type: sqlite
+  sqlite:
+    path: .infer/conversations.db
+  postgres:
+    host: localhost
+    port: 5432
+    database: infer_conversations
+    username: ''
+    password: ''
+    ssl_mode: prefer
+  redis:
+    host: localhost
+    port: 6379
+    password: ''
+    db: 0
+conversation:
+  title_generation:
     enabled: true
-    max_history: 20
-    compact_threshold: 30
-    truncate_large_outputs: true
-    skip_redundant_confirmations: true
+    model: ''
+    system_prompt: |-
+      Generate a concise conversation title based on the messages provided.
+
+      REQUIREMENTS:
+      - MUST be under 50 characters total
+      - MUST be descriptive and capture the main topic
+      - MUST use title case
+      - NO quotes, colons, or special characters
+      - Focus on the primary subject or task discussed
+
+      EXAMPLES:
+      - "React Component Testing"
+      - "Database Migration Setup"
+      - "API Error Handling"
+      - "Docker Configuration"
+
+      Respond with ONLY the title, no quotes or explanation.
+    batch_size: 10
+    interval: 0
+chat:
+  theme: tokyo-night
+a2a:
+  enabled: false
+  agents: []
+  cache:
+    enabled: true
+    ttl: 300
+  task:
+    status_poll_seconds: 5
+  tools:
+    query_agent:
+      enabled: true
+      require_approval: false
+    query_task:
+      enabled: true
+      require_approval: false
+    submit_task:
+      enabled: true
+      require_approval: false
