@@ -527,7 +527,6 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	// Check for image content in messages and validate vision support
 	ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout)
 	defer cancel()
 

@@ -154,5 +154,3 @@ func TestMessage_GetTextContent(t *testing.T) {
 	}
 }
 
-// Additional tests can be added here for integration testing
-// For now, focusing on core Message functionality which is most important
