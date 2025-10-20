@@ -153,4 +153,3 @@ func TestMessage_GetTextContent(t *testing.T) {
 		})
 	}
 }
-
