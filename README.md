@@ -89,7 +89,7 @@ You can horizontally scale the Inference Gateway to handle multiple requests fro
 
 **Note**: MCP middleware components can be easily toggled on/off via environment variables (`MCP_ENABLE`) or bypassed per-request using headers (`X-MCP-Bypass`), giving you full control over which capabilities are active.
 
-**Note**: Vision/multimodal support is disabled by default for security and performance. To enable image processing with vision-capable models (GPT-4o, Claude 3, Gemini, etc.), set `ENABLE_VISION=true` in your environment configuration.
+**Note**: Vision/multimodal support is disabled by default for security and performance. To enable image processing with vision-capable models (GPT-4o, Claude 4.5, Gemini 2.5, etc.), set `ENABLE_VISION=true` in your environment configuration.
 
 The following diagram illustrates the flow:
 
@@ -607,8 +607,8 @@ ENABLE_VISION=true
 **Supported Providers with Vision:**
 
 - OpenAI (GPT-4o, GPT-5, GPT-4.1, GPT-4 Turbo)
-- Anthropic (Claude 3, Claude 4)
-- Google (Gemini 2.0, Gemini 2.5)
+- Anthropic (Claude 3, Claude 4, Claude 4.5 Sonnet, Claude 4.5 Haiku)
+- Google (Gemini 2.5)
 - Cohere (Command A Vision, Aya Vision)
 - Ollama (LLaVA, Llama 4, Llama 3.2 Vision)
 - Groq (vision models)
