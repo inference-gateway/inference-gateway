@@ -45,6 +45,7 @@ dockers_v2:
       org.opencontainers.image.title: '{{ .ProjectName }}'
       org.opencontainers.image.revision: '{{ .FullCommit }}'
       org.opencontainers.image.version: '{{ .Version }}'
+      org.opencontainers.image.description: 'An open-source, cloud-native, high-performance gateway unifying multiple LLM providers, from local solutions like Ollama to major cloud providers such as OpenAI, Groq, Cohere, Anthropic, Cloudflare and DeepSeek.'
 
 archives:
   - formats:
