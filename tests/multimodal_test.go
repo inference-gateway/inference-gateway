@@ -25,8 +25,8 @@ func TestMessage_HasImageContent(t *testing.T) {
 			name: "Array content with only text",
 			message: providers.Message{
 				Role: providers.MessageRoleUser,
-				Content: []interface{}{
-					map[string]interface{}{
+				Content: []any{
+					map[string]any{
 						"type": "text",
 						"text": "Hello, how are you?",
 					},
@@ -38,14 +38,14 @@ func TestMessage_HasImageContent(t *testing.T) {
 			name: "Array content with image",
 			message: providers.Message{
 				Role: providers.MessageRoleUser,
-				Content: []interface{}{
-					map[string]interface{}{
+				Content: []any{
+					map[string]any{
 						"type": "text",
 						"text": "What's in this image?",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"type": "image_url",
-						"image_url": map[string]interface{}{
+						"image_url": map[string]any{
 							"url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...",
 						},
 					},
@@ -57,10 +57,10 @@ func TestMessage_HasImageContent(t *testing.T) {
 			name: "Array content with only image",
 			message: providers.Message{
 				Role: providers.MessageRoleUser,
-				Content: []interface{}{
-					map[string]interface{}{
+				Content: []any{
+					map[string]any{
 						"type": "image_url",
-						"image_url": map[string]interface{}{
+						"image_url": map[string]any{
 							"url":    "https://example.com/image.jpg",
 							"detail": "high",
 						},
@@ -97,12 +97,12 @@ func TestMessage_GetTextContent(t *testing.T) {
 			name: "Array content with text returns first text part",
 			message: providers.Message{
 				Role: providers.MessageRoleUser,
-				Content: []interface{}{
-					map[string]interface{}{
+				Content: []any{
+					map[string]any{
 						"type": "text",
 						"text": "First text part",
 					},
-					map[string]interface{}{
+					map[string]any{
 						"type": "text",
 						"text": "Second text part",
 					},
@@ -114,14 +114,14 @@ func TestMessage_GetTextContent(t *testing.T) {
 			name: "Array content with mixed types returns first text",
 			message: providers.Message{
 				Role: providers.MessageRoleUser,
-				Content: []interface{}{
-					map[string]interface{}{
+				Content: []any{
+					map[string]any{
 						"type": "image_url",
-						"image_url": map[string]interface{}{
+						"image_url": map[string]any{
 							"url": "https://example.com/image.jpg",
 						},
 					},
-					map[string]interface{}{
+					map[string]any{
 						"type": "text",
 						"text": "What's in this image?",
 					},
@@ -133,10 +133,10 @@ func TestMessage_GetTextContent(t *testing.T) {
 			name: "Array content with only image returns empty string",
 			message: providers.Message{
 				Role: providers.MessageRoleUser,
-				Content: []interface{}{
-					map[string]interface{}{
+				Content: []any{
+					map[string]any{
 						"type": "image_url",
-						"image_url": map[string]interface{}{
+						"image_url": map[string]any{
 							"url": "https://example.com/image.jpg",
 						},
 					},

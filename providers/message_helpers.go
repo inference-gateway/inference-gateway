@@ -2,9 +2,9 @@ package providers
 
 // HasImageContent checks if the message contains image content
 func (m *Message) HasImageContent() bool {
-	if contentArray, ok := m.Content.([]interface{}); ok {
+	if contentArray, ok := m.Content.([]any); ok {
 		for _, item := range contentArray {
-			if itemMap, ok := item.(map[string]interface{}); ok {
+			if itemMap, ok := item.(map[string]any); ok {
 				if itemType, ok := itemMap["type"].(string); ok && itemType == "image_url" {
 					return true
 				}
@@ -20,9 +20,9 @@ func (m *Message) GetTextContent() string {
 		return content
 	}
 
-	if contentArray, ok := m.Content.([]interface{}); ok {
+	if contentArray, ok := m.Content.([]any); ok {
 		for _, item := range contentArray {
-			if itemMap, ok := item.(map[string]interface{}); ok {
+			if itemMap, ok := item.(map[string]any); ok {
 				if itemType, ok := itemMap["type"].(string); ok && itemType == "text" {
 					if text, ok := itemMap["text"].(string); ok {
 						return text
