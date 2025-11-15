@@ -605,6 +605,7 @@ ENABLE_VISION=true
 ```
 
 **Supported Providers with Vision:**
+
 - OpenAI (GPT-4o, GPT-5, GPT-4.1, GPT-4 Turbo)
 - Anthropic (Claude 3, Claude 4)
 - Google (Gemini 2.0, Gemini 2.5)
