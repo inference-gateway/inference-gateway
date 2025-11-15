@@ -47,11 +47,12 @@ tasks:
       - helm repo add codecentric https://codecentric.github.io/helm-charts
       - helm repo add jetstack https://charts.jetstack.io
       - helm repo add bitnami https://charts.bitnami.com/bitnami
+      - helm repo update
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
-          --version 4.12.2 \
+          --version 4.14.0 \
           --set controller.progressDeadlineSeconds=600 \
           ingress-nginx ingress-nginx/ingress-nginx
       - |

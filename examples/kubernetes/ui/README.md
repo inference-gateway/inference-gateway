@@ -79,7 +79,7 @@ helm upgrade --install \
   --create-namespace \
   --namespace kube-system \
   --set controller.progressDeadlineSeconds=500 \
-  --version 4.12.2 \
+  --version 4.14.0 \
   --wait \
   ingress-nginx ingress-nginx/ingress-nginx
 ```

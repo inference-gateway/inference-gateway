@@ -8,13 +8,14 @@ tasks:
       - ctlptl apply -f Cluster.yaml
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add jetstack https://charts.jetstack.io
+      - helm repo update
       - echo "🚀 Starting TLS infrastructure deployment..."
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
           --set controller.progressDeadlineSeconds=500 \
-          --version 4.12.2 \
+          --version 4.14.0 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
@@ -43,7 +44,7 @@ tasks:
           --set ingress.tls.enabled=true \
           --set ingress.tls.hosts[0]=api.inference-gateway.local \
           --set ingress.tls.secretName=api-inference-gateway-local-tls \
-          --version 0.14.0 \
+          --version 0.19.5 \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
       - echo "🔐 Inference Gateway with TLS deployed successfully!"
