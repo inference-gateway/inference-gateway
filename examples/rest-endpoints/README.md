@@ -216,7 +216,9 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 }' | jq .
 ```
 
-#### Example: Image with Data URL
+#### Example: Image with Base64 Data URL
+
+You can also send images directly as base64-encoded data URLs. This is useful when you have the image data locally or want to avoid hosting the image externally.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
@@ -226,17 +228,45 @@ curl -X POST http://localhost:8080/v1/chat/completions \
     "messages": [{
       "role": "user",
       "content": [
-        {"type": "text", "text": "What is in this image?"},
+        {"type": "text", "text": "What color is this pixel?"},
         {
           "type": "image_url",
           "image_url": {
-            "url":
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+            "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==",
+            "detail": "auto"
           }
         }
       ]
     }]
   }' | jq .
+```
+
+**Note:** The example above uses a 1x1 pixel blue image. For real images, you would encode your actual image file:
+
+```bash
+# Example: Encode a local image to base64
+base64 -i /path/to/your/image.jpg | tr -d '\n' > image_base64.txt
+
+# Then use it in your request
+IMAGE_BASE64=$(cat image_base64.txt)
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"model\": \"anthropic/claude-3-5-sonnet-20241022\",
+    \"messages\": [{
+      \"role\": \"user\",
+      \"content\": [
+        {\"type\": \"text\", \"text\": \"Describe this image in detail\"},
+        {
+          \"type\": \"image_url\",
+          \"image_url\": {
+            \"url\": \"data:image/jpeg;base64,$IMAGE_BASE64\",
+            \"detail\": \"high\"
+          }
+        }
+      ]
+    }]
+  }" | jq .
 ```
 
 **Supported vision models:**
