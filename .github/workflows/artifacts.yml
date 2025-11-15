@@ -36,7 +36,7 @@ jobs:
 
       - name: Install GoReleaser
         run: |
-          curl -sSL https://github.com/goreleaser/goreleaser/releases/download/v2.7.0/goreleaser_Linux_x86_64.tar.gz | tar -xzv -C /usr/local/bin goreleaser
+          curl -sSL https://github.com/goreleaser/goreleaser/releases/download/v2.12.7/goreleaser_Linux_x86_64.tar.gz | tar -xzv -C /usr/local/bin goreleaser
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3.6.0
@@ -85,9 +85,9 @@ jobs:
       TAG: ${{ github.event.release.tag_name }}
     steps:
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3.8.2
+        uses: sigstore/cosign-installer@v4
         with:
-          cosign-release: 'v2.5.0'
+          cosign-release: 'v3.0.2'
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3.6.0
