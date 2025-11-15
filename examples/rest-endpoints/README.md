@@ -186,3 +186,72 @@ Then the LLM will respond with the weather information as follow:
 ```
 
 Then you would append it to the conversation and so on.
+
+### Multimodal Image Content
+
+The gateway supports vision-capable models that can process both text and images. You can send images using either data URLs or HTTP URLs.
+
+#### Example: Image with Text (HTTP URL)
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "openai/gpt-4o",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "What is in this image?"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+          }
+        }
+      ]
+    }
+  ]
+}' | jq .
+```
+
+#### Example: Image with Data URL
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "anthropic/claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Describe this image in detail"
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...",
+            "detail": "high"
+          }
+        }
+      ]
+    }
+  ]
+}' | jq .
+```
+
+**Supported vision models:**
+- OpenAI: `gpt-4o`, `gpt-4-turbo`, `gpt-4-vision-preview`
+- Anthropic: `claude-3-5-sonnet-*`, `claude-3-opus-*`, `claude-3-sonnet-*`
+- Google: Models with `vision` or `multimodal` in the name
+- Mistral: `pixtral-*` models
+- Groq/DeepSeek/Cohere: Models with `vision` or `multimodal` in the name
+
+**Image detail levels:**
+- `auto` (default): Automatically choose the detail level
+- `low`: Faster processing, lower detail
+- `high`: More detailed analysis, slower processing
+
+**Note:** Attempting to send image content to a non-vision model will result in a `400 Bad Request` error with a clear message indicating that the model does not support vision capabilities.
