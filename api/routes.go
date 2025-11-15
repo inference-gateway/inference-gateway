@@ -554,7 +554,6 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
 
-	// Streaming response
 	if req.Stream != nil && *req.Stream {
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
