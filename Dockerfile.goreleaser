@@ -1,5 +1,6 @@
 FROM gcr.io/distroless/static-debian12
+ARG TARGETPLATFORM
 WORKDIR /app
-COPY inference-gateway /app/inference-gateway
+COPY $TARGETPLATFORM/inference-gateway /app/inference-gateway
 EXPOSE 8080
 CMD ["./inference-gateway"]
