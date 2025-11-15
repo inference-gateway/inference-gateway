@@ -597,7 +597,6 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	// Non-streaming response
 	c.Header("Content-Type", "application/json")
 	response, err := provider.ChatCompletions(ctx, req)
 	if err != nil {
