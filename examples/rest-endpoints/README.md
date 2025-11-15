@@ -230,7 +230,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
         {
           "type": "image_url",
           "image_url": {
-            "url": 
+            "url":
   "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
           }
         }
@@ -240,6 +240,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 ```
 
 **Supported vision models:**
+
 - OpenAI: `gpt-4o`, `gpt-4-turbo`, `gpt-4-vision-preview`
 - Anthropic: `claude-3-5-sonnet-*`, `claude-3-opus-*`, `claude-3-sonnet-*`
 - Google: Models with `vision` or `multimodal` in the name
@@ -247,6 +248,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 - Groq/DeepSeek/Cohere: Models with `vision` or `multimodal` in the name
 
 **Image detail levels:**
+
 - `auto` (default): Automatically choose the detail level
 - `low`: Faster processing, lower detail
 - `high`: More detailed analysis, slower processing

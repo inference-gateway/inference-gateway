@@ -83,15 +83,16 @@ type IProvider interface {
 }
 
 type ProviderImpl struct {
-	id           *Provider
-	name         string
-	url          string
-	token        string
-	authType     string
-	extraHeaders map[string][]string
-	endpoints    Endpoints
-	client       Client
-	logger       l.Logger
+	id             *Provider
+	name           string
+	url            string
+	token          string
+	authType       string
+	supportsVision bool
+	extraHeaders   map[string][]string
+	endpoints      Endpoints
+	client         Client
+	logger         l.Logger
 }
 
 func (p *ProviderImpl) GetID() *Provider {
@@ -328,30 +329,34 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq Crea
 
 // SupportsVision checks if the provider and model support vision/image processing
 func (p *ProviderImpl) SupportsVision(ctx context.Context, model string) (bool, error) {
+	if !p.supportsVision {
+		return false, nil
+	}
+
+	modelLower := strings.ToLower(model)
+
 	switch *p.id {
-	case CohereID:
-		models, err := p.ListModels(ctx)
-		if err != nil {
-			return false, err
-		}
-		for _, m := range models.Data {
-			if m.ID == model || strings.HasSuffix(m.ID, "/"+model) {
-				return strings.Contains(strings.ToLower(model), "vision"), nil
-			}
-		}
-		return false, nil
 	case OpenaiID:
-		return strings.Contains(strings.ToLower(model), "gpt-4") &&
-			(strings.Contains(strings.ToLower(model), "vision") ||
-				strings.Contains(strings.ToLower(model), "turbo") ||
-				strings.Contains(strings.ToLower(model), "gpt-4o")), nil
-	case AnthropicID:
-		return strings.Contains(strings.ToLower(model), "claude-3") ||
-			strings.Contains(strings.ToLower(model), "claude-4"), nil
-	case GroqID, DeepseekID, GoogleID, MistralID:
-		return strings.Contains(strings.ToLower(model), "vision") ||
-			strings.Contains(strings.ToLower(model), "multimodal"), nil
-	default:
+		if strings.Contains(modelLower, "gpt-5") {
+			return true, nil
+		}
+
+		if strings.Contains(modelLower, "gpt-4.1") {
+			return true, nil
+		}
+
+		if strings.Contains(modelLower, "gpt-4") &&
+			(strings.Contains(modelLower, "vision") ||
+				strings.Contains(modelLower, "turbo") ||
+				strings.Contains(modelLower, "gpt-4o")) {
+			return true, nil
+		}
 		return false, nil
+	case AnthropicID:
+		return strings.Contains(modelLower, "claude-3") ||
+			strings.Contains(modelLower, "claude-4"), nil
+	default:
+		return strings.Contains(modelLower, "vision") ||
+			strings.Contains(modelLower, "multimodal"), nil
 	}
 }

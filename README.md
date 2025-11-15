@@ -67,6 +67,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - 🔧 **Tool-use Support**: Enable function calling capabilities across supported providers with a unified API.
 - 🌐 **MCP Support**: Full Model Context Protocol integration - automatically discover and expose tools from MCP servers to LLMs without client-side tool management.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
+- 🖼️ **Vision/Multimodal Support**: Process images alongside text with vision-capable models.
 - 🖥️ **Web Interface**: Access through a modern web UI for easy interaction and management.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
 - ☸️ **Kubernetes Support**: Ready for deployment in Kubernetes environments.
@@ -87,6 +88,8 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 You can horizontally scale the Inference Gateway to handle multiple requests from clients. The Inference Gateway will forward the requests to the respective provider and return the response to the client.
 
 **Note**: MCP middleware components can be easily toggled on/off via environment variables (`MCP_ENABLE`) or bypassed per-request using headers (`X-MCP-Bypass`), giving you full control over which capabilities are active.
+
+**Note**: Vision/multimodal support is disabled by default for security and performance. To enable image processing with vision-capable models (GPT-4o, Claude 3, Gemini, etc.), set `ENABLE_VISION=true` in your environment configuration.
 
 The following diagram illustrates the flow:
 
@@ -592,6 +595,25 @@ exit
 ## Configuration
 
 The Inference Gateway can be configured using environment variables. The following [environment variables](./Configurations.md) are supported.
+
+### Vision/Multimodal Support
+
+To enable vision capabilities for processing images alongside text:
+
+```bash
+ENABLE_VISION=true
+```
+
+**Supported Providers with Vision:**
+- OpenAI (GPT-4o, GPT-5, GPT-4.1, GPT-4 Turbo)
+- Anthropic (Claude 3, Claude 4)
+- Google (Gemini 2.0, Gemini 2.5)
+- Cohere (Command A Vision, Aya Vision)
+- Ollama (LLaVA, Llama 4, Llama 3.2 Vision)
+- Groq (vision models)
+- Mistral (Pixtral)
+
+**Note**: Vision support is disabled by default for performance and security reasons. When disabled, requests with image content will be rejected even if the model supports vision.
 
 ## Examples
 

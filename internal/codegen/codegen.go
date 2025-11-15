@@ -814,13 +814,14 @@ import (
 
 // Base provider configuration
 type Config struct {
-	ID           Provider
-	Name         string
-	URL          string
-	Token        string
-	AuthType     string
-	ExtraHeaders map[string][]string
-	Endpoints    Endpoints
+	ID             Provider
+	Name           string
+	URL            string
+	Token          string
+	AuthType       string
+	SupportsVision bool
+	ExtraHeaders   map[string][]string
+	Endpoints      Endpoints
 }
 
 //go:generate mockgen -source=registry.go -destination=../tests/mocks/providers/registry.go -package=providersmocks
@@ -856,15 +857,16 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID Provider, client Client)
 	}
 
 	return &ProviderImpl{
-		id:           &provider.ID,
-		name:         provider.Name,
-		url:          provider.URL,
-		token:        provider.Token,
-		authType:     provider.AuthType,
-		extraHeaders: provider.ExtraHeaders,
-		endpoints:    provider.Endpoints,
-		logger:       p.logger,
-		client:       client,
+		id:             &provider.ID,
+		name:           provider.Name,
+		url:            provider.URL,
+		token:          provider.Token,
+		authType:       provider.AuthType,
+		supportsVision: provider.SupportsVision,
+		extraHeaders:   provider.ExtraHeaders,
+		endpoints:      provider.Endpoints,
+		logger:         p.logger,
+		client:         client,
 	}, nil
 }
 
@@ -872,10 +874,11 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID Provider, client Client)
 var Registry = map[Provider]*Config{
 	{{- range $name, $config := .Providers }}
 	{{title $name}}ID: {
-		ID:       {{title $name}}ID,
-		Name:     {{title $name}}DisplayName,
-		URL:      {{title $name}}DefaultBaseURL,
-		AuthType: {{getAuthType $config.AuthType}},
+		ID:             {{title $name}}ID,
+		Name:           {{title $name}}DisplayName,
+		URL:            {{title $name}}DefaultBaseURL,
+		AuthType:       {{getAuthType $config.AuthType}},
+		SupportsVision: {{if $config.SupportsVision}}true{{else}}false{{end}},
 		{{- if eq $name "anthropic" }}
 		ExtraHeaders: map[string][]string{
 			"anthropic-version": {"2023-06-01"},

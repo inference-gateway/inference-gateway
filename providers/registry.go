@@ -9,13 +9,14 @@ import (
 
 // Base provider configuration
 type Config struct {
-	ID           Provider
-	Name         string
-	URL          string
-	Token        string
-	AuthType     string
-	ExtraHeaders map[string][]string
-	Endpoints    Endpoints
+	ID             Provider
+	Name           string
+	URL            string
+	Token          string
+	AuthType       string
+	SupportsVision bool
+	ExtraHeaders   map[string][]string
+	Endpoints      Endpoints
 }
 
 //go:generate mockgen -source=registry.go -destination=../tests/mocks/providers/registry.go -package=providersmocks
@@ -51,25 +52,27 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID Provider, client Client)
 	}
 
 	return &ProviderImpl{
-		id:           &provider.ID,
-		name:         provider.Name,
-		url:          provider.URL,
-		token:        provider.Token,
-		authType:     provider.AuthType,
-		extraHeaders: provider.ExtraHeaders,
-		endpoints:    provider.Endpoints,
-		logger:       p.logger,
-		client:       client,
+		id:             &provider.ID,
+		name:           provider.Name,
+		url:            provider.URL,
+		token:          provider.Token,
+		authType:       provider.AuthType,
+		supportsVision: provider.SupportsVision,
+		extraHeaders:   provider.ExtraHeaders,
+		endpoints:      provider.Endpoints,
+		logger:         p.logger,
+		client:         client,
 	}, nil
 }
 
 // The registry of all providers
 var Registry = map[Provider]*Config{
 	AnthropicID: {
-		ID:       AnthropicID,
-		Name:     AnthropicDisplayName,
-		URL:      AnthropicDefaultBaseURL,
-		AuthType: AuthTypeXheader,
+		ID:             AnthropicID,
+		Name:           AnthropicDisplayName,
+		URL:            AnthropicDefaultBaseURL,
+		AuthType:       AuthTypeXheader,
+		SupportsVision: true,
 		ExtraHeaders: map[string][]string{
 			"anthropic-version": {"2023-06-01"},
 		},
@@ -79,80 +82,88 @@ var Registry = map[Provider]*Config{
 		},
 	},
 	CloudflareID: {
-		ID:       CloudflareID,
-		Name:     CloudflareDisplayName,
-		URL:      CloudflareDefaultBaseURL,
-		AuthType: AuthTypeBearer,
+		ID:             CloudflareID,
+		Name:           CloudflareDisplayName,
+		URL:            CloudflareDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: false,
 		Endpoints: Endpoints{
 			Models: CloudflareModelsEndpoint,
 			Chat:   CloudflareChatEndpoint,
 		},
 	},
 	CohereID: {
-		ID:       CohereID,
-		Name:     CohereDisplayName,
-		URL:      CohereDefaultBaseURL,
-		AuthType: AuthTypeBearer,
+		ID:             CohereID,
+		Name:           CohereDisplayName,
+		URL:            CohereDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: true,
 		Endpoints: Endpoints{
 			Models: CohereModelsEndpoint,
 			Chat:   CohereChatEndpoint,
 		},
 	},
 	DeepseekID: {
-		ID:       DeepseekID,
-		Name:     DeepseekDisplayName,
-		URL:      DeepseekDefaultBaseURL,
-		AuthType: AuthTypeBearer,
+		ID:             DeepseekID,
+		Name:           DeepseekDisplayName,
+		URL:            DeepseekDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: false,
 		Endpoints: Endpoints{
 			Models: DeepseekModelsEndpoint,
 			Chat:   DeepseekChatEndpoint,
 		},
 	},
 	GoogleID: {
-		ID:       GoogleID,
-		Name:     GoogleDisplayName,
-		URL:      GoogleDefaultBaseURL,
-		AuthType: AuthTypeBearer,
+		ID:             GoogleID,
+		Name:           GoogleDisplayName,
+		URL:            GoogleDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: true,
 		Endpoints: Endpoints{
 			Models: GoogleModelsEndpoint,
 			Chat:   GoogleChatEndpoint,
 		},
 	},
 	GroqID: {
-		ID:       GroqID,
-		Name:     GroqDisplayName,
-		URL:      GroqDefaultBaseURL,
-		AuthType: AuthTypeBearer,
+		ID:             GroqID,
+		Name:           GroqDisplayName,
+		URL:            GroqDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: true,
 		Endpoints: Endpoints{
 			Models: GroqModelsEndpoint,
 			Chat:   GroqChatEndpoint,
 		},
 	},
 	MistralID: {
-		ID:       MistralID,
-		Name:     MistralDisplayName,
-		URL:      MistralDefaultBaseURL,
-		AuthType: AuthTypeBearer,
+		ID:             MistralID,
+		Name:           MistralDisplayName,
+		URL:            MistralDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: true,
 		Endpoints: Endpoints{
 			Models: MistralModelsEndpoint,
 			Chat:   MistralChatEndpoint,
 		},
 	},
 	OllamaID: {
-		ID:       OllamaID,
-		Name:     OllamaDisplayName,
-		URL:      OllamaDefaultBaseURL,
-		AuthType: AuthTypeNone,
+		ID:             OllamaID,
+		Name:           OllamaDisplayName,
+		URL:            OllamaDefaultBaseURL,
+		AuthType:       AuthTypeNone,
+		SupportsVision: true,
 		Endpoints: Endpoints{
 			Models: OllamaModelsEndpoint,
 			Chat:   OllamaChatEndpoint,
 		},
 	},
 	OpenaiID: {
-		ID:       OpenaiID,
-		Name:     OpenaiDisplayName,
-		URL:      OpenaiDefaultBaseURL,
-		AuthType: AuthTypeBearer,
+		ID:             OpenaiID,
+		Name:           OpenaiDisplayName,
+		URL:            OpenaiDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: true,
 		Endpoints: Endpoints{
 			Models: OpenaiModelsEndpoint,
 			Chat:   OpenaiChatEndpoint,

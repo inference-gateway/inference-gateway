@@ -2,12 +2,13 @@
 
 ### General settings
 
-| Environment Variable         | Default Value | Description                                                                           |
-| ---------------------------- | ------------- | ------------------------------------------------------------------------------------- |
-| ENVIRONMENT                  | `production`  | The environment                                                                       |
-| ALLOWED_MODELS               | `""`          | Comma-separated list of models to allow. If empty, all models will be available       |
-| DEBUG_CONTENT_TRUNCATE_WORDS | `10`          | Number of words to truncate per content section in debug logs (development mode only) |
-| DEBUG_MAX_MESSAGES           | `100`         | Maximum number of messages to show in debug logs (development mode only)              |
+| Environment Variable         | Default Value | Description                                                                                                                                    |
+| ---------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| ENVIRONMENT                  | `production`  | The environment                                                                                                                                |
+| ALLOWED_MODELS               | `""`          | Comma-separated list of models to allow. If empty, all models will be available                                                                |
+| ENABLE_VISION                | `false`       | Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision |
+| DEBUG_CONTENT_TRUNCATE_WORDS | `10`          | Number of words to truncate per content section in debug logs (development mode only)                                                          |
+| DEBUG_MAX_MESSAGES           | `100`         | Maximum number of messages to show in debug logs (development mode only)                                                                       |
 
 ### Telemetry
 

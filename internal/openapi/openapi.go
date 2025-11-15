@@ -212,11 +212,12 @@ type EndpointSchema struct {
 }
 
 type ProviderConfig struct {
-	ID           string                    `yaml:"id"`
-	URL          string                    `yaml:"url"`
-	AuthType     string                    `yaml:"auth_type"`
-	ExtraHeaders map[string]ExtraHeader    `yaml:"extra_headers"`
-	Endpoints    map[string]EndpointSchema `yaml:"endpoints"`
+	ID             string                    `yaml:"id"`
+	URL            string                    `yaml:"url"`
+	AuthType       string                    `yaml:"auth_type"`
+	SupportsVision bool                      `yaml:"supports_vision"`
+	ExtraHeaders   map[string]ExtraHeader    `yaml:"extra_headers"`
+	Endpoints      map[string]EndpointSchema `yaml:"endpoints"`
 }
 
 func Read(openapi string) (*OpenAPISchema, error) {
