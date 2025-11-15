@@ -9,13 +9,14 @@ tasks:
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
       - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
       - helm repo add grafana https://grafana.github.io/helm-charts
+      - helm repo update
       - echo "🚀 Starting monitoring infrastructure deployment..."
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
           --set controller.progressDeadlineSeconds=500 \
-          --version 4.12.2 \
+          --version 4.14.0 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - |
@@ -61,7 +62,7 @@ tasks:
           --set autoscaling.maxReplicas=10 \
           --set autoscaling.targetCPUUtilizationPercentage=80 \
           --set autoscaling.targetMemoryUtilizationPercentage=80 \
-          --version 0.14.0 \
+          --version 0.19.5 \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
       - kubectl label namespace inference-gateway monitoring="true" --overwrite

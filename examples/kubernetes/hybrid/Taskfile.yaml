@@ -7,12 +7,13 @@ tasks:
     cmds:
       - ctlptl apply -f Cluster.yaml
       - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - helm repo update
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace kube-system \
           --set controller.progressDeadlineSeconds=500 \
-          --version 4.12.2 \
+          --version 4.14.0 \
           --wait \
           ingress-nginx ingress-nginx/ingress-nginx
       - echo "🚀 Hybrid infrastructure deployed successfully!"
@@ -41,7 +42,7 @@ tasks:
           --set ingress.enabled=true \
           --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
           --set envFrom.secretRef=inference-gateway \
-          --version 0.14.0 \
+          --version 0.19.5 \
           --wait \
           inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
       - echo "🚪 Inference Gateway with hybrid providers deployed successfully!"

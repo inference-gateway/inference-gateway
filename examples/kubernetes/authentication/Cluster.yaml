@@ -5,7 +5,7 @@ product: k3d
 k3d:
   v1alpha5Simple:
     agents: 1
-    image: docker.io/rancher/k3s:v1.32.0-k3s1
+    image: docker.io/rancher/k3s:v1.34.1-k3s1
     ports:
       - port: 80:80
         nodeFilters:

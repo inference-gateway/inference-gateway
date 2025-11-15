@@ -67,7 +67,7 @@ The project uses [Flox](https://flox.dev/) for development environment managemen
 
 The Flox environment provides all necessary development tools with pinned versions:
 
-- Go 1.25.0, Task, Docker, Docker Compose
+- Go 1.25.3, Task, Docker, Docker Compose
 - golangci-lint, mockgen, Spectral (OpenAPI linting)
 - kubectl, Helm (for Kubernetes examples)
 - And many more utilities

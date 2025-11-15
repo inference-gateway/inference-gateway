@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.6](https://github.com/inference-gateway/inference-gateway/compare/v0.19.5...v0.19.6) (2025-11-15)
+
+### 🔧 Miscellaneous
+
+* **docs:** Update Kubernetes examples to use k3s v1.34.1 and ingress-nginx v4.14.0 ([#191](https://github.com/inference-gateway/inference-gateway/issues/191)) ([65a1d53](https://github.com/inference-gateway/inference-gateway/commit/65a1d53e51e2d5d8fa0103de27412d79e14ad944))
+
+## [0.19.5](https://github.com/inference-gateway/inference-gateway/compare/v0.19.4...v0.19.5) (2025-11-15)
+
+### 🔧 Miscellaneous
+
+* **deps:** Update cosign-installer to v4.0.0 in artifacts workflow ([#190](https://github.com/inference-gateway/inference-gateway/issues/190)) ([fae964c](https://github.com/inference-gateway/inference-gateway/commit/fae964c6b5a811d3523337f416160bb61552d796))
+
+## [0.19.4](https://github.com/inference-gateway/inference-gateway/compare/v0.19.3...v0.19.4) (2025-11-15)
+
+### 🔧 Miscellaneous
+
+* **deps:** Update dependencies and delete claude code review workflow ([#186](https://github.com/inference-gateway/inference-gateway/issues/186)) ([184ed0d](https://github.com/inference-gateway/inference-gateway/commit/184ed0d91370365d51a0c322106e02c09c40ac3a))
+* **deps:** Update quic-go dependency to v0.54.1 across all modules ([#189](https://github.com/inference-gateway/inference-gateway/issues/189)) ([58c157c](https://github.com/inference-gateway/inference-gateway/commit/58c157c46dde74a211e8f1ec5b0cbfb15751bbf4))
+
 ## [0.19.3](https://github.com/inference-gateway/inference-gateway/compare/v0.19.2...v0.19.3) (2025-09-29)
 
 ### ♻️ Improvements
