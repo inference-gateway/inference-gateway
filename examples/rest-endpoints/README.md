@@ -219,27 +219,24 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 #### Example: Image with Data URL
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "anthropic/claude-3-5-sonnet-20241022",
-  "messages": [
-    {
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "openai/gpt-4o-mini",
+    "messages": [{
       "role": "user",
       "content": [
-        {
-          "type": "text",
-          "text": "Describe this image in detail"
-        },
+        {"type": "text", "text": "What is in this image?"},
         {
           "type": "image_url",
           "image_url": {
-            "url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD...",
-            "detail": "high"
+            "url": 
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
           }
         }
       ]
-    }
-  ]
-}' | jq .
+    }]
+  }' | jq .
 ```
 
 **Supported vision models:**
