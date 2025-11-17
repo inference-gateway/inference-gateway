@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -15,14 +17,50 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/mcp"
+	mcp "github.com/inference-gateway/inference-gateway/mcp"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	providers "github.com/inference-gateway/inference-gateway/providers"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sethvargo/go-envconfig"
+	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
+	envconfig "github.com/sethvargo/go-envconfig"
+)
+
+var (
+	version = "dev"
 )
 
 func main() {
+	versionFlag := flag.Bool("version", false, "Print version information")
+	helpFlag := flag.Bool("help", false, "Print help information")
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
+	if *helpFlag {
+		fmt.Println("Inference Gateway - Unified API gateway for multiple LLM providers")
+		fmt.Println()
+		fmt.Println("Usage:")
+		fmt.Println("  inference-gateway [flags]")
+		fmt.Println()
+		fmt.Println("Flags:")
+		fmt.Println("  --version    Print version information")
+		fmt.Println("  --help       Print help information")
+		fmt.Println()
+		fmt.Println("Configuration:")
+		fmt.Println("  The gateway is configured via environment variables.")
+		fmt.Println("  See https://github.com/inference-gateway/inference-gateway/blob/main/Configurations.md")
+		fmt.Println()
+		fmt.Println("Examples:")
+		fmt.Println("  # Start the gateway with default configuration")
+		fmt.Println("  inference-gateway")
+		fmt.Println()
+		fmt.Println("  # Start with specific provider configured")
+		fmt.Println("  export OPENAI_API_KEY=your-key")
+		fmt.Println("  inference-gateway")
+		os.Exit(0)
+	}
 	var config config.Config
 	cfg, err := config.Load(envconfig.OsLookuper())
 	if err != nil {

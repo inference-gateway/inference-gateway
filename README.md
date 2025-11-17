@@ -45,6 +45,11 @@ The Inference Gateway is a proxy server designed to facilitate access to various
   - [Available Tools](#available-tools)
   - [Common Commands](#common-commands)
   - [Environment Details](#environment-details)
+- [Installation](#installation)
+  - [Using Install Script](#using-install-script)
+  - [Manual Download](#manual-download)
+  - [Verify Installation](#verify-installation)
+  - [Running the Gateway](#running-the-gateway)
 - [Configuration](#configuration)
 - [Examples](#examples)
 - [SDKs](#sdks)
@@ -591,6 +596,85 @@ To exit the development environment, simply run:
 ```bash
 exit
 ```
+
+## Installation
+
+> **Recommended**: For production deployments, running the Inference Gateway as a container is recommended. This provides better isolation, easier updates, and simplified configuration management. See [Docker](examples/docker-compose/) or [Kubernetes](examples/kubernetes/) deployment examples.
+
+The Inference Gateway can also be installed as a standalone binary using the provided install script or by downloading pre-built binaries from GitHub releases.
+
+### Using Install Script
+
+The easiest way to install the Inference Gateway is using the automated install script:
+
+**Install latest version:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | bash
+```
+
+**Install specific version:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | VERSION=v0.20.1 bash
+```
+
+**Install to custom directory:**
+
+```bash
+# Install to custom location
+curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | INSTALL_DIR=~/.local/bin bash
+
+# Install to current directory
+curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | INSTALL_DIR=. bash
+```
+
+**What the script does:**
+
+- Automatically detects your operating system (Linux/macOS) and architecture (x86_64/arm64/armv7)
+- Downloads the appropriate binary from GitHub releases
+- Extracts and installs to `/usr/local/bin` (or custom directory)
+- Verifies the installation
+
+**Supported platforms:**
+
+- Linux: x86_64, arm64, armv7
+- macOS (Darwin): x86_64 (Intel), arm64 (Apple Silicon)
+
+### Manual Download
+
+Download pre-built binaries directly from the [releases page](https://github.com/inference-gateway/inference-gateway/releases):
+
+1. Download the appropriate archive for your platform
+2. Extract the binary:
+   ```bash
+   tar -xzf inference-gateway_<OS>_<ARCH>.tar.gz
+   ```
+3. Move to a directory in your PATH:
+   ```bash
+   sudo mv inference-gateway /usr/local/bin/
+   chmod +x /usr/local/bin/inference-gateway
+   ```
+
+### Verify Installation
+
+```bash
+inference-gateway --version
+```
+
+### Running the Gateway
+
+Once installed, start the gateway with your configuration:
+
+```bash
+# Set required environment variables
+export OPENAI_API_KEY="your-api-key"
+
+# Start the gateway
+inference-gateway
+```
+
+For detailed configuration options, see the [Configuration](#configuration) section below.
 
 ## Configuration
 
