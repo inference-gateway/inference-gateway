@@ -1,3 +1,4 @@
+---
 name: Claude Code
 
 on:
@@ -31,21 +32,32 @@ jobs:
       actions: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
 
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.5.0
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.6.0
 
       - name: Install task
         run: |
-          curl -s https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin v3.44.1
+          curl -s https://taskfile.dev/install.sh | sh -s -- -b /usr/local/bin v3.45.4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 'lts/*'
 
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@main
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           additional_permissions: |
@@ -53,30 +65,7 @@ jobs:
           use_commit_signing: true
           base_branch: main
           branch_prefix: 'claude/'
-          custom_instructions: |
-            IMPORTANT: You must NEVER push directly to the main branch. Always:
-            1. Create a new feature branch (claude/feature-name)
-            2. Make your changes on the feature branch
-            3. Open a pull request to main
-            4. Wait for review and approval before merging
-
-            COMMIT MESSAGE FORMAT: Always use conventional commits with capital letters. 
-            Follow the format: "type(scope): Description" where the description starts with a capital letter.
-            Examples: "feat(mcp): Add retry mechanism for agent connections", "fix(auth): Resolve token validation issue"
-
-            Follow the development workflow specified in the coding instructions.
-          mcp_config: |
-            {
-              "mcpServers": {
-                "context7": {
-                  "command": "npx",
-                  "args": ["-y", "@upstash/context7-mcp@latest"],
-                  "env": {}
-                }
-              }
-            }
-          allowed_tools: |
-            Bash(task:*)
-            Bash(go:*)
-            Bash(gh:*)
-            Bash(git:*)
+          claude_args: |
+            --system-prompt "IMPORTANT: You must NEVER push directly to the main branch. Always: 1. Create a new feature branch (claude/feature-name), 2. Make your changes on the feature branch, 3. Open a pull request to main. COMMIT MESSAGE FORMAT: Always use conventional commits with capital letters. Follow the format: 'type(scope): Description' where the description starts with a capital letter. Examples: 'feat(grafana): Add retry mechanism for agent connections', 'fix(auth): Resolve token validation issue'. Follow the development workflow specified in the coding instructions."
+            --allowedTools "Bash(task:*),Bash(go:*),Bash(gh:*),Bash(git:*)"
+            --mcp-config '{"mcpServers":{"context7":{"command":"npx","args":["-y","@upstash/context7-mcp@latest"]}}}'
