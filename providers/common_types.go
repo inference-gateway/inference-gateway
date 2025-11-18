@@ -20,6 +20,7 @@ const (
 	MistralDefaultBaseURL    = "https://api.mistral.ai/v1"
 	OllamaDefaultBaseURL     = "http://ollama:8080/v1"
 	OpenaiDefaultBaseURL     = "https://api.openai.com/v1"
+	QwenDefaultBaseURL       = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 
 // The default endpoints of each provider
@@ -42,6 +43,8 @@ const (
 	OllamaChatEndpoint       = "/chat/completions"
 	OpenaiModelsEndpoint     = "/models"
 	OpenaiChatEndpoint       = "/chat/completions"
+	QwenModelsEndpoint       = "/models"
+	QwenChatEndpoint         = "/chat/completions"
 )
 
 type Provider string
@@ -57,6 +60,7 @@ const (
 	MistralID    Provider = "mistral"
 	OllamaID     Provider = "ollama"
 	OpenaiID     Provider = "openai"
+	QwenID       Provider = "qwen"
 )
 
 // Display names for providers
@@ -70,6 +74,7 @@ const (
 	MistralDisplayName    = "Mistral"
 	OllamaDisplayName     = "Ollama"
 	OpenaiDisplayName     = "Openai"
+	QwenDisplayName       = "Qwen"
 )
 
 // MessageRole represents the role of a message sender
