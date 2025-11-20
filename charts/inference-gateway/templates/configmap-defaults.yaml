@@ -59,6 +59,7 @@ data:
   COHERE_API_URL: {{ .Values.config.COHERE_API_URL | quote }}
   GROQ_API_URL: {{ .Values.config.GROQ_API_URL | quote }}
   OLLAMA_API_URL: {{ .Values.config.OLLAMA_API_URL | quote }}
+  OLLAMA_CLOUD_API_URL: {{ .Values.config.OLLAMA_CLOUD_API_URL | quote }}
   OPENAI_API_URL: {{ .Values.config.OPENAI_API_URL | quote }}
   DEEPSEEK_API_URL: {{ .Values.config.DEEPSEEK_API_URL | quote }}
   GOOGLE_API_URL: {{ .Values.config.GOOGLE_API_URL | quote }}

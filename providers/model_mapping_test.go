@@ -38,6 +38,12 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 			expectedModel:    "mistral",
 		},
 		{
+			name:             "Ollama Cloud model with prefix",
+			model:            "ollama_cloud/llama3.2:latest",
+			expectedProvider: pointerToProvider(OllamaCloudID),
+			expectedModel:    "llama3.2:latest",
+		},
+		{
 			name:             "Cloudflare model with prefix",
 			model:            "cloudflare/@cf/meta/llama-2-7b-chat-fp16",
 			expectedProvider: pointerToProvider(CloudflareID),

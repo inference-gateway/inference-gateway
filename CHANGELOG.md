@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.21.0](https://github.com/inference-gateway/inference-gateway/compare/v0.20.2...v0.21.0) (2025-11-20)
+
+### ✨ Features
+
+* **providers:** Add support for Ollama Cloud provider ([#205](https://github.com/inference-gateway/inference-gateway/issues/205)) ([bd6cf2d](https://github.com/inference-gateway/inference-gateway/commit/bd6cf2d8a4cd0105a752bd8416791ace8e4bc8db)), closes [#204](https://github.com/inference-gateway/inference-gateway/issues/204)
+
+### 🔧 Miscellaneous
+
+* **ci:** Update Claude Code workflow configuration ([#199](https://github.com/inference-gateway/inference-gateway/issues/199)) ([0078170](https://github.com/inference-gateway/inference-gateway/commit/0078170b729e266de26765885056ccb874e83ad8))
+* **deps:** bump golang.org/x/crypto from 0.43.0 to 0.45.0 ([#203](https://github.com/inference-gateway/inference-gateway/issues/203)) ([a98c247](https://github.com/inference-gateway/inference-gateway/commit/a98c247f0d7793e58deb1e1e832307e0c36c6412))
+* Exclude install.sh from language statistics ([5b12105](https://github.com/inference-gateway/inference-gateway/commit/5b121056fd02c314cabb076152ec0e30d3667961))
+
+### 🔨 Miscellaneous
+
+* **deps:** bump golang.org/x/crypto ([#202](https://github.com/inference-gateway/inference-gateway/issues/202)) ([67f2752](https://github.com/inference-gateway/inference-gateway/commit/67f2752d806837ee379c8fa9d404f1530b05a561))
+
 ## [0.20.2](https://github.com/inference-gateway/inference-gateway/compare/v0.20.1...v0.20.2) (2025-11-17)
 
 ### 📚 Documentation

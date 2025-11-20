@@ -67,7 +67,7 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 ## Key Features
 
 - 📜 **Open Source**: Available under the MIT License.
-- 🚀 **Unified API Access**: Proxy requests to multiple language model APIs, including OpenAI, Ollama, Groq, Cohere etc.
+- 🚀 **Unified API Access**: Proxy requests to multiple language model APIs, including OpenAI, Ollama, Ollama Cloud, Groq, Cohere etc.
 - ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
 - 🔧 **Tool-use Support**: Enable function calling capabilities across supported providers with a unified API.
 - 🌐 **MCP Support**: Full Model Context Protocol integration - automatically discover and expose tools from MCP servers to LLMs without client-side tool management.
@@ -431,7 +431,7 @@ Metrics automatically detect providers from:
 - **Model prefixes**: `openai/gpt-4`, `anthropic/claude-3-haiku`, `groq/llama-3-8b`
 - **URL parameters**: `?provider=openai`
 
-**Supported providers**: `openai`, `anthropic`, `groq`, `cohere`, `ollama`, `cloudflare`, `deepseek`, `google`
+**Supported providers**: `openai`, `anthropic`, `groq`, `cohere`, `ollama`, `ollama_cloud`, `cloudflare`, `deepseek`, `google`, `mistral`
 
 > **Learn more**: [Docker Compose Monitoring](examples/docker-compose/monitoring/) | [Kubernetes Monitoring](examples/kubernetes/monitoring/) | [OpenTelemetry Documentation](https://opentelemetry.io/)
 
@@ -439,6 +439,7 @@ Metrics automatically detect providers from:
 
 - [OpenAI](https://platform.openai.com/)
 - [Ollama](https://ollama.com/)
+- [Ollama Cloud](https://ollama.com/cloud) (Preview)
 - [Groq](https://console.groq.com/)
 - [Cloudflare](https://www.cloudflare.com/)
 - [Cohere](https://docs.cohere.com/docs/the-cohere-platform)

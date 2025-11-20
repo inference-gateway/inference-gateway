@@ -263,15 +263,15 @@ const (
 // The default base URLs of each provider
 const (
     {{- range $name, $config := .Providers }}
-    {{title $name}}DefaultBaseURL = "{{$config.URL}}"
+    {{pascalCase $name}}DefaultBaseURL = "{{$config.URL}}"
     {{- end }}
 )
 
 // The default endpoints of each provider
 const (
     {{- range $name, $config := .Providers }}
-    {{title $name}}ModelsEndpoint = "{{(index $config.Endpoints "models").Endpoint}}"
-    {{title $name}}ChatEndpoint   = "{{(index $config.Endpoints "chat").Endpoint}}"
+    {{pascalCase $name}}ModelsEndpoint = "{{(index $config.Endpoints "models").Endpoint}}"
+    {{pascalCase $name}}ChatEndpoint   = "{{(index $config.Endpoints "chat").Endpoint}}"
     {{- end }}
 )
 
@@ -280,14 +280,14 @@ type Provider string
 // The ID's of each provider
 const (
     {{- range $name, $config := .Providers }}
-    {{title $name}}ID Provider = "{{$config.ID}}"
+    {{pascalCase $name}}ID Provider = "{{$config.ID}}"
     {{- end }}
 )
 
 // Display names for providers
 const (
-    {{- range $name, $config := .Providers }}  
-    {{title $name}}DisplayName = "{{title $name}}"
+    {{- range $name, $config := .Providers }}
+    {{pascalCase $name}}DisplayName = "{{pascalCase $name}}"
     {{- end }}
 )
 
@@ -737,7 +737,7 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() ListModelsResponse {
 			ProviderName string
 			Config       openapi.ProviderConfig
 		}{
-			ProviderName: caser.String(providerName),
+			ProviderName: funcMap["pascalCase"].(func(string) string)(providerName),
 			Config:       config,
 		}
 
@@ -873,10 +873,10 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID Provider, client Client)
 // The registry of all providers
 var Registry = map[Provider]*Config{
 	{{- range $name, $config := .Providers }}
-	{{title $name}}ID: {
-		ID:             {{title $name}}ID,
-		Name:           {{title $name}}DisplayName,
-		URL:            {{title $name}}DefaultBaseURL,
+	{{pascalCase $name}}ID: {
+		ID:             {{pascalCase $name}}ID,
+		Name:           {{pascalCase $name}}DisplayName,
+		URL:            {{pascalCase $name}}DefaultBaseURL,
 		AuthType:       {{getAuthType $config.AuthType}},
 		SupportsVision: {{if $config.SupportsVision}}true{{else}}false{{end}},
 		{{- if eq $name "anthropic" }}
@@ -885,8 +885,8 @@ var Registry = map[Provider]*Config{
 		},
 		{{- end }}
 		Endpoints: Endpoints{
-			Models: {{title $name}}ModelsEndpoint,
-			Chat:   {{title $name}}ChatEndpoint,
+			Models: {{pascalCase $name}}ModelsEndpoint,
+			Chat:   {{pascalCase $name}}ChatEndpoint,
 		},
 	},
 	{{- end }}

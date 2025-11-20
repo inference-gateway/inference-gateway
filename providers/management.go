@@ -209,6 +209,13 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 			return ListModelsResponse{}, err
 		}
 		transformer = &resp
+	case OllamaCloudID:
+		var resp ListModelsResponseOllamaCloud
+		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+			p.logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
+			return ListModelsResponse{}, err
+		}
+		transformer = &resp
 	default:
 		var resp ListModelsResponseOpenai
 		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {

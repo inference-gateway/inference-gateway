@@ -94,6 +94,11 @@ paths:
                         created: 1718441600
                         owned_by: 'ollama'
                         served_by: 'ollama'
+                      - id: 'ollama_cloud/llama3.2:latest'
+                        object: 'model'
+                        created: 1730419200
+                        owned_by: 'ollama_cloud'
+                        served_by: 'ollama_cloud'
                       - id: 'mistral/mistral-large-latest'
                         object: 'model'
                         created: 1698019200
@@ -468,6 +473,7 @@ components:
       type: string
       enum:
         - ollama
+        - ollama_cloud
         - groq
         - openai
         - cloudflare
@@ -482,6 +488,20 @@ components:
           id: 'ollama'
           url: 'http://ollama:8080/v1'
           auth_type: 'none'
+          supports_vision: true
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        ollama_cloud:
+          id: 'ollama_cloud'
+          url: 'https://ollama.com/v1'
+          auth_type: 'bearer'
           supports_vision: true
           endpoints:
             models:
@@ -1586,6 +1606,16 @@ components:
                   env: 'OLLAMA_API_KEY'
                   type: string
                   description: 'Ollama API Key'
+                  secret: true
+                - name: ollama_cloud_api_url
+                  env: 'OLLAMA_CLOUD_API_URL'
+                  type: string
+                  default: 'https://ollama.com/v1'
+                  description: 'Ollama Cloud API URL'
+                - name: ollama_cloud_api_key
+                  env: 'OLLAMA_CLOUD_API_KEY'
+                  type: string
+                  description: 'Ollama Cloud API Key'
                   secret: true
                 - name: openai_api_url
                   env: 'OPENAI_API_URL'

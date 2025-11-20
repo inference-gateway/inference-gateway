@@ -15,15 +15,16 @@ func DetermineProviderAndModelName(model string) (provider *Provider, modelName 
 	modelLower := strings.ToLower(model)
 
 	providerPrefixMapping := map[string]Provider{
-		"ollama/":     OllamaID,
-		"groq/":       GroqID,
-		"cloudflare/": CloudflareID,
-		"openai/":     OpenaiID,
-		"anthropic/":  AnthropicID,
-		"cohere/":     CohereID,
-		"deepseek/":   DeepseekID,
-		"google/":     GoogleID,
-		"mistral/":    MistralID,
+		"ollama/":       OllamaID,
+		"ollama_cloud/": OllamaCloudID,
+		"groq/":         GroqID,
+		"cloudflare/":   CloudflareID,
+		"openai/":       OpenaiID,
+		"anthropic/":    AnthropicID,
+		"cohere/":       CohereID,
+		"deepseek/":     DeepseekID,
+		"google/":       GoogleID,
+		"mistral/":      MistralID,
 	}
 
 	for prefix, providerID := range providerPrefixMapping {
