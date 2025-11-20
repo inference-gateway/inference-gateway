@@ -499,7 +499,7 @@ components:
               endpoint: '/chat/completions'
         ollama_cloud:
           id: 'ollama_cloud'
-          url: 'https://cloud.ollama.ai/v1'
+          url: 'https://ollama.com/v1'
           auth_type: 'bearer'
           supports_vision: true
           endpoints:
@@ -1595,7 +1595,7 @@ components:
                 - name: ollama_cloud_api_url
                   env: 'OLLAMA_CLOUD_API_URL'
                   type: string
-                  default: 'https://cloud.ollama.ai/v1'
+                  default: 'https://ollama.com/v1'
                   description: 'Ollama Cloud API URL'
                 - name: ollama_cloud_api_key
                   env: 'OLLAMA_CLOUD_API_KEY'

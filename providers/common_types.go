@@ -19,7 +19,7 @@ const (
 	GroqDefaultBaseURL        = "https://api.groq.com/openai/v1"
 	MistralDefaultBaseURL     = "https://api.mistral.ai/v1"
 	OllamaDefaultBaseURL      = "http://ollama:8080/v1"
-	OllamaCloudDefaultBaseURL = "https://cloud.ollama.ai/v1"
+	OllamaCloudDefaultBaseURL = "https://ollama.com/v1"
 	OpenaiDefaultBaseURL      = "https://api.openai.com/v1"
 )
 

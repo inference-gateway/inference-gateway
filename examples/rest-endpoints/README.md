@@ -4,18 +4,19 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 
 ### GET Endpoints
 
-| Description            | Curl Command                                                      |
-| ---------------------- | ----------------------------------------------------------------- |
-| List all models        | `curl -X GET http://localhost:8080/v1/models`                     |
-| List Ollama models     | `curl -X GET http://localhost:8080/v1/models?provider=ollama`     |
-| List Groq models       | `curl -X GET http://localhost:8080/v1/models?provider=groq`       |
-| List OpenAI models     | `curl -X GET http://localhost:8080/v1/models?provider=openai`     |
-| List Cloudflare models | `curl -X GET http://localhost:8080/v1/models?provider=cloudflare` |
-| List Cohere models     | `curl -X GET http://localhost:8080/v1/models?provider=cohere`     |
-| List Anthropic models  | `curl -X GET http://localhost:8080/v1/models?provider=anthropic`  |
-| List DeepSeek models   | `curl -X GET http://localhost:8080/v1/models?provider=deepseek`   |
-| List Google models     | `curl -X GET http://localhost:8080/v1/models?provider=google`     |
-| List Mistral models    | `curl -X GET http://localhost:8080/v1/models?provider=mistral`    |
+| Description              | Curl Command                                                        |
+| ------------------------ | ------------------------------------------------------------------- |
+| List all models          | `curl -X GET http://localhost:8080/v1/models`                       |
+| List Ollama models       | `curl -X GET http://localhost:8080/v1/models?provider=ollama`       |
+| List Ollama Cloud models | `curl -X GET http://localhost:8080/v1/models?provider=ollama_cloud` |
+| List Groq models         | `curl -X GET http://localhost:8080/v1/models?provider=groq`         |
+| List OpenAI models       | `curl -X GET http://localhost:8080/v1/models?provider=openai`       |
+| List Cloudflare models   | `curl -X GET http://localhost:8080/v1/models?provider=cloudflare`   |
+| List Cohere models       | `curl -X GET http://localhost:8080/v1/models?provider=cohere`       |
+| List Anthropic models    | `curl -X GET http://localhost:8080/v1/models?provider=anthropic`    |
+| List DeepSeek models     | `curl -X GET http://localhost:8080/v1/models?provider=deepseek`     |
+| List Google models       | `curl -X GET http://localhost:8080/v1/models?provider=google`       |
+| List Mistral models      | `curl -X GET http://localhost:8080/v1/models?provider=mistral`      |
 
 ### POST Endpoints
 

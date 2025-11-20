@@ -88,7 +88,7 @@
 | GROQ_API_KEY         | `""`                                                            | Groq API Key         |
 | OLLAMA_API_URL       | `http://ollama:8080/v1`                                         | Ollama API URL       |
 | OLLAMA_API_KEY       | `""`                                                            | Ollama API Key       |
-| OLLAMA_CLOUD_API_URL | `https://cloud.ollama.ai/v1`                                    | Ollama Cloud API URL |
+| OLLAMA_CLOUD_API_URL | `https://ollama.com/v1`                                         | Ollama Cloud API URL |
 | OLLAMA_CLOUD_API_KEY | `""`                                                            | Ollama Cloud API Key |
 | OPENAI_API_URL       | `https://api.openai.com/v1`                                     | OpenAI API URL       |
 | OPENAI_API_KEY       | `""`                                                            | OpenAI API Key       |
