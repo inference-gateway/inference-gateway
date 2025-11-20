@@ -131,6 +131,17 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.OllamaChatEndpoint,
 						},
 					},
+					providers.OllamaCloudID: {
+						ID:             providers.OllamaCloudID,
+						Name:           providers.OllamaCloudDisplayName,
+						URL:            providers.OllamaCloudDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: providers.Endpoints{
+							Models: providers.OllamaCloudModelsEndpoint,
+							Chat:   providers.OllamaCloudChatEndpoint,
+						},
+					},
 					providers.OpenaiID: {
 						ID:             providers.OpenaiID,
 						Name:           providers.OpenaiDisplayName,
@@ -254,6 +265,17 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.OllamaModelsEndpoint,
 							Chat:   providers.OllamaChatEndpoint,
+						},
+					},
+					providers.OllamaCloudID: {
+						ID:             providers.OllamaCloudID,
+						Name:           providers.OllamaCloudDisplayName,
+						URL:            providers.OllamaCloudDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: providers.Endpoints{
+							Models: providers.OllamaCloudModelsEndpoint,
+							Chat:   providers.OllamaCloudChatEndpoint,
 						},
 					},
 					providers.GroqID: {
@@ -421,6 +443,17 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.OllamaModelsEndpoint,
 							Chat:   providers.OllamaChatEndpoint,
+						},
+					},
+					providers.OllamaCloudID: {
+						ID:             providers.OllamaCloudID,
+						Name:           providers.OllamaCloudDisplayName,
+						URL:            providers.OllamaCloudDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: providers.Endpoints{
+							Models: providers.OllamaCloudModelsEndpoint,
+							Chat:   providers.OllamaCloudChatEndpoint,
 						},
 					},
 					providers.GroqID: {

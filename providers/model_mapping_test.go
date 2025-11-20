@@ -40,7 +40,7 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 		{
 			name:             "Ollama Cloud model with prefix",
 			model:            "ollama_cloud/llama3.2:latest",
-			expectedProvider: pointerToProvider(Ollama_cloudID),
+			expectedProvider: pointerToProvider(OllamaCloudID),
 			expectedModel:    "llama3.2:latest",
 		},
 		{

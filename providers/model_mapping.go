@@ -16,7 +16,7 @@ func DetermineProviderAndModelName(model string) (provider *Provider, modelName 
 
 	providerPrefixMapping := map[string]Provider{
 		"ollama/":       OllamaID,
-		"ollama_cloud/": Ollama_cloudID,
+		"ollama_cloud/": OllamaCloudID,
 		"groq/":         GroqID,
 		"cloudflare/":   CloudflareID,
 		"openai/":       OpenaiID,
