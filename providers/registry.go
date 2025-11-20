@@ -158,6 +158,17 @@ var Registry = map[Provider]*Config{
 			Chat:   OllamaChatEndpoint,
 		},
 	},
+	Ollama_cloudID: {
+		ID:             Ollama_cloudID,
+		Name:           Ollama_cloudDisplayName,
+		URL:            Ollama_cloudDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: true,
+		Endpoints: Endpoints{
+			Models: Ollama_cloudModelsEndpoint,
+			Chat:   Ollama_cloudChatEndpoint,
+		},
+	},
 	OpenaiID: {
 		ID:             OpenaiID,
 		Name:           OpenaiDisplayName,
