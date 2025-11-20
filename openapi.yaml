@@ -94,7 +94,7 @@ paths:
                         created: 1718441600
                         owned_by: 'ollama'
                         served_by: 'ollama'
-                      - id: 'ollama_cloud/llama3.2:latest'
+                      - id: 'ollama_cloud/gpt-oss:20b'
                         object: 'model'
                         created: 1730419200
                         owned_by: 'ollama_cloud'
