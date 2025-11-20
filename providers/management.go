@@ -218,7 +218,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 		transformer = &resp
 	default:
 		var resp ListModelsResponseOpenai
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil{
+		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
 			p.logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
 			return ListModelsResponse{}, err
 		}
