@@ -767,7 +767,7 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 					Token:    "test-token",
 					AuthType: providers.AuthTypeBearer,
 					Endpoints: providers.Endpoints{
-						ChatCompletions: providers.OpenaiChatCompletionsEndpoint,
+						Chat: providers.OpenaiChatEndpoint,
 					},
 				},
 			}
@@ -926,7 +926,7 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 					Token:    "test-token",
 					AuthType: providers.AuthTypeBearer,
 					Endpoints: providers.Endpoints{
-						ChatCompletions: providers.OpenaiChatCompletionsEndpoint,
+						Chat: providers.OpenaiChatEndpoint,
 					},
 				},
 			}
