@@ -515,7 +515,6 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			return
 		}
 	} else if router.cfg.DisallowedModels != "" {
-		// Only check disallowed models if allowed models is not set
 		if router.isModelDisallowed(originalModel, router.cfg.DisallowedModels) {
 			router.logger.Error("model is disallowed", nil, "model", originalModel, "disallowed_models", router.cfg.DisallowedModels)
 			c.JSON(http.StatusForbidden, ErrorResponse{Error: "Model is disallowed. Please use a different model."})
@@ -703,17 +702,14 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 // If both are empty, all models are returned.
 // The matching is done using case-insensitive comparison.
 func (router *RouterImpl) filterModels(models []providers.Model, allowedModels string, disallowedModels string) []providers.Model {
-	// If allowed models is set, use allowlist logic (takes precedence)
 	if allowedModels != "" {
 		return router.filterModelsByAllowList(models, allowedModels)
 	}
 
-	// If disallowed models is set, use blocklist logic
 	if disallowedModels != "" {
 		return router.filterModelsByDisallowList(models, disallowedModels)
 	}
 
-	// If neither is set, return all models
 	return models
 }
 
@@ -785,7 +781,6 @@ func (router *RouterImpl) filterModelsByDisallowList(models []providers.Model, d
 			modelName = strings.ToLower(parts[1])
 		}
 
-		// Include model if it's NOT in the disallowed list
 		if !disallowedMap[modelID] && (modelName == "" || !disallowedMap[modelName]) {
 			filtered = append(filtered, model)
 		}
