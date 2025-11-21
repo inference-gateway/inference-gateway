@@ -1316,6 +1316,11 @@ components:
                   type: string
                   default: ''
                   description: 'Comma-separated list of models to allow. If empty, all models will be available'
+                - name: disallowed_models
+                  env: 'DISALLOWED_MODELS'
+                  type: string
+                  default: ''
+                  description: 'Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS'
                 - name: enable_vision
                   env: 'ENABLE_VISION'
                   type: bool

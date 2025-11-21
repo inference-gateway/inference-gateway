@@ -8,6 +8,7 @@ data:
   # General settings
   ENVIRONMENT: {{ .Values.config.ENVIRONMENT | quote }}
   ALLOWED_MODELS: {{ .Values.config.ALLOWED_MODELS | quote }}
+  DISALLOWED_MODELS: {{ .Values.config.DISALLOWED_MODELS | quote }}
   ENABLE_VISION: {{ .Values.config.ENABLE_VISION | quote }}
   DEBUG_CONTENT_TRUNCATE_WORDS: {{ .Values.config.DEBUG_CONTENT_TRUNCATE_WORDS | quote }}
   DEBUG_MAX_MESSAGES: {{ .Values.config.DEBUG_MAX_MESSAGES | quote }}
