@@ -507,7 +507,6 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 	req.Model = model
 
-	// Check allowed models first (takes precedence)
 	if router.cfg.AllowedModels != "" {
 		if !router.isModelAllowed(originalModel, router.cfg.AllowedModels) {
 			router.logger.Error("model not in allowed list", nil, "model", originalModel, "allowed_models", router.cfg.AllowedModels)
