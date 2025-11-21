@@ -24,9 +24,9 @@ func (p *ProviderImpl) prepareStreamingRequest(clientReq CreateChatCompletionReq
 		IncludeUsage: true,
 	}
 
-	// Special case - cohere and mistral don't like stream_options, so we don't
+	// Special case - cohere, mistral, and ollama_cloud don't like stream_options, so we don't
 	// include it - probably they haven't implemented it yet in their OpenAI "compatible" API
-	if *p.GetID() == CohereID || *p.GetID() == MistralID {
+	if *p.GetID() == CohereID || *p.GetID() == MistralID || *p.GetID() == OllamaCloudID {
 		clientReq.StreamOptions = nil
 	}
 
