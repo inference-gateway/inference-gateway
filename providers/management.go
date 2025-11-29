@@ -361,7 +361,9 @@ func (p *ProviderImpl) SupportsVision(ctx context.Context, model string) (bool, 
 		return false, nil
 	case AnthropicID:
 		return strings.Contains(modelLower, "claude-3") ||
-			strings.Contains(modelLower, "claude-4"), nil
+			strings.Contains(modelLower, "opus-4") ||
+			strings.Contains(modelLower, "sonnet-4") ||
+			strings.Contains(modelLower, "haiku-4"), nil
 	default:
 		return strings.Contains(modelLower, "vision") ||
 			strings.Contains(modelLower, "multimodal") ||
