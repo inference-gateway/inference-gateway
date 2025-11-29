@@ -357,7 +357,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 			return
 		}
 
-		response.Data = router.filterModelsByAllowList(response.Data, router.cfg.AllowedModels)
+		response.Data = router.filterModels(response.Data, router.cfg.AllowedModels, router.cfg.DisallowedModels)
 
 		c.JSON(http.StatusOK, response)
 	} else {
@@ -409,7 +409,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 			allModels = make([]providers.Model, 0)
 		}
 
-		allModels = router.filterModelsByAllowList(allModels, router.cfg.AllowedModels)
+		allModels = router.filterModels(allModels, router.cfg.AllowedModels, router.cfg.DisallowedModels)
 
 		unifiedResponse := providers.ListModelsResponse{
 			Object: "list",
@@ -511,6 +511,12 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		if !router.isModelAllowed(originalModel, router.cfg.AllowedModels) {
 			router.logger.Error("model not in allowed list", nil, "model", originalModel, "allowed_models", router.cfg.AllowedModels)
 			c.JSON(http.StatusForbidden, ErrorResponse{Error: "Model not allowed. Please check the list of allowed models."})
+			return
+		}
+	} else if router.cfg.DisallowedModels != "" {
+		if router.isModelDisallowed(originalModel, router.cfg.DisallowedModels) {
+			router.logger.Error("model is disallowed", nil, "model", originalModel, "disallowed_models", router.cfg.DisallowedModels)
+			c.JSON(http.StatusForbidden, ErrorResponse{Error: "Model is disallowed. Please use a different model."})
 			return
 		}
 	}
@@ -688,6 +694,24 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// filterModels filters models based on ALLOWED_MODELS and DISALLOWED_MODELS configuration.
+// ALLOWED_MODELS takes precedence over DISALLOWED_MODELS.
+// If allowedModels is set, only models in the allowed list are returned.
+// If allowedModels is empty but disallowedModels is set, all models except those in the disallowed list are returned.
+// If both are empty, all models are returned.
+// The matching is done using case-insensitive comparison.
+func (router *RouterImpl) filterModels(models []providers.Model, allowedModels string, disallowedModels string) []providers.Model {
+	if allowedModels != "" {
+		return router.filterModelsByAllowList(models, allowedModels)
+	}
+
+	if disallowedModels != "" {
+		return router.filterModelsByDisallowList(models, disallowedModels)
+	}
+
+	return models
+}
+
 // filterModelsByAllowList filters models based on the comma-separated ALLOWED_MODELS configuration.
 // If allowedModels is empty, all models are returned. Otherwise, only models matching
 // the allowed list are returned. The matching is done using case-insensitive comparison.
@@ -726,6 +750,44 @@ func (router *RouterImpl) filterModelsByAllowList(models []providers.Model, allo
 	return filtered
 }
 
+// filterModelsByDisallowList filters models based on the comma-separated DISALLOWED_MODELS configuration.
+// If disallowedModels is empty, all models are returned. Otherwise, only models NOT matching
+// the disallowed list are returned. The matching is done using case-insensitive comparison.
+func (router *RouterImpl) filterModelsByDisallowList(models []providers.Model, disallowedModels string) []providers.Model {
+	if disallowedModels == "" {
+		return models
+	}
+
+	disallowedMap := make(map[string]bool)
+	for _, model := range strings.Split(disallowedModels, ",") {
+		trimmed := strings.TrimSpace(model)
+		if trimmed != "" {
+			disallowedMap[strings.ToLower(trimmed)] = true
+		}
+	}
+
+	if len(disallowedMap) == 0 {
+		return models
+	}
+
+	filtered := make([]providers.Model, 0)
+	for _, model := range models {
+		modelID := strings.ToLower(model.ID)
+
+		parts := strings.SplitN(model.ID, "/", 2)
+		modelName := ""
+		if len(parts) == 2 {
+			modelName = strings.ToLower(parts[1])
+		}
+
+		if !disallowedMap[modelID] && (modelName == "" || !disallowedMap[modelName]) {
+			filtered = append(filtered, model)
+		}
+	}
+
+	return filtered
+}
+
 // isModelAllowed checks if a specific model is allowed based on the ALLOWED_MODELS configuration.
 // If allowedModels is empty, all models are allowed. Otherwise, only models matching
 // the allowed list are permitted. The matching is done using case-insensitive comparison.
@@ -755,6 +817,42 @@ func (router *RouterImpl) isModelAllowed(modelID string, allowedModels string) b
 	if len(parts) == 2 {
 		modelName := strings.ToLower(parts[1])
 		if allowedMap[modelName] {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isModelDisallowed checks if a specific model is disallowed based on the DISALLOWED_MODELS configuration.
+// If disallowedModels is empty, no models are disallowed. Otherwise, only models matching
+// the disallowed list are blocked. The matching is done using case-insensitive comparison.
+func (router *RouterImpl) isModelDisallowed(modelID string, disallowedModels string) bool {
+	if disallowedModels == "" {
+		return false
+	}
+
+	disallowedMap := make(map[string]bool)
+	for _, model := range strings.Split(disallowedModels, ",") {
+		trimmed := strings.TrimSpace(model)
+		if trimmed != "" {
+			disallowedMap[strings.ToLower(trimmed)] = true
+		}
+	}
+
+	if len(disallowedMap) == 0 {
+		return false
+	}
+
+	modelIDLower := strings.ToLower(modelID)
+	if disallowedMap[modelIDLower] {
+		return true
+	}
+
+	parts := strings.SplitN(modelID, "/", 2)
+	if len(parts) == 2 {
+		modelName := strings.ToLower(parts[1])
+		if disallowedMap[modelName] {
 			return true
 		}
 	}

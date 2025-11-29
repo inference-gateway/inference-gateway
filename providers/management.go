@@ -364,6 +364,8 @@ func (p *ProviderImpl) SupportsVision(ctx context.Context, model string) (bool, 
 			strings.Contains(modelLower, "claude-4"), nil
 	default:
 		return strings.Contains(modelLower, "vision") ||
-			strings.Contains(modelLower, "multimodal"), nil
+			strings.Contains(modelLower, "multimodal") ||
+			strings.Contains(modelLower, "-vl") ||
+			strings.Contains(modelLower, "qwen") && strings.Contains(modelLower, "vl"), nil
 	}
 }

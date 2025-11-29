@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.22.0](https://github.com/inference-gateway/inference-gateway/compare/v0.21.0...v0.22.0) (2025-11-21)
+
+### ✨ Features
+
+* **config:** Add DISALLOWED_MODELS configuration option ([#209](https://github.com/inference-gateway/inference-gateway/issues/209)) ([189a57a](https://github.com/inference-gateway/inference-gateway/commit/189a57ade8c74a009ed02849f5c2675661d4c30a)), closes [#208](https://github.com/inference-gateway/inference-gateway/issues/208)
+
+### 🐛 Bug Fixes
+
+* **providers:** Add Ollama Cloud to stream_options exception list ([#207](https://github.com/inference-gateway/inference-gateway/issues/207)) ([52e8017](https://github.com/inference-gateway/inference-gateway/commit/52e8017cfa841769bbff2284cfa12f43a4c8760c)), closes [#206](https://github.com/inference-gateway/inference-gateway/issues/206)
+
+### 🔧 Miscellaneous
+
+* Fix response example in oas ([84f14b4](https://github.com/inference-gateway/inference-gateway/commit/84f14b48ffa94e83cb3dd2369f36eb8e3f7d8c76))
+
 ## [0.21.0](https://github.com/inference-gateway/inference-gateway/compare/v0.20.2...v0.21.0) (2025-11-20)
 
 ### ✨ Features

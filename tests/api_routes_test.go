@@ -471,3 +471,517 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 		})
 	}
 }
+
+func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
+	tests := []struct {
+		name                         string
+		disallowedModels             string
+		mockModels                   []providers.Model
+		expectedModelsSingleProvider []string
+		expectedModelsAllProviders   []string
+		description                  string
+	}{
+		{
+			name:             "Empty DISALLOWED_MODELS returns all models",
+			disallowedModels: "",
+			mockModels: []providers.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			},
+			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/gpt-3.5-turbo"},
+			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "anthropic/gpt-4", "anthropic/gpt-3.5-turbo"},
+			description:                  "When DISALLOWED_MODELS is empty, all models should be returned",
+		},
+		{
+			name:             "Disallow specific model by exact ID",
+			disallowedModels: "openai/gpt-4",
+			mockModels: []providers.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			},
+			expectedModelsSingleProvider: []string{"openai/gpt-3.5-turbo"},
+			expectedModelsAllProviders:   []string{"openai/gpt-3.5-turbo", "anthropic/gpt-4", "anthropic/gpt-3.5-turbo"},
+			description:                  "Should block only the exact model ID match",
+		},
+		{
+			name:             "Disallow by model name without provider prefix",
+			disallowedModels: "gpt-4",
+			mockModels: []providers.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			},
+			expectedModelsSingleProvider: []string{"openai/gpt-3.5-turbo"},
+			expectedModelsAllProviders:   []string{"openai/gpt-3.5-turbo", "anthropic/gpt-3.5-turbo"},
+			description:                  "Should block models by name across all providers",
+		},
+		{
+			name:             "Case insensitive disallowing",
+			disallowedModels: "GPT-4",
+			mockModels: []providers.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			},
+			expectedModelsSingleProvider: []string{"openai/gpt-3.5-turbo"},
+			expectedModelsAllProviders:   []string{"openai/gpt-3.5-turbo", "anthropic/gpt-3.5-turbo"},
+			description:                  "Should match disallowed models in a case-insensitive manner",
+		},
+		{
+			name:             "Disallow multiple models",
+			disallowedModels: "gpt-4,gpt-3.5-turbo",
+			mockModels: []providers.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			},
+			expectedModelsSingleProvider: []string{},
+			expectedModelsAllProviders:   []string{},
+			description:                  "Should block multiple models specified in the disallowed list",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+
+				response := providers.ListModelsResponse{
+					Object: "list",
+					Data:   tt.mockModels,
+				}
+
+				jsonResponse, err := json.Marshal(response)
+				require.NoError(t, err)
+				_, err = w.Write(jsonResponse)
+				require.NoError(t, err)
+			}))
+			defer server.Close()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			mockClient := providersmocks.NewMockClient(ctrl)
+
+			mockClient.EXPECT().
+				Do(gomock.Any()).
+				DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					return http.DefaultClient.Get(server.URL + "/models")
+				}).
+				AnyTimes()
+
+			log, err := logger.NewLogger("test")
+			require.NoError(t, err)
+
+			providerCfg := map[providers.Provider]*providers.Config{
+				providers.OpenaiID: {
+					ID:       providers.OpenaiID,
+					Name:     providers.OpenaiDisplayName,
+					URL:      server.URL,
+					Token:    "test-token",
+					AuthType: providers.AuthTypeBearer,
+					Endpoints: providers.Endpoints{
+						Models: providers.OpenaiModelsEndpoint,
+					},
+				},
+				providers.AnthropicID: {
+					ID:       providers.AnthropicID,
+					Name:     providers.AnthropicDisplayName,
+					URL:      server.URL,
+					Token:    "test-token",
+					AuthType: providers.AuthTypeXheader,
+					Endpoints: providers.Endpoints{
+						Models: providers.AnthropicModelsEndpoint,
+					},
+				},
+			}
+
+			registry := providers.NewProviderRegistry(providerCfg, log)
+
+			cfg := config.Config{
+				DisallowedModels: tt.disallowedModels,
+				Server: &config.ServerConfig{
+					ReadTimeout: time.Duration(5000) * time.Millisecond,
+				},
+				Providers: providerCfg,
+			}
+
+			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+
+			gin.SetMode(gin.TestMode)
+			r := gin.New()
+			r.GET("/v1/models", router.ListModelsHandler)
+
+			t.Run("SingleProvider", func(t *testing.T) {
+				w := httptest.NewRecorder()
+				req, err := http.NewRequest("GET", "/v1/models?provider=openai", nil)
+				require.NoError(t, err)
+
+				r.ServeHTTP(w, req)
+
+				assert.Equal(t, http.StatusOK, w.Code)
+
+				var response providers.ListModelsResponse
+				err = json.Unmarshal(w.Body.Bytes(), &response)
+				require.NoError(t, err)
+
+				assert.Equal(t, "list", response.Object)
+				assert.Equal(t, len(tt.expectedModelsSingleProvider), len(response.Data))
+
+				actualModelIDs := make([]string, len(response.Data))
+				for i, model := range response.Data {
+					actualModelIDs[i] = model.ID
+				}
+
+				for _, expectedID := range tt.expectedModelsSingleProvider {
+					assert.Contains(t, actualModelIDs, expectedID, "Expected model %s not found in response", expectedID)
+				}
+			})
+
+			t.Run("AllProviders", func(t *testing.T) {
+				w := httptest.NewRecorder()
+				req, err := http.NewRequest("GET", "/v1/models", nil)
+				require.NoError(t, err)
+
+				r.ServeHTTP(w, req)
+
+				assert.Equal(t, http.StatusOK, w.Code)
+
+				var response providers.ListModelsResponse
+				err = json.Unmarshal(w.Body.Bytes(), &response)
+				require.NoError(t, err)
+
+				assert.Equal(t, "list", response.Object)
+				assert.Equal(t, len(tt.expectedModelsAllProviders), len(response.Data))
+
+				actualModelIDs := make([]string, len(response.Data))
+				for i, model := range response.Data {
+					actualModelIDs[i] = model.ID
+				}
+
+				for _, expectedID := range tt.expectedModelsAllProviders {
+					assert.Contains(t, actualModelIDs, expectedID, "Expected model %s not found in response", expectedID)
+				}
+			})
+		})
+	}
+}
+
+func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
+	tests := []struct {
+		name             string
+		disallowedModels string
+		requestModel     string
+		expectedStatus   int
+		expectedError    string
+		description      string
+	}{
+		{
+			name:             "Non-disallowed model passes validation",
+			disallowedModels: "gpt-3.5-turbo,claude-2",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusOK,
+			expectedError:    "",
+			description:      "Should allow requests with models not in the disallowed list",
+		},
+		{
+			name:             "Disallowed model fails validation",
+			disallowedModels: "gpt-4,claude-3",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusForbidden,
+			expectedError:    "Model is disallowed",
+			description:      "Should reject requests with models in the disallowed list",
+		},
+		{
+			name:             "Empty disallowed models allows all",
+			disallowedModels: "",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusOK,
+			expectedError:    "",
+			description:      "Should allow all models when DISALLOWED_MODELS is empty",
+		},
+		{
+			name:             "Case insensitive disallowed model validation",
+			disallowedModels: "GPT-4,CLAUDE-3",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusForbidden,
+			expectedError:    "Model is disallowed",
+			description:      "Should validate disallowed models in a case-insensitive manner",
+		},
+		{
+			name:             "Model without provider prefix blocked",
+			disallowedModels: "gpt-4",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusForbidden,
+			expectedError:    "Model is disallowed",
+			description:      "Should block models when specified by name without provider",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+
+				response := providers.CreateChatCompletionResponse{
+					ID:      "chatcmpl-123",
+					Object:  "chat.completion",
+					Created: 1677649963,
+					Model:   "gpt-4",
+					Choices: []providers.ChatCompletionChoice{
+						{
+							Index: 0,
+							Message: providers.Message{
+								Role:    "assistant",
+								Content: "Hello, how can I help you today?",
+							},
+							FinishReason: "stop",
+						},
+					},
+				}
+
+				jsonResponse, err := json.Marshal(response)
+				require.NoError(t, err)
+				_, err = w.Write(jsonResponse)
+				require.NoError(t, err)
+			}))
+			defer server.Close()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			mockClient := providersmocks.NewMockClient(ctrl)
+
+			mockClient.EXPECT().
+				Do(gomock.Any()).
+				DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					return http.DefaultClient.Post(server.URL+"/chat/completions", "application/json", req.Body)
+				}).
+				AnyTimes()
+
+			log, err := logger.NewLogger("test")
+			require.NoError(t, err)
+
+			providerCfg := map[providers.Provider]*providers.Config{
+				providers.OpenaiID: {
+					ID:       providers.OpenaiID,
+					Name:     providers.OpenaiDisplayName,
+					URL:      server.URL,
+					Token:    "test-token",
+					AuthType: providers.AuthTypeBearer,
+					Endpoints: providers.Endpoints{
+						Chat: providers.OpenaiChatEndpoint,
+					},
+				},
+			}
+
+			registry := providers.NewProviderRegistry(providerCfg, log)
+
+			cfg := config.Config{
+				DisallowedModels: tt.disallowedModels,
+				Server: &config.ServerConfig{
+					ReadTimeout: time.Duration(5000) * time.Millisecond,
+				},
+				Providers: providerCfg,
+			}
+
+			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+
+			gin.SetMode(gin.TestMode)
+			r := gin.New()
+			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+
+			requestBody := map[string]interface{}{
+				"model": tt.requestModel,
+				"messages": []map[string]string{
+					{
+						"role":    "user",
+						"content": "Hello, world!",
+					},
+				},
+			}
+
+			jsonBody, err := json.Marshal(requestBody)
+			require.NoError(t, err)
+
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("POST", "/v1/chat/completions", strings.NewReader(string(jsonBody)))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			var response map[string]interface{}
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, err)
+
+			if tt.expectedError != "" {
+				errorMsg, exists := response["error"]
+				assert.True(t, exists, "Response should contain error field")
+				assert.Contains(t, errorMsg.(string), tt.expectedError, "Error message should contain expected text")
+			} else {
+				assert.Equal(t, "chat.completion", response["object"])
+				assert.NotEmpty(t, response["model"])
+			}
+		})
+	}
+}
+
+func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
+	tests := []struct {
+		name             string
+		allowedModels    string
+		disallowedModels string
+		requestModel     string
+		expectedStatus   int
+		expectedError    string
+		description      string
+	}{
+		{
+			name:             "Allowed models takes precedence - model in both lists is allowed",
+			allowedModels:    "gpt-4",
+			disallowedModels: "gpt-4",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusOK,
+			expectedError:    "",
+			description:      "When both are set and model is in both, allowed models takes precedence",
+		},
+		{
+			name:             "Allowed models takes precedence - model only in allowed is allowed",
+			allowedModels:    "gpt-4",
+			disallowedModels: "gpt-3.5-turbo",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusOK,
+			expectedError:    "",
+			description:      "When both are set, only allowed models list is checked",
+		},
+		{
+			name:             "Allowed models takes precedence - model not in allowed is blocked",
+			allowedModels:    "gpt-3.5-turbo",
+			disallowedModels: "",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusForbidden,
+			expectedError:    "Model not allowed",
+			description:      "When allowed models is set, models not in it are blocked even if disallowed is empty",
+		},
+		{
+			name:             "Only disallowed models set - model in disallowed is blocked",
+			allowedModels:    "",
+			disallowedModels: "gpt-4",
+			requestModel:     "openai/gpt-4",
+			expectedStatus:   http.StatusForbidden,
+			expectedError:    "Model is disallowed",
+			description:      "When only disallowed models is set, models in it are blocked",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+
+				response := providers.CreateChatCompletionResponse{
+					ID:      "chatcmpl-123",
+					Object:  "chat.completion",
+					Created: 1677649963,
+					Model:   "gpt-4",
+					Choices: []providers.ChatCompletionChoice{
+						{
+							Index: 0,
+							Message: providers.Message{
+								Role:    "assistant",
+								Content: "Hello, how can I help you today?",
+							},
+							FinishReason: "stop",
+						},
+					},
+				}
+
+				jsonResponse, err := json.Marshal(response)
+				require.NoError(t, err)
+				_, err = w.Write(jsonResponse)
+				require.NoError(t, err)
+			}))
+			defer server.Close()
+
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			mockClient := providersmocks.NewMockClient(ctrl)
+
+			mockClient.EXPECT().
+				Do(gomock.Any()).
+				DoAndReturn(func(req *http.Request) (*http.Response, error) {
+					return http.DefaultClient.Post(server.URL+"/chat/completions", "application/json", req.Body)
+				}).
+				AnyTimes()
+
+			log, err := logger.NewLogger("test")
+			require.NoError(t, err)
+
+			providerCfg := map[providers.Provider]*providers.Config{
+				providers.OpenaiID: {
+					ID:       providers.OpenaiID,
+					Name:     providers.OpenaiDisplayName,
+					URL:      server.URL,
+					Token:    "test-token",
+					AuthType: providers.AuthTypeBearer,
+					Endpoints: providers.Endpoints{
+						Chat: providers.OpenaiChatEndpoint,
+					},
+				},
+			}
+
+			registry := providers.NewProviderRegistry(providerCfg, log)
+
+			cfg := config.Config{
+				AllowedModels:    tt.allowedModels,
+				DisallowedModels: tt.disallowedModels,
+				Server: &config.ServerConfig{
+					ReadTimeout: time.Duration(5000) * time.Millisecond,
+				},
+				Providers: providerCfg,
+			}
+
+			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+
+			gin.SetMode(gin.TestMode)
+			r := gin.New()
+			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+
+			requestBody := map[string]interface{}{
+				"model": tt.requestModel,
+				"messages": []map[string]string{
+					{
+						"role":    "user",
+						"content": "Hello, world!",
+					},
+				},
+			}
+
+			jsonBody, err := json.Marshal(requestBody)
+			require.NoError(t, err)
+
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("POST", "/v1/chat/completions", strings.NewReader(string(jsonBody)))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatus, w.Code)
+
+			var response map[string]interface{}
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, err)
+
+			if tt.expectedError != "" {
+				errorMsg, exists := response["error"]
+				assert.True(t, exists, "Response should contain error field")
+				assert.Contains(t, errorMsg.(string), tt.expectedError, "Error message should contain expected text")
+			} else {
+				assert.Equal(t, "chat.completion", response["object"])
+				assert.NotEmpty(t, response["model"])
+			}
+		})
+	}
+}
