@@ -81,8 +81,6 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - upload_artifacts
-    env:
-      TAG: ${{ github.event.release.tag_name }}
     steps:
       - name: Install cosign
         uses: sigstore/cosign-installer@v4.0.0
@@ -96,20 +94,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set VERSION
-        run: echo "VERSION=${TAG#v}" >> $GITHUB_ENV
-
       - name: Sign container images
         env:
           CONTAINER_REGISTRY: ghcr.io
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          docker pull ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ env.VERSION }}
-          VERSION_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:${{ env.VERSION }})
+          VERSION=${TAG#v}
+          docker pull ${CONTAINER_REGISTRY}/${{ github.repository }}:${VERSION}
+          VERSION_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${CONTAINER_REGISTRY}/${{ github.repository }}:${VERSION})
           cosign sign --yes $VERSION_DIGEST
 
           if [[ ! "$TAG" =~ -rc ]]; then
-            docker pull ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:latest
-            LATEST_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}:latest)
+            docker pull ${CONTAINER_REGISTRY}/${{ github.repository }}:latest
+            LATEST_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${CONTAINER_REGISTRY}/${{ github.repository }}:latest)
             cosign sign --yes $LATEST_DIGEST
           fi
 
