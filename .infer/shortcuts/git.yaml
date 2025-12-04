@@ -10,35 +10,35 @@
 
 shortcuts:
   - name: git-status
-    description: "Show working tree status"
+    description: 'Show working tree status'
     command: git
     args:
       - status
 
   - name: git-pull
-    description: "Pull changes from remote repository"
+    description: 'Pull changes from remote repository'
     command: git
     args:
       - pull
 
   - name: git-push
-    description: "Push commits to remote repository"
+    description: 'Push commits to remote repository'
     command: git
     args:
       - push
 
   - name: git-log
-    description: "Show commit logs (last 10)"
+    description: 'Show commit logs (last 10)'
     command: git
     args:
       - log
       - --oneline
       - --graph
       - --decorate
-      - "-10"
+      - '-10'
 
   - name: git-commit
-    description: "Generate AI commit message from staged changes"
+    description: 'Generate AI commit message from staged changes'
     command: bash
     args:
       - -c
@@ -80,4 +80,4 @@ shortcuts:
         ```
 
         Output ONLY the commit message in the format "type: Description"
-      template: "!git commit -m \"{llm}\""
+      template: '!git commit -m "{llm}"'

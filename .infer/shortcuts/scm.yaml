@@ -12,27 +12,27 @@
 
 shortcuts:
   - name: scm-issues
-    description: "List all GitHub issues for the repository"
+    description: 'List all GitHub issues for the repository'
     command: gh
     args:
       - issue
       - list
       - --json
-      - "number,title,state,author,labels,createdAt,updatedAt"
+      - 'number,title,state,author,labels,createdAt,updatedAt'
       - --limit
-      - "20"
+      - '20'
 
   - name: scm-issue
-    description: "Show details for a specific GitHub issue (usage: /scm-issue <number>)"
+    description: 'Show details for a specific GitHub issue (usage: /scm-issue <number>)'
     command: gh
     args:
       - issue
       - view
       - --json
-      - "number,title,body,state,author,labels,comments,createdAt,updatedAt"
+      - 'number,title,body,state,author,labels,comments,createdAt,updatedAt'
 
   - name: scm-pr-create
-    description: "Generate AI-powered PR plan with LLM (usage: /scm-pr-create [optional context])"
+    description: 'Generate AI-powered PR plan with LLM (usage: /scm-pr-create [optional context])'
     command: bash
     args:
       - -c
