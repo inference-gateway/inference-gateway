@@ -61,6 +61,7 @@ The project uses [Flox](https://flox.dev/) for development environment managemen
    ```
 
 3. **Install pre-commit hooks:**
+
    ```bash
    task pre-commit:install
    ```

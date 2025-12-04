@@ -32,6 +32,7 @@ The agent in this example:
    ```
 
 3. Watch the agent logs to see the tool calls in action:
+
    ```bash
    docker compose logs -f agent
    ```

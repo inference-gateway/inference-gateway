@@ -147,10 +147,11 @@ The Model Context Protocol is an open standard for implementing function calling
    If using vscode dev container, you can skip this step.
 
 3. **Access the services:**
-   - Inference Gateway: http://api.inference-gateway.local
-   - MCP Inspector: http://localhost:6274 (after running `task port-forward`)
+   - Inference Gateway: <http://api.inference-gateway.local>
+   - MCP Inspector: <http://localhost:6274> (after running `task port-forward`)
 
 4. **Test the deployment:**
+
    ```bash
    task test
    ```
@@ -329,7 +330,7 @@ The MCP Inspector provides a web interface for debugging and exploring your MCP 
    ```
 
 2. **Access the inspector:**
-   Open http://localhost:6274 in your browser
+   Open <http://localhost:6274> in your browser
 
 3. **Features:**
    - Browse all connected MCP servers and their capabilities
@@ -389,19 +390,20 @@ To add your own MCP server:
    ```
 
 3. **Redeploy:**
+
    ```bash
    task deploy
    ```
 
 ## Cleanup
 
-### Remove the deployment only:
+### Remove the deployment only
 
 ```bash
 task undeploy
 ```
 
-### Remove everything including the cluster:
+### Remove everything including the cluster
 
 ```bash
 task clean

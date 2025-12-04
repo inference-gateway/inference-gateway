@@ -13,57 +13,42 @@ PROJECT_DESCRIPTION = "An open-source, high-performance gateway unifying multipl
 [install]
 go.pkg-path = "go"
 go.version = "^1.25.4"
-
 docker.pkg-path = "docker"
 docker.version = "^28.5.1"
-
 docker-compose.pkg-path = "docker-compose"
 docker-compose.version = "^2.39.4"
-
 go-task.pkg-path = "go-task"
 go-task.version = "^3.45.5"
-
 golangci-lint.pkg-path = "golangci-lint"
 golangci-lint.version = "^2.6.2"
-
 curl.pkg-path = "curl"
 curl.version = "^8.17.0"
-
 jq.pkg-path = "jq" 
 jq.version = "^1.8.1"
-
 git.pkg-path = "git"
 git.version = "^2.51.2"
-
 gh.pkg-path = "gh"
 gh.version = "^2.83.1"
-
 kubectl.pkg-path = "kubectl"
 kubectl.version = "^1.34.2"
-
 kubernetes-helm.pkg-path = "kubernetes-helm"
 kubernetes-helm.version = "^3.19.1"
-
 ctlptl.pkg-path = "ctlptl"
 ctlptl.version = "^0.8.43"
-
 k3d.pkg-path = "k3d"
 k3d.version = "^5.8.3"
-
 mockgen.pkg-path = "mockgen"
 mockgen.version = "^0.6.0"
-
 nodejs_24.pkg-path = "nodejs_24"
 nodejs_24.version = "^24.11.1"
-
 prettier.pkg-path = "prettier"
 prettier.version = "^3.6.2"
-
 claude-code.pkg-path = "claude-code"
 claude-code.version = "^2.0.55"
-
 goreleaser.pkg-path = "goreleaser"
 goreleaser.version = "^2.13.0"
+markdownlint-cli.pkg-path = "markdownlint-cli"
+markdownlint-cli.version = "^0.46.0"
 
 [hook]
 on-activate = """

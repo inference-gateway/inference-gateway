@@ -20,49 +20,17 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - [Key Features](#key-features)
 - [Overview](#overview)
 - [Middleware Control and Bypass Mechanisms](#middleware-control-and-bypass-mechanisms)
-  - [Bypass Headers](#bypass-headers)
-  - [Client Control Examples](#client-control-examples)
-  - [When to Use Bypass Headers](#when-to-use-bypass-headers)
-  - [How It Works Internally](#how-it-works-internally)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
 - [Metrics and Observability](#metrics-and-observability)
-  - [Enabling Metrics](#enabling-metrics)
-  - [Available Metrics](#available-metrics)
-    - [Token Usage Metrics](#token-usage-metrics)
-    - [Request/Response Metrics](#requestresponse-metrics)
-    - [Function/Tool Call Metrics](#functiontool-call-metrics)
-  - [Monitoring Setup](#monitoring-setup)
-    - [Docker Compose Example](#docker-compose-example)
-    - [Kubernetes Example](#kubernetes-example)
-  - [Histogram Boundaries](#histogram-boundaries)
-  - [Grafana Dashboard](#grafana-dashboard)
-  - [Prometheus Configuration](#prometheus-configuration)
-  - [Provider Detection](#provider-detection)
 - [Supported API's](#supported-apis)
-- [Development Environment](#development-environment)
-  - [Prerequisites](#prerequisites)
-  - [Quick Start](#quick-start)
-  - [Available Tools](#available-tools)
-  - [Common Commands](#common-commands)
-  - [Environment Details](#environment-details)
 - [Installation](#installation)
-  - [Using Install Script](#using-install-script)
-  - [Manual Download](#manual-download)
-  - [Verify Installation](#verify-installation)
-  - [Running the Gateway](#running-the-gateway)
 - [Configuration](#configuration)
 - [Examples](#examples)
 - [SDKs](#sdks)
 - [CLI Tool](#cli-tool)
-  - [Key Features](#key-features-1)
-  - [Installation](#installation)
-    - [Using Go Install](#using-go-install)
-    - [Using Install Script](#using-install-script)
-    - [Manual Download](#manual-download)
-  - [Quick Start](#quick-start-1)
-- [License](#license)
+- [Development Environment](#development-environment)
 - [Contributing](#contributing)
-- [Motivation](#motivation)
+- [License](#license)
 
 ## Key Features
 
@@ -393,14 +361,6 @@ task deploy-inference-gateway
 kubectl port-forward svc/grafana-service 3000:3000
 ```
 
-### Histogram Boundaries
-
-Request and tool call duration histograms use optimized boundaries for millisecond precision:
-
-```
-[1, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000] ms
-```
-
 ### Grafana Dashboard
 
 The included Grafana dashboard provides:
@@ -410,28 +370,6 @@ The included Grafana dashboard provides:
 - **Provider Comparison**: Performance metrics across all supported providers
 - **Usage Insights**: Token consumption patterns and cost analysis
 - **Error Monitoring**: Failed requests and tool call error classification
-
-### Prometheus Configuration
-
-The gateway exposes metrics compatible with Prometheus scraping:
-
-```yaml
-scrape_configs:
-  - job_name: 'inference-gateway'
-    static_configs:
-      - targets: ['localhost:9464']
-    scrape_interval: 5s
-    scrape_timeout: 4s
-```
-
-### Provider Detection
-
-Metrics automatically detect providers from:
-
-- **Model prefixes**: `openai/gpt-4`, `anthropic/claude-3-haiku`, `groq/llama-3-8b`
-- **URL parameters**: `?provider=openai`
-
-**Supported providers**: `openai`, `anthropic`, `groq`, `cohere`, `ollama`, `ollama_cloud`, `cloudflare`, `deepseek`, `google`, `mistral`
 
 > **Learn more**: [Docker Compose Monitoring](examples/docker-compose/monitoring/) | [Kubernetes Monitoring](examples/kubernetes/monitoring/) | [OpenTelemetry Documentation](https://opentelemetry.io/)
 
@@ -450,153 +388,44 @@ Metrics automatically detect providers from:
 
 ## Development Environment
 
-The Inference Gateway uses [Flox](https://flox.dev/) to provide a reproducible, cross-platform development environment. Flox eliminates the need to manually install and manage development tools, ensuring all developers have the same setup regardless of their operating system.
+Get started with development using one of two pre-configured environments:
 
-### Prerequisites
+### Option 1: Flox (Recommended)
 
-- **Flox**: Install Flox by following the [official installation guide](https://flox.dev/docs/install-flox/)
-- **Git**: For cloning the repository
+[Flox](https://flox.dev/) provides a reproducible development environment with all tools pre-installed:
 
-### Quick Start
+```bash
+# Clone and activate
+git clone https://github.com/inference-gateway/inference-gateway.git
+cd inference-gateway
+flox activate
 
-1. **Clone the repository:**
+# Build and test
+task build
+task test
+```
 
-   ```bash
-   git clone https://github.com/inference-gateway/inference-gateway.git
-   cd inference-gateway
-   ```
+### Option 2: Dev Container
 
-2. **Activate the development environment:**
+Use VS Code Dev Containers for a containerized development environment:
 
-   ```bash
-   flox activate
-   ```
+1. Install [VS Code](https://code.visualstudio.com/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Clone the repository
+3. Open in VS Code and select "Reopen in Container"
 
-   This command will:
-   - ✅ Install all required development tools with pinned versions
-   - ✅ Set up Go environment variables and paths
-   - ✅ Download Go dependencies automatically
-   - ✅ Configure shell aliases for common commands
-   - ✅ Display helpful getting started information
-
-3. **Install git hooks (recommended):**
-
-   ```bash
-   task pre-commit:install
-   ```
-
-4. **Build and test:**
-   ```bash
-   task build
-   task test
-   ```
-
-### Available Tools
-
-The Flox environment provides all necessary development tools with pinned versions for reproducibility:
-
-| Tool               | Version | Purpose                               |
-| ------------------ | ------- | ------------------------------------- |
-| **Go**             | 1.25.0  | Primary language runtime              |
-| **Task**           | 3.44.1  | Task runner and build automation      |
-| **Docker**         | 28.4.0  | Container runtime                     |
-| **Docker Compose** | 2.39.1  | Multi-container orchestration         |
-| **golangci-lint**  | 2.5.0   | Go code linting                       |
-| **mockgen**        | 0.6.0   | Go mock generation                    |
-| **Node.js**        | 22.17.0 | JavaScript runtime (for npm tools)    |
-| **Prettier**       | 3.6.2   | Code formatting                       |
-| **Spectral**       | 6.15.0  | OpenAPI/JSON Schema linting (via npx) |
-| **curl**           | 8.14.1  | HTTP client for testing               |
-| **jq**             | 1.8.1   | JSON processing                       |
-| **kubectl**        | 1.34.0  | Kubernetes CLI                        |
-| **Helm**           | 3.19.0  | Kubernetes package manager            |
-
-### Common Commands
-
-The environment provides convenient aliases for frequently used commands:
-
-| Alias   | Command                       | Description                |
-| ------- | ----------------------------- | -------------------------- |
-| `build` | `task build`                  | Build the gateway binary   |
-| `test`  | `task test`                   | Run all tests              |
-| `lint`  | `task lint`                   | Run code linting           |
-| `gen`   | `task generate`               | Generate code from schemas |
-| `spec`  | `npx @stoplight/spectral-cli` | Lint OpenAPI specs         |
-| `gs`    | `git status`                  | Git status                 |
-| `gl`    | `git log --oneline -10`       | Git log (last 10 commits)  |
-| `gd`    | `git diff`                    | Git diff                   |
-
-**Task Commands:**
+### Common Development Commands
 
 ```bash
 task --list                    # Show all available tasks
 task build                     # Build the gateway
-task run                       # Run the gateway locally
+task run                       # Run locally
 task test                      # Run tests
 task lint                      # Run linting
-task generate                  # Generate code from schemas
-task pre-commit:install        # Install git hooks
-task mcp:schema:download       # Download latest MCP schema
+task generate                  # Generate code from OpenAPI spec
+task pre-commit:install        # Install git hooks (recommended)
 ```
 
-**Development Workflow:**
-
-```bash
-# Lint OpenAPI specifications
-spec lint openapi.yaml
-
-# Format code
-prettier --write .
-
-# Generate mocks
-mockgen -source=internal/provider.go -destination=mocks/provider.go
-
-# Test with curl
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": "Hello"}]}'
-```
-
-### Environment Details
-
-**Cross-Platform Support:**
-
-- ✅ macOS (ARM64 & x86_64)
-- ✅ Linux (ARM64 & x86_64)
-- ✅ Automatic nvm compatibility (no conflicts)
-
-**Environment Variables:**
-
-- `GOPATH`: `$HOME/go`
-- `GOPROXY`: `https://proxy.golang.org,direct`
-- `GOSUMDB`: `sum.golang.org`
-- `GO111MODULE`: `on`
-- `CGO_ENABLED`: `1`
-
-**Path Configuration:**
-
-- Go binaries: `$GOPATH/bin`
-- Project binaries: `./bin`
-- npm packages: Handled automatically via npx
-
-**Shell Integration:**
-
-- Bash and Zsh completion support
-- Custom aliases for productivity
-- Automatic tool availability detection
-
-**Reproducibility:**
-
-- All tools use pinned versions
-- Consistent environment across team members
-- No manual tool installation required
-- Isolated from system packages
-
-To exit the development environment, simply run:
-
-```bash
-exit
-```
+For detailed contributor guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md) and [CLAUDE.md](./CLAUDE.md).
 
 ## Installation
 
@@ -617,7 +446,7 @@ curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway
 **Install specific version:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | VERSION=v0.20.1 bash
+curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | VERSION=v0.22.3 bash
 ```
 
 **Install to custom directory:**
@@ -648,10 +477,13 @@ Download pre-built binaries directly from the [releases page](https://github.com
 
 1. Download the appropriate archive for your platform
 2. Extract the binary:
+
    ```bash
    tar -xzf inference-gateway_<OS>_<ARCH>.tar.gz
    ```
+
 3. Move to a directory in your PATH:
+
    ```bash
    sudo mv inference-gateway /usr/local/bin/
    chmod +x /usr/local/bin/inference-gateway
@@ -775,6 +607,7 @@ Download the latest release from the [releases page](https://github.com/inferenc
    ```
 
 3. **Start an interactive chat:**
+
    ```bash
    infer chat
    ```
@@ -795,5 +628,3 @@ Please read the [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 ## Motivation
 
 My motivation is to build AI Agents without being tied to a single vendor. By avoiding vendor lock-in and supporting self-hosted LLMs from a single interface, organizations gain both portability and data privacy. You can choose to consume LLMs from a cloud provider or run them entirely offline with Ollama.
-
-Note: This project is independently developed and is not backed by any venture capital or corporate interests, ensuring that Inference Gateway remains focused on developer needs rather than investor demands.

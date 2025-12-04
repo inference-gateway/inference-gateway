@@ -33,19 +33,19 @@ To run any example:
 cd examples/docker-compose/[example-name]
 ```
 
-2. Copy the environment file and customize as needed:
+1. Copy the environment file and customize as needed:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Start the services:
+1. Start the services:
 
 ```bash
 docker compose up -d
 ```
 
-4. Follow the specific instructions in the example's README for testing and usage
+1. Follow the specific instructions in the example's README for testing and usage
 
 ## Environment Variables
 

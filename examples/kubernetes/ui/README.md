@@ -55,10 +55,10 @@ task port-forward
 ```
 
 Then access the UI at:
-http://localhost:3000
+<http://localhost:3000>
 
 Or use the ingress to access the UI via the domain name:
-https://ui.inference-gateway.local
+<https://ui.inference-gateway.local>
 
 ## Manual Deployment Steps
 
@@ -216,10 +216,10 @@ kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:3000 --a
 ```
 
 Access the UI at:
-http://localhost:3000
+<http://localhost:3000>
 
 Or use the ingress to access the UI via the domain name:
-https://ui.inference-gateway.local
+<https://ui.inference-gateway.local>
 
 ## Configuration
 
