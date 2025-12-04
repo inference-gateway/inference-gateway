@@ -115,7 +115,7 @@ plugins:
         For more installation options and documentation, visit the [README](https://github.com/inference-gateway/inference-gateway#installation).
       successCommentCondition: 'false'
       labels:
-        - 'release'
+        - "<%= nextRelease.channel === 'rc' ? 'prerelease' : 'release' %>"
         - "<%= nextRelease.channel === 'rc' ? 'rc' : '' %>"
 
   - - '@semantic-release/git'
