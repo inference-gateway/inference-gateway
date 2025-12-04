@@ -63,8 +63,8 @@ use of Mixture of Experts.
 - 🧪 **Tested**: Extensively tested with unit tests and integration tests.
 - 🛠️ **Maintained**: Actively maintained and developed.
 - 📈 **Scalable**: Easily scalable and can be used in a distributed environment
-  - with <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/" target="_blank">HPA</a>
-    in Kubernetes.
+  with <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/" target="_blank">HPA</a>
+  in Kubernetes.
 - 🔒 **Compliance** and Data Privacy: This project does not collect data or
   analytics, ensuring compliance and data privacy.
 - 🏠 **Self-Hosted**: Can be self-hosted for complete control over the deployment environment.
