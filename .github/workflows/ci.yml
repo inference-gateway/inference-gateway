@@ -36,11 +36,14 @@ jobs:
         with:
           node-version: 'lts/*'
 
-      - name: Install Spectral
-        run: npm install -g @stoplight/spectral-cli
+      - name: Install Spectral and markdownlint
+        run: npm install -g @stoplight/spectral-cli markdownlint-cli
 
       - name: Validate OpenAPI with Spectral
         run: spectral lint openapi.yaml
+
+      - name: Run markdownlint
+        run: markdownlint . --ignore CHANGELOG.md --ignore '**/node_modules/**' --ignore Configurations.md
 
       - name: Install dependencies
         run: go mod tidy

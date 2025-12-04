@@ -92,7 +92,7 @@ For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md).
 
 The pre-commit hook ensures code quality and prevents commits that would break the build or introduce inconsistencies.
 
-**Alternative: Dev Container**
+#### Alternative: Dev Container
 
 Use VS Code Dev Containers for a containerized development environment:
 
@@ -100,7 +100,7 @@ Use VS Code Dev Containers for a containerized development environment:
 2. Clone the repository
 3. Open in VS Code and select "Reopen in Container"
 
-**Common Development Commands:**
+#### Common Development Commands
 
 ```bash
 task --list                    # Show all available tasks
