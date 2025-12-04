@@ -34,7 +34,6 @@ use of Mixture of Experts.
 - [Examples](#examples)
 - [SDKs](#sdks)
 - [CLI Tool](#cli-tool)
-- [Development Environment](#development-environment)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -421,48 +420,6 @@ The included Grafana dashboard provides:
 - [DeepSeek](https://api-docs.deepseek.com/)
 - [Google](https://aistudio.google.com/)
 - [Mistral](https://mistral.ai/)
-
-## Development Environment
-
-Get started with development using one of two pre-configured environments:
-
-### Option 1: Flox (Recommended)
-
-[Flox](https://flox.dev/) provides a reproducible development environment with all tools pre-installed:
-
-```bash
-# Clone and activate
-git clone https://github.com/inference-gateway/inference-gateway.git
-cd inference-gateway
-flox activate
-
-# Build and test
-task build
-task test
-```
-
-### Option 2: Dev Container
-
-Use VS Code Dev Containers for a containerized development environment:
-
-1. Install [VS Code](https://code.visualstudio.com/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-2. Clone the repository
-3. Open in VS Code and select "Reopen in Container"
-
-### Common Development Commands
-
-```bash
-task --list                    # Show all available tasks
-task build                     # Build the gateway
-task run                       # Run locally
-task test                      # Run tests
-task lint                      # Run linting
-task generate                  # Generate code from OpenAPI spec
-task pre-commit:install        # Install git hooks (recommended)
-```
-
-For detailed contributor guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md)
-and [CLAUDE.md](./CLAUDE.md).
 
 ## Installation
 

@@ -92,6 +92,28 @@ For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md).
 
 The pre-commit hook ensures code quality and prevents commits that would break the build or introduce inconsistencies.
 
+**Alternative: Dev Container**
+
+Use VS Code Dev Containers for a containerized development environment:
+
+1. Install [VS Code](https://code.visualstudio.com/) and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+2. Clone the repository
+3. Open in VS Code and select "Reopen in Container"
+
+**Common Development Commands:**
+
+```bash
+task --list                    # Show all available tasks
+task build                     # Build the gateway
+task run                       # Run locally
+task test                      # Run tests
+task lint                      # Run linting
+task generate                  # Generate code from OpenAPI spec
+task pre-commit:install        # Install git hooks (recommended)
+```
+
+For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md) and [CLAUDE.md](./CLAUDE.md).
+
 ### Code Style
 
 Please follow the coding style used in the project. We use `gofmt` to format
