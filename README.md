@@ -3,7 +3,9 @@
 <p align="center">
   <!-- CI Status Badge -->
   <a href="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml?query=branch%3Amain">
-    <img src="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status"/>
+    <img
+      src="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml/badge.svg?branch=main"
+      alt="CI Status"/>
   </a>
   <!-- Version Badge -->
   <a href="https://github.com/inference-gateway/inference-gateway/releases">
@@ -15,7 +17,11 @@
   </a>
 </p>
 
-The Inference Gateway is a proxy server designed to facilitate access to various language model APIs. It allows users to interact with different language models through a unified interface, simplifying the configuration and the process of sending requests and receiving responses from multiple LLMs, enabling an easy use of Mixture of Experts.
+The Inference Gateway is a proxy server designed to facilitate access to various
+language model APIs. It allows users to interact with different language models
+through a unified interface, simplifying the configuration and the process of
+sending requests and receiving responses from multiple LLMs, enabling an easy
+use of Mixture of Experts.
 
 - [Key Features](#key-features)
 - [Overview](#overview)
@@ -35,10 +41,14 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 ## Key Features
 
 - 📜 **Open Source**: Available under the MIT License.
-- 🚀 **Unified API Access**: Proxy requests to multiple language model APIs, including OpenAI, Ollama, Ollama Cloud, Groq, Cohere etc.
+- 🚀 **Unified API Access**: Proxy requests to multiple language model APIs,
+  including OpenAI, Ollama, Ollama Cloud, Groq, Cohere etc.
 - ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
-- 🔧 **Tool-use Support**: Enable function calling capabilities across supported providers with a unified API.
-- 🌐 **MCP Support**: Full Model Context Protocol integration - automatically discover and expose tools from MCP servers to LLMs without client-side tool management.
+- 🔧 **Tool-use Support**: Enable function calling capabilities across supported
+  providers with a unified API.
+- 🌐 **MCP Support**: Full Model Context Protocol integration - automatically
+  discover and expose tools from MCP servers to LLMs without client-side tool
+  management.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
 - 🖼️ **Vision/Multimodal Support**: Process images alongside text with vision-capable models.
 - 🖥️ **Web Interface**: Access through a modern web UI for easy interaction and management.
@@ -46,23 +56,35 @@ The Inference Gateway is a proxy server designed to facilitate access to various
 - ☸️ **Kubernetes Support**: Ready for deployment in Kubernetes environments.
 - 📊 **OpenTelemetry**: Monitor and analyze performance.
 - 🛡️ **Production Ready**: Built with production in mind, with configurable timeouts and TLS support.
-- 🌿 **Lightweight**: Includes only essential libraries and runtime, resulting in smaller size binary of ~10.8MB.
+- 🌿 **Lightweight**: Includes only essential libraries and runtime, resulting
+  in smaller size binary of ~10.8MB.
 - 📉 **Minimal Resource Consumption**: Designed to consume minimal resources and have a lower footprint.
 - 📚 **Documentation**: Well documented with examples and guides.
 - 🧪 **Tested**: Extensively tested with unit tests and integration tests.
 - 🛠️ **Maintained**: Actively maintained and developed.
-- 📈 **Scalable**: Easily scalable and can be used in a distributed environment - with <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/" target="_blank">HPA</a> in Kubernetes.
-- 🔒 **Compliance** and Data Privacy: This project does not collect data or analytics, ensuring compliance and data privacy.
+- 📈 **Scalable**: Easily scalable and can be used in a distributed environment
+  - with <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/" target="_blank">HPA</a>
+    in Kubernetes.
+- 🔒 **Compliance** and Data Privacy: This project does not collect data or
+  analytics, ensuring compliance and data privacy.
 - 🏠 **Self-Hosted**: Can be self-hosted for complete control over the deployment environment.
-- ⌨️ **CLI Tool**: Improved command-line interface for managing and interacting with the Inference Gateway
+- ⌨️ **CLI Tool**: Improved command-line interface for managing and
+  interacting with the Inference Gateway
 
 ## Overview
 
-You can horizontally scale the Inference Gateway to handle multiple requests from clients. The Inference Gateway will forward the requests to the respective provider and return the response to the client.
+You can horizontally scale the Inference Gateway to handle multiple requests
+from clients. The Inference Gateway will forward the requests to the respective
+provider and return the response to the client.
 
-**Note**: MCP middleware components can be easily toggled on/off via environment variables (`MCP_ENABLE`) or bypassed per-request using headers (`X-MCP-Bypass`), giving you full control over which capabilities are active.
+**Note**: MCP middleware components can be easily toggled on/off via
+environment variables (`MCP_ENABLE`) or bypassed per-request using headers
+(`X-MCP-Bypass`), giving you full control over which capabilities are active.
 
-**Note**: Vision/multimodal support is disabled by default for security and performance. To enable image processing with vision-capable models (GPT-4o, Claude 4.5, Gemini 2.5, etc.), set `ENABLE_VISION=true` in your environment configuration.
+**Note**: Vision/multimodal support is disabled by default for security and
+performance. To enable image processing with vision-capable models (GPT-4o,
+Claude 4.5, Gemini 2.5, etc.), set `ENABLE_VISION=true` in your environment
+configuration.
 
 The following diagram illustrates the flow:
 
@@ -180,7 +202,9 @@ For streaming the tokens simply add to the request body `stream: true`.
 
 ## Middleware Control and Bypass Mechanisms
 
-The Inference Gateway uses middleware to process requests and add capabilities like MCP (Model Context Protocol). Clients can control which middlewares are active using bypass headers:
+The Inference Gateway uses middleware to process requests and add capabilities
+like MCP (Model Context Protocol). Clients can control which middlewares are
+active using bypass headers:
 
 ### Bypass Headers
 
@@ -234,11 +258,13 @@ The middlewares use these same headers to prevent infinite loops during their op
 - Each follow-up request includes `X-MCP-Bypass: true` to skip middleware re-processing
 - This allows the agent to iterate without creating circular calls
 
-> **Note**: These bypass headers only affect middleware processing. The core chat completions functionality remains available regardless of header values.
+> **Note**: These bypass headers only affect middleware processing. The core
+> chat completions functionality remains available regardless of header values.
 
 ## Model Context Protocol (MCP) Integration
 
-Enable MCP to automatically provide tools to LLMs without requiring clients to manage them:
+Enable MCP to automatically provide tools to LLMs without requiring clients to
+manage them:
 
 ```bash
 # Enable MCP and connect to tool servers
@@ -253,13 +279,19 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   }'
 ```
 
-The gateway automatically injects available tools into requests and handles tool execution, making external capabilities seamlessly available to any LLM.
+The gateway automatically injects available tools into requests and handles tool
+execution, making external capabilities seamlessly available to any LLM.
 
-> **Learn more**: [Model Context Protocol Documentation](https://modelcontextprotocol.io/) | [MCP Integration Example](examples/docker-compose/mcp/)
+> **Learn more**:
+> [Model Context Protocol Documentation](https://modelcontextprotocol.io/) |
+> [MCP Integration Example](examples/docker-compose/mcp/)
 
 ## Metrics and Observability
 
-The Inference Gateway provides comprehensive OpenTelemetry metrics for monitoring performance, usage, and function/tool call activity. Metrics are automatically exported to Prometheus format and available on port 9464 by default.
+The Inference Gateway provides comprehensive OpenTelemetry metrics for
+monitoring performance, usage, and function/tool call activity. Metrics are
+automatically exported to Prometheus format and available on port 9464 by
+default.
 
 ### Enabling Metrics
 
@@ -366,12 +398,16 @@ kubectl port-forward svc/grafana-service 3000:3000
 The included Grafana dashboard provides:
 
 - **Real-time Metrics**: 5-second refresh rate for immediate feedback
-- **Tool Call Analytics**: Success rates, duration analysis, and failure tracking
+- **Tool Call Analytics**: Success rates, duration analysis, and failure
+  tracking
 - **Provider Comparison**: Performance metrics across all supported providers
 - **Usage Insights**: Token consumption patterns and cost analysis
 - **Error Monitoring**: Failed requests and tool call error classification
 
-> **Learn more**: [Docker Compose Monitoring](examples/docker-compose/monitoring/) | [Kubernetes Monitoring](examples/kubernetes/monitoring/) | [OpenTelemetry Documentation](https://opentelemetry.io/)
+> **Learn more**:
+> [Docker Compose Monitoring](examples/docker-compose/monitoring/) |
+> [Kubernetes Monitoring](examples/kubernetes/monitoring/) |
+> [OpenTelemetry Documentation](https://opentelemetry.io/)
 
 ## Supported API's
 
@@ -425,13 +461,19 @@ task generate                  # Generate code from OpenAPI spec
 task pre-commit:install        # Install git hooks (recommended)
 ```
 
-For detailed contributor guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md) and [CLAUDE.md](./CLAUDE.md).
+For detailed contributor guidelines, see [CONTRIBUTING.md](./CONTRIBUTING.md)
+and [CLAUDE.md](./CLAUDE.md).
 
 ## Installation
 
-> **Recommended**: For production deployments, running the Inference Gateway as a container is recommended. This provides better isolation, easier updates, and simplified configuration management. See [Docker](examples/docker-compose/) or [Kubernetes](examples/kubernetes/) deployment examples.
+> **Recommended**: For production deployments, running the Inference Gateway as
+> a container is recommended. This provides better isolation, easier updates,
+> and simplified configuration management. See [Docker](examples/docker-compose/)
+> or [Kubernetes](examples/kubernetes/) deployment examples.
 
-The Inference Gateway can also be installed as a standalone binary using the provided install script or by downloading pre-built binaries from GitHub releases.
+The Inference Gateway can also be installed as a standalone binary using the
+provided install script or by downloading pre-built binaries from GitHub
+releases.
 
 ### Using Install Script
 
@@ -511,7 +553,8 @@ For detailed configuration options, see the [Configuration](#configuration) sect
 
 ## Configuration
 
-The Inference Gateway can be configured using environment variables. The following [environment variables](./Configurations.md) are supported.
+The Inference Gateway can be configured using environment variables. The
+following [environment variables](./Configurations.md) are supported.
 
 ### Vision/Multimodal Support
 
@@ -531,31 +574,42 @@ ENABLE_VISION=true
 - Groq (vision models)
 - Mistral (Pixtral)
 
-**Note**: Vision support is disabled by default for performance and security reasons. When disabled, requests with image content will be rejected even if the model supports vision.
+**Note**: Vision support is disabled by default for performance and security
+reasons. When disabled, requests with image content will be rejected even if the
+model supports vision.
 
 ## Examples
 
 - Using [Docker Compose](examples/docker-compose/)
-  - [Basic setup](examples/docker-compose/basic/) - Simple configuration with a single provider
-  - [MCP Integration](examples/docker-compose/mcp/) - Model Context Protocol with multiple tool servers
-  - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers (cloud + local)
-  - [Authentication](examples/docker-compose/authentication/) - OIDC authentication setup
+  - [Basic setup](examples/docker-compose/basic/) - Simple configuration with a
+    single provider
+  - [MCP Integration](examples/docker-compose/mcp/) - Model Context Protocol with
+    multiple tool servers
+  - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers
+    (cloud + local)
+  - [Authentication](examples/docker-compose/authentication/) - OIDC
+    authentication setup
   - [Tools](examples/docker-compose/tools/) - Tool integration examples
   - [Web UI](examples/docker-compose/ui/) - Complete setup with web interface
 - Using [Kubernetes](examples/kubernetes/)
   - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
-  - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in Kubernetes
+  - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in
+    Kubernetes
   - [Agent deployment](examples/kubernetes/agent/) - Standalone agent deployment
-  - [Hybrid deployment](examples/kubernetes/hybrid/) - Multiple providers in Kubernetes
-  - [Authentication](examples/kubernetes/authentication/) - OIDC authentication in Kubernetes
-  - [Monitoring](examples/kubernetes/monitoring/) - Observability and monitoring setup
+  - [Hybrid deployment](examples/kubernetes/hybrid/) - Multiple providers in
+    Kubernetes
+  - [Authentication](examples/kubernetes/authentication/) - OIDC authentication
+    in Kubernetes
+  - [Monitoring](examples/kubernetes/monitoring/) - Observability and monitoring
+    setup
   - [TLS setup](examples/kubernetes/tls/) - TLS/SSL configuration
   - [Web UI](examples/kubernetes/ui/) - Complete setup with web interface
 - Using standard [REST endpoints](examples/rest-endpoints/)
 
 ## SDKs
 
-More SDKs could be generated using the OpenAPI specification. The following SDKs are currently available:
+More SDKs could be generated using the OpenAPI specification. The following
+SDKs are currently available:
 
 - [Typescript](https://github.com/inference-gateway/typescript-sdk)
 - [Rust](https://github.com/inference-gateway/rust-sdk)
@@ -564,9 +618,11 @@ More SDKs could be generated using the OpenAPI specification. The following SDKs
 
 ## CLI Tool
 
-The Inference Gateway CLI provides a powerful command-line interface for managing and interacting with the Inference Gateway. It offers tools for configuration, monitoring, and management of inference services.
+The Inference Gateway CLI provides a powerful command-line interface for
+managing and interacting with the Inference Gateway. It offers tools for
+configuration, monitoring, and management of inference services.
 
-### Key Features
+### CLI Key Features
 
 - **Status Monitoring**: Check gateway health and resource usage
 - **Interactive Chat**: Chat with models using an interactive interface
@@ -574,7 +630,7 @@ The Inference Gateway CLI provides a powerful command-line interface for managin
 - **Project Initialization**: Set up local project configurations
 - **Tool Execution**: LLMs can execute whitelisted commands and tools
 
-### Installation
+### CLI Installation
 
 #### Using Go Install
 
@@ -582,15 +638,16 @@ The Inference Gateway CLI provides a powerful command-line interface for managin
 go install github.com/inference-gateway/cli@latest
 ```
 
-#### Using Install Script
+#### Using CLI Install Script
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/inference-gateway/cli/main/install.sh | bash
 ```
 
-#### Manual Download
+#### Manual CLI Download
 
-Download the latest release from the [releases page](https://github.com/inference-gateway/cli/releases).
+Download the latest release from the
+[releases page](https://github.com/inference-gateway/cli/releases).
 
 ### Quick Start
 
@@ -627,4 +684,7 @@ Please read the [CONTRIBUTING.md](./CONTRIBUTING.md) for more details.
 
 ## Motivation
 
-My motivation is to build AI Agents without being tied to a single vendor. By avoiding vendor lock-in and supporting self-hosted LLMs from a single interface, organizations gain both portability and data privacy. You can choose to consume LLMs from a cloud provider or run them entirely offline with Ollama.
+My motivation is to build AI Agents without being tied to a single vendor. By
+avoiding vendor lock-in and supporting self-hosted LLMs from a single interface,
+organizations gain both portability and data privacy. You can choose to consume
+LLMs from a cloud provider or run them entirely offline with Ollama.

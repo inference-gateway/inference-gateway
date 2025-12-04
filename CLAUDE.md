@@ -106,7 +106,7 @@ go test -v -run TestSpecificName ./path/to/package
 - All settings documented in `Configurations.md` (auto-generated)
 - Supports provider API keys, URLs, timeouts, and feature flags
 
-**Middleware Flow**
+### Middleware Flow
 
 1. Request → Authentication (optional OIDC) → Logging → Telemetry
 2. MCP middleware (if enabled) injects available tools

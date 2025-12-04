@@ -1,6 +1,8 @@
 # Contributing to Inference Gateway
 
-Thank you for considering contributing to Inference Gateway! We welcome contributions in many forms, including bug reports, feature requests, code, and documentation.
+Thank you for considering contributing to Inference Gateway! We welcome
+contributions in many forms, including bug reports, feature requests, code, and
+documentation.
 
 ## Table of Contents
 
@@ -28,17 +30,22 @@ Thank you for considering contributing to Inference Gateway! We welcome contribu
 
 ### Reporting Bugs
 
-If you find a bug, please create an issue on GitHub with as much detail as possible. Include steps to reproduce the bug, the expected behavior, and any relevant logs or screenshots.
+If you find a bug, please create an issue on GitHub with as much detail as
+possible. Include steps to reproduce the bug, the expected behavior, and any
+relevant logs or screenshots.
 
 ### Requesting Features
 
-We welcome feature requests! Please create an issue on GitHub with a clear description of the feature and its benefits. If possible, include examples of how the feature would be used.
+We welcome feature requests! Please create an issue on GitHub with a clear
+description of the feature and its benefits. If possible, include examples of
+how the feature would be used.
 
 ### Code Contributions
 
 1. Fork the repository.
 2. Create a new branch for your feature or bug fix.
-3. **Set up development environment** by running `task pre-commit:install` to install pre-commit hooks for automatic code quality checks.
+3. **Set up development environment** by running `task pre-commit:install`
+   to install pre-commit hooks for automatic code quality checks.
 4. Write your code and tests.
 5. Run the tests to ensure everything works.
 6. Commit your changes and push your branch to your fork.
@@ -46,7 +53,8 @@ We welcome feature requests! Please create an issue on GitHub with a clear descr
 
 ### Development Setup
 
-The project uses [Flox](https://flox.dev/) for development environment management. This ensures all contributors have identical tooling and configurations.
+The project uses [Flox](https://flox.dev/) for development environment management.
+This ensures all contributors have identical tooling and configurations.
 
 **Quick Start:**
 
@@ -86,15 +94,21 @@ The pre-commit hook ensures code quality and prevents commits that would break t
 
 ### Code Style
 
-Please follow the coding style used in the project. We use `gofmt` to format our Go code.
+Please follow the coding style used in the project. We use `gofmt` to format
+our Go code.
 
-Also semantic-release is being used for automated releases, so please ensure your commits are following [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#specification).
+Also semantic-release is being used for automated releases, so please ensure
+your commits are following
+[conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#specification).
 
-You don't need to install most of the tools if you use VSCode, because there is a dev container.
+You don't need to install most of the tools if you use VSCode, because there is
+a dev container.
 
 ## Adding New Providers
 
-The Inference Gateway uses an automated code generation system to make onboarding new providers simple and consistent. The system generates all necessary provider files automatically from the OpenAPI specification.
+The Inference Gateway uses an automated code generation system to make
+onboarding new providers simple and consistent. The system generates all
+necessary provider files automatically from the OpenAPI specification.
 
 ### Quick Start
 
@@ -108,9 +122,12 @@ To add a new provider, follow these simple steps:
 
 #### 1. Configure the Provider
 
-Add your new provider to the `openapi.yaml` file under the `Provider` schema. For example, to add a new provider called "newai":
+Add your new provider to the `openapi.yaml` file under the `Provider` schema.
+For example, to add a new provider called "newai":
 
-> **Important**: Provider names must be valid Go identifiers. Use only lowercase letters, and camel-case if really needed (recommended: one word for example 'newai').
+> **Important**: Provider names must be valid Go identifiers. Use only
+> lowercase letters, and camel-case if really needed (recommended: one word
+> for example 'newai').
 
 ```yaml
 Provider:
@@ -151,8 +168,10 @@ task generate
 
 This command will:
 
-- Generate a new provider file (`providers/newai.go`) with OpenAI-compatible structure
-- Update the provider registry (`providers/registry.go`) to include your provider
+- Generate a new provider file (`providers/newai.go`) with OpenAI-compatible
+  structure
+- Update the provider registry (`providers/registry.go`) to include your
+  provider
 - Update configuration files to support the new provider
 - Generate constants and types for the new provider
 
@@ -179,9 +198,11 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 ### Protected Files
 
-The code generation system respects existing custom implementations through the `.openapi-ignore` file. Files listed there will not be overwritten during generation:
+The code generation system respects existing custom implementations through the
+`.openapi-ignore` file. Files listed there will not be overwritten during
+generation:
 
-```
+```text
 # .openapi-ignore
 providers/anthropic.go
 providers/cohere.go
@@ -192,16 +213,21 @@ providers/deepseek.go
 providers/groq.go
 ```
 
-If you need custom implementation details for your provider, add it to this ignore file after generation.
+If you need custom implementation details for your provider, add it to this
+ignore file after generation.
 
 ### Generated Files
 
 The code generation process creates:
 
-- **Provider implementation** (`providers/{provider}.go`): Contains the `ListModelsResponse` struct and `Transform()` method
-- **Provider registry updates** (`providers/registry.go`): Adds your provider to the central registry
-- **Configuration updates** (`config/config.go`): Includes environment variable support
-- **Common types** (`providers/common_types.go`): Provider constants and endpoints
+- **Provider implementation** (`providers/{provider}.go`): Contains the
+  `ListModelsResponse` struct and `Transform()` method
+- **Provider registry updates** (`providers/registry.go`): Adds your provider
+  to the central registry
+- **Configuration updates** (`config/config.go`): Includes environment variable
+  support
+- **Common types** (`providers/common_types.go`): Provider constants and
+  endpoints
 
 ### Authentication Types
 

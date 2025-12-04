@@ -1,6 +1,9 @@
 # Pizza Demo TypeScript MCP Server
 
-This is a simplified demonstration MCP server built using the official [@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk) TypeScript SDK. It showcases a single tool that returns mock data about the top 5 pizzas in the world.
+This is a simplified demonstration MCP server built using the official
+[@modelcontextprotocol/sdk](https://github.com/modelcontextprotocol/typescript-sdk)
+TypeScript SDK. It showcases a single tool that returns mock data about the top
+5 pizzas in the world.
 
 ## Features
 
@@ -15,7 +18,9 @@ This is a simplified demonstration MCP server built using the official [@modelco
 
 ### Tools
 
-- **get-top-pizzas** - Returns mock data of the top 5 pizzas in the world with detailed information including origin, description, year created, and key ingredients
+- **get-top-pizzas** - Returns mock data of the top 5 pizzas in the world with
+  detailed information including origin, description, year created, and key
+  ingredients
 
 ## Endpoints
 
@@ -136,7 +141,9 @@ This server is designed to work seamlessly with the Inference Gateway's MCP midd
 MCP_SERVERS=http://pizza-demo-mcp-server:8084/mcp
 ```
 
-The server supports both traditional JSON-RPC responses and SSE streaming, making it fully compatible with the enhanced MCP client and middleware implementations.
+The server supports both traditional JSON-RPC responses and SSE streaming,
+making it fully compatible with the enhanced MCP client and middleware
+implementations.
 
 ## Mock Data
 

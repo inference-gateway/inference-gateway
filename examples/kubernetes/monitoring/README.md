@@ -1,6 +1,7 @@
 # Monitoring Example with Enhanced Function/Tool Call Metrics
 
-This example demonstrates monitoring integration with the Inference Gateway using:
+This example demonstrates monitoring integration with the Inference Gateway
+using:
 
 - **Prometheus** for metrics collection
 - **Grafana** for visualization with enhanced dashboards
@@ -53,7 +54,9 @@ task deploy-inference-gateway
 kubectl -n monitoring port-forward svc/grafana-service 3000:3000
 ```
 
-Or use the deployed ingress, add `grafana.inference-gateway.local` DNS to your /etc/hosts and open: <http://grafana.inference-gateway.local/d/inference-gateway/inference-gateway-metrics>
+Or use the deployed ingress, add `grafana.inference-gateway.local` DNS to your
+/etc/hosts and open:
+<http://grafana.inference-gateway.local/d/inference-gateway/inference-gateway-metrics>
 
 Login credentials:
 
@@ -62,27 +65,27 @@ Password: admin
 
 1. Deploy Ollama and simulate requests responses being sent to the gateway:
 
-```
-task deploy-ollama
-```
+   ```bash
+   task deploy-ollama
+   ```
 
 1. Pull required models (needed for tool calling tests):
 
-```
-task pull-models
-```
+   ```bash
+   task pull-models
+   ```
 
 1. Simulate basic requests:
 
-```
-task simulate-requests
-```
+   ```bash
+   task simulate-requests
+   ```
 
 1. Simulate tool/function calling requests:
 
-```
-task simulate-tool-call-requests
-```
+   ```bash
+   task simulate-tool-call-requests
+   ```
 
 ## Configuration
 
