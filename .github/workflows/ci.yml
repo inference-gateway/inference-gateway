@@ -38,7 +38,7 @@ jobs:
           node-version: 'lts/*'
 
       - name: Install Spectral and markdownlint
-        run: npm install -g @stoplight/spectral-cli markdownlint-cli
+        run: npm install -g @stoplight/spectral-cli markdownlint-cli@0.46.0
 
       - name: Validate OpenAPI with Spectral
         run: spectral lint openapi.yaml
