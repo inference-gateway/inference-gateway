@@ -390,5 +390,5 @@ Set `ENVIRONMENT=development` for detailed logging:
 
 ---
 
-*Last Updated: December 11, 2025*  
-*For questions, refer to CONTRIBUTING.md or open an issue on GitHub.*
+_Last Updated: December 11, 2025_  
+_For questions, refer to CONTRIBUTING.md or open an issue on GitHub._

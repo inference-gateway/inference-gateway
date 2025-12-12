@@ -38,7 +38,7 @@ jobs:
         uses: inference-gateway/infer-action@v0.3.1
         with:
           github-token: ${{ steps.app_token.outputs.token }}
-          trigger-phrase: "@infer"
+          trigger-phrase: '@infer'
           model: deepseek/deepseek-chat
           max-turns: 50
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

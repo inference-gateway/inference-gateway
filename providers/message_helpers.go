@@ -54,15 +54,16 @@ func (m *Message) StripImageContent() {
 			}
 		}
 
-		if len(textOnlyContent) == 0 {
+		switch len(textOnlyContent) {
+		case 0:
 			m.Content = ""
-		} else if len(textOnlyContent) == 1 {
+		case 1:
 			if itemMap, ok := textOnlyContent[0].(map[string]any); ok {
 				if text, ok := itemMap["text"].(string); ok {
 					m.Content = text
 				}
 			}
-		} else {
+		default:
 			m.Content = textOnlyContent
 		}
 	}
