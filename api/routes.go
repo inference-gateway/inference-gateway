@@ -538,10 +538,11 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 	if router.cfg.EnableVision {
 		hasImageContent := false
+		imageCount := 0
 		for _, message := range req.Messages {
 			if message.HasImageContent() {
 				hasImageContent = true
-				break
+				imageCount++
 			}
 		}
 
@@ -553,9 +554,18 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 				return
 			}
 			if !supportsVision {
-				router.logger.Error("image content sent to non-vision model", nil, "provider", providerID, "model", req.Model)
-				c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Model %s does not support image content. Please use a vision-capable model.", req.Model)})
-				return
+				router.logger.Info("filtering images from non-vision model request",
+					"provider", providerID,
+					"model", req.Model,
+					"messagesWithImages", imageCount)
+
+				for i := range req.Messages {
+					if req.Messages[i].HasImageContent() {
+						req.Messages[i].StripImageContent()
+					}
+				}
+
+				router.logger.Debug("images stripped from request, continuing with text-only content")
 			}
 		}
 	}
