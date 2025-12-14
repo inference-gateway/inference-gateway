@@ -186,6 +186,17 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.MistralChatEndpoint,
 						},
 					},
+					providers.QwenID: {
+						ID:             providers.QwenID,
+						Name:           providers.QwenDisplayName,
+						URL:            providers.QwenDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: providers.Endpoints{
+							Models: providers.QwenModelsEndpoint,
+							Chat:   providers.QwenChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -371,6 +382,17 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.MistralChatEndpoint,
 						},
 					},
+					providers.QwenID: {
+						ID:             providers.QwenID,
+						Name:           providers.QwenDisplayName,
+						URL:            providers.QwenDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: providers.Endpoints{
+							Models: providers.QwenModelsEndpoint,
+							Chat:   providers.QwenChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -545,6 +567,17 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.MistralModelsEndpoint,
 							Chat:   providers.MistralChatEndpoint,
+						},
+					},
+					providers.QwenID: {
+						ID:             providers.QwenID,
+						Name:           providers.QwenDisplayName,
+						URL:            providers.QwenDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: providers.Endpoints{
+							Models: providers.QwenModelsEndpoint,
+							Chat:   providers.QwenChatEndpoint,
 						},
 					},
 				},
