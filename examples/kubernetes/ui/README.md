@@ -1,6 +1,9 @@
 # User Interface (UI)
 
-This example demonstrates how to deploy the Inference Gateway with a user interface (UI) using the `inference-gateway-ui` helm chart. The UI provides a web-based interface for interacting with the Inference Gateway, making it easier to manage and monitor your inference workloads.
+This example demonstrates how to deploy the Inference Gateway with a user
+interface (UI) using the `inference-gateway-ui` helm chart. The UI provides a
+web-based interface for interacting with the Inference Gateway, making it easier
+to manage and monitor your inference workloads.
 
 ## Table of Contents
 
@@ -29,8 +32,10 @@ This example demonstrates how to deploy the Inference Gateway with a user interf
 
 This example provides two deployment options:
 
-1. **Combined Deployment**: Deploy the UI with the Inference Gateway backend as a dependency (recommended)
-2. **Separate Deployment**: Deploy the UI and connect it to an existing Inference Gateway instance
+1. **Combined Deployment**: Deploy the UI with the Inference Gateway backend as
+   a dependency (recommended)
+2. **Separate Deployment**: Deploy the UI and connect it to an existing
+   Inference Gateway instance
 
 ## Quick Start Using Task
 
@@ -40,7 +45,8 @@ The fastest way to get started is using the provided Task automation:
 # Create a local k3d cluster with NGINX ingress controller and Cert-Manager
 task deploy-infrastructure
 
-# Set up secrets for providers (needed for Provider integration, in this case we will use DeepSeek)
+# Set up secrets for providers
+# (needed for Provider integration, in this case we will use DeepSeek)
 task setup-secrets
 
 # Configure the Inference Gateway and the UI
@@ -55,10 +61,10 @@ task port-forward
 ```
 
 Then access the UI at:
-http://localhost:3000
+<http://localhost:3000>
 
 Or use the ingress to access the UI via the domain name:
-https://ui.inference-gateway.local
+<https://ui.inference-gateway.local>
 
 ## Manual Deployment Steps
 
@@ -144,7 +150,8 @@ helm upgrade --install inference-gateway-ui \
   --set "ingress.tls[0].hosts[0]=ui.inference-gateway.local"
 ```
 
-Configure(as an example, let's disable authentication and set the DeepSeek API key in the UI):
+Configure (as an example, let's disable authentication and set the DeepSeek API
+key in the UI):
 
 ```bash
 kubectl apply -f - <<EOF
@@ -216,14 +223,15 @@ kubectl port-forward -n inference-gateway svc/inference-gateway-ui 3000:3000 --a
 ```
 
 Access the UI at:
-http://localhost:3000
+<http://localhost:3000>
 
 Or use the ingress to access the UI via the domain name:
-https://ui.inference-gateway.local
+<https://ui.inference-gateway.local>
 
 ## Configuration
 
-The deployment uses Helm's `--set` parameters instead of values files for clarity and direct configuration. Key configuration options include:
+The deployment uses Helm's `--set` parameters instead of values files for
+clarity and direct configuration. Key configuration options include:
 
 - `gateway.enabled`: Set to `true` to deploy the Gateway backend with the UI
 - `ingress.enabled`: Enable ingress for external access

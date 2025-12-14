@@ -34,3 +34,37 @@ func (m *Message) GetTextContent() string {
 
 	return ""
 }
+
+// StripImageContent removes image content from the message, keeping only text parts
+func (m *Message) StripImageContent() {
+	if _, ok := m.Content.(string); ok {
+		return
+	}
+
+	if contentArray, ok := m.Content.([]any); ok {
+		var textOnlyContent []any
+
+		for _, item := range contentArray {
+			if itemMap, ok := item.(map[string]any); ok {
+				if itemType, ok := itemMap["type"].(string); ok {
+					if itemType == "text" {
+						textOnlyContent = append(textOnlyContent, item)
+					}
+				}
+			}
+		}
+
+		switch len(textOnlyContent) {
+		case 0:
+			m.Content = ""
+		case 1:
+			if itemMap, ok := textOnlyContent[0].(map[string]any); ok {
+				if text, ok := itemMap["text"].(string); ok {
+					m.Content = text
+				}
+			}
+		default:
+			m.Content = textOnlyContent
+		}
+	}
+}

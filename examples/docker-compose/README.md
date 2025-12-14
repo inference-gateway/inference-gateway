@@ -10,12 +10,16 @@ This directory contains examples that demonstrate how to use the Inference Gatew
 ## Available Examples
 
 - [Basic](basic/README.md) - Simple setup with a single model provider
-- [MCP](mcp/README.md) - Model Context Protocol integration with multiple tool servers
-- [Hybrid](hybrid/README.md) - Configuration with multiple model providers (cloud and local)
+- [MCP](mcp/README.md) - Model Context Protocol integration with multiple tool
+  servers
+- [Hybrid](hybrid/README.md) - Configuration with multiple model providers
+  (cloud and local)
 - [Tools](tools/README.md) - Function calling and tool usage examples
-- [Authentication](authentication/README.md) - Adding authentication to your gateway
+- [Authentication](authentication/README.md) - Adding authentication to your
+  gateway
 - [UI](ui/README.md) - Setting up a user interface for the gateway
-- [Monitoring](monitoring/README.md) - Metrics collection and visualization with Prometheus and Grafana
+- [Monitoring](monitoring/README.md) - Metrics collection and visualization with
+  Prometheus and Grafana
 
 ## Quick Start
 
@@ -33,19 +37,20 @@ To run any example:
 cd examples/docker-compose/[example-name]
 ```
 
-2. Copy the environment file and customize as needed:
+1. Copy the environment file and customize as needed:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Start the services:
+1. Start the services:
 
 ```bash
 docker compose up -d
 ```
 
-4. Follow the specific instructions in the example's README for testing and usage
+1. Follow the specific instructions in the example's README for testing and
+   usage
 
 ## Environment Variables
 
@@ -65,4 +70,6 @@ Common environment variables used across examples:
 
 ## Support
 
-If you encounter any issues with these examples, please [open an issue](https://github.com/inference-gateway/inference-gateway/issues/new) on GitHub.
+If you encounter any issues with these examples, please
+[open an issue](https://github.com/inference-gateway/inference-gateway/issues/new)
+on GitHub.

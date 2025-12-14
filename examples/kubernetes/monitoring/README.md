@@ -1,6 +1,7 @@
 # Monitoring Example with Enhanced Function/Tool Call Metrics
 
-This example demonstrates monitoring integration with the Inference Gateway using:
+This example demonstrates monitoring integration with the Inference Gateway
+using:
 
 - **Prometheus** for metrics collection
 - **Grafana** for visualization with enhanced dashboards
@@ -41,48 +42,50 @@ This example demonstrates monitoring integration with the Inference Gateway usin
 task deploy-infrastructure
 ```
 
-2. Deploy Inference Gateway with monitoring:
+1. Deploy Inference Gateway with monitoring:
 
 ```bash
 task deploy-inference-gateway
 ```
 
-3. Access Grafana dashboards:
+1. Access Grafana dashboards:
 
 ```bash
 kubectl -n monitoring port-forward svc/grafana-service 3000:3000
 ```
 
-Or use the deployed ingress, add `grafana.inference-gateway.local` DNS to your /etc/hosts and open: http://grafana.inference-gateway.local/d/inference-gateway/inference-gateway-metrics
+Or use the deployed ingress, add `grafana.inference-gateway.local` DNS to your
+/etc/hosts and open:
+<http://grafana.inference-gateway.local/d/inference-gateway/inference-gateway-metrics>
 
 Login credentials:
 
 Username: admin
 Password: admin
 
-4. Deploy Ollama and simulate requests responses being sent to the gateway:
+1. Deploy Ollama and simulate requests responses being sent to the gateway:
 
-```
-task deploy-ollama
-```
+   ```bash
+   task deploy-ollama
+   ```
 
-5. Pull required models (needed for tool calling tests):
+1. Pull required models (needed for tool calling tests):
 
-```
-task pull-models
-```
+   ```bash
+   task pull-models
+   ```
 
-6. Simulate basic requests:
+1. Simulate basic requests:
 
-```
-task simulate-requests
-```
+   ```bash
+   task simulate-requests
+   ```
 
-7. Simulate tool/function calling requests:
+1. Simulate tool/function calling requests:
 
-```
-task simulate-tool-call-requests
-```
+   ```bash
+   task simulate-tool-call-requests
+   ```
 
 ## Configuration
 

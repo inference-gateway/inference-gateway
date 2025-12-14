@@ -39,13 +39,13 @@ This example demonstrates secure TLS communication with the Inference Gateway us
 task deploy-infrastructure
 ```
 
-2. Deploy Inference Gateway with TLS:
+1. Deploy Inference Gateway with TLS:
 
 ```bash
 task deploy-inference-gateway
 ```
 
-3. Test secure endpoint:
+1. Test secure endpoint:
 
 ```bash
 curl -k https://api.inference-gateway.local/v1/models

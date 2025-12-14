@@ -38,13 +38,13 @@ This example demonstrates Keycloak authentication integration with the Inference
 task deploy-infrastructure
 ```
 
-2. Deploy Inference Gateway with authentication:
+1. Deploy Inference Gateway with authentication:
 
 ```bash
 task deploy-inference-gateway
 ```
 
-3. Review the Keycloak UI:
+1. Review the Keycloak UI:
 
 ```bash
 task keycloak-admin-password
@@ -54,13 +54,16 @@ task keycloak-admin-password
 
 - Login with `temp-admin` and the fetched password as credentials
 
-4. Create a Realm and Client in Keycloak, no need to do it via ClickOps, instead review the YAML file `keycloak/job-import-realm.yaml` it was already deployed when you ran `deploy-infrastructure`.
+1. Create a Realm and Client in Keycloak, no need to do it via ClickOps,
+   instead review the YAML file `keycloak/job-import-realm.yaml` it was already
+   deployed when you ran `deploy-infrastructure`.
 
-5. Test authentication:
+2. Test authentication:
 
-```bash
-curl -k -v -H "Authorization: Bearer $(task fetch-access-token)" https://api.inference-gateway.local/v1/models
-```
+   ```bash
+   curl -k -v -H "Authorization: Bearer $(task fetch-access-token)" \
+     https://api.inference-gateway.local/v1/models
+   ```
 
 ## Configuration
 
@@ -80,4 +83,5 @@ curl -k -v -H "Authorization: Bearer $(task fetch-access-token)" https://api.inf
 task clean
 ```
 
-**Note**: The example uses a self-signed certificate for Keycloak. In production, use a trusted CA certificate.
+**Note**: The example uses a self-signed certificate for Keycloak. In
+production, use a trusted CA certificate.

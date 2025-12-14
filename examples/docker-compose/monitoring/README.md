@@ -46,9 +46,9 @@ The enhanced Grafana dashboard provides:
    ```
 
 3. **Access services:**
-   - **Inference Gateway**: http://localhost:8080
-   - **Prometheus**: http://localhost:9090
-   - **Grafana**: http://localhost:3000 (admin/admin)
+   - **Inference Gateway**: <http://localhost:8080>
+   - **Prometheus**: <http://localhost:9090>
+   - **Grafana**: <http://localhost:3000> (admin/admin)
 
 4. **View enhanced metrics:**
    - Navigate to the "Inference Gateway - Enhanced Metrics" dashboard
@@ -151,7 +151,7 @@ The dashboard supports provider filtering via `$provider` variable:
 ### No Metrics Showing
 
 1. Verify gateway is exposing metrics: `curl http://localhost:9464/metrics`
-2. Check Prometheus targets: http://localhost:9090/targets
+2. Check Prometheus targets: <http://localhost:9090/targets>
 3. Ensure gateway has telemetry enabled in environment
 
 ### Tool Call Metrics Empty

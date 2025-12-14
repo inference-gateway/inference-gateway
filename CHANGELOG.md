@@ -2,6 +2,95 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.22.9](https://github.com/inference-gateway/inference-gateway/compare/v0.22.8...v0.22.9) (2025-12-14)
+
+### 🐛 Bug Fixes
+
+* **install:** Prefix the path with the INSTALL_DIR variable ([78ed26b](https://github.com/inference-gateway/inference-gateway/commit/78ed26bd5279ed629e9ca18dad7e96bdbd8d2496))
+
+## [0.22.8](https://github.com/inference-gateway/inference-gateway/compare/v0.22.7...v0.22.8) (2025-12-12)
+
+### ♻️ Improvements
+
+* Gracefully handle images sent to non-vision models ([#223](https://github.com/inference-gateway/inference-gateway/issues/223)) ([06fb970](https://github.com/inference-gateway/inference-gateway/commit/06fb970c48563e74f954786adc1c6dc941d5f34f))
+
+### 👷 CI
+
+* Setup infer workflow ([#222](https://github.com/inference-gateway/inference-gateway/issues/222)) ([2c235be](https://github.com/inference-gateway/inference-gateway/commit/2c235be1645c0e2330860b1d008c925d3c3dc2a2))
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump claude code to its latest for development ([9c4a7ee](https://github.com/inference-gateway/inference-gateway/commit/9c4a7eec0315ed7294147752d0bce36f4246358b))
+
+## [0.22.7](https://github.com/inference-gateway/inference-gateway/compare/v0.22.6...v0.22.7) (2025-12-11)
+
+### 📚 Documentation
+
+* Add AGENTS.md for AI agent guidance ([91c2131](https://github.com/inference-gateway/inference-gateway/commit/91c2131a64b93066e1d692947c538b3a13903df6))
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump infer CLI version to its latest ([df3f040](https://github.com/inference-gateway/inference-gateway/commit/df3f04069df85cefcaa9ec8a544c4803f15951d2))
+* **deps:** Bump semantic-release to its latest version ([a3405b5](https://github.com/inference-gateway/inference-gateway/commit/a3405b50a8a9d9bb7d6c830c3da16c012051a452))
+
+## [0.22.6](https://github.com/inference-gateway/inference-gateway/compare/v0.22.5...v0.22.6) (2025-12-11)
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump github.com/quic-go/quic-go from 0.54.1 to 0.57.0 ([#221](https://github.com/inference-gateway/inference-gateway/issues/221)) ([af3fbb5](https://github.com/inference-gateway/inference-gateway/commit/af3fbb5be02170aac6a5130f67c451dbb172894e))
+* **deps:** Bump github.com/quic-go/quic-go from 0.54.1 to 0.57.0 in /examples/*/mcp/* ([#220](https://github.com/inference-gateway/inference-gateway/issues/220)) ([591a7f0](https://github.com/inference-gateway/inference-gateway/commit/591a7f0bd5771d9dec66b2cc2d2d83de9260281b))
+
+## [0.22.5](https://github.com/inference-gateway/inference-gateway/compare/v0.22.4...v0.22.5) (2025-12-04)
+
+### 🐛 Bug Fixes
+
+* **docs:** Remove v prefix ([135b3b6](https://github.com/inference-gateway/inference-gateway/commit/135b3b6e274db1208dbca35f3d93bf47a0c98f09))
+
+## [0.22.4](https://github.com/inference-gateway/inference-gateway/compare/v0.22.3...v0.22.4) (2025-12-04)
+
+### 📚 Documentation
+
+* Move installation right after the overview section ([a3fda4a](https://github.com/inference-gateway/inference-gateway/commit/a3fda4a0ac3675d510d71935e68d6967335dd3a6))
+
+### 🔧 Miscellaneous
+
+* Add markdownlint and improve docs ([#218](https://github.com/inference-gateway/inference-gateway/issues/218)) ([f351330](https://github.com/inference-gateway/inference-gateway/commit/f35133090388218bbf50405c42ec7fb2d549cf29))
+
+## [0.22.3](https://github.com/inference-gateway/inference-gateway/compare/v0.22.2...v0.22.3) (2025-12-04)
+
+### ♻️ Improvements
+
+* Propagate the actual error from the provider to the client ([e3a9feb](https://github.com/inference-gateway/inference-gateway/commit/e3a9febd6c889a6325e0e4d2f02ee30a53e1c6cb))
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump golang.org/x/crypto from 0.40.0 to 0.45.0 in the examples ([b475adf](https://github.com/inference-gateway/inference-gateway/commit/b475adf99b897c8a2c50ce247cbf99c3666d60c6))
+* **deps:** Update overall dependecies ([42737ed](https://github.com/inference-gateway/inference-gateway/commit/42737ed2fc9898ad27614a189b9a33ca1ada00a4))
+* **style:** Run task format ([e966e07](https://github.com/inference-gateway/inference-gateway/commit/e966e07f00cad71cf9038245278d24e89fe2d1ac))
+
+### 🔨 Miscellaneous
+
+* **deps:** Bump @modelcontextprotocol/sdk ([#215](https://github.com/inference-gateway/inference-gateway/issues/215)) ([839953b](https://github.com/inference-gateway/inference-gateway/commit/839953bd59f57c2997723751fea9cab91a5d0886))
+* **deps:** Bump express in /examples/docker-compose/mcp/pizza-server ([#214](https://github.com/inference-gateway/inference-gateway/issues/214)) ([a81dba7](https://github.com/inference-gateway/inference-gateway/commit/a81dba71638566c95c1b3fe2b6edb58846a3bb5e))
+* **deps:** Bump golang.org/x/crypto ([#216](https://github.com/inference-gateway/inference-gateway/issues/216)) ([1a89da5](https://github.com/inference-gateway/inference-gateway/commit/1a89da564754993a363d97e8e76a2ef3aa3c828f))
+
+## [0.22.2](https://github.com/inference-gateway/inference-gateway/compare/v0.22.1...v0.22.2) (2025-11-29)
+
+### ♻️ Improvements
+
+* **providers:** Improve Claude 4 vision model detection ([#213](https://github.com/inference-gateway/inference-gateway/issues/213)) ([6a64730](https://github.com/inference-gateway/inference-gateway/commit/6a647300afde31e1933838d5f7a24df547552917))
+
+## [0.22.1](https://github.com/inference-gateway/inference-gateway/compare/v0.22.0...v0.22.1) (2025-11-29)
+
+### ♻️ Improvements
+
+* **providers:** Improve vision model detection ([#212](https://github.com/inference-gateway/inference-gateway/issues/212)) ([cc2b619](https://github.com/inference-gateway/inference-gateway/commit/cc2b61931763ce77a99fdcd9dcf001d78b444630))
+
+### 🔨 Miscellaneous
+
+* **deps:** Bump golang.org/x/crypto ([#210](https://github.com/inference-gateway/inference-gateway/issues/210)) ([698b2dd](https://github.com/inference-gateway/inference-gateway/commit/698b2dd31e86f5de0accf3902f26ef3b2c7bc435))
+* **deps:** Bump golang.org/x/crypto ([#211](https://github.com/inference-gateway/inference-gateway/issues/211)) ([b50fe2a](https://github.com/inference-gateway/inference-gateway/commit/b50fe2afb8d40b5b0932bde4ff943aec5bb58387))
+
 ## [0.22.0](https://github.com/inference-gateway/inference-gateway/compare/v0.21.0...v0.22.0) (2025-11-21)
 
 ### ✨ Features

@@ -7,7 +7,7 @@ replicaCount: 1
 image:
   repository: ghcr.io/inference-gateway/inference-gateway
   pullPolicy: IfNotPresent
-  tag: ""
+  tag: ''
 
 monitoring:
   enabled: false
@@ -24,8 +24,8 @@ envFrom:
 # This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
 imagePullSecrets: []
 # This is to override the chart name.
-nameOverride: ""
-fullnameOverride: ""
+nameOverride: ''
+fullnameOverride: ''
 
 # This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
 serviceAccount:
@@ -37,7 +37,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: ""
+  name: ''
 
 # This is for setting Kubernetes Annotations to a Pod.
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
@@ -46,12 +46,10 @@ podAnnotations: {}
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
 
-podSecurityContext:
-  {}
+podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext:
-  {}
+securityContext: {}
   # capabilities:
   #   drop:
   #   - ALL
@@ -71,7 +69,7 @@ ingress:
   enabled: false
   className: nginx
   annotations:
-    cert-manager.io/cluster-issuer: "selfsigned-issuer"
+    cert-manager.io/cluster-issuer: 'selfsigned-issuer'
   hosts:
     - host: api.inference-gateway.local
       paths:
@@ -138,62 +136,62 @@ extraEnv: []
 
 config:
   # General settings
-  ENVIRONMENT: "production"
-  ALLOWED_MODELS: ""
-  DISALLOWED_MODELS: ""
-  ENABLE_VISION: "false"
-  DEBUG_CONTENT_TRUNCATE_WORDS: "10"
-  DEBUG_MAX_MESSAGES: "100"
+  ENVIRONMENT: 'production'
+  ALLOWED_MODELS: ''
+  DISALLOWED_MODELS: ''
+  ENABLE_VISION: 'false'
+  DEBUG_CONTENT_TRUNCATE_WORDS: '10'
+  DEBUG_MAX_MESSAGES: '100'
   # Telemetry
-  TELEMETRY_ENABLE: "false"
-  TELEMETRY_METRICS_PORT: "9464"
+  TELEMETRY_ENABLE: 'false'
+  TELEMETRY_METRICS_PORT: '9464'
   # Model Context Protocol (MCP)
-  MCP_ENABLE: "false"
-  MCP_EXPOSE: "false"
-  MCP_SERVERS: ""
-  MCP_CLIENT_TIMEOUT: "5s"
-  MCP_DIAL_TIMEOUT: "3s"
-  MCP_TLS_HANDSHAKE_TIMEOUT: "3s"
-  MCP_RESPONSE_HEADER_TIMEOUT: "3s"
-  MCP_EXPECT_CONTINUE_TIMEOUT: "1s"
-  MCP_REQUEST_TIMEOUT: "5s"
-  MCP_MAX_RETRIES: "3"
-  MCP_RETRY_INTERVAL: "5s"
-  MCP_INITIAL_BACKOFF: "1s"
-  MCP_ENABLE_RECONNECT: "true"
-  MCP_RECONNECT_INTERVAL: "30s"
-  MCP_POLLING_ENABLE: "true"
-  MCP_POLLING_INTERVAL: "30s"
-  MCP_POLLING_TIMEOUT: "5s"
-  MCP_DISABLE_HEALTHCHECK_LOGS: "true"
+  MCP_ENABLE: 'false'
+  MCP_EXPOSE: 'false'
+  MCP_SERVERS: ''
+  MCP_CLIENT_TIMEOUT: '5s'
+  MCP_DIAL_TIMEOUT: '3s'
+  MCP_TLS_HANDSHAKE_TIMEOUT: '3s'
+  MCP_RESPONSE_HEADER_TIMEOUT: '3s'
+  MCP_EXPECT_CONTINUE_TIMEOUT: '1s'
+  MCP_REQUEST_TIMEOUT: '5s'
+  MCP_MAX_RETRIES: '3'
+  MCP_RETRY_INTERVAL: '5s'
+  MCP_INITIAL_BACKOFF: '1s'
+  MCP_ENABLE_RECONNECT: 'true'
+  MCP_RECONNECT_INTERVAL: '30s'
+  MCP_POLLING_ENABLE: 'true'
+  MCP_POLLING_INTERVAL: '30s'
+  MCP_POLLING_TIMEOUT: '5s'
+  MCP_DISABLE_HEALTHCHECK_LOGS: 'true'
   # Authentication
-  AUTH_ENABLE: "false"
-  AUTH_OIDC_ISSUER: "http://keycloak:8080/realms/inference-gateway-realm"
+  AUTH_ENABLE: 'false'
+  AUTH_OIDC_ISSUER: 'http://keycloak:8080/realms/inference-gateway-realm'
   # Server settings
-  SERVER_HOST: "0.0.0.0"
-  SERVER_PORT: "8080"
-  SERVER_READ_TIMEOUT: "30s"
-  SERVER_WRITE_TIMEOUT: "30s"
-  SERVER_IDLE_TIMEOUT: "120s"
-  SERVER_TLS_CERT_PATH: ""
-  SERVER_TLS_KEY_PATH: ""
+  SERVER_HOST: '0.0.0.0'
+  SERVER_PORT: '8080'
+  SERVER_READ_TIMEOUT: '30s'
+  SERVER_WRITE_TIMEOUT: '30s'
+  SERVER_IDLE_TIMEOUT: '120s'
+  SERVER_TLS_CERT_PATH: ''
+  SERVER_TLS_KEY_PATH: ''
   # Client settings
-  CLIENT_TIMEOUT: "30s"
-  CLIENT_MAX_IDLE_CONNS: "20"
-  CLIENT_MAX_IDLE_CONNS_PER_HOST: "20"
-  CLIENT_IDLE_CONN_TIMEOUT: "30s"
-  CLIENT_TLS_MIN_VERSION: "TLS12"
-  CLIENT_DISABLE_COMPRESSION: "true"
-  CLIENT_RESPONSE_HEADER_TIMEOUT: "10s"
-  CLIENT_EXPECT_CONTINUE_TIMEOUT: "1s"
+  CLIENT_TIMEOUT: '30s'
+  CLIENT_MAX_IDLE_CONNS: '20'
+  CLIENT_MAX_IDLE_CONNS_PER_HOST: '20'
+  CLIENT_IDLE_CONN_TIMEOUT: '30s'
+  CLIENT_TLS_MIN_VERSION: 'TLS12'
+  CLIENT_DISABLE_COMPRESSION: 'true'
+  CLIENT_RESPONSE_HEADER_TIMEOUT: '10s'
+  CLIENT_EXPECT_CONTINUE_TIMEOUT: '1s'
   # Providers
-  ANTHROPIC_API_URL: "https://api.anthropic.com/v1"
-  CLOUDFLARE_API_URL: "https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai"
-  COHERE_API_URL: "https://api.cohere.ai"
-  GROQ_API_URL: "https://api.groq.com/openai/v1"
-  OLLAMA_API_URL: "http://ollama:8080/v1"
-  OLLAMA_CLOUD_API_URL: "https://ollama.com/v1"
-  OPENAI_API_URL: "https://api.openai.com/v1"
-  DEEPSEEK_API_URL: "https://api.deepseek.com"
-  GOOGLE_API_URL: "https://generativelanguage.googleapis.com/v1beta/openai"
-  MISTRAL_API_URL: "https://api.mistral.ai/v1"
+  ANTHROPIC_API_URL: 'https://api.anthropic.com/v1'
+  CLOUDFLARE_API_URL: 'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai'
+  COHERE_API_URL: 'https://api.cohere.ai'
+  GROQ_API_URL: 'https://api.groq.com/openai/v1'
+  OLLAMA_API_URL: 'http://ollama:8080/v1'
+  OLLAMA_CLOUD_API_URL: 'https://ollama.com/v1'
+  OPENAI_API_URL: 'https://api.openai.com/v1'
+  DEEPSEEK_API_URL: 'https://api.deepseek.com'
+  GOOGLE_API_URL: 'https://generativelanguage.googleapis.com/v1beta/openai'
+  MISTRAL_API_URL: 'https://api.mistral.ai/v1'

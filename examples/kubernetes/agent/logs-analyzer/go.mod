@@ -1,6 +1,6 @@
 module github.com/youraccount/yourrepo
 
-go 1.25.3
+go 1.25.4
 
 require (
 	github.com/inference-gateway/sdk v1.7.1

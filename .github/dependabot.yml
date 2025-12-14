@@ -1,3 +1,4 @@
+---
 version: 2
 updates:
   - package-ecosystem: 'gomod'
@@ -5,8 +6,6 @@ updates:
     schedule:
       interval: 'daily'
     open-pull-requests-limit: 0
-    reviewers:
-      - '@inference-gateway/maintainers'
     assignees:
       - '@inference-gateway/maintainers'
     commit-message:
@@ -31,8 +30,6 @@ updates:
     schedule:
       interval: 'daily'
     open-pull-requests-limit: 0
-    reviewers:
-      - '@inference-gateway/maintainers'
     assignees:
       - '@inference-gateway/maintainers'
     commit-message:
@@ -46,8 +43,6 @@ updates:
     schedule:
       interval: 'daily'
     open-pull-requests-limit: 0
-    reviewers:
-      - '@inference-gateway/maintainers'
     assignees:
       - '@inference-gateway/maintainers'
     commit-message:
@@ -61,8 +56,6 @@ updates:
     schedule:
       interval: 'daily'
     open-pull-requests-limit: 0
-    reviewers:
-      - '@inference-gateway/maintainers'
     assignees:
       - '@inference-gateway/maintainers'
     commit-message:
@@ -77,8 +70,6 @@ updates:
     schedule:
       interval: 'daily'
     open-pull-requests-limit: 0
-    reviewers:
-      - '@inference-gateway/maintainers'
     assignees:
       - '@inference-gateway/maintainers'
     commit-message:

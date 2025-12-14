@@ -39,7 +39,7 @@ This example demonstrates a hybrid deployment of the Inference Gateway using:
 task deploy-infrastructure
 ```
 
-2. Deploy Ollama provider:
+1. Deploy Ollama provider:
 
 ```bash
 task deploy-ollama
@@ -53,13 +53,13 @@ task watch-ollama-download
 
 Once you see "success", you can proceed to the next step.
 
-3. Deploy Inference Gateway:
+1. Deploy Inference Gateway:
 
 ```bash
 task deploy-inference-gateway
 ```
 
-4. Test local provider:
+1. Test local provider:
 
 ```bash
 curl -X POST http://api.inference-gateway.local/v1/chat/completions \

@@ -1,8 +1,16 @@
 # Model Context Protocol (MCP) Integration Example
 
-This example demonstrates how to deploy the Inference Gateway with Model Context Protocol (MCP) support in Kubernetes, allowing LLMs to access external tools and data through multiple MCP servers.
+This example demonstrates how to deploy the Inference Gateway with Model
+Context Protocol (MCP) support in Kubernetes, allowing LLMs to access external
+tools and data through multiple MCP servers.
 
-> **⚠️ Important Notice**: The MCP servers included in this example (time, search, and filesystem servers) are simplified implementations designed for demonstration and testing purposes only. They should **NOT** be used in production environments without proper security hardening, input validation, authentication, authorization, and error handling. For production deployments, implement proper MCP servers with comprehensive security measures and robust error handling.
+> **⚠️ Important Notice**: The MCP servers included in this example (time,
+> search, and filesystem servers) are simplified implementations designed for
+> demonstration and testing purposes only. They should **NOT** be used in
+> production environments without proper security hardening, input validation,
+> authentication, authorization, and error handling. For production deployments,
+> implement proper MCP servers with comprehensive security measures and robust
+> error handling.
 
 ## Table of Contents
 
@@ -30,19 +38,20 @@ This example demonstrates how to deploy the Inference Gateway with Model Context
     - [Example 4: Multiple Tools](#example-4-multiple-tools)
     - [Example 5: List Available MCP Tools](#example-5-list-available-mcp-tools)
   - [MCP Inspector](#mcp-inspector)
-  - [Monitoring and Debugging](#monitoring-and-debugging-1)
+  - [Operations and Troubleshooting](#operations-and-troubleshooting)
     - [View Logs](#view-logs)
     - [Check Status](#check-status)
     - [Run Tests](#run-tests)
   - [Adding Custom MCP Servers](#adding-custom-mcp-servers)
-  - [Cleanup](#cleanup-1)
-    - [Remove the deployment only:](#remove-the-deployment-only)
-    - [Remove everything including the cluster:](#remove-everything-including-the-cluster)
+  - [Resource Cleanup](#resource-cleanup)
+    - [Remove the deployment only](#remove-the-deployment-only)
+    - [Remove everything including the cluster](#remove-everything-including-the-cluster)
   - [Learn More](#learn-more)
 
 ## Overview
 
-The Model Context Protocol is an open standard for implementing function calling in AI applications. This example shows how to:
+The Model Context Protocol is an open standard for implementing function
+calling in AI applications. This example shows how to:
 
 1. Deploy the Inference Gateway using its Helm chart with MCP configuration
 2. Deploy multiple MCP servers as standalone services
@@ -52,7 +61,7 @@ The Model Context Protocol is an open standard for implementing function calling
 
 ## Architecture
 
-```
+```text
 ┌─────────────────┐   HTTP    ┌─────────────────────────┐
 │                 │  Request  │                         │
 │   Client/Agent  │──────────▶│   NGINX Ingress         │
@@ -106,14 +115,21 @@ The Model Context Protocol is an open standard for implementing function calling
 
 ## Components
 
-- **Inference Gateway**: Main service deployed via official Helm chart with MCP configuration
-- **MCP Time Server**: Provides time-related tools and utilities _(example implementation only)_
-- **MCP Search Server**: Provides web search functionality _(mock implementation for demo purposes)_
-- **MCP Filesystem Server**: Provides file operations (read, write, delete, list directories) _(example implementation only)_
+- **Inference Gateway**: Main service deployed via official Helm chart with
+  MCP configuration
+- **MCP Time Server**: Provides time-related tools and utilities _(example
+  implementation only)_
+- **MCP Search Server**: Provides web search functionality _(mock implementation
+  for demo purposes)_
+- **MCP Filesystem Server**: Provides file operations (read, write, delete, list
+  directories) _(example implementation only)_
 - **MCP Inspector**: Web-based debugging tool for exploring and testing MCP servers
 - **NGINX Ingress**: Routes external traffic to the gateway
 
-> **Note**: The MCP servers in this example are basic implementations for demonstration purposes. They lack production-ready features such as proper authentication, authorization, input validation, rate limiting, and comprehensive error handling.
+> **Note**: The MCP servers in this example are basic implementations for
+> demonstration purposes. They lack production-ready features such as proper
+> authentication, authorization, input validation, rate limiting, and
+> comprehensive error handling.
 
 ## Prerequisites
 
@@ -140,17 +156,18 @@ The Model Context Protocol is an open standard for implementing function calling
 2. **Configure DNS (for local testing):**
    Add to your `/etc/hosts` file:
 
-   ```
+   ```text
    127.0.0.1 api.inference-gateway.local
    ```
 
    If using vscode dev container, you can skip this step.
 
 3. **Access the services:**
-   - Inference Gateway: http://api.inference-gateway.local
-   - MCP Inspector: http://localhost:6274 (after running `task port-forward`)
+   - Inference Gateway: <http://api.inference-gateway.local>
+   - MCP Inspector: <http://localhost:6274> (after running `task port-forward`)
 
 4. **Test the deployment:**
+
    ```bash
    task test
    ```
@@ -206,7 +223,8 @@ Run `task --list` to see all available tasks.
 
 ### Gateway Settings
 
-The Inference Gateway is deployed using the official Helm chart with MCP-specific configuration in `values-mcp.yaml`:
+The Inference Gateway is deployed using the official Helm chart with
+MCP-specific configuration in `values-mcp.yaml`:
 
 - **MCP_ENABLE**: Enables MCP middleware (`true`)
 - **MCP_EXPOSE**: Exposes MCP endpoints (`true`)
@@ -224,7 +242,8 @@ The example deploys three MCP servers:
 
 1. **Time Server** (port 8081): Provides current time in various formats
 2. **Search Server** (port 8082): Provides mock web search functionality
-3. **Filesystem Server** (port 8083): Provides file operations with persistent storage
+3. **Filesystem Server** (port 8083): Provides file operations with persistent
+   storage
 
 ## Usage Examples
 
@@ -329,7 +348,7 @@ The MCP Inspector provides a web interface for debugging and exploring your MCP 
    ```
 
 2. **Access the inspector:**
-   Open http://localhost:6274 in your browser
+   Open <http://localhost:6274> in your browser
 
 3. **Features:**
    - Browse all connected MCP servers and their capabilities
@@ -337,7 +356,7 @@ The MCP Inspector provides a web interface for debugging and exploring your MCP 
    - Execute tool calls directly and see responses
    - Monitor MCP protocol messages
 
-## Monitoring and Debugging
+## Operations and Troubleshooting
 
 ### View Logs
 
@@ -389,19 +408,20 @@ To add your own MCP server:
    ```
 
 3. **Redeploy:**
+
    ```bash
    task deploy
    ```
 
-## Cleanup
+## Resource Cleanup
 
-### Remove the deployment only:
+### Remove the deployment only
 
 ```bash
 task undeploy
 ```
 
-### Remove everything including the cluster:
+### Remove everything including the cluster
 
 ```bash
 task clean

@@ -61,9 +61,61 @@ plugins:
         - CHANGELOG.md
       releasedLabels: ['released']
       releaseNameTemplate: '🚀 Version ${nextRelease.version}'
+      releaseBodyTemplate: |
+        ${nextRelease.notes}
+
+        ---
+
+        ## 📦 Quick Installation
+
+        ### Binary Installation
+
+        **Install latest version:**
+        ```bash
+        curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | bash
+        ```
+
+        **Install this version:**
+        ```bash
+        curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | VERSION=v${nextRelease.version} bash
+        ```
+
+        **Install to custom directory:**
+        ```bash
+        curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/install.sh | INSTALL_DIR=~/.local/bin bash
+        ```
+
+        **Verify installation:**
+        ```bash
+        inference-gateway --version
+        ```
+
+        ### Running as a Container (Recommended)
+
+        **Using Docker:**
+        ```bash
+        docker run -d \
+          -p 8080:8080 \
+          -e OPENAI_API_KEY=your-api-key \
+          ghcr.io/inference-gateway/inference-gateway:${nextRelease.version}
+        ```
+
+        **Using Docker Compose:**
+        ```bash
+        # Download example configuration
+        curl -O https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/examples/docker-compose/basic/docker-compose.yml
+        curl -O https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/examples/docker-compose/basic/.env.example
+        mv .env.example .env
+
+        # Edit .env with your API keys
+        # Start the gateway
+        docker compose up -d
+        ```
+
+        For more installation options and documentation, visit the [README](https://github.com/inference-gateway/inference-gateway#installation).
       successCommentCondition: 'false'
       labels:
-        - 'release'
+        - "<%= nextRelease.channel === 'rc' ? 'prerelease' : 'release' %>"
         - "<%= nextRelease.channel === 'rc' ? 'rc' : '' %>"
 
   - - '@semantic-release/git'

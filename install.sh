@@ -107,13 +107,13 @@ main() {
         sudo mv "$binary_path" "${INSTALL_DIR}/inference-gateway"
     fi
 
-    if command -v inference-gateway &> /dev/null; then
-        local installed_version=$(inference-gateway --version 2>/dev/null || echo "unknown")
+    if [ -f "${INSTALL_DIR}/inference-gateway" ]; then
+        local installed_version=$("${INSTALL_DIR}/inference-gateway" --version 2>/dev/null || echo "unknown")
         info "✓ Successfully installed inference-gateway"
         info "Version: $installed_version"
         info "Location: ${INSTALL_DIR}/inference-gateway"
     else
-        error "Installation failed - binary not found in PATH"
+        error "Installation failed - binary not found at ${INSTALL_DIR}/inference-gateway"
     fi
 }
 

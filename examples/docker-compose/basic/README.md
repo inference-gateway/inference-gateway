@@ -1,6 +1,7 @@
 # Basic Docker Compose Example
 
-This example demonstrates how to set up the Inference Gateway with Docker Compose for a simple configuration with a single cloud-based model provider.
+This example demonstrates how to set up the Inference Gateway with Docker
+Compose for a simple configuration with a single cloud-based model provider.
 
 ## Overview
 
@@ -22,21 +23,21 @@ The Basic example sets up:
 cp .env.example .env
 ```
 
-2. Edit the `.env` file to configure your model provider:
+1. Edit the `.env` file to configure your model provider:
 
-```
-OPENAI_API_KEY=your_api_key_here
-```
+   ```bash
+   OPENAI_API_KEY=your_api_key_here
+   ```
 
 Or any other provider you want to use.
 
-3. Start the Inference Gateway:
+1. Start the Inference Gateway:
 
 ```bash
 docker compose up -d
 ```
 
-4. Verify the gateway is running:
+1. Verify the gateway is running:
 
 ```bash
 docker compose ps

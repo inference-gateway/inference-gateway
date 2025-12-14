@@ -288,7 +288,7 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
-			var response map[string]interface{}
+			var response map[string]any
 			err = json.Unmarshal(w.Body.Bytes(), &response)
 			require.NoError(t, err)
 
@@ -356,15 +356,15 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 
-				response := map[string]interface{}{
+				response := map[string]any{
 					"id":      "chatcmpl-test",
 					"object":  "chat.completion",
 					"created": 1677649963,
 					"model":   tt.requestModel,
-					"choices": []map[string]interface{}{
+					"choices": []map[string]any{
 						{
 							"index": 0,
-							"message": map[string]interface{}{
+							"message": map[string]any{
 								"role":    "assistant",
 								"content": "Test response",
 							},
@@ -434,7 +434,7 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 			r := gin.New()
 			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
-			requestBody := map[string]interface{}{
+			requestBody := map[string]any{
 				"model": tt.requestModel,
 				"messages": []map[string]string{
 					{
@@ -456,7 +456,7 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
-			var response map[string]interface{}
+			var response map[string]any
 			err = json.Unmarshal(w.Body.Bytes(), &response)
 			require.NoError(t, err)
 
@@ -788,7 +788,7 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 			r := gin.New()
 			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
-			requestBody := map[string]interface{}{
+			requestBody := map[string]any{
 				"model": tt.requestModel,
 				"messages": []map[string]string{
 					{
@@ -810,7 +810,7 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
-			var response map[string]interface{}
+			var response map[string]any
 			err = json.Unmarshal(w.Body.Bytes(), &response)
 			require.NoError(t, err)
 
@@ -948,7 +948,7 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 			r := gin.New()
 			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
-			requestBody := map[string]interface{}{
+			requestBody := map[string]any{
 				"model": tt.requestModel,
 				"messages": []map[string]string{
 					{
@@ -970,7 +970,7 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
-			var response map[string]interface{}
+			var response map[string]any
 			err = json.Unmarshal(w.Body.Bytes(), &response)
 			require.NoError(t, err)
 
@@ -982,6 +982,153 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 				assert.Equal(t, "chat.completion", response["object"])
 				assert.NotEmpty(t, response["model"])
 			}
+		})
+	}
+}
+
+func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
+	tests := []struct {
+		name               string
+		providerError      error
+		expectedStatusCode int
+		expectedError      string
+		description        string
+	}{
+		{
+			name:               "Generic streaming error returns 400 with full error message",
+			providerError:      assert.AnError,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedError:      assert.AnError.Error(),
+			description:        "Generic errors should return 400 with the full error message",
+		},
+		{
+			name:               "HTTP 401 error is returned with correct status code",
+			providerError:      &providers.HTTPError{StatusCode: http.StatusUnauthorized, Message: `{"error":{"message":"authentication failed"}}`},
+			expectedStatusCode: http.StatusUnauthorized,
+			expectedError:      "authentication failed",
+			description:        "HTTP 401 errors should return with correct status code",
+		},
+		{
+			name:               "HTTP 403 error is returned with correct status code",
+			providerError:      &providers.HTTPError{StatusCode: http.StatusForbidden, Message: `{"error":{"message":"forbidden access"}}`},
+			expectedStatusCode: http.StatusForbidden,
+			expectedError:      "forbidden access",
+			description:        "HTTP 403 errors should return with correct status code",
+		},
+		{
+			name:               "HTTP 404 error is returned with correct status code",
+			providerError:      &providers.HTTPError{StatusCode: http.StatusNotFound, Message: `{"error":{"message":"model not found"}}`},
+			expectedStatusCode: http.StatusNotFound,
+			expectedError:      "model not found",
+			description:        "HTTP 404 errors should return with correct status code",
+		},
+		{
+			name:               "HTTP 429 error is returned with correct status code",
+			providerError:      &providers.HTTPError{StatusCode: http.StatusTooManyRequests, Message: `{"error":{"message":"rate limit exceeded"}}`},
+			expectedStatusCode: http.StatusTooManyRequests,
+			expectedError:      "rate limit exceeded",
+			description:        "HTTP 429 errors should return with correct status code",
+		},
+		{
+			name:               "HTTP 500 error is returned with correct status code",
+			providerError:      &providers.HTTPError{StatusCode: http.StatusInternalServerError, Message: `{"error":{"message":"internal server error"}}`},
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedError:      "internal server error",
+			description:        "HTTP 500 errors should return with correct status code",
+		},
+		{
+			name:               "HTTP 502 error is returned with correct status code",
+			providerError:      &providers.HTTPError{StatusCode: http.StatusBadGateway, Message: `{"error":{"message":"bad gateway"}}`},
+			expectedStatusCode: http.StatusBadGateway,
+			expectedError:      "bad gateway",
+			description:        "HTTP 502 errors should return with correct status code",
+		},
+		{
+			name:               "HTTP 503 error is returned with correct status code",
+			providerError:      &providers.HTTPError{StatusCode: http.StatusServiceUnavailable, Message: `{"error":{"message":"service unavailable"}}`},
+			expectedStatusCode: http.StatusServiceUnavailable,
+			expectedError:      "service unavailable",
+			description:        "HTTP 503 errors should return with correct status code",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			mockProvider := providersmocks.NewMockIProvider(ctrl)
+			mockClient := providersmocks.NewMockClient(ctrl)
+			mockRegistry := providersmocks.NewMockProviderRegistry(ctrl)
+
+			log, err := logger.NewLogger("test")
+			require.NoError(t, err)
+
+			providerCfg := map[providers.Provider]*providers.Config{
+				providers.OpenaiID: {
+					ID:       providers.OpenaiID,
+					Name:     providers.OpenaiDisplayName,
+					URL:      "http://localhost:8080",
+					Token:    "test-token",
+					AuthType: providers.AuthTypeBearer,
+					Endpoints: providers.Endpoints{
+						Chat: providers.OpenaiChatEndpoint,
+					},
+				},
+			}
+
+			cfg := config.Config{
+				Server: &config.ServerConfig{
+					ReadTimeout: time.Duration(5000) * time.Millisecond,
+				},
+				Providers: providerCfg,
+			}
+
+			mockProvider.EXPECT().
+				StreamChatCompletions(gomock.Any(), gomock.Any()).
+				Return(nil, tt.providerError)
+
+			mockRegistry.EXPECT().
+				BuildProvider(providers.OpenaiID, mockClient).
+				Return(mockProvider, nil)
+
+			router := api.NewRouter(cfg, log, mockRegistry, mockClient, nil)
+
+			gin.SetMode(gin.TestMode)
+			r := gin.New()
+			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+
+			stream := true
+			requestBody := providers.CreateChatCompletionRequest{
+				Model:  "openai/gpt-4",
+				Stream: &stream,
+				Messages: []providers.Message{
+					{
+						Role:    "user",
+						Content: "Hello, world!",
+					},
+				},
+			}
+
+			jsonBody, err := json.Marshal(requestBody)
+			require.NoError(t, err)
+
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("POST", "/v1/chat/completions", strings.NewReader(string(jsonBody)))
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", "application/json")
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.expectedStatusCode, w.Code, "Expected status code %d but got %d", tt.expectedStatusCode, w.Code)
+
+			var response map[string]any
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, err)
+
+			errorMsg, exists := response["error"]
+			assert.True(t, exists, "Response should contain error field")
+			assert.Contains(t, errorMsg.(string), tt.expectedError, "Error message should contain expected text")
 		})
 	}
 }

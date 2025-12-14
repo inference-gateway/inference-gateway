@@ -1,0 +1,53 @@
+---
+name: Infer
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  issues: write
+  contents: write
+  pull-requests: write
+
+jobs:
+  infer:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Generate GitHub App Token
+        uses: actions/create-github-app-token@v2.2.0
+        id: app_token
+        with:
+          app-id: ${{ secrets.INFER_APP_ID }}
+          private-key: ${{ secrets.INFER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            ${{ github.event.repository.name }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          token: ${{ steps.app_token.outputs.token }}
+
+      - name: Run Infer Agent
+        uses: inference-gateway/infer-action@v0.3.1
+        with:
+          github-token: ${{ steps.app_token.outputs.token }}
+          trigger-phrase: '@infer'
+          model: deepseek/deepseek-chat
+          max-turns: 50
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          google-api-key: ${{ secrets.GOOGLE_API_KEY }}
+          deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
+          groq-api-key: ${{ secrets.GROQ_API_KEY }}
+          mistral-api-key: ${{ secrets.MISTRAL_API_KEY }}
+          cloudflare-api-key: ${{ secrets.CLOUDFLARE_API_KEY }}
+          cohere-api-key: ${{ secrets.COHERE_API_KEY }}
+          ollama-api-key: ${{ secrets.OLLAMA_API_KEY }}
+          ollama-cloud-api-key: ${{ secrets.OLLAMA_CLOUD_API_KEY }}

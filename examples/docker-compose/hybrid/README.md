@@ -15,7 +15,7 @@ Copy `.env.example` to `.env` and adjust the values (`.env` is added to gitignor
 docker compose up -d
 ```
 
-2. List the available models of a specific API, for example Groq:
+1. List the available models of a specific API, for example Groq:
 
 ```bash
 curl -X GET http://localhost:8080/v1/models?provider=groq | jq '.'
@@ -27,7 +27,7 @@ Or the local models:
 curl -X GET http://localhost:8080/v1/models?provider=ollama | jq '.'
 ```
 
-3. Use a specific API models, for example Groq:
+1. Use a specific API models, for example Groq:
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
@@ -47,7 +47,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   }' | jq '.'
 ```
 
-4. Or with streaming using Ollama:
+1. Or with streaming using Ollama:
 
 ```bash
 # Download the models first

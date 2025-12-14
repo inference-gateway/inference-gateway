@@ -1,6 +1,8 @@
 # Model Context Protocol Integration Example
 
-This example demonstrates integrating the Model Context Protocol (MCP) with Inference Gateway, enabling LLMs to access external tools and data through multiple MCP servers.
+This example demonstrates integrating the Model Context Protocol (MCP) with
+Inference Gateway, enabling LLMs to access external tools and data through
+multiple MCP servers.
 
 ## Features
 
@@ -277,7 +279,9 @@ Example response:
 
 ### Example 9: Pizza Server Tools
 
-This example demonstrates using tools from the official TypeScript MCP server built with `@modelcontextprotocol/sdk`. The pizza server provides pizza-related tools:
+This example demonstrates using tools from the official TypeScript MCP server
+built with `@modelcontextprotocol/sdk`. The pizza server provides pizza-related
+tools:
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
@@ -330,9 +334,12 @@ All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 
 ### Pizza Server Tools
 
-- **get-top-pizzas**: Returns mock data of the top 5 pizzas in the world with detailed information
+- **get-top-pizzas**: Returns mock data of the top 5 pizzas in the world with
+  detailed information
 
-The pizza server showcases best practices using the `@modelcontextprotocol/sdk` and includes comprehensive session management, type validation with Zod schemas, and dual transport support.
+The pizza server showcases best practices using the `@modelcontextprotocol/sdk`
+and includes comprehensive session management, type validation with Zod schemas,
+and dual transport support.
 
 ## Adding Your Own MCP Servers
 
@@ -356,14 +363,17 @@ The pizza server showcases best practices using the `@modelcontextprotocol/sdk` 
 - Responds to HTTP requests on the `/mcp` endpoint
 - Supports CORS for web clients (if using the MCP Inspector)
 
-### Current Example Servers
+### Pre-configured Example Servers
 
 This example includes four pre-configured servers:
 
 - **Time Server**: `http://mcp-time-server:8081/mcp` - Get current time
-- **Search Server**: `http://mcp-search-server:8082/mcp` - Web search functionality
-- **Filesystem Server**: `http://mcp-filesystem-server:8083/mcp` - File operations
-- **TypeScript Server**: `http://official-ts-server:8084/mcp` - Math and utility functions
+- **Search Server**: `http://mcp-search-server:8082/mcp` - Web search
+  functionality
+- **Filesystem Server**: `http://mcp-filesystem-server:8083/mcp` - File
+  operations
+- **TypeScript Server**: `http://official-ts-server:8084/mcp` - Math and utility
+  functions
 
 ### Configuration Options
 

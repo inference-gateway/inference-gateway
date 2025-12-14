@@ -33,13 +33,13 @@ This example demonstrates the simplest deployment of the Inference Gateway using
 task deploy-infrastructure
 ```
 
-2. Deploy Inference Gateway:
+1. Deploy Inference Gateway:
 
 ```bash
 task deploy-inference-gateway
 ```
 
-3. Test the gateway:
+1. Test the gateway:
 
 ```bash
 curl http://api.inference-gateway.local/v1/models

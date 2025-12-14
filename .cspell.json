@@ -1,0 +1,33 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "words": [
+    "armv",
+    "benchmem",
+    "benchtime",
+    "Buildx",
+    "chatcmpl",
+    "flox",
+    "Flox",
+    "golangci",
+    "gomod",
+    "Groq",
+    "Mockgen",
+    "multimodal",
+    "Multimodal",
+    "Ollama",
+    "Pixtral",
+    "sigstore",
+    "stretchr",
+    "topk"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    ".git/**",
+    "dist/**",
+    "build/**",
+    "*.min.js",
+    "CHANGELOG.md",
+    ".flox/**"
+  ]
+}

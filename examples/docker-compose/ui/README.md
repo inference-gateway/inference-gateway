@@ -17,7 +17,7 @@ cp .env.backend.example .env.backend
 cp .env.frontend.example .env.frontend
 ```
 
-2. Configure backend environment (.env.backend):
+1. Configure backend environment (.env.backend):
 
 ```ini
 AUTH_ENABLE=true
@@ -26,7 +26,7 @@ AUTH_OIDC_CLIENT_ID=app-client
 AUTH_OIDC_CLIENT_SECRET=very-secret
 ```
 
-3. Configure frontend environment (.env.frontend):
+1. Configure frontend environment (.env.frontend):
 
 ```ini
 AUTH_ENABLED="true"
@@ -49,7 +49,7 @@ docker compose -f docker-compose.yaml up
 
 ## Accessing the Application
 
-- UI: http://localhost:3000
+- UI: <http://localhost:3000>
 
 ## Configuration Notes
 

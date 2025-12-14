@@ -1,8 +1,10 @@
 # Example REST Endpoints
 
-Assuming you've deployed the Inference Gateway, you can interact with the language models through the REST endpoints. Below are some examples of how to interact with the Inference Gateway using curl commands.
+Assuming you've deployed the Inference Gateway, you can interact with the
+language models through the REST endpoints. Below are some examples of how to
+interact with the Inference Gateway using curl commands.
 
-### GET Endpoints
+## GET Endpoints
 
 | Description              | Curl Command                                                        |
 | ------------------------ | ------------------------------------------------------------------- |
@@ -18,7 +20,7 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 | List Google models       | `curl -X GET http://localhost:8080/v1/models?provider=google`       |
 | List Mistral models      | `curl -X GET http://localhost:8080/v1/models?provider=mistral`      |
 
-### POST Endpoints
+## POST Endpoints
 
 | Domain                            | Curl Command                                                                                                                                                                                                               |
 | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,7 +35,8 @@ Assuming you've deployed the Inference Gateway, you can interact with the langua
 | generativelanguage.googleapis.com | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"google/models/gemini-2.5-flash-lite","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`       |
 | api.mistral.ai                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"mistral/pixtral-large-latest","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`              |
 
-You can set the stream as an optional flag in the request body to enable streaming of tokens. The default value is `false`.
+You can set the stream as an optional flag in the request body to enable
+streaming of tokens. The default value is `false`.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
@@ -77,9 +80,10 @@ Response:
 }
 ```
 
-### Tool Calls
+## Tool Calls
 
-You can provide tools that the LLM can use to perform specific functions. Here are some examples:
+You can provide tools that the LLM can use to perform specific functions. Here
+are some examples:
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
@@ -189,11 +193,12 @@ Then the LLM will respond with the weather information as follow:
 
 Then you would append it to the conversation and so on.
 
-### Multimodal Image Content
+## Multimodal Image Content
 
-The gateway supports vision-capable models that can process both text and images. You can send images using either data URLs or HTTP URLs.
+The gateway supports vision-capable models that can process both text and
+images. You can send images using either data URLs or HTTP URLs.
 
-#### Example: Image with Text (HTTP URL)
+### Example: Image with Text (HTTP URL)
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
@@ -218,9 +223,11 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 }' | jq .
 ```
 
-#### Example: Image with Base64 Data URL
+### Example: Image with Base64 Data URL
 
-You can also send images directly as base64-encoded data URLs. This is useful when you have the image data locally or want to avoid hosting the image externally.
+You can also send images directly as base64-encoded data URLs. This is useful
+when you have the image data locally or want to avoid hosting the image
+externally.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
@@ -285,4 +292,6 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 - `low`: Faster processing, lower detail
 - `high`: More detailed analysis, slower processing
 
-**Note:** Attempting to send image content to a non-vision model will result in a `400 Bad Request` error with a clear message indicating that the model does not support vision capabilities.
+**Note:** Attempting to send image content to a non-vision model will result in
+a `400 Bad Request` error with a clear message indicating that the model does
+not support vision capabilities.
