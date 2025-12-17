@@ -482,6 +482,7 @@ components:
         - deepseek
         - google
         - mistral
+        - moonshot
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -614,6 +615,20 @@ components:
           url: 'https://api.mistral.ai/v1'
           auth_type: 'bearer'
           supports_vision: true
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        moonshot:
+          id: 'moonshot'
+          url: 'https://api.moonshot.cn/v1'
+          auth_type: 'bearer'
+          supports_vision: false
           endpoints:
             models:
               name: 'list_models'

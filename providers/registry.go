@@ -147,6 +147,17 @@ var Registry = map[Provider]*Config{
 			Chat:   MistralChatEndpoint,
 		},
 	},
+	MoonshotID: {
+		ID:             MoonshotID,
+		Name:           MoonshotDisplayName,
+		URL:            MoonshotDefaultBaseURL,
+		AuthType:       AuthTypeBearer,
+		SupportsVision: false,
+		Endpoints: Endpoints{
+			Models: MoonshotModelsEndpoint,
+			Chat:   MoonshotChatEndpoint,
+		},
+	},
 	OllamaID: {
 		ID:             OllamaID,
 		Name:           OllamaDisplayName,
