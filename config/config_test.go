@@ -186,6 +186,17 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.MistralChatEndpoint,
 						},
 					},
+					providers.MoonshotID: {
+						ID:             providers.MoonshotID,
+						Name:           providers.MoonshotDisplayName,
+						URL:            providers.MoonshotDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: false,
+						Endpoints: providers.Endpoints{
+							Models: providers.MoonshotModelsEndpoint,
+							Chat:   providers.MoonshotChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -371,6 +382,17 @@ func TestLoad(t *testing.T) {
 							Chat:   providers.MistralChatEndpoint,
 						},
 					},
+					providers.MoonshotID: {
+						ID:             providers.MoonshotID,
+						Name:           providers.MoonshotDisplayName,
+						URL:            providers.MoonshotDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: false,
+						Endpoints: providers.Endpoints{
+							Models: providers.MoonshotModelsEndpoint,
+							Chat:   providers.MoonshotChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -545,6 +567,17 @@ func TestLoad(t *testing.T) {
 						Endpoints: providers.Endpoints{
 							Models: providers.MistralModelsEndpoint,
 							Chat:   providers.MistralChatEndpoint,
+						},
+					},
+					providers.MoonshotID: {
+						ID:             providers.MoonshotID,
+						Name:           providers.MoonshotDisplayName,
+						URL:            providers.MoonshotDefaultBaseURL,
+						AuthType:       providers.AuthTypeBearer,
+						SupportsVision: false,
+						Endpoints: providers.Endpoints{
+							Models: providers.MoonshotModelsEndpoint,
+							Chat:   providers.MoonshotChatEndpoint,
 						},
 					},
 				},
