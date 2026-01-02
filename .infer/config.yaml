@@ -2,7 +2,7 @@ container_runtime:
   type: docker
 gateway:
   url: http://localhost:8080
-  api_key: ''
+  api_key: ""
   timeout: 200
   oci: ghcr.io/inference-gateway/inference-gateway:latest
   run: true
@@ -35,15 +35,20 @@ client:
       - 504
 logging:
   debug: false
-  dir: ''
+  dir: ""
 tools:
   enabled: true
   sandbox:
     directories:
       - .
       - /tmp
+      - .infer/tmp
     protected_paths:
-      - .infer/
+      - .infer/config.yaml
+      - .infer/*.db
+      - .infer/shortcuts/
+      - .infer/agents.yaml
+      - .infer/mcp.yaml
       - .git/
       - '*.env'
   bash:
@@ -97,8 +102,9 @@ tools:
     enabled: true
     whitelisted_domains:
       - golang.org
+      - localhost
     safety:
-      max_size: 8192
+      max_size: 10485760
       timeout: 30
       allow_redirect: true
     cache:
@@ -129,11 +135,17 @@ tools:
 image:
   max_size: 5242880
   timeout: 30
+  clipboard_optimize:
+    enabled: true
+    max_width: 1920
+    max_height: 1080
+    quality: 75
+    convert_jpeg: true
 export:
-  output_dir: .infer
-  summary_model: ''
+  output_dir: .infer/tmp
+  summary_model: ""
 agent:
-  model: ''
+  model: ""
   system_prompt: |
     Autonomous software engineering agent. Execute tasks iteratively until completion.
 
@@ -166,6 +178,15 @@ agent:
     5. Run lint/format with: task fmt and task lint
     6. Commit changes (only if explicitly asked)
     7. Create a pull request (only if explicitly asked)
+
+    A2A ARTIFACT DOWNLOADS:
+    When a delegated A2A task completes with artifacts:
+    1. Wait for the automatic completion notification
+    2. The completion message will show artifact details including Download URLs
+    3. Use WebFetch with download=true to automatically save artifacts to disk
+       Example: WebFetch(url="http://agent/artifacts/123/file.png", download=true)
+    4. The file will be saved to <configDir>/tmp with filename extracted from URL
+    5. Check the tool result for the saved file path
 
     EXAMPLE:
     <user>Can you create a pull request with the changes?</user>
@@ -241,7 +262,7 @@ agent:
   max_concurrent_tools: 5
 git:
   commit_message:
-    model: ''
+    model: ""
     system_prompt: |-
       Generate a concise git commit message following conventional commit format.
 
@@ -260,34 +281,36 @@ git:
       Respond with ONLY the commit message, no quotes or explanation.
 scm:
   pr_create:
-    prompt: ''
+    prompt: ""
     base_branch: main
-    branch_prefix: ''
-    model: ''
+    branch_prefix: ""
+    model: ""
   cleanup:
     return_to_base: true
     delete_local_branch: false
 storage:
   enabled: true
-  type: sqlite
+  type: jsonl
   sqlite:
     path: .infer/conversations.db
   postgres:
     host: localhost
     port: 5432
     database: infer_conversations
-    username: ''
-    password: ''
+    username: ""
+    password: ""
     ssl_mode: prefer
   redis:
     host: localhost
     port: 6379
-    password: ''
+    password: ""
     db: 0
+  jsonl:
+    path: .infer/conversations
 conversation:
   title_generation:
     enabled: true
-    model: ''
+    model: ""
     system_prompt: |-
       Generate a concise conversation title based on the messages provided.
 
@@ -366,6 +389,12 @@ chat:
         description: cycle agent mode (Standard/Plan/Auto-Accept)
         category: mode
         enabled: true
+      navigation_go_back_in_time:
+        keys:
+          - esc,esc
+        description: go back in time to previous message (double ESC)
+        category: navigation
+        enabled: true
       navigation_page_down:
         keys:
           - pgdn
@@ -407,7 +436,7 @@ chat:
       plan_approval_plan_approval_accept:
         keys:
           - enter
-          - 'y'
+          - "y"
         description: accept plan
         category: plan_approval
         enabled: true
@@ -426,7 +455,7 @@ chat:
         enabled: true
       plan_approval_plan_approval_reject:
         keys:
-          - 'n'
+          - "n"
         description: reject plan
         category: plan_approval
         enabled: true
@@ -530,6 +559,7 @@ chat:
       a2a_agents: true
       tools: true
       background_shells: true
+      a2a_tasks: true
       mcp: true
       context_usage: true
       session_tokens: true
@@ -557,11 +587,6 @@ a2a:
       require_approval: false
     submit_task:
       enabled: true
-      require_approval: true
-    download_artifacts:
-      enabled: true
-      download_dir: /tmp/downloads
-      timeout_seconds: 30
       require_approval: true
 mcp:
   enabled: false
@@ -594,3 +619,9 @@ init:
 compact:
   enabled: true
   auto_at: 80
+  keep_first_messages: 2
+web:
+  enabled: false
+  port: 3000
+  host: localhost
+  session_inactivity_mins: 5

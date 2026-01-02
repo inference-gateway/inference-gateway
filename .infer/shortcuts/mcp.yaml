@@ -1,0 +1,34 @@
+---
+# MCP (Model Context Protocol) Shortcuts
+# Manage MCP server configuration from within chat
+#
+# Usage:
+# - /mcp list - List all configured MCP servers with details
+# - /mcp add - Add a new MCP server
+# - /mcp remove - Remove an MCP server
+# - /mcp enable - Enable an MCP server
+# - /mcp disable - Disable an MCP server
+# - /mcp enable-global - Enable MCP globally
+# - /mcp disable-global - Disable MCP globally
+
+shortcuts:
+  - name: mcp
+    description: "Manage MCP servers"
+    command: infer
+    args:
+      - mcp
+    subcommands:
+      - name: list
+        description: "List all configured MCP servers"
+      - name: add
+        description: "Add a new MCP server (usage: <name> <url> [options])"
+      - name: remove
+        description: "Remove an MCP server (usage: <name>)"
+      - name: enable
+        description: "Enable an MCP server (usage: <name>)"
+      - name: disable
+        description: "Disable an MCP server (usage: <name>)"
+      - name: enable-global
+        description: "Enable MCP globally"
+      - name: disable-global
+        description: "Disable MCP globally"

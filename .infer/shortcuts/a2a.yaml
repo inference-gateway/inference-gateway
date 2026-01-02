@@ -1,0 +1,28 @@
+---
+# A2A (Agent-to-Agent) Shortcuts
+# Manage A2A agent configuration from within chat
+#
+# Usage:
+# - /agents list - List all configured A2A agents
+# - /agents add - Add a new A2A agent
+# - /agents remove - Remove an A2A agent
+# - /agents enable - Enable an A2A agent
+# - /agents disable - Disable an A2A agent
+
+shortcuts:
+  - name: agents
+    description: "Manage A2A agents"
+    command: infer
+    args:
+      - agents
+    subcommands:
+      - name: list
+        description: "List all configured A2A agents"
+      - name: add
+        description: "Add a new A2A agent (usage: <name> [url] [options])"
+      - name: remove
+        description: "Remove an A2A agent (usage: <name>)"
+      - name: enable
+        description: "Enable an A2A agent (usage: <name>)"
+      - name: disable
+        description: "Disable an A2A agent (usage: <name>)"

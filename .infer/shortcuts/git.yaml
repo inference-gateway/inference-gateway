@@ -2,82 +2,70 @@
 # Common git operations with AI-powered commit messages
 #
 # Usage:
-# - /git-status - Show working tree status
-# - /git-pull - Pull changes from remote
-# - /git-push - Push commits to remote
-# - /git-log - Show commit logs
-# - /git-commit - Generate AI commit message from staged changes
+# - /git status - Show working tree status
+# - /git pull - Pull changes from remote
+# - /git push - Push commits to remote
+# - /git log - Show commit logs
+# - /git commit - Generate AI commit message from staged changes
 
 shortcuts:
-  - name: git-status
-    description: 'Show working tree status'
+  - name: git
+    description: "Common git operations"
     command: git
-    args:
-      - status
+    subcommands:
+      - name: status
+        description: "Show working tree status"
+      - name: pull
+        description: "Pull changes from remote repository"
+      - name: push
+        description: "Push commits to remote repository"
+      - name: log
+        description: "Show commit logs (last 5)"
+        args:
+          - --oneline
+          - -n
+          - "5"
+      - name: commit
+        description: "Generate AI commit message from staged changes"
+        command: bash
+        args:
+          - -c
+          - |
+            if ! git diff --cached --quiet 2>/dev/null; then
+              diff=$(git diff --cached)
+              jq -n --arg diff "$diff" '{diff: $diff}'
+            else
+              echo '{"error": "No staged changes found. Use git add to stage changes first."}'
+              exit 1
+            fi
+        snippet:
+          prompt: |
+            Generate a concise git commit message following conventional commit format.
 
-  - name: git-pull
-    description: 'Pull changes from remote repository'
-    command: git
-    args:
-      - pull
+            REQUIREMENTS:
+            - MUST use format: "type: Brief description"
+            - Type MUST be one of: feat, fix, docs, style, refactor, test, chore
+            - Description MUST start with a capital letter
+            - Description MUST be under 50 characters
+            - DO NOT include any explanation, body, or additional text
+            - Output ONLY the commit message, nothing else
 
-  - name: git-push
-    description: 'Push commits to remote repository'
-    command: git
-    args:
-      - push
+            Examples of GOOD commit messages:
+            - feat: Add user authentication
+            - fix: Resolve memory leak in parser
+            - docs: Update API documentation
+            - refactor: Simplify error handling
 
-  - name: git-log
-    description: 'Show commit logs (last 10)'
-    command: git
-    args:
-      - log
-      - --oneline
-      - --graph
-      - --decorate
-      - '-10'
+            Examples of BAD commit messages (DO NOT DO THIS):
+            - Add user authentication (missing type)
+            - feat: add user authentication (lowercase description)
+            - feat: added a comprehensive user authentication system with OAuth2 support (too long, too detailed)
 
-  - name: git-commit
-    description: 'Generate AI commit message from staged changes'
-    command: bash
-    args:
-      - -c
-      - |
-        if ! git diff --cached --quiet 2>/dev/null; then
-          diff=$(git diff --cached)
-          jq -n --arg diff "$diff" '{diff: $diff}'
-        else
-          echo '{"error": "No staged changes found. Use git add to stage changes first."}'
-          exit 1
-        fi
-    snippet:
-      prompt: |
-        Generate a concise git commit message following conventional commit format.
+            Analyze this diff and generate ONE commit message:
 
-        REQUIREMENTS:
-        - MUST use format: "type: Brief description"
-        - Type MUST be one of: feat, fix, docs, style, refactor, test, chore
-        - Description MUST start with a capital letter
-        - Description MUST be under 50 characters
-        - DO NOT include any explanation, body, or additional text
-        - Output ONLY the commit message, nothing else
+            ```diff
+            {diff}
+            ```
 
-        Examples of GOOD commit messages:
-        - feat: Add user authentication
-        - fix: Resolve memory leak in parser
-        - docs: Update API documentation
-        - refactor: Simplify error handling
-
-        Examples of BAD commit messages (DO NOT DO THIS):
-        - Add user authentication (missing type)
-        - feat: add user authentication (lowercase description)
-        - feat: added a comprehensive user authentication system with OAuth2 support (too long, too detailed)
-
-        Analyze this diff and generate ONE commit message:
-
-        ```diff
-        {diff}
-        ```
-
-        Output ONLY the commit message in the format "type: Description"
-      template: '!git commit -m "{llm}"'
+            Output ONLY the commit message in the format "type: Description"
+          template: "!git commit -m \"{llm}\""
