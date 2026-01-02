@@ -1,0 +1,11 @@
+# Background Shells Shortcuts
+# List and manage background shell processes
+#
+# Usage:
+# - /shells - List all background shells
+
+shortcuts:
+  - name: shells
+    description: "List all running and recent background shell processes"
+    tool: ListShells
+    tool_args: {}

@@ -1,0 +1,14 @@
+---
+# Export Shortcuts
+# Export conversations to markdown files
+#
+# Usage:
+# - /export - Export the current active conversation
+
+shortcuts:
+  - name: export
+    description: "Export current conversation to markdown"
+    command: infer
+    args:
+      - export
+    pass_session_id: true
