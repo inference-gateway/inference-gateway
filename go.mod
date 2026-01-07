@@ -1,6 +1,6 @@
 module github.com/inference-gateway/inference-gateway
 
-go 1.25.4
+go 1.25.5
 
 require (
 	github.com/coreos/go-oidc/v3 v3.16.0
