@@ -76,7 +76,7 @@ This ensures all contributors have identical tooling and configurations.
 
 The Flox environment provides all necessary development tools with pinned versions:
 
-- Go 1.25.4, Task, Docker, Docker Compose
+- Go 1.25.5, Task, Docker, Docker Compose
 - golangci-lint, mockgen, Spectral (OpenAPI linting)
 - kubectl, Helm (for Kubernetes examples)
 - And many more utilities
