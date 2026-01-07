@@ -99,3 +99,5 @@
 | GOOGLE_API_KEY       | `""`                                                            | Google API Key       |
 | MISTRAL_API_URL      | `https://api.mistral.ai/v1`                                     | Mistral API URL      |
 | MISTRAL_API_KEY      | `""`                                                            | Mistral API Key      |
+| QWEN_API_URL         | `https://dashscope.aliyuncs.com/compatible-mode/v1`             | Qwen API URL         |
+| QWEN_API_KEY         | `""`                                                            | Qwen API Key         |

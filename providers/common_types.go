@@ -21,6 +21,7 @@ const (
 	OllamaDefaultBaseURL      = "http://ollama:8080/v1"
 	OllamaCloudDefaultBaseURL = "https://ollama.com/v1"
 	OpenaiDefaultBaseURL      = "https://api.openai.com/v1"
+	QwenDefaultBaseURL        = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 
 // The default endpoints of each provider
@@ -45,6 +46,8 @@ const (
 	OllamaCloudChatEndpoint   = "/chat/completions"
 	OpenaiModelsEndpoint      = "/models"
 	OpenaiChatEndpoint        = "/chat/completions"
+	QwenModelsEndpoint        = "/models"
+	QwenChatEndpoint          = "/chat/completions"
 )
 
 type Provider string
@@ -61,6 +64,7 @@ const (
 	OllamaID      Provider = "ollama"
 	OllamaCloudID Provider = "ollama_cloud"
 	OpenaiID      Provider = "openai"
+	QwenID        Provider = "qwen"
 )
 
 // Display names for providers
@@ -75,6 +79,7 @@ const (
 	OllamaDisplayName      = "Ollama"
 	OllamaCloudDisplayName = "OllamaCloud"
 	OpenaiDisplayName      = "Openai"
+	QwenDisplayName        = "Qwen"
 )
 
 // MessageRole represents the role of a message sender
