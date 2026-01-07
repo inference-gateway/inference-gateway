@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.22.10](https://github.com/inference-gateway/inference-gateway/compare/v0.22.9...v0.22.10) (2026-01-07)
+
+### 🐛 Bug Fixes
+
+* **deps:** Update qs to 6.14.1 to resolve security vulnerability ([6f67514](https://github.com/inference-gateway/inference-gateway/commit/6f675146d87f03734e70f5696f17854ee8b6fad0))
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump @modelcontextprotocol/sdk ([#226](https://github.com/inference-gateway/inference-gateway/issues/226)) ([e0802fd](https://github.com/inference-gateway/inference-gateway/commit/e0802fd70e5445a51e9ab56f9ea1bb4daedca6da))
+* **deps:** Update infer CLI - update config and add shortcut files ([7dd101b](https://github.com/inference-gateway/inference-gateway/commit/7dd101b0613748df97e347c4e29d87932497adc2))
+* Update dependency versions ([#227](https://github.com/inference-gateway/inference-gateway/issues/227)) ([b570fec](https://github.com/inference-gateway/inference-gateway/commit/b570feccafcdd0f71e6e3cb855ed796b1317dc13))
+
 ## [0.22.9](https://github.com/inference-gateway/inference-gateway/compare/v0.22.8...v0.22.9) (2025-12-14)
 
 ### 🐛 Bug Fixes

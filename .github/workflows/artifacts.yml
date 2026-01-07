@@ -36,7 +36,7 @@ jobs:
 
       - name: Install GoReleaser
         run: |
-          curl -sSL https://github.com/goreleaser/goreleaser/releases/download/v2.12.7/goreleaser_Linux_x86_64.tar.gz | tar -xzv -C /usr/local/bin goreleaser
+          curl -sSL https://github.com/goreleaser/goreleaser/releases/download/v2.13.0/goreleaser_Linux_x86_64.tar.gz | tar -xzv -C /usr/local/bin goreleaser
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3.6.0
@@ -124,7 +124,7 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.1
         with:
-          version: v3.19.0
+          version: v3.19.1
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
