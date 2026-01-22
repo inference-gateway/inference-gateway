@@ -25,6 +25,7 @@ func DetermineProviderAndModelName(model string) (provider *Provider, modelName 
 		"deepseek/":     DeepseekID,
 		"google/":       GoogleID,
 		"mistral/":      MistralID,
+		"moonshot/":     MoonshotID,
 	}
 
 	for prefix, providerID := range providerPrefixMapping {
