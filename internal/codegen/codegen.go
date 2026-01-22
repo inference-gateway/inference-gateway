@@ -296,10 +296,9 @@ type MessageRole string
 
 // Message role enum values
 const (
-    MessageRoleSystem    MessageRole = "system"
-    MessageRoleUser      MessageRole = "user"
-    MessageRoleAssistant MessageRole = "assistant"
-    MessageRoleTool      MessageRole = "tool"
+    {{- range $i, $role := (index .Schemas "MessageRole").Enum }}
+    MessageRole{{pascalCase $role}} MessageRole = "{{$role}}"
+    {{- end }}
 )
 
 // ChatCompletionToolType represents a value type of a Tool in the API

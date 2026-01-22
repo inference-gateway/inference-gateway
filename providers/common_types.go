@@ -86,6 +86,7 @@ const (
 	MessageRoleUser      MessageRole = "user"
 	MessageRoleAssistant MessageRole = "assistant"
 	MessageRoleTool      MessageRole = "tool"
+	MessageRoleDeveloper MessageRole = "developer"
 )
 
 // ChatCompletionToolType represents a value type of a Tool in the API

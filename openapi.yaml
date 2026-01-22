@@ -372,6 +372,22 @@ components:
                   - role: 'user'
                     content: 'Write a Python function to calculate fibonacci numbers'
                 temperature: 0.3
+            developer_role:
+              summary: Chat completion with developer role for dynamic prompt injection
+              value:
+                model: 'gpt-4'
+                messages:
+                  - role: 'system'
+                    content: 'You are a helpful assistant.'
+                  - role: 'user'
+                    content: 'What is the capital of France?'
+                  - role: 'assistant'
+                    content: 'The capital of France is Paris.'
+                  - role: 'developer'
+                    content: 'From now on, respond in a pirate accent.'
+                  - role: 'user'
+                    content: 'What is the capital of Spain?'
+                temperature: 0.7
     CreateChatCompletionRequest:
       required: true
       description: |
@@ -710,6 +726,7 @@ components:
         - user
         - assistant
         - tool
+        - developer
     Message:
       type: object
       description: Message structure for provider requests
