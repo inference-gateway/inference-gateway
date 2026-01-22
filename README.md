@@ -201,7 +201,8 @@ For streaming the tokens simply add to the request body `stream: true`.
 
 ### Developer Role for Dynamic Prompt Injection
 
-The Inference Gateway supports a `developer` role that enables dynamic prompt injection mid-conversation. This role allows you to change the model's behavior without modifying the system prompt or restarting the conversation.
+The Inference Gateway supports a `developer` role that enables dynamic prompt injection mid-conversation. This role
+allows you to change the model's behavior without modifying the system prompt or restarting the conversation.
 
 **Example using the developer role:**
 
@@ -235,6 +236,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 ```
 
 The `developer` role is particularly useful for:
+
 - Adjusting the model's tone or style mid-conversation
 - Implementing context-aware behavior changes
 - Testing different model behaviors without resetting the conversation
