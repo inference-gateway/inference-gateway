@@ -333,7 +333,9 @@ type ListModelsTransformer interface {
 
 // {{$name}} represents a {{$name}} in the API
 {{- if $schema.AdditionalProperties }}
-type {{$name}} map[string]interface{}
+type {{$name}} map[string]any
+{{- else if gt (len $schema.OneOf) 0 }}
+type {{$name}} any
 {{- else }}
 type {{$name}} struct {
     {{- range $field, $prop := $schema.Properties }}
@@ -544,6 +546,10 @@ func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Respo
 }
 
 func generateType(prop openapi.Property) string {
+	if len(prop.OneOf) > 0 {
+		return "any"
+	}
+
 	if prop.Ref != "" {
 		parts := strings.Split(prop.Ref, "/")
 		return parts[len(parts)-1]
@@ -554,20 +560,11 @@ func generateType(prop openapi.Property) string {
 	}
 
 	if prop.AdditionalProperties != nil && *prop.AdditionalProperties {
-		return "map[string]interface{}"
+		return "map[string]any"
 	}
 
 	switch prop.Type {
 	case "string":
-		if len(prop.Enum) > 0 {
-			if prop.Name != "" {
-				parts := strings.Split(prop.Name, "_")
-				for i, part := range parts {
-					parts[i] = cases.Title(language.English).String(strings.ToLower(part))
-				}
-				return strings.Join(parts, "")
-			}
-		}
 		if prop.Format == "date-time" {
 			return "time.Time"
 		}
@@ -603,9 +600,9 @@ func generateType(prop openapi.Property) string {
 		if len(prop.Properties) > 0 {
 			return "struct{}"
 		}
-		return "map[string]interface{}"
+		return "map[string]any"
 	default:
-		return "interface{}"
+		return "any"
 	}
 }
 

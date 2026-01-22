@@ -732,13 +732,7 @@ components:
         role:
           $ref: '#/components/schemas/MessageRole'
         content:
-          oneOf:
-            - type: string
-              description: Text content (backward compatibility)
-            - type: array
-              items:
-                $ref: '#/components/schemas/ContentPart'
-              description: Array of content parts for multimodal messages
+          $ref: '#/components/schemas/MessageContent'
         tool_calls:
           type: array
           items:
@@ -754,6 +748,15 @@ components:
       required:
         - role
         - content
+    MessageContent:
+      description: Message content - either text or multimodal content parts
+      oneOf:
+        - type: string
+          description: Text content (backward compatibility)
+        - type: array
+          items:
+            $ref: '#/components/schemas/ContentPart'
+          description: Array of content parts for multimodal messages
     ContentPart:
       type: object
       description: A content part within a multimodal message
@@ -1061,25 +1064,7 @@ components:
       type: object
       properties:
         finish_reason:
-          type: string
-          description: >
-            The reason the model stopped generating tokens. This will be
-            `stop` if the model hit a natural stop point or a provided
-            stop sequence,
-
-            `length` if the maximum number of tokens specified in the
-            request was reached,
-
-            `content_filter` if content was omitted due to a flag from our
-            content filters,
-
-            `tool_calls` if the model called a tool.
-          enum:
-            - stop
-            - length
-            - tool_calls
-            - content_filter
-            - function_call
+          $ref: '#/components/schemas/FinishReason'
         index:
           type: integer
           description: The index of the choice in the list of choices.

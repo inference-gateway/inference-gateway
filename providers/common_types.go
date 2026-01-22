@@ -181,6 +181,9 @@ type CompletionUsage struct {
 	TotalTokens      int64 `json:"total_tokens"`
 }
 
+// ContentPart represents a ContentPart in the API
+type ContentPart any
+
 // CreateChatCompletionRequest represents a CreateChatCompletionRequest in the API
 type CreateChatCompletionRequest struct {
 	MaxTokens       *int                         `json:"max_tokens,omitempty"`
@@ -234,7 +237,19 @@ type FunctionObject struct {
 }
 
 // FunctionParameters represents a FunctionParameters in the API
-type FunctionParameters map[string]interface{}
+type FunctionParameters map[string]any
+
+// ImageContentPart represents a ImageContentPart in the API
+type ImageContentPart struct {
+	ImageUrl ImageURL `json:"image_url"`
+	Type     string   `json:"type"`
+}
+
+// ImageURL represents a ImageURL in the API
+type ImageURL struct {
+	Detail *string `json:"detail,omitempty"`
+	Url    string  `json:"url"`
+}
 
 // ListModelsResponse represents a ListModelsResponse in the API
 type ListModelsResponse struct {
@@ -251,21 +266,24 @@ type ListToolsResponse struct {
 
 // MCPTool represents a MCPTool in the API
 type MCPTool struct {
-	Description string                  `json:"description"`
-	InputSchema *map[string]interface{} `json:"input_schema,omitempty"`
-	Name        string                  `json:"name"`
-	Server      string                  `json:"server"`
+	Description string          `json:"description"`
+	InputSchema *map[string]any `json:"input_schema,omitempty"`
+	Name        string          `json:"name"`
+	Server      string          `json:"server"`
 }
 
 // Message represents a Message in the API
 type Message struct {
-	Content          interface{}                      `json:"content"`
+	Content          MessageContent                   `json:"content"`
 	Reasoning        *string                          `json:"reasoning,omitempty"`
 	ReasoningContent *string                          `json:"reasoning_content,omitempty"`
 	Role             MessageRole                      `json:"role"`
 	ToolCallId       *string                          `json:"tool_call_id,omitempty"`
 	ToolCalls        *[]ChatCompletionMessageToolCall `json:"tool_calls,omitempty"`
 }
+
+// MessageContent represents a MessageContent in the API
+type MessageContent any
 
 // Model represents a Model in the API
 type Model struct {
@@ -274,6 +292,12 @@ type Model struct {
 	Object   string   `json:"object"`
 	OwnedBy  string   `json:"owned_by"`
 	ServedBy Provider `json:"served_by"`
+}
+
+// TextContentPart represents a TextContentPart in the API
+type TextContentPart struct {
+	Text string `json:"text"`
+	Type string `json:"type"`
 }
 
 // Transform converts provider-specific response to common format

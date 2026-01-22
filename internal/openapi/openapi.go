@@ -79,6 +79,11 @@ type OpenAPISchema struct {
 			ProviderAuthType                      SchemaProperty `yaml:"ProviderAuthType"`
 			MessageRole                           SchemaProperty `yaml:"MessageRole"`
 			Message                               SchemaProperty `yaml:"Message"`
+			MessageContent                        SchemaProperty `yaml:"MessageContent"`
+			ContentPart                           SchemaProperty `yaml:"ContentPart"`
+			TextContentPart                       SchemaProperty `yaml:"TextContentPart"`
+			ImageContentPart                      SchemaProperty `yaml:"ImageContentPart"`
+			ImageURL                              SchemaProperty `yaml:"ImageURL"`
 			Model                                 SchemaProperty `yaml:"Model"`
 			ListModelsResponse                    SchemaProperty `yaml:"ListModelsResponse"`
 			Endpoints                             SchemaProperty `yaml:"Endpoints"`
@@ -186,6 +191,7 @@ type Property struct {
 	Properties           map[string]Property `yaml:"properties,omitempty"`
 	Items                *Property           `yaml:"items,omitempty"`
 	AdditionalProperties *bool               `yaml:"additionalProperties,omitempty"`
+	OneOf                []Property          `yaml:"oneOf,omitempty"`
 }
 
 type SchemaProperty struct {
@@ -196,6 +202,7 @@ type SchemaProperty struct {
 	Items                *Property           `yaml:"items,omitempty"`
 	Enum                 []string            `yaml:"enum,omitempty"`
 	AdditionalProperties *bool               `yaml:"additionalProperties,omitempty"`
+	OneOf                []Property          `yaml:"oneOf,omitempty"`
 }
 
 type SchemaField struct {
