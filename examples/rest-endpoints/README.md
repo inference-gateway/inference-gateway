@@ -295,3 +295,78 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 **Note:** Attempting to send image content to a non-vision model will result in
 a `400 Bad Request` error with a clear message indicating that the model does
 not support vision capabilities.
+
+## Developer Role for Dynamic Prompt Injection
+
+The gateway supports the `developer` role which enables dynamic prompt
+injection mid-conversation. This allows you to change the model's behavior
+without modifying the system prompt or restarting the conversation.
+
+### Example: Changing Model Behavior Mid-Conversation
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "openai/gpt-4o-mini",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "What is the capital of France?"
+    },
+    {
+      "role": "assistant",
+      "content": "The capital of France is Paris."
+    },
+    {
+      "role": "developer",
+      "content": "From now on, respond in a pirate accent."
+    },
+    {
+      "role": "user",
+      "content": "What is the capital of Spain?"
+    }
+  ]
+}' | jq .
+```
+
+The model will now respond to the second question in a pirate accent, while
+maintaining the conversation context.
+
+### Common Use Cases
+
+- **Tone adjustment**: Change formality, personality, or style mid-conversation
+- **Context-aware changes**: Adapt behavior based on conversation state
+- **Testing**: Experiment with different prompts without resetting
+- **Dynamic engineering**: Inject constraints or guidance as needed
+
+### Example: Adjusting Response Format
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions -d '{
+  "model": "anthropic/claude-3-5-sonnet-20241022",
+  "messages": [
+    {
+      "role": "user",
+      "content": "List three programming languages."
+    },
+    {
+      "role": "assistant",
+      "content": "Here are three programming languages: Python, JavaScript, and Go."
+    },
+    {
+      "role": "developer",
+      "content": "Format all future responses as JSON arrays."
+    },
+    {
+      "role": "user",
+      "content": "List three databases."
+    }
+  ]
+}' | jq .
+```
+
+The model will respond with a JSON array for the databases question, while the
+previous response remains in natural language format.
