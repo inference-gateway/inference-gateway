@@ -65,3 +65,4 @@ data:
   DEEPSEEK_API_URL: {{ .Values.config.DEEPSEEK_API_URL | quote }}
   GOOGLE_API_URL: {{ .Values.config.GOOGLE_API_URL | quote }}
   MISTRAL_API_URL: {{ .Values.config.MISTRAL_API_URL | quote }}
+  MOONSHOT_API_URL: {{ .Values.config.MOONSHOT_API_URL | quote }}

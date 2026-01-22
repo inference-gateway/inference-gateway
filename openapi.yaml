@@ -1662,3 +1662,13 @@ components:
                   type: string
                   description: 'Mistral API Key'
                   secret: true
+                - name: moonshot_api_url
+                  env: 'MOONSHOT_API_URL'
+                  type: string
+                  default: 'https://api.moonshot.cn/v1'
+                  description: 'Moonshot API URL'
+                - name: moonshot_api_key
+                  env: 'MOONSHOT_API_KEY'
+                  type: string
+                  description: 'Moonshot API Key'
+                  secret: true
