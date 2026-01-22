@@ -1,8 +1,7 @@
 ---
 services:
   inference-gateway:
-    build:
-      context: ../../..
+    image: inference-gateway/inference-gateway:latest
     env_file:
       - .env
     ports:
