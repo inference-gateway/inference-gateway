@@ -169,6 +169,13 @@ func main() {
 	client := providers.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
 	providerRegistry := providers.NewProviderRegistry(cfg.Providers, logger)
 
+	// Log registered providers
+	var providerNames []string
+	for providerID := range cfg.Providers {
+		providerNames = append(providerNames, string(providerID))
+	}
+	logger.Info("provider registry initialized", "count", len(providerNames), "providers", strings.Join(providerNames, ", "))
+
 	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
 	var mcpAgent mcp.Agent
@@ -256,6 +263,38 @@ func main() {
 			}
 		}()
 	}
+
+	// Validate provider connectivity after server starts
+	go func() {
+		// Wait a moment for the server to be ready
+		time.Sleep(2 * time.Second)
+
+		totalModels := 0
+		availableProviders := 0
+
+		for providerID := range cfg.Providers {
+			provider, err := providerRegistry.BuildProvider(providerID, client)
+			if err != nil {
+				logger.Warn("failed to build provider", "provider", providerID, "error", err.Error())
+				continue
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			response, err := provider.ListModels(ctx)
+			cancel()
+
+			if err != nil {
+				logger.Warn("provider unavailable or authentication failed", "provider", providerID, "error", err.Error())
+			} else {
+				modelCount := len(response.Data)
+				totalModels += modelCount
+				availableProviders++
+				logger.Info("provider ready", "provider", providerID, "models", modelCount)
+			}
+		}
+
+		logger.Info("provider validation complete", "total_providers", len(cfg.Providers), "available_providers", availableProviders, "total_models", totalModels)
+	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)

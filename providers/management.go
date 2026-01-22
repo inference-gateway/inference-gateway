@@ -76,7 +76,7 @@ func (p *ProviderImpl) handleHTTPError(response *http.Response, operation string
 		StatusCode: response.StatusCode,
 		Message:    errorMsg,
 	}
-	p.logger.Error("Non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode, "operation", operation)
+	p.logger.Error("non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode, "operation", operation)
 	return err
 }
 
