@@ -18,7 +18,7 @@ const (
 	GoogleDefaultBaseURL      = "https://generativelanguage.googleapis.com/v1beta/openai"
 	GroqDefaultBaseURL        = "https://api.groq.com/openai/v1"
 	MistralDefaultBaseURL     = "https://api.mistral.ai/v1"
-	MoonshotDefaultBaseURL    = "https://api.moonshot.cn/v1"
+	MoonshotDefaultBaseURL    = "https://api.moonshot.ai/v1"
 	OllamaDefaultBaseURL      = "http://ollama:8080/v1"
 	OllamaCloudDefaultBaseURL = "https://ollama.com/v1"
 	OpenaiDefaultBaseURL      = "https://api.openai.com/v1"

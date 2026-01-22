@@ -626,7 +626,7 @@ components:
               endpoint: '/chat/completions'
         moonshot:
           id: 'moonshot'
-          url: 'https://api.moonshot.cn/v1'
+          url: 'https://api.moonshot.ai/v1'
           auth_type: 'bearer'
           supports_vision: false
           endpoints:
@@ -1665,7 +1665,7 @@ components:
                 - name: moonshot_api_url
                   env: 'MOONSHOT_API_URL'
                   type: string
-                  default: 'https://api.moonshot.cn/v1'
+                  default: 'https://api.moonshot.ai/v1'
                   description: 'Moonshot API URL'
                 - name: moonshot_api_key
                   env: 'MOONSHOT_API_KEY'

@@ -197,3 +197,4 @@ config:
   DEEPSEEK_API_URL: "https://api.deepseek.com"
   GOOGLE_API_URL: "https://generativelanguage.googleapis.com/v1beta/openai"
   MISTRAL_API_URL: "https://api.mistral.ai/v1"
+  MOONSHOT_API_URL: "https://api.moonshot.ai/v1"

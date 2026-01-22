@@ -1,7 +1,8 @@
 ---
 services:
   inference-gateway:
-    image: ghcr.io/inference-gateway/inference-gateway:latest
+    build:
+      context: ../../..
     env_file:
       - .env
     ports:
