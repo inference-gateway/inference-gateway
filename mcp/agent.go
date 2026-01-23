@@ -286,7 +286,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 	var results []types.Message
 
 	for _, toolCall := range toolCalls {
-		var args map[string]interface{}
+		var args map[string]any
 		if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
 			a.logger.Error("failed to parse tool arguments", err, "args", toolCall.Function.Arguments, "tool_name", toolCall.Function.Name)
 			msg := types.Message{
@@ -314,7 +314,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 
 		mcpRequest := Request{
 			Method: "tools/call",
-			Params: map[string]interface{}{
+			Params: map[string]any{
 				"name":      toolName,
 				"arguments": args,
 			},

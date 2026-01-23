@@ -321,7 +321,7 @@ func (m *MCPMiddlewareImpl) writeErrorResponse(c *gin.Context, customWriter *cus
 }
 
 // writeResponse writes the response to the client
-func (m *MCPMiddlewareImpl) writeResponse(c *gin.Context, customWriter *customResponseWriter, response interface{}) {
+func (m *MCPMiddlewareImpl) writeResponse(c *gin.Context, customWriter *customResponseWriter, response any) {
 	customWriter.writeToClient = true
 	c.Writer = customWriter.ResponseWriter
 	c.JSON(customWriter.statusCode, response)

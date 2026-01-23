@@ -383,11 +383,11 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			mockRegistry.EXPECT().BuildProvider(constants.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
 
 			for _, toolCall := range tt.toolCalls {
-				var args map[string]interface{}
+				var args map[string]any
 				if json.Unmarshal([]byte(toolCall.Function.Arguments), &args) == nil {
 					mcpRequest := mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      toolCall.Function.Name,
 							"arguments": args,
 						},

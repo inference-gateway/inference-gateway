@@ -114,9 +114,9 @@ func TestAgent_Run(t *testing.T) {
 					gomock.Any(),
 					mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      "test_tool",
-							"arguments": map[string]interface{}{"param": "value"},
+							"arguments": map[string]any{"param": "value"},
 						},
 					},
 					"http://test-server:8080/mcp",
@@ -286,9 +286,9 @@ func TestAgent_ExecuteTools(t *testing.T) {
 					gomock.Any(),
 					mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      "test_tool",
-							"arguments": map[string]interface{}{"param": "value"},
+							"arguments": map[string]any{"param": "value"},
 						},
 					},
 					"http://test-server:8080/mcp",
@@ -326,9 +326,9 @@ func TestAgent_ExecuteTools(t *testing.T) {
 					gomock.Any(),
 					mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      "server_tool",
-							"arguments": map[string]interface{}{"param": "value"},
+							"arguments": map[string]any{"param": "value"},
 						},
 					},
 					"http://custom-server:8080",
@@ -409,9 +409,9 @@ func TestAgent_ExecuteTools(t *testing.T) {
 					gomock.Any(),
 					mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      "first_tool",
-							"arguments": map[string]interface{}{"param": "value1"},
+							"arguments": map[string]any{"param": "value1"},
 						},
 					},
 					"http://test-server:8080/mcp",
@@ -428,9 +428,9 @@ func TestAgent_ExecuteTools(t *testing.T) {
 					gomock.Any(),
 					mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      "second_tool",
-							"arguments": map[string]interface{}{"action": "execute"},
+							"arguments": map[string]any{"action": "execute"},
 						},
 					},
 					"http://test-server:8080/mcp",
@@ -572,11 +572,11 @@ func TestAgent_RunWithStream(t *testing.T) {
 						jsonStr := strings.TrimPrefix(response, "data: ")
 						jsonStr = strings.TrimSpace(jsonStr)
 
-						var streamResp map[string]interface{}
+						var streamResp map[string]any
 						if err := json.Unmarshal([]byte(jsonStr), &streamResp); err == nil {
-							if choices, ok := streamResp["choices"].([]interface{}); ok && len(choices) > 0 {
-								if choice, ok := choices[0].(map[string]interface{}); ok {
-									if delta, ok := choice["delta"].(map[string]interface{}); ok {
+							if choices, ok := streamResp["choices"].([]any); ok && len(choices) > 0 {
+								if choice, ok := choices[0].(map[string]any); ok {
+									if delta, ok := choice["delta"].(map[string]any); ok {
 										if content, ok := delta["content"].(string); ok {
 											combinedContent.WriteString(content)
 										}
@@ -768,9 +768,9 @@ func TestAgent_RunWithStream(t *testing.T) {
 					gomock.Any(),
 					mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      "test_tool",
-							"arguments": map[string]interface{}{"param": "value"},
+							"arguments": map[string]any{"param": "value"},
 						},
 					},
 					"http://test-server:8080/mcp",
@@ -787,9 +787,9 @@ func TestAgent_RunWithStream(t *testing.T) {
 					gomock.Any(),
 					mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      "other_tool",
-							"arguments": map[string]interface{}{"action": "execute"},
+							"arguments": map[string]any{"action": "execute"},
 						},
 					},
 					"http://test-server:8080/mcp",
@@ -829,11 +829,11 @@ func TestAgent_RunWithStream(t *testing.T) {
 						jsonStr := strings.TrimPrefix(response, "data: ")
 						jsonStr = strings.TrimSpace(jsonStr)
 
-						var streamResp map[string]interface{}
+						var streamResp map[string]any
 						if err := json.Unmarshal([]byte(jsonStr), &streamResp); err == nil {
-							if choices, ok := streamResp["choices"].([]interface{}); ok && len(choices) > 0 {
-								if choice, ok := choices[0].(map[string]interface{}); ok {
-									if delta, ok := choice["delta"].(map[string]interface{}); ok {
+							if choices, ok := streamResp["choices"].([]any); ok && len(choices) > 0 {
+								if choice, ok := choices[0].(map[string]any); ok {
+									if delta, ok := choice["delta"].(map[string]any); ok {
 										if content, ok := delta["content"].(string); ok {
 											combinedContent.WriteString(content)
 										}

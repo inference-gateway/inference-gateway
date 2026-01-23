@@ -47,7 +47,7 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		clientGone := c.Request.Context().Done()
 
 		// Send initial connection message
-		initialMsg := map[string]interface{}{
+		initialMsg := map[string]any{
 			"type":    "connection",
 			"status":  "connected",
 			"message": "MCP Search Server SSE stream established",
@@ -68,7 +68,7 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 				return
 			case <-ticker.C:
 				// Send periodic server status
-				statusUpdate := map[string]interface{}{
+				statusUpdate := map[string]any{
 					"type":      "status",
 					"timestamp": time.Now().Format(time.RFC3339),
 					"server":    "mcp-search-server",
@@ -97,7 +97,7 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		}
 
 		if err := c.ShouldBindJSON(&request); err != nil {
-			errorMsg := map[string]interface{}{
+			errorMsg := map[string]any{
 				"type":  "error",
 				"error": err.Error(),
 			}
@@ -124,7 +124,7 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 
 		// Stream each result individually for real-time effect
 		for i, result := range results.Results {
-			resultMsg := map[string]interface{}{
+			resultMsg := map[string]any{
 				"type":   "search_result",
 				"index":  i + 1,
 				"total":  len(results.Results),
@@ -140,7 +140,7 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		}
 
 		// Send completion message
-		completionMsg := map[string]interface{}{
+		completionMsg := map[string]any{
 			"type":    "complete",
 			"total":   results.Total,
 			"query":   results.Query,

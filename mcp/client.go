@@ -173,9 +173,9 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 		}
 		req.Body.Close()
 
-		var jsonBody map[string]interface{}
+		var jsonBody map[string]any
 		if err := json.Unmarshal(bodyBytes, &jsonBody); err == nil {
-			if params, ok := jsonBody["params"].(map[string]interface{}); ok {
+			if params, ok := jsonBody["params"].(map[string]any); ok {
 				if cursor, exists := params["cursor"]; exists && cursor == nil {
 					delete(params, "cursor")
 					if modifiedBody, err := json.Marshal(jsonBody); err == nil {
@@ -354,7 +354,7 @@ func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL
 			continue
 		}
 
-		var contentMap map[string]interface{}
+		var contentMap map[string]any
 		if err = json.Unmarshal(contentBytes, &contentMap); err != nil {
 			mc.Logger.Error("Failed to unmarshal content", err)
 			continue
@@ -557,12 +557,12 @@ func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverUR
 // discoverServerCapabilities discovers and stores server capabilities and tools
 func (mc *MCPClient) discoverServerCapabilities(ctx context.Context, client *m.Client, serverURL string) error {
 	capabilities := ServerCapabilities{
-		Completions:  make(map[string]interface{}),
-		Experimental: make(map[string]map[string]interface{}),
-		Logging:      make(map[string]interface{}),
-		Prompts:      make(map[string]interface{}),
-		Resources:    make(map[string]interface{}),
-		Tools:        make(map[string]interface{}),
+		Completions:  make(map[string]any),
+		Experimental: make(map[string]map[string]any),
+		Logging:      make(map[string]any),
+		Prompts:      make(map[string]any),
+		Resources:    make(map[string]any),
+		Tools:        make(map[string]any),
 	}
 
 	mc.ServerCapabilities[serverURL] = capabilities
@@ -605,7 +605,7 @@ func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, 
 			*enhancedDesc = ""
 		}
 
-		inputSchema := make(map[string]interface{})
+		inputSchema := make(map[string]any)
 		if tool.InputSchema != nil {
 			if inputBytes, err := json.Marshal(tool.InputSchema); err == nil {
 				_ = json.Unmarshal(inputBytes, &inputSchema)
@@ -661,7 +661,7 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 		inputSchema := tool.InputSchema
 
 		if inputSchema == nil {
-			inputSchema = make(map[string]interface{})
+			inputSchema = make(map[string]any)
 		}
 
 		tools = append(tools, types.ChatCompletionTool{
