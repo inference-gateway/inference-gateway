@@ -76,7 +76,7 @@ func (p *ProviderImpl) handleHTTPError(response *http.Response, operation string
 		StatusCode: response.StatusCode,
 		Message:    errorMsg,
 	}
-	p.logger.Error("Non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode, "operation", operation)
+	p.logger.Error("non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode, "operation", operation)
 	return err
 }
 
@@ -226,6 +226,13 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (ListModelsResponse, erro
 		transformer = &resp
 	case OllamaCloudID:
 		var resp ListModelsResponseOllamaCloud
+		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+			p.logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
+			return ListModelsResponse{}, err
+		}
+		transformer = &resp
+	case MoonshotID:
+		var resp ListModelsResponseMoonshot
 		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
 			p.logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
 			return ListModelsResponse{}, err

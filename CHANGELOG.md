@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.23.0](https://github.com/inference-gateway/inference-gateway/compare/v0.22.10...v0.23.0) (2026-01-22)
+
+### ✨ Features
+
+* **providers:** Add Moonshot AI provider ([#225](https://github.com/inference-gateway/inference-gateway/issues/225)) ([43e5816](https://github.com/inference-gateway/inference-gateway/commit/43e5816051ba15e79f54d16b610a08275dde267f))
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump hono in /examples/docker-compose/mcp/pizza-server ([#228](https://github.com/inference-gateway/inference-gateway/issues/228)) ([16200aa](https://github.com/inference-gateway/inference-gateway/commit/16200aa19504d2a086ff81e5fd53b73748acac99))
+
 ## [0.22.10](https://github.com/inference-gateway/inference-gateway/compare/v0.22.9...v0.22.10) (2026-01-07)
 
 ### 🐛 Bug Fixes

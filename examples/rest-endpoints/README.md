@@ -19,6 +19,7 @@ interact with the Inference Gateway using curl commands.
 | List DeepSeek models     | `curl -X GET http://localhost:8080/v1/models?provider=deepseek`     |
 | List Google models       | `curl -X GET http://localhost:8080/v1/models?provider=google`       |
 | List Mistral models      | `curl -X GET http://localhost:8080/v1/models?provider=mistral`      |
+| List Moonshot models     | `curl -X GET http://localhost:8080/v1/models?provider=moonshot`     |
 
 ## POST Endpoints
 
@@ -34,6 +35,7 @@ interact with the Inference Gateway using curl commands.
 | api.deepseek.com                  | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"deepseek/deepseek-reasoner","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                |
 | generativelanguage.googleapis.com | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"google/models/gemini-2.5-flash-lite","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`       |
 | api.mistral.ai                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"mistral/pixtral-large-latest","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`              |
+| api.moonshot.ai                   | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"moonshot/moonshot-v1-8k","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                   |
 
 You can set the stream as an optional flag in the request body to enable
 streaming of tokens. The default value is `false`.

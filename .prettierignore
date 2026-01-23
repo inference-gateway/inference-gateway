@@ -1,2 +1,3 @@
-charts/**/templates/*
+charts/**/*
 CHANGELOG.md
+.infer

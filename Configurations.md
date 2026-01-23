@@ -101,3 +101,5 @@
 | MISTRAL_API_KEY      | `""`                                                            | Mistral API Key      |
 | QWEN_API_URL         | `https://dashscope.aliyuncs.com/compatible-mode/v1`             | Qwen API URL         |
 | QWEN_API_KEY         | `""`                                                            | Qwen API Key         |
+| MOONSHOT_API_URL     | `https://api.moonshot.ai/v1`                                    | Moonshot API URL     |
+| MOONSHOT_API_KEY     | `""`                                                            | Moonshot API Key     |
