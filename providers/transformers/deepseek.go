@@ -1,8 +1,8 @@
 package transformers
 
 import (
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 type ListModelsResponseDeepseek struct {
