@@ -13,11 +13,11 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	mcp "github.com/inference-gateway/inference-gateway/mcp"
-	"github.com/inference-gateway/inference-gateway/providers/client"
-	"github.com/inference-gateway/inference-gateway/providers/core"
-	"github.com/inference-gateway/inference-gateway/providers/registry"
-	"github.com/inference-gateway/inference-gateway/providers/routing"
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	routing "github.com/inference-gateway/inference-gateway/providers/routing"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 const (

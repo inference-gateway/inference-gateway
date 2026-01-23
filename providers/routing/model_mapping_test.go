@@ -3,9 +3,10 @@ package routing
 import (
 	"testing"
 
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/types"
-	"github.com/stretchr/testify/assert"
+	assert "github.com/stretchr/testify/assert"
+
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 func TestDetermineProviderAndModelName(t *testing.T) {

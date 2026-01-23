@@ -19,8 +19,8 @@ import (
 	l "github.com/inference-gateway/inference-gateway/logger"
 	mcp "github.com/inference-gateway/inference-gateway/mcp"
 	otel "github.com/inference-gateway/inference-gateway/otel"
-	"github.com/inference-gateway/inference-gateway/providers/client"
-	"github.com/inference-gateway/inference-gateway/providers/registry"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
 	envconfig "github.com/sethvargo/go-envconfig"
 )

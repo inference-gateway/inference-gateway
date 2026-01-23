@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers/core"
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	gin "github.com/gin-gonic/gin"
+
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // MaxAgentIterations limits the number of agent loop iterations

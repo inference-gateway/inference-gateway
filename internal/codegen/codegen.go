@@ -7,9 +7,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/inference-gateway/inference-gateway/internal/openapi"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
+	cases "golang.org/x/text/cases"
+	language "golang.org/x/text/language"
+
+	openapi "github.com/inference-gateway/inference-gateway/internal/openapi"
 )
 
 // GenerateConfig generates a configuration file from an OpenAPI spec
@@ -44,10 +45,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/registry"
-	"github.com/inference-gateway/inference-gateway/providers/types"
-	"github.com/sethvargo/go-envconfig"
+	envconfig "github.com/sethvargo/go-envconfig"
+
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // Config holds the configuration for the Inference Gateway

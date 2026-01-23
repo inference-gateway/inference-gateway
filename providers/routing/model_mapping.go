@@ -3,8 +3,8 @@ package routing
 import (
 	"strings"
 
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // DetermineProviderAndModelName analyzes a model string and tries to determine

@@ -3,7 +3,7 @@ package core
 import (
 	"context"
 
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 //go:generate mockgen -source=interfaces.go -destination=../../../tests/mocks/providers/management.go -package=providersmocks

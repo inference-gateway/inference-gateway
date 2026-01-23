@@ -13,11 +13,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers/types"
 	m "github.com/metoro-io/mcp-golang"
 	transport "github.com/metoro-io/mcp-golang/transport/http"
+
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 var (

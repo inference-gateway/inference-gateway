@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // RequestModifier defines interface for modifying proxy requests
