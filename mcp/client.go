@@ -13,11 +13,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers"
 	m "github.com/metoro-io/mcp-golang"
 	transport "github.com/metoro-io/mcp-golang/transport/http"
+
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 var (
@@ -66,10 +67,10 @@ type MCPClientInterface interface {
 	GetServerTools(serverURL string) ([]Tool, error)
 
 	// GetAllChatCompletionTools returns all pre-converted chat completion tools from all servers
-	GetAllChatCompletionTools() []providers.ChatCompletionTool
+	GetAllChatCompletionTools() []types.ChatCompletionTool
 
 	// ConvertMCPToolsToChatCompletionTools converts MCP server tools to chat completion tools
-	ConvertMCPToolsToChatCompletionTools([]Tool) []providers.ChatCompletionTool
+	ConvertMCPToolsToChatCompletionTools([]Tool) []types.ChatCompletionTool
 
 	// GetServerForTool returns the server URL that provides the specified tool
 	GetServerForTool(toolName string) (string, error)
@@ -98,7 +99,7 @@ type MCPClient struct {
 	Config              config.Config
 	ServerCapabilities  map[string]ServerCapabilities
 	ServerTools         map[string][]Tool
-	ChatCompletionTools []providers.ChatCompletionTool
+	ChatCompletionTools []types.ChatCompletionTool
 	Initialized         bool
 	ServerStatuses      map[string]ServerStatus
 	statusMutex         sync.RWMutex
@@ -173,9 +174,9 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 		}
 		req.Body.Close()
 
-		var jsonBody map[string]interface{}
+		var jsonBody map[string]any
 		if err := json.Unmarshal(bodyBytes, &jsonBody); err == nil {
-			if params, ok := jsonBody["params"].(map[string]interface{}); ok {
+			if params, ok := jsonBody["params"].(map[string]any); ok {
 				if cursor, exists := params["cursor"]; exists && cursor == nil {
 					delete(params, "cursor")
 					if modifiedBody, err := json.Marshal(jsonBody); err == nil {
@@ -317,7 +318,7 @@ func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) 
 		Config:              cfg,
 		ServerCapabilities:  make(map[string]ServerCapabilities),
 		ServerTools:         make(map[string][]Tool),
-		ChatCompletionTools: make([]providers.ChatCompletionTool, 0),
+		ChatCompletionTools: make([]types.ChatCompletionTool, 0),
 		Initialized:         false,
 		ServerStatuses:      make(map[string]ServerStatus),
 		pollingDone:         make(chan struct{}),
@@ -354,7 +355,7 @@ func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL
 			continue
 		}
 
-		var contentMap map[string]interface{}
+		var contentMap map[string]any
 		if err = json.Unmarshal(contentBytes, &contentMap); err != nil {
 			mc.Logger.Error("Failed to unmarshal content", err)
 			continue
@@ -424,7 +425,7 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		mc.Logger.Debug("mcp server tools status", "server", serverURL, "toolCount", len(serverTools))
 	}
 
-	allChatCompletionTools := make([]providers.ChatCompletionTool, 0)
+	allChatCompletionTools := make([]types.ChatCompletionTool, 0)
 
 	for serverURL, serverTools := range mc.ServerTools {
 		if len(serverTools) == 0 {
@@ -557,12 +558,12 @@ func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverUR
 // discoverServerCapabilities discovers and stores server capabilities and tools
 func (mc *MCPClient) discoverServerCapabilities(ctx context.Context, client *m.Client, serverURL string) error {
 	capabilities := ServerCapabilities{
-		Completions:  make(map[string]interface{}),
-		Experimental: make(map[string]map[string]interface{}),
-		Logging:      make(map[string]interface{}),
-		Prompts:      make(map[string]interface{}),
-		Resources:    make(map[string]interface{}),
-		Tools:        make(map[string]interface{}),
+		Completions:  make(map[string]any),
+		Experimental: make(map[string]map[string]any),
+		Logging:      make(map[string]any),
+		Prompts:      make(map[string]any),
+		Resources:    make(map[string]any),
+		Tools:        make(map[string]any),
 	}
 
 	mc.ServerCapabilities[serverURL] = capabilities
@@ -605,7 +606,7 @@ func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, 
 			*enhancedDesc = ""
 		}
 
-		inputSchema := make(map[string]interface{})
+		inputSchema := make(map[string]any)
 		if tool.InputSchema != nil {
 			if inputBytes, err := json.Marshal(tool.InputSchema); err == nil {
 				_ = json.Unmarshal(inputBytes, &inputSchema)
@@ -653,23 +654,23 @@ func (mc *MCPClient) GetServerTools(serverURL string) ([]Tool, error) {
 }
 
 // ConvertMCPToolsToChatCompletionTools converts MCP server tools to chat completion tools
-func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []providers.ChatCompletionTool {
-	tools := make([]providers.ChatCompletionTool, 0)
+func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []types.ChatCompletionTool {
+	tools := make([]types.ChatCompletionTool, 0)
 	for _, tool := range serverTools {
 		description := tool.Description
 
 		inputSchema := tool.InputSchema
 
 		if inputSchema == nil {
-			inputSchema = make(map[string]interface{})
+			inputSchema = make(map[string]any)
 		}
 
-		tools = append(tools, providers.ChatCompletionTool{
+		tools = append(tools, types.ChatCompletionTool{
 			Type: "function",
-			Function: providers.FunctionObject{
+			Function: types.FunctionObject{
 				Name:        "mcp_" + tool.Name,
 				Description: description,
-				Parameters:  (*providers.FunctionParameters)(&inputSchema),
+				Parameters:  (*types.FunctionParameters)(&inputSchema),
 			},
 		})
 	}
@@ -695,9 +696,9 @@ func (mc *MCPClient) GetServerForTool(toolName string) (string, error) {
 }
 
 // GetAllChatCompletionTools returns all pre-converted chat completion tools from all servers
-func (mc *MCPClient) GetAllChatCompletionTools() []providers.ChatCompletionTool {
+func (mc *MCPClient) GetAllChatCompletionTools() []types.ChatCompletionTool {
 	if !mc.Initialized {
-		return []providers.ChatCompletionTool{}
+		return []types.ChatCompletionTool{}
 	}
 	return mc.ChatCompletionTools
 }

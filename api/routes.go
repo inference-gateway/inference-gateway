@@ -14,14 +14,18 @@ import (
 	"sync"
 	"time"
 
-	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
-
-	mcp "github.com/inference-gateway/inference-gateway/mcp"
-
 	gin "github.com/gin-gonic/gin"
+
 	config "github.com/inference-gateway/inference-gateway/config"
+	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	providers "github.com/inference-gateway/inference-gateway/providers"
+	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	routing "github.com/inference-gateway/inference-gateway/providers/routing"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 //go:generate mockgen -source=routes.go -destination=../tests/mocks/routes.go -package=mocks
@@ -37,8 +41,8 @@ type Router interface {
 type RouterImpl struct {
 	cfg       config.Config
 	logger    l.Logger
-	registry  providers.ProviderRegistry
-	client    providers.Client
+	registry  registry.ProviderRegistry
+	client    client.Client
 	mcpClient mcp.MCPClientInterface
 }
 
@@ -53,15 +57,15 @@ type ResponseJSON struct {
 func NewRouter(
 	cfg config.Config,
 	logger l.Logger,
-	registry providers.ProviderRegistry,
-	client providers.Client,
+	providerRegistry registry.ProviderRegistry,
+	httpClient client.Client,
 	mcpClient mcp.MCPClientInterface,
 ) Router {
 	return &RouterImpl{
 		cfg,
 		logger,
-		registry,
-		client,
+		providerRegistry,
+		httpClient,
 		mcpClient,
 	}
 }
@@ -72,7 +76,7 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 }
 
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
-	p := providers.Provider(c.Param("provider"))
+	p := types.Provider(c.Param("provider"))
 	provider, err := router.registry.BuildProvider(p, router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
@@ -88,15 +92,15 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	// Setup authentication headers or query params
 	token := provider.GetToken()
 	switch provider.GetAuthType() {
-	case providers.AuthTypeBearer:
+	case constants.AuthTypeBearer:
 		c.Request.Header.Set("Authorization", "Bearer "+token)
-	case providers.AuthTypeXheader:
+	case constants.AuthTypeXheader:
 		c.Request.Header.Set("x-api-key", token)
-	case providers.AuthTypeQuery:
+	case constants.AuthTypeQuery:
 		query := c.Request.URL.Query()
 		query.Set("key", token)
 		c.Request.URL.RawQuery = query.Encode()
-	case providers.AuthTypeNone:
+	case constants.AuthTypeNone:
 		// Do Nothing
 	default:
 		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
@@ -122,7 +126,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	handleProxyRequest(c, provider, router)
 }
 
-func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router *RouterImpl) {
+func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *RouterImpl) {
 	for k, v := range map[string]string{
 		"Content-Type":      "text/event-stream",
 		"Cache-Control":     "no-cache",
@@ -227,7 +231,7 @@ func handleStreamingRequest(c *gin.Context, provider providers.IProvider, router
 	})
 }
 
-func handleProxyRequest(c *gin.Context, provider providers.IProvider, router *RouterImpl) {
+func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterImpl) {
 	fullURL, err := constructProviderURL(provider, c.Param("path"), c.Request.URL.RawQuery)
 	if err != nil {
 		router.logger.Error("failed to construct provider url", err, "provider", provider.GetName())
@@ -278,7 +282,7 @@ func handleProxyRequest(c *gin.Context, provider providers.IProvider, router *Ro
 
 // constructProviderURL builds the provider URL consistently to avoid path duplication.
 // It ensures that the path from the provider URL is handled correctly with the path parameter.
-func constructProviderURL(provider providers.IProvider, pathParam, rawQuery string) (*url.URL, error) {
+func constructProviderURL(provider core.IProvider, pathParam, rawQuery string) (*url.URL, error) {
 	providerURL, err := url.Parse(provider.GetURL())
 	if err != nil {
 		return nil, err
@@ -328,7 +332,7 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 // This endpoint allows applications built for OpenAI's API to work seamlessly
 // with the Inference Gateway's multi-provider architecture.
 func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
-	providerID := providers.Provider(c.Query("provider"))
+	providerID := types.Provider(c.Query("provider"))
 	if providerID != "" {
 		provider, err := router.registry.BuildProvider(providerID, router.client)
 		if err != nil {
@@ -364,14 +368,14 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 		var wg sync.WaitGroup
 		providersCfg := router.cfg.Providers
 
-		ch := make(chan providers.ListModelsResponse, len(providersCfg))
+		ch := make(chan types.ListModelsResponse, len(providersCfg))
 
 		ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout*time.Millisecond)
 		defer cancel()
 
 		for providerID := range providersCfg {
 			wg.Add(1)
-			go func(id providers.Provider) {
+			go func(id types.Provider) {
 				defer wg.Done()
 
 				provider, err := router.registry.BuildProvider(id, router.client)
@@ -391,7 +395,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 				}
 
 				if response.Data == nil {
-					response.Data = make([]providers.Model, 0)
+					response.Data = make([]types.Model, 0)
 				}
 				ch <- response
 			}(providerID)
@@ -400,18 +404,18 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 		wg.Wait()
 		close(ch)
 
-		var allModels []providers.Model
+		var allModels []types.Model
 		for response := range ch {
 			allModels = append(allModels, response.Data...)
 		}
 
 		if allModels == nil {
-			allModels = make([]providers.Model, 0)
+			allModels = make([]types.Model, 0)
 		}
 
 		allModels = router.filterModels(allModels, router.cfg.AllowedModels, router.cfg.DisallowedModels)
 
-		unifiedResponse := providers.ListModelsResponse{
+		unifiedResponse := types.ListModelsResponse{
 			Object: "list",
 			Data:   allModels,
 		}
@@ -474,10 +478,10 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 // built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
 // architecture.
 func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
-	var req providers.CreateChatCompletionRequest
+	var req types.CreateChatCompletionRequest
 
 	if mcpRequest, exists := c.Get("X-MCP-Bypass"); exists {
-		if parsedRequest, ok := mcpRequest.(*providers.CreateChatCompletionRequest); ok {
+		if parsedRequest, ok := mcpRequest.(*types.CreateChatCompletionRequest); ok {
 			req = *parsedRequest
 		} else {
 			router.logger.Error("invalid mcp request type in context", nil)
@@ -494,10 +498,10 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 	model := req.Model
 	originalModel := req.Model
-	providerID := providers.Provider(c.Query("provider"))
+	providerID := types.Provider(c.Query("provider"))
 	if providerID == "" {
-		var providerPtr *providers.Provider
-		providerPtr, model = providers.DetermineProviderAndModelName(model)
+		var providerPtr *types.Provider
+		providerPtr, model = routing.DetermineProviderAndModelName(model)
 		if providerPtr == nil {
 			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-4)."})
@@ -561,7 +565,11 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 				for i := range req.Messages {
 					if req.Messages[i].HasImageContent() {
-						req.Messages[i].StripImageContent()
+						if err := req.Messages[i].StripImageContent(); err != nil {
+							router.logger.Error("failed to strip image content from message", err)
+							c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process message content"})
+							return
+						}
 					}
 				}
 
@@ -584,7 +592,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			router.logger.Error("failed to start streaming", err, "provider", providerID)
 
 			statusCode := http.StatusBadRequest
-			if httpErr, ok := err.(*providers.HTTPError); ok {
+			if httpErr, ok := err.(*core.HTTPError); ok {
 				statusCode = httpErr.StatusCode
 			}
 
@@ -632,7 +640,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		router.logger.Error("failed to generate tokens", err, "provider", providerID)
 
 		statusCode := http.StatusBadRequest
-		if httpErr, ok := err.(*providers.HTTPError); ok {
+		if httpErr, ok := err.(*core.HTTPError); ok {
 			statusCode = httpErr.StatusCode
 		}
 
@@ -673,15 +681,15 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 		return
 	}
 
-	var allTools []providers.MCPTool
+	var allTools []types.MCPTool
 
 	switch {
 	case router.mcpClient == nil:
 		router.logger.Debug("mcp client is nil, returning empty tools list")
-		allTools = make([]providers.MCPTool, 0)
+		allTools = make([]types.MCPTool, 0)
 	case !router.mcpClient.IsInitialized():
 		router.logger.Info("mcp client not initialized, no tools available")
-		allTools = make([]providers.MCPTool, 0)
+		allTools = make([]types.MCPTool, 0)
 	default:
 		servers := router.mcpClient.GetServers()
 
@@ -693,7 +701,7 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 			}
 
 			for _, tool := range tools {
-				mcpTool := providers.MCPTool{
+				mcpTool := types.MCPTool{
 					Name:        "mcp_" + tool.Name,
 					Description: *tool.Description,
 					Server:      serverURL,
@@ -704,11 +712,11 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 		}
 
 		if allTools == nil {
-			allTools = make([]providers.MCPTool, 0)
+			allTools = make([]types.MCPTool, 0)
 		}
 	}
 
-	response := providers.ListToolsResponse{
+	response := types.ListToolsResponse{
 		Object: "list",
 		Data:   allTools,
 	}
@@ -722,7 +730,7 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 // If allowedModels is empty but disallowedModels is set, all models except those in the disallowed list are returned.
 // If both are empty, all models are returned.
 // The matching is done using case-insensitive comparison.
-func (router *RouterImpl) filterModels(models []providers.Model, allowedModels string, disallowedModels string) []providers.Model {
+func (router *RouterImpl) filterModels(models []types.Model, allowedModels string, disallowedModels string) []types.Model {
 	if allowedModels != "" {
 		return router.filterModelsByAllowList(models, allowedModels)
 	}
@@ -737,7 +745,7 @@ func (router *RouterImpl) filterModels(models []providers.Model, allowedModels s
 // filterModelsByAllowList filters models based on the comma-separated ALLOWED_MODELS configuration.
 // If allowedModels is empty, all models are returned. Otherwise, only models matching
 // the allowed list are returned. The matching is done using case-insensitive comparison.
-func (router *RouterImpl) filterModelsByAllowList(models []providers.Model, allowedModels string) []providers.Model {
+func (router *RouterImpl) filterModelsByAllowList(models []types.Model, allowedModels string) []types.Model {
 	if allowedModels == "" {
 		return models
 	}
@@ -754,7 +762,7 @@ func (router *RouterImpl) filterModelsByAllowList(models []providers.Model, allo
 		return models
 	}
 
-	filtered := make([]providers.Model, 0)
+	filtered := make([]types.Model, 0)
 	for _, model := range models {
 		modelID := strings.ToLower(model.ID)
 
@@ -775,7 +783,7 @@ func (router *RouterImpl) filterModelsByAllowList(models []providers.Model, allo
 // filterModelsByDisallowList filters models based on the comma-separated DISALLOWED_MODELS configuration.
 // If disallowedModels is empty, all models are returned. Otherwise, only models NOT matching
 // the disallowed list are returned. The matching is done using case-insensitive comparison.
-func (router *RouterImpl) filterModelsByDisallowList(models []providers.Model, disallowedModels string) []providers.Model {
+func (router *RouterImpl) filterModelsByDisallowList(models []types.Model, disallowedModels string) []types.Model {
 	if disallowedModels == "" {
 		return models
 	}
@@ -792,7 +800,7 @@ func (router *RouterImpl) filterModelsByDisallowList(models []providers.Model, d
 		return models
 	}
 
-	filtered := make([]providers.Model, 0)
+	filtered := make([]types.Model, 0)
 	for _, model := range models {
 		modelID := strings.ToLower(model.ID)
 

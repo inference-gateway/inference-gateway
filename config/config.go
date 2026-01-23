@@ -8,8 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inference-gateway/inference-gateway/providers"
-	"github.com/sethvargo/go-envconfig"
+	envconfig "github.com/sethvargo/go-envconfig"
+
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // Config holds the configuration for the Inference Gateway
@@ -33,7 +36,7 @@ type Config struct {
 	Client *ClientConfig `env:", prefix=CLIENT_" description:"Client configuration"`
 
 	// Providers map
-	Providers map[providers.Provider]*providers.Config
+	Providers map[types.Provider]*registry.ProviderConfig
 }
 
 // Telemetry configuration
@@ -106,11 +109,11 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 
 	// Initialize Providers map if nil
 	if cfg.Providers == nil {
-		cfg.Providers = make(map[providers.Provider]*providers.Config)
+		cfg.Providers = make(map[types.Provider]*registry.ProviderConfig)
 	}
 
 	// Set defaults for each provider
-	for id, defaults := range providers.Registry {
+	for id, defaults := range registry.Registry {
 		if _, exists := cfg.Providers[id]; !exists {
 			providerCfg := defaults
 			url, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_URL")
@@ -119,7 +122,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 			}
 
 			token, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_KEY")
-			if (!ok || token == "") && id != providers.OllamaID {
+			if (!ok || token == "") && id != constants.OllamaID {
 				t := time.Now().UTC().Format(time.RFC3339)
 				log.SetFlags(0)
 				log.Printf("{\"level\":\"notice\",\"timestamp\":\"%s\",\"caller\":\"config/config.go:103\",\"msg\":\"provider is not configured\",\"provider\":\"%s\"}", t, string(id))

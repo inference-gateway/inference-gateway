@@ -10,15 +10,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/mock/gomock"
+	gin "github.com/gin-gonic/gin"
+	assert "github.com/stretchr/testify/assert"
+	gomock "go.uber.org/mock/gomock"
 
-	"github.com/inference-gateway/inference-gateway/api/middlewares"
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/mcp"
-	"github.com/inference-gateway/inference-gateway/providers"
-	"github.com/inference-gateway/inference-gateway/tests/mocks"
+	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
+	config "github.com/inference-gateway/inference-gateway/config"
+	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
+
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
 	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
@@ -130,7 +132,7 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 				mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
-				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
+				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]types.ChatCompletionTool{}).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -189,17 +191,17 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 	tests := []struct {
 		name          string
-		mcpTools      []providers.ChatCompletionTool
-		requestTools  *[]providers.ChatCompletionTool
+		mcpTools      []types.ChatCompletionTool
+		requestTools  *[]types.ChatCompletionTool
 		expectedCount int
 		isInitialized bool
 	}{
 		{
 			name: "Add MCP tools to request without existing tools",
-			mcpTools: []providers.ChatCompletionTool{
+			mcpTools: []types.ChatCompletionTool{
 				{
-					Type: providers.ChatCompletionToolTypeFunction,
-					Function: providers.FunctionObject{
+					Type: types.Function,
+					Function: types.FunctionObject{
 						Name: "mcp_test_tool",
 					},
 				},
@@ -210,18 +212,18 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 		},
 		{
 			name: "Add MCP tools to request with existing tools",
-			mcpTools: []providers.ChatCompletionTool{
+			mcpTools: []types.ChatCompletionTool{
 				{
-					Type: providers.ChatCompletionToolTypeFunction,
-					Function: providers.FunctionObject{
+					Type: types.Function,
+					Function: types.FunctionObject{
 						Name: "mcp_tool",
 					},
 				},
 			},
-			requestTools: &[]providers.ChatCompletionTool{
+			requestTools: &[]types.ChatCompletionTool{
 				{
-					Type: providers.ChatCompletionToolTypeFunction,
-					Function: providers.FunctionObject{
+					Type: types.Function,
+					Function: types.FunctionObject{
 						Name: "existing_tool",
 					},
 				},
@@ -231,7 +233,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 		},
 		{
 			name:          "No tools added when MCP not initialized",
-			mcpTools:      []providers.ChatCompletionTool{},
+			mcpTools:      []types.ChatCompletionTool{},
 			requestTools:  nil,
 			expectedCount: 0,
 			isInitialized: false,
@@ -257,12 +259,12 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Error(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
+			mockRegistry.EXPECT().BuildProvider(constants.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
 
-			requestData := providers.CreateChatCompletionRequest{
+			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
-				Messages: []providers.Message{
-					{Role: providers.MessageRoleUser, Content: "Hello"},
+				Messages: []types.Message{
+					types.NewTextMessage(t, types.User, "Hello"),
 				},
 				Tools: tt.requestTools,
 			}
@@ -279,16 +281,13 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			router.POST("/v1/chat/completions", func(c *gin.Context) {
 				toolsAdded = true
 
-				response := providers.CreateChatCompletionResponse{
+				response := types.CreateChatCompletionResponse{
 					ID:    "test-id",
 					Model: "gpt-3.5-turbo",
-					Choices: []providers.ChatCompletionChoice{
+					Choices: []types.ChatCompletionChoice{
 						{
-							Message: providers.Message{
-								Role:    providers.MessageRoleAssistant,
-								Content: "Hello! How can I help you?",
-							},
-							FinishReason: providers.FinishReasonStop,
+							Message:      types.NewTextMessage(t, types.Assistant, "Hello! How can I help you?"),
+							FinishReason: types.Stop,
 						},
 					},
 				}
@@ -312,18 +311,18 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 	tests := []struct {
 		name            string
-		toolCalls       []providers.ChatCompletionMessageToolCall
+		toolCalls       []types.ChatCompletionMessageToolCall
 		toolResponse    *mcp.CallToolResult
 		toolError       error
 		expectAgentLoop bool
 	}{
 		{
 			name: "Process tool calls successfully",
-			toolCalls: []providers.ChatCompletionMessageToolCall{
+			toolCalls: []types.ChatCompletionMessageToolCall{
 				{
 					ID:   "call_123",
-					Type: providers.ChatCompletionToolTypeFunction,
-					Function: providers.ChatCompletionMessageToolCallFunction{
+					Type: types.Function,
+					Function: types.ChatCompletionMessageToolCallFunction{
 						Name:      "test_function",
 						Arguments: `{"param": "value"}`,
 					},
@@ -341,11 +340,11 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 		},
 		{
 			name: "Handle tool execution error",
-			toolCalls: []providers.ChatCompletionMessageToolCall{
+			toolCalls: []types.ChatCompletionMessageToolCall{
 				{
 					ID:   "call_456",
-					Type: providers.ChatCompletionToolTypeFunction,
-					Function: providers.ChatCompletionMessageToolCallFunction{
+					Type: types.Function,
+					Function: types.ChatCompletionMessageToolCallFunction{
 						Name:      "failing_function",
 						Arguments: `{"param": "value"}`,
 					},
@@ -356,11 +355,11 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 		},
 		{
 			name: "Handle invalid tool arguments",
-			toolCalls: []providers.ChatCompletionMessageToolCall{
+			toolCalls: []types.ChatCompletionMessageToolCall{
 				{
 					ID:   "call_789",
-					Type: providers.ChatCompletionToolTypeFunction,
-					Function: providers.ChatCompletionMessageToolCallFunction{
+					Type: types.Function,
+					Function: types.ChatCompletionMessageToolCallFunction{
 						Name:      "test_function",
 						Arguments: `invalid json`,
 					},
@@ -379,16 +378,16 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 
 			mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 			mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
-			mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
+			mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]types.ChatCompletionTool{}).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
+			mockRegistry.EXPECT().BuildProvider(constants.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
 
 			for _, toolCall := range tt.toolCalls {
-				var args map[string]interface{}
+				var args map[string]any
 				if json.Unmarshal([]byte(toolCall.Function.Arguments), &args) == nil {
 					mcpRequest := mcp.Request{
 						Method: "tools/call",
-						Params: map[string]interface{}{
+						Params: map[string]any{
 							"name":      toolCall.Function.Name,
 							"arguments": args,
 						},
@@ -408,41 +407,35 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			if tt.expectAgentLoop {
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-				followUpResponse := providers.CreateChatCompletionResponse{
+				followUpResponse := types.CreateChatCompletionResponse{
 					ID:    "test-id-2",
 					Model: "gpt-3.5-turbo",
-					Choices: []providers.ChatCompletionChoice{
+					Choices: []types.ChatCompletionChoice{
 						{
-							Message: providers.Message{
-								Role:    providers.MessageRoleAssistant,
-								Content: "Based on the tool results, here's my response.",
-							},
-							FinishReason: providers.FinishReasonStop,
+							Message:      types.NewTextMessage(t, types.Assistant, "Based on the tool results, here's my response."),
+							FinishReason: types.Stop,
 						},
 					},
 				}
 				mockProvider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).Return(followUpResponse, nil).AnyTimes()
 			} else {
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-				mockProvider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).Return(providers.CreateChatCompletionResponse{
+				mockProvider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).Return(types.CreateChatCompletionResponse{
 					ID:    "test-id-error",
 					Model: "gpt-3.5-turbo",
-					Choices: []providers.ChatCompletionChoice{
+					Choices: []types.ChatCompletionChoice{
 						{
-							Message: providers.Message{
-								Role:    providers.MessageRoleAssistant,
-								Content: "Error response",
-							},
-							FinishReason: providers.FinishReasonStop,
+							Message:      types.NewTextMessage(t, types.Assistant, "Error response"),
+							FinishReason: types.Stop,
 						},
 					},
 				}, nil).AnyTimes()
 			}
 
-			requestData := providers.CreateChatCompletionRequest{
+			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
-				Messages: []providers.Message{
-					{Role: providers.MessageRoleUser, Content: "Please use the tool"},
+				Messages: []types.Message{
+					types.NewTextMessage(t, types.User, "Please use the tool"),
 				},
 			}
 
@@ -456,17 +449,13 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			router.Use(middleware.Middleware())
 
 			router.POST("/v1/chat/completions", func(c *gin.Context) {
-				response := providers.CreateChatCompletionResponse{
+				response := types.CreateChatCompletionResponse{
 					ID:    "test-id",
 					Model: "gpt-3.5-turbo",
-					Choices: []providers.ChatCompletionChoice{
+					Choices: []types.ChatCompletionChoice{
 						{
-							Message: providers.Message{
-								Role:      providers.MessageRoleAssistant,
-								Content:   "I'll use the tool to help you.",
-								ToolCalls: &tt.toolCalls,
-							},
-							FinishReason: providers.FinishReasonToolCalls,
+							Message:      types.NewAssistantMessage(t, "I'll use the tool to help you.", &tt.toolCalls),
+							FinishReason: types.ToolCalls,
 						},
 					},
 				}
@@ -524,13 +513,13 @@ data: [DONE]`,
 
 			mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 			mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
-			mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{}).AnyTimes()
+			mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]types.ChatCompletionTool{}).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 			mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-			mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
+			mockRegistry.EXPECT().BuildProvider(constants.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
 
 			if tt.expectToolCalls {
 				mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "").Return(&mcp.CallToolResult{
@@ -551,10 +540,10 @@ data: [DONE]`,
 				mockProvider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(streamCh, nil).AnyTimes()
 			}
 
-			requestData := providers.CreateChatCompletionRequest{
+			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
-				Messages: []providers.Message{
-					{Role: providers.MessageRoleUser, Content: "Test streaming"},
+				Messages: []types.Message{
+					types.NewTextMessage(t, types.User, "Test streaming"),
 				},
 				Stream: &[]bool{true}[0],
 			}
@@ -611,10 +600,10 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 				mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
-				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
+				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]types.ChatCompletionTool{
 					{
-						Type: providers.ChatCompletionToolTypeFunction,
-						Function: providers.FunctionObject{
+						Type: types.Function,
+						Function: types.FunctionObject{
 							Name: "mcp_test_tool",
 						},
 					},
@@ -632,18 +621,18 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			setupMocks: func(mockRegistry *providersmocks.MockProviderRegistry, mockClient *providersmocks.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 				mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
-				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
+				mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]types.ChatCompletionTool{
 					{
-						Type: providers.ChatCompletionToolTypeFunction,
-						Function: providers.FunctionObject{
+						Type: types.Function,
+						Function: types.FunctionObject{
 							Name: "mcp_test_tool",
 						},
 					},
 				}).AnyTimes()
 				mockLogger.EXPECT().Debug("mcp middleware invoked", "path", "/v1/chat/completions").AnyTimes()
 				mockLogger.EXPECT().Debug("added mcp tools to request", "tool_count", 1).AnyTimes()
-				mockRegistry.EXPECT().BuildProvider(providers.OpenaiID, mockClient).Return(nil, fmt.Errorf("provider build failed")).AnyTimes()
-				mockLogger.EXPECT().Error("failed to get provider", gomock.Any(), "provider", providers.OpenaiID).AnyTimes()
+				mockRegistry.EXPECT().BuildProvider(constants.OpenaiID, mockClient).Return(nil, fmt.Errorf("provider build failed")).AnyTimes()
+				mockLogger.EXPECT().Error("failed to get provider", gomock.Any(), "provider", constants.OpenaiID).AnyTimes()
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedError:  "Provider not available",
@@ -783,10 +772,10 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 
 		mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
 		mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
-		mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]providers.ChatCompletionTool{
+		mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]types.ChatCompletionTool{
 			{
-				Type: providers.ChatCompletionToolTypeFunction,
-				Function: providers.FunctionObject{
+				Type: types.Function,
+				Function: types.FunctionObject{
 					Name: "get-pizza-info",
 				},
 			},
@@ -801,7 +790,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		mockLogger.EXPECT().Info(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 		mockLogger.EXPECT().Error(gomock.Any(), gomock.Any()).AnyTimes()
 
-		mockRegistry.EXPECT().BuildProvider(providers.GroqID, mockClient).Return(mockProvider, nil).AnyTimes()
+		mockRegistry.EXPECT().BuildProvider(constants.GroqID, mockClient).Return(mockProvider, nil).AnyTimes()
 		mockProvider.EXPECT().GetName().Return("groq").AnyTimes()
 
 		mockMCPClient.EXPECT().GetServerForTool("get-pizza-info").Return("http://mcp-pizza-server:8084/mcp", nil).AnyTimes()
@@ -886,10 +875,10 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 
 		gomock.InOrder(call1, call2, call3)
 
-		requestData := providers.CreateChatCompletionRequest{
+		requestData := types.CreateChatCompletionRequest{
 			Model: "groq/meta-llama/llama-4-scout-17b-instruct",
-			Messages: []providers.Message{
-				{Role: providers.MessageRoleUser, Content: "What are the top pizzas?"},
+			Messages: []types.Message{
+				types.NewTextMessage(t, types.User, "What are the top pizzas?"),
 			},
 			Stream: &[]bool{true}[0],
 		}

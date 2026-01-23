@@ -73,7 +73,7 @@ func setupFilesystemSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		clientGone := c.Request.Context().Done()
 
 		// Send initial connection message
-		initialMsg := map[string]interface{}{
+		initialMsg := map[string]any{
 			"type":    "connection",
 			"status":  "connected",
 			"message": "MCP Filesystem Server SSE stream established",
@@ -94,7 +94,7 @@ func setupFilesystemSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 				return
 			case <-ticker.C:
 				// Send periodic filesystem status
-				statusUpdate := map[string]interface{}{
+				statusUpdate := map[string]any{
 					"type":      "status",
 					"timestamp": time.Now().Format(time.RFC3339),
 					"server":    "mcp-filesystem-server",
@@ -126,7 +126,7 @@ func setupFilesystemSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		}
 
 		if err := c.ShouldBindJSON(&request); err != nil {
-			errorMsg := map[string]interface{}{
+			errorMsg := map[string]any{
 				"type":  "error",
 				"error": err.Error(),
 			}
@@ -163,7 +163,7 @@ func setupFilesystemSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		}
 
 		// Send completion message
-		completionMsg := map[string]interface{}{
+		completionMsg := map[string]any{
 			"type":      "complete",
 			"operation": request.Operation,
 			"path":      request.Path,

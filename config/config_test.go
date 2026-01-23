@@ -4,10 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/providers"
-	"github.com/sethvargo/go-envconfig"
-	"github.com/stretchr/testify/assert"
+	envconfig "github.com/sethvargo/go-envconfig"
+	assert "github.com/stretchr/testify/assert"
+
+	config "github.com/inference-gateway/inference-gateway/config"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 func TestLoad(t *testing.T) {
@@ -72,138 +75,140 @@ func TestLoad(t *testing.T) {
 					ResponseHeaderTimeout: 10 * time.Second,
 					ExpectContinueTimeout: 1 * time.Second,
 				},
-				Providers: map[providers.Provider]*providers.Config{
-					providers.AnthropicID: {
-						ID:             providers.AnthropicID,
-						Name:           providers.AnthropicDisplayName,
-						URL:            providers.AnthropicDefaultBaseURL,
-						AuthType:       providers.AuthTypeXheader,
+				Providers: map[types.Provider]*registry.ProviderConfig{
+					constants.AnthropicID: {
+						ID:             constants.AnthropicID,
+						Name:           constants.AnthropicDisplayName,
+						URL:            constants.AnthropicDefaultBaseURL,
+						AuthType:       constants.AuthTypeXheader,
 						SupportsVision: true,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},
-						Endpoints: providers.Endpoints{
-							Models: providers.AnthropicModelsEndpoint,
-							Chat:   providers.AnthropicChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.AnthropicModelsEndpoint,
+							Chat:   constants.AnthropicChatEndpoint,
 						},
 					},
-					providers.CloudflareID: {
-						ID:             providers.CloudflareID,
-						Name:           providers.CloudflareDisplayName,
-						URL:            providers.CloudflareDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.CloudflareID: {
+						ID:             constants.CloudflareID,
+						Name:           constants.CloudflareDisplayName,
+						URL:            constants.CloudflareDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.CloudflareModelsEndpoint,
-							Chat:   providers.CloudflareChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.CloudflareModelsEndpoint,
+							Chat:   constants.CloudflareChatEndpoint,
 						},
 					},
-					providers.CohereID: {
-						ID:             providers.CohereID,
-						Name:           providers.CohereDisplayName,
-						URL:            providers.CohereDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.CohereID: {
+						ID:             constants.CohereID,
+						Name:           constants.CohereDisplayName,
+						URL:            constants.CohereDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.CohereModelsEndpoint,
-							Chat:   providers.CohereChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.CohereModelsEndpoint,
+							Chat:   constants.CohereChatEndpoint,
 						},
 					},
-					providers.GroqID: {
-						ID:             providers.GroqID,
-						Name:           providers.GroqDisplayName,
-						URL:            providers.GroqDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.GroqID: {
+						ID:             constants.GroqID,
+						Name:           constants.GroqDisplayName,
+						URL:            constants.GroqDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.GroqModelsEndpoint,
-							Chat:   providers.GroqChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.GroqModelsEndpoint,
+							Chat:   constants.GroqChatEndpoint,
 						},
 					},
-					providers.OllamaID: {
-						ID:             providers.OllamaID,
-						Name:           providers.OllamaDisplayName,
-						URL:            providers.OllamaDefaultBaseURL,
-						AuthType:       providers.AuthTypeNone,
+					constants.OllamaID: {
+						ID:             constants.OllamaID,
+						Name:           constants.OllamaDisplayName,
+						URL:            constants.OllamaDefaultBaseURL,
+						AuthType:       constants.AuthTypeNone,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OllamaModelsEndpoint,
-							Chat:   providers.OllamaChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OllamaModelsEndpoint,
+							Chat:   constants.OllamaChatEndpoint,
 						},
 					},
-					providers.OllamaCloudID: {
-						ID:             providers.OllamaCloudID,
-						Name:           providers.OllamaCloudDisplayName,
-						URL:            providers.OllamaCloudDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.OllamaCloudID: {
+						ID:             constants.OllamaCloudID,
+						Name:           constants.OllamaCloudDisplayName,
+						URL:            constants.OllamaCloudDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OllamaCloudModelsEndpoint,
-							Chat:   providers.OllamaCloudChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OllamaCloudModelsEndpoint,
+							Chat:   constants.OllamaCloudChatEndpoint,
 						},
 					},
-					providers.OpenaiID: {
-						ID:             providers.OpenaiID,
-						Name:           providers.OpenaiDisplayName,
-						URL:            providers.OpenaiDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.OpenaiID: {
+						ID:             constants.OpenaiID,
+						Name:           constants.OpenaiDisplayName,
+						URL:            constants.OpenaiDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OpenaiModelsEndpoint,
-							Chat:   providers.OpenaiChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OpenaiModelsEndpoint,
+							Chat:   constants.OpenaiChatEndpoint,
 						},
 					},
-					providers.DeepseekID: {
-						ID:             providers.DeepseekID,
-						Name:           providers.DeepseekDisplayName,
-						URL:            providers.DeepseekDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.DeepseekID: {
+						ID:             constants.DeepseekID,
+						Name:           constants.DeepseekDisplayName,
+						URL:            constants.DeepseekDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.DeepseekModelsEndpoint,
-							Chat:   providers.DeepseekChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.DeepseekModelsEndpoint,
+							Chat:   constants.DeepseekChatEndpoint,
 						},
 					},
-					providers.GoogleID: {
-						ID:             providers.GoogleID,
-						Name:           providers.GoogleDisplayName,
-						URL:            providers.GoogleDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.GoogleID: {
+						ID:             constants.GoogleID,
+						Name:           constants.GoogleDisplayName,
+						URL:            constants.GoogleDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.GoogleModelsEndpoint,
-							Chat:   providers.GoogleChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.GoogleModelsEndpoint,
+							Chat:   constants.GoogleChatEndpoint,
 						},
 					},
-					providers.MistralID: {
-						ID:             providers.MistralID,
-						Name:           providers.MistralDisplayName,
-						URL:            providers.MistralDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.MistralID: {
+						ID:             constants.MistralID,
+						Name:           constants.MistralDisplayName,
+						URL:            constants.MistralDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.MistralModelsEndpoint,
-							Chat:   providers.MistralChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.MistralModelsEndpoint,
+							Chat:   constants.MistralChatEndpoint,
 						},
 					},
-					providers.QwenID: {
-						ID:             providers.QwenID,
-						Name:           providers.QwenDisplayName,
-						URL:            providers.QwenDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.QwenID: {
+						ID:             constants.QwenID,
+						Name:           constants.QwenDisplayName,
+						URL:            constants.QwenDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.QwenModelsEndpoint,
-							Chat:   providers.QwenChatEndpoint,
-					providers.MoonshotID: {
-						ID:             providers.MoonshotID,
-						Name:           providers.MoonshotDisplayName,
-						URL:            providers.MoonshotDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+						Endpoints: types.Endpoints{
+							Models: constants.QwenModelsEndpoint,
+							Chat:   constants.QwenChatEndpoint,
+						},
+					},
+					constants.MoonshotID: {
+						ID:             constants.MoonshotID,
+						Name:           constants.MoonshotDisplayName,
+						URL:            constants.MoonshotDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.MoonshotModelsEndpoint,
-							Chat:   providers.MoonshotChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.MoonshotModelsEndpoint,
+							Chat:   constants.MoonshotChatEndpoint,
 						},
 					},
 				},
@@ -275,140 +280,142 @@ func TestLoad(t *testing.T) {
 					ResponseHeaderTimeout: 10 * time.Second,
 					ExpectContinueTimeout: 1 * time.Second,
 				},
-				Providers: map[providers.Provider]*providers.Config{
-					providers.OllamaID: {
-						ID:             providers.OllamaID,
-						Name:           providers.OllamaDisplayName,
+				Providers: map[types.Provider]*registry.ProviderConfig{
+					constants.OllamaID: {
+						ID:             constants.OllamaID,
+						Name:           constants.OllamaDisplayName,
 						URL:            "http://custom-ollama:8080",
-						AuthType:       providers.AuthTypeNone,
+						AuthType:       constants.AuthTypeNone,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OllamaModelsEndpoint,
-							Chat:   providers.OllamaChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OllamaModelsEndpoint,
+							Chat:   constants.OllamaChatEndpoint,
 						},
 					},
-					providers.OllamaCloudID: {
-						ID:             providers.OllamaCloudID,
-						Name:           providers.OllamaCloudDisplayName,
-						URL:            providers.OllamaCloudDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.OllamaCloudID: {
+						ID:             constants.OllamaCloudID,
+						Name:           constants.OllamaCloudDisplayName,
+						URL:            constants.OllamaCloudDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OllamaCloudModelsEndpoint,
-							Chat:   providers.OllamaCloudChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OllamaCloudModelsEndpoint,
+							Chat:   constants.OllamaCloudChatEndpoint,
 						},
 					},
-					providers.GroqID: {
-						ID:             providers.GroqID,
-						Name:           providers.GroqDisplayName,
-						URL:            providers.GroqDefaultBaseURL,
+					constants.GroqID: {
+						ID:             constants.GroqID,
+						Name:           constants.GroqDisplayName,
+						URL:            constants.GroqDefaultBaseURL,
 						Token:          "groq123",
-						AuthType:       providers.AuthTypeBearer,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.GroqModelsEndpoint,
-							Chat:   providers.GroqChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.GroqModelsEndpoint,
+							Chat:   constants.GroqChatEndpoint,
 						},
 					},
-					providers.OpenaiID: {
-						ID:             providers.OpenaiID,
-						Name:           providers.OpenaiDisplayName,
-						URL:            providers.OpenaiDefaultBaseURL,
+					constants.OpenaiID: {
+						ID:             constants.OpenaiID,
+						Name:           constants.OpenaiDisplayName,
+						URL:            constants.OpenaiDefaultBaseURL,
 						Token:          "openai123",
-						AuthType:       providers.AuthTypeBearer,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OpenaiModelsEndpoint,
-							Chat:   providers.OpenaiChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OpenaiModelsEndpoint,
+							Chat:   constants.OpenaiChatEndpoint,
 						},
 					},
-					providers.CloudflareID: {
-						ID:             providers.CloudflareID,
-						Name:           providers.CloudflareDisplayName,
-						URL:            providers.CloudflareDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.CloudflareID: {
+						ID:             constants.CloudflareID,
+						Name:           constants.CloudflareDisplayName,
+						URL:            constants.CloudflareDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.CloudflareModelsEndpoint,
-							Chat:   providers.CloudflareChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.CloudflareModelsEndpoint,
+							Chat:   constants.CloudflareChatEndpoint,
 						},
 					},
-					providers.CohereID: {
-						ID:             providers.CohereID,
-						Name:           providers.CohereDisplayName,
-						URL:            providers.CohereDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.CohereID: {
+						ID:             constants.CohereID,
+						Name:           constants.CohereDisplayName,
+						URL:            constants.CohereDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.CohereModelsEndpoint,
-							Chat:   providers.CohereChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.CohereModelsEndpoint,
+							Chat:   constants.CohereChatEndpoint,
 						},
 					},
-					providers.AnthropicID: {
-						ID:             providers.AnthropicID,
-						Name:           providers.AnthropicDisplayName,
-						URL:            providers.AnthropicDefaultBaseURL,
-						AuthType:       providers.AuthTypeXheader,
+					constants.AnthropicID: {
+						ID:             constants.AnthropicID,
+						Name:           constants.AnthropicDisplayName,
+						URL:            constants.AnthropicDefaultBaseURL,
+						AuthType:       constants.AuthTypeXheader,
 						SupportsVision: true,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},
-						Endpoints: providers.Endpoints{
-							Models: providers.AnthropicModelsEndpoint,
-							Chat:   providers.AnthropicChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.AnthropicModelsEndpoint,
+							Chat:   constants.AnthropicChatEndpoint,
 						},
 					},
-					providers.DeepseekID: {
-						ID:             providers.DeepseekID,
-						Name:           providers.DeepseekDisplayName,
-						URL:            providers.DeepseekDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.DeepseekID: {
+						ID:             constants.DeepseekID,
+						Name:           constants.DeepseekDisplayName,
+						URL:            constants.DeepseekDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.DeepseekModelsEndpoint,
-							Chat:   providers.DeepseekChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.DeepseekModelsEndpoint,
+							Chat:   constants.DeepseekChatEndpoint,
 						},
 					},
-					providers.GoogleID: {
-						ID:             providers.GoogleID,
-						Name:           providers.GoogleDisplayName,
-						URL:            providers.GoogleDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.GoogleID: {
+						ID:             constants.GoogleID,
+						Name:           constants.GoogleDisplayName,
+						URL:            constants.GoogleDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.GoogleModelsEndpoint,
-							Chat:   providers.GoogleChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.GoogleModelsEndpoint,
+							Chat:   constants.GoogleChatEndpoint,
 						},
 					},
-					providers.MistralID: {
-						ID:             providers.MistralID,
-						Name:           providers.MistralDisplayName,
-						URL:            providers.MistralDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.MistralID: {
+						ID:             constants.MistralID,
+						Name:           constants.MistralDisplayName,
+						URL:            constants.MistralDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.MistralModelsEndpoint,
-							Chat:   providers.MistralChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.MistralModelsEndpoint,
+							Chat:   constants.MistralChatEndpoint,
 						},
 					},
-					providers.QwenID: {
-						ID:             providers.QwenID,
-						Name:           providers.QwenDisplayName,
-						URL:            providers.QwenDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.QwenID: {
+						ID:             constants.QwenID,
+						Name:           constants.QwenDisplayName,
+						URL:            constants.QwenDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.QwenModelsEndpoint,
-							Chat:   providers.QwenChatEndpoint,
-					providers.MoonshotID: {
-						ID:             providers.MoonshotID,
-						Name:           providers.MoonshotDisplayName,
-						URL:            providers.MoonshotDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+						Endpoints: types.Endpoints{
+							Models: constants.QwenModelsEndpoint,
+							Chat:   constants.QwenChatEndpoint,
+						},
+					},
+					constants.MoonshotID: {
+						ID:             constants.MoonshotID,
+						Name:           constants.MoonshotDisplayName,
+						URL:            constants.MoonshotDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.MoonshotModelsEndpoint,
-							Chat:   providers.MoonshotChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.MoonshotModelsEndpoint,
+							Chat:   constants.MoonshotChatEndpoint,
 						},
 					},
 				},
@@ -473,138 +480,140 @@ func TestLoad(t *testing.T) {
 					ResponseHeaderTimeout: 10 * time.Second,
 					ExpectContinueTimeout: 1 * time.Second,
 				},
-				Providers: map[providers.Provider]*providers.Config{
-					providers.OllamaID: {
-						ID:             providers.OllamaID,
-						Name:           providers.OllamaDisplayName,
+				Providers: map[types.Provider]*registry.ProviderConfig{
+					constants.OllamaID: {
+						ID:             constants.OllamaID,
+						Name:           constants.OllamaDisplayName,
 						URL:            "http://custom-ollama:8080",
-						AuthType:       providers.AuthTypeNone,
+						AuthType:       constants.AuthTypeNone,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OllamaModelsEndpoint,
-							Chat:   providers.OllamaChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OllamaModelsEndpoint,
+							Chat:   constants.OllamaChatEndpoint,
 						},
 					},
-					providers.OllamaCloudID: {
-						ID:             providers.OllamaCloudID,
-						Name:           providers.OllamaCloudDisplayName,
-						URL:            providers.OllamaCloudDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.OllamaCloudID: {
+						ID:             constants.OllamaCloudID,
+						Name:           constants.OllamaCloudDisplayName,
+						URL:            constants.OllamaCloudDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OllamaCloudModelsEndpoint,
-							Chat:   providers.OllamaCloudChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OllamaCloudModelsEndpoint,
+							Chat:   constants.OllamaCloudChatEndpoint,
 						},
 					},
-					providers.GroqID: {
-						ID:             providers.GroqID,
-						Name:           providers.GroqDisplayName,
-						URL:            providers.GroqDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.GroqID: {
+						ID:             constants.GroqID,
+						Name:           constants.GroqDisplayName,
+						URL:            constants.GroqDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.GroqModelsEndpoint,
-							Chat:   providers.GroqChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.GroqModelsEndpoint,
+							Chat:   constants.GroqChatEndpoint,
 						},
 					},
-					providers.OpenaiID: {
-						ID:             providers.OpenaiID,
-						Name:           providers.OpenaiDisplayName,
-						URL:            providers.OpenaiDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.OpenaiID: {
+						ID:             constants.OpenaiID,
+						Name:           constants.OpenaiDisplayName,
+						URL:            constants.OpenaiDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.OpenaiModelsEndpoint,
-							Chat:   providers.OpenaiChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.OpenaiModelsEndpoint,
+							Chat:   constants.OpenaiChatEndpoint,
 						},
 					},
-					providers.CloudflareID: {
-						ID:             providers.CloudflareID,
-						Name:           providers.CloudflareDisplayName,
-						URL:            providers.CloudflareDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.CloudflareID: {
+						ID:             constants.CloudflareID,
+						Name:           constants.CloudflareDisplayName,
+						URL:            constants.CloudflareDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.CloudflareModelsEndpoint,
-							Chat:   providers.CloudflareChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.CloudflareModelsEndpoint,
+							Chat:   constants.CloudflareChatEndpoint,
 						},
 					},
-					providers.CohereID: {
-						ID:             providers.CohereID,
-						Name:           providers.CohereDisplayName,
-						URL:            providers.CohereDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.CohereID: {
+						ID:             constants.CohereID,
+						Name:           constants.CohereDisplayName,
+						URL:            constants.CohereDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.CohereModelsEndpoint,
-							Chat:   providers.CohereChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.CohereModelsEndpoint,
+							Chat:   constants.CohereChatEndpoint,
 						},
 					},
-					providers.AnthropicID: {
-						ID:             providers.AnthropicID,
-						Name:           providers.AnthropicDisplayName,
-						URL:            providers.AnthropicDefaultBaseURL,
-						AuthType:       providers.AuthTypeXheader,
+					constants.AnthropicID: {
+						ID:             constants.AnthropicID,
+						Name:           constants.AnthropicDisplayName,
+						URL:            constants.AnthropicDefaultBaseURL,
+						AuthType:       constants.AuthTypeXheader,
 						SupportsVision: true,
 						ExtraHeaders: map[string][]string{
 							"anthropic-version": {"2023-06-01"},
 						},
-						Endpoints: providers.Endpoints{
-							Models: providers.AnthropicModelsEndpoint,
-							Chat:   providers.AnthropicChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.AnthropicModelsEndpoint,
+							Chat:   constants.AnthropicChatEndpoint,
 						},
 					},
-					providers.DeepseekID: {
-						ID:             providers.DeepseekID,
-						Name:           providers.DeepseekDisplayName,
-						URL:            providers.DeepseekDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.DeepseekID: {
+						ID:             constants.DeepseekID,
+						Name:           constants.DeepseekDisplayName,
+						URL:            constants.DeepseekDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.DeepseekModelsEndpoint,
-							Chat:   providers.DeepseekChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.DeepseekModelsEndpoint,
+							Chat:   constants.DeepseekChatEndpoint,
 						},
 					},
-					providers.GoogleID: {
-						ID:             providers.GoogleID,
-						Name:           providers.GoogleDisplayName,
-						URL:            providers.GoogleDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.GoogleID: {
+						ID:             constants.GoogleID,
+						Name:           constants.GoogleDisplayName,
+						URL:            constants.GoogleDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.GoogleModelsEndpoint,
-							Chat:   providers.GoogleChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.GoogleModelsEndpoint,
+							Chat:   constants.GoogleChatEndpoint,
 						},
 					},
-					providers.MistralID: {
-						ID:             providers.MistralID,
-						Name:           providers.MistralDisplayName,
-						URL:            providers.MistralDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.MistralID: {
+						ID:             constants.MistralID,
+						Name:           constants.MistralDisplayName,
+						URL:            constants.MistralDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.MistralModelsEndpoint,
-							Chat:   providers.MistralChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.MistralModelsEndpoint,
+							Chat:   constants.MistralChatEndpoint,
 						},
 					},
-					providers.QwenID: {
-						ID:             providers.QwenID,
-						Name:           providers.QwenDisplayName,
-						URL:            providers.QwenDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+					constants.QwenID: {
+						ID:             constants.QwenID,
+						Name:           constants.QwenDisplayName,
+						URL:            constants.QwenDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: true,
-						Endpoints: providers.Endpoints{
-							Models: providers.QwenModelsEndpoint,
-							Chat:   providers.QwenChatEndpoint,
-					providers.MoonshotID: {
-						ID:             providers.MoonshotID,
-						Name:           providers.MoonshotDisplayName,
-						URL:            providers.MoonshotDefaultBaseURL,
-						AuthType:       providers.AuthTypeBearer,
+						Endpoints: types.Endpoints{
+							Models: constants.QwenModelsEndpoint,
+							Chat:   constants.QwenChatEndpoint,
+						},
+					},
+					constants.MoonshotID: {
+						ID:             constants.MoonshotID,
+						Name:           constants.MoonshotDisplayName,
+						URL:            constants.MoonshotDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
 						SupportsVision: false,
-						Endpoints: providers.Endpoints{
-							Models: providers.MoonshotModelsEndpoint,
-							Chat:   providers.MoonshotChatEndpoint,
+						Endpoints: types.Endpoints{
+							Models: constants.MoonshotModelsEndpoint,
+							Chat:   constants.MoonshotChatEndpoint,
 						},
 					},
 				},

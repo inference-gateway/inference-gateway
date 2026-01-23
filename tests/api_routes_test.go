@@ -9,14 +9,18 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
-	api "github.com/inference-gateway/inference-gateway/api"
-	config "github.com/inference-gateway/inference-gateway/config"
-	logger "github.com/inference-gateway/inference-gateway/logger"
-	providers "github.com/inference-gateway/inference-gateway/providers"
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
+
+	api "github.com/inference-gateway/inference-gateway/api"
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 func init() {
@@ -27,7 +31,7 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 	tests := []struct {
 		name                         string
 		allowedModels                string
-		mockModels                   []providers.Model
+		mockModels                   []types.Model
 		expectedModelsSingleProvider []string
 		expectedModelsAllProviders   []string
 		description                  string
@@ -35,9 +39,9 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		{
 			name:          "Empty ALLOWED_MODELS returns all models",
 			allowedModels: "",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/gpt-3.5-turbo"},
 			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "anthropic/gpt-4", "anthropic/gpt-3.5-turbo"},
@@ -46,9 +50,9 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		{
 			name:          "Filter by exact model ID",
 			allowedModels: "openai/gpt-4",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-4"},
 			expectedModelsAllProviders:   []string{"openai/gpt-4"},
@@ -57,9 +61,9 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		{
 			name:          "Filter by model name without provider prefix",
 			allowedModels: "gpt-4",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-4"},
 			expectedModelsAllProviders:   []string{"openai/gpt-4", "anthropic/gpt-4"},
@@ -68,9 +72,9 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		{
 			name:          "Case insensitive matching",
 			allowedModels: "GPT-4",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-4"},
 			expectedModelsAllProviders:   []string{"openai/gpt-4", "anthropic/gpt-4"},
@@ -79,9 +83,9 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		{
 			name:          "Trim whitespace in ALLOWED_MODELS",
 			allowedModels: " gpt-4 ",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-4"},
 			expectedModelsAllProviders:   []string{"openai/gpt-4", "anthropic/gpt-4"},
@@ -90,9 +94,9 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		{
 			name:          "No matches returns empty list",
 			allowedModels: "nonexistent-model",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{},
 			expectedModelsAllProviders:   []string{},
@@ -101,9 +105,9 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 		{
 			name:          "Mixed exact ID and name matching",
 			allowedModels: "openai/gpt-4",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-4"},
 			expectedModelsAllProviders:   []string{"openai/gpt-4"},
@@ -117,7 +121,7 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 
-				response := providers.ListModelsResponse{
+				response := types.ListModelsResponse{
 					Object: "list",
 					Data:   tt.mockModels,
 				}
@@ -143,30 +147,30 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
 
-			providerCfg := map[providers.Provider]*providers.Config{
-				providers.OpenaiID: {
-					ID:       providers.OpenaiID,
-					Name:     providers.OpenaiDisplayName,
+			providerCfg := map[types.Provider]*registry.ProviderConfig{
+				constants.OpenaiID: {
+					ID:       constants.OpenaiID,
+					Name:     constants.OpenaiDisplayName,
 					URL:      server.URL,
 					Token:    "test-token",
-					AuthType: providers.AuthTypeBearer,
-					Endpoints: providers.Endpoints{
-						Models: providers.OpenaiModelsEndpoint,
+					AuthType: constants.AuthTypeBearer,
+					Endpoints: types.Endpoints{
+						Models: constants.OpenaiModelsEndpoint,
 					},
 				},
-				providers.AnthropicID: {
-					ID:       providers.AnthropicID,
-					Name:     providers.AnthropicDisplayName,
+				constants.AnthropicID: {
+					ID:       constants.AnthropicID,
+					Name:     constants.AnthropicDisplayName,
 					URL:      server.URL,
 					Token:    "test-token",
-					AuthType: providers.AuthTypeXheader,
-					Endpoints: providers.Endpoints{
-						Models: providers.AnthropicModelsEndpoint,
+					AuthType: constants.AuthTypeXheader,
+					Endpoints: types.Endpoints{
+						Models: constants.AnthropicModelsEndpoint,
 					},
 				},
 			}
 
-			registry := providers.NewProviderRegistry(providerCfg, log)
+			registry := registry.NewProviderRegistry(providerCfg, log)
 
 			cfg := config.Config{
 				AllowedModels: tt.allowedModels,
@@ -191,7 +195,7 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 
 				assert.Equal(t, http.StatusOK, w.Code)
 
-				var response providers.ListModelsResponse
+				var response types.ListModelsResponse
 				err = json.Unmarshal(w.Body.Bytes(), &response)
 				require.NoError(t, err)
 
@@ -217,7 +221,7 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 
 				assert.Equal(t, http.StatusOK, w.Code)
 
-				var response providers.ListModelsResponse
+				var response types.ListModelsResponse
 				err = json.Unmarshal(w.Body.Bytes(), &response)
 				require.NoError(t, err)
 
@@ -266,7 +270,7 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
 
-			registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{}, log)
+			registry := registry.NewProviderRegistry(map[types.Provider]*registry.ProviderConfig{}, log)
 
 			cfg := config.Config{
 				Server: &config.ServerConfig{
@@ -405,20 +409,20 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
 
-			providerCfg := map[providers.Provider]*providers.Config{
-				providers.OpenaiID: {
-					ID:       providers.OpenaiID,
-					Name:     providers.OpenaiDisplayName,
+			providerCfg := map[types.Provider]*registry.ProviderConfig{
+				constants.OpenaiID: {
+					ID:       constants.OpenaiID,
+					Name:     constants.OpenaiDisplayName,
 					URL:      server.URL,
 					Token:    "test-token",
-					AuthType: providers.AuthTypeBearer,
-					Endpoints: providers.Endpoints{
-						Chat: providers.OpenaiChatEndpoint,
+					AuthType: constants.AuthTypeBearer,
+					Endpoints: types.Endpoints{
+						Chat: constants.OpenaiChatEndpoint,
 					},
 				},
 			}
 
-			registry := providers.NewProviderRegistry(providerCfg, log)
+			registry := registry.NewProviderRegistry(providerCfg, log)
 
 			cfg := config.Config{
 				AllowedModels: tt.allowedModels,
@@ -476,7 +480,7 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 	tests := []struct {
 		name                         string
 		disallowedModels             string
-		mockModels                   []providers.Model
+		mockModels                   []types.Model
 		expectedModelsSingleProvider []string
 		expectedModelsAllProviders   []string
 		description                  string
@@ -484,9 +488,9 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 		{
 			name:             "Empty DISALLOWED_MODELS returns all models",
 			disallowedModels: "",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-4", "openai/gpt-3.5-turbo"},
 			expectedModelsAllProviders:   []string{"openai/gpt-4", "openai/gpt-3.5-turbo", "anthropic/gpt-4", "anthropic/gpt-3.5-turbo"},
@@ -495,9 +499,9 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 		{
 			name:             "Disallow specific model by exact ID",
 			disallowedModels: "openai/gpt-4",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-3.5-turbo"},
 			expectedModelsAllProviders:   []string{"openai/gpt-3.5-turbo", "anthropic/gpt-4", "anthropic/gpt-3.5-turbo"},
@@ -506,9 +510,9 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 		{
 			name:             "Disallow by model name without provider prefix",
 			disallowedModels: "gpt-4",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-3.5-turbo"},
 			expectedModelsAllProviders:   []string{"openai/gpt-3.5-turbo", "anthropic/gpt-3.5-turbo"},
@@ -517,9 +521,9 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 		{
 			name:             "Case insensitive disallowing",
 			disallowedModels: "GPT-4",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{"openai/gpt-3.5-turbo"},
 			expectedModelsAllProviders:   []string{"openai/gpt-3.5-turbo", "anthropic/gpt-3.5-turbo"},
@@ -528,9 +532,9 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 		{
 			name:             "Disallow multiple models",
 			disallowedModels: "gpt-4,gpt-3.5-turbo",
-			mockModels: []providers.Model{
-				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: providers.OpenaiID},
-				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: providers.OpenaiID},
+			mockModels: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},
 			expectedModelsSingleProvider: []string{},
 			expectedModelsAllProviders:   []string{},
@@ -544,7 +548,7 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 
-				response := providers.ListModelsResponse{
+				response := types.ListModelsResponse{
 					Object: "list",
 					Data:   tt.mockModels,
 				}
@@ -570,30 +574,30 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
 
-			providerCfg := map[providers.Provider]*providers.Config{
-				providers.OpenaiID: {
-					ID:       providers.OpenaiID,
-					Name:     providers.OpenaiDisplayName,
+			providerCfg := map[types.Provider]*registry.ProviderConfig{
+				constants.OpenaiID: {
+					ID:       constants.OpenaiID,
+					Name:     constants.OpenaiDisplayName,
 					URL:      server.URL,
 					Token:    "test-token",
-					AuthType: providers.AuthTypeBearer,
-					Endpoints: providers.Endpoints{
-						Models: providers.OpenaiModelsEndpoint,
+					AuthType: constants.AuthTypeBearer,
+					Endpoints: types.Endpoints{
+						Models: constants.OpenaiModelsEndpoint,
 					},
 				},
-				providers.AnthropicID: {
-					ID:       providers.AnthropicID,
-					Name:     providers.AnthropicDisplayName,
+				constants.AnthropicID: {
+					ID:       constants.AnthropicID,
+					Name:     constants.AnthropicDisplayName,
 					URL:      server.URL,
 					Token:    "test-token",
-					AuthType: providers.AuthTypeXheader,
-					Endpoints: providers.Endpoints{
-						Models: providers.AnthropicModelsEndpoint,
+					AuthType: constants.AuthTypeXheader,
+					Endpoints: types.Endpoints{
+						Models: constants.AnthropicModelsEndpoint,
 					},
 				},
 			}
 
-			registry := providers.NewProviderRegistry(providerCfg, log)
+			registry := registry.NewProviderRegistry(providerCfg, log)
 
 			cfg := config.Config{
 				DisallowedModels: tt.disallowedModels,
@@ -618,7 +622,7 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 
 				assert.Equal(t, http.StatusOK, w.Code)
 
-				var response providers.ListModelsResponse
+				var response types.ListModelsResponse
 				err = json.Unmarshal(w.Body.Bytes(), &response)
 				require.NoError(t, err)
 
@@ -644,7 +648,7 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 
 				assert.Equal(t, http.StatusOK, w.Code)
 
-				var response providers.ListModelsResponse
+				var response types.ListModelsResponse
 				err = json.Unmarshal(w.Body.Bytes(), &response)
 				require.NoError(t, err)
 
@@ -721,18 +725,15 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 
-				response := providers.CreateChatCompletionResponse{
+				response := types.CreateChatCompletionResponse{
 					ID:      "chatcmpl-123",
 					Object:  "chat.completion",
 					Created: 1677649963,
 					Model:   "gpt-4",
-					Choices: []providers.ChatCompletionChoice{
+					Choices: []types.ChatCompletionChoice{
 						{
-							Index: 0,
-							Message: providers.Message{
-								Role:    "assistant",
-								Content: "Hello, how can I help you today?",
-							},
+							Index:        0,
+							Message:      types.NewTextMessage(t, types.Assistant, "Hello, how can I help you today?"),
 							FinishReason: "stop",
 						},
 					},
@@ -759,20 +760,20 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
 
-			providerCfg := map[providers.Provider]*providers.Config{
-				providers.OpenaiID: {
-					ID:       providers.OpenaiID,
-					Name:     providers.OpenaiDisplayName,
+			providerCfg := map[types.Provider]*registry.ProviderConfig{
+				constants.OpenaiID: {
+					ID:       constants.OpenaiID,
+					Name:     constants.OpenaiDisplayName,
 					URL:      server.URL,
 					Token:    "test-token",
-					AuthType: providers.AuthTypeBearer,
-					Endpoints: providers.Endpoints{
-						Chat: providers.OpenaiChatEndpoint,
+					AuthType: constants.AuthTypeBearer,
+					Endpoints: types.Endpoints{
+						Chat: constants.OpenaiChatEndpoint,
 					},
 				},
 			}
 
-			registry := providers.NewProviderRegistry(providerCfg, log)
+			registry := registry.NewProviderRegistry(providerCfg, log)
 
 			cfg := config.Config{
 				DisallowedModels: tt.disallowedModels,
@@ -880,18 +881,15 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 
-				response := providers.CreateChatCompletionResponse{
+				response := types.CreateChatCompletionResponse{
 					ID:      "chatcmpl-123",
 					Object:  "chat.completion",
 					Created: 1677649963,
 					Model:   "gpt-4",
-					Choices: []providers.ChatCompletionChoice{
+					Choices: []types.ChatCompletionChoice{
 						{
-							Index: 0,
-							Message: providers.Message{
-								Role:    "assistant",
-								Content: "Hello, how can I help you today?",
-							},
+							Index:        0,
+							Message:      types.NewTextMessage(t, types.Assistant, "Hello, how can I help you today?"),
 							FinishReason: "stop",
 						},
 					},
@@ -918,20 +916,20 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
 
-			providerCfg := map[providers.Provider]*providers.Config{
-				providers.OpenaiID: {
-					ID:       providers.OpenaiID,
-					Name:     providers.OpenaiDisplayName,
+			providerCfg := map[types.Provider]*registry.ProviderConfig{
+				constants.OpenaiID: {
+					ID:       constants.OpenaiID,
+					Name:     constants.OpenaiDisplayName,
 					URL:      server.URL,
 					Token:    "test-token",
-					AuthType: providers.AuthTypeBearer,
-					Endpoints: providers.Endpoints{
-						Chat: providers.OpenaiChatEndpoint,
+					AuthType: constants.AuthTypeBearer,
+					Endpoints: types.Endpoints{
+						Chat: constants.OpenaiChatEndpoint,
 					},
 				},
 			}
 
-			registry := providers.NewProviderRegistry(providerCfg, log)
+			registry := registry.NewProviderRegistry(providerCfg, log)
 
 			cfg := config.Config{
 				AllowedModels:    tt.allowedModels,
@@ -1003,49 +1001,49 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 		},
 		{
 			name:               "HTTP 401 error is returned with correct status code",
-			providerError:      &providers.HTTPError{StatusCode: http.StatusUnauthorized, Message: `{"error":{"message":"authentication failed"}}`},
+			providerError:      &core.HTTPError{StatusCode: http.StatusUnauthorized, Message: `{"error":{"message":"authentication failed"}}`},
 			expectedStatusCode: http.StatusUnauthorized,
 			expectedError:      "authentication failed",
 			description:        "HTTP 401 errors should return with correct status code",
 		},
 		{
 			name:               "HTTP 403 error is returned with correct status code",
-			providerError:      &providers.HTTPError{StatusCode: http.StatusForbidden, Message: `{"error":{"message":"forbidden access"}}`},
+			providerError:      &core.HTTPError{StatusCode: http.StatusForbidden, Message: `{"error":{"message":"forbidden access"}}`},
 			expectedStatusCode: http.StatusForbidden,
 			expectedError:      "forbidden access",
 			description:        "HTTP 403 errors should return with correct status code",
 		},
 		{
 			name:               "HTTP 404 error is returned with correct status code",
-			providerError:      &providers.HTTPError{StatusCode: http.StatusNotFound, Message: `{"error":{"message":"model not found"}}`},
+			providerError:      &core.HTTPError{StatusCode: http.StatusNotFound, Message: `{"error":{"message":"model not found"}}`},
 			expectedStatusCode: http.StatusNotFound,
 			expectedError:      "model not found",
 			description:        "HTTP 404 errors should return with correct status code",
 		},
 		{
 			name:               "HTTP 429 error is returned with correct status code",
-			providerError:      &providers.HTTPError{StatusCode: http.StatusTooManyRequests, Message: `{"error":{"message":"rate limit exceeded"}}`},
+			providerError:      &core.HTTPError{StatusCode: http.StatusTooManyRequests, Message: `{"error":{"message":"rate limit exceeded"}}`},
 			expectedStatusCode: http.StatusTooManyRequests,
 			expectedError:      "rate limit exceeded",
 			description:        "HTTP 429 errors should return with correct status code",
 		},
 		{
 			name:               "HTTP 500 error is returned with correct status code",
-			providerError:      &providers.HTTPError{StatusCode: http.StatusInternalServerError, Message: `{"error":{"message":"internal server error"}}`},
+			providerError:      &core.HTTPError{StatusCode: http.StatusInternalServerError, Message: `{"error":{"message":"internal server error"}}`},
 			expectedStatusCode: http.StatusInternalServerError,
 			expectedError:      "internal server error",
 			description:        "HTTP 500 errors should return with correct status code",
 		},
 		{
 			name:               "HTTP 502 error is returned with correct status code",
-			providerError:      &providers.HTTPError{StatusCode: http.StatusBadGateway, Message: `{"error":{"message":"bad gateway"}}`},
+			providerError:      &core.HTTPError{StatusCode: http.StatusBadGateway, Message: `{"error":{"message":"bad gateway"}}`},
 			expectedStatusCode: http.StatusBadGateway,
 			expectedError:      "bad gateway",
 			description:        "HTTP 502 errors should return with correct status code",
 		},
 		{
 			name:               "HTTP 503 error is returned with correct status code",
-			providerError:      &providers.HTTPError{StatusCode: http.StatusServiceUnavailable, Message: `{"error":{"message":"service unavailable"}}`},
+			providerError:      &core.HTTPError{StatusCode: http.StatusServiceUnavailable, Message: `{"error":{"message":"service unavailable"}}`},
 			expectedStatusCode: http.StatusServiceUnavailable,
 			expectedError:      "service unavailable",
 			description:        "HTTP 503 errors should return with correct status code",
@@ -1064,15 +1062,15 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
 
-			providerCfg := map[providers.Provider]*providers.Config{
-				providers.OpenaiID: {
-					ID:       providers.OpenaiID,
-					Name:     providers.OpenaiDisplayName,
+			providerCfg := map[types.Provider]*registry.ProviderConfig{
+				constants.OpenaiID: {
+					ID:       constants.OpenaiID,
+					Name:     constants.OpenaiDisplayName,
 					URL:      "http://localhost:8080",
 					Token:    "test-token",
-					AuthType: providers.AuthTypeBearer,
-					Endpoints: providers.Endpoints{
-						Chat: providers.OpenaiChatEndpoint,
+					AuthType: constants.AuthTypeBearer,
+					Endpoints: types.Endpoints{
+						Chat: constants.OpenaiChatEndpoint,
 					},
 				},
 			}
@@ -1089,7 +1087,7 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 				Return(nil, tt.providerError)
 
 			mockRegistry.EXPECT().
-				BuildProvider(providers.OpenaiID, mockClient).
+				BuildProvider(constants.OpenaiID, mockClient).
 				Return(mockProvider, nil)
 
 			router := api.NewRouter(cfg, log, mockRegistry, mockClient, nil)
@@ -1099,14 +1097,11 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
 			stream := true
-			requestBody := providers.CreateChatCompletionRequest{
+			requestBody := types.CreateChatCompletionRequest{
 				Model:  "openai/gpt-4",
 				Stream: &stream,
-				Messages: []providers.Message{
-					{
-						Role:    "user",
-						Content: "Hello, world!",
-					},
+				Messages: []types.Message{
+					types.NewTextMessage(t, types.User, "Hello, world!"),
 				},
 			}
 

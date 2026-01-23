@@ -124,7 +124,7 @@ func main() {
 							}
 
 							// Log the request
-							requestJSON, _ := json.MarshalIndent(map[string]interface{}{
+							requestJSON, _ := json.MarshalIndent(map[string]any{
 								"provider": sdk.Groq,
 								"model":    "llama-3.3-70b-versatile",
 								"messages": messages,

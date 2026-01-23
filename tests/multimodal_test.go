@@ -3,69 +3,46 @@ package tests
 import (
 	"testing"
 
-	providers "github.com/inference-gateway/inference-gateway/providers"
+	"github.com/inference-gateway/inference-gateway/providers/types"
 	assert "github.com/stretchr/testify/assert"
 )
 
 func TestMessage_HasImageContent(t *testing.T) {
 	tests := []struct {
 		name     string
-		message  providers.Message
+		makeMsg  func(t *testing.T) types.Message
 		expected bool
 	}{
 		{
 			name: "String content has no images",
-			message: providers.Message{
-				Role:    providers.MessageRoleUser,
-				Content: "Hello, how are you?",
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewTextMessage(t, types.User, "Hello, how are you?")
 			},
 			expected: false,
 		},
 		{
 			name: "Array content with only text",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "text",
-						"text": "Hello, how are you?",
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewTextContentPart(t, "Hello, how are you?"))
 			},
 			expected: false,
 		},
 		{
 			name: "Array content with image",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "text",
-						"text": "What's in this image?",
-					},
-					map[string]any{
-						"type": "image_url",
-						"image_url": map[string]any{
-							"url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...",
-						},
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewTextContentPart(t, "What's in this image?"),
+					types.NewImageContentPart(t, "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...", nil))
 			},
 			expected: true,
 		},
 		{
 			name: "Array content with only image",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "image_url",
-						"image_url": map[string]any{
-							"url":    "https://example.com/image.jpg",
-							"detail": "high",
-						},
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				detail := types.ImageURLDetail("high")
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewImageContentPart(t, "https://example.com/image.jpg", &detail))
 			},
 			expected: true,
 		},
@@ -73,7 +50,8 @@ func TestMessage_HasImageContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.message.HasImageContent()
+			msg := tt.makeMsg(t)
+			result := msg.HasImageContent()
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -82,65 +60,39 @@ func TestMessage_HasImageContent(t *testing.T) {
 func TestMessage_GetTextContent(t *testing.T) {
 	tests := []struct {
 		name     string
-		message  providers.Message
+		makeMsg  func(t *testing.T) types.Message
 		expected string
 	}{
 		{
 			name: "String content returns text",
-			message: providers.Message{
-				Role:    providers.MessageRoleUser,
-				Content: "Hello, world!",
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewTextMessage(t, types.User, "Hello, world!")
 			},
 			expected: "Hello, world!",
 		},
 		{
 			name: "Array content with text returns first text part",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "text",
-						"text": "First text part",
-					},
-					map[string]any{
-						"type": "text",
-						"text": "Second text part",
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewTextContentPart(t, "First text part"),
+					types.NewTextContentPart(t, "Second text part"))
 			},
 			expected: "First text part",
 		},
 		{
 			name: "Array content with mixed types returns first text",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "image_url",
-						"image_url": map[string]any{
-							"url": "https://example.com/image.jpg",
-						},
-					},
-					map[string]any{
-						"type": "text",
-						"text": "What's in this image?",
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewImageContentPart(t, "https://example.com/image.jpg", nil),
+					types.NewTextContentPart(t, "What's in this image?"))
 			},
 			expected: "What's in this image?",
 		},
 		{
 			name: "Array content with only image returns empty string",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "image_url",
-						"image_url": map[string]any{
-							"url": "https://example.com/image.jpg",
-						},
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewImageContentPart(t, "https://example.com/image.jpg", nil))
 			},
 			expected: "",
 		},
@@ -148,7 +100,8 @@ func TestMessage_GetTextContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := tt.message.GetTextContent()
+			msg := tt.makeMsg(t)
+			result := msg.GetTextContent()
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -157,108 +110,85 @@ func TestMessage_GetTextContent(t *testing.T) {
 func TestMessage_StripImageContent(t *testing.T) {
 	tests := []struct {
 		name            string
-		message         providers.Message
-		expectedContent any
+		makeMsg         func(t *testing.T) types.Message
+		expectedContent string
+		checkAsString   bool
+		checkAsParts    bool
+		expectedParts   int
 	}{
 		{
 			name: "String content remains unchanged",
-			message: providers.Message{
-				Role:    providers.MessageRoleUser,
-				Content: "Hello, world!",
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewTextMessage(t, types.User, "Hello, world!")
 			},
 			expectedContent: "Hello, world!",
+			checkAsString:   true,
 		},
 		{
 			name: "Array with only text remains as single string",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "text",
-						"text": "Just text",
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewTextContentPart(t, "Just text"))
 			},
 			expectedContent: "Just text",
+			checkAsString:   true,
 		},
 		{
 			name: "Array with text and image keeps only text as string",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "text",
-						"text": "What's in this image?",
-					},
-					map[string]any{
-						"type": "image_url",
-						"image_url": map[string]any{
-							"url": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...",
-						},
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewTextContentPart(t, "What's in this image?"),
+					types.NewImageContentPart(t, "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...", nil))
 			},
 			expectedContent: "What's in this image?",
+			checkAsString:   true,
 		},
 		{
 			name: "Array with only images becomes empty string",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "image_url",
-						"image_url": map[string]any{
-							"url": "https://example.com/image.jpg",
-						},
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewImageContentPart(t, "https://example.com/image.jpg", nil))
 			},
 			expectedContent: "",
+			checkAsString:   true,
 		},
 		{
 			name: "Array with multiple text parts and images keeps only text parts",
-			message: providers.Message{
-				Role: providers.MessageRoleUser,
-				Content: []any{
-					map[string]any{
-						"type": "text",
-						"text": "First part",
-					},
-					map[string]any{
-						"type": "image_url",
-						"image_url": map[string]any{
-							"url": "https://example.com/image1.jpg",
-						},
-					},
-					map[string]any{
-						"type": "text",
-						"text": "Second part",
-					},
-					map[string]any{
-						"type": "image_url",
-						"image_url": map[string]any{
-							"url": "https://example.com/image2.jpg",
-						},
-					},
-				},
+			makeMsg: func(t *testing.T) types.Message {
+				return types.NewMultimodalMessage(t, types.User,
+					types.NewTextContentPart(t, "First part"),
+					types.NewImageContentPart(t, "https://example.com/image1.jpg", nil),
+					types.NewTextContentPart(t, "Second part"),
+					types.NewImageContentPart(t, "https://example.com/image2.jpg", nil))
 			},
-			expectedContent: []any{
-				map[string]any{
-					"type": "text",
-					"text": "First part",
-				},
-				map[string]any{
-					"type": "text",
-					"text": "Second part",
-				},
-			},
+			checkAsParts:  true,
+			expectedParts: 2,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.message.StripImageContent()
-			assert.Equal(t, tt.expectedContent, tt.message.Content)
+			msg := tt.makeMsg(t)
+			err := msg.StripImageContent()
+			assert.NoError(t, err)
+
+			if tt.checkAsString {
+				content, err := msg.Content.AsMessageContent0()
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedContent, content)
+			}
+
+			if tt.checkAsParts {
+				parts, err := msg.Content.AsMessageContent1()
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedParts, len(parts))
+
+				for i, part := range parts {
+					textPart, err := part.AsTextContentPart()
+					assert.NoError(t, err, "Part %d should be a text part", i)
+					assert.NotEmpty(t, textPart.Text, "Part %d should have non-empty text", i)
+				}
+			}
 		})
 	}
 }

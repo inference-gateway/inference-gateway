@@ -6,13 +6,17 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers"
+	gin "github.com/gin-gonic/gin"
+	assert "github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
+
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	transformers "github.com/inference-gateway/inference-gateway/providers/transformers"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/mock/gomock"
 )
 
 func init() {
@@ -24,62 +28,62 @@ func TestProviderRegistry(t *testing.T) {
 	log, err := logger.NewLogger("test")
 	assert.NoError(t, err)
 
-	cfg := map[providers.Provider]*providers.Config{
-		providers.OpenaiID: {
-			ID:       providers.OpenaiID,
-			Name:     providers.OpenaiDisplayName,
-			URL:      providers.OpenaiDefaultBaseURL,
+	cfg := map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: {
+			ID:       constants.OpenaiID,
+			Name:     constants.OpenaiDisplayName,
+			URL:      constants.OpenaiDefaultBaseURL,
 			Token:    "test-token",
-			AuthType: providers.AuthTypeBearer,
-			Endpoints: providers.Endpoints{
-				Models: providers.OpenaiModelsEndpoint,
-				Chat:   providers.OpenaiChatEndpoint,
+			AuthType: constants.AuthTypeBearer,
+			Endpoints: types.Endpoints{
+				Models: constants.OpenaiModelsEndpoint,
+				Chat:   constants.OpenaiChatEndpoint,
 			},
 		},
-		providers.MistralID: {
-			ID:       providers.MistralID,
-			Name:     providers.MistralDisplayName,
-			URL:      providers.MistralDefaultBaseURL,
+		constants.MistralID: {
+			ID:       constants.MistralID,
+			Name:     constants.MistralDisplayName,
+			URL:      constants.MistralDefaultBaseURL,
 			Token:    "test-token",
-			AuthType: providers.AuthTypeBearer,
-			Endpoints: providers.Endpoints{
-				Models: providers.MistralModelsEndpoint,
-				Chat:   providers.MistralChatEndpoint,
+			AuthType: constants.AuthTypeBearer,
+			Endpoints: types.Endpoints{
+				Models: constants.MistralModelsEndpoint,
+				Chat:   constants.MistralChatEndpoint,
 			},
 		},
-		providers.OllamaID: {
-			ID:       providers.OllamaID,
-			Name:     providers.OllamaDisplayName,
-			URL:      providers.OllamaDefaultBaseURL,
-			AuthType: providers.AuthTypeNone,
-			Endpoints: providers.Endpoints{
-				Models: providers.OllamaModelsEndpoint,
-				Chat:   providers.OllamaChatEndpoint,
+		constants.OllamaID: {
+			ID:       constants.OllamaID,
+			Name:     constants.OllamaDisplayName,
+			URL:      constants.OllamaDefaultBaseURL,
+			AuthType: constants.AuthTypeNone,
+			Endpoints: types.Endpoints{
+				Models: constants.OllamaModelsEndpoint,
+				Chat:   constants.OllamaChatEndpoint,
 			},
 		},
 	}
 
-	registry := providers.NewProviderRegistry(cfg, log)
+	providerRegistry := registry.NewProviderRegistry(cfg, log)
 
-	providerConfigs := registry.GetProviders()
+	providerConfigs := providerRegistry.GetProviders()
 	assert.Equal(t, len(cfg), len(providerConfigs))
-	assert.Equal(t, cfg[providers.OpenaiID], providerConfigs[providers.OpenaiID])
-	assert.Equal(t, cfg[providers.MistralID], providerConfigs[providers.MistralID])
-	assert.Equal(t, cfg[providers.OllamaID], providerConfigs[providers.OllamaID])
+	assert.Equal(t, cfg[constants.OpenaiID], providerConfigs[constants.OpenaiID])
+	assert.Equal(t, cfg[constants.MistralID], providerConfigs[constants.MistralID])
+	assert.Equal(t, cfg[constants.OllamaID], providerConfigs[constants.OllamaID])
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	mockClient := providersmocks.NewMockClient(ctrl)
 
-	openaiProvider, err := registry.BuildProvider(providers.OpenaiID, mockClient)
+	openaiProvider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 	require.NoError(t, err)
-	assert.Equal(t, providers.OpenaiID, *openaiProvider.GetID())
-	assert.Equal(t, providers.OpenaiDisplayName, openaiProvider.GetName())
-	assert.Equal(t, providers.OpenaiDefaultBaseURL, openaiProvider.GetURL())
+	assert.Equal(t, constants.OpenaiID, *openaiProvider.GetID())
+	assert.Equal(t, constants.OpenaiDisplayName, openaiProvider.GetName())
+	assert.Equal(t, constants.OpenaiDefaultBaseURL, openaiProvider.GetURL())
 	assert.Equal(t, "test-token", openaiProvider.GetToken())
-	assert.Equal(t, providers.AuthTypeBearer, openaiProvider.GetAuthType())
+	assert.Equal(t, constants.AuthTypeBearer, openaiProvider.GetAuthType())
 
-	_, err = registry.BuildProvider("invalid-provider", mockClient)
+	_, err = providerRegistry.BuildProvider("invalid-provider", mockClient)
 	assert.Error(t, err)
 }
 
@@ -128,32 +132,31 @@ func TestProviderChatCompletions(t *testing.T) {
 	log, err := logger.NewLogger("test")
 	assert.NoError(t, err)
 
-	config := &providers.Config{
-		ID:       providers.OpenaiID,
-		Name:     providers.OpenaiDisplayName,
+	config := &registry.ProviderConfig{
+		ID:       constants.OpenaiID,
+		Name:     constants.OpenaiDisplayName,
 		URL:      server.URL,
 		Token:    "test-token",
-		AuthType: providers.AuthTypeBearer,
-		Endpoints: providers.Endpoints{
-			Chat: providers.OpenaiChatEndpoint,
+		AuthType: constants.AuthTypeBearer,
+		Endpoints: types.Endpoints{
+			Chat: constants.OpenaiChatEndpoint,
 		},
 	}
 
-	registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{
-		providers.OpenaiID: config,
+	providerRegistry := registry.NewProviderRegistry(map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: config,
 	}, log)
 
-	provider, err := registry.BuildProvider(providers.OpenaiID, mockClient)
+	provider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 	assert.NoError(t, err)
 
-	roleUser := providers.MessageRoleUser
-	req := providers.CreateChatCompletionRequest{
+	msg := types.NewTextMessage(t, types.User, "Hello, how are you?")
+	require.NoError(t, err)
+
+	req := types.CreateChatCompletionRequest{
 		Model: "gpt-3.5-turbo",
-		Messages: []providers.Message{
-			{
-				Role:    roleUser,
-				Content: "Hello, how are you?",
-			},
+		Messages: []types.Message{
+			msg,
 		},
 	}
 
@@ -162,7 +165,9 @@ func TestProviderChatCompletions(t *testing.T) {
 	assert.Equal(t, "test-completion-id", resp.ID)
 	assert.Equal(t, "gpt-3.5-turbo", resp.Model)
 	assert.Equal(t, 1, len(resp.Choices))
-	assert.Equal(t, "This is a test response.", resp.Choices[0].Message.Content)
+	content, err := resp.Choices[0].Message.Content.AsMessageContent0()
+	assert.NoError(t, err)
+	assert.Equal(t, "This is a test response.", content)
 	assert.Equal(t, "stop", string(resp.Choices[0].FinishReason))
 }
 
@@ -210,22 +215,22 @@ func TestProviderListModels(t *testing.T) {
 	log, err := logger.NewLogger("test")
 	assert.NoError(t, err)
 
-	config := &providers.Config{
-		ID:       providers.OpenaiID,
-		Name:     providers.OpenaiDisplayName,
+	config := &registry.ProviderConfig{
+		ID:       constants.OpenaiID,
+		Name:     constants.OpenaiDisplayName,
 		URL:      server.URL,
 		Token:    "test-token",
-		AuthType: providers.AuthTypeBearer,
-		Endpoints: providers.Endpoints{
-			Models: providers.OpenaiModelsEndpoint,
+		AuthType: constants.AuthTypeBearer,
+		Endpoints: types.Endpoints{
+			Models: constants.OpenaiModelsEndpoint,
 		},
 	}
 
-	registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{
-		providers.OpenaiID: config,
+	providerRegistry := registry.NewProviderRegistry(map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: config,
 	}, log)
 
-	provider, err := registry.BuildProvider(providers.OpenaiID, mockClient)
+	provider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 	assert.NoError(t, err)
 
 	resp, err := provider.ListModels(context.Background())
@@ -241,7 +246,7 @@ func TestDifferentAuthTypes(t *testing.T) {
 	assert.NoError(t, err)
 
 	testCases := []struct {
-		providerId   providers.Provider
+		providerId   types.Provider
 		name         string
 		authType     string
 		token        string
@@ -249,14 +254,14 @@ func TestDifferentAuthTypes(t *testing.T) {
 	}{
 		{
 			name:       "Bearer Auth",
-			providerId: providers.OpenaiID,
-			authType:   providers.AuthTypeBearer,
+			providerId: constants.OpenaiID,
+			authType:   constants.AuthTypeBearer,
 			token:      "sk-test-token",
 		},
 		{
 			name:       "X-Header Auth",
-			providerId: providers.AnthropicID,
-			authType:   providers.AuthTypeXheader,
+			providerId: constants.AnthropicID,
+			authType:   constants.AuthTypeXheader,
 			token:      "anthropic-api-key",
 			extraHeaders: map[string][]string{
 				"anthropic-version": {"2023-06-01"},
@@ -264,20 +269,20 @@ func TestDifferentAuthTypes(t *testing.T) {
 		},
 		{
 			name:       "Mistral Bearer Auth",
-			providerId: providers.MistralID,
-			authType:   providers.AuthTypeBearer,
+			providerId: constants.MistralID,
+			authType:   constants.AuthTypeBearer,
 			token:      "mistral-api-key",
 		},
 		{
 			name:       "No Auth",
-			providerId: providers.OllamaID,
-			authType:   providers.AuthTypeNone,
+			providerId: constants.OllamaID,
+			authType:   constants.AuthTypeNone,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			cfg := map[providers.Provider]*providers.Config{
+			cfg := map[types.Provider]*registry.ProviderConfig{
 				tc.providerId: {
 					ID:           tc.providerId,
 					Name:         "Test Provider",
@@ -288,13 +293,13 @@ func TestDifferentAuthTypes(t *testing.T) {
 				},
 			}
 
-			registry := providers.NewProviderRegistry(cfg, log)
+			providerRegistry := registry.NewProviderRegistry(cfg, log)
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			mockClient := providersmocks.NewMockClient(ctrl)
 
-			provider, err := registry.BuildProvider(tc.providerId, mockClient)
+			provider, err := providerRegistry.BuildProvider(tc.providerId, mockClient)
 			require.NoError(t, err)
 
 			assert.Equal(t, tc.authType, provider.GetAuthType())
@@ -341,31 +346,29 @@ func BenchmarkChatCompletions(b *testing.B) {
 		AnyTimes()
 
 	log, _ := logger.NewLogger("test")
-	config := &providers.Config{
-		ID:       providers.OpenaiID,
-		Name:     providers.OpenaiDisplayName,
+	config := &registry.ProviderConfig{
+		ID:       constants.OpenaiID,
+		Name:     constants.OpenaiDisplayName,
 		URL:      server.URL,
 		Token:    "test-token",
-		AuthType: providers.AuthTypeBearer,
-		Endpoints: providers.Endpoints{
-			Chat: providers.OpenaiChatEndpoint,
+		AuthType: constants.AuthTypeBearer,
+		Endpoints: types.Endpoints{
+			Chat: constants.OpenaiChatEndpoint,
 		},
 	}
 
-	registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{
-		providers.OpenaiID: config,
+	providerRegistry := registry.NewProviderRegistry(map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: config,
 	}, log)
 
-	provider, _ := registry.BuildProvider(providers.OpenaiID, mockClient)
+	provider, _ := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 
-	roleUser := providers.MessageRoleUser
-	req := providers.CreateChatCompletionRequest{
+	msg := types.NewTextMessage(b, types.User, "Hello, how are you?")
+
+	req := types.CreateChatCompletionRequest{
 		Model: "openai/gpt-3.5-turbo",
-		Messages: []providers.Message{
-			{
-				Role:    roleUser,
-				Content: "Hello, how are you?",
-			},
+		Messages: []types.Message{
+			msg,
 		},
 	}
 
@@ -412,22 +415,22 @@ func BenchmarkListModels(b *testing.B) {
 		AnyTimes()
 
 	log, _ := logger.NewLogger("test")
-	config := &providers.Config{
-		ID:       providers.OpenaiID,
-		Name:     providers.OpenaiDisplayName,
+	config := &registry.ProviderConfig{
+		ID:       constants.OpenaiID,
+		Name:     constants.OpenaiDisplayName,
 		URL:      server.URL,
 		Token:    "test-token",
-		AuthType: providers.AuthTypeBearer,
-		Endpoints: providers.Endpoints{
-			Models: providers.OpenaiModelsEndpoint,
+		AuthType: constants.AuthTypeBearer,
+		Endpoints: types.Endpoints{
+			Models: constants.OpenaiModelsEndpoint,
 		},
 	}
 
-	registry := providers.NewProviderRegistry(map[providers.Provider]*providers.Config{
-		providers.OpenaiID: config,
+	providerRegistry := registry.NewProviderRegistry(map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: config,
 	}, log)
 
-	provider, _ := registry.BuildProvider(providers.OpenaiID, mockClient)
+	provider, _ := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 
 	b.ResetTimer()
 
@@ -437,23 +440,23 @@ func BenchmarkListModels(b *testing.B) {
 }
 
 func BenchmarkProviderTransformations(b *testing.B) {
-	ollamaData := &providers.ListModelsResponseOllama{
-		Data: []providers.Model{
+	ollamaData := &transformers.ListModelsResponseOllama{
+		Data: []types.Model{
 			{ID: "openai/gpt-3.5-turbo"},
 			{ID: "openai/gpt-4"},
 		},
 	}
 
-	openaiData := &providers.ListModelsResponseOpenai{
-		Data: []providers.Model{
+	openaiData := &transformers.ListModelsResponseOpenai{
+		Data: []types.Model{
 			{ID: "openai/gpt-4"},
 			{ID: "openai/gpt-3.5-turbo"},
 		},
 	}
 
-	mistralData := &providers.ListModelsResponseMistral{
+	mistralData := &transformers.ListModelsResponseMistral{
 		Object: "list",
-		Data: []providers.Model{
+		Data: []types.Model{
 			{ID: "mistral-large-latest"},
 			{ID: "mistral-small-latest"},
 		},

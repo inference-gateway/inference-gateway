@@ -1,70 +1,73 @@
-package providers
+package routing
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	assert "github.com/stretchr/testify/assert"
+
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 func TestDetermineProviderAndModelName(t *testing.T) {
 	tests := []struct {
 		name             string
 		model            string
-		expectedProvider *Provider
+		expectedProvider *types.Provider
 		expectedModel    string
 	}{
 		{
 			name:             "OpenAI model with prefix",
 			model:            "openai/gpt-4",
-			expectedProvider: pointerToProvider(OpenaiID),
+			expectedProvider: pointerToProvider(constants.OpenaiID),
 			expectedModel:    "gpt-4",
 		},
 		{
 			name:             "Anthropic model with prefix",
 			model:            "anthropic/claude-3",
-			expectedProvider: pointerToProvider(AnthropicID),
+			expectedProvider: pointerToProvider(constants.AnthropicID),
 			expectedModel:    "claude-3",
 		},
 		{
 			name:             "Groq model with prefix",
 			model:            "groq/llama-7b",
-			expectedProvider: pointerToProvider(GroqID),
+			expectedProvider: pointerToProvider(constants.GroqID),
 			expectedModel:    "llama-7b",
 		},
 		{
 			name:             "Ollama model with prefix",
 			model:            "ollama/mistral",
-			expectedProvider: pointerToProvider(OllamaID),
+			expectedProvider: pointerToProvider(constants.OllamaID),
 			expectedModel:    "mistral",
 		},
 		{
 			name:             "Ollama Cloud model with prefix",
 			model:            "ollama_cloud/llama3.2:latest",
-			expectedProvider: pointerToProvider(OllamaCloudID),
+			expectedProvider: pointerToProvider(constants.OllamaCloudID),
 			expectedModel:    "llama3.2:latest",
 		},
 		{
 			name:             "Cloudflare model with prefix",
 			model:            "cloudflare/@cf/meta/llama-2-7b-chat-fp16",
-			expectedProvider: pointerToProvider(CloudflareID),
+			expectedProvider: pointerToProvider(constants.CloudflareID),
 			expectedModel:    "@cf/meta/llama-2-7b-chat-fp16",
 		},
 		{
 			name:             "Cohere model with prefix",
 			model:            "cohere/command-nightly",
-			expectedProvider: pointerToProvider(CohereID),
+			expectedProvider: pointerToProvider(constants.CohereID),
 			expectedModel:    "command-nightly",
 		},
 		{
 			name:             "Deepseek model with prefix",
 			model:            "deepseek/deepseek-coder",
-			expectedProvider: pointerToProvider(DeepseekID),
+			expectedProvider: pointerToProvider(constants.DeepseekID),
 			expectedModel:    "deepseek-coder",
 		},
 		{
 			name:             "Case insensitive prefix matching",
 			model:            "OpenAI/GPT-4",
-			expectedProvider: pointerToProvider(OpenaiID),
+			expectedProvider: pointerToProvider(constants.OpenaiID),
 			expectedModel:    "GPT-4",
 		},
 		{
@@ -116,6 +119,6 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 }
 
 // Helper function to convert Provider to *Provider
-func pointerToProvider(p Provider) *Provider {
+func pointerToProvider(p types.Provider) *types.Provider {
 	return &p
 }

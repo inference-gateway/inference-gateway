@@ -9,7 +9,8 @@
   </a>
   <!-- Version Badge -->
   <a href="https://github.com/inference-gateway/inference-gateway/releases">
-    <img src="https://img.shields.io/github/v/release/inference-gateway/inference-gateway?color=blue&style=flat-square" alt="Version"/>
+    <img src="https://img.shields.io/github/v/release/inference-gateway/inference-gateway?color=blue&style=flat-square"
+         alt="Version"/>
   </a>
   <!-- License Badge -->
   <a href="https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE">

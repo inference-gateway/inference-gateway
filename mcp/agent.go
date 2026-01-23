@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gin-gonic/gin"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers"
+	gin "github.com/gin-gonic/gin"
+
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // MaxAgentIterations limits the number of agent loop iterations
@@ -19,10 +21,10 @@ const MaxAgentIterations = 10
 //
 //go:generate mockgen -source=agent.go -destination=../tests/mocks/mcp/agent.go -package=mcpmocks
 type Agent interface {
-	Run(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse) error
-	RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *providers.CreateChatCompletionRequest) error
-	ExecuteTools(ctx context.Context, toolCalls []providers.ChatCompletionMessageToolCall) ([]providers.Message, error)
-	SetProvider(provider providers.IProvider)
+	Run(ctx context.Context, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error
+	RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *types.CreateChatCompletionRequest) error
+	ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error)
+	SetProvider(provider core.IProvider)
 	SetModel(model *string)
 }
 
@@ -33,7 +35,7 @@ var _ Agent = (*agentImpl)(nil)
 type agentImpl struct {
 	logger    logger.Logger
 	mcpClient MCPClientInterface
-	provider  providers.IProvider
+	provider  core.IProvider
 	model     *string
 }
 
@@ -47,7 +49,7 @@ func NewAgent(logger logger.Logger, mcpClient MCPClientInterface) Agent {
 	}
 }
 
-func (a *agentImpl) SetProvider(provider providers.IProvider) {
+func (a *agentImpl) SetProvider(provider core.IProvider) {
 	if provider == nil {
 		a.logger.Error("attempted to set nil provider", errors.New("provider is nil"))
 		return
@@ -65,7 +67,7 @@ func (a *agentImpl) SetModel(model *string) {
 	a.logger.Debug("model set for agent", "model", *model)
 }
 
-func (a *agentImpl) Run(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse) error {
+func (a *agentImpl) Run(ctx context.Context, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error {
 	if a.provider == nil {
 		return errors.New("provider is not set for agent")
 	}
@@ -121,7 +123,7 @@ type ErrorResponse struct {
 }
 
 // RunWithStream executes the agent with the provided streaming response channel
-func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *providers.CreateChatCompletionRequest) error {
+func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *types.CreateChatCompletionRequest) error {
 	if a.provider == nil {
 		return errors.New("provider is not set for agent")
 	}
@@ -152,10 +154,13 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 		}
 
 		var responseBodyBuilder strings.Builder
-		assistantMessage := providers.Message{
-			Role:      providers.MessageRoleAssistant,
-			Content:   "",
+		assistantMessage := types.Message{
+			Role:      types.Assistant,
 			ToolCalls: nil,
+		}
+		if err := assistantMessage.Content.FromMessageContent0(""); err != nil {
+			a.logger.Error("failed to initialize assistant message content", err)
+			return err
 		}
 
 		streamComplete := false
@@ -191,7 +196,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				middlewareStreamCh <- formattedData
 				responseBodyBuilder.Write(formattedData)
 
-				var resp providers.CreateChatCompletionStreamResponse
+				var resp types.CreateChatCompletionStreamResponse
 				if err := json.Unmarshal([]byte(chunkData), &resp); err != nil {
 					a.logger.Debug("failed to unmarshal streaming chunk", err, "chunk_data", chunkData, "iteration", iteration+1)
 					continue
@@ -204,10 +209,15 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				choice := resp.Choices[0]
 
 				if choice.Delta.Content != "" {
-					if currentContent, ok := assistantMessage.Content.(string); ok {
-						assistantMessage.Content = currentContent + choice.Delta.Content
+					if currentContent, err := assistantMessage.Content.AsMessageContent0(); err == nil {
+						newContent := currentContent + choice.Delta.Content
+						if err := assistantMessage.Content.FromMessageContent0(newContent); err != nil {
+							a.logger.Debug("failed to update message content", err)
+						}
 					} else {
-						assistantMessage.Content = choice.Delta.Content
+						if err := assistantMessage.Content.FromMessageContent0(choice.Delta.Content); err != nil {
+							a.logger.Debug("failed to set message content", err)
+						}
 					}
 				}
 
@@ -223,10 +233,10 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				}
 
 				switch choice.FinishReason {
-				case providers.FinishReasonToolCalls:
+				case types.ToolCalls:
 					a.logger.Debug("stream completing due to tool calls finish reason", "finish_reason", string(choice.FinishReason), "iteration", iteration+1)
 					streamComplete = true
-				case providers.FinishReasonStop:
+				case types.Stop:
 					a.logger.Debug("stream completing due to stop finish reason", "finish_reason", string(choice.FinishReason), "iteration", iteration+1)
 					streamComplete = true
 				}
@@ -239,7 +249,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		a.logger.Debug("stream completed for iteration", "iteration", iteration+1, "has_tool_calls", hasToolCalls)
 
-		var toolCalls []providers.ChatCompletionMessageToolCall
+		var toolCalls []types.ChatCompletionMessageToolCall
 		if hasToolCalls {
 			toolCalls, err = a.parseStreamingToolCalls(responseBodyBuilder.String())
 			if err != nil {
@@ -280,18 +290,21 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 }
 
 // ExecuteTools executes tools with the provided context, tool name, and arguments
-func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.ChatCompletionMessageToolCall) ([]providers.Message, error) {
-	var results []providers.Message
+func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error) {
+	var results []types.Message
 
 	for _, toolCall := range toolCalls {
-		var args map[string]interface{}
+		var args map[string]any
 		if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
 			a.logger.Error("failed to parse tool arguments", err, "args", toolCall.Function.Arguments, "tool_name", toolCall.Function.Name)
-			results = append(results, providers.Message{
-				Role:       providers.MessageRoleTool,
-				Content:    fmt.Sprintf("Error: Failed to parse arguments: %v", err),
-				ToolCallId: &toolCall.ID,
-			})
+			msg := types.Message{
+				Role:       types.Tool,
+				ToolCallID: &toolCall.ID,
+			}
+			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: Failed to parse arguments: %v", err)); contentErr != nil {
+				a.logger.Error("failed to set error content", contentErr)
+			}
+			results = append(results, msg)
 			continue
 		}
 
@@ -300,17 +313,20 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 		server, err := a.mcpClient.GetServerForTool(toolName)
 		if err != nil {
 			a.logger.Error("failed to find server for tool", err, "tool", toolCall.Function.Name, "tool_name", toolName)
-			results = append(results, providers.Message{
-				Role:       providers.MessageRoleTool,
-				Content:    fmt.Sprintf("Error: %v", err),
-				ToolCallId: &toolCall.ID,
-			})
+			msg := types.Message{
+				Role:       types.Tool,
+				ToolCallID: &toolCall.ID,
+			}
+			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
+				a.logger.Error("failed to set error content", contentErr)
+			}
+			results = append(results, msg)
 			continue
 		}
 
 		mcpRequest := Request{
 			Method: "tools/call",
-			Params: map[string]interface{}{
+			Params: map[string]any{
 				"name":      toolName,
 				"arguments": args,
 			},
@@ -320,11 +336,14 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
 		if err != nil {
 			a.logger.Error("failed to execute tool call", err, "tool", toolCall.Function.Name, "server", server)
-			results = append(results, providers.Message{
-				Role:       providers.MessageRoleTool,
-				Content:    fmt.Sprintf("Error: %v", err),
-				ToolCallId: &toolCall.ID,
-			})
+			msg := types.Message{
+				Role:       types.Tool,
+				ToolCallID: &toolCall.ID,
+			}
+			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
+				a.logger.Error("failed to set error content", contentErr)
+			}
+			results = append(results, msg)
 			continue
 		}
 
@@ -340,19 +359,23 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []providers.Chat
 			}
 		}
 
-		results = append(results, providers.Message{
-			Role:       providers.MessageRoleTool,
-			Content:    resultStr,
-			ToolCallId: &toolCall.ID,
-		})
+		msg := types.Message{
+			Role:       types.Tool,
+			ToolCallID: &toolCall.ID,
+		}
+		if err := msg.Content.FromMessageContent0(resultStr); err != nil {
+			a.logger.Error("failed to set tool result content", err)
+			return nil, err
+		}
+		results = append(results, msg)
 	}
 
 	return results, nil
 }
 
 // parseStreamingToolCalls parses streaming response to extract tool calls
-func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]providers.ChatCompletionMessageToolCall, error) {
-	toolCallsMap := make(map[int]*providers.ChatCompletionMessageToolCall)
+func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]types.ChatCompletionMessageToolCall, error) {
+	toolCallsMap := make(map[int]*types.ChatCompletionMessageToolCall)
 	lines := strings.Split(responseBodyBuilder, "\n")
 
 	for _, line := range lines {
@@ -372,7 +395,7 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 			break
 		}
 
-		var chunk providers.CreateChatCompletionStreamResponse
+		var chunk types.CreateChatCompletionStreamResponse
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
 			a.logger.Debug("failed to parse streaming chunk", "data", data, "error", err)
 			continue
@@ -386,10 +409,10 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 			index := toolCallChunk.Index
 
 			if _, exists := toolCallsMap[index]; !exists {
-				toolCallsMap[index] = &providers.ChatCompletionMessageToolCall{
+				toolCallsMap[index] = &types.ChatCompletionMessageToolCall{
 					ID:   "",
-					Type: providers.ChatCompletionToolTypeFunction,
-					Function: providers.ChatCompletionMessageToolCallFunction{
+					Type: types.Function,
+					Function: types.ChatCompletionMessageToolCallFunction{
 						Name:      "",
 						Arguments: "",
 					},
@@ -403,7 +426,7 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 			}
 
 			if toolCallChunk.Type != nil {
-				toolCall.Type = providers.ChatCompletionToolType(*toolCallChunk.Type)
+				toolCall.Type = types.ChatCompletionToolType(*toolCallChunk.Type)
 			}
 
 			if toolCallChunk.Function != nil {
@@ -445,7 +468,7 @@ func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]provi
 		}
 	}
 
-	var toolCalls []providers.ChatCompletionMessageToolCall
+	var toolCalls []types.ChatCompletionMessageToolCall
 	for i := 0; i < len(toolCallsMap); i++ {
 		if toolCall, exists := toolCallsMap[i]; exists {
 			a.logger.Debug("final parsed tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%s", toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments))

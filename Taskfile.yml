@@ -24,12 +24,12 @@ tasks:
     deps:
       - install:generator
     cmds:
-      - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client.go
-      # TODO - migrate to an existing tool that generate the types from OpenAPI spec schemas
-      # - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest --package=providers --generate types -o providers/common_types.go openapi.yaml
-      - go run cmd/generate/main.go -type ProvidersCommonTypes -output providers/common_types.go
-      - go run cmd/generate/main.go -type Providers -output providers
-      - go run cmd/generate/main.go -type ProviderRegistry -output providers/registry.go
+      - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client/client.go
+      - go run cmd/generate/main.go -type ProvidersConstants -output providers/constants/constants.go
+      - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest --config=.oapi-codegen.yaml -o providers/types/common_types.go openapi.yaml
+      - sed -i '' 's/interface{}/any/g' providers/types/common_types.go
+      - go run cmd/generate/main.go -type Providers -output providers/transformers
+      - go run cmd/generate/main.go -type ProviderRegistry -output providers/registry/registry.go
       - go run cmd/generate/main.go -type Config -output config/config.go
       - go run cmd/generate/main.go -type MD -output Configurations.md
       - go run cmd/generate/main.go -type HelmSecret -output charts/inference-gateway/templates/secrets-defaults.yaml

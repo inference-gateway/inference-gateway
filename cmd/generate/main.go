@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/inference-gateway/inference-gateway/internal/codegen"
-	"github.com/inference-gateway/inference-gateway/internal/dockergen"
-	"github.com/inference-gateway/inference-gateway/internal/kubegen"
-	"github.com/inference-gateway/inference-gateway/internal/mdgen"
+	codegen "github.com/inference-gateway/inference-gateway/internal/codegen"
+	dockergen "github.com/inference-gateway/inference-gateway/internal/dockergen"
+	kubegen "github.com/inference-gateway/inference-gateway/internal/kubegen"
+	mdgen "github.com/inference-gateway/inference-gateway/internal/mdgen"
 )
 
 var (
@@ -65,11 +65,11 @@ func main() {
 			fmt.Printf("Error generating providers client config: %v\n", err)
 			os.Exit(1)
 		}
-	case "ProvidersCommonTypes":
-		fmt.Printf("Generating providers common types to %s\n", output)
-		err := codegen.GenerateCommonTypes("providers/common_types.go", "openapi.yaml")
+	case "ProvidersConstants":
+		fmt.Printf("Generating providers constants to %s\n", output)
+		err := codegen.GenerateConstants(output, "openapi.yaml")
 		if err != nil {
-			fmt.Printf("Error generating providers common types: %v\n", err)
+			fmt.Printf("Error generating providers constants: %v\n", err)
 			os.Exit(1)
 		}
 	case "Config":

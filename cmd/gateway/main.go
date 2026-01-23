@@ -19,7 +19,8 @@ import (
 	l "github.com/inference-gateway/inference-gateway/logger"
 	mcp "github.com/inference-gateway/inference-gateway/mcp"
 	otel "github.com/inference-gateway/inference-gateway/otel"
-	providers "github.com/inference-gateway/inference-gateway/providers"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
 	envconfig "github.com/sethvargo/go-envconfig"
 )
@@ -155,7 +156,7 @@ func main() {
 	}
 
 	// Initialize provider registry and HTTP client
-	clientConfig, err := providers.NewClientConfig()
+	clientConfig, err := client.NewClientConfig()
 	if err != nil {
 		log.Printf("fatal: failed to initialize client configuration: %v", err)
 		return
@@ -166,8 +167,8 @@ func main() {
 		scheme = "https"
 	}
 
-	client := providers.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
-	providerRegistry := providers.NewProviderRegistry(cfg.Providers, logger)
+	httpClient := client.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
+	providerRegistry := registry.NewProviderRegistry(cfg.Providers, logger)
 
 	// Log registered providers
 	var providerNames []string
@@ -202,7 +203,7 @@ func main() {
 			logger.Info("mcp is enabled but no servers configured, using no-op middleware")
 			mcpAgent = mcp.NewAgent(logger, mcpClient)
 		}
-		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, client, mcpClient, mcpAgent, logger, cfg)
+		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, httpClient, mcpClient, mcpAgent, logger, cfg)
 		if err != nil {
 			logger.Error("failed to initialize mcp middleware", err)
 			return
@@ -214,7 +215,7 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, client, mcpClient)
+	api := api.NewRouter(cfg, logger, providerRegistry, httpClient, mcpClient)
 	r := gin.New()
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.Telemetry.Enable {
@@ -273,7 +274,7 @@ func main() {
 		availableProviders := 0
 
 		for providerID := range cfg.Providers {
-			provider, err := providerRegistry.BuildProvider(providerID, client)
+			provider, err := providerRegistry.BuildProvider(providerID, httpClient)
 			if err != nil {
 				logger.Warn("failed to build provider", "provider", providerID, "error", err.Error())
 				continue

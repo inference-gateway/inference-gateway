@@ -29,14 +29,14 @@ func setupSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		c.Header("Access-Control-Allow-Headers", "Cache-Control")
 
 		// Create a channel for streaming responses
-		responseChan := make(chan map[string]interface{}, 10)
+		responseChan := make(chan map[string]any, 10)
 		defer close(responseChan)
 
 		// Handle client disconnection
 		clientGone := c.Request.Context().Done()
 
 		// Send initial connection message
-		initialMsg := map[string]interface{}{
+		initialMsg := map[string]any{
 			"type":    "connection",
 			"status":  "connected",
 			"message": "MCP Time Server SSE stream established",
@@ -58,7 +58,7 @@ func setupSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 				return
 			case <-ticker.C:
 				// Send periodic time update
-				timeUpdate := map[string]interface{}{
+				timeUpdate := map[string]any{
 					"type":      "time_update",
 					"timestamp": time.Now().Format(time.RFC3339),
 					"server":    "mcp-time-server",
@@ -82,11 +82,11 @@ func setupSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 
 		var request struct {
 			Method string      `json:"method"`
-			Params interface{} `json:"params"`
+			Params any `json:"params"`
 		}
 
 		if err := c.ShouldBindJSON(&request); err != nil {
-			errorMsg := map[string]interface{}{
+			errorMsg := map[string]any{
 				"type":  "error",
 				"error": err.Error(),
 			}
@@ -104,7 +104,7 @@ func setupSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 			// Simulate processing and stream result
 			time.Sleep(100 * time.Millisecond)
 
-			result := map[string]interface{}{
+			result := map[string]any{
 				"type":   "result",
 				"result": fmt.Sprintf("Current time (streamed): %s", time.Now().Format(time.RFC3339)),
 			}

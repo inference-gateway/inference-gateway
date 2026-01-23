@@ -8,11 +8,16 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	gin "github.com/gin-gonic/gin"
+
 	config "github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/mcp"
-	"github.com/inference-gateway/inference-gateway/providers"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	routing "github.com/inference-gateway/inference-gateway/providers/routing"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 const (
@@ -33,9 +38,9 @@ const (
 
 // MCPProviderModelResult contains the result of provider and model determination
 type MCPProviderModelResult struct {
-	Provider      providers.IProvider
+	Provider      core.IProvider
 	ProviderModel string
-	ProviderID    *providers.Provider
+	ProviderID    *types.Provider
 }
 
 // MCPMiddleware defines the interface for MCP middleware
@@ -45,8 +50,8 @@ type MCPMiddleware interface {
 
 // MCPMiddlewareImpl implements the MCP middleware
 type MCPMiddlewareImpl struct {
-	registry               providers.ProviderRegistry
-	inferenceGatewayClient providers.Client
+	registry               registry.ProviderRegistry
+	inferenceGatewayClient client.Client
 	mcpClient              mcp.MCPClientInterface
 	mcpAgent               mcp.Agent
 	logger                 logger.Logger
@@ -57,14 +62,14 @@ type MCPMiddlewareImpl struct {
 type NoopMCPMiddlewareImpl struct{}
 
 // NewMCPMiddleware creates a new MCP middleware instance
-func NewMCPMiddleware(registry providers.ProviderRegistry, inferenceGatewayClient providers.Client, mcpClient mcp.MCPClientInterface, mcpAgent mcp.Agent, log logger.Logger, cfg config.Config) (MCPMiddleware, error) {
+func NewMCPMiddleware(providerRegistry registry.ProviderRegistry, inferenceGatewayClient client.Client, mcpClient mcp.MCPClientInterface, mcpAgent mcp.Agent, log logger.Logger, cfg config.Config) (MCPMiddleware, error) {
 	if mcpClient == nil {
 		log.Info("mcp client is nil, using no-op middleware")
 		return &NoopMCPMiddlewareImpl{}, nil
 	}
 
 	return &MCPMiddlewareImpl{
-		registry:               registry,
+		registry:               providerRegistry,
 		inferenceGatewayClient: inferenceGatewayClient,
 		mcpClient:              mcpClient,
 		mcpAgent:               mcpAgent,
@@ -95,7 +100,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		m.logger.Debug("mcp middleware invoked", "path", c.Request.URL.Path)
-		var originalRequestBody providers.CreateChatCompletionRequest
+		var originalRequestBody types.CreateChatCompletionRequest
 		if err := c.ShouldBindJSON(&originalRequestBody); err != nil {
 			m.logger.Error("failed to parse request body", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
@@ -177,7 +182,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		c.Next()
 
-		var response providers.CreateChatCompletionResponse
+		var response types.CreateChatCompletionResponse
 		if err := json.Unmarshal(customWriter.body.Bytes(), &response); err != nil {
 			m.logger.Error("failed to parse response body", err)
 			m.writeErrorResponse(c, customWriter, "Failed to parse response", http.StatusInternalServerError)
@@ -198,7 +203,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 // getProviderAndModel determines the provider and model from the request model string or query parameter
 func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*MCPProviderModelResult, error) {
-	if providerID := providers.Provider(c.Query("provider")); providerID != "" {
+	if providerID := types.Provider(c.Query("provider")); providerID != "" {
 		provider, err := m.registry.BuildProvider(providerID, m.inferenceGatewayClient)
 		if err != nil {
 			return &MCPProviderModelResult{ProviderID: &providerID}, fmt.Errorf("failed to build provider: %w", err)
@@ -211,7 +216,7 @@ func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*
 		}, nil
 	}
 
-	providerPtr, providerModel := providers.DetermineProviderAndModelName(model)
+	providerPtr, providerModel := routing.DetermineProviderAndModelName(model)
 	if providerPtr == nil {
 		return &MCPProviderModelResult{ProviderID: nil}, fmt.Errorf("unable to determine provider for model: %s. Please specify a provider using the ?provider= query parameter or use the provider/model format", model)
 	}
@@ -229,7 +234,7 @@ func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*
 }
 
 // handleMCPStreamingRequest handles streaming requests with MCP agent
-func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *providers.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
+func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *types.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
 	m.mcpAgent.SetProvider(result.Provider)
 	m.mcpAgent.SetModel(&result.ProviderModel)
 
@@ -296,7 +301,7 @@ func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *p
 }
 
 // handleMCPToolCalls executes MCP tool calls using the injected agent
-func (m *MCPMiddlewareImpl) handleMCPToolCalls(c *gin.Context, response *providers.CreateChatCompletionResponse, originalRequest *providers.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
+func (m *MCPMiddlewareImpl) handleMCPToolCalls(c *gin.Context, response *types.CreateChatCompletionResponse, originalRequest *types.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
 	m.mcpAgent.SetProvider(result.Provider)
 	m.mcpAgent.SetModel(&result.ProviderModel)
 
@@ -316,7 +321,7 @@ func (m *MCPMiddlewareImpl) writeErrorResponse(c *gin.Context, customWriter *cus
 }
 
 // writeResponse writes the response to the client
-func (m *MCPMiddlewareImpl) writeResponse(c *gin.Context, customWriter *customResponseWriter, response interface{}) {
+func (m *MCPMiddlewareImpl) writeResponse(c *gin.Context, customWriter *customResponseWriter, response any) {
 	customWriter.writeToClient = true
 	c.Writer = customWriter.ResponseWriter
 	c.JSON(customWriter.statusCode, response)
