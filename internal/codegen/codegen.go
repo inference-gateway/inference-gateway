@@ -417,7 +417,9 @@ func GenerateConstants(destination string, oas string) error {
 		Parse(`// Code generated from OpenAPI schema. DO NOT EDIT.
 package constants
 
-import "github.com/inference-gateway/inference-gateway/providers/types"
+import (
+	types "github.com/inference-gateway/inference-gateway/providers/types"
+)
 
 // The authentication type of the specific provider
 const (
@@ -531,7 +533,7 @@ import (
     "strings"
     "time"
 
-    "github.com/sethvargo/go-envconfig"
+    envconfig "github.com/sethvargo/go-envconfig"
 )
 
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
@@ -793,11 +795,12 @@ func GenerateProviders(outputDir string, oas string) error {
 		},
 	}
 
-	openaiCompatibleTemplate := `package transformers
+	openaiCompatibleTemplate := `// Code generated from OpenAPI schema. DO NOT EDIT.
+package transformers
 
 import (
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 type ListModelsResponse{{.ProviderName}} struct {
@@ -914,11 +917,11 @@ package registry
 import (
 	"fmt"
 
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/types"
-	"github.com/inference-gateway/inference-gateway/providers/core"
-	"github.com/inference-gateway/inference-gateway/providers/client"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 )
 
 // Base provider configuration

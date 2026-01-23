@@ -1,7 +1,9 @@
 // Code generated from OpenAPI schema. DO NOT EDIT.
 package constants
 
-import "github.com/inference-gateway/inference-gateway/providers/types"
+import (
+	types "github.com/inference-gateway/inference-gateway/providers/types"
+)
 
 // The authentication type of the specific provider
 const (

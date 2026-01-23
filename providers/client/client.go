@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sethvargo/go-envconfig"
+	envconfig "github.com/sethvargo/go-envconfig"
 )
 
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks

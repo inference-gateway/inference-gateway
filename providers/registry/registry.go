@@ -4,11 +4,11 @@ package registry
 import (
 	"fmt"
 
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers/client"
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/core"
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // Base provider configuration
