@@ -482,6 +482,7 @@ components:
         - deepseek
         - google
         - mistral
+        - qwen
         - moonshot
       x-provider-configs:
         ollama:
@@ -624,6 +625,11 @@ components:
               name: 'chat_completions'
               method: 'POST'
               endpoint: '/chat/completions'
+        qwen:
+          id: 'qwen'
+          url: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+          auth_type: 'bearer'
+          supports_vision: true
         moonshot:
           id: 'moonshot'
           url: 'https://api.moonshot.ai/v1'
@@ -1647,6 +1653,15 @@ components:
                   type: string
                   description: 'Mistral API Key'
                   secret: true
+                - name: qwen_api_url
+                  env: 'QWEN_API_URL'
+                  type: string
+                  default: 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+                  description: 'Qwen API URL'
+                - name: qwen_api_key
+                  env: 'QWEN_API_KEY'
+                  type: string
+                  description: 'Qwen API Key'
                 - name: moonshot_api_url
                   env: 'MOONSHOT_API_URL'
                   type: string

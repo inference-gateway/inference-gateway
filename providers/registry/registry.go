@@ -195,4 +195,15 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.OpenaiChatEndpoint,
 		},
 	},
+	constants.QwenID: {
+		ID:             constants.QwenID,
+		Name:           constants.QwenDisplayName,
+		URL:            constants.QwenDefaultBaseURL,
+		AuthType:       constants.AuthTypeBearer,
+		SupportsVision: true,
+		Endpoints: types.Endpoints{
+			Models: constants.QwenModelsEndpoint,
+			Chat:   constants.QwenChatEndpoint,
+		},
+	},
 }

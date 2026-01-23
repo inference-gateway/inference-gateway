@@ -26,6 +26,7 @@ const (
 	OllamaDefaultBaseURL      = "http://ollama:8080/v1"
 	OllamaCloudDefaultBaseURL = "https://ollama.com/v1"
 	OpenaiDefaultBaseURL      = "https://api.openai.com/v1"
+	QwenDefaultBaseURL        = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 )
 
 // The default endpoints of each provider
@@ -52,6 +53,8 @@ const (
 	OllamaCloudChatEndpoint   = "/chat/completions"
 	OpenaiModelsEndpoint      = "/models"
 	OpenaiChatEndpoint        = "/chat/completions"
+	QwenModelsEndpoint        = ""
+	QwenChatEndpoint          = ""
 )
 
 // The ID's of each provider
@@ -67,6 +70,7 @@ const (
 	OllamaID      types.Provider = "ollama"
 	OllamaCloudID types.Provider = "ollama_cloud"
 	OpenaiID      types.Provider = "openai"
+	QwenID        types.Provider = "qwen"
 )
 
 // Display names for providers
@@ -82,6 +86,7 @@ const (
 	OllamaDisplayName      = "Ollama"
 	OllamaCloudDisplayName = "OllamaCloud"
 	OpenaiDisplayName      = "Openai"
+	QwenDisplayName        = "Qwen"
 )
 
 // ListModelsTransformer interface for transforming provider-specific responses

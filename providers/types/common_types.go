@@ -60,6 +60,7 @@ const (
 	Ollama      Provider = "ollama"
 	OllamaCloud Provider = "ollama_cloud"
 	Openai      Provider = "openai"
+	Qwen        Provider = "qwen"
 )
 
 // Defines values for ProviderAuthType.

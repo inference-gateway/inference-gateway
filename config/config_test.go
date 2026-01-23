@@ -4,12 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/registry"
-	"github.com/inference-gateway/inference-gateway/providers/types"
-	"github.com/sethvargo/go-envconfig"
-	"github.com/stretchr/testify/assert"
+	envconfig "github.com/sethvargo/go-envconfig"
+	assert "github.com/stretchr/testify/assert"
+
+	config "github.com/inference-gateway/inference-gateway/config"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 func TestLoad(t *testing.T) {
@@ -186,6 +187,17 @@ func TestLoad(t *testing.T) {
 						Endpoints: types.Endpoints{
 							Models: constants.MistralModelsEndpoint,
 							Chat:   constants.MistralChatEndpoint,
+						},
+					},
+					constants.QwenID: {
+						ID:             constants.QwenID,
+						Name:           constants.QwenDisplayName,
+						URL:            constants.QwenDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.QwenModelsEndpoint,
+							Chat:   constants.QwenChatEndpoint,
 						},
 					},
 					constants.MoonshotID: {
@@ -384,6 +396,17 @@ func TestLoad(t *testing.T) {
 							Chat:   constants.MistralChatEndpoint,
 						},
 					},
+					constants.QwenID: {
+						ID:             constants.QwenID,
+						Name:           constants.QwenDisplayName,
+						URL:            constants.QwenDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.QwenModelsEndpoint,
+							Chat:   constants.QwenChatEndpoint,
+						},
+					},
 					constants.MoonshotID: {
 						ID:             constants.MoonshotID,
 						Name:           constants.MoonshotDisplayName,
@@ -569,6 +592,17 @@ func TestLoad(t *testing.T) {
 						Endpoints: types.Endpoints{
 							Models: constants.MistralModelsEndpoint,
 							Chat:   constants.MistralChatEndpoint,
+						},
+					},
+					constants.QwenID: {
+						ID:             constants.QwenID,
+						Name:           constants.QwenDisplayName,
+						URL:            constants.QwenDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.QwenModelsEndpoint,
+							Chat:   constants.QwenChatEndpoint,
 						},
 					},
 					constants.MoonshotID: {
