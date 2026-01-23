@@ -8,7 +8,6 @@ This directory contains examples that demonstrate how to use the Inference Gatew
 - [Authentication](authentication/README.md)
 - [Agent Building](agent/README.md)
 - [Monitoring](monitoring/README.md)
-- [User Interface (UI)](ui/README.md)
 - [Model Context Protocol (MCP)](mcp/README.md)
 
 In order for the examples to work flawlessly you should add the following to your `/etc/hosts` file:

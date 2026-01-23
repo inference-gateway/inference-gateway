@@ -51,7 +51,6 @@ use of Mixture of Experts.
   management.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
 - 🖼️ **Vision/Multimodal Support**: Process images alongside text with vision-capable models.
-- 🖥️ **Web Interface**: Access through a modern web UI for easy interaction and management.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
 - ☸️ **Kubernetes Support**: Ready for deployment in Kubernetes environments.
 - 📊 **OpenTelemetry**: Monitor and analyze performance.
@@ -95,7 +94,6 @@ The following diagram illustrates the flow:
 graph TD
     %% Client nodes
     A["👥 Clients / 🤖 Agents"] --> |POST /v1/chat/completions| Auth
-    UI["💻 Web UI"] --> |API requests| Auth
 
     %% Auth node
     Auth["🔒 Optional OIDC"] --> |Auth?| IG1
@@ -136,12 +134,10 @@ graph TD
     classDef auth fill:#F5A800,stroke:#333,stroke-width:1px,color:black;
     classDef gateway fill:#326CE5,stroke:#fff,stroke-width:1px,color:white;
     classDef provider fill:#32CD32,stroke:#333,stroke-width:1px,color:white;
-    classDef ui fill:#FF6B6B,stroke:#333,stroke-width:1px,color:white;
     classDef mcp fill:#FF69B4,stroke:#333,stroke-width:1px,color:white;
 
     %% Apply styles
     class A client;
-    class UI ui;
     class Auth auth;
     class IG1,IG2,IG3,P gateway;
     class C,D,E,G,H1,H2,H3,C1,D1,E1,Providers provider;
@@ -548,7 +544,6 @@ model supports vision.
   - [Authentication](examples/docker-compose/authentication/) - OIDC
     authentication setup
   - [Tools](examples/docker-compose/tools/) - Tool integration examples
-  - [Web UI](examples/docker-compose/ui/) - Complete setup with web interface
 - Using [Kubernetes](examples/kubernetes/)
   - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
   - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in
@@ -561,7 +556,6 @@ model supports vision.
   - [Monitoring](examples/kubernetes/monitoring/) - Observability and monitoring
     setup
   - [TLS setup](examples/kubernetes/tls/) - TLS/SSL configuration
-  - [Web UI](examples/kubernetes/ui/) - Complete setup with web interface
 - Using standard [REST endpoints](examples/rest-endpoints/)
 
 ## SDKs
