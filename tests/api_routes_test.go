@@ -732,12 +732,8 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 					Model:   "gpt-4",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Index: 0,
-							Message: func() types.Message {
-								msg := types.Message{Role: "assistant"}
-								msg.Content.FromMessageContent0("Hello, how can I help you today?")
-								return msg
-							}(),
+							Index:        0,
+							Message:      types.NewTextMessage(t, types.Assistant, "Hello, how can I help you today?"),
 							FinishReason: "stop",
 						},
 					},
@@ -892,12 +888,8 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 					Model:   "gpt-4",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Index: 0,
-							Message: func() types.Message {
-								msg := types.Message{Role: "assistant"}
-								msg.Content.FromMessageContent0("Hello, how can I help you today?")
-								return msg
-							}(),
+							Index:        0,
+							Message:      types.NewTextMessage(t, types.Assistant, "Hello, how can I help you today?"),
 							FinishReason: "stop",
 						},
 					},
@@ -1109,11 +1101,7 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 				Model:  "openai/gpt-4",
 				Stream: &stream,
 				Messages: []types.Message{
-					func() types.Message {
-						msg := types.Message{Role: "user"}
-						msg.Content.FromMessageContent0("Hello, world!")
-						return msg
-					}(),
+					types.NewTextMessage(t, types.User, "Hello, world!"),
 				},
 			}
 

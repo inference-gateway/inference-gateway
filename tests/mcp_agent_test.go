@@ -63,6 +63,31 @@ func TestNewAgent(t *testing.T) {
 }
 
 func TestAgent_Run(t *testing.T) {
+	userHello := types.NewTextMessage(t, types.User, "Hello")
+	assistantHello := types.NewTextMessage(t, types.Assistant, "Hello! How can I help you?")
+	userUseTestTool := types.NewTextMessage(t, types.User, "Use the test tool")
+	assistantToolResponse := types.NewAssistantMessage(t, "I'll use the tool to help you.", &[]types.ChatCompletionMessageToolCall{
+		{
+			ID:   "call_123",
+			Type: "function",
+			Function: types.ChatCompletionMessageToolCallFunction{
+				Name:      "mcp_test_tool",
+				Arguments: `{"param": "value"}`,
+			},
+		},
+	})
+	assistantFinalResponse := types.NewTextMessage(t, types.Assistant, "Based on the tool result, here's my answer.")
+	assistantMoreToolCalls := types.NewAssistantMessage(t, "More tool calls needed", &[]types.ChatCompletionMessageToolCall{
+		{
+			ID:   "call_123",
+			Type: "function",
+			Function: types.ChatCompletionMessageToolCallFunction{
+				Name:      "mcp_test_tool",
+				Arguments: `{"param": "value"}`,
+			},
+		},
+	})
+
 	tests := []struct {
 		name           string
 		setupMocks     func(*mocks.MockLogger, *mcpmocks.MockMCPClientInterface, *providersmocks.MockIProvider)
@@ -82,7 +107,7 @@ func TestAgent_Run(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Hello"),
+					userHello,
 				},
 			},
 			response: &types.CreateChatCompletionResponse{
@@ -90,7 +115,7 @@ func TestAgent_Run(t *testing.T) {
 				Model: "test-model",
 				Choices: []types.ChatCompletionChoice{
 					{
-						Message:      types.NewTextMessage(types.Assistant, "Hello! How can I help you?"),
+						Message:      assistantHello,
 						FinishReason: types.Stop,
 					},
 				},
@@ -129,21 +154,23 @@ func TestAgent_Run(t *testing.T) {
 					},
 				}, nil).Times(1)
 
-				mockProvider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).Return(types.CreateChatCompletionResponse{
-					ID:    "test-id-2",
-					Model: "test-model",
-					Choices: []types.ChatCompletionChoice{
-						{
-							Message:      types.NewTextMessage(types.Assistant, "Based on the tool result, here's my answer."),
-							FinishReason: types.Stop,
+				mockProvider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req types.CreateChatCompletionRequest) (types.CreateChatCompletionResponse, error) {
+					return types.CreateChatCompletionResponse{
+						ID:    "test-id-2",
+						Model: "test-model",
+						Choices: []types.ChatCompletionChoice{
+							{
+								Message:      assistantFinalResponse,
+								FinishReason: types.Stop,
+							},
 						},
-					},
-				}, nil).Times(1)
+					}, nil
+				}).Times(1)
 			},
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Use the test tool"),
+					types.NewTextMessage(t, types.User, "Use the test tool"),
 				},
 			},
 			response: &types.CreateChatCompletionResponse{
@@ -151,16 +178,7 @@ func TestAgent_Run(t *testing.T) {
 				Model: "test-model",
 				Choices: []types.ChatCompletionChoice{
 					{
-						Message: types.NewAssistantMessage("I'll use the tool to help you.", &[]types.ChatCompletionMessageToolCall{
-							{
-								ID:   "call_123",
-								Type: "function",
-								Function: types.ChatCompletionMessageToolCallFunction{
-									Name:      "mcp_test_tool",
-									Arguments: `{"param": "value"}`,
-								},
-							},
-						}),
+						Message:      assistantToolResponse,
 						FinishReason: types.ToolCalls,
 					},
 				},
@@ -187,30 +205,23 @@ func TestAgent_Run(t *testing.T) {
 					},
 				}, nil).Times(10)
 
-				mockProvider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).Return(types.CreateChatCompletionResponse{
-					ID:    "test-id",
-					Model: "test-model",
-					Choices: []types.ChatCompletionChoice{
-						{
-							Message: types.NewAssistantMessage("More tool calls needed", &[]types.ChatCompletionMessageToolCall{
-								{
-									ID:   "call_123",
-									Type: types.Function,
-									Function: types.ChatCompletionMessageToolCallFunction{
-										Name:      "mcp_test_tool",
-										Arguments: `{"param": "value"}`,
-									},
-								},
-							}),
-							FinishReason: types.ToolCalls,
+				mockProvider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).DoAndReturn(func(ctx context.Context, req types.CreateChatCompletionRequest) (types.CreateChatCompletionResponse, error) {
+					return types.CreateChatCompletionResponse{
+						ID:    "test-id",
+						Model: "test-model",
+						Choices: []types.ChatCompletionChoice{
+							{
+								Message:      assistantMoreToolCalls,
+								FinishReason: types.ToolCalls,
+							},
 						},
-					},
-				}, nil).Times(10)
+					}, nil
+				}).Times(10)
 			},
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Use the test tool"),
+					userUseTestTool,
 				},
 			},
 			response: &types.CreateChatCompletionResponse{
@@ -218,16 +229,7 @@ func TestAgent_Run(t *testing.T) {
 				Model: "test-model",
 				Choices: []types.ChatCompletionChoice{
 					{
-						Message: types.NewAssistantMessage("I'll use the tool to help you.", &[]types.ChatCompletionMessageToolCall{
-							{
-								ID:   "call_123",
-								Type: types.Function,
-								Function: types.ChatCompletionMessageToolCallFunction{
-									Name:      "mcp_test_tool",
-									Arguments: `{"param": "value"}`,
-								},
-							},
-						}),
+						Message:      assistantToolResponse,
 						FinishReason: types.ToolCalls,
 					},
 				},
@@ -553,7 +555,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Hello"),
+					types.NewTextMessage(t, types.User, "Hello"),
 				},
 			},
 			expectError:       false,
@@ -610,7 +612,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Hello"),
+					types.NewTextMessage(t, types.User, "Hello"),
 				},
 			},
 			expectError:       true,
@@ -641,7 +643,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Hello"),
+					types.NewTextMessage(t, types.User, "Hello"),
 				},
 			},
 			expectError:       true,
@@ -808,7 +810,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Use the test tool and the other tool"),
+					types.NewTextMessage(t, types.User, "Use the test tool and the other tool"),
 				},
 			},
 			expectError:       false,

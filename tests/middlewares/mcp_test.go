@@ -264,7 +264,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Hello"),
+					types.NewTextMessage(t, types.User, "Hello"),
 				},
 				Tools: tt.requestTools,
 			}
@@ -286,7 +286,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 					Model: "gpt-3.5-turbo",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Message:      types.NewTextMessage(types.Assistant, "Hello! How can I help you?"),
+							Message:      types.NewTextMessage(t, types.Assistant, "Hello! How can I help you?"),
 							FinishReason: types.Stop,
 						},
 					},
@@ -412,7 +412,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 					Model: "gpt-3.5-turbo",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Message:      types.NewTextMessage(types.Assistant, "Based on the tool results, here's my response."),
+							Message:      types.NewTextMessage(t, types.Assistant, "Based on the tool results, here's my response."),
 							FinishReason: types.Stop,
 						},
 					},
@@ -425,7 +425,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 					Model: "gpt-3.5-turbo",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Message:      types.NewTextMessage(types.Assistant, "Error response"),
+							Message:      types.NewTextMessage(t, types.Assistant, "Error response"),
 							FinishReason: types.Stop,
 						},
 					},
@@ -435,7 +435,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Please use the tool"),
+					types.NewTextMessage(t, types.User, "Please use the tool"),
 				},
 			}
 
@@ -454,7 +454,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 					Model: "gpt-3.5-turbo",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Message:      types.NewAssistantMessage("I'll use the tool to help you.", &tt.toolCalls),
+							Message:      types.NewAssistantMessage(t, "I'll use the tool to help you.", &tt.toolCalls),
 							FinishReason: types.ToolCalls,
 						},
 					},
@@ -543,7 +543,7 @@ data: [DONE]`,
 			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
 				Messages: []types.Message{
-					types.NewTextMessage(types.User, "Test streaming"),
+					types.NewTextMessage(t, types.User, "Test streaming"),
 				},
 				Stream: &[]bool{true}[0],
 			}
@@ -878,7 +878,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		requestData := types.CreateChatCompletionRequest{
 			Model: "groq/meta-llama/llama-4-scout-17b-instruct",
 			Messages: []types.Message{
-				types.NewTextMessage(types.User, "What are the top pizzas?"),
+				types.NewTextMessage(t, types.User, "What are the top pizzas?"),
 			},
 			Stream: &[]bool{true}[0],
 		}

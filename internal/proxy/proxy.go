@@ -120,7 +120,9 @@ func (m *DevRequestModifier) truncateChatCompletionRequest(req types.CreateChatC
 	for i := range displayReq.Messages {
 		if content, err := displayReq.Messages[i].Content.AsMessageContent0(); err == nil && content != "" {
 			truncated := m.truncateWords(content, maxWords)
-			displayReq.Messages[i].Content.FromMessageContent0(truncated)
+			if err := displayReq.Messages[i].Content.FromMessageContent0(truncated); err != nil {
+				m.logger.Debug("failed to set truncated content", "error", err)
+			}
 		}
 	}
 

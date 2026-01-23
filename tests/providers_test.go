@@ -150,10 +150,13 @@ func TestProviderChatCompletions(t *testing.T) {
 	provider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 	assert.NoError(t, err)
 
+	msg := types.NewTextMessage(t, types.User, "Hello, how are you?")
+	require.NoError(t, err)
+
 	req := types.CreateChatCompletionRequest{
 		Model: "gpt-3.5-turbo",
 		Messages: []types.Message{
-			types.NewTextMessage(types.User, "Hello, how are you?"),
+			msg,
 		},
 	}
 
@@ -360,10 +363,12 @@ func BenchmarkChatCompletions(b *testing.B) {
 
 	provider, _ := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 
+	msg := types.NewTextMessage(b, types.User, "Hello, how are you?")
+
 	req := types.CreateChatCompletionRequest{
 		Model: "openai/gpt-3.5-turbo",
 		Messages: []types.Message{
-			types.NewTextMessage(types.User, "Hello, how are you?"),
+			msg,
 		},
 	}
 

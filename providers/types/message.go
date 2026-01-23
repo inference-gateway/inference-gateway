@@ -23,18 +23,15 @@ func (m *Message) HasImageContent() bool {
 // For multimodal content, returns the text from the first text part found.
 // Returns empty string if no text content is found.
 func (m *Message) GetTextContent() string {
-	// Try string content first
 	if content, err := m.Content.AsMessageContent0(); err == nil {
 		return content
 	}
 
-	// Try array of ContentParts
 	parts, err := m.Content.AsMessageContent1()
 	if err != nil {
 		return ""
 	}
 
-	// Find first text part by checking the Type field
 	for _, part := range parts {
 		if textPart, err := part.AsTextContentPart(); err == nil {
 			if textPart.Type == "text" {
@@ -51,14 +48,15 @@ func (m *Message) GetTextContent() string {
 // - If no text parts remain, content becomes an empty string
 // - If exactly one text part remains, content becomes that text string
 // - If multiple text parts remain, content stays as an array of text parts
-func (m *Message) StripImageContent() {
+// Returns an error if content conversion fails.
+func (m *Message) StripImageContent() error {
 	if _, err := m.Content.AsMessageContent0(); err == nil {
-		return
+		return nil
 	}
 
 	parts, err := m.Content.AsMessageContent1()
 	if err != nil {
-		return
+		return nil
 	}
 
 	var textParts []ContentPart
@@ -72,12 +70,19 @@ func (m *Message) StripImageContent() {
 
 	switch len(textParts) {
 	case 0:
-		m.Content.FromMessageContent0("")
+		if err := m.Content.FromMessageContent0(""); err != nil {
+			return err
+		}
 	case 1:
 		if textPart, err := textParts[0].AsTextContentPart(); err == nil {
-			m.Content.FromMessageContent0(textPart.Text)
+			if err := m.Content.FromMessageContent0(textPart.Text); err != nil {
+				return err
+			}
 		}
 	default:
-		m.Content.FromMessageContent1(textParts)
+		if err := m.Content.FromMessageContent1(textParts); err != nil {
+			return err
+		}
 	}
+	return nil
 }

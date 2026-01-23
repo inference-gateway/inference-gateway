@@ -158,7 +158,10 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			Role:      types.Assistant,
 			ToolCalls: nil,
 		}
-		assistantMessage.Content.FromMessageContent0("")
+		if err := assistantMessage.Content.FromMessageContent0(""); err != nil {
+			a.logger.Error("failed to initialize assistant message content", err)
+			return err
+		}
 
 		streamComplete := false
 		hasToolCalls := false
@@ -208,9 +211,13 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				if choice.Delta.Content != "" {
 					if currentContent, err := assistantMessage.Content.AsMessageContent0(); err == nil {
 						newContent := currentContent + choice.Delta.Content
-						assistantMessage.Content.FromMessageContent0(newContent)
+						if err := assistantMessage.Content.FromMessageContent0(newContent); err != nil {
+							a.logger.Debug("failed to update message content", err)
+						}
 					} else {
-						assistantMessage.Content.FromMessageContent0(choice.Delta.Content)
+						if err := assistantMessage.Content.FromMessageContent0(choice.Delta.Content); err != nil {
+							a.logger.Debug("failed to set message content", err)
+						}
 					}
 				}
 
@@ -294,7 +301,9 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 				Role:       types.Tool,
 				ToolCallID: &toolCall.ID,
 			}
-			msg.Content.FromMessageContent0(fmt.Sprintf("Error: Failed to parse arguments: %v", err))
+			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: Failed to parse arguments: %v", err)); contentErr != nil {
+				a.logger.Error("failed to set error content", contentErr)
+			}
 			results = append(results, msg)
 			continue
 		}
@@ -308,7 +317,9 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 				Role:       types.Tool,
 				ToolCallID: &toolCall.ID,
 			}
-			msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err))
+			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
+				a.logger.Error("failed to set error content", contentErr)
+			}
 			results = append(results, msg)
 			continue
 		}
@@ -329,7 +340,9 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 				Role:       types.Tool,
 				ToolCallID: &toolCall.ID,
 			}
-			msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err))
+			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
+				a.logger.Error("failed to set error content", contentErr)
+			}
 			results = append(results, msg)
 			continue
 		}
@@ -350,7 +363,10 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 			Role:       types.Tool,
 			ToolCallID: &toolCall.ID,
 		}
-		msg.Content.FromMessageContent0(resultStr)
+		if err := msg.Content.FromMessageContent0(resultStr); err != nil {
+			a.logger.Error("failed to set tool result content", err)
+			return nil, err
+		}
 		results = append(results, msg)
 	}
 

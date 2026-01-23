@@ -565,7 +565,11 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 				for i := range req.Messages {
 					if req.Messages[i].HasImageContent() {
-						req.Messages[i].StripImageContent()
+						if err := req.Messages[i].StripImageContent(); err != nil {
+							router.logger.Error("failed to strip image content from message", err)
+							c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process message content"})
+							return
+						}
 					}
 				}
 
