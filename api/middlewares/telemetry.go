@@ -12,7 +12,7 @@ import (
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/otel"
-	"github.com/inference-gateway/inference-gateway/providers"
+	"github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 type Telemetry interface {
@@ -44,7 +44,7 @@ type responseData struct {
 	PromptTokens     int64
 	CompletionTokens int64
 	TotalTokens      int64
-	ToolCalls        []providers.ChatCompletionMessageToolCall
+	ToolCalls        []types.ChatCompletionMessageToolCall
 }
 
 // Write captures the response body
@@ -62,7 +62,7 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		var requestBody providers.CreateChatCompletionRequest
+		var requestBody types.CreateChatCompletionRequest
 		bodyBytes, _ := io.ReadAll(c.Request.Body)
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		_ = json.Unmarshal(bodyBytes, &requestBody)
@@ -187,10 +187,10 @@ func (t *TelemetryImpl) parseResponseData(responseBytes []byte, isStreaming bool
 }
 
 // parseStreamingResponse handles streaming response parsing for both tokens and tool calls
-func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []providers.ChatCompletionMessageToolCall {
+func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []types.ChatCompletionMessageToolCall {
 	responseStr := string(responseBytes)
 	chunks := strings.Split(responseStr, "\n\n")
-	toolCallsMap := make(map[int]*providers.ChatCompletionMessageToolCall)
+	toolCallsMap := make(map[int]*types.ChatCompletionMessageToolCall)
 
 	usageChunks := chunks
 	if len(chunks) > 4 {
@@ -207,7 +207,7 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 			continue
 		}
 
-		var streamResponse providers.CreateChatCompletionStreamResponse
+		var streamResponse types.CreateChatCompletionStreamResponse
 		if err := json.Unmarshal([]byte(chunk), &streamResponse); err != nil {
 			t.logger.Error("failed to unmarshal streaming response chunk", err,
 				"provider", provider,
@@ -232,7 +232,7 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 			continue
 		}
 
-		var streamResponse providers.CreateChatCompletionStreamResponse
+		var streamResponse types.CreateChatCompletionStreamResponse
 		if err := json.Unmarshal([]byte(chunk), &streamResponse); err != nil {
 			continue
 		}
@@ -244,10 +244,10 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 		for _, toolCallChunk := range *streamResponse.Choices[0].Delta.ToolCalls {
 			index := toolCallChunk.Index
 			if _, exists := toolCallsMap[index]; !exists {
-				toolCallsMap[index] = &providers.ChatCompletionMessageToolCall{
+				toolCallsMap[index] = &types.ChatCompletionMessageToolCall{
 					ID:       "",
-					Type:     providers.ChatCompletionToolTypeFunction,
-					Function: providers.ChatCompletionMessageToolCallFunction{Name: "", Arguments: ""},
+					Type:     types.Function,
+					Function: types.ChatCompletionMessageToolCallFunction{Name: "", Arguments: ""},
 				}
 			}
 
@@ -266,7 +266,7 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 		}
 	}
 
-	var toolCalls []providers.ChatCompletionMessageToolCall
+	var toolCalls []types.ChatCompletionMessageToolCall
 	for i := 0; i < len(toolCallsMap); i++ {
 		if toolCall, exists := toolCallsMap[i]; exists && toolCall.Function.Name != "" {
 			toolCalls = append(toolCalls, *toolCall)
@@ -277,8 +277,8 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 }
 
 // parseNonStreamingResponse handles non-streaming response parsing for both tokens and tool calls
-func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []providers.ChatCompletionMessageToolCall {
-	var chatCompletionResponse providers.CreateChatCompletionResponse
+func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []types.ChatCompletionMessageToolCall {
+	var chatCompletionResponse types.CreateChatCompletionResponse
 	if err := json.Unmarshal(responseBytes, &chatCompletionResponse); err != nil {
 		t.logger.Error("failed to unmarshal non-streaming response", err,
 			"provider", provider,
@@ -301,7 +301,7 @@ func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, promptTo
 }
 
 // recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
-func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, model string, request *providers.CreateChatCompletionRequest, respData *responseData) {
+func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, model string, request *types.CreateChatCompletionRequest, respData *responseData) {
 	availableTools := make(map[string]string) // tool_name -> tool_type
 	if request.Tools != nil {
 		for _, tool := range *request.Tools {

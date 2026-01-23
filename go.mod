@@ -6,6 +6,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.16.0
 	github.com/gin-gonic/gin v1.11.0
 	github.com/metoro-io/mcp-golang v0.16.0
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/prometheus/client_golang v1.23.2
 	github.com/sethvargo/go-envconfig v1.3.0
 	github.com/stretchr/testify v1.11.1
@@ -22,6 +23,7 @@ require (
 )
 
 require (
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect

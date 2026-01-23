@@ -1,0 +1,27 @@
+package transformers
+
+import (
+	"github.com/inference-gateway/inference-gateway/providers/constants"
+	"github.com/inference-gateway/inference-gateway/providers/types"
+)
+
+type ListModelsResponseCohere struct {
+	Object string        `json:"object"`
+	Data   []types.Model `json:"data"`
+}
+
+func (l *ListModelsResponseCohere) Transform() types.ListModelsResponse {
+	provider := constants.CohereID
+	models := make([]types.Model, len(l.Data))
+	for i, model := range l.Data {
+		model.ServedBy = provider
+		model.ID = string(provider) + "/" + model.ID
+		models[i] = model
+	}
+
+	return types.ListModelsResponse{
+		Provider: &provider,
+		Object:   l.Object,
+		Data:     models,
+	}
+}

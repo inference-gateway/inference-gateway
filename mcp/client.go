@@ -15,7 +15,7 @@ import (
 
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers"
+	"github.com/inference-gateway/inference-gateway/providers/types"
 	m "github.com/metoro-io/mcp-golang"
 	transport "github.com/metoro-io/mcp-golang/transport/http"
 )
@@ -66,10 +66,10 @@ type MCPClientInterface interface {
 	GetServerTools(serverURL string) ([]Tool, error)
 
 	// GetAllChatCompletionTools returns all pre-converted chat completion tools from all servers
-	GetAllChatCompletionTools() []providers.ChatCompletionTool
+	GetAllChatCompletionTools() []types.ChatCompletionTool
 
 	// ConvertMCPToolsToChatCompletionTools converts MCP server tools to chat completion tools
-	ConvertMCPToolsToChatCompletionTools([]Tool) []providers.ChatCompletionTool
+	ConvertMCPToolsToChatCompletionTools([]Tool) []types.ChatCompletionTool
 
 	// GetServerForTool returns the server URL that provides the specified tool
 	GetServerForTool(toolName string) (string, error)
@@ -98,7 +98,7 @@ type MCPClient struct {
 	Config              config.Config
 	ServerCapabilities  map[string]ServerCapabilities
 	ServerTools         map[string][]Tool
-	ChatCompletionTools []providers.ChatCompletionTool
+	ChatCompletionTools []types.ChatCompletionTool
 	Initialized         bool
 	ServerStatuses      map[string]ServerStatus
 	statusMutex         sync.RWMutex
@@ -317,7 +317,7 @@ func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) 
 		Config:              cfg,
 		ServerCapabilities:  make(map[string]ServerCapabilities),
 		ServerTools:         make(map[string][]Tool),
-		ChatCompletionTools: make([]providers.ChatCompletionTool, 0),
+		ChatCompletionTools: make([]types.ChatCompletionTool, 0),
 		Initialized:         false,
 		ServerStatuses:      make(map[string]ServerStatus),
 		pollingDone:         make(chan struct{}),
@@ -424,7 +424,7 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		mc.Logger.Debug("mcp server tools status", "server", serverURL, "toolCount", len(serverTools))
 	}
 
-	allChatCompletionTools := make([]providers.ChatCompletionTool, 0)
+	allChatCompletionTools := make([]types.ChatCompletionTool, 0)
 
 	for serverURL, serverTools := range mc.ServerTools {
 		if len(serverTools) == 0 {
@@ -653,8 +653,8 @@ func (mc *MCPClient) GetServerTools(serverURL string) ([]Tool, error) {
 }
 
 // ConvertMCPToolsToChatCompletionTools converts MCP server tools to chat completion tools
-func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []providers.ChatCompletionTool {
-	tools := make([]providers.ChatCompletionTool, 0)
+func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []types.ChatCompletionTool {
+	tools := make([]types.ChatCompletionTool, 0)
 	for _, tool := range serverTools {
 		description := tool.Description
 
@@ -664,12 +664,12 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 			inputSchema = make(map[string]interface{})
 		}
 
-		tools = append(tools, providers.ChatCompletionTool{
+		tools = append(tools, types.ChatCompletionTool{
 			Type: "function",
-			Function: providers.FunctionObject{
+			Function: types.FunctionObject{
 				Name:        "mcp_" + tool.Name,
 				Description: description,
-				Parameters:  (*providers.FunctionParameters)(&inputSchema),
+				Parameters:  (*types.FunctionParameters)(&inputSchema),
 			},
 		})
 	}
@@ -695,9 +695,9 @@ func (mc *MCPClient) GetServerForTool(toolName string) (string, error) {
 }
 
 // GetAllChatCompletionTools returns all pre-converted chat completion tools from all servers
-func (mc *MCPClient) GetAllChatCompletionTools() []providers.ChatCompletionTool {
+func (mc *MCPClient) GetAllChatCompletionTools() []types.ChatCompletionTool {
 	if !mc.Initialized {
-		return []providers.ChatCompletionTool{}
+		return []types.ChatCompletionTool{}
 	}
 	return mc.ChatCompletionTools
 }

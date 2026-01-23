@@ -14,7 +14,8 @@ import (
 	reflect "reflect"
 
 	gin "github.com/gin-gonic/gin"
-	providers "github.com/inference-gateway/inference-gateway/providers"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -43,10 +44,10 @@ func (m *MockAgent) EXPECT() *MockAgentMockRecorder {
 }
 
 // ExecuteTools mocks base method.
-func (m *MockAgent) ExecuteTools(ctx context.Context, toolCalls []providers.ChatCompletionMessageToolCall) ([]providers.Message, error) {
+func (m *MockAgent) ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecuteTools", ctx, toolCalls)
-	ret0, _ := ret[0].([]providers.Message)
+	ret0, _ := ret[0].([]types.Message)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -58,7 +59,7 @@ func (mr *MockAgentMockRecorder) ExecuteTools(ctx, toolCalls any) *gomock.Call {
 }
 
 // Run mocks base method.
-func (m *MockAgent) Run(ctx context.Context, request *providers.CreateChatCompletionRequest, response *providers.CreateChatCompletionResponse) error {
+func (m *MockAgent) Run(ctx context.Context, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Run", ctx, request, response)
 	ret0, _ := ret[0].(error)
@@ -72,7 +73,7 @@ func (mr *MockAgentMockRecorder) Run(ctx, request, response any) *gomock.Call {
 }
 
 // RunWithStream mocks base method.
-func (m *MockAgent) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *providers.CreateChatCompletionRequest) error {
+func (m *MockAgent) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *types.CreateChatCompletionRequest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RunWithStream", ctx, middlewareStreamCh, c, body)
 	ret0, _ := ret[0].(error)
@@ -98,7 +99,7 @@ func (mr *MockAgentMockRecorder) SetModel(model any) *gomock.Call {
 }
 
 // SetProvider mocks base method.
-func (m *MockAgent) SetProvider(provider providers.IProvider) {
+func (m *MockAgent) SetProvider(provider core.IProvider) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetProvider", provider)
 }

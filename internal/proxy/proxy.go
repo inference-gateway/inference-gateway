@@ -11,7 +11,7 @@ import (
 
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/providers"
+	"github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // RequestModifier defines interface for modifying proxy requests
@@ -94,7 +94,7 @@ func (m *DevRequestModifier) truncateWords(text string, maxWords int) string {
 
 // createSmartBodyPreview creates an intelligent preview of the request body
 func (m *DevRequestModifier) createSmartBodyPreview(body []byte) string {
-	var chatReq providers.CreateChatCompletionRequest
+	var chatReq types.CreateChatCompletionRequest
 	if err := json.Unmarshal(body, &chatReq); err != nil {
 		bodyPreview := string(body)
 		if len(bodyPreview) > 1024 {
@@ -107,7 +107,7 @@ func (m *DevRequestModifier) createSmartBodyPreview(body []byte) string {
 }
 
 // truncateChatCompletionRequest applies smart truncation to chat completion requests
-func (m *DevRequestModifier) truncateChatCompletionRequest(req providers.CreateChatCompletionRequest) string {
+func (m *DevRequestModifier) truncateChatCompletionRequest(req types.CreateChatCompletionRequest) string {
 	maxWords := m.cfg.DebugContentTruncateWords
 	maxMessages := m.cfg.DebugMaxMessages
 
@@ -118,8 +118,9 @@ func (m *DevRequestModifier) truncateChatCompletionRequest(req providers.CreateC
 	}
 
 	for i := range displayReq.Messages {
-		if content, ok := displayReq.Messages[i].Content.(string); ok && content != "" {
-			displayReq.Messages[i].Content = m.truncateWords(content, maxWords)
+		if content, err := displayReq.Messages[i].Content.AsMessageContent0(); err == nil && content != "" {
+			truncated := m.truncateWords(content, maxWords)
+			displayReq.Messages[i].Content.FromMessageContent0(truncated)
 		}
 	}
 

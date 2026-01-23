@@ -36,7 +36,7 @@ func GenerateConfig(destination string, oas string) error {
 
 	tmpl := template.Must(template.New("config").Funcs(funcMap).Parse(`// Code generated from OpenAPI schema. DO NOT EDIT.
 package config
-	
+
 import (
 	"context"
 	"fmt"
@@ -44,7 +44,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inference-gateway/inference-gateway/providers"
+	"github.com/inference-gateway/inference-gateway/providers/constants"
+	"github.com/inference-gateway/inference-gateway/providers/registry"
+	"github.com/inference-gateway/inference-gateway/providers/types"
 	"github.com/sethvargo/go-envconfig"
 )
 
@@ -77,7 +79,7 @@ type Config struct {
 	{{- end }}
 
 	// Providers map
-	Providers map[providers.Provider]*providers.Config
+	Providers map[types.Provider]*registry.ProviderConfig
 }
 
 {{- range $section := .Sections }}
@@ -137,11 +139,11 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 
 	// Initialize Providers map if nil
 	if cfg.Providers == nil {
-		cfg.Providers = make(map[providers.Provider]*providers.Config)
+		cfg.Providers = make(map[types.Provider]*registry.ProviderConfig)
 	}
 
 	// Set defaults for each provider
-	for id, defaults := range providers.Registry {
+	for id, defaults := range registry.Registry {
 		if _, exists := cfg.Providers[id]; !exists {
 			providerCfg := defaults
 			url, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_URL")
@@ -150,7 +152,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 			}
 
 			token, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_KEY")
-			if (!ok || token == "") && id != providers.OllamaID {
+			if (!ok || token == "") && id != constants.OllamaID {
 				t := time.Now().UTC().Format(time.RFC3339)
 				log.SetFlags(0)
 				log.Printf("{\"level\":\"notice\",\"timestamp\":\"%s\",\"caller\":\"config/config.go:103\",\"msg\":\"provider is not configured\",\"provider\":\"%s\"}", t, string(id))
@@ -387,6 +389,105 @@ func (p *CreateChatCompletionResponse) Transform() CreateChatCompletionResponse 
 	return nil
 }
 
+// GenerateConstants generates provider constants and enums from OpenAPI spec
+func GenerateConstants(destination string, oas string) error {
+	schema, err := openapi.Read(oas)
+	if err != nil {
+		return fmt.Errorf("failed to read OpenAPI spec: %w", err)
+	}
+
+	funcMap := template.FuncMap{
+		"pascalCase": func(s string) string {
+			if strings.ToLower(s) == "id" {
+				return "ID"
+			}
+
+			parts := strings.Split(s, "_")
+			for i, part := range parts {
+				parts[i] = cases.Title(language.English).String(strings.ToLower(part))
+			}
+			return strings.Join(parts, "")
+		},
+	}
+
+	tmpl := template.Must(template.New("constants").
+		Funcs(funcMap).
+		Parse(`// Code generated from OpenAPI schema. DO NOT EDIT.
+package constants
+
+import "github.com/inference-gateway/inference-gateway/providers/types"
+
+// The authentication type of the specific provider
+const (
+    AuthTypeBearer  = "bearer"
+    AuthTypeXheader = "xheader"
+    AuthTypeQuery   = "query"
+    AuthTypeNone    = "none"
+)
+
+// The default base URLs of each provider
+const (
+    {{- range $name, $config := .Providers }}
+    {{pascalCase $name}}DefaultBaseURL = "{{$config.URL}}"
+    {{- end }}
+)
+
+// The default endpoints of each provider
+const (
+    {{- range $name, $config := .Providers }}
+    {{pascalCase $name}}ModelsEndpoint = "{{(index $config.Endpoints "models").Endpoint}}"
+    {{pascalCase $name}}ChatEndpoint   = "{{(index $config.Endpoints "chat").Endpoint}}"
+    {{- end }}
+)
+
+// The ID's of each provider
+const (
+    {{- range $name, $config := .Providers }}
+    {{pascalCase $name}}ID types.Provider = "{{$config.ID}}"
+    {{- end }}
+)
+
+// Display names for providers
+const (
+    {{- range $name, $config := .Providers }}
+    {{pascalCase $name}}DisplayName = "{{pascalCase $name}}"
+    {{- end }}
+)
+
+// ListModelsTransformer interface for transforming provider-specific responses
+type ListModelsTransformer interface {
+    Transform() types.ListModelsResponse
+}
+`))
+
+	data := struct {
+		Providers map[string]openapi.ProviderConfig
+	}{
+		Providers: schema.Components.Schemas.Provider.XProviderConfigs,
+	}
+
+	f, err := os.Create(destination)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if len(schema.Components.Schemas.Provider.XProviderConfigs) == 0 {
+		return fmt.Errorf("no provider configurations found in OpenAPI spec")
+	}
+
+	if err := tmpl.Execute(f, data); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("go", "fmt", destination)
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
+	}
+
+	return nil
+}
+
 func GenerateProvidersClientConfig(destination, oas string) error {
 	schema, err := openapi.Read(oas)
 	if err != nil {
@@ -418,7 +519,7 @@ func GenerateProvidersClientConfig(destination, oas string) error {
 	}
 
 	const clientTemplate = `// Code generated from OpenAPI schema. DO NOT EDIT.
-package providers
+package client
 
 import (
     "context"
@@ -431,7 +532,7 @@ import (
     "github.com/sethvargo/go-envconfig"
 )
 
-//go:generate mockgen -source=client.go -destination=../tests/mocks/providers/client.go -package=providersmocks
+//go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
 type Client interface {
     Do(req *http.Request) (*http.Response, error)
     Get(url string) (*http.Response, error)
@@ -690,23 +791,28 @@ func GenerateProviders(outputDir string, oas string) error {
 		},
 	}
 
-	openaiCompatibleTemplate := `package providers
+	openaiCompatibleTemplate := `package transformers
+
+import (
+	"github.com/inference-gateway/inference-gateway/providers/constants"
+	"github.com/inference-gateway/inference-gateway/providers/types"
+)
 
 type ListModelsResponse{{.ProviderName}} struct {
-	Object string  ` + "`json:\"object\"`" + `
-	Data   []Model ` + "`json:\"data\"`" + `
+	Object string        ` + "`json:\"object\"`" + `
+	Data   []types.Model ` + "`json:\"data\"`" + `
 }
 
-func (l *ListModelsResponse{{.ProviderName}}) Transform() ListModelsResponse {
-	provider := {{.ProviderName}}ID
-	models := make([]Model, len(l.Data))
+func (l *ListModelsResponse{{.ProviderName}}) Transform() types.ListModelsResponse {
+	provider := constants.{{.ProviderName}}ID
+	models := make([]types.Model, len(l.Data))
 	for i, model := range l.Data {
 		model.ServedBy = provider
 		model.ID = string(provider) + "/" + model.ID
 		models[i] = model
 	}
 
-	return ListModelsResponse{
+	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   l.Object,
 		Data:     models,
@@ -801,89 +907,93 @@ func GenerateProviderRegistry(destination string, oas string) error {
 	}
 
 	registryTemplate := `// Code generated from OpenAPI schema. DO NOT EDIT.
-package providers
+package registry
 
 import (
 	"fmt"
 
 	"github.com/inference-gateway/inference-gateway/logger"
+	"github.com/inference-gateway/inference-gateway/providers/constants"
+	"github.com/inference-gateway/inference-gateway/providers/types"
+	"github.com/inference-gateway/inference-gateway/providers/core"
+	"github.com/inference-gateway/inference-gateway/providers/client"
 )
 
 // Base provider configuration
-type Config struct {
-	ID             Provider
+type ProviderConfig struct {
+	ID             types.Provider
 	Name           string
 	URL            string
 	Token          string
 	AuthType       string
 	SupportsVision bool
 	ExtraHeaders   map[string][]string
-	Endpoints      Endpoints
+	Endpoints      types.Endpoints
 }
 
-//go:generate mockgen -source=registry.go -destination=../tests/mocks/providers/registry.go -package=providersmocks
+//go:generate mockgen -source=registry.go -destination=../../tests/mocks/providers/registry.go -package=providersmocks
 type ProviderRegistry interface {
-	GetProviders() map[Provider]*Config
-	BuildProvider(providerID Provider, client Client) (IProvider, error)
+	GetProviders() map[types.Provider]*ProviderConfig
+	BuildProvider(providerID types.Provider, c client.Client) (core.IProvider, error)
 }
 
 type ProviderRegistryImpl struct {
-	cfg    map[Provider]*Config
+	cfg    map[types.Provider]*ProviderConfig
 	logger logger.Logger
 }
 
-func NewProviderRegistry(cfg map[Provider]*Config, logger logger.Logger) ProviderRegistry {
+func NewProviderRegistry(cfg map[types.Provider]*ProviderConfig, logger logger.Logger) ProviderRegistry {
 	return &ProviderRegistryImpl{
 		cfg:    cfg,
 		logger: logger,
 	}
 }
 
-func (p *ProviderRegistryImpl) GetProviders() map[Provider]*Config {
+func (p *ProviderRegistryImpl) GetProviders() map[types.Provider]*ProviderConfig {
 	return p.cfg
 }
 
-func (p *ProviderRegistryImpl) BuildProvider(providerID Provider, client Client) (IProvider, error) {
+func (p *ProviderRegistryImpl) BuildProvider(providerID types.Provider, c client.Client) (core.IProvider, error) {
 	provider, ok := p.cfg[providerID]
 	if !ok {
 		return nil, fmt.Errorf("provider %s not found", providerID)
 	}
 
-	if provider.AuthType != AuthTypeNone && provider.Token == "" {
+	if provider.AuthType != constants.AuthTypeNone && provider.Token == "" {
 		return nil, fmt.Errorf("provider %s token not configured", providerID)
 	}
 
-	return &ProviderImpl{
-		id:             &provider.ID,
-		name:           provider.Name,
-		url:            provider.URL,
-		token:          provider.Token,
-		authType:       provider.AuthType,
-		supportsVision: provider.SupportsVision,
-		extraHeaders:   provider.ExtraHeaders,
-		endpoints:      provider.Endpoints,
-		logger:         p.logger,
-		client:         client,
+	return &core.ProviderImpl{
+		ID:                 &provider.ID,
+		Name:               provider.Name,
+		URL:                provider.URL,
+		Token:              provider.Token,
+		AuthType:           provider.AuthType,
+		SupportsVisionFlag: provider.SupportsVision,
+		ExtraHeaders:       provider.ExtraHeaders,
+		Endpoints:          provider.Endpoints,
+		Logger:             p.logger,
+		Client:             c,
 	}, nil
 }
 
 // The registry of all providers
-var Registry = map[Provider]*Config{
+var Registry = map[types.Provider]*ProviderConfig{
 	{{- range $name, $config := .Providers }}
-	{{pascalCase $name}}ID: {
-		ID:             {{pascalCase $name}}ID,
-		Name:           {{pascalCase $name}}DisplayName,
-		URL:            {{pascalCase $name}}DefaultBaseURL,
-		AuthType:       {{getAuthType $config.AuthType}},
+	constants.{{pascalCase $name}}ID: {
+		ID:             constants.{{pascalCase $name}}ID,
+		Name:           constants.{{pascalCase $name}}DisplayName,
+		URL:            constants.{{pascalCase $name}}DefaultBaseURL,
+		AuthType:       constants.{{getAuthType $config.AuthType}},
 		SupportsVision: {{if $config.SupportsVision}}true{{else}}false{{end}},
 		{{- if eq $name "anthropic" }}
 		ExtraHeaders: map[string][]string{
 			"anthropic-version": {"2023-06-01"},
 		},
 		{{- end }}
-		Endpoints: Endpoints{
-			Models: {{pascalCase $name}}ModelsEndpoint,
-			Chat:   {{pascalCase $name}}ChatEndpoint,
+		Endpoints: types.Endpoints{
+			Models: constants.{{pascalCase $name}}ModelsEndpoint,
+			Chat:   constants.{{pascalCase $name}}ChatEndpoint,
 		},
 	},
 	{{- end }}

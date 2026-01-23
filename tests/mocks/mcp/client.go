@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 
 	mcp "github.com/inference-gateway/inference-gateway/mcp"
-	providers "github.com/inference-gateway/inference-gateway/providers"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -57,10 +57,10 @@ func (mr *MockMCPClientInterfaceMockRecorder) BuildSSEFallbackURL(serverURL any)
 }
 
 // ConvertMCPToolsToChatCompletionTools mocks base method.
-func (m *MockMCPClientInterface) ConvertMCPToolsToChatCompletionTools(arg0 []mcp.Tool) []providers.ChatCompletionTool {
+func (m *MockMCPClientInterface) ConvertMCPToolsToChatCompletionTools(arg0 []mcp.Tool) []types.ChatCompletionTool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConvertMCPToolsToChatCompletionTools", arg0)
-	ret0, _ := ret[0].([]providers.ChatCompletionTool)
+	ret0, _ := ret[0].([]types.ChatCompletionTool)
 	return ret0
 }
 
@@ -86,10 +86,10 @@ func (mr *MockMCPClientInterfaceMockRecorder) ExecuteTool(ctx, request, serverUR
 }
 
 // GetAllChatCompletionTools mocks base method.
-func (m *MockMCPClientInterface) GetAllChatCompletionTools() []providers.ChatCompletionTool {
+func (m *MockMCPClientInterface) GetAllChatCompletionTools() []types.ChatCompletionTool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllChatCompletionTools")
-	ret0, _ := ret[0].([]providers.ChatCompletionTool)
+	ret0, _ := ret[0].([]types.ChatCompletionTool)
 	return ret0
 }
 

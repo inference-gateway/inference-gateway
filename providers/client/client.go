@@ -1,5 +1,5 @@
 // Code generated from OpenAPI schema. DO NOT EDIT.
-package providers
+package client
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/sethvargo/go-envconfig"
 )
 
-//go:generate mockgen -source=client.go -destination=../tests/mocks/providers/client.go -package=providersmocks
+//go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 	Get(url string) (*http.Response, error)

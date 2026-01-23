@@ -1,0 +1,6 @@
+package: types
+generate:
+  models: true
+output-options:
+  skip-prune: true
+  name-normalizer: ToCamelCaseWithInitialisms
