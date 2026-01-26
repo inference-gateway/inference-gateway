@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.23.2](https://github.com/inference-gateway/inference-gateway/compare/v0.23.1...v0.23.2) (2026-01-23)
+
+### 🐛 Bug Fixes
+
+* **examples:** Add missing ghcr.io prefix to oci images ([02a84b8](https://github.com/inference-gateway/inference-gateway/commit/02a84b89680744534aa37c705f941bbd84b56869))
+
 ## [0.23.1](https://github.com/inference-gateway/inference-gateway/compare/v0.23.0...v0.23.1) (2026-01-23)
 
 ### ♻️ Improvements
