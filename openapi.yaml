@@ -104,6 +104,11 @@ paths:
                         created: 1698019200
                         owned_by: 'mistral'
                         served_by: 'mistral'
+                      - id: 'vllm/llama-3-8b'
+                        object: 'model'
+                        created: 1735689600
+                        owned_by: 'vllm'
+                        served_by: 'vllm'
                 singleProvider:
                   summary: Models from a specific provider
                   value:
@@ -483,6 +488,7 @@ components:
         - google
         - mistral
         - moonshot
+        - vllm
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -629,6 +635,20 @@ components:
           url: 'https://api.moonshot.ai/v1'
           auth_type: 'bearer'
           supports_vision: false
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        vllm:
+          id: 'vllm'
+          url: 'http://vllm:8000/v1'
+          auth_type: 'bearer'
+          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1656,4 +1676,14 @@ components:
                   env: 'MOONSHOT_API_KEY'
                   type: string
                   description: 'Moonshot API Key'
+                  secret: true
+                - name: vllm_api_url
+                  env: 'VLLM_API_URL'
+                  type: string
+                  default: 'http://vllm:8000/v1'
+                  description: 'vLLM API URL'
+                - name: vllm_api_key
+                  env: 'VLLM_API_KEY'
+                  type: string
+                  description: 'vLLM API Key'
                   secret: true

@@ -60,6 +60,7 @@ const (
 	Ollama      Provider = "ollama"
 	OllamaCloud Provider = "ollama_cloud"
 	Openai      Provider = "openai"
+	Vllm        Provider = "vllm"
 )
 
 // Defines values for ProviderAuthType.
@@ -232,7 +233,7 @@ type CompletionUsage struct {
 }
 
 // Config defines model for Config.
-type Config = any
+type Config = interface{}
 
 // ContentPart A content part within a multimodal message
 type ContentPart struct {
@@ -351,7 +352,7 @@ type FunctionObject struct {
 
 // FunctionParameters The parameters the functions accepts, described as a JSON Schema object. See the [guide](/docs/guides/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
 // Omitting `parameters` defines a function with an empty parameter list.
-type FunctionParameters map[string]any
+type FunctionParameters map[string]interface{}
 
 // ImageContentPart Image content part
 type ImageContentPart struct {
@@ -399,7 +400,7 @@ type MCPTool struct {
 	Description string `json:"description"`
 
 	// InputSchema JSON schema for the tool's input parameters
-	InputSchema *map[string]any `json:"input_schema,omitempty"`
+	InputSchema *map[string]interface{} `json:"input_schema,omitempty"`
 
 	// Name The name of the tool
 	Name string `json:"name"`
@@ -493,7 +494,7 @@ type ProviderAuthType string
 //	}
 //
 // ```
-type ProviderSpecificResponse = map[string]any
+type ProviderSpecificResponse = map[string]interface{}
 
 // SSEvent defines model for SSEvent.
 type SSEvent struct {
