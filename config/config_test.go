@@ -199,6 +199,17 @@ func TestLoad(t *testing.T) {
 							Chat:   constants.MoonshotChatEndpoint,
 						},
 					},
+					constants.VllmID: {
+						ID:             constants.VllmID,
+						Name:           constants.VllmDisplayName,
+						URL:            constants.VllmDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.VllmModelsEndpoint,
+							Chat:   constants.VllmChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -395,6 +406,17 @@ func TestLoad(t *testing.T) {
 							Chat:   constants.MoonshotChatEndpoint,
 						},
 					},
+					constants.VllmID: {
+						ID:             constants.VllmID,
+						Name:           constants.VllmDisplayName,
+						URL:            constants.VllmDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.VllmModelsEndpoint,
+							Chat:   constants.VllmChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -580,6 +602,17 @@ func TestLoad(t *testing.T) {
 						Endpoints: types.Endpoints{
 							Models: constants.MoonshotModelsEndpoint,
 							Chat:   constants.MoonshotChatEndpoint,
+						},
+					},
+					constants.VllmID: {
+						ID:             constants.VllmID,
+						Name:           constants.VllmDisplayName,
+						URL:            constants.VllmDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.VllmModelsEndpoint,
+							Chat:   constants.VllmChatEndpoint,
 						},
 					},
 				},
