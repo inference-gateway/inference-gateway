@@ -20,14 +20,14 @@ jobs:
           persist-credentials: false
 
       - name: Set up Go
-        uses: actions/setup-go@v6.1.0
+        uses: actions/setup-go@v6.2.0
         with:
           go-version-file: 'go.mod'
           cache: true
 
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.7.2
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.8.0
 
       - name: Install Mockgen
         run: go install go.uber.org/mock/mockgen@v0.6.0
@@ -38,7 +38,7 @@ jobs:
           node-version: 'lts/*'
 
       - name: Install Spectral and markdownlint
-        run: npm install -g @stoplight/spectral-cli markdownlint-cli@0.46.0
+        run: npm install -g @stoplight/spectral-cli markdownlint-cli@0.47.0
 
       - name: Validate OpenAPI with Spectral
         run: spectral lint openapi.yaml

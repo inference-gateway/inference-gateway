@@ -42,7 +42,7 @@ use of Mixture of Experts.
 
 - 📜 **Open Source**: Available under the MIT License.
 - 🚀 **Unified API Access**: Proxy requests to multiple language model APIs,
-  including OpenAI, Ollama, Ollama Cloud, Groq, Cohere etc.
+  including OpenAI, Ollama, Ollama Cloud, vLLM, Groq, Cohere etc.
 - ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
 - 🔧 **Tool-use Support**: Enable function calling capabilities across supported
   providers with a unified API.
@@ -497,6 +497,7 @@ The included Grafana dashboard provides:
 - [OpenAI](https://platform.openai.com/)
 - [Ollama](https://ollama.com/)
 - [Ollama Cloud](https://ollama.com/cloud) (Preview)
+- [vLLM](https://docs.vllm.ai/)
 - [Groq](https://console.groq.com/)
 - [Cloudflare](https://www.cloudflare.com/)
 - [Cohere](https://docs.cohere.com/docs/the-cohere-platform)
@@ -525,6 +526,7 @@ ENABLE_VISION=true
 - Google (Gemini 2.5)
 - Cohere (Command A Vision, Aya Vision)
 - Ollama (LLaVA, Llama 4, Llama 3.2 Vision)
+- vLLM (vision-capable models)
 - Groq (vision models)
 - Mistral (Pixtral)
 

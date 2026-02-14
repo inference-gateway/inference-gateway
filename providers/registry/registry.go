@@ -195,4 +195,15 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.OpenaiChatEndpoint,
 		},
 	},
+	constants.VllmID: {
+		ID:             constants.VllmID,
+		Name:           constants.VllmDisplayName,
+		URL:            constants.VllmDefaultBaseURL,
+		AuthType:       constants.AuthTypeBearer,
+		SupportsVision: true,
+		Endpoints: types.Endpoints{
+			Models: constants.VllmModelsEndpoint,
+			Chat:   constants.VllmChatEndpoint,
+		},
+	},
 }

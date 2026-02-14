@@ -65,6 +65,12 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 			expectedModel:    "deepseek-coder",
 		},
 		{
+			name:             "vLLM model with prefix",
+			model:            "vllm/llama-3-8b",
+			expectedProvider: pointerToProvider(constants.VllmID),
+			expectedModel:    "llama-3-8b",
+		},
+		{
 			name:             "Case insensitive prefix matching",
 			model:            "OpenAI/GPT-4",
 			expectedProvider: pointerToProvider(constants.OpenaiID),

@@ -1,17 +1,17 @@
 # Multi-stage build for better caching and smaller final image
 FROM mcr.microsoft.com/devcontainers/go:2-1.25-bookworm AS base
 
-ENV TASK_VERSION=v3.45.5 \
-    CTLPTL_VERSION=0.8.43 \
+ENV TASK_VERSION=v3.48.0 \
+    CTLPTL_VERSION=0.9.0 \
     K3D_VERSION=v5.8.3 \
-    KUBECTL_VERSION=v1.34.3 \
+    KUBECTL_VERSION=v1.35.0 \
     HELM_VERSION=v3.19.1 \
-    GORELEASER_VERSION=v2.13.0 \
-    GOLANG_CI_LINT_VERSION=v2.7.2 \
-    GITHUB_CLI_VERSION=2.83.2 \
+    GORELEASER_VERSION=v2.13.3 \
+    GOLANG_CI_LINT_VERSION=v2.8.0 \
+    GITHUB_CLI_VERSION=2.86.0 \
     NODE_VERSION=lts \
     SEMANTIC_RELEASE_VERSION=v25.0.2 \
-    INFERENCE_GATEWAY_CLI=v0.95.0
+    INFERENCE_GATEWAY_CLI=v0.100.3
 
 # Determine architecture once and store as build arg
 RUN architecture=$(uname -m) && \

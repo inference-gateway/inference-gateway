@@ -101,3 +101,5 @@
 | MISTRAL_API_KEY      | `""`                                                            | Mistral API Key      |
 | MOONSHOT_API_URL     | `https://api.moonshot.ai/v1`                                    | Moonshot API URL     |
 | MOONSHOT_API_KEY     | `""`                                                            | Moonshot API Key     |
+| VLLM_API_URL         | `http://vllm:8000/v1`                                           | vLLM API URL         |
+| VLLM_API_KEY         | `""`                                                            | vLLM API Key         |
