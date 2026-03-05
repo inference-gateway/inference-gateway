@@ -68,8 +68,8 @@ updates:
   - package-ecosystem: 'docker'
     directory: '/examples'
     schedule:
-      interval: 'daily'
-    open-pull-requests-limit: 0
+      interval: 'monthly'
+    open-pull-requests-limit: 1
     assignees:
       - '@inference-gateway/maintainers'
     commit-message:
@@ -79,3 +79,50 @@ updates:
       - 'dependencies'
       - 'docker'
       - 'examples'
+    groups:
+      examples-docker:
+        patterns:
+          - '*'
+  - package-ecosystem: 'npm'
+    directory: '/examples/docker-compose/mcp/pizza-server'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 1
+    assignees:
+      - '@inference-gateway/maintainers'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'npm'
+      - 'examples'
+    groups:
+      examples-npm:
+        patterns:
+          - '*'
+  - package-ecosystem: 'gomod'
+    directories:
+      - '/examples/kubernetes/agent/logs-analyzer'
+      - '/examples/docker-compose/mcp/filesystem-server'
+      - '/examples/docker-compose/mcp/search-server'
+      - '/examples/docker-compose/mcp/time-server'
+      - '/examples/kubernetes/mcp/filesystem-server'
+      - '/examples/kubernetes/mcp/search-server'
+      - '/examples/kubernetes/mcp/time-server'
+    schedule:
+      interval: 'monthly'
+    open-pull-requests-limit: 1
+    assignees:
+      - '@inference-gateway/maintainers'
+    commit-message:
+      prefix: 'chore(deps)'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'go'
+      - 'examples'
+    groups:
+      examples-go:
+        patterns:
+          - '*'
