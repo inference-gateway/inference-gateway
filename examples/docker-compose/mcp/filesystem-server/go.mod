@@ -3,8 +3,8 @@ module github.com/inference-gateway/inference-gateway/examples/docker-compose/mc
 go 1.25.4
 
 require (
-	github.com/gin-gonic/gin v1.11.0
-	github.com/metoro-io/mcp-golang v0.16.0
+	github.com/gin-gonic/gin v1.12.0
+	github.com/metoro-io/mcp-golang v0.16.1
 )
 
 require (

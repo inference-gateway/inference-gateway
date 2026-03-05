@@ -1,22 +1,15 @@
-container_runtime:
-  type: docker
 gateway:
   url: http://localhost:8080
   api_key: ""
   timeout: 200
   oci: ghcr.io/inference-gateway/inference-gateway:latest
   run: true
-  standalone_binary: true
+  docker: true
   exclude_models:
     - ollama_cloud/cogito-2.1:671b
     - ollama_cloud/kimi-k2:1t
     - ollama_cloud/kimi-k2-thinking
     - ollama_cloud/deepseek-v3.1:671b
-    - groq/whisper-large-v3
-    - groq/whisper-large-v3-turbo
-    - groq/playai-tts
-    - groq/playai-tts-arabic
-  vision_enabled: true
 client:
   timeout: 200
   retry:
@@ -42,18 +35,12 @@ tools:
     directories:
       - .
       - /tmp
-      - .infer/tmp
     protected_paths:
-      - .infer/config.yaml
-      - .infer/*.db
-      - .infer/shortcuts/
-      - .infer/agents.yaml
-      - .infer/mcp.yaml
+      - .infer/
       - .git/
       - '*.env'
   bash:
     enabled: true
-    timeout: 120
     whitelist:
       commands:
         - ls
@@ -74,11 +61,6 @@ tools:
         - ^git diff
         - ^git remote( -v)?$
         - ^git show
-    background_shells:
-      enabled: true
-      max_concurrent: 5
-      max_output_buffer_mb: 10
-      retention_minutes: 60
   read:
     enabled: true
     require_approval: false
@@ -102,9 +84,8 @@ tools:
     enabled: true
     whitelisted_domains:
       - golang.org
-      - localhost
     safety:
-      max_size: 10485760
+      max_size: 8192
       timeout: 30
       allow_redirect: true
     cache:
@@ -132,17 +113,8 @@ tools:
     require_approval: false
   safety:
     require_approval: true
-image:
-  max_size: 5242880
-  timeout: 30
-  clipboard_optimize:
-    enabled: true
-    max_width: 1920
-    max_height: 1080
-    quality: 75
-    convert_jpeg: true
 export:
-  output_dir: .infer/tmp
+  output_dir: .infer
   summary_model: ""
 agent:
   model: ""
@@ -179,15 +151,6 @@ agent:
     6. Commit changes (only if explicitly asked)
     7. Create a pull request (only if explicitly asked)
 
-    A2A ARTIFACT DOWNLOADS:
-    When a delegated A2A task completes with artifacts:
-    1. Wait for the automatic completion notification
-    2. The completion message will show artifact details including Download URLs
-    3. Use WebFetch with download=true to automatically save artifacts to disk
-       Example: WebFetch(url="http://agent/artifacts/123/file.png", download=true)
-    4. The file will be saved to <configDir>/tmp with filename extracted from URL
-    5. Check the tool result for the saved file path
-
     EXAMPLE:
     <user>Can you create a pull request with the changes?</user>
     <assistant>I will checkout to a new branch</assistant>
@@ -201,54 +164,37 @@ agent:
     <assistant>Now I'll create a pull request</assistant>
     <tool>Github(...)</tool>
   system_prompt_plan: |-
-    You are an AI planning assistant in PLAN MODE. Your role is to analyze user requests and create ACTIONABLE, EXECUTABLE plans WITHOUT executing them.
-
-    CRITICAL: Your plan MUST be actionable - if the user accepts it, you will be asked to execute it step-by-step. Plans that are not actionable are NOT plans.
+    You are an AI planning assistant in PLAN MODE. Your role is to analyze user requests and create detailed, actionable plans WITHOUT executing them.
 
     CAPABILITIES IN PLAN MODE:
-    - Read, Grep, and Tree tools for gathering information
-    - TodoWrite for tracking planning progress
-    - RequestPlanApproval tool to submit your plan for user approval
+    - Read, Grep, and Tree tools ONLY for gathering information
     - Analyze code structure and dependencies
-    - Break down complex tasks into concrete, executable steps
-    - Identify exact files and code locations that need changes
+    - Break down complex tasks into clear steps
+    - Explain reasoning and approaches
+    - Identify potential challenges and solutions
 
     RESTRICTIONS IN PLAN MODE:
     - DO NOT execute Write, Edit, Delete, Bash, or modification tools
     - DO NOT make any changes to files or system
     - DO NOT attempt to implement the plan
-    - Focus solely on creating an executable plan
+    - Focus solely on planning and explanation
 
     PLANNING WORKFLOW:
-    1. Use Read/Grep/Tree to understand the codebase thoroughly
-    2. Analyze the user's request and identify ALL requirements
-    3. If you need clarification or more information, ASK the user - do NOT call RequestPlanApproval yet
-    4. Break down into specific, numbered action steps
-    5. For EACH step, specify:
-       - Exact file paths to modify
-       - Specific changes to make
-       - Tool calls that will be needed
-    6. Include testing and validation steps
-    7. When your plan is complete and actionable, call RequestPlanApproval tool
+    1. Use Read/Grep/Tree to understand the codebase
+    2. Analyze the user's request thoroughly
+    3. Break down into logical, sequential steps
+    4. Explain your reasoning for each step
+    5. Identify files/components that need changes
+    6. Suggest testing and validation approaches
+    7. Present the complete plan to the user
 
-    DECISION MAKING:
-    - Need more info? ASK questions instead of requesting approval
-    - Plan has gaps or uncertainties? ASK for clarification
-    - Plan is complete and specific? Call RequestPlanApproval tool
-
-    OUTPUT FORMAT - ACTIONABLE STEPS:
-    Structure your plan with concrete actions:
-    - Overview: What will be done and why
-    - Steps: Numbered steps with SPECIFIC actions
-      Example: "Step 1: Edit /path/to/file.go - Add function X at line Y"
-      Example: "Step 2: Run 'task test' to verify changes"
-    - Files: Exact list of files to be modified
-    - Testing: Specific commands to run and expected outcomes
-
-    REMEMBER:
-    - If accepted, YOU will execute this plan. Make it specific and actionable!
-    - Call RequestPlanApproval ONLY when your plan is complete and ready
-    - If you need clarification, ASK - don't guess!
+    OUTPUT FORMAT:
+    Structure your plan clearly with:
+    - Overview: What needs to be done and why
+    - Steps: Numbered, actionable steps with explanations
+    - Files: List of files that would be modified
+    - Testing: How to verify the changes
+    - Considerations: Potential issues or alternatives
   system_reminders:
     enabled: true
     interval: 4
@@ -290,7 +236,7 @@ scm:
     delete_local_branch: false
 storage:
   enabled: true
-  type: jsonl
+  type: sqlite
   sqlite:
     path: .infer/conversations.db
   postgres:
@@ -305,8 +251,6 @@ storage:
     port: 6379
     password: ""
     db: 0
-  jsonl:
-    path: .infer/conversations
 conversation:
   title_generation:
     enabled: true
@@ -332,239 +276,6 @@ conversation:
     interval: 0
 chat:
   theme: tokyo-night
-  keybindings:
-    enabled: false
-    bindings:
-      chat_enter_key_handler:
-        keys:
-          - enter
-        description: send message or insert newline
-        category: chat
-        enabled: true
-      clipboard_copy_text:
-        keys:
-          - ctrl+shift+c
-        description: copy text
-        category: clipboard
-        enabled: true
-      clipboard_paste_text:
-        keys:
-          - ctrl+v
-        description: paste text
-        category: clipboard
-        enabled: true
-      display_toggle_raw_format:
-        keys:
-          - ctrl+r
-        description: toggle raw/rendered markdown
-        category: display
-        enabled: true
-      display_toggle_todo_box:
-        keys:
-          - ctrl+t
-        description: toggle todo list
-        category: display
-        enabled: true
-      global_cancel:
-        keys:
-          - esc
-        description: cancel current operation
-        category: global
-        enabled: true
-      global_quit:
-        keys:
-          - ctrl+c
-        description: exit application
-        category: global
-        enabled: true
-      help_toggle_help:
-        keys:
-          - '?'
-        description: toggle help when input is empty
-        category: help
-        enabled: true
-      mode_cycle_agent_mode:
-        keys:
-          - shift+tab
-        description: cycle agent mode (Standard/Plan/Auto-Accept)
-        category: mode
-        enabled: true
-      navigation_go_back_in_time:
-        keys:
-          - esc,esc
-        description: go back in time to previous message (double ESC)
-        category: navigation
-        enabled: true
-      navigation_page_down:
-        keys:
-          - pgdn
-          - page_down
-        description: page down
-        category: navigation
-        enabled: true
-      navigation_page_up:
-        keys:
-          - pgup
-          - page_up
-        description: page up
-        category: navigation
-        enabled: true
-      navigation_scroll_down_half_page:
-        keys:
-          - shift+down
-        description: scroll down half page
-        category: navigation
-        enabled: true
-      navigation_scroll_to_bottom:
-        keys:
-          - end
-        description: scroll to bottom
-        category: navigation
-        enabled: true
-      navigation_scroll_to_top:
-        keys:
-          - home
-        description: scroll to top
-        category: navigation
-        enabled: true
-      navigation_scroll_up_half_page:
-        keys:
-          - shift+up
-        description: scroll up half page
-        category: navigation
-        enabled: true
-      plan_approval_plan_approval_accept:
-        keys:
-          - enter
-          - "y"
-        description: accept plan
-        category: plan_approval
-        enabled: true
-      plan_approval_plan_approval_accept_and_auto_approve:
-        keys:
-          - a
-        description: accept plan and enable auto-approve mode
-        category: plan_approval
-        enabled: true
-      plan_approval_plan_approval_left:
-        keys:
-          - left
-          - h
-        description: move selection left
-        category: plan_approval
-        enabled: true
-      plan_approval_plan_approval_reject:
-        keys:
-          - "n"
-        description: reject plan
-        category: plan_approval
-        enabled: true
-      plan_approval_plan_approval_right:
-        keys:
-          - right
-          - l
-        description: move selection right
-        category: plan_approval
-        enabled: true
-      selection_toggle_mouse_mode:
-        keys:
-          - ctrl+s
-        description: toggle mouse scrolling/text selection
-        category: selection
-        enabled: true
-      text_editing_backspace:
-        keys:
-          - backspace
-        description: delete character
-        category: text_editing
-        enabled: true
-      text_editing_delete_to_beginning:
-        keys:
-          - ctrl+u
-        description: delete to beginning of line
-        category: text_editing
-        enabled: true
-      text_editing_delete_word_backward:
-        keys:
-          - ctrl+w
-        description: delete word backward
-        category: text_editing
-        enabled: true
-      text_editing_history_down:
-        keys:
-          - down
-        description: navigate to next message in history
-        category: text_editing
-        enabled: true
-      text_editing_history_up:
-        keys:
-          - up
-        description: navigate to previous message in history
-        category: text_editing
-        enabled: true
-      text_editing_insert_newline_alt:
-        keys:
-          - alt+enter
-        description: insert newline
-        category: text_editing
-        enabled: true
-      text_editing_insert_newline_ctrl:
-        keys:
-          - ctrl+j
-        description: insert newline
-        category: text_editing
-        enabled: true
-      text_editing_move_cursor_left:
-        keys:
-          - left
-        description: move cursor left
-        category: text_editing
-        enabled: true
-      text_editing_move_cursor_right:
-        keys:
-          - right
-        description: move cursor right
-        category: text_editing
-        enabled: true
-      text_editing_move_to_beginning:
-        keys:
-          - ctrl+a
-        description: move cursor to beginning
-        category: text_editing
-        enabled: true
-      text_editing_move_to_end:
-        keys:
-          - ctrl+e
-        description: move cursor to end
-        category: text_editing
-        enabled: true
-      tools_background_shell:
-        keys:
-          - ctrl+b
-        description: move running bash command to background
-        category: tools
-        enabled: true
-      tools_toggle_tool_expansion:
-        keys:
-          - ctrl+o
-        description: expand/collapse tool results
-        category: tools
-        enabled: true
-  status_bar:
-    enabled: true
-    indicators:
-      model: true
-      theme: true
-      max_output: false
-      a2a_agents: true
-      tools: true
-      background_shells: true
-      a2a_tasks: true
-      mcp: true
-      context_usage: true
-      session_tokens: true
-      cost: true
-      git_branch: true
 a2a:
   enabled: true
   cache:
@@ -588,18 +299,11 @@ a2a:
     submit_task:
       enabled: true
       require_approval: true
-mcp:
-  enabled: false
-  connection_timeout: 30
-  discovery_timeout: 30
-  liveness_probe_enabled: true
-  liveness_probe_interval: 10
-  max_retries: 10
-  servers: []
-pricing:
-  enabled: true
-  currency: USD
-  custom_prices: {}
+    download_artifacts:
+      enabled: true
+      download_dir: /tmp/downloads
+      timeout_seconds: 30
+      require_approval: true
 init:
   prompt: |-
     Please analyze this project and generate a comprehensive AGENTS.md file. Start by using the Tree tool to understand the project structure.
@@ -619,9 +323,3 @@ init:
 compact:
   enabled: true
   auto_at: 80
-  keep_first_messages: 2
-web:
-  enabled: false
-  port: 3000
-  host: localhost
-  session_inactivity_mins: 5
