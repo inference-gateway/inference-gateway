@@ -17,7 +17,7 @@ tasks:
   install:generator:
     desc: 'Install the generator tool'
     cmds:
-      - GOBIN=${PWD}/bin go install github.com/inference-gateway/tools/cmd/generator@v0.1.2
+      - GOBIN=${PWD}/bin go install github.com/inference-gateway/tools/cmd/generator@v0.2.2
 
   generate:
     desc: 'Generate the gateway from OpenAPI Spec'

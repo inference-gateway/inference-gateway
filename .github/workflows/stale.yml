@@ -12,7 +12,6 @@ permissions:
 jobs:
   stale:
     runs-on: ubuntu-24.04
-
     steps:
       - name: Mark stale issues
         uses: actions/stale@v10

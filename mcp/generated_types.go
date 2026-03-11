@@ -1,6 +1,37 @@
 // Code generated from JSON schema. DO NOT EDIT.
 package mcp
 
+// The user action in response to the elicitation.
+// - "accept": User submitted the form/confirmed the action
+// - "decline": User explicitly decline the action
+// - "cancel": User dismissed without making an explicit choice
+type Action string
+
+// Action enum values
+const (
+	ActionAccept  Action = "accept"
+	ActionCancel  Action = "cancel"
+	ActionDecline Action = "decline"
+)
+
+type Format string
+
+// Format enum values
+const (
+	FormatDate     Format = "date"
+	FormatDateTime Format = "date-time"
+	FormatEmail    Format = "email"
+	FormatURI      Format = "uri"
+)
+
+type Type string
+
+// Type enum values
+const (
+	TypeInteger Type = "integer"
+	TypeNumber  Type = "number"
+)
+
 // The severity of a log message.
 //
 // These map to syslog message severities, as specified in RFC-5424:
@@ -134,8 +165,7 @@ type CreateMessageResult struct {
 }
 
 // An opaque token used to represent a cursor for pagination.
-type Cursor struct {
-}
+type Cursor = string
 
 // A request from the server to elicit additional information from the user via the client.
 type ElicitRequest struct {
@@ -146,7 +176,7 @@ type ElicitRequest struct {
 // The client's response to an elicitation request.
 type ElicitResult struct {
 	Meta    map[string]any `json:"_meta,omitempty"`
-	Action  string         `json:"action"`
+	Action  Action         `json:"action"`
 	Content map[string]any `json:"content,omitempty"`
 }
 
@@ -368,7 +398,7 @@ type NumberSchema struct {
 	Maximum     *int    `json:"maximum,omitempty"`
 	Minimum     *int    `json:"minimum,omitempty"`
 	Title       *string `json:"title,omitempty"`
-	Type        string  `json:"type"`
+	Type        Type    `json:"type"`
 }
 
 type PaginatedRequest struct {
@@ -573,7 +603,7 @@ type SetLevelRequest struct {
 
 type StringSchema struct {
 	Description *string `json:"description,omitempty"`
-	Format      *string `json:"format,omitempty"`
+	Format      *Format `json:"format,omitempty"`
 	MaxLength   *int    `json:"maxLength,omitempty"`
 	MinLength   *int    `json:"minLength,omitempty"`
 	Title       *string `json:"title,omitempty"`
