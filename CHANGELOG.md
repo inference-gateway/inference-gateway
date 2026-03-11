@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.23.4](https://github.com/inference-gateway/inference-gateway/compare/v0.23.3...v0.23.4) (2026-03-05)
+
+### 🐛 Bug Fixes
+
+* Do not run infer agent if the comment was made by dependabot ([2ea9aa9](https://github.com/inference-gateway/inference-gateway/commit/2ea9aa9f92bb75cf1e8fad8f2721389c8021e092))
+
+## [0.23.3](https://github.com/inference-gateway/inference-gateway/compare/v0.23.2...v0.23.3) (2026-03-05)
+
+### ♻️ Improvements
+
+* Remove deprecated web UI ([#233](https://github.com/inference-gateway/inference-gateway/issues/233)) ([1738332](https://github.com/inference-gateway/inference-gateway/commit/1738332230bc5092206f352f087442ae245e34db))
+
+### 🔧 Miscellaneous
+
+* **deps)(deps:** Bump go.opentelemetry.io/otel/sdk ([#242](https://github.com/inference-gateway/inference-gateway/issues/242)) ([5660f71](https://github.com/inference-gateway/inference-gateway/commit/5660f71fc6b455fa4e0339eae24a599dbd18f267))
+* **deps:** Bump @hono/node-server ([#245](https://github.com/inference-gateway/inference-gateway/issues/245)) ([379e1b9](https://github.com/inference-gateway/inference-gateway/commit/379e1b99ce992ebeca8c335c07b7fbe377d080d2))
+* **deps:** Bump @modelcontextprotocol/sdk ([#235](https://github.com/inference-gateway/inference-gateway/issues/235)) ([987087e](https://github.com/inference-gateway/inference-gateway/commit/987087e931f6a60c92aaa6ae9c733e075e83539c))
+* **deps:** Bump ajv in /examples/docker-compose/mcp/pizza-server ([#240](https://github.com/inference-gateway/inference-gateway/issues/240)) ([9a24b04](https://github.com/inference-gateway/inference-gateway/commit/9a24b046ea8b660d9e583148399dc4213386f3ee))
+* **deps:** bump dev tool and CI action versions ([#247](https://github.com/inference-gateway/inference-gateway/issues/247)) ([0deb374](https://github.com/inference-gateway/inference-gateway/commit/0deb37410fd0a0468d7e503baeb3aa400e08503b))
+* **deps:** Bump hono in /examples/docker-compose/mcp/pizza-server ([#234](https://github.com/inference-gateway/inference-gateway/issues/234)) ([ad5bd93](https://github.com/inference-gateway/inference-gateway/commit/ad5bd934cbb679a49147709e0fc5278a3bcf6c30))
+* **deps:** Bump hono in /examples/docker-compose/mcp/pizza-server ([#239](https://github.com/inference-gateway/inference-gateway/issues/239)) ([289f2d1](https://github.com/inference-gateway/inference-gateway/commit/289f2d14ee862663282087383939d1237e4ca667))
+* **deps:** Bump hono in /examples/docker-compose/mcp/pizza-server ([#241](https://github.com/inference-gateway/inference-gateway/issues/241)) ([bdfb283](https://github.com/inference-gateway/inference-gateway/commit/bdfb283c830860e2d06a052b77f01c9148dfd74b))
+* **deps:** Bump hono in /examples/docker-compose/mcp/pizza-server ([#244](https://github.com/inference-gateway/inference-gateway/issues/244)) ([cbad88f](https://github.com/inference-gateway/inference-gateway/commit/cbad88f234b75aa29d42d02319f4b76b2eb33f60))
+* **deps:** Bump qs in /examples/docker-compose/mcp/pizza-server ([#238](https://github.com/inference-gateway/inference-gateway/issues/238)) ([df33864](https://github.com/inference-gateway/inference-gateway/commit/df33864f28393a009290bf491cdcdab57bdd27b9))
+* **deps:** Bump the examples-go group across 7 directories with 5 updates ([#250](https://github.com/inference-gateway/inference-gateway/issues/250)) ([11f16ec](https://github.com/inference-gateway/inference-gateway/commit/11f16ecf9d3691ff396cefec89011c641d19d96d))
+* **deps:** Bump the examples-npm group ([#249](https://github.com/inference-gateway/inference-gateway/issues/249)) ([42ae2f5](https://github.com/inference-gateway/inference-gateway/commit/42ae2f55734f6b523a6ba611ae114e7bc87976b2))
+* **deps:** Reduce dependabot noise for examples dependencies ([#248](https://github.com/inference-gateway/inference-gateway/issues/248)) ([0611eaa](https://github.com/inference-gateway/inference-gateway/commit/0611eaa42e77fcad3a72b65441a0734589e404ad))
+
 ## [0.23.2](https://github.com/inference-gateway/inference-gateway/compare/v0.23.1...v0.23.2) (2026-01-23)
 
 ### 🐛 Bug Fixes
