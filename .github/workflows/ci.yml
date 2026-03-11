@@ -12,7 +12,6 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-24.04
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -27,18 +26,18 @@ jobs:
 
       - name: Install golangci-lint
         run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.10.1
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /usr/local/bin v2.11.0
 
       - name: Install Mockgen
         run: go install go.uber.org/mock/mockgen@v0.6.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: 'lts/*'
 
       - name: Install Spectral and markdownlint
-        run: npm install -g @stoplight/spectral-cli markdownlint-cli@0.46.0
+        run: npm install -g @stoplight/spectral-cli markdownlint-cli@0.48.0
 
       - name: Validate OpenAPI with Spectral
         run: spectral lint openapi.yaml

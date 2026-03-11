@@ -7,11 +7,11 @@ ENV TASK_VERSION=v3.48.0 \
     KUBECTL_VERSION=v1.35.0 \
     HELM_VERSION=v3.19.1 \
     GORELEASER_VERSION=v2.13.3 \
-    GOLANG_CI_LINT_VERSION=v2.10.1 \
-    GITHUB_CLI_VERSION=2.83.2 \
+    GOLANGCI_LINT_VERSION=v2.11.0 \
+    GITHUB_CLI_VERSION=2.87.3 \
     NODE_VERSION=lts \
-    SEMANTIC_RELEASE_VERSION=v25.0.3 \
-    INFERENCE_GATEWAY_CLI=v0.95.0
+    SEMANTIC_RELEASE_VERSION=v25.0.2 \
+    INFERENCE_GATEWAY_CLI=v0.100.3
 
 # Determine architecture once and store as build arg
 RUN architecture=$(uname -m) && \
@@ -58,7 +58,7 @@ RUN architecture_pretty=$(cat /tmp/arch) && \
     curl -fsSL https://github.com/goreleaser/goreleaser/releases/download/${GORELEASER_VERSION}/goreleaser_Linux_${architecture_pretty}.tar.gz | tar -xzv -C /usr/local/bin goreleaser
 
 # Install golangci-lint
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin ${GOLANG_CI_LINT_VERSION}
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin ${GOLANGCI_LINT_VERSION}
 
 # Install gh cli
 RUN architecture_pretty=$(cat /tmp/arch) && \
@@ -91,7 +91,7 @@ FROM base AS development
 USER vscode
 
 RUN go install go.uber.org/mock/mockgen@v0.6.0 && \
-    go install github.com/inference-gateway/tools/cmd/generator@v0.1.2
+    go install github.com/inference-gateway/tools/cmd/generator@v0.2.2
 
 # Use Powerlevel10k theme
 RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git /home/vscode/.powerlevel10k
