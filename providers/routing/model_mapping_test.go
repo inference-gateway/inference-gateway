@@ -19,55 +19,55 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 		{
 			name:             "OpenAI model with prefix",
 			model:            "openai/gpt-4",
-			expectedProvider: pointerToProvider(constants.OpenaiID),
+			expectedProvider: new(constants.OpenaiID),
 			expectedModel:    "gpt-4",
 		},
 		{
 			name:             "Anthropic model with prefix",
 			model:            "anthropic/claude-3",
-			expectedProvider: pointerToProvider(constants.AnthropicID),
+			expectedProvider: new(constants.AnthropicID),
 			expectedModel:    "claude-3",
 		},
 		{
 			name:             "Groq model with prefix",
 			model:            "groq/llama-7b",
-			expectedProvider: pointerToProvider(constants.GroqID),
+			expectedProvider: new(constants.GroqID),
 			expectedModel:    "llama-7b",
 		},
 		{
 			name:             "Ollama model with prefix",
 			model:            "ollama/mistral",
-			expectedProvider: pointerToProvider(constants.OllamaID),
+			expectedProvider: new(constants.OllamaID),
 			expectedModel:    "mistral",
 		},
 		{
 			name:             "Ollama Cloud model with prefix",
 			model:            "ollama_cloud/llama3.2:latest",
-			expectedProvider: pointerToProvider(constants.OllamaCloudID),
+			expectedProvider: new(constants.OllamaCloudID),
 			expectedModel:    "llama3.2:latest",
 		},
 		{
 			name:             "Cloudflare model with prefix",
 			model:            "cloudflare/@cf/meta/llama-2-7b-chat-fp16",
-			expectedProvider: pointerToProvider(constants.CloudflareID),
+			expectedProvider: new(constants.CloudflareID),
 			expectedModel:    "@cf/meta/llama-2-7b-chat-fp16",
 		},
 		{
 			name:             "Cohere model with prefix",
 			model:            "cohere/command-nightly",
-			expectedProvider: pointerToProvider(constants.CohereID),
+			expectedProvider: new(constants.CohereID),
 			expectedModel:    "command-nightly",
 		},
 		{
 			name:             "Deepseek model with prefix",
 			model:            "deepseek/deepseek-coder",
-			expectedProvider: pointerToProvider(constants.DeepseekID),
+			expectedProvider: new(constants.DeepseekID),
 			expectedModel:    "deepseek-coder",
 		},
 		{
 			name:             "Case insensitive prefix matching",
 			model:            "OpenAI/GPT-4",
-			expectedProvider: pointerToProvider(constants.OpenaiID),
+			expectedProvider: new(constants.OpenaiID),
 			expectedModel:    "GPT-4",
 		},
 		{
@@ -118,7 +118,3 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 	}
 }
 
-// Helper function to convert Provider to *Provider
-func pointerToProvider(p types.Provider) *types.Provider {
-	return &p
-}

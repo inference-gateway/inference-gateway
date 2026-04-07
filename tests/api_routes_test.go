@@ -1096,10 +1096,9 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 			r := gin.New()
 			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
-			stream := true
 			requestBody := types.CreateChatCompletionRequest{
 				Model:  "openai/gpt-4",
-				Stream: &stream,
+				Stream: new(true),
 				Messages: []types.Message{
 					types.NewTextMessage(t, types.User, "Hello, world!"),
 				},
