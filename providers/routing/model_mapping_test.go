@@ -117,4 +117,3 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 		})
 	}
 }
-
