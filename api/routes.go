@@ -254,6 +254,8 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 
 	proxy.Rewrite = func(pr *httputil.ProxyRequest) {
 		pr.SetURL(fullURL)
+		pr.Out.URL.Path = fullURL.Path
+		pr.Out.URL.RawQuery = fullURL.RawQuery
 		pr.Out.Header = pr.In.Header.Clone()
 		pr.Out.Header.Set("Content-Type", "application/json")
 		pr.Out.Header.Set("Accept", "application/json")
