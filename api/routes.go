@@ -238,10 +238,7 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
 		return
 	}
-	proxy := httputil.NewSingleHostReverseProxy(fullURL)
-
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Request.Header.Set("Accept", "application/json")
+	proxy := &httputil.ReverseProxy{}
 
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		router.logger.Error("proxy request failed", err, "url", fullURL.String())
@@ -255,17 +252,15 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		}
 	}
 
-	proxy.Director = func(req *http.Request) {
-		req.Header = c.Request.Header
-		req.Host = fullURL.Host
-		req.URL.Host = fullURL.Host
-		req.URL.Scheme = fullURL.Scheme
-		req.URL.Path = fullURL.Path
-		req.URL.RawQuery = fullURL.RawQuery
+	proxy.Rewrite = func(pr *httputil.ProxyRequest) {
+		pr.SetURL(fullURL)
+		pr.Out.Header = pr.In.Header.Clone()
+		pr.Out.Header.Set("Content-Type", "application/json")
+		pr.Out.Header.Set("Accept", "application/json")
 
 		if router.cfg.Environment == "development" {
 			reqModifier := proxymodifier.NewDevRequestModifier(router.logger, &router.cfg)
-			if err := reqModifier.Modify(req); err != nil {
+			if err := reqModifier.Modify(pr.Out); err != nil {
 				router.logger.Error("failed to modify request", err)
 				return
 			}
