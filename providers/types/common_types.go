@@ -128,6 +128,7 @@ const (
 	Ollama      Provider = "ollama"
 	OllamaCloud Provider = "ollama_cloud"
 	Openai      Provider = "openai"
+	Vllm        Provider = "vllm"
 )
 
 // Valid indicates whether the value is a known member of the Provider enum.
