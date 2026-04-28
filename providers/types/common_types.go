@@ -5,6 +5,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -249,6 +250,13 @@ type ChatCompletionChoice struct {
 
 // ChatCompletionMessageToolCall defines model for ChatCompletionMessageToolCall.
 type ChatCompletionMessageToolCall struct {
+	// ExtraContent Provider-specific opaque data attached to a tool call. The contents are
+	// not interpreted by the gateway, but must be echoed back verbatim on the
+	// next request that references this tool call. Currently used by Google
+	// Gemini extended-thinking models to carry the per-call `thought_signature`.
+	// Other providers may ignore the field.
+	ExtraContent *ToolCallExtraContent `json:"extra_content,omitempty"`
+
 	// Function The function that the model called.
 	Function ChatCompletionMessageToolCallFunction `json:"function"`
 
@@ -261,6 +269,13 @@ type ChatCompletionMessageToolCall struct {
 
 // ChatCompletionMessageToolCallChunk defines model for ChatCompletionMessageToolCallChunk.
 type ChatCompletionMessageToolCallChunk struct {
+	// ExtraContent Provider-specific opaque data attached to a tool call. The contents are
+	// not interpreted by the gateway, but must be echoed back verbatim on the
+	// next request that references this tool call. Currently used by Google
+	// Gemini extended-thinking models to carry the per-call `thought_signature`.
+	// Other providers may ignore the field.
+	ExtraContent *ToolCallExtraContent `json:"extra_content,omitempty"`
+
 	// Function The function that the model called.
 	Function *ChatCompletionMessageToolCallFunction `json:"function,omitempty"`
 
@@ -663,6 +678,25 @@ type TextContentPart struct {
 // TextContentPartType Content type identifier
 type TextContentPartType string
 
+// ToolCallExtraContent Provider-specific opaque data attached to a tool call. The contents are
+// not interpreted by the gateway, but must be echoed back verbatim on the
+// next request that references this tool call. Currently used by Google
+// Gemini extended-thinking models to carry the per-call `thought_signature`.
+// Other providers may ignore the field.
+type ToolCallExtraContent struct {
+	// Google Google Gemini-specific extra content.
+	Google *ToolCallExtraContent_Google `json:"google,omitempty"`
+}
+
+// ToolCallExtraContent_Google Google Gemini-specific extra content.
+type ToolCallExtraContent_Google struct {
+	// ThoughtSignature Opaque signature returned with reasoning-enabled tool calls.
+	// Must be echoed back verbatim in the next request that includes
+	// this tool call, or Google will reject the request.
+	ThoughtSignature     *string        `json:"thought_signature,omitempty"`
+	AdditionalProperties map[string]any `json:"-"`
+}
+
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
 
@@ -779,6 +813,74 @@ type ProxyPostJSONRequestBody ProxyPostJSONBody
 
 // ProxyPutJSONRequestBody defines body for ProxyPut for application/json ContentType.
 type ProxyPutJSONRequestBody ProxyPutJSONBody
+
+// Getter for additional properties for ToolCallExtraContent_Google. Returns the specified
+// element and whether it was found
+func (a ToolCallExtraContent_Google) Get(fieldName string) (value any, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for ToolCallExtraContent_Google
+func (a *ToolCallExtraContent_Google) Set(fieldName string, value any) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]any)
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for ToolCallExtraContent_Google to handle AdditionalProperties
+func (a *ToolCallExtraContent_Google) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["thought_signature"]; found {
+		err = json.Unmarshal(raw, &a.ThoughtSignature)
+		if err != nil {
+			return fmt.Errorf("error reading 'thought_signature': %w", err)
+		}
+		delete(object, "thought_signature")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]any)
+		for fieldName, fieldBuf := range object {
+			var fieldVal any
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for ToolCallExtraContent_Google to handle AdditionalProperties
+func (a ToolCallExtraContent_Google) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.ThoughtSignature != nil {
+		object["thought_signature"], err = json.Marshal(a.ThoughtSignature)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'thought_signature': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
 
 // AsTextContentPart returns the union data inside the ContentPart as a TextContentPart
 func (t ContentPart) AsTextContentPart() (TextContentPart, error) {

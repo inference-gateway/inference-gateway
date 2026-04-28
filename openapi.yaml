@@ -1056,6 +1056,8 @@ components:
           $ref: '#/components/schemas/ChatCompletionToolType'
         function:
           $ref: '#/components/schemas/ChatCompletionMessageToolCallFunction'
+        extra_content:
+          $ref: '#/components/schemas/ToolCallExtraContent'
       required:
         - id
         - type
@@ -1180,8 +1182,30 @@ components:
           description: The type of the tool. Currently, only `function` is supported.
         function:
           $ref: '#/components/schemas/ChatCompletionMessageToolCallFunction'
+        extra_content:
+          $ref: '#/components/schemas/ToolCallExtraContent'
       required:
         - index
+    ToolCallExtraContent:
+      type: object
+      description: |
+        Provider-specific opaque data attached to a tool call. The contents are
+        not interpreted by the gateway, but must be echoed back verbatim on the
+        next request that references this tool call. Currently used by Google
+        Gemini extended-thinking models to carry the per-call `thought_signature`.
+        Other providers may ignore the field.
+      properties:
+        google:
+          type: object
+          description: Google Gemini-specific extra content.
+          properties:
+            thought_signature:
+              type: string
+              description: |
+                Opaque signature returned with reasoning-enabled tool calls.
+                Must be echoed back verbatim in the next request that includes
+                this tool call, or Google will reject the request.
+          additionalProperties: true
     ChatCompletionTokenLogprob:
       type: object
       properties:
