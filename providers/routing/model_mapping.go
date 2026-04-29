@@ -31,6 +31,7 @@ func DetermineProviderAndModelName(model string) (provider *types.Provider, mode
 		"google/":       constants.GoogleID,
 		"mistral/":      constants.MistralID,
 		"moonshot/":     constants.MoonshotID,
+		"vllm/":         constants.VllmID,
 	}
 
 	for prefix, providerID := range providerPrefixMapping {
