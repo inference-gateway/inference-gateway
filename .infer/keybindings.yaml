@@ -1,0 +1,224 @@
+---
+enabled: true
+bindings:
+  chat_enter_key_handler:
+    keys:
+      - enter
+    description: send message or insert newline
+    category: chat
+    enabled: true
+  clipboard_copy_text:
+    keys:
+      - ctrl+shift+c
+    description: copy text
+    category: clipboard
+    enabled: true
+  clipboard_paste_text:
+    keys:
+      - ctrl+v
+    description: paste text
+    category: clipboard
+    enabled: true
+  display_toggle_raw_format:
+    keys:
+      - ctrl+r
+    description: toggle raw/rendered markdown
+    category: display
+    enabled: true
+  display_toggle_thinking:
+    keys:
+      - ctrl+k
+    description: expand/collapse thinking blocks
+    category: display
+    enabled: true
+  display_toggle_todo_box:
+    keys:
+      - ctrl+t
+    description: toggle todo list
+    category: display
+    enabled: true
+  global_cancel:
+    keys:
+      - esc
+    description: cancel current operation
+    category: global
+    enabled: true
+  global_quit:
+    keys:
+      - ctrl+c
+    description: exit application
+    category: global
+    enabled: true
+  help_toggle_help:
+    keys:
+      - '?'
+    description: toggle help when input is empty
+    category: help
+    enabled: true
+  mode_cycle_agent_mode:
+    keys:
+      - shift+tab
+    description: cycle agent mode (Standard/Plan/Auto-Accept)
+    category: mode
+    enabled: true
+  navigation_go_back_in_time:
+    keys:
+      - esc,esc
+    description: go back in time to previous message (double ESC)
+    category: navigation
+    enabled: true
+  navigation_page_down:
+    keys:
+      - pgdn
+      - page_down
+    description: page down
+    category: navigation
+    enabled: true
+  navigation_page_up:
+    keys:
+      - pgup
+      - page_up
+    description: page up
+    category: navigation
+    enabled: true
+  navigation_scroll_down_half_page:
+    keys:
+      - shift+down
+    description: scroll down half page
+    category: navigation
+    enabled: true
+  navigation_scroll_to_bottom:
+    keys:
+      - end
+    description: scroll to bottom
+    category: navigation
+    enabled: true
+  navigation_scroll_to_top:
+    keys:
+      - home
+    description: scroll to top
+    category: navigation
+    enabled: true
+  navigation_scroll_up_half_page:
+    keys:
+      - shift+up
+    description: scroll up half page
+    category: navigation
+    enabled: true
+  plan_approval_plan_approval_accept:
+    keys:
+      - enter
+      - "y"
+    description: accept plan
+    category: plan_approval
+    enabled: true
+  plan_approval_plan_approval_accept_and_auto_approve:
+    keys:
+      - a
+    description: accept plan and enable auto-approve mode
+    category: plan_approval
+    enabled: true
+  plan_approval_plan_approval_left:
+    keys:
+      - left
+      - h
+    description: move selection left
+    category: plan_approval
+    enabled: true
+  plan_approval_plan_approval_reject:
+    keys:
+      - "n"
+    description: reject plan
+    category: plan_approval
+    enabled: true
+  plan_approval_plan_approval_right:
+    keys:
+      - right
+      - l
+    description: move selection right
+    category: plan_approval
+    enabled: true
+  selection_toggle_mouse_mode:
+    keys:
+      - ctrl+s
+    description: toggle mouse scrolling/text selection
+    category: selection
+    enabled: true
+  text_editing_backspace:
+    keys:
+      - backspace
+    description: delete character
+    category: text_editing
+    enabled: true
+  text_editing_delete_to_beginning:
+    keys:
+      - ctrl+u
+    description: delete to beginning of line
+    category: text_editing
+    enabled: true
+  text_editing_delete_word_backward:
+    keys:
+      - ctrl+w
+    description: delete word backward
+    category: text_editing
+    enabled: true
+  text_editing_history_down:
+    keys:
+      - down
+    description: navigate to next message in history
+    category: text_editing
+    enabled: true
+  text_editing_history_up:
+    keys:
+      - up
+    description: navigate to previous message in history
+    category: text_editing
+    enabled: true
+  text_editing_insert_newline_alt:
+    keys:
+      - alt+enter
+    description: insert newline
+    category: text_editing
+    enabled: true
+  text_editing_insert_newline_ctrl:
+    keys:
+      - ctrl+j
+    description: insert newline
+    category: text_editing
+    enabled: true
+  text_editing_move_cursor_left:
+    keys:
+      - left
+    description: move cursor left
+    category: text_editing
+    enabled: true
+  text_editing_move_cursor_right:
+    keys:
+      - right
+    description: move cursor right
+    category: text_editing
+    enabled: true
+  text_editing_move_to_beginning:
+    keys:
+      - ctrl+a
+    description: move cursor to beginning
+    category: text_editing
+    enabled: true
+  text_editing_move_to_end:
+    keys:
+      - ctrl+e
+    description: move cursor to end
+    category: text_editing
+    enabled: true
+  tools_background_shell:
+    keys:
+      - ctrl+b
+    description: move running bash command to background
+    category: tools
+    enabled: true
+  tools_toggle_tool_expansion:
+    keys:
+      - ctrl+o
+    description: expand/collapse tool results
+    category: tools
+    enabled: true

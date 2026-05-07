@@ -6,3 +6,4 @@ conversations.db*
 conversations
 bin/
 tmp/
+plans/

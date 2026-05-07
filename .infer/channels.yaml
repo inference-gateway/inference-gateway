@@ -1,0 +1,17 @@
+---
+enabled: false
+max_workers: 5
+image_retention: 5
+require_approval: true
+telegram:
+  enabled: false
+  bot_token: ""
+  allowed_users: []
+  poll_timeout: 30
+whatsapp:
+  enabled: false
+  phone_number_id: ""
+  access_token: ""
+  verify_token: ""
+  webhook_port: 8443
+  allowed_users: []
