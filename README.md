@@ -465,7 +465,7 @@ docker compose up -d
 
 #### Kubernetes Example
 
-Production-ready monitoring with Prometheus Operator:
+Enterprise-ready monitoring with Prometheus Operator:
 
 ```bash
 cd examples/kubernetes/monitoring/

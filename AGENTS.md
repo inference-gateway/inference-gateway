@@ -22,7 +22,7 @@ This document provides comprehensive guidance for AI agents working with the Inf
 
 ## Project Overview
 
-**Inference Gateway** is a unified API proxy server for multiple LLM providers with Model Context Protocol (MCP) integration, OpenTelemetry metrics, and production-ready features. It provides an OpenAI-compatible API surface that routes requests to various LLM providers.
+**Inference Gateway** is a unified API proxy server for multiple LLM providers with Model Context Protocol (MCP) integration, OpenTelemetry metrics, and enterprise-ready features. It provides an OpenAI-compatible API surface that routes requests to various LLM providers.
 
 ### Key Technologies
 
