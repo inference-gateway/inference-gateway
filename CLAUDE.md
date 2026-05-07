@@ -166,7 +166,9 @@ The gateway supports Server-Sent Events (SSE) streaming:
 
 ### Pre-commit Hook
 
-`task pre-commit:install` symlinks `scripts/pre-commit-check.sh` to `.git/hooks/pre-commit`. The hook runs `task generate`, `task format`, `task lint` (Go + markdown + OpenAPI), `task build`, and `task test`. If you skip the hook, run those tasks manually before pushing — CI mirrors them.
+`task pre-commit:install` symlinks `scripts/pre-commit-check.sh` to `.git/hooks/pre-commit`.
+The hook runs `task generate`, `task format`, `task lint` (Go + markdown + OpenAPI), `task build`, and `task test`.
+If you skip the hook, run those tasks manually before pushing — CI mirrors them.
 
 ### Related Documentation
 
