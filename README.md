@@ -16,6 +16,10 @@
   <a href="https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/inference-gateway/inference-gateway?color=blue&style=flat-square" alt="License"/>
   </a>
+  <!-- Go Version Badge -->
+  <a href="https://github.com/inference-gateway/inference-gateway/blob/main/go.mod">
+    <img src="https://img.shields.io/github/go-mod/go-version/inference-gateway/inference-gateway?color=blue&style=flat-square&logo=go" alt="Go Version"/>
+  </a>
 </p>
 
 The Inference Gateway is a proxy server designed to facilitate access to various
