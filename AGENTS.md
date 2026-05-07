@@ -4,7 +4,8 @@
 > **Repository**: github.com/inference-gateway/inference-gateway
 > **Current Version**: v0.24.1
 
-This document provides comprehensive guidance for AI agents working with the Inference Gateway project. It covers project architecture, development workflow, testing patterns, code generation, and conventions.
+This document provides comprehensive guidance for AI agents working with the Inference Gateway project.
+It covers project architecture, development workflow, testing patterns, code generation, and conventions.
 
 ## Table of Contents
 
@@ -22,7 +23,9 @@ This document provides comprehensive guidance for AI agents working with the Inf
 
 ## Project Overview
 
-**Inference Gateway** is a unified API proxy server for multiple LLM providers with Model Context Protocol (MCP) integration, OpenTelemetry metrics, and enterprise-ready features. It provides an OpenAI-compatible API surface that routes requests to various LLM providers.
+**Inference Gateway** is a unified API proxy server for multiple LLM providers with Model Context Protocol (MCP) integration,
+OpenTelemetry metrics, and enterprise-ready features. It provides an OpenAI-compatible API surface that routes requests to
+various LLM providers.
 
 ### Key Technologies
 
@@ -45,7 +48,7 @@ This document provides comprehensive guidance for AI agents working with the Inf
 
 ### Directory Layout
 
-```
+```text
 api/                        # HTTP API layer
 ├── middlewares/            # Auth, Logger, MCP, Telemetry middleware
 └── routes.go               # Route handlers (chat, models, proxy, tools, health)
@@ -98,6 +101,7 @@ hack/                       # Dev cluster management
 ### Core Components
 
 #### 1. Gateway Server (`cmd/gateway/main.go`)
+
 - Initializes Config (env-based), Logger (zap), Telemetry (OTel Prometheus)
 - Sets up provider registry and HTTP client
 - Configures middleware pipeline: Logger → Telemetry → OIDC Auth → MCP
@@ -105,6 +109,7 @@ hack/                       # Dev cluster management
 - Supports TLS and graceful shutdown via OS signals
 
 #### 2. API Layer (`api/routes.go`)
+
 - `RouterImpl` implements the `Router` interface
 - Routes: `GET /health`, `GET /v1/models`, `POST /v1/chat/completions`, `GET /v1/mcp/tools`, `/proxy/:provider/*path`
 - Handles both streaming (SSE) and non-streaming (JSON) responses
@@ -113,6 +118,7 @@ hack/                       # Dev cluster management
 - Processes vision content when `ENABLE_VISION=true`
 
 #### 3. Provider System (`providers/`)
+
 - `IProvider` interface defines: `ListModels`, `ChatCompletions`, `StreamChatCompletions`, `SupportsVision`
 - `ProviderImpl` base struct handles provider-agnostic logic (HTTP requests, streaming, auth)
 - Provider-specific list-models transformers convert provider formats to OpenAI-compatible
@@ -120,6 +126,7 @@ hack/                       # Dev cluster management
 - Auth types: `bearer`, `xheader` (x-api-key), `query` (key param), `none`
 
 #### 4. MCP Integration (`mcp/`)
+
 - `MCPClientInterface`: Connects to MCP servers via SSE, manages tool discovery
 - `Agent`: Executes tool calls in an iterative loop (up to 10 iterations)
 - Middleware injects MCP tools into the request before sending to the LLM
@@ -129,7 +136,7 @@ hack/                       # Dev cluster management
 
 ### Middleware Pipeline
 
-```
+```text
 Request → Logger → [Telemetry] → [OIDC Auth] → [MCP Agent] → Route Handler → Response
 ```
 
@@ -142,7 +149,7 @@ Request → Logger → [Telemetry] → [OIDC Auth] → [MCP Agent] → Route Han
 ### API Routes
 
 | Method | Path | Handler | Description |
-|--------|------|---------|-------------|
+| ------ | ---- | ------- | ----------- |
 | GET | `/health` | `HealthcheckHandler` | Health check endpoint |
 | GET | `/v1/models` | `ListModelsHandler` | List models (optional `?provider=` filter) |
 | GET | `/v1/mcp/tools` | `ListToolsHandler` | List MCP tools (when `MCP_EXPOSE=true`) |
@@ -151,8 +158,8 @@ Request → Logger → [Telemetry] → [OIDC Auth] → [MCP Agent] → Route Han
 
 ### Supported Providers
 
-| Provider | ID | Auth Type | Vision | 
-|----------|----|-----------|--------|
+| Provider | ID | Auth Type | Vision |
+| -------- | -- | --------- | ------ |
 | OpenAI | `openai` | bearer | Yes |
 | Anthropic | `anthropic` | xheader | Yes |
 | Groq | `groq` | bearer | Yes |
@@ -391,6 +398,7 @@ type IProvider interface { ... }
 ```
 
 When adding a new interface that needs mocking:
+
 1. Add a `//go:generate` directive above the interface
 2. Run `go generate ./...` to regenerate mocks
 3. The mock destination should be in `tests/mocks/` following the existing structure
@@ -469,7 +477,7 @@ If your provider needs custom response handling, add it to `.openapi-ignore` aft
 ### Authentication Types
 
 | Type | Method | Example Provider |
-|------|--------|------------------|
+| ---- | ------ | ---------------- |
 | `bearer` | `Authorization: Bearer {token}` | OpenAI, Groq, Cohere |
 | `xheader` | `x-api-key: {token}` | Anthropic |
 | `query` | `?key={token}` | Legacy APIs |
@@ -510,6 +518,7 @@ cmd/generate/main.go                  # CLI entry
 ### When to Regenerate
 
 Always run `task generate` after:
+
 - Adding/modifying a provider in `openapi.yaml`
 - Changing the OpenAPI schema/types
 - Updating MCP schema (then also `task mcp:schema:download`)
@@ -550,7 +559,7 @@ Always run `task generate` after:
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):
 
-```
+```text
 feat: add support for new-provider
 fix: resolve streaming timeout issue
 chore(deps): bump go.opentelemetry.io/otel
@@ -563,7 +572,7 @@ test: add MCP middleware test cases
 ### Configuration & Build
 
 | File | Purpose |
-|------|---------|
+| ---- | ------- |
 | `openapi.yaml` | API spec - **source of truth** for code generation |
 | `Taskfile.yml` | Task runner - all dev commands |
 | `go.mod` | Go module with pinned version and dependencies |
@@ -577,7 +586,7 @@ test: add MCP middleware test cases
 ### Source Code
 
 | File | Purpose |
-|------|---------|
+| ---- | ------- |
 | `cmd/gateway/main.go` | Server entry point, initialization |
 | `cmd/generate/main.go` | Code generation CLI |
 | `api/routes.go` | All API route handlers |
@@ -595,7 +604,7 @@ test: add MCP middleware test cases
 ### Documentation
 
 | File | Purpose |
-|------|---------|
+| ---- | ------- |
 | `README.md` | Project overview and usage |
 | `CONTRIBUTING.md` | Contribution guidelines |
 | `CLAUDE.md` | Development guidance for Claude Code |
@@ -605,7 +614,7 @@ test: add MCP middleware test cases
 ### CI/CD (`.github/workflows/`)
 
 | Workflow | Purpose |
-|----------|---------|
+| -------- | ------- |
 | `ci.yml` | PR/main CI: lint, build, test, benchmark |
 | `release.yml` | Release automation with goreleaser |
 | `artifacts.yml` | Build artifacts |
@@ -668,7 +677,8 @@ When `TELEMETRY_ENABLE=true`, metrics are available at `http://localhost:9464/me
 
 - **Token Usage**: `llm_usage_prompt_tokens_total`, `llm_usage_completion_tokens_total`, `llm_usage_total_tokens_total` (labels: provider, model)
 - **Request/Response**: `llm_requests_total`, `llm_responses_total`, `llm_request_duration` (labels: provider, request_method, request_path, status_code)
-- **Tool Calls**: `llm_tool_calls_total`, `llm_tool_calls_success_total`, `llm_tool_calls_failure_total`, `llm_tool_call_duration` (labels: provider, model, tool_type, tool_name)
+- **Tool Calls**: `llm_tool_calls_total`, `llm_tool_calls_success_total`, `llm_tool_calls_failure_total`, `llm_tool_call_duration`
+  (labels: provider, model, tool_type, tool_name)
 
 ### Pre-built Monitoring
 
@@ -680,7 +690,7 @@ When `TELEMETRY_ENABLE=true`, metrics are available at `http://localhost:9464/me
 ### Common Issues
 
 | Issue | Solution |
-|-------|----------|
+| ----- | -------- |
 | Code generation conflicts | Run `task generate` and commit the changes |
 | Linting errors | Run `task lint` and fix, check `.golangci.yml` |
 | Test failures | Ensure mocks are current: `go generate ./...` |
@@ -693,6 +703,7 @@ When `TELEMETRY_ENABLE=true`, metrics are available at `http://localhost:9464/me
 ### Debug Mode
 
 Set `ENVIRONMENT=development` for:
+
 - Detailed request/response logging
 - Content truncation for large messages (controlled by `DEBUG_CONTENT_TRUNCATE_WORDS`)
 - Debug-level telemetry output
@@ -700,7 +711,8 @@ Set `ENVIRONMENT=development` for:
 
 ### Pre-commit Hook
 
-The pre-commit hook (`scripts/pre-commit-check.sh`) ensures code generation is clean before committing. If it fails, you likely need to run `task generate` and commit the generated changes.
+The pre-commit hook (`scripts/pre-commit-check.sh`) ensures code generation is clean before committing.
+If it fails, you likely need to run `task generate` and commit the generated changes.
 
 ## Security Notes
 
