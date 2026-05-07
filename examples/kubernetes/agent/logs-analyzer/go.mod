@@ -1,9 +1,9 @@
 module github.com/youraccount/yourrepo
 
-go 1.26.1
+go 1.26.2
 
 require (
-	github.com/inference-gateway/sdk v1.16.0
+	github.com/inference-gateway/sdk v1.16.2
 	k8s.io/api v0.36.0
 	k8s.io/apimachinery v0.36.0
 	k8s.io/client-go v0.36.0
