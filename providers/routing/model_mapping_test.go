@@ -67,7 +67,7 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 		{
 			name:             "vLLM model with prefix",
 			model:            "vllm/llama-3-8b",
-			expectedProvider: pointerToProvider(constants.VllmID),
+			expectedProvider: new(constants.VllmID),
 			expectedModel:    "llama-3-8b",
 		},
 		{
