@@ -1,0 +1,6 @@
+---
+enabled: false
+interval: 1h
+initial_delay: 1m
+model: ""
+prompt: Heartbeat tick — check for any pending tasks, todos, or background work and act on them.

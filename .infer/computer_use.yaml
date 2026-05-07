@@ -1,0 +1,40 @@
+---
+enabled: false
+floating_window:
+  enabled: true
+  respawn_on_close: true
+  position: top-right
+  always_on_top: true
+screenshot:
+  enabled: true
+  max_width: 1920
+  max_height: 1080
+  target_width: 1024
+  target_height: 768
+  format: jpeg
+  quality: 85
+  streaming_enabled: true
+  capture_interval: 3
+  buffer_size: 5
+  temp_dir: ""
+  log_captures: false
+  show_overlay: true
+rate_limit:
+  enabled: true
+  max_actions_per_minute: 60
+  window_seconds: 60
+tools:
+  mouse_move:
+    enabled: true
+  mouse_click:
+    enabled: true
+  mouse_scroll:
+    enabled: true
+  keyboard_type:
+    enabled: true
+    max_text_length: 1000
+    typing_delay_ms: 100
+  get_focused_app:
+    enabled: true
+  activate_app:
+    enabled: true

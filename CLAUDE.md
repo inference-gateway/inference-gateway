@@ -135,8 +135,6 @@ The project uses extensive code generation from `openapi.yaml`:
 
 ### Development Best Practices
 
-From `.github/copilot-instructions.md`:
-
 - Use early returns to avoid deep nesting
 - Prefer switch statements over if-else chains
 - Use table-driven testing
@@ -144,6 +142,8 @@ From `.github/copilot-instructions.md`:
 - Use lowercase log messages
 - Ensure type safety with strong typing
 - Each test should have isolated mock dependencies
+- Follow Conventional Commits (enforced by semantic-release in `.releaserc.yaml`)
+- Go version is pinned to 1.26.2; mocks are regenerated via `go generate ./...` (run as part of `task generate`)
 
 ### Provider Addition
 
@@ -163,3 +163,15 @@ The gateway supports Server-Sent Events (SSE) streaming:
 - Forwards streaming responses chunk by chunk
 - Handles both data-only and data: prefixed chunks
 - Properly manages connection lifecycle and error handling
+
+### Pre-commit Hook
+
+`task pre-commit:install` symlinks `scripts/pre-commit-check.sh` to `.git/hooks/pre-commit`.
+The hook runs `task generate`, `task format`, `task lint` (Go + markdown + OpenAPI), `task build`, and `task test`.
+If you skip the hook, run those tasks manually before pushing — CI mirrors them.
+
+### Related Documentation
+
+- `AGENTS.md` — broader agent-oriented guide (deployment, environment vars, related repos). Use this for ecosystem-level context.
+- `Configurations.md` — auto-generated env-var reference. Don't edit by hand; it's regenerated from `openapi.yaml` by `task generate`.
+- `CONTRIBUTING.md` — contribution guidelines for human contributors.
