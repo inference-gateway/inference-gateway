@@ -40,7 +40,7 @@ jobs:
           git config --global commit.signoff true
 
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.0.2
         with:
           ref: ${{ github.ref }}
           fetch-depth: 0
@@ -48,7 +48,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.3.0
         with:
           node-version: 'lts/*'
 

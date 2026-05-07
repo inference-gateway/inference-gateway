@@ -2,6 +2,67 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.24.1](https://github.com/inference-gateway/inference-gateway/compare/v0.24.0...v0.24.1) (2026-05-07)
+
+### 👷 CI
+
+* **deps:** Bump golangci-lint to latest ([6924c38](https://github.com/inference-gateway/inference-gateway/commit/6924c3865e90178446142eb0ac622a93421e1950))
+* Update Claude Code action version and refine system prompt instructions ([3e2fae3](https://github.com/inference-gateway/inference-gateway/commit/3e2fae3dfbc50ac8b789d76ba812f339cbc8ee49))
+* Update golangci-lint installation script to use the latest version and correct installation path ([d6982fa](https://github.com/inference-gateway/inference-gateway/commit/d6982fa08b8f2d236ef079d15531424d0050538f))
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump ip-address and express-rate-limit ([#278](https://github.com/inference-gateway/inference-gateway/issues/278)) ([036ee3d](https://github.com/inference-gateway/inference-gateway/commit/036ee3d65516f990531e7b103125b0833efacb75))
+* **deps:** Bump the examples-go group across 1 directory with 3 updates ([#276](https://github.com/inference-gateway/inference-gateway/issues/276)) ([85649f0](https://github.com/inference-gateway/inference-gateway/commit/85649f0a6c3a0dd478238edf0fa70cac943fdbb5))
+* **deps:** Bump the examples-npm group ([#277](https://github.com/inference-gateway/inference-gateway/issues/277)) ([2c7e91d](https://github.com/inference-gateway/inference-gateway/commit/2c7e91d5addfbd34a6493e4e7048e282aa5c6148))
+
+## [0.24.0](https://github.com/inference-gateway/inference-gateway/compare/v0.23.6...v0.24.0) (2026-04-28)
+
+### ✨ Features
+
+* Add Google's extra content for thought_signature passing ([#275](https://github.com/inference-gateway/inference-gateway/issues/275)) ([b31659b](https://github.com/inference-gateway/inference-gateway/commit/b31659b3d83b587077baa26f11d17d6040d4c080))
+
+### 🐛 Bug Fixes
+
+* **ci:** Infer workflow should be skipped when the actor was a bot ([327a86c](https://github.com/inference-gateway/inference-gateway/commit/327a86c72e463f38e7a1fe04052973abf3b37e31))
+
+### 🔧 Miscellaneous
+
+* **deps:** Bump all dev dependecies to latest ([#272](https://github.com/inference-gateway/inference-gateway/issues/272)) ([4280290](https://github.com/inference-gateway/inference-gateway/commit/42802908f6765d032692f9fe3790cf6c3653fbd4))
+* **deps:** Bump go.opentelemetry.io/otel/sdk from 1.40.0 to 1.43.0 ([#270](https://github.com/inference-gateway/inference-gateway/issues/270)) ([9b83399](https://github.com/inference-gateway/inference-gateway/commit/9b833999d8ac13af68f4d5cde8ede27364ce1030))
+* **deps:** Bump hono in /examples/docker-compose/mcp/pizza-server ([#271](https://github.com/inference-gateway/inference-gateway/issues/271)) ([3910ae1](https://github.com/inference-gateway/inference-gateway/commit/3910ae1f664b5e3e38c14cd0951356b88a6109a1))
+* Replace deepseek-chat with deepseek-v4-pro ([#273](https://github.com/inference-gateway/inference-gateway/issues/273)) ([cefa812](https://github.com/inference-gateway/inference-gateway/commit/cefa8127fbc8d5a787cf88dc48dbc6f65882553a))
+
+## [0.23.6](https://github.com/inference-gateway/inference-gateway/compare/v0.23.5...v0.23.6) (2026-04-08)
+
+### 🔧 Miscellaneous
+
+* Bump dev dependencies and tool versions ([#266](https://github.com/inference-gateway/inference-gateway/issues/266)) ([d851119](https://github.com/inference-gateway/inference-gateway/commit/d85111908b4063b1d1ac5651f6a8d1c00ae9f426))
+* **deps:** Bump @hono/node-server ([#267](https://github.com/inference-gateway/inference-gateway/issues/267)) ([ec87055](https://github.com/inference-gateway/inference-gateway/commit/ec870559658eb7adbfd66f2fd2e3fe1ffc8ad953))
+* **deps:** Bump github.com/buger/jsonparser ([#262](https://github.com/inference-gateway/inference-gateway/issues/262)) ([a44fc7b](https://github.com/inference-gateway/inference-gateway/commit/a44fc7bd8084108332660f93625cfbe06933175b))
+* **deps:** Bump github.com/buger/jsonparser ([#263](https://github.com/inference-gateway/inference-gateway/issues/263)) ([44dbcc3](https://github.com/inference-gateway/inference-gateway/commit/44dbcc3150d4b4bd77955feb0c49b5c354a4b03f))
+* **deps:** Bump github.com/buger/jsonparser ([#264](https://github.com/inference-gateway/inference-gateway/issues/264)) ([452da2c](https://github.com/inference-gateway/inference-gateway/commit/452da2c9d14b616de4b39f08b5db22d6edc1627a))
+* **deps:** Bump github.com/buger/jsonparser ([#265](https://github.com/inference-gateway/inference-gateway/issues/265)) ([a62131a](https://github.com/inference-gateway/inference-gateway/commit/a62131a646bb932b372f782d1991415f7dc36912))
+* **deps:** Bump github.com/go-jose/go-jose/v4 from 4.1.3 to 4.1.4 ([#261](https://github.com/inference-gateway/inference-gateway/issues/261)) ([cd24fe2](https://github.com/inference-gateway/inference-gateway/commit/cd24fe2e2f05c6685ac2c05984351681d2445fd9))
+* **deps:** Bump hono in /examples/docker-compose/mcp/pizza-server ([#268](https://github.com/inference-gateway/inference-gateway/issues/268)) ([361f095](https://github.com/inference-gateway/inference-gateway/commit/361f095a176d10ad3c647d2ffe12e0d07136f45f))
+* Resolve CVE in MCP examples ([#269](https://github.com/inference-gateway/inference-gateway/issues/269)) ([ef27ea9](https://github.com/inference-gateway/inference-gateway/commit/ef27ea98ff95035b7fcecb5d0a96eb72ae041fde))
+
+## [0.23.5](https://github.com/inference-gateway/inference-gateway/compare/v0.23.4...v0.23.5) (2026-04-01)
+
+### 🔧 Miscellaneous
+
+* Add stale issues workflow to auto-close inactive issues ([0989d22](https://github.com/inference-gateway/inference-gateway/commit/0989d225d61f7ba414f1619f5c13058ed5033503))
+* Bump CI and dev containers dependencies ([#255](https://github.com/inference-gateway/inference-gateway/issues/255)) ([aca7a05](https://github.com/inference-gateway/inference-gateway/commit/aca7a0574889e6aeea77e2bf84fe744332b5c016))
+* Change assignees from 'maintainers' to 'core' ([#260](https://github.com/inference-gateway/inference-gateway/issues/260)) ([bdc1cf2](https://github.com/inference-gateway/inference-gateway/commit/bdc1cf2a4cb1c0bfbefa50e2996f982d9a5d7b65))
+* **deps:** Bump claude code to 2.1.70 ([c2d8fa4](https://github.com/inference-gateway/inference-gateway/commit/c2d8fa4c1f45792eeb03c6560cf37e45629a20d4))
+* **deps:** Bump express-rate-limit ([#253](https://github.com/inference-gateway/inference-gateway/issues/253)) ([d778280](https://github.com/inference-gateway/inference-gateway/commit/d7782809193126566ae05f0312b43ab64645fdd7))
+* **deps:** Bump github.com/buger/jsonparser ([#258](https://github.com/inference-gateway/inference-gateway/issues/258)) ([17d0db4](https://github.com/inference-gateway/inference-gateway/commit/17d0db424f4fbe40618c4a507077ea20fec17e54))
+* **deps:** Bump github.com/buger/jsonparser from 1.1.1 to 1.1.2 ([#259](https://github.com/inference-gateway/inference-gateway/issues/259)) ([936a7a8](https://github.com/inference-gateway/inference-gateway/commit/936a7a87c2c0530c378b7791353c6710c9aee7b9))
+* **deps:** Bump hono ([#254](https://github.com/inference-gateway/inference-gateway/issues/254)) ([70d193f](https://github.com/inference-gateway/inference-gateway/commit/70d193f2d24f450ed4db411ef78539693197ad3a))
+* **deps:** Bump the examples-go group across 1 directory with 3 updates ([#256](https://github.com/inference-gateway/inference-gateway/issues/256)) ([5535384](https://github.com/inference-gateway/inference-gateway/commit/55353844fcdd56c46fbc97136604602796af1da8))
+* **deps:** Bump the examples-npm group ([#257](https://github.com/inference-gateway/inference-gateway/issues/257)) ([e9d662f](https://github.com/inference-gateway/inference-gateway/commit/e9d662f41fa13a24a8fa77633344ce59cdcfdfd3))
+* Remove include scope from dependabot ([326771b](https://github.com/inference-gateway/inference-gateway/commit/326771bca52ca5ed902424c3dad91a08eab87599))
+
 ## [0.23.4](https://github.com/inference-gateway/inference-gateway/compare/v0.23.3...v0.23.4) (2026-03-05)
 
 ### 🐛 Bug Fixes

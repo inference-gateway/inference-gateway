@@ -11,7 +11,7 @@ OpenTelemetry metrics, and production-ready features.
 
 **Key Technologies:**
 
-- **Language**: Go 1.25.4
+- **Language**: Go 1.26.1
 - **Framework**: Gin for HTTP routing
 - **Code Generation**: OpenAPI-driven generation system
 - **Containerization**: Docker, Docker Compose, Kubernetes
@@ -62,7 +62,7 @@ Request → Auth (OIDC) → Logging → Telemetry → MCP → Provider Routing �
 
 ### Prerequisites
 
-- **Go 1.25.4**
+- **Go 1.26.1**
 - **Docker & Docker Compose** (for containerized development)
 - **Task** (task runner)
 
@@ -349,7 +349,7 @@ Pre-built dashboards available in `examples/docker-compose/monitoring/` and `exa
 1. **Code generation conflicts**: Run `task generate` and commit changes
 2. **Linting errors**: Check `.golangci.yml` and run `task lint`
 3. **Test failures**: Ensure mocks are generated with `go generate ./...`
-4. **Build failures**: Verify Go version compatibility (1.25.4)
+4. **Build failures**: Verify Go version compatibility (1.26.1)
 
 ### Debug Mode
 

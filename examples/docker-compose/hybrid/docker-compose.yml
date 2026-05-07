@@ -15,43 +15,17 @@ services:
           memory: 100M
           cpus: '0.1'
     depends_on:
-      ollama-health-checker:
+      ollama:
         condition: service_healthy
     networks:
       - app_network
       - external_network
     pull_policy: always
 
-  ollama-health-checker:
-    image: alpine/curl:latest
-    entrypoint:
-      - /bin/sh
-      - -c
-      - 'tail -f /dev/null'
-    healthcheck:
-      test:
-        - CMD-SHELL
-        - 'curl -f http://ollama:8080/api/version || exit 1'
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 10s
-    networks:
-      - app_network
-
   ollama:
     image: ollama/ollama:latest
-    entrypoint:
-      - /bin/sh
-      - -c
-    command: >
-      "
-      ollama serve
-      "
-    working_dir: /root
     environment:
       OLLAMA_HOST: 0.0.0.0:8080
-      OLLAMA_DEBUG: 0
       OLLAMA_KEEP_ALIVE: '10m'
       OLLAMA_MAX_LOADED_MODELS: 2
       OLLAMA_FLASH_ATTENTION: 1
@@ -60,9 +34,15 @@ services:
       OLLAMA_MAX_QUEUE: 512
       OLLAMA_RUNNERS_DIR: /tmp
       OLLAMA_TMPDIR: /tmp
-      HOME: /root
-      OLLAMA_REQUEST_TIMEOUT: 300s
-      OLLAMA_CONCURRENT_REQUESTS: 4
+    healthcheck:
+      test:
+        - CMD
+        - ollama
+        - list
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
     volumes:
       - type: volume
         source: docker-compose-ollama-data
@@ -104,9 +84,6 @@ services:
     networks:
       - app_network
       - external_network
-    depends_on:
-      ollama-health-checker:
-        condition: service_healthy
 
 volumes:
   docker-compose-ollama-data:
