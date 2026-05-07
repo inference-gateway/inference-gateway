@@ -127,7 +127,7 @@ calling in AI applications. This example shows how to:
 - **NGINX Ingress**: Routes external traffic to the gateway
 
 > **Note**: The MCP servers in this example are basic implementations for
-> demonstration purposes. They lack production-ready features such as proper
+> demonstration purposes. They lack enterprise-ready features such as proper
 > authentication, authorization, input validation, rate limiting, and
 > comprehensive error handling.
 
