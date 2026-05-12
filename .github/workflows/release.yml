@@ -17,7 +17,7 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
     steps:
-      - uses: actions/create-github-app-token@v3.1.1
+      - uses: actions/create-github-app-token@v3.2.0
         id: app-token
         with:
           client-id: ${{ secrets.BOT_GH_APP_ID }}

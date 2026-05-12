@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Generate GitHub App Token
-        uses: actions/create-github-app-token@v3.1.1
+        uses: actions/create-github-app-token@v3.2.0
         id: app_token
         with:
           client-id: ${{ secrets.INFER_APP_ID }}
