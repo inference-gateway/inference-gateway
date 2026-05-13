@@ -111,17 +111,20 @@ func main() {
 						if pattern.MatchString(line) {
 							ctx := context.Background()
 
-							// Prepare request for logging
-							messages := []sdk.Message{
-								{
-									Role:    sdk.System,
-									Content: fmt.Sprintf(systemPrompt, line),
-								},
-								{
-									Role:    sdk.User,
-									Content: "Analyze this error",
-								},
+							// Prepare request for logging. As of SDK v1.16.x, Message.Content
+							// is a MessageContent union (text or multimodal parts), so we
+							// build messages via the NewTextMessage helper.
+							systemMsg, err := sdk.NewTextMessage(sdk.System, fmt.Sprintf(systemPrompt, line))
+							if err != nil {
+								log.Printf("Error building system message: %v", err)
+								continue
 							}
+							userMsg, err := sdk.NewTextMessage(sdk.User, "Analyze this error")
+							if err != nil {
+								log.Printf("Error building user message: %v", err)
+								continue
+							}
+							messages := []sdk.Message{systemMsg, userMsg}
 
 							// Log the request
 							requestJSON, _ := json.MarshalIndent(map[string]any{
@@ -150,8 +153,14 @@ func main() {
 							responseJSON, _ := json.MarshalIndent(response, "", "  ")
 							log.Printf("Received response from inference gateway:\n%s", string(responseJSON))
 
+							// Message.Content is a union; extract the text variant for logging.
+							analysis, err := response.Choices[0].Message.Content.AsMessageContent0()
+							if err != nil {
+								log.Printf("Error extracting analysis text from response: %v", err)
+								break
+							}
 							log.Printf("Found error in %s/%s:\nError: %s\nAnalysis: %s",
-								ns.Name, pod.Name, line, response.Choices[0].Message.Content)
+								ns.Name, pod.Name, line, analysis)
 							break
 						}
 					}

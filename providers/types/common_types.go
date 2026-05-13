@@ -244,6 +244,15 @@ type ChatCompletionChoice struct {
 	// Index The index of the choice in the list of choices.
 	Index int `json:"index"`
 
+	// Logprobs Log probability information for the choice.
+	Logprobs *struct {
+		// Content A list of message content tokens with log probability information.
+		Content []ChatCompletionTokenLogprob `json:"content"`
+
+		// Refusal A list of message refusal tokens with log probability information.
+		Refusal []ChatCompletionTokenLogprob `json:"refusal"`
+	} `json:"logprobs,omitempty"`
+
 	// Message Message structure for provider requests
 	Message Message `json:"message"`
 }
@@ -693,7 +702,7 @@ type ToolCallExtraContent_Google struct {
 	// ThoughtSignature Opaque signature returned with reasoning-enabled tool calls.
 	// Must be echoed back verbatim in the next request that includes
 	// this tool call, or Google will reject the request.
-	ThoughtSignature     *string        `json:"thought_signature,omitempty"`
+	ThoughtSignature     *string                `json:"thought_signature,omitempty"`
 	AdditionalProperties map[string]any `json:"-"`
 }
 

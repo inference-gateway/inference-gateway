@@ -157,7 +157,16 @@ paths:
                 $ref: '#/components/schemas/CreateChatCompletionResponse'
             text/event-stream:
               schema:
-                $ref: '#/components/schemas/SSEvent'
+                description: |
+                  Server-Sent Events stream. Each frame is an `SSEvent` whose
+                  `data` field contains the JSON-serialized payload for that
+                  event. For content/message chunk events the payload is a
+                  `CreateChatCompletionStreamResponse`. The `oneOf` here makes
+                  the streaming payload schemas reachable from this operation
+                  so that code generators emit types for them.
+                oneOf:
+                  - $ref: '#/components/schemas/SSEvent'
+                  - $ref: '#/components/schemas/CreateChatCompletionStreamResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1072,11 +1081,28 @@ components:
           description: The index of the choice in the list of choices.
         message:
           $ref: '#/components/schemas/Message'
+        logprobs:
+          description: Log probability information for the choice.
+          type: object
+          nullable: true
+          properties:
+            content:
+              description: A list of message content tokens with log probability information.
+              type: array
+              items:
+                $ref: '#/components/schemas/ChatCompletionTokenLogprob'
+            refusal:
+              description: A list of message refusal tokens with log probability information.
+              type: array
+              items:
+                $ref: '#/components/schemas/ChatCompletionTokenLogprob'
+          required:
+            - content
+            - refusal
       required:
         - finish_reason
         - index
         - message
-        - logprobs
     ChatCompletionStreamChoice:
       type: object
       required:
