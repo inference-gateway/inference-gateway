@@ -195,13 +195,6 @@ func main() {
 			case initErr == nil:
 				logger.Info("mcp client initialized successfully")
 			case errors.Is(initErr, mcp.ErrNoClientsInitialized) && cfg.MCP.EnableReconnect:
-				// Defense in depth: the MCP client already treats this as a
-				// recoverable startup state when reconnect is enabled, but if a
-				// future code path ever returns ErrNoClientsInitialized while
-				// background reconnect is still wired up, keep the gateway
-				// running so tool calls fail gracefully instead of
-				// crash-looping the pod.
-				// See: https://github.com/inference-gateway/inference-gateway/issues/304
 				logger.Warn("no mcp servers initialized at startup; continuing with background reconnection enabled",
 					"error", initErr.Error())
 			default:
