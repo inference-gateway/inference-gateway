@@ -412,13 +412,11 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	mc.Initialized = true
 
 	if successfulInitializations == 0 {
-		mc.Logger.Warn("no servers successfully initialized, but enabling MCP with background reconnection",
-			"total_servers", len(mc.ServerURLs),
-			"failed_servers", len(failedServers),
-			"component", "mcp_client")
-
-		if mc.Config.MCP.EnableReconnect && len(failedServers) > 0 {
-			mc.spawnBackgroundReconnection(failedServers)
+		if mc.scheduleReconnectionIfEnabled(failedServers) {
+			mc.Logger.Warn("no servers successfully initialized; enabling MCP with background reconnection",
+				"total_servers", len(mc.ServerURLs),
+				"failed_servers", len(failedServers),
+				"component", "mcp_client")
 			return nil
 		}
 
@@ -458,14 +456,24 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		"total_servers", len(mc.ServerURLs),
 		"component", "mcp_client")
 
-	if mc.Config.MCP.EnableReconnect && len(failedServers) > 0 {
-		mc.Logger.Info("starting background reconnection for failed servers",
-			"failed_servers", failedServers,
-			"component", "mcp_client")
-		mc.spawnBackgroundReconnection(failedServers)
-	}
+	mc.scheduleReconnectionIfEnabled(failedServers)
 
 	return nil
+}
+
+// scheduleReconnectionIfEnabled is the single guard point for kicking off the
+// background reconnection goroutine. It spawns the loop iff reconnect is
+// enabled and at least one server failed, and reports whether reconnection
+// was scheduled so callers can branch on it (e.g. the "no servers
+// initialized" path needs to know whether to return nil or surface
+// ErrNoClientsInitialized). Callers should not re-check EnableReconnect
+// themselves — keep that policy in one place.
+func (mc *MCPClient) scheduleReconnectionIfEnabled(failedServers []string) bool {
+	if !mc.Config.MCP.EnableReconnect || len(failedServers) == 0 {
+		return false
+	}
+	mc.spawnBackgroundReconnection(failedServers)
+	return true
 }
 
 // spawnBackgroundReconnection launches the reconnect goroutine with a
