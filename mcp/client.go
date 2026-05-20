@@ -409,7 +409,14 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 			"component", "mcp_client")
 
 		if mc.Config.MCP.EnableReconnect && len(failedServers) > 0 {
-			go mc.startBackgroundReconnection(ctx, failedServers)
+			// Background reconnection will keep retrying until at least one server
+			// becomes reachable. Treat startup as successful so the gateway can
+			// continue serving non-MCP traffic and graceful tool-call failures
+			// instead of crash-looping when every MCP backend is temporarily
+			// unreachable (cold starts, DNS races, MCP rollouts, etc.).
+			// See: https://github.com/inference-gateway/inference-gateway/issues/304
+			go mc.startBackgroundReconnection(context.Background(), failedServers)
+			return nil
 		}
 
 		if lastError != nil {
@@ -452,7 +459,10 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		mc.Logger.Info("starting background reconnection for failed servers",
 			"failed_servers", failedServers,
 			"component", "mcp_client")
-		go mc.startBackgroundReconnection(ctx, failedServers)
+		// Detach from the initialization context (which has a short timeout)
+		// so the background reconnect ticker can keep running for the lifetime
+		// of the process.
+		go mc.startBackgroundReconnection(context.Background(), failedServers)
 	}
 
 	return nil
