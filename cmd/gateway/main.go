@@ -317,6 +317,7 @@ func main() {
 
 	if cfg.MCP.Enable && mcpClient != nil {
 		mcpClient.StopStatusPolling()
+		mcpClient.StopBackgroundReconnection()
 	}
 
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)

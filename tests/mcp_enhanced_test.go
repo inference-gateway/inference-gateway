@@ -89,6 +89,55 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 			"client should report as initialized so the gateway pipeline can continue")
 	})
 
+	t.Run("StopBackgroundReconnection cancels the loop cleanly", func(t *testing.T) {
+		cfg := config.Config{
+			MCP: &config.MCPConfig{
+				DialTimeout:           100 * time.Millisecond,
+				TlsHandshakeTimeout:   100 * time.Millisecond,
+				ResponseHeaderTimeout: 100 * time.Millisecond,
+				ExpectContinueTimeout: 100 * time.Millisecond,
+				ClientTimeout:         200 * time.Millisecond,
+				RequestTimeout:        500 * time.Millisecond,
+				MaxRetries:            1,
+				RetryInterval:         10 * time.Millisecond,
+				InitialBackoff:        10 * time.Millisecond,
+				EnableReconnect:       true,
+				// Use a long reconnect interval so the loop is guaranteed to be
+				// waiting on the ticker when we call Stop — exercising the
+				// ctx.Done() exit path.
+				ReconnectInterval: 1 * time.Hour,
+			},
+		}
+
+		testLogger, err := logger.NewLogger("test")
+		require.NoError(t, err)
+
+		mcpClient := mcp.NewMCPClient([]string{unreachableURL}, testLogger, cfg)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		require.NoError(t, mcpClient.InitializeAll(ctx))
+
+		// Stop must return promptly — if the context were context.Background()
+		// (the pre-fix behavior) the goroutine would sit on the 1h ticker
+		// forever and Stop would block until the test timeout.
+		stopped := make(chan struct{})
+		go func() {
+			mcpClient.StopBackgroundReconnection()
+			close(stopped)
+		}()
+
+		select {
+		case <-stopped:
+		case <-time.After(5 * time.Second):
+			t.Fatal("StopBackgroundReconnection blocked — reconnect goroutine is not respecting cancellation")
+		}
+
+		// Calling Stop a second time must be a safe no-op.
+		mcpClient.StopBackgroundReconnection()
+	})
+
 	t.Run("EnableReconnect=false still returns ErrNoClientsInitialized", func(t *testing.T) {
 		cfg := config.Config{
 			MCP: &config.MCPConfig{

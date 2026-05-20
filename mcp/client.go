@@ -89,6 +89,12 @@ type MCPClientInterface interface {
 
 	// StopStatusPolling stops the background status polling goroutine
 	StopStatusPolling()
+
+	// StopBackgroundReconnection stops the background reconnection goroutine
+	// (started internally by InitializeAll when some servers fail and
+	// EnableReconnect is true). Safe to call even if reconnection was never
+	// started.
+	StopBackgroundReconnection()
 }
 
 // MCPClient provides methods to interact with MCP servers
@@ -105,6 +111,9 @@ type MCPClient struct {
 	statusMutex         sync.RWMutex
 	pollingCancel       context.CancelFunc
 	pollingDone         chan struct{}
+	reconnectCancel     context.CancelFunc
+	reconnectDone       chan struct{}
+	reconnectMutex      sync.Mutex
 }
 
 // TransportMode represents the type of transport being used
@@ -415,7 +424,7 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 			// instead of crash-looping when every MCP backend is temporarily
 			// unreachable (cold starts, DNS races, MCP rollouts, etc.).
 			// See: https://github.com/inference-gateway/inference-gateway/issues/304
-			go mc.startBackgroundReconnection(context.Background(), failedServers)
+			mc.spawnBackgroundReconnection(failedServers)
 			return nil
 		}
 
@@ -461,11 +470,62 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 			"component", "mcp_client")
 		// Detach from the initialization context (which has a short timeout)
 		// so the background reconnect ticker can keep running for the lifetime
-		// of the process.
-		go mc.startBackgroundReconnection(context.Background(), failedServers)
+		// of the process — but use a cancellable context owned by the client
+		// so StopBackgroundReconnection() can shut the goroutine down cleanly
+		// during graceful shutdown.
+		mc.spawnBackgroundReconnection(failedServers)
 	}
 
 	return nil
+}
+
+// spawnBackgroundReconnection launches the reconnect goroutine with a
+// cancellable context owned by the client. It is safe to call multiple times:
+// only the first call starts the goroutine; subsequent calls are no-ops while
+// a reconnection loop is already in flight. The context is cancelled by
+// StopBackgroundReconnection during graceful shutdown.
+func (mc *MCPClient) spawnBackgroundReconnection(failedServers []string) {
+	mc.reconnectMutex.Lock()
+	defer mc.reconnectMutex.Unlock()
+
+	if mc.reconnectCancel != nil {
+		// Reconnection already running; do not start a second loop.
+		return
+	}
+
+	reconnectCtx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	mc.reconnectCancel = cancel
+	mc.reconnectDone = done
+
+	go func() {
+		// Capture `done` locally so that StopBackgroundReconnection nilling
+		// out mc.reconnectDone (under the mutex) does not race with the
+		// goroutine exit.
+		defer close(done)
+		mc.startBackgroundReconnection(reconnectCtx, failedServers)
+	}()
+}
+
+// StopBackgroundReconnection cancels the reconnection goroutine (if any) and
+// waits for it to exit. Safe to call when no reconnection has been started.
+func (mc *MCPClient) StopBackgroundReconnection() {
+	mc.reconnectMutex.Lock()
+	cancel := mc.reconnectCancel
+	done := mc.reconnectDone
+	mc.reconnectCancel = nil
+	mc.reconnectDone = nil
+	mc.reconnectMutex.Unlock()
+
+	if cancel == nil {
+		return
+	}
+
+	cancel()
+	if done != nil {
+		<-done
+	}
+	mc.Logger.Info("stopped mcp background reconnection", "component", "mcp_client")
 }
 
 // initializeServer initializes a single server with retry logic
@@ -838,6 +898,15 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 		"servers", failedServers,
 		"interval", mc.Config.MCP.ReconnectInterval,
 		"component", "mcp_client")
+
+	// When the loop exits (either via ctx cancellation or because every server
+	// has been reconnected), clear the bookkeeping so a future failure can
+	// start a fresh reconnect loop via spawnBackgroundReconnection.
+	defer func() {
+		mc.reconnectMutex.Lock()
+		mc.reconnectCancel = nil
+		mc.reconnectMutex.Unlock()
+	}()
 
 	ticker := time.NewTicker(mc.Config.MCP.ReconnectInterval)
 	defer ticker.Stop()

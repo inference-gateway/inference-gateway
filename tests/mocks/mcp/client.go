@@ -236,3 +236,15 @@ func (mr *MockMCPClientInterfaceMockRecorder) StopStatusPolling() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopStatusPolling", reflect.TypeOf((*MockMCPClientInterface)(nil).StopStatusPolling))
 }
+
+// StopBackgroundReconnection mocks base method.
+func (m *MockMCPClientInterface) StopBackgroundReconnection() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "StopBackgroundReconnection")
+}
+
+// StopBackgroundReconnection indicates an expected call of StopBackgroundReconnection.
+func (mr *MockMCPClientInterfaceMockRecorder) StopBackgroundReconnection() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StopBackgroundReconnection", reflect.TypeOf((*MockMCPClientInterface)(nil).StopBackgroundReconnection))
+}
