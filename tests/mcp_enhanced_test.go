@@ -102,7 +102,7 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 				RetryInterval:         10 * time.Millisecond,
 				InitialBackoff:        10 * time.Millisecond,
 				EnableReconnect:       true,
-				ReconnectInterval: 1 * time.Hour,
+				ReconnectInterval:     1 * time.Hour,
 			},
 		}
 
