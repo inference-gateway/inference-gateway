@@ -418,12 +418,6 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 			"component", "mcp_client")
 
 		if mc.Config.MCP.EnableReconnect && len(failedServers) > 0 {
-			// Background reconnection will keep retrying until at least one server
-			// becomes reachable. Treat startup as successful so the gateway can
-			// continue serving non-MCP traffic and graceful tool-call failures
-			// instead of crash-looping when every MCP backend is temporarily
-			// unreachable (cold starts, DNS races, MCP rollouts, etc.).
-			// See: https://github.com/inference-gateway/inference-gateway/issues/304
 			mc.spawnBackgroundReconnection(failedServers)
 			return nil
 		}
@@ -468,11 +462,6 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		mc.Logger.Info("starting background reconnection for failed servers",
 			"failed_servers", failedServers,
 			"component", "mcp_client")
-		// Detach from the initialization context (which has a short timeout)
-		// so the background reconnect ticker can keep running for the lifetime
-		// of the process — but use a cancellable context owned by the client
-		// so StopBackgroundReconnection() can shut the goroutine down cleanly
-		// during graceful shutdown.
 		mc.spawnBackgroundReconnection(failedServers)
 	}
 
@@ -489,7 +478,6 @@ func (mc *MCPClient) spawnBackgroundReconnection(failedServers []string) {
 	defer mc.reconnectMutex.Unlock()
 
 	if mc.reconnectCancel != nil {
-		// Reconnection already running; do not start a second loop.
 		return
 	}
 
@@ -499,9 +487,6 @@ func (mc *MCPClient) spawnBackgroundReconnection(failedServers []string) {
 	mc.reconnectDone = done
 
 	go func() {
-		// Capture `done` locally so that StopBackgroundReconnection nilling
-		// out mc.reconnectDone (under the mutex) does not race with the
-		// goroutine exit.
 		defer close(done)
 		mc.startBackgroundReconnection(reconnectCtx, failedServers)
 	}()
@@ -899,9 +884,6 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 		"interval", mc.Config.MCP.ReconnectInterval,
 		"component", "mcp_client")
 
-	// When the loop exits (either via ctx cancellation or because every server
-	// has been reconnected), clear the bookkeeping so a future failure can
-	// start a fresh reconnect loop via spawnBackgroundReconnection.
 	defer func() {
 		mc.reconnectMutex.Lock()
 		mc.reconnectCancel = nil
