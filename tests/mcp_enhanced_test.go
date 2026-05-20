@@ -102,9 +102,6 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 				RetryInterval:         10 * time.Millisecond,
 				InitialBackoff:        10 * time.Millisecond,
 				EnableReconnect:       true,
-				// Use a long reconnect interval so the loop is guaranteed to be
-				// waiting on the ticker when we call Stop — exercising the
-				// ctx.Done() exit path.
 				ReconnectInterval: 1 * time.Hour,
 			},
 		}
@@ -119,9 +116,6 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 
 		require.NoError(t, mcpClient.InitializeAll(ctx))
 
-		// Stop must return promptly — if the context were context.Background()
-		// (the pre-fix behavior) the goroutine would sit on the 1h ticker
-		// forever and Stop would block until the test timeout.
 		stopped := make(chan struct{})
 		go func() {
 			mcpClient.StopBackgroundReconnection()
@@ -134,7 +128,6 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 			t.Fatal("StopBackgroundReconnection blocked — reconnect goroutine is not respecting cancellation")
 		}
 
-		// Calling Stop a second time must be a safe no-op.
 		mcpClient.StopBackgroundReconnection()
 	})
 
@@ -176,10 +169,6 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 func reserveUnreachableURL(t *testing.T) string {
 	t.Helper()
 
-	// httptest.NewServer gives us a real listening address. Closing it makes the
-	// address refuse new connections (or at least fail handshake quickly), which
-	// is a reliable way to produce a guaranteed-unreachable URL in CI without
-	// depending on external hosts.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	addr := srv.Listener.Addr().(*net.TCPAddr)
 	srv.Close()
