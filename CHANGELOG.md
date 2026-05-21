@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.24.6-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.24.5...v0.24.6-rc.1) (2026-05-21)
+
+### ♻️ Improvements
+
+* **mcp:** Consolidate reconnect guard into single helper ([45a704f](https://github.com/inference-gateway/inference-gateway/commit/45a704f7998ac239df1f3225df973ed23e42812c))
+
+### 🐛 Bug Fixes
+
+* **mcp:** Cancel background reconnection goroutine on shutdown ([c1add9d](https://github.com/inference-gateway/inference-gateway/commit/c1add9d0c4590a2c6562ede7fcddb7bb83fdd355))
+* **mcp:** Keep gateway running when all MCP servers are unreachable at startup ([c5a8ca0](https://github.com/inference-gateway/inference-gateway/commit/c5a8ca0c0054218eacf1620387c3415eae94f3ff)), closes [#304](https://github.com/inference-gateway/inference-gateway/issues/304)
+
+### 🔧 Miscellaneous
+
+* Apply suggestions from code review ([6f06ac0](https://github.com/inference-gateway/inference-gateway/commit/6f06ac0ac855f2ef013bf0c43d80087e7abba239))
+* Apply suggestions from code review ([eb9118b](https://github.com/inference-gateway/inference-gateway/commit/eb9118b2f025963ba26bb034f0a40758316a1b38))
+* Apply suggestions from code review ([cf66cdd](https://github.com/inference-gateway/inference-gateway/commit/cf66cdd6748b0f6ccc31cb1f622882c251564451))
+
+### 🎨 Miscellaneous
+
+* **tests:** Apply go fmt to mcp_enhanced_test.go ([fdf1458](https://github.com/inference-gateway/inference-gateway/commit/fdf1458abca18f9cc12fc75b6510ab5ba572aa60))
+
 ## [0.24.5](https://github.com/inference-gateway/inference-gateway/compare/v0.24.4...v0.24.5) (2026-05-20)
 
 ### 👷 CI
