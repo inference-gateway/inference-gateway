@@ -51,6 +51,9 @@
         "pkg-path": "goreleaser",
         "version": "^2.15.4"
       },
+      "infer": {
+        "flake": "github:inference-gateway/cli/v0.109.9"
+      },
       "jq": {
         "pkg-path": "jq",
         "version": "^1.8.1",
@@ -97,7 +100,7 @@
       "PROJECT_NAME": "inference-gateway"
     },
     "hook": {
-      "on-activate": "  echo \"🚀 Welcome to $PROJECT_NAME development environment!\"\n  echo \"📝 $PROJECT_DESCRIPTION\"\n  echo \"\"\n  echo \"📦 Available tools and commands:\"\n  echo \"  task --list             # Show all available tasks\"\n  echo \"  task build              # Build the gateway\"\n  echo \"  task run                # Run the gateway locally\"\n  echo \"  task test               # Run tests\"\n  echo \"  task lint               # Run linting\"\n  echo \"  task generate           # Generate code from schemas\"\n  echo \"  task pre-commit:install # Install git hooks\"\n  echo \"  spec lint <file>        # Lint OpenAPI/JSON Schema files\"\n  echo \"\"\n  echo \"🔧 Getting started checklist:\"\n  echo \"  1. Run 'task pre-commit:install' to set up git hooks\"\n  echo \"  2. Run 'task build' to build the project\"\n  echo \"  3. Run 'task test' to verify everything works\"\n  echo \"\"\n  \n  mkdir -p \"$GOPATH/bin\"\n  \n  mkdir -p bin\n  \n  export GOENV=\"$FLOX_ENV_CACHE/goenv\"\n\n  if [ -f go.mod ]; then\n    echo \"📥 Installing Go dependencies...\"\n    go mod download\n    echo \"✅ Go dependencies installed\"\n  fi\n\n  # Install infer CLI if not already installed\n  if ! command -v infer >/dev/null 2>&1; then\n    echo \"📥 Installing infer CLI...\"\n    curl -fsSL https://raw.githubusercontent.com/inference-gateway/cli/main/install.sh | bash -s -- --install-dir $HOME/.local/bin\n    echo \"✅ infer CLI installed\"\n  else\n    echo \"✅ infer CLI already installed\"\n  fi\n"
+      "on-activate": "  echo \"🚀 Welcome to $PROJECT_NAME development environment!\"\n  echo \"📝 $PROJECT_DESCRIPTION\"\n  echo \"\"\n  echo \"📦 Available tools and commands:\"\n  echo \"  task --list             # Show all available tasks\"\n  echo \"  task build              # Build the gateway\"\n  echo \"  task run                # Run the gateway locally\"\n  echo \"  task test               # Run tests\"\n  echo \"  task lint               # Run linting\"\n  echo \"  task generate           # Generate code from schemas\"\n  echo \"  task pre-commit:install # Install git hooks\"\n  echo \"  spec lint <file>        # Lint OpenAPI/JSON Schema files\"\n  echo \"\"\n  echo \"🔧 Getting started checklist:\"\n  echo \"  1. Run 'task pre-commit:install' to set up git hooks\"\n  echo \"  2. Run 'task build' to build the project\"\n  echo \"  3. Run 'task test' to verify everything works\"\n  echo \"\"\n  \n  mkdir -p \"$GOPATH/bin\"\n  \n  mkdir -p bin\n  \n  export GOENV=\"$FLOX_ENV_CACHE/goenv\"\n\n  if [ -f go.mod ]; then\n    echo \"📥 Installing Go dependencies...\"\n    go mod download\n    echo \"✅ Go dependencies installed\"\n  fi\n\n"
     },
     "profile": {
       "common": "  alias gs=\"git status\"\n  alias gl=\"git log --oneline -10\"\n  alias gd=\"git diff\"\n  \n  alias build=\"task build\"\n  alias test=\"task test\"\n  alias lint=\"task lint\"\n  alias gen=\"task generate\"\n  alias spec=\"npx @stoplight/spectral-cli\"\n",
@@ -2411,6 +2414,122 @@
       },
       "system": "x86_64-linux",
       "group": "toplevel",
+      "priority": 5
+    },
+    {
+      "install_id": "infer",
+      "locked-url": "github:inference-gateway/cli/9944c2c1d70b2bbe66a927a1c6efbacbd6fb3150?narHash=sha256-f/FtPau3Lr4F3Agp5nNga581cHLOrFRZ32o8Xzv1%2BXw%3D",
+      "flake-description": "Inference Gateway CLI - infer",
+      "locked-flake-attr-path": "packages.aarch64-darwin.default",
+      "derivation": "/nix/store/zcjxhh0wwqiq5hdk586yvxczll6zjm76-infer-0.109.9.drv",
+      "outputs": {
+        "out": "/nix/store/m8gpy1xck4gypkpg4dknrzmpgb9v5r7d-infer-0.109.9"
+      },
+      "output-names": [
+        "out"
+      ],
+      "outputs-to-install": [
+        "out"
+      ],
+      "requested-outputs-to-install": [],
+      "package-system": "aarch64-darwin",
+      "system": "aarch64-darwin",
+      "name": "infer-0.109.9",
+      "pname": "infer",
+      "version": "0.109.9",
+      "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
+      "licenses": [
+        "MIT"
+      ],
+      "broken": false,
+      "unfree": false,
+      "priority": 5
+    },
+    {
+      "install_id": "infer",
+      "locked-url": "github:inference-gateway/cli/9944c2c1d70b2bbe66a927a1c6efbacbd6fb3150?narHash=sha256-f/FtPau3Lr4F3Agp5nNga581cHLOrFRZ32o8Xzv1%2BXw%3D",
+      "flake-description": "Inference Gateway CLI - infer",
+      "locked-flake-attr-path": "packages.aarch64-linux.default",
+      "derivation": "/nix/store/1qh96j790p32zi655iwpgqppwivc13d5-infer-0.109.9.drv",
+      "outputs": {
+        "out": "/nix/store/fcrgl15k22kmwpzsq9hj62f7zqmznm6q-infer-0.109.9"
+      },
+      "output-names": [
+        "out"
+      ],
+      "outputs-to-install": [
+        "out"
+      ],
+      "requested-outputs-to-install": [],
+      "package-system": "aarch64-linux",
+      "system": "aarch64-linux",
+      "name": "infer-0.109.9",
+      "pname": "infer",
+      "version": "0.109.9",
+      "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
+      "licenses": [
+        "MIT"
+      ],
+      "broken": false,
+      "unfree": false,
+      "priority": 5
+    },
+    {
+      "install_id": "infer",
+      "locked-url": "github:inference-gateway/cli/9944c2c1d70b2bbe66a927a1c6efbacbd6fb3150?narHash=sha256-f/FtPau3Lr4F3Agp5nNga581cHLOrFRZ32o8Xzv1%2BXw%3D",
+      "flake-description": "Inference Gateway CLI - infer",
+      "locked-flake-attr-path": "packages.x86_64-darwin.default",
+      "derivation": "/nix/store/f305d1fwl85fbqlc3zl04d0mi9cx2anj-infer-0.109.9.drv",
+      "outputs": {
+        "out": "/nix/store/a3b08sqsj6nk8jx1dkswwg57c5a8s478-infer-0.109.9"
+      },
+      "output-names": [
+        "out"
+      ],
+      "outputs-to-install": [
+        "out"
+      ],
+      "requested-outputs-to-install": [],
+      "package-system": "x86_64-darwin",
+      "system": "x86_64-darwin",
+      "name": "infer-0.109.9",
+      "pname": "infer",
+      "version": "0.109.9",
+      "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
+      "licenses": [
+        "MIT"
+      ],
+      "broken": false,
+      "unfree": false,
+      "priority": 5
+    },
+    {
+      "install_id": "infer",
+      "locked-url": "github:inference-gateway/cli/9944c2c1d70b2bbe66a927a1c6efbacbd6fb3150?narHash=sha256-f/FtPau3Lr4F3Agp5nNga581cHLOrFRZ32o8Xzv1%2BXw%3D",
+      "flake-description": "Inference Gateway CLI - infer",
+      "locked-flake-attr-path": "packages.x86_64-linux.default",
+      "derivation": "/nix/store/y10b81p8mxymqvh08bg9f3q59qg3qm08-infer-0.109.9.drv",
+      "outputs": {
+        "out": "/nix/store/k4fibiz5sc4i1msjm7bhcyg7cdbvkna5-infer-0.109.9"
+      },
+      "output-names": [
+        "out"
+      ],
+      "outputs-to-install": [
+        "out"
+      ],
+      "requested-outputs-to-install": [],
+      "package-system": "x86_64-linux",
+      "system": "x86_64-linux",
+      "name": "infer-0.109.9",
+      "pname": "infer",
+      "version": "0.109.9",
+      "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
+      "licenses": [
+        "MIT"
+      ],
+      "broken": false,
+      "unfree": false,
       "priority": 5
     }
   ]

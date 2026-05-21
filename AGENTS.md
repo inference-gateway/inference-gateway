@@ -148,29 +148,29 @@ Request → Logger → [Telemetry] → [OIDC Auth] → [MCP Agent] → Route Han
 
 ### API Routes
 
-| Method | Path | Handler | Description |
-| ------ | ---- | ------- | ----------- |
-| GET | `/health` | `HealthcheckHandler` | Health check endpoint |
-| GET | `/v1/models` | `ListModelsHandler` | List models (optional `?provider=` filter) |
-| GET | `/v1/mcp/tools` | `ListToolsHandler` | List MCP tools (when `MCP_EXPOSE=true`) |
-| POST | `/v1/chat/completions` | `ChatCompletionsHandler` | Chat completions (streaming + non-streaming) |
-| Any | `/proxy/:provider/*path` | `ProxyHandler` | Direct provider proxy passthrough |
+| Method | Path                     | Handler                  | Description                                  |
+| ------ | ------------------------ | ------------------------ | -------------------------------------------- |
+| GET    | `/health`                | `HealthcheckHandler`     | Health check endpoint                        |
+| GET    | `/v1/models`             | `ListModelsHandler`      | List models (optional `?provider=` filter)   |
+| GET    | `/v1/mcp/tools`          | `ListToolsHandler`       | List MCP tools (when `MCP_EXPOSE=true`)      |
+| POST   | `/v1/chat/completions`   | `ChatCompletionsHandler` | Chat completions (streaming + non-streaming) |
+| Any    | `/proxy/:provider/*path` | `ProxyHandler`           | Direct provider proxy passthrough            |
 
 ### Supported Providers
 
-| Provider | ID | Auth Type | Vision |
-| -------- | -- | --------- | ------ |
-| OpenAI | `openai` | bearer | Yes |
-| Anthropic | `anthropic` | xheader | Yes |
-| Groq | `groq` | bearer | Yes |
-| Ollama | `ollama` | none | Yes |
-| Ollama Cloud | `ollama_cloud` | bearer | Yes |
-| Cloudflare | `cloudflare` | bearer | No |
-| Cohere | `cohere` | bearer | Yes |
-| DeepSeek | `deepseek` | bearer | No |
-| Google | `google` | bearer | Yes |
-| Mistral | `mistral` | bearer | Yes |
-| Moonshot | `moonshot` | bearer | No |
+| Provider     | ID             | Auth Type | Vision |
+| ------------ | -------------- | --------- | ------ |
+| OpenAI       | `openai`       | bearer    | Yes    |
+| Anthropic    | `anthropic`    | xheader   | Yes    |
+| Groq         | `groq`         | bearer    | Yes    |
+| Ollama       | `ollama`       | none      | Yes    |
+| Ollama Cloud | `ollama_cloud` | bearer    | Yes    |
+| Cloudflare   | `cloudflare`   | bearer    | No     |
+| Cohere       | `cohere`       | bearer    | Yes    |
+| DeepSeek     | `deepseek`     | bearer    | No     |
+| Google       | `google`       | bearer    | Yes    |
+| Mistral      | `mistral`      | bearer    | Yes    |
+| Moonshot     | `moonshot`     | bearer    | No     |
 
 ## Development Environment Setup
 
@@ -428,12 +428,12 @@ Provider:
   type: string
   enum:
     - existing_providers...
-    - newai       # Add your provider here
+    - newai # Add your provider here
   x-provider-configs:
     newai:
       id: 'newai'
       url: 'https://api.newai.com/v1'
-      auth_type: 'bearer'    # or xheader, query, none
+      auth_type: 'bearer' # or xheader, query, none
       endpoints:
         models:
           name: 'list_models'
@@ -476,12 +476,12 @@ If your provider needs custom response handling, add it to `.openapi-ignore` aft
 
 ### Authentication Types
 
-| Type | Method | Example Provider |
-| ---- | ------ | ---------------- |
-| `bearer` | `Authorization: Bearer {token}` | OpenAI, Groq, Cohere |
-| `xheader` | `x-api-key: {token}` | Anthropic |
-| `query` | `?key={token}` | Legacy APIs |
-| `none` | No auth | Local Ollama |
+| Type      | Method                          | Example Provider     |
+| --------- | ------------------------------- | -------------------- |
+| `bearer`  | `Authorization: Bearer {token}` | OpenAI, Groq, Cohere |
+| `xheader` | `x-api-key: {token}`            | Anthropic            |
+| `query`   | `?key={token}`                  | Legacy APIs          |
+| `none`    | No auth                         | Local Ollama         |
 
 ## Code Generation Workflow
 
@@ -571,57 +571,57 @@ test: add MCP middleware test cases
 
 ### Configuration & Build
 
-| File | Purpose |
-| ---- | ------- |
-| `openapi.yaml` | API spec - **source of truth** for code generation |
-| `Taskfile.yml` | Task runner - all dev commands |
-| `go.mod` | Go module with pinned version and dependencies |
-| `.golangci.yml` | Go linter configuration (v2 format) |
-| `.goreleaser.yaml` | Release automation |
-| `.releaserc.yaml` | semantic-release configuration |
-| `.editorconfig` | Editor formatting rules |
-| `.spectral.yaml` | OpenAPI linting rules |
-| `Dockerfile` | Multi-stage production Docker build |
+| File               | Purpose                                            |
+| ------------------ | -------------------------------------------------- |
+| `openapi.yaml`     | API spec - **source of truth** for code generation |
+| `Taskfile.yml`     | Task runner - all dev commands                     |
+| `go.mod`           | Go module with pinned version and dependencies     |
+| `.golangci.yml`    | Go linter configuration (v2 format)                |
+| `.goreleaser.yaml` | Release automation                                 |
+| `.releaserc.yaml`  | semantic-release configuration                     |
+| `.editorconfig`    | Editor formatting rules                            |
+| `.spectral.yaml`   | OpenAPI linting rules                              |
+| `Dockerfile`       | Multi-stage production Docker build                |
 
 ### Source Code
 
-| File | Purpose |
-| ---- | ------- |
-| `cmd/gateway/main.go` | Server entry point, initialization |
-| `cmd/generate/main.go` | Code generation CLI |
-| `api/routes.go` | All API route handlers |
-| `api/middlewares/mcp.go` | MCP middleware (injects tools, runs agent) |
-| `config/config.go` | Config struct and loader |
-| `providers/core/interfaces.go` | `IProvider` interface definition |
-| `providers/core/provider.go` | `ProviderImpl` base implementation |
-| `providers/registry/registry.go` | Provider registry (GENERATED) |
-| `providers/routing/model_mapping.go` | Model-to-provider prefix mapping |
-| `mcp/agent.go` | MCP agent loop (tool execution) |
-| `mcp/client.go` | MCP HTTP client |
-| `logger/logger.go` | Logger interface + zap impl |
-| `otel/otel.go` | OpenTelemetry metrics |
+| File                                 | Purpose                                    |
+| ------------------------------------ | ------------------------------------------ |
+| `cmd/gateway/main.go`                | Server entry point, initialization         |
+| `cmd/generate/main.go`               | Code generation CLI                        |
+| `api/routes.go`                      | All API route handlers                     |
+| `api/middlewares/mcp.go`             | MCP middleware (injects tools, runs agent) |
+| `config/config.go`                   | Config struct and loader                   |
+| `providers/core/interfaces.go`       | `IProvider` interface definition           |
+| `providers/core/provider.go`         | `ProviderImpl` base implementation         |
+| `providers/registry/registry.go`     | Provider registry (GENERATED)              |
+| `providers/routing/model_mapping.go` | Model-to-provider prefix mapping           |
+| `mcp/agent.go`                       | MCP agent loop (tool execution)            |
+| `mcp/client.go`                      | MCP HTTP client                            |
+| `logger/logger.go`                   | Logger interface + zap impl                |
+| `otel/otel.go`                       | OpenTelemetry metrics                      |
 
 ### Documentation
 
-| File | Purpose |
-| ---- | ------- |
-| `README.md` | Project overview and usage |
-| `CONTRIBUTING.md` | Contribution guidelines |
-| `CLAUDE.md` | Development guidance for Claude Code |
+| File                | Purpose                              |
+| ------------------- | ------------------------------------ |
+| `README.md`         | Project overview and usage           |
+| `CONTRIBUTING.md`   | Contribution guidelines              |
+| `CLAUDE.md`         | Development guidance for Claude Code |
 | `Configurations.md` | Auto-generated env var documentation |
-| `CHANGELOG.md` | Auto-generated release changelog |
+| `CHANGELOG.md`      | Auto-generated release changelog     |
 
 ### CI/CD (`.github/workflows/`)
 
-| Workflow | Purpose |
-| -------- | ------- |
-| `ci.yml` | PR/main CI: lint, build, test, benchmark |
-| `release.yml` | Release automation with goreleaser |
-| `artifacts.yml` | Build artifacts |
-| `claude.yml` | Claude Code integration |
-| `infer.yml` | Inference CLI integration |
-| `stale.yml` | Stale issue/PR management |
-| `dependabot.yml` | Automated dependency updates |
+| Workflow         | Purpose                                  |
+| ---------------- | ---------------------------------------- |
+| `ci.yml`         | PR/main CI: lint, build, test, benchmark |
+| `release.yml`    | Release automation with goreleaser       |
+| `artifacts.yml`  | Build artifacts                          |
+| `claude.yml`     | Claude Code integration                  |
+| `infer.yml`      | Inference CLI integration                |
+| `stale.yml`      | Stale issue/PR management                |
+| `dependabot.yml` | Automated dependency updates             |
 
 ## Deployment
 
@@ -689,16 +689,16 @@ When `TELEMETRY_ENABLE=true`, metrics are available at `http://localhost:9464/me
 
 ### Common Issues
 
-| Issue | Solution |
-| ----- | -------- |
-| Code generation conflicts | Run `task generate` and commit the changes |
-| Linting errors | Run `task lint` and fix, check `.golangci.yml` |
-| Test failures | Ensure mocks are current: `go generate ./...` |
-| Build failures | Verify Go version (1.26.2 in `go.mod`) |
-| Provider not found | Check `{PROVIDER}_API_KEY` env var is set |
-| MCP not working | Verify `MCP_ENABLE=true` and server URLs are correct |
-| Streaming issues | Check provider supports SSE streaming |
-| Vision not working | Set `ENABLE_VISION=true` |
+| Issue                     | Solution                                             |
+| ------------------------- | ---------------------------------------------------- |
+| Code generation conflicts | Run `task generate` and commit the changes           |
+| Linting errors            | Run `task lint` and fix, check `.golangci.yml`       |
+| Test failures             | Ensure mocks are current: `go generate ./...`        |
+| Build failures            | Verify Go version (1.26.2 in `go.mod`)               |
+| Provider not found        | Check `{PROVIDER}_API_KEY` env var is set            |
+| MCP not working           | Verify `MCP_ENABLE=true` and server URLs are correct |
+| Streaming issues          | Check provider supports SSE streaming                |
+| Vision not working        | Set `ENABLE_VISION=true`                             |
 
 ### Debug Mode
 

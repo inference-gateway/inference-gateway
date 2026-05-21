@@ -17,10 +17,10 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
       new_release_published: ${{ steps.semantic.outputs.new_release_published }}
     steps:
-      - uses: actions/create-github-app-token@v2.2.1
+      - uses: actions/create-github-app-token@v3.2.0
         id: app-token
         with:
-          app-id: ${{ secrets.BOT_GH_APP_ID }}
+          client-id: ${{ secrets.BOT_GH_APP_ID }}
           private-key: ${{ secrets.BOT_GH_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: |
@@ -55,7 +55,6 @@ jobs:
       - name: Install semantic release and plugins
         run: |
           npm install -g semantic-release@v25.0.2 \
-            conventional-changelog-cli \
             conventional-changelog-conventionalcommits \
             @semantic-release/changelog \
             @semantic-release/exec \

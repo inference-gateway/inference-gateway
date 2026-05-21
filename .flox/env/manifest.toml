@@ -56,6 +56,7 @@ markdownlint-cli.version = "^0.48.0"
 git.pkg-path = "git"
 git.version = "^2.53.0"
 git.outputs = "all"
+infer.flake = "github:inference-gateway/cli/v0.109.9"
 
 [hook]
 on-activate = """
@@ -90,14 +91,6 @@ on-activate = """
     echo "✅ Go dependencies installed"
   fi
 
-  # Install infer CLI if not already installed
-  if ! command -v infer >/dev/null 2>&1; then
-    echo "📥 Installing infer CLI..."
-    curl -fsSL https://raw.githubusercontent.com/inference-gateway/cli/main/install.sh | bash -s -- --install-dir $HOME/.local/bin
-    echo "✅ infer CLI installed"
-  else
-    echo "✅ infer CLI already installed"
-  fi
 """
 
 [profile]

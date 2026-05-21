@@ -89,6 +89,12 @@ type MCPClientInterface interface {
 
 	// StopStatusPolling stops the background status polling goroutine
 	StopStatusPolling()
+
+	// StopBackgroundReconnection stops the background reconnection goroutine
+	// (started internally by InitializeAll when some servers fail and
+	// EnableReconnect is true). Safe to call even if reconnection was never
+	// started.
+	StopBackgroundReconnection()
 }
 
 // MCPClient provides methods to interact with MCP servers
@@ -105,6 +111,9 @@ type MCPClient struct {
 	statusMutex         sync.RWMutex
 	pollingCancel       context.CancelFunc
 	pollingDone         chan struct{}
+	reconnectCancel     context.CancelFunc
+	reconnectDone       chan struct{}
+	reconnectMutex      sync.Mutex
 }
 
 // TransportMode represents the type of transport being used
@@ -403,13 +412,12 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	mc.Initialized = true
 
 	if successfulInitializations == 0 {
-		mc.Logger.Warn("no servers successfully initialized, but enabling MCP with background reconnection",
-			"total_servers", len(mc.ServerURLs),
-			"failed_servers", len(failedServers),
-			"component", "mcp_client")
-
-		if mc.Config.MCP.EnableReconnect && len(failedServers) > 0 {
-			go mc.startBackgroundReconnection(ctx, failedServers)
+		if mc.scheduleReconnectionIfEnabled(failedServers) {
+			mc.Logger.Warn("no servers successfully initialized; enabling MCP with background reconnection",
+				"total_servers", len(mc.ServerURLs),
+				"failed_servers", len(failedServers),
+				"component", "mcp_client")
+			return nil
 		}
 
 		if lastError != nil {
@@ -448,14 +456,69 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		"total_servers", len(mc.ServerURLs),
 		"component", "mcp_client")
 
-	if mc.Config.MCP.EnableReconnect && len(failedServers) > 0 {
-		mc.Logger.Info("starting background reconnection for failed servers",
-			"failed_servers", failedServers,
-			"component", "mcp_client")
-		go mc.startBackgroundReconnection(ctx, failedServers)
-	}
+	mc.scheduleReconnectionIfEnabled(failedServers)
 
 	return nil
+}
+
+// scheduleReconnectionIfEnabled is the single guard point for kicking off the
+// background reconnection goroutine. It spawns the loop iff reconnect is
+// enabled and at least one server failed, and reports whether reconnection
+// was scheduled so callers can branch on it (e.g. the "no servers
+// initialized" path needs to know whether to return nil or surface
+// ErrNoClientsInitialized). Callers should not re-check EnableReconnect
+// themselves — keep that policy in one place.
+func (mc *MCPClient) scheduleReconnectionIfEnabled(failedServers []string) bool {
+	if !mc.Config.MCP.EnableReconnect || len(failedServers) == 0 {
+		return false
+	}
+	mc.spawnBackgroundReconnection(failedServers)
+	return true
+}
+
+// spawnBackgroundReconnection launches the reconnect goroutine with a
+// cancellable context owned by the client. It is safe to call multiple times:
+// only the first call starts the goroutine; subsequent calls are no-ops while
+// a reconnection loop is already in flight. The context is cancelled by
+// StopBackgroundReconnection during graceful shutdown.
+func (mc *MCPClient) spawnBackgroundReconnection(failedServers []string) {
+	mc.reconnectMutex.Lock()
+	defer mc.reconnectMutex.Unlock()
+
+	if mc.reconnectCancel != nil {
+		return
+	}
+
+	reconnectCtx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	mc.reconnectCancel = cancel
+	mc.reconnectDone = done
+
+	go func() {
+		defer close(done)
+		mc.startBackgroundReconnection(reconnectCtx, failedServers)
+	}()
+}
+
+// StopBackgroundReconnection cancels the reconnection goroutine (if any) and
+// waits for it to exit. Safe to call when no reconnection has been started.
+func (mc *MCPClient) StopBackgroundReconnection() {
+	mc.reconnectMutex.Lock()
+	cancel := mc.reconnectCancel
+	done := mc.reconnectDone
+	mc.reconnectCancel = nil
+	mc.reconnectDone = nil
+	mc.reconnectMutex.Unlock()
+
+	if cancel == nil {
+		return
+	}
+
+	cancel()
+	if done != nil {
+		<-done
+	}
+	mc.Logger.Info("stopped mcp background reconnection", "component", "mcp_client")
 }
 
 // initializeServer initializes a single server with retry logic
@@ -828,6 +891,12 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 		"servers", failedServers,
 		"interval", mc.Config.MCP.ReconnectInterval,
 		"component", "mcp_client")
+
+	defer func() {
+		mc.reconnectMutex.Lock()
+		mc.reconnectCancel = nil
+		mc.reconnectMutex.Unlock()
+	}()
 
 	ticker := time.NewTicker(mc.Config.MCP.ReconnectInterval)
 	defer ticker.Stop()

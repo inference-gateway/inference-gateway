@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -190,11 +191,16 @@ func main() {
 
 			logger.Info("starting mcp client initialization", "timeout", cfg.MCP.RequestTimeout.String())
 			initErr := mcpClient.InitializeAll(initCtx)
-			if initErr != nil {
+			switch {
+			case initErr == nil:
+				logger.Info("mcp client initialized successfully")
+			case errors.Is(initErr, mcp.ErrNoClientsInitialized) && cfg.MCP.EnableReconnect:
+				logger.Warn("no mcp servers initialized at startup; continuing with background reconnection enabled",
+					"error", initErr.Error())
+			default:
 				logger.Error("failed to initialize mcp client", initErr)
 				return
 			}
-			logger.Info("mcp client initialized successfully")
 
 			mcpClient.StartStatusPolling(context.Background())
 			mcpAgent = mcp.NewAgent(logger, mcpClient)
@@ -304,6 +310,7 @@ func main() {
 
 	if cfg.MCP.Enable && mcpClient != nil {
 		mcpClient.StopStatusPolling()
+		mcpClient.StopBackgroundReconnection()
 	}
 
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -1,121 +1,29 @@
 ---
 version: 2
 updates:
-  - package-ecosystem: 'gomod'
-    directory: '/'
+  - package-ecosystem: gomod
+    directory: /
     schedule:
-      interval: 'daily'
-    open-pull-requests-limit: 0
-    assignees:
-      - 'inference-gateway/core'
-    commit-message:
-      prefix: 'chore(deps)'
-    labels:
-      - 'dependencies'
-      - 'go'
+      interval: weekly
     groups:
-      opentelemetry:
+      gomod:
         patterns:
-          - 'go.opentelemetry.io/*'
-      testing:
-        patterns:
-          - 'github.com/stretchr/testify'
-          - 'go.uber.org/mock'
-      uber:
-        patterns:
-          - 'go.uber.org/*'
-  - package-ecosystem: 'docker'
-    directory: '/'
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: 'daily'
-    open-pull-requests-limit: 0
-    assignees:
-      - 'inference-gateway/core'
-    commit-message:
-      prefix: 'chore(deps)'
-    labels:
-      - 'dependencies'
-      - 'docker'
-  - package-ecosystem: 'github-actions'
-    directory: '/'
-    schedule:
-      interval: 'daily'
-    open-pull-requests-limit: 0
-    assignees:
-      - 'inference-gateway/core'
-    commit-message:
-      prefix: 'chore(deps)'
-    labels:
-      - 'dependencies'
-      - 'github-actions'
-  - package-ecosystem: 'docker'
-    directory: '/.devcontainer'
-    schedule:
-      interval: 'daily'
-    open-pull-requests-limit: 0
-    assignees:
-      - 'inference-gateway/core'
-    commit-message:
-      prefix: 'chore(deps)'
-    labels:
-      - 'dependencies'
-      - 'docker'
-      - 'devcontainer'
-  - package-ecosystem: 'docker'
-    directory: '/examples'
-    schedule:
-      interval: 'monthly'
-    open-pull-requests-limit: 1
-    assignees:
-      - 'inference-gateway/core'
-    commit-message:
-      prefix: 'chore(deps)'
-    labels:
-      - 'dependencies'
-      - 'docker'
-      - 'examples'
+      interval: weekly
     groups:
-      examples-docker:
+      github-actions:
         patterns:
-          - '*'
-  - package-ecosystem: 'npm'
-    directory: '/examples/docker-compose/mcp/pizza-server'
+          - "*"
+
+  - package-ecosystem: docker
+    directory: /
     schedule:
-      interval: 'monthly'
-    open-pull-requests-limit: 1
-    assignees:
-      - 'inference-gateway/core'
-    commit-message:
-      prefix: 'chore(deps)'
-    labels:
-      - 'dependencies'
-      - 'npm'
-      - 'examples'
+      interval: weekly
     groups:
-      examples-npm:
+      docker:
         patterns:
-          - '*'
-  - package-ecosystem: 'gomod'
-    directories:
-      - '/examples/kubernetes/agent/logs-analyzer'
-      - '/examples/docker-compose/mcp/filesystem-server'
-      - '/examples/docker-compose/mcp/search-server'
-      - '/examples/docker-compose/mcp/time-server'
-      - '/examples/kubernetes/mcp/filesystem-server'
-      - '/examples/kubernetes/mcp/search-server'
-      - '/examples/kubernetes/mcp/time-server'
-    schedule:
-      interval: 'monthly'
-    open-pull-requests-limit: 1
-    assignees:
-      - 'inference-gateway/core'
-    commit-message:
-      prefix: 'chore(deps)'
-    labels:
-      - 'dependencies'
-      - 'go'
-      - 'examples'
-    groups:
-      examples-go:
-        patterns:
-          - '*'
+          - "*"
