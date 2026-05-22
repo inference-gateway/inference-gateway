@@ -1,10 +1,18 @@
 1. Get the application URL by running these commands:
-{{- if .Values.ingress.enabled }}
-{{- range $host := .Values.ingress.hosts }}
-  {{- range .paths }}
-  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}{{ .path }}
+{{- if .Values.gateway.enabled }}
+{{- $tls := false -}}
+{{- range .Values.gateway.listeners }}
+  {{- if or (eq (.protocol | toString) "HTTPS") (eq (.protocol | toString) "TLS") }}
+    {{- $tls = true -}}
   {{- end }}
 {{- end }}
+{{- range .Values.gateway.httpRoute.hostnames }}
+  http{{ if $tls }}s{{ end }}://{{ . }}
+{{- end }}
+
+  Exposed via Gateway API: gatewayClassName={{ .Values.gateway.gatewayClassName | quote }}.
+  Make sure the matching GatewayClass (and its controller, eg. Envoy Gateway)
+  is installed in the cluster.
 {{- else if contains "NodePort" .Values.service.type }}
   export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "inference-gateway.fullname" . }})
   export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")

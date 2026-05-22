@@ -66,25 +66,67 @@ service:
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 8080
 
-# This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
-ingress:
+# This block configures exposure via the Kubernetes Gateway API
+# (https://gateway-api.sigs.k8s.io/). The chart replaces the legacy
+# networking.k8s.io/v1 Ingress with a Gateway + HTTPRoute pair. Envoy is the
+# default gatewayClassName, matching the inference-gateway operator's default,
+# but any installed GatewayClass (eg. eg, istio, cilium, contour) can be used
+# instead.
+#
+# Prerequisites:
+#   - The Gateway API CRDs must be installed in the cluster
+#     (kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/...)
+#   - A GatewayClass implementation matching `gatewayClassName` must exist
+gateway:
   enabled: false
-  className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: "selfsigned-issuer"
-  hosts:
-    - host: api.inference-gateway.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls:
-    enabled: false
-    # Hosts can be specified as either:
-    # hosts: api.inference-gateway.local  # Single host
-    # or
-    hosts:
+  # The GatewayClass to bind to. Envoy Gateway exposes the `envoy` class by
+  # default. Override to `eg`, `istio`, `cilium`, `contour`, etc. if needed.
+  gatewayClassName: envoy
+  # Annotations applied to the Gateway resource.
+  annotations: {}
+  # Optional `addresses` (eg. static IP) and `infrastructure` (parametersRef,
+  # labels, annotations) blocks - passed through verbatim. See:
+  # https://gateway-api.sigs.k8s.io/api-types/gateway/
+  addresses: []
+  infrastructure: {}
+  # Listener definitions on the Gateway. Each listener accepts the standard
+  # Gateway API fields (name, hostname, port, protocol, tls, allowedRoutes).
+  listeners:
+    - name: http
+      hostname: api.inference-gateway.local
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: Same
+    # Example HTTPS listener (uncomment + provide a TLS cert secret):
+    # - name: https
+    #   hostname: api.inference-gateway.local
+    #   port: 443
+    #   protocol: HTTPS
+    #   tls:
+    #     mode: Terminate
+    #     certificateRefs:
+    #       - kind: Secret
+    #         name: api-inference-gateway-tls
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: Same
+  httpRoute:
+    # Annotations applied to the HTTPRoute resource.
+    annotations: {}
+    # The Gateway listener this route attaches to. Defaults to the Gateway
+    # rendered above; override to attach this route to a Gateway in another
+    # namespace.
+    sectionName: ""
+    parentRefs: []
+    # Hostnames the HTTPRoute matches. Defaults to the listener hostname.
+    hostnames:
       - api.inference-gateway.local
-    secretName: api-inference-gateway-tls
+    # Override `rules` to add filters (header rewrites, redirects, mirrors,
+    # request/response modifiers, etc.). When unset, a single rule routes
+    # path "/" → the inference-gateway Service on `service.port`.
+    rules: []
 
 resources:
   limits:

@@ -15,8 +15,9 @@ This example demonstrates the simplest deployment of the Inference Gateway using
 
 ## Architecture
 
-- **Gateway**: Inference Gateway deployed via inference gateway operator
-- **Ingress**: Basic ingress configuration
+- **Gateway**: Inference Gateway deployed via the inference gateway operator
+- **Exposure**: Gateway API (`Gateway` + `HTTPRoute`) backed by Envoy by default — the
+  legacy `Ingress` object has been removed from the chart
 
 ## Prerequisites
 
