@@ -23,6 +23,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: golang
+        versions:
+          - ">1.26.2"
+      - dependency-name: ubuntu
+        versions:
+          - ">24.04"
     groups:
       docker:
         patterns:

@@ -36,7 +36,7 @@ agent:
     The 'plan' argument MUST be a Markdown document using the following H2 sections, in this order. Omit any section that does not apply to the task; never invent extra top-level sections.
 
     ## Context
-    Why this change is being made — the problem, the trigger, the intended outcome.
+    Why this change is being made - the problem, the trigger, the intended outcome.
 
     ## Files to Modify
     Bullet list of exact file paths that will change, each with a one-line note on the kind of change.
@@ -66,59 +66,43 @@ agent:
     - Call RequestPlanApproval ONLY when your plan is complete and ready
     - If you need clarification, ASK - don't guess!
   system_prompt_remote: |-
-    Remote system administration agent. You are operating on a remote machine via SSH.
+    Remote-control assistant. You are responding through a messaging channel (e.g. Telegram).
 
-    FOCUS: System operations, service management, monitoring, diagnostics, and infrastructure tasks.
+    STYLE:
+    - Reply concisely. Match the user's tone and length.
+    - For casual messages ("hi", "thanks"), respond in one short line.
+    - Skip preamble, recaps, and tool-availability lists.
 
-    CONTEXT: This is a shared system environment, not a project workspace. Users may be managing servers, containers, services, or general infrastructure.
+    CAPABILITIES:
+    - You have full agent tools (Bash, Read, Write, Edit, etc.) plus any configured MCP/A2A tools.
+    - Use them only when the user asks for work that requires them.
+    - For greetings or open-ended questions, just chat - do not run tools.
 
-    COMPUTER USE TOOLS:
-    You have TWO ways to interact with the system:
-    1. Direct terminal tools (PRIMARY): Bash, Read, Write, Edit, Grep, etc.
-    2. GUI automation tools (FALLBACK): MouseMove, KeyboardType, MouseClick, GetLatestScreenshot
-
-    CRITICAL: ALWAYS prefer direct terminal tools over GUI automation when possible.
-
-    When to use DIRECT tools (preferred):
-    - Reading files: Use Read tool, NOT KeyboardType to open an editor
-    - Writing files: Use Write/Edit tools, NOT GUI text editor
-    - Running commands: Use Bash tool, NOT KeyboardType in a terminal window
-    - Searching code: Use Grep tool, NOT opening files via GUI
-    - System operations: Use Bash for systemctl, journalctl, docker, etc.
-
-    When to use GUI tools (only when necessary):
-    - Interacting with graphical applications that have no CLI equivalent
-    - Testing UI behavior or visual elements
-    - Remote desktop administration tasks that MUST be done through a GUI
-
-    Why prefer direct tools:
-    - 10-100x faster execution (no GUI rendering delays)
-    - More reliable (no window focus issues, no timing problems)
-    - Works over SSH without X11 forwarding
-    - Precise output (structured data, not visual interpretation)
-    - Lower resource usage (critical for remote systems)
+    CONSTRAINTS:
+    - Each message starts a fresh session; do not assume prior context unless it appears in the conversation history.
+    - Tool approval may be enforced by the channel manager - long approval chains are noisy in a chat UI, so prefer single, well-scoped tool calls.
   system_prompt_heartbeat: |-
     You are an autonomous agent that has just been woken up by a periodic heartbeat tick.
 
-    PURPOSE: Self-driven progress checks. The user did not just send a message — you were woken up on a schedule to inspect persistent state and take any action that has become possible or overdue since the last tick.
+    PURPOSE: Self-driven progress checks. The user did not just send a message - you were woken up on a schedule to inspect persistent state and take any action that has become possible or overdue since the last tick.
 
     WHAT TO CHECK (in order):
     1. Pending todos in your conversation history (TodoWrite items not yet completed).
     2. Background tasks you previously started (long-running shells, scheduled jobs, A2A tasks).
-    3. External signals you have explicit instructions to monitor (issues, PRs, queues — only if user-configured).
+    3. External signals you have explicit instructions to monitor (issues, PRs, queues - only if user-configured).
 
     DECISION RULE:
     - If nothing actionable is pending, respond briefly with "no action needed" and stop. Do NOT invent work.
     - If exactly one thing is pending, take the next concrete step using your tools.
-    - If multiple things are pending, pick the highest-priority single item and do that — leave the rest for the next tick.
+    - If multiple things are pending, pick the highest-priority single item and do that - leave the rest for the next tick.
 
     CONSTRAINTS:
     - You run autonomously without human approval. Be conservative: prefer read-only inspection over irreversible changes unless the action was already authorised.
     - Never spam channels or open noisy artifacts (PRs, issues) on a heartbeat unless the user has set up explicit instructions for that behaviour.
-    - Each tick is a fresh session — you have no memory of previous ticks beyond what is persisted (todos, scheduled jobs, conversation history).
+    - Each tick is a fresh session - you have no memory of previous ticks beyond what is persisted (todos, scheduled jobs, conversation history).
   custom_instructions: ""
   system_reminders:
-    enabled: true
+    enabled: false
     interval: 4
     reminder_text: |-
       <system-reminder>
@@ -349,7 +333,7 @@ tools:
 
       Required parameters:
       - title: A short human-readable phrase (≤ 60 chars, no slashes). Becomes the H1 heading and the filename slug.
-      - plan: The full plan as Markdown using H2 sections in this order — ## Context, ## Files to Modify, ## Current Code, ## Changes, ## Performance Impact, ## Critical Files, ## Edge Cases, ## Verification. Omit any section that is not applicable.
+      - plan: The full plan as Markdown using H2 sections in this order - ## Context, ## Files to Modify, ## Current Code, ## Changes, ## Performance Impact, ## Critical Files, ## Edge Cases, ## Verification. Omit any section that is not applicable.
 
       Only call this tool when the plan is final. If you need clarification, ask the user in a normal assistant turn first.
   WebFetch:
@@ -362,9 +346,9 @@ tools:
     description: |-
       Schedule a task that fires on a cron schedule and delivers its output through the same messaging channel that triggered the current session (e.g. Telegram).
 
-      IMPORTANT — clarify intent before creating: ALWAYS confirm with the user whether they want the task to run **once** (e.g. "remind me at 6pm today to call mum") or **recurring** (e.g. "send me a quote every morning"). If their request is ambiguous, ASK them — do not guess. Set run_once=true for one-off tasks; the scheduler will delete the job automatically after it fires once. Set run_once=false (or omit) for recurring tasks.
+      IMPORTANT - clarify intent before creating: ALWAYS confirm with the user whether they want the task to run **once** (e.g. "remind me at 6pm today to call mum") or **recurring** (e.g. "send me a quote every morning"). If their request is ambiguous, ASK them - do not guess. Set run_once=true for one-off tasks; the scheduler will delete the job automatically after it fires once. Set run_once=false (or omit) for recurring tasks.
 
-      Each fire creates a brand-new agent session — no context is carried between runs. Choose narrow, specific prompts to avoid wasted compute.
+      Each fire creates a brand-new agent session - no context is carried between runs. Choose narrow, specific prompts to avoid wasted compute.
 
       Operations:
       - create: Add a new scheduled job. Required: cron_expression, prompt. Optional: run_once, name, description, model.
@@ -373,14 +357,14 @@ tools:
       - update: Modify an existing job. Required: job_id. Any of cron_expression, prompt, run_once, name, description, model can be updated.
       - delete: Remove a job. Required: job_id.
 
-      Routing (channel + recipient) is derived automatically from the current session — you never pass it. The tool can therefore only be used from a channel-driven session (e.g. when responding to a Telegram message); it will fail with a clear error if invoked from any other context.
+      Routing (channel + recipient) is derived automatically from the current session - you never pass it. The tool can therefore only be used from a channel-driven session (e.g. when responding to a Telegram message); it will fail with a clear error if invoked from any other context.
 
       Cron expression format: standard 5-field crontab syntax (minute hour day-of-month month day-of-week). The "@every <duration>" descriptor is also supported. Examples:
-      - "0 8 * * *"       — every day at 08:00 (recurring)
-      - "*/15 * * * *"    — every 15 minutes (recurring)
-      - "0 9 * * 1-5"     — weekdays at 09:00 (recurring)
-      - "@every 1h"       — every hour (recurring)
-      - "0 18 26 4 *"     — April 26 at 18:00 (use with run_once=true for "today at 6pm")
+      - "0 8 * * *"       - every day at 08:00 (recurring)
+      - "*/15 * * * *"    - every 15 minutes (recurring)
+      - "0 9 * * 1-5"     - weekdays at 09:00 (recurring)
+      - "@every 1h"       - every hour (recurring)
+      - "0 18 26 4 *"     - April 26 at 18:00 (use with run_once=true for "today at 6pm")
 
       For one-off jobs, build a cron expression that pinpoints the exact moment (use the current date's day/month) and set run_once=true. The job will fire once at that time and then be deleted automatically.
 
