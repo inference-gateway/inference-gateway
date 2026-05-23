@@ -43,7 +43,7 @@ jobs:
           cache: true
 
       - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v9.2.0
+        uses: golangci/golangci-lint-action@v9.2.1
         with:
           version: v2.12.2
           args: --help
@@ -59,9 +59,16 @@ jobs:
         with:
           node-version: 'lts/*'
 
+      - name: Install maintainer skill
+        run: |
+          mkdir -p ~/.claude/skills/maintainer
+          curl -fsSL \
+            https://raw.githubusercontent.com/inference-gateway/skills/main/skills/maintainer/SKILL.md \
+            -o ~/.claude/skills/maintainer/SKILL.md
+
       - name: Run Claude Code
         id: claude
-        uses: anthropics/claude-code-action@v1.0.130
+        uses: anthropics/claude-code-action@v1.0.132
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           display_report: true
