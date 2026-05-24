@@ -44,7 +44,7 @@ use of Mixture of Experts.
 
 ## Key Features
 
-- 📜 **Open Source**: Available under the MIT License.
+- 📜 **Open Source**: Available under the Apache 2.0 License.
 - 🚀 **Unified API Access**: Proxy requests to multiple language model APIs,
   including OpenAI, Ollama, Ollama Cloud, Groq, Cohere etc.
 - ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
@@ -629,7 +629,7 @@ For more details, see the [CLI documentation](https://github.com/inference-gatew
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the Apache 2.0 License.
 
 ## Contributing
 

@@ -168,10 +168,10 @@ The gateway supports Server-Sent Events (SSE) streaming:
 
 `task pre-commit:install` symlinks `scripts/pre-commit-check.sh` to `.git/hooks/pre-commit`.
 The hook runs `task generate`, `task format`, `task lint` (Go + markdown + OpenAPI), `task build`, and `task test`.
-If you skip the hook, run those tasks manually before pushing — CI mirrors them.
+If you skip the hook, run those tasks manually before pushing - CI mirrors them.
 
 ### Related Documentation
 
-- `AGENTS.md` — broader agent-oriented guide (deployment, environment vars, related repos). Use this for ecosystem-level context.
-- `Configurations.md` — auto-generated env-var reference. Don't edit by hand; it's regenerated from `openapi.yaml` by `task generate`.
-- `CONTRIBUTING.md` — contribution guidelines for human contributors.
+- `AGENTS.md` - broader agent-oriented guide (deployment, environment vars, related repos). Use this for ecosystem-level context.
+- `Configurations.md` - auto-generated env-var reference. Don't edit by hand; it's regenerated from `openapi.yaml` by `task generate`.
+- `CONTRIBUTING.md` - contribution guidelines for human contributors.
