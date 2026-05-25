@@ -8,7 +8,7 @@ updates:
     groups:
       gomod:
         patterns:
-          - "*"
+          - '*'
 
   - package-ecosystem: github-actions
     directory: /
@@ -17,7 +17,7 @@ updates:
     groups:
       github-actions:
         patterns:
-          - "*"
+          - '*'
 
   - package-ecosystem: docker
     directory: /
@@ -26,11 +26,11 @@ updates:
     ignore:
       - dependency-name: golang
         versions:
-          - ">1.26.2"
+          - '>1.26.2'
       - dependency-name: ubuntu
         versions:
-          - ">24.04"
+          - '>24.04'
     groups:
       docker:
         patterns:
-          - "*"
+          - '*'

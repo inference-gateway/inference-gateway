@@ -4,14 +4,14 @@ FROM mcr.microsoft.com/devcontainers/go:2-1.26-bookworm AS base
 ENV TASK_VERSION=v3.48.0 \
     CTLPTL_VERSION=0.9.3 \
     K3D_VERSION=v5.8.3 \
-    KUBECTL_VERSION=v1.36.0 \
+    KUBECTL_VERSION=v1.36.1 \
     HELM_VERSION=v3.20.2 \
     GORELEASER_VERSION=v2.15.4 \
-    GOLANGCI_LINT_VERSION=v2.12.1 \
+    GOLANGCI_LINT_VERSION=v2.12.2 \
     GITHUB_CLI_VERSION=2.92.0 \
     NODE_VERSION=lts \
     SEMANTIC_RELEASE_VERSION=v25.0.2 \
-    INFERENCE_GATEWAY_CLI=v0.109.2
+    INFERENCE_GATEWAY_CLI=v0.112.1
 
 # Determine architecture once and store as build arg
 RUN architecture=$(uname -m) && \
