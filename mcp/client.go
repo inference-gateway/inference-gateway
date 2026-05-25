@@ -467,7 +467,7 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 // was scheduled so callers can branch on it (e.g. the "no servers
 // initialized" path needs to know whether to return nil or surface
 // ErrNoClientsInitialized). Callers should not re-check EnableReconnect
-// themselves — keep that policy in one place.
+// themselves - keep that policy in one place.
 func (mc *MCPClient) scheduleReconnectionIfEnabled(failedServers []string) bool {
 	if !mc.Config.MCP.EnableReconnect || len(failedServers) == 0 {
 		return false

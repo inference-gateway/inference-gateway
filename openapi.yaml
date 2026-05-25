@@ -12,7 +12,7 @@ info:
     url: https://inference-gateway.github.io/docs/
   version: 1.0.0
   license:
-    name: MIT
+    name: Apache-2.0
     url: https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE
 servers:
   - url: http://localhost:8080

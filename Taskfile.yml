@@ -76,7 +76,7 @@ tasks:
     desc: 'Run Go static analysis and linting'
     cmds:
       - golangci-lint run
-      - markdownlint . --ignore CHANGELOG.md --ignore '**/node_modules/**' --ignore Configurations.md --fix
+      - markdownlint . --ignore '{AGENTS,CLAUDE,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md --fix
 
   openapi:lint:
     desc: 'Lint OpenAPI spec'

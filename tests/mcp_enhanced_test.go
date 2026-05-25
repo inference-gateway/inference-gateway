@@ -84,7 +84,7 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 
 		initErr := mcpClient.InitializeAll(ctx)
 		assert.NoError(t, initErr,
-			"InitializeAll must not return a fatal error when reconnect is enabled — background reconnection takes over")
+			"InitializeAll must not return a fatal error when reconnect is enabled - background reconnection takes over")
 		assert.True(t, mcpClient.IsInitialized(),
 			"client should report as initialized so the gateway pipeline can continue")
 	})
@@ -125,7 +125,7 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 		select {
 		case <-stopped:
 		case <-time.After(5 * time.Second):
-			t.Fatal("StopBackgroundReconnection blocked — reconnect goroutine is not respecting cancellation")
+			t.Fatal("StopBackgroundReconnection blocked - reconnect goroutine is not respecting cancellation")
 		}
 
 		mcpClient.StopBackgroundReconnection()
@@ -163,7 +163,7 @@ func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 }
 
 // reserveUnreachableURL returns an http URL pointing at a port that was bound
-// briefly and then released — there is a non-zero chance the OS rebinds the
+// briefly and then released - there is a non-zero chance the OS rebinds the
 // port to something else, so the test falls back to httptest.NewServer's closed
 // listener pattern.
 func reserveUnreachableURL(t *testing.T) string {

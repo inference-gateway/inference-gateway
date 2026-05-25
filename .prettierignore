@@ -1,3 +1,5 @@
 charts/**/*
 CHANGELOG.md
+AGENTS.md
+CLAUDE.md
 .infer

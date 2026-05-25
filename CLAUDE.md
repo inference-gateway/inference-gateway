@@ -2,176 +2,75 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Common Development Commands
+The Inference Gateway is a Go service that proxies a single OpenAI-compatible API to many upstream LLM providers (OpenAI, Anthropic, Groq, Ollama, Cohere, DeepSeek, Google, Mistral, Cloudflare, Moonshot, Ollama Cloud). Most of the per-provider code is generated from `openapi.yaml`; the runtime is a thin Gin server with a configurable middleware chain.
 
-### Building and Running
+## Commands
 
-```bash
-# Build the gateway binary
-task build
+Everyday tasks go through `Taskfile.yml`:
 
-# Run the gateway locally
-task run
+- `task run` — run the gateway from `cmd/gateway/main.go`
+- `task build` — produce `bin/inference-gateway`
+- `task test` — `go test -v ./...`
+- `task benchmark` — benchmarks under `./tests/...` (run when touching routing / transformers / MCP)
+- `task generate` — regenerate everything from `openapi.yaml` + `mcp/mcp-schema.yaml` (see "Code generation")
+- `task format` — `prettier --write .` then `go fmt ./...`
+- `task lint` — `golangci-lint run` + `markdownlint` (CLAUDE.md, AGENTS.md, CHANGELOG.md, and Configurations.md are excluded)
+- `task openapi:lint` — Spectral lint of `openapi.yaml`
+- `task pre-commit:install` — symlinks `scripts/pre-commit-check.sh` into `.git/hooks/pre-commit`; the hook runs generate → format → lint → openapi:lint → build → test, and CI mirrors it
 
-# Build Docker container
-task build:container
-```
+Running a single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 1.26.2, golangci-lint, mockgen, Spectral, kubectl, helm, etc.) is declared in `.flox/env/manifest.toml`; `flox activate` brings it all in.
 
-### Testing and Quality
+## Architecture
 
-```bash
-# Run all tests
-task test
+### Request pipeline
 
-# Run linting (golangci-lint)
-task lint
+`cmd/gateway/main.go` is the only entry point. It loads `config.Config` from env vars via `sethvargo/go-envconfig`, initializes the logger, optionally starts an OpenTelemetry Prometheus metrics server on `:9464` (`TELEMETRY_ENABLE=true`), builds the provider registry and shared HTTP client, optionally wires up the MCP client / agent / middleware, and registers Gin handlers.
 
-# Lint OpenAPI spec
-task openapi:lint
+Routes (`api/routes.go`):
 
-# Format code (prettier + go fmt)
-task format
+- `GET  /health`
+- `GET  /v1/models`
+- `GET  /v1/mcp/tools`
+- `POST /v1/chat/completions` — the main inference endpoint
+- `ANY  /proxy/:provider/*path` — raw passthrough that bypasses every middleware
 
-# Install pre-commit hooks (recommended)
-task pre-commit:install
+Middleware chain (registered in `main.go`, defined in `api/middlewares/`): `logger` → `telemetry` (if enabled) → `OIDC auth` (if enabled) → `MCP` (if enabled). The MCP middleware inspects responses for tool calls and re-invokes the upstream provider with tool results; to prevent loops, its internal follow-up requests set `X-MCP-Bypass: true`. Clients can set the same header to opt out. `/proxy/...` skips middleware entirely.
 
-# Run benchmarks
-task benchmark
-```
+### Provider abstraction
 
-### Code Generation
+A "provider" is one upstream LLM API. The runtime pieces live under `providers/`:
 
-```bash
-# Generate all code from OpenAPI spec (providers, config, types, etc.)
-task generate
+- `core/` — `IProvider` interface and base `ProviderImpl` (hand-written).
+- `client/` — shared HTTP client config (`client.go` is generated).
+- `registry/` — `ProviderRegistry.BuildProvider(id, client)` constructs a provider on demand from `cfg.Providers` (`registry.go` is generated).
+- `transformers/` — per-provider request/response transformers, one file per provider. All are generated from `openapi.yaml` and start with `// Code generated from OpenAPI schema. DO NOT EDIT.`; protect any that need hand-edits via `.openapi-ignore`.
+- `routing/model_mapping.go` — maps a model string like `openai/gpt-4o` to a provider. The only routing rule is the explicit prefix (`openai/`, `groq/`, `anthropic/`, ...); without a prefix, the request must include `?provider=...`.
+- `constants/`, `types/` — generated identifiers and OpenAPI-derived Go types.
 
-# Download latest MCP schema before working on MCP features
-task mcp:schema:download
+### Code generation
 
-# Download latest OpenAPI spec
-task openapi:download
-```
+`openapi.yaml` and `mcp/mcp-schema.yaml` are the source of truth. `task generate`:
 
-### Testing Individual Components
+1. Builds the `bin/generator` helper (pinned via `task install:generator`).
+2. Runs `cmd/generate/main.go` (a thin CLI over `internal/codegen`, `internal/dockergen`, `internal/kubegen`, `internal/mdgen`) repeatedly with different `-type` flags to emit: `providers/client/client.go`, `providers/constants/constants.go`, `providers/transformers/*.go`, `providers/registry/registry.go`, `config/config.go`, `Configurations.md`, `charts/inference-gateway/templates/{secrets,configmap}-defaults.yaml`, `charts/inference-gateway/values.yaml`, and every `examples/docker-compose/*/.env.example`.
+3. Runs `oapi-codegen` to emit `providers/types/common_types.go` (then `sed`s `interface{}` → `any`).
+4. Runs `bin/generator` to emit `mcp/generated_types.go` from `mcp-schema.yaml`.
+5. Runs `go generate ./...` to refresh mocks under `tests/mocks/` (driven by `//go:generate mockgen ...` directives at the top of each interface file — `api/routes.go`, `providers/core/interfaces.go`, `providers/registry/registry.go`, `providers/client/client.go`, `mcp/agent.go`, `mcp/client.go`, `logger/logger.go`, plus OTel).
 
-```bash
-# Run tests for a specific package
-go test -v ./providers/...
-go test -v ./api/...
-go test -v ./mcp/...
+Anything with the "DO NOT EDIT" header will be clobbered on the next run. Adding a new provider: edit `openapi.yaml`'s `Provider` enum + `x-provider-configs` and run `task generate` — full flow in `CONTRIBUTING.md`. Provider IDs must be lowercase Go-identifier-safe (`openai`, `deepseek`, `newai`).
 
-# Run tests with coverage
-go test -v -cover ./...
+CI runs `task generate` and fails the build if the working tree is dirty afterwards, so always commit the regenerated files.
 
-# Run a specific test
-go test -v -run TestSpecificName ./path/to/package
-```
+### Configuration
 
-## High-Level Architecture
+`config/config.go` is generated — every supported env var lives in struct tags there and is mirrored into `Configurations.md`. Link users to `Configurations.md` rather than enumerating vars in prose; it'll go stale.
 
-### Core Components
+### MCP
 
-**Gateway Server** (`cmd/gateway/main.go`)
+`mcp/client.go` connects to the comma-separated list in `MCP_SERVERS`. `mcp/agent.go` orchestrates the tool-call loop (capped at 10 iterations via `MaxAgentIterations` / `MaxMCPAgentIterations`). `mcp/generated_types.go` is regenerated from `mcp-schema.yaml`. Background reconnection kicks in when `MCP_ENABLE_RECONNECT=true`; the gateway will start even if no MCP server is reachable at boot, as long as reconnect is enabled.
 
-- Entry point that initializes configuration, logger, telemetry, and HTTP server
-- Uses Gin framework for HTTP routing
-- Supports graceful shutdown with context cancellation
+## Conventions
 
-**API Layer** (`api/`)
-
-- `routes.go`: Defines main request handlers (ChatCompletionsHandler, ListModelsHandler, ProxyHandler)
-- `middlewares/`: Contains auth (OIDC), logging, telemetry, and MCP middleware
-- Handles streaming and non-streaming responses
-- Routes requests to appropriate providers based on model prefix or URL parameter
-
-**Providers** (`providers/`)
-
-- Each provider (OpenAI, Anthropic, Groq, Ollama, etc.) implements a common interface
-- `registry.go`: Central registry for provider management
-- `client.go`: HTTP client configuration for making provider requests
-- `model_mapping.go`: Maps model names to provider endpoints
-- Provider detection via model prefix (e.g., "openai/gpt-4") or explicit `?provider=` parameter
-
-**MCP (Model Context Protocol)** (`mcp/`)
-
-- `client.go`: MCP client for connecting to tool servers
-- `agent.go`: Handles tool execution and response processing
-- `generated_types.go`: Auto-generated types from MCP schema
-- Middleware can be bypassed with `X-MCP-Bypass` header
-- Supports up to 10 follow-up tool calls per request
-
-**Configuration** (`config/`)
-
-- Environment-based configuration using `sethvargo/go-envconfig`
-- All settings documented in `Configurations.md` (auto-generated)
-- Supports provider API keys, URLs, timeouts, and feature flags
-
-### Middleware Flow
-
-1. Request → Authentication (optional OIDC) → Logging → Telemetry
-2. MCP middleware (if enabled) injects available tools
-3. Provider routing and proxying
-4. Tool execution handling (if tools in response)
-5. Response streaming or standard JSON response
-
-### Code Generation Workflow
-
-The project uses extensive code generation from `openapi.yaml`:
-
-1. Update `openapi.yaml` with new schemas/configurations
-2. Run `task generate` to regenerate:
-   - Provider implementations
-   - Configuration structures
-   - Helm charts values
-   - Docker Compose `.env` examples
-   - Documentation
-
-### Testing Strategy
-
-- **Unit Tests**: Table-driven tests for individual components
-- **Mock Generation**: Uses `mockgen` for interface mocking
-- **Integration Tests**: Test full request flow with mock providers
-- **Benchmarks**: Performance testing in `tests/` directory
-
-### Development Best Practices
-
-- Use early returns to avoid deep nesting
-- Prefer switch statements over if-else chains
-- Use table-driven testing
-- Code to interfaces for easier mocking
-- Use lowercase log messages
-- Ensure type safety with strong typing
-- Each test should have isolated mock dependencies
-- Follow Conventional Commits (enforced by semantic-release in `.releaserc.yaml`)
-- Go version is pinned to 1.26.2; mocks are regenerated via `go generate ./...` (run as part of `task generate`)
-
-### Provider Addition
-
-When adding a new provider:
-
-1. Add configuration to `openapi.yaml`
-2. Run `task generate`
-3. Implement provider-specific logic if needed
-4. Add environment variables for API keys/URLs
-5. Test with both streaming and non-streaming requests
-
-### Streaming Implementation
-
-The gateway supports Server-Sent Events (SSE) streaming:
-
-- Detects `stream: true` in request body
-- Forwards streaming responses chunk by chunk
-- Handles both data-only and data: prefixed chunks
-- Properly manages connection lifecycle and error handling
-
-### Pre-commit Hook
-
-`task pre-commit:install` symlinks `scripts/pre-commit-check.sh` to `.git/hooks/pre-commit`.
-The hook runs `task generate`, `task format`, `task lint` (Go + markdown + OpenAPI), `task build`, and `task test`.
-If you skip the hook, run those tasks manually before pushing — CI mirrors them.
-
-### Related Documentation
-
-- `AGENTS.md` — broader agent-oriented guide (deployment, environment vars, related repos). Use this for ecosystem-level context.
-- `Configurations.md` — auto-generated env-var reference. Don't edit by hand; it's regenerated from `openapi.yaml` by `task generate`.
-- `CONTRIBUTING.md` — contribution guidelines for human contributors.
+- **Conventional Commits** are enforced by semantic-release (`.releaserc.yaml`); CI uses them to compute the next version, so non-conforming subjects break releases.
+- **Tests** live either next to the package (`*_test.go`) or in the top-level `tests/` directory for cross-package and end-to-end flows. Mocks are committed under `tests/mocks/` and regenerated by `task generate`.
+- **Pre-commit** is the source of truth for "is this PR-ready": if `scripts/pre-commit-check.sh` passes locally, CI will pass too.

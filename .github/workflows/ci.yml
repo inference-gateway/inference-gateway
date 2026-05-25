@@ -45,7 +45,7 @@ jobs:
         run: spectral lint openapi.yaml
 
       - name: Run markdownlint
-        run: markdownlint . --ignore CHANGELOG.md --ignore '**/node_modules/**' --ignore Configurations.md
+        run: markdownlint . --ignore '{AGENTS,CLAUDE,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md
 
       - name: Install dependencies
         run: go mod tidy
