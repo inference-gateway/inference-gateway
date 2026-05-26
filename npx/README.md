@@ -30,20 +30,20 @@ The package version tracks the gateway release version 1:1.
 
 ## Supported platforms
 
-| OS     | Architectures              |
-| ------ | -------------------------- |
-| Linux  | x86_64, arm64, armv7       |
-| macOS  | x86_64 (Intel), arm64 (Apple Silicon) |
+| OS    | Architectures                         |
+| ----- | ------------------------------------- |
+| Linux | x86_64, arm64, armv7                  |
+| macOS | x86_64 (Intel), arm64 (Apple Silicon) |
 
 Windows is not supported - use WSL or Docker.
 
 ## Environment variables
 
-| Variable                        | Purpose                                                                                  |
-| ------------------------------- | ---------------------------------------------------------------------------------------- |
-| `INFERENCE_GATEWAY_VERSION`     | Override which release tag to download (e.g. `v0.22.3`). Defaults to the package version. |
-| `INFERENCE_GATEWAY_CACHE_DIR`   | Override the binary cache directory.                                                     |
-| `XDG_CACHE_HOME`                | Standard XDG path; the cache lives under `$XDG_CACHE_HOME/inference-gateway/`.           |
+| Variable                      | Purpose                                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| `INFERENCE_GATEWAY_VERSION`   | Override which release tag to download (e.g. `v0.22.3`). Defaults to the package version. |
+| `INFERENCE_GATEWAY_CACHE_DIR` | Override the binary cache directory.                                                      |
+| `XDG_CACHE_HOME`              | Standard XDG path; the cache lives under `$XDG_CACHE_HOME/inference-gateway/`.            |
 
 Gateway runtime configuration (API keys, ports, MCP, OIDC, etc.) is read from
 the same env vars as the binary - see
