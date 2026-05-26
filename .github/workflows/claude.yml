@@ -78,6 +78,7 @@ jobs:
           base_branch: main
           branch_prefix: 'claude/'
           claude_args: |
+            --effort max
             --model claude-opus-4-7
             --system-prompt "You must NEVER push directly to the main branch. Always create a new feature branch (claude/feature-name), make changes there, and open a pull request to main. Use conventional commits with a capital description, e.g. 'feat(client): Add retry mechanism for streaming requests' or 'fix(auth): Resolve token validation issue'. Follow the development workflow specified in the coding instructions."
             --allowedTools "Bash(helm:*),Bash(task:*),Bash(go:*),Bash(gh:*),Bash(git:*)"
