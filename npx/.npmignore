@@ -1,0 +1,8 @@
+.gitignore
+.npmignore
+*.log
+.DS_Store
+node_modules/
+test/
+tests/
+*.test.js

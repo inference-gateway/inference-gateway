@@ -249,6 +249,25 @@ curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway
 - Linux: x86_64, arm64, armv7
 - macOS (Darwin): x86_64 (Intel), arm64 (Apple Silicon)
 
+### Using npx (not recommended)
+
+If you already have Node.js (>= 18) installed, you can fetch and run the
+gateway through `npx` without touching curl or sudo. This is a convenience
+shim that downloads the matching release binary on first run and caches it
+under `~/.cache/inference-gateway/`.
+
+```bash
+# Latest published version
+npx @inference-gateway/inference-gateway --version
+
+# Pin a specific version
+npx @inference-gateway/inference-gateway@0.24.6
+```
+
+> **Not recommended for production.** Prefer the container image, the install
+> script, or a direct binary download for anything beyond local experimentation.
+> See the [`npx/` README](./npx/README.md) for details and supported platforms.
+
 ### Manual Download
 
 Download pre-built binaries directly from the [releases page](https://github.com/inference-gateway/inference-gateway/releases):

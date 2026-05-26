@@ -55,6 +55,7 @@ plugins:
         sed -i 's/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/' config/meta.go
         sed -i 's/^version: .*/version: ${nextRelease.version}/' charts/inference-gateway/Chart.yaml
         sed -i 's/^appVersion: .*/appVersion: ${nextRelease.version}/' charts/inference-gateway/Chart.yaml
+        sed -i 's/"version": "[^"]*"/"version": "${nextRelease.version}"/' npx/package.json
 
   - - '@semantic-release/github'
     - assets:
@@ -113,6 +114,19 @@ plugins:
         ```
 
         For more installation options and documentation, visit the [README](https://github.com/inference-gateway/inference-gateway#installation).
+
+        ---
+
+        <details>
+        <summary><strong>Using npx (not recommended)</strong></summary>
+
+        If you already have Node.js (>= 18) installed, you can fetch and run the gateway through `npx`. The package downloads the matching release binary on first run and caches it under `~/.cache/inference-gateway/`. This is a convenience shim for local experimentation - prefer the container image, the install script, or a direct binary download for production.
+
+        ```bash
+        npx @inference-gateway/inference-gateway@${nextRelease.version}
+        ```
+
+        </details>
       successCommentCondition: 'false'
       labels:
         - "<%= nextRelease.channel === 'rc' ? 'prerelease' : 'release' %>"
@@ -123,4 +137,5 @@ plugins:
         - CHANGELOG.md
         - config/meta.go
         - charts/inference-gateway/Chart.yaml
+        - npx/package.json
       message: "chore(release): 🔖 ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"

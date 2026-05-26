@@ -1,0 +1,49 @@
+{
+  "name": "@inference-gateway/inference-gateway",
+  "version": "0.24.6",
+  "description": "npx wrapper for the Inference Gateway binary - downloads and runs the matching release from GitHub. Not recommended for production - prefer Docker or the install script.",
+  "keywords": [
+    "inference-gateway",
+    "llm",
+    "openai",
+    "anthropic",
+    "groq",
+    "ollama",
+    "proxy",
+    "gateway"
+  ],
+  "homepage": "https://github.com/inference-gateway/inference-gateway#readme",
+  "bugs": {
+    "url": "https://github.com/inference-gateway/inference-gateway/issues"
+  },
+  "license": "Apache-2.0",
+  "author": "Inference Gateway",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inference-gateway/inference-gateway.git",
+    "directory": "npx"
+  },
+  "bin": {
+    "inference-gateway": "bin/inference-gateway.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "linux",
+    "darwin"
+  ],
+  "cpu": [
+    "x64",
+    "arm64",
+    "arm"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}
