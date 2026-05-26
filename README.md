@@ -58,7 +58,7 @@ use of Mixture of Experts.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
 - ☸️ **Kubernetes Support**: Ready for deployment in Kubernetes environments.
 - 📊 **OpenTelemetry**: Monitor and analyze performance.
-- 🛡️ **Production Ready**: Built with production in mind, with configurable timeouts and TLS support.
+- 🛡️ **Enterprise Ready**: Built with production in mind, with configurable timeouts and TLS support.
 - 🌿 **Lightweight**: Includes only essential libraries and runtime, resulting
   in smaller size binary of ~10.8MB.
 - 📉 **Minimal Resource Consumption**: Designed to consume minimal resources and have a lower footprint.
