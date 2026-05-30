@@ -7,6 +7,12 @@ name: Claude Code
 # Do not hand-edit setup here; change the reusable workflow or repos.yaml instead.
 
 on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Free-text task for Claude to work on in this repo'
+        required: true
+        type: string
   issue_comment:
     types:
       - created
@@ -24,20 +30,21 @@ on:
 jobs:
   claude:
     if: |
+      github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
       (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
-    # A called workflow's GITHUB_TOKEN is capped by the caller, so grant here.
     permissions:
       contents: write
       pull-requests: write
       issues: write
       id-token: write
       actions: read
-    uses: inference-gateway/.github/.github/workflows/claude.yml@v0.2.1
+    uses: inference-gateway/.github/.github/workflows/claude.yml@v0.2.2
     with:
       language: "go"
       node: true
       extra-tools: "Bash(helm:*)"
+      prompt: ${{ inputs.prompt }}
     secrets: inherit
