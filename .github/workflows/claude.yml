@@ -3,7 +3,7 @@ name: Claude Code
 
 # Thin caller for the org-wide reusable @claude workflow.
 # Source of truth: inference-gateway/.github/.github/workflows/claude.yml
-# Inputs are managed centrally in inference-gateway/.github/repos.yaml (claude_targets).
+# Inputs are managed centrally in inference-gateway/.github/repos.yaml (the entry's orchestrators.claude block).
 # Do not hand-edit setup here; change the reusable workflow or repos.yaml instead.
 
 on:
@@ -41,7 +41,7 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: inference-gateway/.github/.github/workflows/claude.yml@v0.2.2
+    uses: inference-gateway/.github/.github/workflows/claude.yml@v0.3.2
     with:
       language: "go"
       node: true
