@@ -25,6 +25,19 @@ claude_code:
   max_output_tokens: 32000
   thinking_budget: 10000
   max_turns: 10
+speech_to_text:
+  enabled: false
+  engine: whisper.cpp
+  binary_path: ""
+  model: tiny
+  models_dir: ""
+  language: ""
+  auto_download: true
+  timeout: 120
+  max_recording_seconds: 30
+  silence_timeout: 2
+  ffmpeg_path: ""
+  input_device: ""
 client:
   timeout: 200
   retry:
