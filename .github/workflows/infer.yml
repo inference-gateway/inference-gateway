@@ -7,6 +7,12 @@ name: Infer
 # Do not hand-edit setup here; change the reusable workflow or repos.yaml instead.
 
 on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Free-text task for infer (deepseek) to work on in this repo'
+        required: true
+        type: string
   issues:
     types:
       - opened
@@ -18,17 +24,21 @@ on:
 jobs:
   infer:
     if: |
-      github.event.sender.type != 'Bot' &&
-      !endsWith(github.actor, '[bot]') &&
+      github.event_name == 'workflow_dispatch' ||
       (
-        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@infer')) ||
-        (github.event_name == 'issues' && (contains(github.event.issue.body, '@infer') || contains(github.event.issue.title, '@infer')))
+        github.event.sender.type != 'Bot' &&
+        !endsWith(github.actor, '[bot]') &&
+        (
+          (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@infer')) ||
+          (github.event_name == 'issues' && (contains(github.event.issue.body, '@infer') || contains(github.event.issue.title, '@infer')))
+        )
       )
     permissions:
       contents: write
       pull-requests: write
       issues: write
-    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.4.1
+    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.5.3
     with:
       language: "go"
+      prompt: ${{ inputs.prompt }}
     secrets: inherit

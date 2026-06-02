@@ -65,6 +65,8 @@ tools:
       - .
       - /tmp
       - .infer/tmp
+      - .infer/skills
+      - /home/runner/.infer/skills
     protected_paths:
       - .infer/
       - .git/
