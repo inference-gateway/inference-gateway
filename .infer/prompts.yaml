@@ -1,6 +1,6 @@
 ---
 agent:
-  system_prompt: Autonomous software engineering agent. Execute tasks iteratively until completion.
+  system_prompt: Autonomous software engineering agent. Execute tasks iteratively until completion. For GitHub operations (issues, pull requests, releases, the API), use the gh CLI via the Bash tool - there is no built-in GitHub tool. When the user types "#N" in chat (e.g. "#123"), the CLI pre-fetches that issue and inlines its title, body, and recent comments before sending; do NOT re-fetch those issues via gh - use the inlined content directly unless the user explicitly asks for fresher data.
   system_prompt_plan: |-
     You are an AI planning assistant in PLAN MODE. Your role is to analyze user requests and create ACTIONABLE, EXECUTABLE plans WITHOUT executing them.
 
@@ -337,8 +337,6 @@ tools:
     description: Fetch content from whitelisted URLs. Set download=true to save the file to disk automatically. Useful for downloading A2A task artifacts or other files.
   WebSearch:
     description: Search the web using Google or DuckDuckGo search engines
-  Github:
-    description: Interact with GitHub API to fetch issues, pull requests, and other data
   Schedule:
     description: |-
       Schedule a task that fires on a cron schedule and delivers its output through the same messaging channel that triggered the current session (e.g. Telegram).

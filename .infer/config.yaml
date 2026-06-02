@@ -66,16 +66,7 @@ tools:
       - /tmp
       - .infer/tmp
     protected_paths:
-      - .infer/config.yaml
-      - .infer/*.db
-      - .infer/shortcuts/
-      - .infer/agents.yaml
-      - .infer/mcp.yaml
-      - .infer/keybindings.yaml
-      - .infer/prompts.yaml
-      - .infer/channels.yaml
-      - .infer/heartbeat.yaml
-      - .infer/computer_use.yaml
+      - .infer/
       - .git/
       - '*.env'
   bash:
@@ -102,6 +93,11 @@ tools:
         - ^git diff
         - ^git remote( -v)?$
         - ^git show
+        - ^gh (issue|pr|repo|release|run|workflow) (list|view|status|diff|checks)( |$)
+        - ^gh auth status( |$)
+        - ^gh issue (create|edit|comment)( |$)
+        - ^gh pr create( |$)
+        - ^gh api [^ -][^ ]*( --paginate| --jq [^ ]+| -q [^ ]+)*$
     background_shells:
       enabled: true
       max_concurrent: 5
@@ -147,14 +143,6 @@ tools:
       - duckduckgo
       - google
     timeout: 10
-  github:
-    enabled: true
-    token: '%GITHUB_TOKEN%'
-    base_url: https://api.github.com
-    owner: inference-gateway
-    safety:
-      max_size: 1048576
-      timeout: 30
   todo_write:
     enabled: true
     require_approval: false

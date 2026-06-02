@@ -28,7 +28,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.4.0
+    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.4.1
     with:
       language: "go"
     secrets: inherit
