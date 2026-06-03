@@ -74,20 +74,20 @@ shortcuts:
               1. Create a new branch with a descriptive name
               2. Stage and commit the changes
               3. Push the branch to remote
-              4. Create a pull request using the Github tool
+              4. Create a pull request with the gh CLI (gh pr create)
 
             IF current branch is already a feature branch (not main/master):
               1. Stage and commit the changes
               2. Push the branch to remote
-              3. Create a pull request using the Github tool
+              3. Create a pull request with the gh CLI (gh pr create)
 
             REQUIREMENTS:
             - Branch name: Use conventional format (feat/, fix/, docs/, refactor/, chore/) with kebab-case
-            - Commit message: Follow conventional commits format "type: Description" (under 50 chars, capitalize first letter)
+            - Commit message: Follow conventional commits format "type: description" (under 50 chars)
             - PR title: Clear and descriptive (similar to commit message but can be slightly longer)
             - PR description: Brief summary of changes (2-3 sentences, focus on WHAT changed and WHY)
             - Use simple, direct language - NO filler words like "comprehensive", "enhance", "robust"
-            - For creating the PR, use the Github tool with resource="create_pull_request"
+            - For creating the PR, use the gh CLI via the Bash tool (e.g. gh pr create --title "..." --body "...")
             - If user provided additional context, incorporate it into your understanding of the changes
 
             Output a clear, numbered action plan. Be specific about branch names, commit messages, and PR details based on the diff.
