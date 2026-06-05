@@ -58,8 +58,8 @@ claude-code.pkg-path = "claude-code"
 claude-code.version = "^2.1.158"
 claude-code.pkg-group = "claude-code"
 codex.pkg-path = "codex"
-codex.version = "^0.133.0"
-codex.pkg-group = "ai"
+codex.version = "^0.135.0"
+codex.pkg-group = "codex"
 
 [hook]
 on-activate = """
