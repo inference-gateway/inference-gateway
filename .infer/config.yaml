@@ -99,6 +99,7 @@ tools:
         - ^gh pr create( |$)
         - ^gh search (issues|code|prs|repos|commits)( |$)
         - ^gh api [^ -][^ ]*( --paginate| --jq (?:'[^']*'|"[^"]*"|[^ ]+)| -q (?:'[^']*'|"[^"]*"|[^ ]+))*$
+        - ^gh project (item-add|item-edit|item-list|field-list|view|list)( |$)
     background_shells:
       enabled: true
       max_concurrent: 5

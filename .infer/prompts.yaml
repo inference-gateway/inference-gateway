@@ -160,7 +160,7 @@ init:
     Briefly inspect the project (build system, config files, existing docs) to ground the content, then write the file.
 tools:
   Bash:
-    description: Execute whitelisted bash commands securely. Only pre-approved commands from the whitelist can be executed.
+    description: Execute whitelisted bash commands securely. Only pre-approved commands from the whitelist can be executed. Each segment of a pipe or &&/||/; chain must itself be whitelisted, and file-write redirections (>, >>) and command substitution ($(...), backticks) are blocked unless an anchored whitelist pattern (^...$) explicitly allows them; benign redirects like 2>&1 or >/dev/null are fine.
   BashOutput:
     description: Retrieves output from a running or completed background bash shell. Returns only new output since the last read. Use this to monitor long-running commands that were moved to the background.
   KillShell:
