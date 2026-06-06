@@ -65,8 +65,6 @@ tools:
       - .
       - /tmp
       - .infer/tmp
-      - .infer/skills
-      - /home/runner/.infer/skills
     protected_paths:
       - .infer/
       - .git/
@@ -89,7 +87,7 @@ tools:
         - make
         - find
       patterns:
-        - ^git status$
+        - ^git status( |$)
         - ^git branch( --show-current)?( -[alrvd])?$
         - ^git log
         - ^git diff
@@ -99,7 +97,8 @@ tools:
         - ^gh auth status( |$)
         - ^gh issue (create|edit|comment)( |$)
         - ^gh pr create( |$)
-        - ^gh api [^ -][^ ]*( --paginate| --jq [^ ]+| -q [^ ]+)*$
+        - ^gh search (issues|code|prs|repos|commits)( |$)
+        - ^gh api [^ -][^ ]*( --paginate| --jq (?:'[^']*'|"[^"]*"|[^ ]+)| -q (?:'[^']*'|"[^"]*"|[^ ]+))*$
     background_shells:
       enabled: true
       max_concurrent: 5
@@ -114,6 +113,7 @@ tools:
   edit:
     enabled: true
     require_approval: true
+    strict_whitespace: false
   delete:
     enabled: true
     require_approval: true

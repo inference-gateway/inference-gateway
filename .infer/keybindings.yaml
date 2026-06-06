@@ -19,6 +19,119 @@ bindings:
     description: paste text
     category: clipboard
     enabled: true
+  diff_viewer_cancel:
+    keys:
+      - esc
+      - q
+    description: close the changes panel / exit patch mode
+    category: diff_viewer
+    enabled: true
+  diff_viewer_collapse:
+    keys:
+      - left
+      - h
+    description: collapse section/folder
+    category: diff_viewer
+    enabled: true
+  diff_viewer_commit:
+    keys:
+      - c
+    description: commit staged changes
+    category: diff_viewer
+    enabled: true
+  diff_viewer_discard:
+    keys:
+      - d
+    description: discard a file's working-tree changes
+    category: diff_viewer
+    enabled: true
+  diff_viewer_edit:
+    keys:
+      - v
+    description: edit the selected file (vim mode)
+    category: diff_viewer
+    enabled: true
+  diff_viewer_expand:
+    keys:
+      - right
+      - l
+    description: expand section/folder
+    category: diff_viewer
+    enabled: true
+  diff_viewer_halfpage_down:
+    keys:
+      - ctrl+d
+    description: scroll the diff down half a page
+    category: diff_viewer
+    enabled: true
+  diff_viewer_halfpage_up:
+    keys:
+      - ctrl+u
+    description: scroll the diff up half a page
+    category: diff_viewer
+    enabled: true
+  diff_viewer_nav_down:
+    keys:
+      - down
+      - j
+    description: move selection down
+    category: diff_viewer
+    enabled: true
+  diff_viewer_nav_up:
+    keys:
+      - up
+      - k
+    description: move selection up
+    category: diff_viewer
+    enabled: true
+  diff_viewer_patch:
+    keys:
+      - p
+    description: stage hunks (enter patch mode)
+    category: diff_viewer
+    enabled: true
+  diff_viewer_patch_apply:
+    keys:
+      - a
+      - s
+      - u
+      - enter
+      - space
+    description: apply the current hunk
+    category: diff_viewer
+    enabled: true
+  diff_viewer_scroll_down:
+    keys:
+      - pgdown
+      - pgdn
+    description: scroll the diff down
+    category: diff_viewer
+    enabled: true
+  diff_viewer_scroll_up:
+    keys:
+      - pgup
+    description: scroll the diff up
+    category: diff_viewer
+    enabled: true
+  diff_viewer_stage:
+    keys:
+      - a
+    description: stage the selected file
+    category: diff_viewer
+    enabled: true
+  diff_viewer_toggle:
+    keys:
+      - enter
+      - space
+    description: toggle section/folder collapse
+    category: diff_viewer
+    enabled: true
+  diff_viewer_unstage:
+    keys:
+      - u
+    description: unstage the selected file
+    category: diff_viewer
+    enabled: true
   display_toggle_raw_format:
     keys:
       - ctrl+r
@@ -36,6 +149,91 @@ bindings:
       - ctrl+t
     description: toggle todo list
     category: display
+    enabled: true
+  explorer_cancel:
+    keys:
+      - esc
+      - q
+    description: close the explorer panel
+    category: explorer
+    enabled: true
+  explorer_collapse:
+    keys:
+      - left
+      - h
+    description: collapse the selected folder
+    category: explorer
+    enabled: true
+  explorer_expand:
+    keys:
+      - right
+      - l
+    description: expand the selected folder
+    category: explorer
+    enabled: true
+  explorer_find:
+    keys:
+      - /
+    description: open the fuzzy file finder
+    category: explorer
+    enabled: true
+  explorer_halfpage_down:
+    keys:
+      - ctrl+d
+    description: scroll the preview down half a page
+    category: explorer
+    enabled: true
+  explorer_halfpage_up:
+    keys:
+      - ctrl+u
+    description: scroll the preview up half a page
+    category: explorer
+    enabled: true
+  explorer_nav_down:
+    keys:
+      - down
+      - j
+    description: move selection down
+    category: explorer
+    enabled: true
+  explorer_nav_up:
+    keys:
+      - up
+      - k
+    description: move selection up
+    category: explorer
+    enabled: true
+  explorer_open:
+    keys:
+      - v
+    description: open the selected file in your editor
+    category: explorer
+    enabled: true
+  explorer_scroll_down:
+    keys:
+      - pgdown
+      - pgdn
+    description: scroll the preview down
+    category: explorer
+    enabled: true
+  explorer_scroll_up:
+    keys:
+      - pgup
+    description: scroll the preview up
+    category: explorer
+    enabled: true
+  explorer_toggle:
+    keys:
+      - enter
+      - space
+    description: expand/collapse a folder
+    category: explorer
+    enabled: true
+  explorer_toggle_hidden:
+    keys:
+      - .
+    description: show/hide hidden and ignored files
+    category: explorer
     enabled: true
   global_cancel:
     keys:
