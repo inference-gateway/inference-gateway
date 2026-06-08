@@ -9,12 +9,15 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.3
         with:
           persist-credentials: false
 
