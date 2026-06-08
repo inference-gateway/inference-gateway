@@ -6,12 +6,12 @@
       "claude-code": {
         "pkg-path": "claude-code",
         "pkg-group": "claude-code",
-        "version": "^2.1.158"
+        "version": "^2.1.161"
       },
       "codex": {
         "pkg-path": "codex",
-        "pkg-group": "ai",
-        "version": "^0.133.0"
+        "pkg-group": "codex",
+        "version": "^0.135.0"
       },
       "ctlptl": {
         "pkg-path": "ctlptl",
@@ -57,7 +57,7 @@
         "version": "^2.15.4"
       },
       "infer": {
-        "flake": "github:inference-gateway/cli/v0.117.1"
+        "flake": "github:inference-gateway/cli/v0.121.0"
       },
       "jq": {
         "pkg-path": "jq",
@@ -124,145 +124,29 @@
   },
   "packages": [
     {
-      "attr_path": "codex",
-      "broken": false,
-      "derivation": "/nix/store/5dz189nj9xw1pqc4f7d2r9ar53id5gi4-codex-0.133.0.drv",
-      "description": "Lightweight coding agent that runs in your terminal",
-      "install_id": "codex",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=29916453413845e54a65b8a1cf996842300cd299",
-      "name": "codex-0.133.0",
-      "pname": "codex",
-      "rev": "29916453413845e54a65b8a1cf996842300cd299",
-      "rev_count": 1003640,
-      "rev_date": "2026-05-23T03:54:30Z",
-      "scrape_date": "2026-05-24T07:05:50.764279Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "0.133.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/3989mh54c44d6lrjyrapk37187brwkgf-codex-0.133.0"
-      },
-      "system": "aarch64-darwin",
-      "group": "ai",
-      "priority": 5
-    },
-    {
-      "attr_path": "codex",
-      "broken": false,
-      "derivation": "/nix/store/8ihs927bfq5g61psjhjj4adf6w5y35px-codex-0.133.0.drv",
-      "description": "Lightweight coding agent that runs in your terminal",
-      "install_id": "codex",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=29916453413845e54a65b8a1cf996842300cd299",
-      "name": "codex-0.133.0",
-      "pname": "codex",
-      "rev": "29916453413845e54a65b8a1cf996842300cd299",
-      "rev_count": 1003640,
-      "rev_date": "2026-05-23T03:54:30Z",
-      "scrape_date": "2026-05-24T07:34:04.560076Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "0.133.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/4jgv6y03chvad2qh77xnbi9805vdb8sc-codex-0.133.0"
-      },
-      "system": "aarch64-linux",
-      "group": "ai",
-      "priority": 5
-    },
-    {
-      "attr_path": "codex",
-      "broken": false,
-      "derivation": "/nix/store/qj0s11mbagm6cda86nspd4k0008jg7k4-codex-0.133.0.drv",
-      "description": "Lightweight coding agent that runs in your terminal",
-      "install_id": "codex",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=29916453413845e54a65b8a1cf996842300cd299",
-      "name": "codex-0.133.0",
-      "pname": "codex",
-      "rev": "29916453413845e54a65b8a1cf996842300cd299",
-      "rev_count": 1003640,
-      "rev_date": "2026-05-23T03:54:30Z",
-      "scrape_date": "2026-05-24T08:01:32.382001Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "0.133.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/mb01qnylk0q6vdzq6v6wlkw4w0pmd1fl-codex-0.133.0"
-      },
-      "system": "x86_64-darwin",
-      "group": "ai",
-      "priority": 5
-    },
-    {
-      "attr_path": "codex",
-      "broken": false,
-      "derivation": "/nix/store/q7gzwxqks72r9czqxy7va057xqiji8cf-codex-0.133.0.drv",
-      "description": "Lightweight coding agent that runs in your terminal",
-      "install_id": "codex",
-      "license": "Apache-2.0",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=29916453413845e54a65b8a1cf996842300cd299",
-      "name": "codex-0.133.0",
-      "pname": "codex",
-      "rev": "29916453413845e54a65b8a1cf996842300cd299",
-      "rev_count": 1003640,
-      "rev_date": "2026-05-23T03:54:30Z",
-      "scrape_date": "2026-05-24T08:31:55.803341Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "0.133.0",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/397dbj9vas9p2yb905wsnx4jvskjnx3h-codex-0.133.0"
-      },
-      "system": "x86_64-linux",
-      "group": "ai",
-      "priority": 5
-    },
-    {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/ignv04676bhp0rhva5sa1p7pkbk91xv6-claude-code-2.1.158.drv",
+      "derivation": "/nix/store/4758p7by4xdgsqap4ghigq0mwxzqxvqh-claude-code-2.1.161.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "name": "claude-code-2.1.158",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "name": "claude-code-2.1.161",
       "pname": "claude-code",
-      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "rev_count": 1008282,
-      "rev_date": "2026-05-31T16:09:29Z",
-      "scrape_date": "2026-06-02T08:55:40.213722Z",
+      "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "rev_count": 1011622,
+      "rev_date": "2026-06-06T12:30:50Z",
+      "scrape_date": "2026-06-08T03:14:19.044046Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.158",
+      "version": "2.1.161",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/lzgcgcrdgs8s4swv8qfb12apphkapamw-claude-code-2.1.158"
+        "out": "/nix/store/i9sba4hvza65y8i9bsj9m300z28znay1-claude-code-2.1.161"
       },
       "system": "aarch64-darwin",
       "group": "claude-code",
@@ -271,27 +155,27 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/jiiad9kkqaz3a4sy6f8570x657qkanja-claude-code-2.1.158.drv",
+      "derivation": "/nix/store/d9fk8q28kw044ni4vm8lp28qrz5hkia5-claude-code-2.1.161.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "name": "claude-code-2.1.158",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "name": "claude-code-2.1.161",
       "pname": "claude-code",
-      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "rev_count": 1008282,
-      "rev_date": "2026-05-31T16:09:29Z",
-      "scrape_date": "2026-06-02T09:40:19.388977Z",
+      "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "rev_count": 1011622,
+      "rev_date": "2026-06-06T12:30:50Z",
+      "scrape_date": "2026-06-08T03:46:51.180700Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.158",
+      "version": "2.1.161",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/vgjbba0zydq7cgc622wa1yrm12frnfb9-claude-code-2.1.158"
+        "out": "/nix/store/0snj330dzl9g1ac9jlhyj97m92fhzysy-claude-code-2.1.161"
       },
       "system": "aarch64-linux",
       "group": "claude-code",
@@ -300,27 +184,27 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/fmydk5qjafp19cm5hkr8g7i89psm237y-claude-code-2.1.158.drv",
+      "derivation": "/nix/store/ym8vcimq6zs08b261qjr5g0grzgxdhkk-claude-code-2.1.161.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "name": "claude-code-2.1.158",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "name": "claude-code-2.1.161",
       "pname": "claude-code",
-      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "rev_count": 1008282,
-      "rev_date": "2026-05-31T16:09:29Z",
-      "scrape_date": "2026-06-02T10:24:47.406140Z",
+      "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "rev_count": 1011622,
+      "rev_date": "2026-06-06T12:30:50Z",
+      "scrape_date": "2026-06-08T04:17:43.796895Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.158",
+      "version": "2.1.161",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/8lidks21j8vr5zy1k7gbz9nrvm34q1sk-claude-code-2.1.158"
+        "out": "/nix/store/803c84sp6d6ypay1pxyqdd0fm832g8cz-claude-code-2.1.161"
       },
       "system": "x86_64-darwin",
       "group": "claude-code",
@@ -329,30 +213,146 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/s49lw13idqgq9khsfp38salvxbvlqpb9-claude-code-2.1.158.drv",
+      "derivation": "/nix/store/8swi042jz88zqd56nj593i05ppvshf4n-claude-code-2.1.161.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "name": "claude-code-2.1.158",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "name": "claude-code-2.1.161",
       "pname": "claude-code",
-      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "rev_count": 1008282,
-      "rev_date": "2026-05-31T16:09:29Z",
-      "scrape_date": "2026-06-02T11:06:42.968405Z",
+      "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "rev_count": 1011622,
+      "rev_date": "2026-06-06T12:30:50Z",
+      "scrape_date": "2026-06-08T04:53:14.811360Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.158",
+      "version": "2.1.161",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/adxi8k34iwjvy9kdmdpi087cmcpywi30-claude-code-2.1.158"
+        "out": "/nix/store/caanb1wd5cncm5z2abksqd3pid4bcizn-claude-code-2.1.161"
       },
       "system": "x86_64-linux",
       "group": "claude-code",
+      "priority": 5
+    },
+    {
+      "attr_path": "codex",
+      "broken": false,
+      "derivation": "/nix/store/gzs0s2pjs6r703d5ckzpp15z2z9mh4yx-codex-0.135.0.drv",
+      "description": "Lightweight coding agent that runs in your terminal",
+      "install_id": "codex",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
+      "name": "codex-0.135.0",
+      "pname": "codex",
+      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
+      "rev_count": 1008282,
+      "rev_date": "2026-05-31T16:09:29Z",
+      "scrape_date": "2026-06-02T08:55:40.294021Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.135.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/l6p2maazc8iljiz8iv34dkppk7lvk7ni-codex-0.135.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "codex",
+      "priority": 5
+    },
+    {
+      "attr_path": "codex",
+      "broken": false,
+      "derivation": "/nix/store/djxbjp6sx9xwmkgf9yy41vik8kdyhix5-codex-0.135.0.drv",
+      "description": "Lightweight coding agent that runs in your terminal",
+      "install_id": "codex",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
+      "name": "codex-0.135.0",
+      "pname": "codex",
+      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
+      "rev_count": 1008282,
+      "rev_date": "2026-05-31T16:09:29Z",
+      "scrape_date": "2026-06-02T09:40:19.446424Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.135.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/ywsap0cn6xx7pawpa07bcc7yxlvmfl0r-codex-0.135.0"
+      },
+      "system": "aarch64-linux",
+      "group": "codex",
+      "priority": 5
+    },
+    {
+      "attr_path": "codex",
+      "broken": false,
+      "derivation": "/nix/store/aq0sbnzf9y676868ckh9gvp9hy2ndqa1-codex-0.135.0.drv",
+      "description": "Lightweight coding agent that runs in your terminal",
+      "install_id": "codex",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
+      "name": "codex-0.135.0",
+      "pname": "codex",
+      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
+      "rev_count": 1008282,
+      "rev_date": "2026-05-31T16:09:29Z",
+      "scrape_date": "2026-06-02T10:24:47.448521Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.135.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/70qxp4l1gs24gsx0v4pqmyw45jplx8yz-codex-0.135.0"
+      },
+      "system": "x86_64-darwin",
+      "group": "codex",
+      "priority": 5
+    },
+    {
+      "attr_path": "codex",
+      "broken": false,
+      "derivation": "/nix/store/swrcc8r0z2kp41ga0j6jf6ig10kli5qv-codex-0.135.0.drv",
+      "description": "Lightweight coding agent that runs in your terminal",
+      "install_id": "codex",
+      "license": "Apache-2.0",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
+      "name": "codex-0.135.0",
+      "pname": "codex",
+      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
+      "rev_count": 1008282,
+      "rev_date": "2026-05-31T16:09:29Z",
+      "scrape_date": "2026-06-02T11:06:43.030616Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "0.135.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/q1j9qd6h3cvbbi24q6mr5b5x4ia5q0kd-codex-0.135.0"
+      },
+      "system": "x86_64-linux",
+      "group": "codex",
       "priority": 5
     },
     {
@@ -2511,12 +2511,12 @@
     },
     {
       "install_id": "infer",
-      "locked-url": "github:inference-gateway/cli/7191553c962d5b092043b68b187498e68eb6a015?narHash=sha256-3J7iYBgzEBOAFLMhl/xCaiV0wxYbT/bYVQJmG6z78rQ%3D",
+      "locked-url": "github:inference-gateway/cli/81761aed9cf0c38a1db8fb531ef40a45f037d48c?narHash=sha256-z/weHqUvnWr/ko389SeFU7XzEQAiMcD4fgyeSZUO67o%3D",
       "flake-description": "Inference Gateway CLI - infer",
       "locked-flake-attr-path": "packages.aarch64-darwin.default",
-      "derivation": "/nix/store/nr8dql549cxs18vg2z0gmxha9kzkgs6z-infer-0.117.1.drv",
+      "derivation": "/nix/store/a3kc0csis9pqfamqhr3acb9nx0f4a1h4-infer-0.121.0.drv",
       "outputs": {
-        "out": "/nix/store/gxhml24d33rvjx2nrz2x29kfjraaq6p5-infer-0.117.1"
+        "out": "/nix/store/iz58cqypnv22hxsq211bl5xy51lzxjln-infer-0.121.0"
       },
       "output-names": [
         "out"
@@ -2527,9 +2527,9 @@
       "requested-outputs-to-install": [],
       "package-system": "aarch64-darwin",
       "system": "aarch64-darwin",
-      "name": "infer-0.117.1",
+      "name": "infer-0.121.0",
       "pname": "infer",
-      "version": "0.117.1",
+      "version": "0.121.0",
       "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
       "licenses": [
         "MIT"
@@ -2540,12 +2540,12 @@
     },
     {
       "install_id": "infer",
-      "locked-url": "github:inference-gateway/cli/7191553c962d5b092043b68b187498e68eb6a015?narHash=sha256-3J7iYBgzEBOAFLMhl/xCaiV0wxYbT/bYVQJmG6z78rQ%3D",
+      "locked-url": "github:inference-gateway/cli/81761aed9cf0c38a1db8fb531ef40a45f037d48c?narHash=sha256-z/weHqUvnWr/ko389SeFU7XzEQAiMcD4fgyeSZUO67o%3D",
       "flake-description": "Inference Gateway CLI - infer",
       "locked-flake-attr-path": "packages.aarch64-linux.default",
-      "derivation": "/nix/store/vy88yjvjybqb9gx569g5zvznakmfs3w6-infer-0.117.1.drv",
+      "derivation": "/nix/store/l116syh03dj59cmi2fczj83dlv3fdwaw-infer-0.121.0.drv",
       "outputs": {
-        "out": "/nix/store/c0xq5kn54vb8lbwdayjlrfrwkiim31zh-infer-0.117.1"
+        "out": "/nix/store/db5cmx8qm51i69c04741b6y9gi6dy4rs-infer-0.121.0"
       },
       "output-names": [
         "out"
@@ -2556,9 +2556,9 @@
       "requested-outputs-to-install": [],
       "package-system": "aarch64-linux",
       "system": "aarch64-linux",
-      "name": "infer-0.117.1",
+      "name": "infer-0.121.0",
       "pname": "infer",
-      "version": "0.117.1",
+      "version": "0.121.0",
       "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
       "licenses": [
         "MIT"
@@ -2569,12 +2569,12 @@
     },
     {
       "install_id": "infer",
-      "locked-url": "github:inference-gateway/cli/7191553c962d5b092043b68b187498e68eb6a015?narHash=sha256-3J7iYBgzEBOAFLMhl/xCaiV0wxYbT/bYVQJmG6z78rQ%3D",
+      "locked-url": "github:inference-gateway/cli/81761aed9cf0c38a1db8fb531ef40a45f037d48c?narHash=sha256-z/weHqUvnWr/ko389SeFU7XzEQAiMcD4fgyeSZUO67o%3D",
       "flake-description": "Inference Gateway CLI - infer",
       "locked-flake-attr-path": "packages.x86_64-darwin.default",
-      "derivation": "/nix/store/1hp5h4vfwqsiknhdiyyg3sjda2z6f0w3-infer-0.117.1.drv",
+      "derivation": "/nix/store/8w2zwk9p6vbf1q9j19yxfx99ya1ss47v-infer-0.121.0.drv",
       "outputs": {
-        "out": "/nix/store/qjb2xsfkdlymwqkhcggychi4m6wpxq5k-infer-0.117.1"
+        "out": "/nix/store/j8hvvl1m92i3f7hf6daspgyr862xsjnc-infer-0.121.0"
       },
       "output-names": [
         "out"
@@ -2585,9 +2585,9 @@
       "requested-outputs-to-install": [],
       "package-system": "x86_64-darwin",
       "system": "x86_64-darwin",
-      "name": "infer-0.117.1",
+      "name": "infer-0.121.0",
       "pname": "infer",
-      "version": "0.117.1",
+      "version": "0.121.0",
       "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
       "licenses": [
         "MIT"
@@ -2598,12 +2598,12 @@
     },
     {
       "install_id": "infer",
-      "locked-url": "github:inference-gateway/cli/7191553c962d5b092043b68b187498e68eb6a015?narHash=sha256-3J7iYBgzEBOAFLMhl/xCaiV0wxYbT/bYVQJmG6z78rQ%3D",
+      "locked-url": "github:inference-gateway/cli/81761aed9cf0c38a1db8fb531ef40a45f037d48c?narHash=sha256-z/weHqUvnWr/ko389SeFU7XzEQAiMcD4fgyeSZUO67o%3D",
       "flake-description": "Inference Gateway CLI - infer",
       "locked-flake-attr-path": "packages.x86_64-linux.default",
-      "derivation": "/nix/store/z5nrhfzh86jgnj69icc0204ygsyps54h-infer-0.117.1.drv",
+      "derivation": "/nix/store/12mnarjbd2rwkladqz75h6jhkic4w6sh-infer-0.121.0.drv",
       "outputs": {
-        "out": "/nix/store/ydp8hrn71zwlp7qnxzk4lsdz083n7mcs-infer-0.117.1"
+        "out": "/nix/store/jj2ldsbz6zra45i479yacsq7aisk5wy1-infer-0.121.0"
       },
       "output-names": [
         "out"
@@ -2614,9 +2614,9 @@
       "requested-outputs-to-install": [],
       "package-system": "x86_64-linux",
       "system": "x86_64-linux",
-      "name": "infer-0.117.1",
+      "name": "infer-0.121.0",
       "pname": "infer",
-      "version": "0.117.1",
+      "version": "0.121.0",
       "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
       "licenses": [
         "MIT"
