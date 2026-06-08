@@ -35,12 +35,8 @@ func isSensitiveKey(key string) bool {
 
 func sanitizeHeaders(headers map[string][]string) map[string][]string {
 	sanitized := make(map[string][]string, len(headers))
-	for key, values := range headers {
-		if isSensitiveKey(key) {
-			sanitized[key] = []string{"[REDACTED]"}
-			continue
-		}
-		sanitized[key] = values
+	for key := range headers {
+		sanitized[key] = []string{"[REDACTED]"}
 	}
 	return sanitized
 }
