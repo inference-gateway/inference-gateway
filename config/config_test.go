@@ -193,7 +193,7 @@ func TestLoad(t *testing.T) {
 						Name:           constants.MoonshotDisplayName,
 						URL:            constants.MoonshotDefaultBaseURL,
 						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
+						SupportsVision: true,
 						Endpoints: types.Endpoints{
 							Models: constants.MoonshotModelsEndpoint,
 							Chat:   constants.MoonshotChatEndpoint,
@@ -389,7 +389,7 @@ func TestLoad(t *testing.T) {
 						Name:           constants.MoonshotDisplayName,
 						URL:            constants.MoonshotDefaultBaseURL,
 						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
+						SupportsVision: true,
 						Endpoints: types.Endpoints{
 							Models: constants.MoonshotModelsEndpoint,
 							Chat:   constants.MoonshotChatEndpoint,
@@ -576,7 +576,7 @@ func TestLoad(t *testing.T) {
 						Name:           constants.MoonshotDisplayName,
 						URL:            constants.MoonshotDefaultBaseURL,
 						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
+						SupportsVision: true,
 						Endpoints: types.Endpoints{
 							Models: constants.MoonshotModelsEndpoint,
 							Chat:   constants.MoonshotChatEndpoint,

@@ -637,7 +637,7 @@ components:
           id: 'moonshot'
           url: 'https://api.moonshot.ai/v1'
           auth_type: 'bearer'
-          supports_vision: false
+          supports_vision: true
           endpoints:
             models:
               name: 'list_models'

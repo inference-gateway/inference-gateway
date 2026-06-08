@@ -156,7 +156,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.MoonshotDisplayName,
 		URL:            constants.MoonshotDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: false,
+		SupportsVision: true,
 		Endpoints: types.Endpoints{
 			Models: constants.MoonshotModelsEndpoint,
 			Chat:   constants.MoonshotChatEndpoint,
