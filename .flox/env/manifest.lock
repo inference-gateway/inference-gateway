@@ -6,7 +6,7 @@
       "claude-code": {
         "pkg-path": "claude-code",
         "pkg-group": "claude-code",
-        "version": "^2.1.158"
+        "version": "^2.1.161"
       },
       "codex": {
         "pkg-path": "codex",
@@ -126,27 +126,27 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/ignv04676bhp0rhva5sa1p7pkbk91xv6-claude-code-2.1.158.drv",
+      "derivation": "/nix/store/4758p7by4xdgsqap4ghigq0mwxzqxvqh-claude-code-2.1.161.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "name": "claude-code-2.1.158",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "name": "claude-code-2.1.161",
       "pname": "claude-code",
-      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "rev_count": 1008282,
-      "rev_date": "2026-05-31T16:09:29Z",
-      "scrape_date": "2026-06-02T08:55:40.213722Z",
+      "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "rev_count": 1011622,
+      "rev_date": "2026-06-06T12:30:50Z",
+      "scrape_date": "2026-06-08T03:14:19.044046Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.158",
+      "version": "2.1.161",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/lzgcgcrdgs8s4swv8qfb12apphkapamw-claude-code-2.1.158"
+        "out": "/nix/store/i9sba4hvza65y8i9bsj9m300z28znay1-claude-code-2.1.161"
       },
       "system": "aarch64-darwin",
       "group": "claude-code",
@@ -155,27 +155,27 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/jiiad9kkqaz3a4sy6f8570x657qkanja-claude-code-2.1.158.drv",
+      "derivation": "/nix/store/d9fk8q28kw044ni4vm8lp28qrz5hkia5-claude-code-2.1.161.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "name": "claude-code-2.1.158",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "name": "claude-code-2.1.161",
       "pname": "claude-code",
-      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "rev_count": 1008282,
-      "rev_date": "2026-05-31T16:09:29Z",
-      "scrape_date": "2026-06-02T09:40:19.388977Z",
+      "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "rev_count": 1011622,
+      "rev_date": "2026-06-06T12:30:50Z",
+      "scrape_date": "2026-06-08T03:46:51.180700Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.158",
+      "version": "2.1.161",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/vgjbba0zydq7cgc622wa1yrm12frnfb9-claude-code-2.1.158"
+        "out": "/nix/store/0snj330dzl9g1ac9jlhyj97m92fhzysy-claude-code-2.1.161"
       },
       "system": "aarch64-linux",
       "group": "claude-code",
@@ -184,27 +184,27 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/fmydk5qjafp19cm5hkr8g7i89psm237y-claude-code-2.1.158.drv",
+      "derivation": "/nix/store/ym8vcimq6zs08b261qjr5g0grzgxdhkk-claude-code-2.1.161.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "name": "claude-code-2.1.158",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "name": "claude-code-2.1.161",
       "pname": "claude-code",
-      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "rev_count": 1008282,
-      "rev_date": "2026-05-31T16:09:29Z",
-      "scrape_date": "2026-06-02T10:24:47.406140Z",
+      "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "rev_count": 1011622,
+      "rev_date": "2026-06-06T12:30:50Z",
+      "scrape_date": "2026-06-08T04:17:43.796895Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.158",
+      "version": "2.1.161",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/8lidks21j8vr5zy1k7gbz9nrvm34q1sk-claude-code-2.1.158"
+        "out": "/nix/store/803c84sp6d6ypay1pxyqdd0fm832g8cz-claude-code-2.1.161"
       },
       "system": "x86_64-darwin",
       "group": "claude-code",
@@ -213,27 +213,27 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/s49lw13idqgq9khsfp38salvxbvlqpb9-claude-code-2.1.158.drv",
+      "derivation": "/nix/store/8swi042jz88zqd56nj593i05ppvshf4n-claude-code-2.1.161.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "name": "claude-code-2.1.158",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "name": "claude-code-2.1.161",
       "pname": "claude-code",
-      "rev": "331800de5053fcebacf6813adb5db9c9dca22a0c",
-      "rev_count": 1008282,
-      "rev_date": "2026-05-31T16:09:29Z",
-      "scrape_date": "2026-06-02T11:06:42.968405Z",
+      "rev": "a799d3e3886da994fa307f817a6bc705ae538eeb",
+      "rev_count": 1011622,
+      "rev_date": "2026-06-06T12:30:50Z",
+      "scrape_date": "2026-06-08T04:53:14.811360Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.158",
+      "version": "2.1.161",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/adxi8k34iwjvy9kdmdpi087cmcpywi30-claude-code-2.1.158"
+        "out": "/nix/store/caanb1wd5cncm5z2abksqd3pid4bcizn-claude-code-2.1.161"
       },
       "system": "x86_64-linux",
       "group": "claude-code",

@@ -27,6 +27,8 @@ on:
     types:
       - submitted
 
+permissions: {}
+
 jobs:
   claude:
     if: |
@@ -41,7 +43,7 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: inference-gateway/.github/.github/workflows/claude.yml@v0.7.1
+    uses: inference-gateway/.github/.github/workflows/claude.yml@v0.7.6
     with:
       language: "go"
       node: true
