@@ -70,6 +70,18 @@ bindings:
     description: scroll the diff up half a page
     category: diff_viewer
     enabled: true
+  diff_viewer_hunk_next:
+    keys:
+      - ']'
+    description: jump to the next hunk
+    category: diff_viewer
+    enabled: true
+  diff_viewer_hunk_prev:
+    keys:
+      - '['
+    description: jump to the previous hunk
+    category: diff_viewer
+    enabled: true
   diff_viewer_nav_down:
     keys:
       - down
@@ -93,11 +105,22 @@ bindings:
   diff_viewer_patch_apply:
     keys:
       - a
-      - s
       - u
       - enter
+    description: apply the selected lines / current hunk
+    category: diff_viewer
+    enabled: true
+  diff_viewer_patch_select:
+    keys:
       - space
-    description: apply the current hunk
+      - v
+    description: start/clear a line-range selection
+    category: diff_viewer
+    enabled: true
+  diff_viewer_patch_split:
+    keys:
+      - s
+    description: split the current hunk into smaller pieces
     category: diff_viewer
     enabled: true
   diff_viewer_scroll_down:
@@ -119,6 +142,12 @@ bindings:
     description: stage the selected file
     category: diff_viewer
     enabled: true
+  diff_viewer_stage_all:
+    keys:
+      - A
+    description: stage all files
+    category: diff_viewer
+    enabled: true
   diff_viewer_toggle:
     keys:
       - enter
@@ -130,6 +159,12 @@ bindings:
     keys:
       - u
     description: unstage the selected file
+    category: diff_viewer
+    enabled: true
+  diff_viewer_unstage_all:
+    keys:
+      - U
+    description: unstage all files
     category: diff_viewer
     enabled: true
   display_toggle_raw_format:

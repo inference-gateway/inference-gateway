@@ -72,34 +72,38 @@ tools:
   bash:
     enabled: true
     timeout: 120
-    whitelist:
-      commands:
-        - echo
-        - ls
-        - pwd
-        - tree
-        - wc
-        - sort
-        - uniq
-        - head
-        - tail
-        - task
-        - make
-        - find
-      patterns:
-        - ^git status( |$)
-        - ^git branch( --show-current)?( -[alrvd])?$
-        - ^git log
-        - ^git diff
-        - ^git remote( -v)?$
-        - ^git show
-        - ^gh (issue|pr|repo|release|run|workflow) (list|view|status|diff|checks)( |$)
-        - ^gh auth status( |$)
-        - ^gh issue (create|edit|comment)( |$)
-        - ^gh pr create( |$)
-        - ^gh search (issues|code|prs|repos|commits)( |$)
-        - ^gh api [^ -][^ ]*( --paginate| --jq (?:'[^']*'|"[^"]*"|[^ ]+)| -q (?:'[^']*'|"[^"]*"|[^ ]+))*$
-        - ^gh project (item-add|item-edit|item-list|field-list|view|list)( |$)
+    mode:
+      all:
+        allow:
+          - echo( .*)?
+          - ls( .*)?
+          - pwd( .*)?
+          - tree( .*)?
+          - wc( .*)?
+          - sort( .*)?
+          - uniq( .*)?
+          - head( .*)?
+          - tail( .*)?
+          - task( .*)?
+          - make( .*)?
+          - find( .*)?
+          - git status( .*)?
+          - git branch( --show-current)?( -[alrvd])?
+          - git log( .*)?
+          - git diff( .*)?
+          - git remote( -v)?
+          - git show( .*)?
+          - gh (issue|pr|repo|release|run|workflow) (list|view|status|diff|checks)( .*)?
+          - gh auth status( .*)?
+          - gh search (issues|code|prs|repos|commits)( .*)?
+          - gh project (list|view|item-list|field-list)( .*)?
+      plan:
+        allow: []
+      standard:
+        allow: []
+      auto:
+        allow:
+          - .*
     background_shells:
       enabled: true
       max_concurrent: 5
@@ -127,7 +131,7 @@ tools:
     require_approval: false
   web_fetch:
     enabled: true
-    whitelisted_domains:
+    allowed_domains:
       - golang.org
       - localhost
     safety:
@@ -155,6 +159,7 @@ tools:
     max_jobs: 100
   safety:
     require_approval: true
+    approval_behaviour: prompt
 image:
   max_size: 5242880
   timeout: 30
@@ -175,7 +180,7 @@ agent:
     working_dir_enabled: true
     git_context_refresh_turns: 10
   skills:
-    enabled: false
+    enabled: true
   verbose_tools: false
   max_turns: 50
   max_tokens: 8192

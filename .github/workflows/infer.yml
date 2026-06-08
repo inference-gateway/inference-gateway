@@ -21,6 +21,8 @@ on:
     types:
       - created
 
+permissions: {}
+
 jobs:
   infer:
     if: |
@@ -37,7 +39,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.7.5
+    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.7.6
     with:
       language: "go"
       prompt: ${{ inputs.prompt }}
