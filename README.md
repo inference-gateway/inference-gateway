@@ -500,6 +500,7 @@ The included Grafana dashboard provides:
 - [DeepSeek](https://api-docs.deepseek.com/)
 - [Google](https://aistudio.google.com/)
 - [Mistral](https://mistral.ai/)
+- [Moonshot](https://platform.moonshot.ai/)
 
 ## Configuration
 
