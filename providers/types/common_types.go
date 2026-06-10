@@ -124,6 +124,7 @@ const (
 	Deepseek    Provider = "deepseek"
 	Google      Provider = "google"
 	Groq        Provider = "groq"
+	Minimax     Provider = "minimax"
 	Mistral     Provider = "mistral"
 	Moonshot    Provider = "moonshot"
 	Ollama      Provider = "ollama"
@@ -145,6 +146,8 @@ func (e Provider) Valid() bool {
 	case Google:
 		return true
 	case Groq:
+		return true
+	case Minimax:
 		return true
 	case Mistral:
 		return true

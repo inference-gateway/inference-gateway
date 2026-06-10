@@ -29,6 +29,7 @@ func DetermineProviderAndModelName(model string) (provider *types.Provider, mode
 		"cohere/":       constants.CohereID,
 		"deepseek/":     constants.DeepseekID,
 		"google/":       constants.GoogleID,
+		"minimax/":      constants.MinimaxID,
 		"mistral/":      constants.MistralID,
 		"moonshot/":     constants.MoonshotID,
 	}

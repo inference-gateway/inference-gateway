@@ -140,6 +140,17 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.GroqChatEndpoint,
 		},
 	},
+	constants.MinimaxID: {
+		ID:             constants.MinimaxID,
+		Name:           constants.MinimaxDisplayName,
+		URL:            constants.MinimaxDefaultBaseURL,
+		AuthType:       constants.AuthTypeBearer,
+		SupportsVision: true,
+		Endpoints: types.Endpoints{
+			Models: constants.MinimaxModelsEndpoint,
+			Chat:   constants.MinimaxChatEndpoint,
+		},
+	},
 	constants.MistralID: {
 		ID:             constants.MistralID,
 		Name:           constants.MistralDisplayName,

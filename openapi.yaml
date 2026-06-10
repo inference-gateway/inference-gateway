@@ -491,6 +491,7 @@ components:
         - deepseek
         - google
         - mistral
+        - minimax
         - moonshot
       x-provider-configs:
         ollama:
@@ -622,6 +623,20 @@ components:
         mistral:
           id: 'mistral'
           url: 'https://api.mistral.ai/v1'
+          auth_type: 'bearer'
+          supports_vision: true
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        minimax:
+          id: 'minimax'
+          url: 'https://api.minimax.io/v1'
           auth_type: 'bearer'
           supports_vision: true
           endpoints:
@@ -1696,6 +1711,16 @@ components:
                   env: 'MISTRAL_API_KEY'
                   type: string
                   description: 'Mistral API Key'
+                  secret: true
+                - name: minimax_api_url
+                  env: 'MINIMAX_API_URL'
+                  type: string
+                  default: 'https://api.minimax.io/v1'
+                  description: 'MiniMax API URL'
+                - name: minimax_api_key
+                  env: 'MINIMAX_API_KEY'
+                  type: string
+                  description: 'MiniMax API Key'
                   secret: true
                 - name: moonshot_api_url
                   env: 'MOONSHOT_API_URL'
