@@ -225,6 +225,13 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 			return types.ListModelsResponse{}, err
 		}
 		transformer = &resp
+	case constants.MinimaxID:
+		var resp transformers.ListModelsResponseMinimax
+		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
+			return types.ListModelsResponse{}, err
+		}
+		transformer = &resp
 	default:
 		var resp transformers.ListModelsResponseOpenai
 		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
