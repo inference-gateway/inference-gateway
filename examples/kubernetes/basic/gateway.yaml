@@ -66,11 +66,8 @@ spec:
   ingress:
     enabled: true
     host: 'api.inference-gateway.local'
-    annotations:
-      cert-manager.io/cluster-issuer: 'selfsigned-cluster-issuer'
     tls:
-      enabled: true
-      secretName: inference-gateway-tls
+      enabled: false
 ---
 apiVersion: v1
 kind: Secret
