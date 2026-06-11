@@ -1,6 +1,10 @@
 # Basic Deployment Example
 
-This example demonstrates the simplest deployment of the Inference Gateway using Helm.
+This example demonstrates the simplest deployment of the Inference Gateway using the
+[Inference Gateway Operator](https://github.com/inference-gateway/operator) and the Kubernetes Gateway API.
+
+> **Note:** The Helm chart is deprecated. All Kubernetes examples now deploy the gateway through the operator
+> by applying a `Gateway` custom resource.
 
 ## Table of Contents
 
@@ -10,13 +14,15 @@ This example demonstrates the simplest deployment of the Inference Gateway using
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
   - [Configuration](#configuration)
-    - [Gateway Settings](#gateway-settings)
   - [Cleanup](#cleanup)
 
 ## Architecture
 
-- **Gateway**: Inference Gateway deployed via inference gateway operator
-- **Ingress**: Basic ingress configuration
+- **Operator**: The Inference Gateway Operator watches `Gateway` custom resources and reconciles the
+  underlying Deployment, Service and autoscaling.
+- **Gateway**: An `inference-gateway` `Gateway` resource (`core.inference-gateway.com/v1alpha1`).
+- **Routing**: North-south traffic is served via the Kubernetes Gateway API (`spec.routing`), implemented by
+  Envoy Gateway (the `envoy` GatewayClass).
 
 ## Prerequisites
 
@@ -27,30 +33,44 @@ This example demonstrates the simplest deployment of the Inference Gateway using
 
 ## Quick Start
 
-1. Deploy infrastructure:
+1. Deploy the infrastructure (cluster, Gateway API CRDs, Envoy Gateway and the operator):
 
-```bash
-task deploy-infrastructure
-```
+   ```bash
+   task deploy-infrastructure
+   ```
 
-1. Deploy Inference Gateway:
+2. Add your provider API keys to the `inference-gateway-secrets` Secret in `gateway.yaml`, then deploy the
+   gateway:
 
-```bash
-task deploy-inference-gateway
-```
+   ```bash
+   task deploy-inference-gateway
+   ```
 
-1. Test the gateway:
+3. Wait for the gateway and its Gateway API resources to become ready:
 
-```bash
-curl http://api.inference-gateway.local/v1/models
-```
+   ```bash
+   kubectl get gateway.core.inference-gateway.com -n inference-gateway -w
+   kubectl get gateway.gateway.networking.k8s.io -n inference-gateway
+   kubectl get httproute -n inference-gateway
+   ```
+
+4. Port-forward the Envoy data plane for the gateway and send a test request:
+
+   ```bash
+   ENVOY_SVC=$(kubectl get svc -n envoy-gateway-system \
+     -l gateway.envoyproxy.io/owning-gateway-name=inference-gateway \
+     -o jsonpath='{.items[0].metadata.name}')
+   kubectl -n envoy-gateway-system port-forward "svc/${ENVOY_SVC}" 8080:80 &
+
+   curl -H 'Host: api.inference-gateway.local' http://localhost:8080/v1/models
+   ```
 
 ## Configuration
 
-### Gateway Settings
-
-- Configured via helm values in Taskfile.yaml
-- No additional components required
+The gateway is configured declaratively in `gateway.yaml` via the `Gateway` spec — providers, telemetry,
+autoscaling (HPA), resources and routing. Provider API keys are read from the `inference-gateway-secrets`
+Secret. See the [operator documentation](https://github.com/inference-gateway/operator) for the full
+`Gateway` API reference.
 
 ## Cleanup
 

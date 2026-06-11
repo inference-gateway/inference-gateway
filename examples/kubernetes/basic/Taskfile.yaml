@@ -1,13 +1,18 @@
 ---
 version: '3'
 
+vars:
+  GATEWAY_API_VERSION: v1.5.1
+  ENVOY_GATEWAY_VERSION: v1.2.0
+  OPERATOR_VERSION: v0.16.3
+
 tasks:
   deploy-infrastructure:
     desc: 'Deploy basic infrastructure'
     cmds:
       - task: create-cluster
-      - task: deploy-cert-manager
-      - task: deploy-nginx-ingress
+      - task: deploy-gateway-api
+      - task: deploy-envoy-gateway
       - task: deploy-inference-gateway-operator
       - echo "🚀 Basic infrastructure deployed successfully!"
 
@@ -17,40 +22,44 @@ tasks:
       - ctlptl apply -f Cluster.yaml
       - echo "🛠️ Cluster created successfully!"
 
-  deploy-cert-manager:
-    desc: 'Deploy cert-manager with helm'
+  deploy-gateway-api:
+    desc: 'Install the Kubernetes Gateway API CRDs'
     cmds:
-      - helm repo add jetstack https://charts.jetstack.io
-      - |
-        helm upgrade --install cert-manager jetstack/cert-manager \
-          --create-namespace \
-          --namespace cert-manager \
-          --version 1.18.1 \
-          --set crds.enabled=true \
-          --wait
-      - echo "🔐 Cert-manager deployed successfully!"
+      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
+      - echo "🌐 Gateway API CRDs installed successfully!"
 
-  deploy-nginx-ingress:
-    desc: 'Deploy NGINX Ingress Controller with helm'
+  deploy-envoy-gateway:
+    desc: 'Deploy Envoy Gateway and register the envoy GatewayClass'
     cmds:
-      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-      - helm repo update
       - |
-        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+        helm upgrade --install envoy-gateway \
+          oci://docker.io/envoyproxy/gateway-helm \
+          --version {{.ENVOY_GATEWAY_VERSION}} \
+          --namespace envoy-gateway-system \
           --create-namespace \
-          --namespace ingress-nginx \
-          --version 4.12.3 \
+          --skip-crds \
           --wait
-      - echo "🌐 NGINX Ingress Controller deployed successfully!"
+      - kubectl -n envoy-gateway-system wait --for=condition=Available --timeout=120s deployment/envoy-gateway
+      - |
+        kubectl apply -f - <<'EOF'
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: GatewayClass
+        metadata:
+          name: envoy
+        spec:
+          controllerName: gateway.envoyproxy.io/gatewayclass-controller
+        EOF
+      - echo "🚪 Envoy Gateway deployed successfully!"
 
   deploy-inference-gateway-operator:
-    desc: 'Deploy inference-gateway operator with helm'
+    desc: 'Deploy the Inference Gateway operator'
     cmds:
-      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/v0.5.2/install.yaml
+      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/{{.OPERATOR_VERSION}}/install.yaml
+      - kubectl -n inference-gateway-system wait --for=condition=Available --timeout=120s deployment/operator-inference-gateway
       - echo "🛠️ Inference Gateway operator deployed successfully!"
 
   deploy-inference-gateway:
-    desc: 'Deploy inference-gateway with helm'
+    desc: 'Deploy the Inference Gateway via the operator'
     cmds:
       - kubectl apply -f gateway.yaml
       - echo "🚪 Inference Gateway deployed successfully!"

@@ -24,24 +24,28 @@ spec:
     metrics:
       enabled: true
       port: 9464
-  hpa:
-    enabled: true
-    config:
-      minReplicas: 3
-      maxReplicas: 10
-      metrics:
-        - type: Resource
-          resource:
-            name: cpu
-            target:
-              type: Utilization
-              averageUtilization: 80
   server:
     host: '0.0.0.0'
     timeouts:
       read: '60s'
       write: '60s'
       idle: '300s'
+  # OIDC authentication against Keycloak. The operator emits AUTH_ENABLE,
+  # AUTH_OIDC_ISSUER, AUTH_OIDC_CLIENT_ID and AUTH_OIDC_CLIENT_SECRET, and — via
+  # caCertRef — mounts Keycloak's self-signed CA and points SSL_CERT_FILE at it so
+  # OIDC discovery over HTTPS is trusted.
+  auth:
+    enabled: true
+    provider: oidc
+    oidc:
+      issuerUrl: 'https://keycloak.inference-gateway.local:8543/realms/inference-gateway-realm'
+      clientId: inference-gateway-client
+      clientSecretRef:
+        name: inference-gateway-auth
+        key: AUTH_OIDC_CLIENT_SECRET
+      caCertRef:
+        name: keycloak-ca
+        key: ca.crt
   providers:
     - name: OpenAI
       enabled: true
@@ -51,22 +55,14 @@ spec:
             secretKeyRef:
               name: inference-gateway-secrets
               key: OPENAI_API_KEY
-    - name: Anthropic
+    - name: Groq
       enabled: true
       env:
-        - name: ANTHROPIC_API_KEY
+        - name: GROQ_API_KEY
           valueFrom:
             secretKeyRef:
               name: inference-gateway-secrets
-              key: ANTHROPIC_API_KEY
-    - name: DeepSeek
-      enabled: true
-      env:
-        - name: DEEPSEEK_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: inference-gateway-secrets
-              key: DEEPSEEK_API_KEY
+              key: GROQ_API_KEY
   resources:
     requests:
       cpu: '100m'
@@ -78,9 +74,24 @@ spec:
     enabled: true
     gateway:
       gatewayClassName: envoy
+      tls:
+        enabled: true
+        issuer: selfsigned-issuer
+        secretName: api-inference-gateway-local-tls
     httpRoute:
       hostnames:
         - api.inference-gateway.local
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inference-gateway-auth
+  namespace: inference-gateway
+type: Opaque
+stringData:
+  # Must match the client secret of the inference-gateway-client in the realm
+  # (see keycloak/job-import-realm.yaml).
+  AUTH_OIDC_CLIENT_SECRET: very-secret
 ---
 apiVersion: v1
 kind: Secret
@@ -95,5 +106,4 @@ metadata:
 type: Opaque
 stringData:
   OPENAI_API_KEY: ''
-  ANTHROPIC_API_KEY: ''
-  DEEPSEEK_API_KEY: ''
+  GROQ_API_KEY: ''

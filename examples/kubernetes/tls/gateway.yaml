@@ -24,18 +24,6 @@ spec:
     metrics:
       enabled: true
       port: 9464
-  hpa:
-    enabled: true
-    config:
-      minReplicas: 3
-      maxReplicas: 10
-      metrics:
-        - type: Resource
-          resource:
-            name: cpu
-            target:
-              type: Utilization
-              averageUtilization: 80
   server:
     host: '0.0.0.0'
     timeouts:
@@ -78,6 +66,12 @@ spec:
     enabled: true
     gateway:
       gatewayClassName: envoy
+      # Envoy terminates TLS at the Gateway listener. cert-manager issues the
+      # certificate into `secretName` from the referenced ClusterIssuer.
+      tls:
+        enabled: true
+        issuer: selfsigned-issuer
+        secretName: api-inference-gateway-local-tls
     httpRoute:
       hostnames:
         - api.inference-gateway.local

@@ -1,52 +1,84 @@
 ---
 version: '3'
 
+vars:
+  CERT_MANAGER_VERSION: v1.20.2
+  GATEWAY_API_VERSION: v1.5.1
+  ENVOY_GATEWAY_VERSION: v1.2.0
+  OPERATOR_VERSION: v0.16.3
+
 tasks:
   deploy-infrastructure:
     desc: 'Deploy TLS infrastructure'
     cmds:
-      - ctlptl apply -f Cluster.yaml
-      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-      - helm repo add jetstack https://charts.jetstack.io
-      - helm repo update
-      - echo "🚀 Starting TLS infrastructure deployment..."
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace kube-system \
-          --set controller.progressDeadlineSeconds=500 \
-          --version 4.14.0 \
-          --wait \
-          ingress-nginx ingress-nginx/ingress-nginx
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace cert-manager \
-          --version 1.17.2 \
-          --set crds.enabled=true \
-          --wait \
-          cert-manager jetstack/cert-manager
-      - kubectl apply -f cert-manager/
+      - task: create-cluster
+      - task: deploy-gateway-api
+      - task: deploy-cert-manager
+      - task: deploy-envoy-gateway
+      - task: deploy-inference-gateway-operator
       - echo "🔒 TLS infrastructure deployed successfully!"
 
-  deploy-inference-gateway:
-    desc: 'Deploy inference-gateway with TLS'
+  create-cluster:
+    desc: 'Create a Kubernetes cluster using ctlptl'
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - echo "🛠️ Cluster created successfully!"
+
+  deploy-gateway-api:
+    desc: 'Install the Kubernetes Gateway API CRDs (before cert-manager so it watches Gateways)'
+    cmds:
+      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
+      - echo "🌐 Gateway API CRDs installed successfully!"
+
+  deploy-cert-manager:
+    desc: 'Deploy cert-manager and a self-signed ClusterIssuer'
+    cmds:
+      - helm repo add jetstack https://charts.jetstack.io
+      - helm repo update
+      - |
+        helm upgrade --install cert-manager jetstack/cert-manager \
+          --create-namespace \
+          --namespace cert-manager \
+          --version {{.CERT_MANAGER_VERSION}} \
+          --set crds.enabled=true \
+          --wait
+      - kubectl apply -f cert-manager/
+      - echo "🔐 Cert-manager deployed successfully!"
+
+  deploy-envoy-gateway:
+    desc: 'Deploy Envoy Gateway and register the envoy GatewayClass'
     cmds:
       - |
-        helm upgrade --install \
+        helm upgrade --install envoy-gateway \
+          oci://docker.io/envoyproxy/gateway-helm \
+          --version {{.ENVOY_GATEWAY_VERSION}} \
+          --namespace envoy-gateway-system \
           --create-namespace \
-          --namespace inference-gateway \
-          --set ingress.enabled=true \
-          --set ingress.annotations."cert-manager\.io/cluster-issuer"=selfsigned-issuer \
-          --set ingress.hosts[0].host=api.inference-gateway.local \
-          --set ingress.hosts[0].paths[0].path=/ \
-          --set ingress.hosts[0].paths[0].pathType=ImplementationSpecific \
-          --set ingress.tls.enabled=true \
-          --set ingress.tls.hosts[0]=api.inference-gateway.local \
-          --set ingress.tls.secretName=api-inference-gateway-local-tls \
-          --version 0.19.5 \
-          --wait \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+          --skip-crds \
+          --wait
+      - kubectl -n envoy-gateway-system wait --for=condition=Available --timeout=120s deployment/envoy-gateway
+      - |
+        kubectl apply -f - <<'EOF'
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: GatewayClass
+        metadata:
+          name: envoy
+        spec:
+          controllerName: gateway.envoyproxy.io/gatewayclass-controller
+        EOF
+      - echo "🚪 Envoy Gateway deployed successfully!"
+
+  deploy-inference-gateway-operator:
+    desc: 'Deploy the Inference Gateway operator'
+    cmds:
+      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/{{.OPERATOR_VERSION}}/install.yaml
+      - kubectl -n inference-gateway-system wait --for=condition=Available --timeout=120s deployment/operator-inference-gateway
+      - echo "🛠️ Inference Gateway operator deployed successfully!"
+
+  deploy-inference-gateway:
+    desc: 'Deploy the Inference Gateway with TLS via the operator'
+    cmds:
+      - kubectl apply -f gateway.yaml
       - echo "🔐 Inference Gateway with TLS deployed successfully!"
 
   clean:

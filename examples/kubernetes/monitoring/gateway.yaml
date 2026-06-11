@@ -5,6 +5,8 @@ metadata:
   name: inference-gateway
   labels:
     inference-gateway.com/managed: 'true'
+    # Picked up by the Prometheus serviceMonitorNamespaceSelector.
+    monitoring: 'true'
 ---
 apiVersion: core.inference-gateway.com/v1alpha1
 kind: Gateway
@@ -27,12 +29,18 @@ spec:
   hpa:
     enabled: true
     config:
-      minReplicas: 3
+      minReplicas: 2
       maxReplicas: 10
       metrics:
         - type: Resource
           resource:
             name: cpu
+            target:
+              type: Utilization
+              averageUtilization: 80
+        - type: Resource
+          resource:
+            name: memory
             target:
               type: Utilization
               averageUtilization: 80
@@ -43,30 +51,11 @@ spec:
       write: '60s'
       idle: '300s'
   providers:
-    - name: OpenAI
+    - name: Ollama
       enabled: true
       env:
-        - name: OPENAI_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: inference-gateway-secrets
-              key: OPENAI_API_KEY
-    - name: Anthropic
-      enabled: true
-      env:
-        - name: ANTHROPIC_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: inference-gateway-secrets
-              key: ANTHROPIC_API_KEY
-    - name: DeepSeek
-      enabled: true
-      env:
-        - name: DEEPSEEK_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: inference-gateway-secrets
-              key: DEEPSEEK_API_KEY
+        - name: OLLAMA_API_URL
+          value: 'http://ollama.ollama:8080/v1'
   resources:
     requests:
       cpu: '100m'
@@ -82,18 +71,20 @@ spec:
       hostnames:
         - api.inference-gateway.local
 ---
+# The operator-managed Service carries no labels, so this thin Service exposes the
+# pods' metrics port (9464) with a label the ServiceMonitor selects on.
 apiVersion: v1
-kind: Secret
+kind: Service
 metadata:
-  name: inference-gateway-secrets
+  name: inference-gateway-metrics
   namespace: inference-gateway
   labels:
     app.kubernetes.io/name: inference-gateway
-    app.kubernetes.io/instance: inference-gateway
-    app.kubernetes.io/component: secrets
-    app.kubernetes.io/part-of: inference-gateway
-type: Opaque
-stringData:
-  OPENAI_API_KEY: ''
-  ANTHROPIC_API_KEY: ''
-  DEEPSEEK_API_KEY: ''
+spec:
+  selector:
+    app: inference-gateway
+  ports:
+    - name: metrics
+      port: 9464
+      targetPort: 9464
+      protocol: TCP

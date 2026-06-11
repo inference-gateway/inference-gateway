@@ -27,7 +27,9 @@ spec:
   httpManagement:
     port: 9000
   hostname:
-    hostname: keycloak.inference-gateway.local
+    # Includes the :8543 port so the issued tokens' `iss` matches the issuer the
+    # gateway is configured with and the URL it reaches Keycloak at in-cluster.
+    hostname: 'https://keycloak.inference-gateway.local:8543'
     strict: true
   # features:
   #   disabled:
