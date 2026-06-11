@@ -23,13 +23,13 @@ The stack runs three services:
 
 | Setting                  | Value                                                 |
 | ------------------------ | ----------------------------------------------------- |
-| Realm                    | `inference-gateway-realm`                              |
-| Client ID                | `inference-gateway-client`                             |
-| Client secret            | `very-secret`                                          |
+| Realm                    | `inference-gateway-realm`                             |
+| Client ID                | `inference-gateway-client`                            |
+| Client secret            | `very-secret`                                         |
 | Test user / password     | `user` / `password`                                   |
 | OIDC issuer (in-network) | `http://keycloak:8080/realms/inference-gateway-realm` |
-| Gateway                  | http://localhost:8080                                 |
-| Keycloak                 | http://localhost:8081                                 |
+| Gateway                  | `http://localhost:8080`                               |
+| Keycloak                 | `http://localhost:8081`                               |
 
 > These are insecure demo values. Never reuse them outside local testing.
 
