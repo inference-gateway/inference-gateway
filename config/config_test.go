@@ -177,6 +177,17 @@ func TestLoad(t *testing.T) {
 							Chat:   constants.GoogleChatEndpoint,
 						},
 					},
+					constants.MinimaxID: {
+						ID:             constants.MinimaxID,
+						Name:           constants.MinimaxDisplayName,
+						URL:            constants.MinimaxDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.MinimaxModelsEndpoint,
+							Chat:   constants.MinimaxChatEndpoint,
+						},
+					},
 					constants.MistralID: {
 						ID:             constants.MistralID,
 						Name:           constants.MistralDisplayName,
@@ -193,7 +204,7 @@ func TestLoad(t *testing.T) {
 						Name:           constants.MoonshotDisplayName,
 						URL:            constants.MoonshotDefaultBaseURL,
 						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
+						SupportsVision: true,
 						Endpoints: types.Endpoints{
 							Models: constants.MoonshotModelsEndpoint,
 							Chat:   constants.MoonshotChatEndpoint,
@@ -373,6 +384,17 @@ func TestLoad(t *testing.T) {
 							Chat:   constants.GoogleChatEndpoint,
 						},
 					},
+					constants.MinimaxID: {
+						ID:             constants.MinimaxID,
+						Name:           constants.MinimaxDisplayName,
+						URL:            constants.MinimaxDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.MinimaxModelsEndpoint,
+							Chat:   constants.MinimaxChatEndpoint,
+						},
+					},
 					constants.MistralID: {
 						ID:             constants.MistralID,
 						Name:           constants.MistralDisplayName,
@@ -389,7 +411,7 @@ func TestLoad(t *testing.T) {
 						Name:           constants.MoonshotDisplayName,
 						URL:            constants.MoonshotDefaultBaseURL,
 						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
+						SupportsVision: true,
 						Endpoints: types.Endpoints{
 							Models: constants.MoonshotModelsEndpoint,
 							Chat:   constants.MoonshotChatEndpoint,
@@ -560,6 +582,17 @@ func TestLoad(t *testing.T) {
 							Chat:   constants.GoogleChatEndpoint,
 						},
 					},
+					constants.MinimaxID: {
+						ID:             constants.MinimaxID,
+						Name:           constants.MinimaxDisplayName,
+						URL:            constants.MinimaxDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.MinimaxModelsEndpoint,
+							Chat:   constants.MinimaxChatEndpoint,
+						},
+					},
 					constants.MistralID: {
 						ID:             constants.MistralID,
 						Name:           constants.MistralDisplayName,
@@ -576,7 +609,7 @@ func TestLoad(t *testing.T) {
 						Name:           constants.MoonshotDisplayName,
 						URL:            constants.MoonshotDefaultBaseURL,
 						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
+						SupportsVision: true,
 						Endpoints: types.Endpoints{
 							Models: constants.MoonshotModelsEndpoint,
 							Chat:   constants.MoonshotChatEndpoint,

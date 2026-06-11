@@ -65,6 +65,12 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 			expectedModel:    "deepseek-coder",
 		},
 		{
+			name:             "MiniMax model with prefix",
+			model:            "minimax/MiniMax-Text-01",
+			expectedProvider: new(constants.MinimaxID),
+			expectedModel:    "MiniMax-Text-01",
+		},
+		{
 			name:             "Case insensitive prefix matching",
 			model:            "OpenAI/GPT-4",
 			expectedProvider: new(constants.OpenaiID),

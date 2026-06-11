@@ -300,15 +300,7 @@ active using bypass headers:
 ### Client Control Examples
 
 ```bash
-# Use only standard tool calls (skip MCP)
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "X-MCP-Bypass: true" \
-  -d '{
-    "model": "anthropic/claude-3-haiku",
-    "messages": [{"role": "user", "content": "Connect to external agents"}]
-  }'
-
-# Skip both middlewares for direct provider access
+# Skip MCP middleware for direct provider access
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "X-MCP-Bypass: true" \
   -d '{
@@ -508,6 +500,7 @@ The included Grafana dashboard provides:
 - [DeepSeek](https://api-docs.deepseek.com/)
 - [Google](https://aistudio.google.com/)
 - [Mistral](https://mistral.ai/)
+- [Moonshot](https://platform.moonshot.ai/)
 
 ## Configuration
 

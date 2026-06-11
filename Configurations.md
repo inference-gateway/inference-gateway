@@ -99,5 +99,7 @@
 | GOOGLE_API_KEY       | `""`                                                            | Google API Key       |
 | MISTRAL_API_URL      | `https://api.mistral.ai/v1`                                     | Mistral API URL      |
 | MISTRAL_API_KEY      | `""`                                                            | Mistral API Key      |
+| MINIMAX_API_URL      | `https://api.minimax.io/v1`                                     | MiniMax API URL      |
+| MINIMAX_API_KEY      | `""`                                                            | MiniMax API Key      |
 | MOONSHOT_API_URL     | `https://api.moonshot.ai/v1`                                    | Moonshot API URL     |
 | MOONSHOT_API_KEY     | `""`                                                            | Moonshot API Key     |

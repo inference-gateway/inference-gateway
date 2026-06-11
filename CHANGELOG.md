@@ -2,6 +2,98 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.1](https://github.com/inference-gateway/inference-gateway/compare/v0.25.0...v0.25.1) (2026-06-11)
+
+### 🐛 Bug Fixes
+
+* route minimax through its own transformer + label it in telemetry ([#358](https://github.com/inference-gateway/inference-gateway/issues/358)) ([a52057f](https://github.com/inference-gateway/inference-gateway/commit/a52057f674e082f0694321d216a5b6e4173a2908))
+
+## [0.25.0](https://github.com/inference-gateway/inference-gateway/compare/v0.24.6...v0.25.0) (2026-06-11)
+
+### ✨ Features
+
+* add MiniMax provider support ([#357](https://github.com/inference-gateway/inference-gateway/issues/357)) ([6ad0347](https://github.com/inference-gateway/inference-gateway/commit/6ad03471ed2950c8c9591ab606951b0c3115b929))
+* enable vision support for moonshot provider ([#349](https://github.com/inference-gateway/inference-gateway/issues/349)) ([a0f6d7d](https://github.com/inference-gateway/inference-gateway/commit/a0f6d7d01436f3a7a0c7cd7b9bad3403df15c833))
+
+### ♻️ Improvements
+
+* **claude:** use default system prompt and move mcps to a runtime config ([948e641](https://github.com/inference-gateway/inference-gateway/commit/948e6415ab0c62a6584bd3e2fa25bf63c424d16a))
+* **docs:** Rename Production-ready to Enterprise-ready ([47d39fa](https://github.com/inference-gateway/inference-gateway/commit/47d39fa8242900a111ed4e6e8178b0cd562e40a6))
+* potential fix for code scanning alert ([#346](https://github.com/inference-gateway/inference-gateway/issues/346)) ([be20af9](https://github.com/inference-gateway/inference-gateway/commit/be20af9297982b91c807a5f210e16274ab5b1419))
+
+### 🐛 Bug Fixes
+
+* **ci:** Ignore Markdown files created by agents ([9d41bde](https://github.com/inference-gateway/inference-gateway/commit/9d41bde551d7fc10487a914e85bb4eca6905edff))
+* **ci:** only trigger infer when actually needed ([9ea276c](https://github.com/inference-gateway/inference-gateway/commit/9ea276c1477d85301874c25bb3a04d860df945f2))
+
+### 👷 CI
+
+* centralize claude.yml via reusable workflow ([#320](https://github.com/inference-gateway/inference-gateway/issues/320)) ([ac0ea82](https://github.com/inference-gateway/inference-gateway/commit/ac0ea82e3e07ffcd82ededd3104fdc284b762a1b))
+* centralize claude.yml via reusable workflow ([#321](https://github.com/inference-gateway/inference-gateway/issues/321)) ([7234a3b](https://github.com/inference-gateway/inference-gateway/commit/7234a3b5fbcdbd00e45b071dc90e6aeebdc2bbf3))
+* centralize claude.yml via reusable workflow ([#322](https://github.com/inference-gateway/inference-gateway/issues/322)) ([2e2f493](https://github.com/inference-gateway/inference-gateway/commit/2e2f493d4695d7663c806bce8b9c8bafe66157ef))
+* centralize claude.yml via reusable workflow ([#351](https://github.com/inference-gateway/inference-gateway/issues/351)) ([3155b82](https://github.com/inference-gateway/inference-gateway/commit/3155b82c6a06f84c82da8d5eba0fdb4d6dc742a2))
+* centralize infer.yml + bump infer CLI and sync .infer config ([#325](https://github.com/inference-gateway/inference-gateway/issues/325)) ([7bbe1ff](https://github.com/inference-gateway/inference-gateway/commit/7bbe1ffb140651cea40eadc539437a591ac6a4ee))
+* centralize infer.yml + sync .infer config ([#324](https://github.com/inference-gateway/inference-gateway/issues/324)) ([0a5be89](https://github.com/inference-gateway/inference-gateway/commit/0a5be893c2cc305f6c2f2cfdbfafc7013e6b3c7b))
+* centralize infer.yml via reusable workflow ([#323](https://github.com/inference-gateway/inference-gateway/issues/323)) ([9b60c07](https://github.com/inference-gateway/inference-gateway/commit/9b60c07ee2403812456a25e8926de0b8a2621ed0))
+* **claude:** Add maintainer skill ([ceda3a9](https://github.com/inference-gateway/inference-gateway/commit/ceda3a9cad0d16d1d5e16db7739e43d08cccff94))
+* **claude:** download all maintainer skill assets ([7e7aa17](https://github.com/inference-gateway/inference-gateway/commit/7e7aa17667a11f7eb901da4020ddbc33eca3b44f))
+* **claude:** standardize workflow + task-based branch prefix ([6c95470](https://github.com/inference-gateway/inference-gateway/commit/6c95470d871894738134cfb253fbd93d929a1fef))
+* **deps:** Bump anthropics/claude-code-action in the github-actions group ([#309](https://github.com/inference-gateway/inference-gateway/issues/309)) ([9d3f2a2](https://github.com/inference-gateway/inference-gateway/commit/9d3f2a22d37b80850437476727ca6c66fa7d3866))
+* **deps:** Bump claude-code-action  v1.0.132 -> v1.0.133 ([a8e9205](https://github.com/inference-gateway/inference-gateway/commit/a8e9205c4479ac7a06c31fab4d46c932e7570d7a))
+* **deps:** Update Claude Code Action to version 1.0.131 ([a36f2db](https://github.com/inference-gateway/inference-gateway/commit/a36f2dba618fa73168218b502c4d01dc79d8fed0))
+* **deps:** Update claude-code-action to version 1.0.130 ([1c9b867](https://github.com/inference-gateway/inference-gateway/commit/1c9b8674f6cd80cef3b29287a227a52e135a3600))
+* **infer:** centralize infer.yml + bump infer CLI and sync .infer config ([#326](https://github.com/inference-gateway/inference-gateway/issues/326)) ([0770150](https://github.com/inference-gateway/inference-gateway/commit/07701506465894dee6300bbc7529232e2833ab3e))
+* **infer:** centralize infer.yml + bump infer CLI and sync .infer config ([#327](https://github.com/inference-gateway/inference-gateway/issues/327)) ([320ec6b](https://github.com/inference-gateway/inference-gateway/commit/320ec6bf9fb183bc5639d77c3cdacb7734945e01))
+* potential fix for code scanning alert no. 4 ([#348](https://github.com/inference-gateway/inference-gateway/issues/348)) ([0c91c91](https://github.com/inference-gateway/inference-gateway/commit/0c91c91aa2c3f4a02cc38f2a725f5cd54f3fbd14))
+
+### 📚 Documentation
+
+* Re-generate CLAUDE.md and AGENTS.md ([00e2ddd](https://github.com/inference-gateway/inference-gateway/commit/00e2ddda68676f9245014df806f85b05f6e89e0f))
+* **readme:** add Moonshot to supported providers list ([#355](https://github.com/inference-gateway/inference-gateway/issues/355)) ([e03a875](https://github.com/inference-gateway/inference-gateway/commit/e03a87549b08cd4a91d90680e75a92bc97401a4d))
+* **readme:** remove stale 'both middlewares' wording from bypass examples ([#354](https://github.com/inference-gateway/inference-gateway/issues/354)) ([dcc0bf6](https://github.com/inference-gateway/inference-gateway/commit/dcc0bf68496e445cedab484393406866f646b15f))
+
+### 🔧 Miscellaneous
+
+* **ci:** use max effort in claude code CI ([#316](https://github.com/inference-gateway/inference-gateway/issues/316)) ([bf1b788](https://github.com/inference-gateway/inference-gateway/commit/bf1b788b35c58765340013a4af19cbb0a119ad07))
+* Delete AGENTS.md ([d2fa085](https://github.com/inference-gateway/inference-gateway/commit/d2fa0853d436322f5bb17faeea78983d534e3216))
+* **dependabot:** Update golang and ubuntu version ignore rules in dependabot configuration ([2f78519](https://github.com/inference-gateway/inference-gateway/commit/2f7851984f077d31fb76d5dabe1fc9704e32eff9))
+* **dependabot:** Update golang version in Dockerfiles to 1.26.2 ([700d0f4](https://github.com/inference-gateway/inference-gateway/commit/700d0f42a8af8069fcefbb8528fc207ce094616d))
+* **deps:** Add codex and bump infer CLI ([18549dc](https://github.com/inference-gateway/inference-gateway/commit/18549dcdf0625ee333e00f293229160796fbd92c))
+* **deps:** bump claude-code 2.1.148 -> 2.1.158 ([#329](https://github.com/inference-gateway/inference-gateway/issues/329)) ([1e9b0c0](https://github.com/inference-gateway/inference-gateway/commit/1e9b0c0eb5ee423dab0fdb98c3f51ed310df145f))
+* **deps:** bump claude-code 2.1.158 -> 2.1.161 ([#344](https://github.com/inference-gateway/inference-gateway/issues/344)) ([e463684](https://github.com/inference-gateway/inference-gateway/commit/e463684008b4eb768875dc3e03d19084c5c240b4))
+* **deps:** bump codex 0.133.0 -> 0.135.0 ([#337](https://github.com/inference-gateway/inference-gateway/issues/337)) ([4ad5700](https://github.com/inference-gateway/inference-gateway/commit/4ad5700473449fca3c1a05ec0f9cc489c166842d))
+* **deps:** Bump github.com/oapi-codegen/runtime in the gomod group ([#308](https://github.com/inference-gateway/inference-gateway/issues/308)) ([6e78c67](https://github.com/inference-gateway/inference-gateway/commit/6e78c67fccabb80798668f84f25b46c885a1b8db))
+* **deps:** bump github.com/quic-go/quic-go ([#331](https://github.com/inference-gateway/inference-gateway/issues/331)) ([68d356d](https://github.com/inference-gateway/inference-gateway/commit/68d356d99fdb693624c1497ec16d8bafc308679a))
+* **deps:** bump github.com/quic-go/quic-go ([#332](https://github.com/inference-gateway/inference-gateway/issues/332)) ([b778050](https://github.com/inference-gateway/inference-gateway/commit/b778050c32330268811299c1dbf13713646fa8ca))
+* **deps:** bump github.com/quic-go/quic-go ([#339](https://github.com/inference-gateway/inference-gateway/issues/339)) ([e12cd14](https://github.com/inference-gateway/inference-gateway/commit/e12cd1401d4939322837081796999152c07285dc))
+* **deps:** bump github.com/quic-go/quic-go ([#343](https://github.com/inference-gateway/inference-gateway/issues/343)) ([48b10f0](https://github.com/inference-gateway/inference-gateway/commit/48b10f0d62984ad26fdaf9c6e58da6cb55e96110))
+* **deps:** bump github.com/quic-go/quic-go from 0.59.0 to 0.59.1 ([#333](https://github.com/inference-gateway/inference-gateway/issues/333)) ([d5aa8ef](https://github.com/inference-gateway/inference-gateway/commit/d5aa8ef762d08f43d12d9d619b538c8a52bf3cec))
+* **deps:** bump golang.org/x/text in the gomod group ([#347](https://github.com/inference-gateway/inference-gateway/issues/347)) ([f73c54c](https://github.com/inference-gateway/inference-gateway/commit/f73c54c72d5245740cccd45a93527877a4a54381))
+* **deps:** bump hono in /examples/docker-compose/mcp/pizza-server ([#335](https://github.com/inference-gateway/inference-gateway/issues/335)) ([d4a24bc](https://github.com/inference-gateway/inference-gateway/commit/d4a24bceac340e9b72aa285462e3d7fb22fe44b5))
+* **deps:** bump infer CLI v0.117.0 -> v0.117.1, infer-action v0.9.1 -> v0.11.1 ([#328](https://github.com/inference-gateway/inference-gateway/issues/328)) ([9efbfac](https://github.com/inference-gateway/inference-gateway/commit/9efbfac669f77e29747d7fe4c22c6090f702e269))
+* **deps:** bump infer CLI v0.117.1 -> v0.119.0, infer-action v0.11.3 -> v0.11.4 ([#340](https://github.com/inference-gateway/inference-gateway/issues/340)) ([d79db20](https://github.com/inference-gateway/inference-gateway/commit/d79db20ece03502bbbc1fc4d537d663073028f67))
+* **deps:** bump infer CLI v0.119.0 -> v0.120.0, infer-action v0.11.4 -> v0.11.6 ([#341](https://github.com/inference-gateway/inference-gateway/issues/341)) ([a46bada](https://github.com/inference-gateway/inference-gateway/commit/a46bada79df99323ce0fbf59e35fe31410f01e88))
+* **deps:** bump infer CLI v0.120.0 -> v0.120.1, infer-action v0.11.6 -> v0.11.7 ([#342](https://github.com/inference-gateway/inference-gateway/issues/342)) ([a31a34c](https://github.com/inference-gateway/inference-gateway/commit/a31a34c6ef352491e8097f2348a879395b354b3f))
+* **deps:** bump infer CLI v0.120.1 -> v0.121.0 ([#345](https://github.com/inference-gateway/inference-gateway/issues/345)) ([fd6b81a](https://github.com/inference-gateway/inference-gateway/commit/fd6b81a2efeeb5a43b443312af1e2e465d7553ee))
+* **deps:** bump infer-action v0.11.1 -> v0.11.2 ([#334](https://github.com/inference-gateway/inference-gateway/issues/334)) ([459ab0e](https://github.com/inference-gateway/inference-gateway/commit/459ab0e5b2cdb9fb94552deb0154d726f7423351))
+* **deps:** bump infer-action v0.11.7 -> v0.12.1 ([#350](https://github.com/inference-gateway/inference-gateway/issues/350)) ([70c8c70](https://github.com/inference-gateway/inference-gateway/commit/70c8c702ee43d56039761965afa71e31eb2d64ec))
+* **deps:** bump inference-gateway/infer-action ([#319](https://github.com/inference-gateway/inference-gateway/issues/319)) ([e366120](https://github.com/inference-gateway/inference-gateway/commit/e36612089e97b4b35a38f6ff3e59a0c3ac0b3d31))
+* **deps:** Bump prettier to version 3.8.3 ([e16fa37](https://github.com/inference-gateway/inference-gateway/commit/e16fa376537ef6dc2db98ddea5c2ed51cc767038))
+* **deps:** bump the github-actions group with 3 updates ([#338](https://github.com/inference-gateway/inference-gateway/issues/338)) ([978e91b](https://github.com/inference-gateway/inference-gateway/commit/978e91b15b10b394c3ab48baa34b6bcfca0a509e))
+* **deps:** Bump the github-actions group with 4 updates ([#313](https://github.com/inference-gateway/inference-gateway/issues/313)) ([8b97c32](https://github.com/inference-gateway/inference-gateway/commit/8b97c32ef9f7592f954db11abf15ec476d3d1918))
+* **deps:** bump the gomod group with 5 updates ([#318](https://github.com/inference-gateway/inference-gateway/issues/318)) ([7f3291b](https://github.com/inference-gateway/inference-gateway/commit/7f3291b28ebb0d9c79e2781376176e501e97054c))
+* **deps:** Update claude-code version to 2.1.141 and infer.flake to v0.109.11 ([b9f8959](https://github.com/inference-gateway/inference-gateway/commit/b9f8959d3355192074f6f83c72e5a0854620314b))
+* **docs:** Re-generate CLAUDE.md and AGENTS.md ([f8223c6](https://github.com/inference-gateway/inference-gateway/commit/f8223c6dee28a41de8d2cfb191bcf73bb797a917))
+* **examples-deps:** Bump qs in /examples/docker-compose/mcp/pizza-server ([#314](https://github.com/inference-gateway/inference-gateway/issues/314)) ([36ad5cf](https://github.com/inference-gateway/inference-gateway/commit/36ad5cf48ee5684d3f00b5b517a2e1c9e55c8db6))
+* **flox:** add missing manifest.lock file ([08bd56d](https://github.com/inference-gateway/inference-gateway/commit/08bd56ddea0812db26bfe1c91d956e2a7af623af))
+* **flox:** Bump dev dependecies to latest ([bdf8576](https://github.com/inference-gateway/inference-gateway/commit/bdf85765a451d8a254fc3e294fc4bfe047fdfb79))
+* **flox:** Bump schema version ([7a37057](https://github.com/inference-gateway/inference-gateway/commit/7a3705769fb63aa4c59a7b3e5290b85451b22e91))
+* **license:** Update license to Apache 2.0 ([edb963f](https://github.com/inference-gateway/inference-gateway/commit/edb963f6d07dac470bf7836c1629e9ce2dd3ff1a))
+* Regenerate infer cli configurations ([8e7f691](https://github.com/inference-gateway/inference-gateway/commit/8e7f691508ccf1059dc052f577ece3efd27f0353))
+* Remove CLAUDE.md file ([1468122](https://github.com/inference-gateway/inference-gateway/commit/1468122bc4e57b0d4d4c4e6ec412bbd57f5b3e4f))
+* Replace em dashes with normal dashes ([c68967b](https://github.com/inference-gateway/inference-gateway/commit/c68967b0688cc6336217bd567212c609dad14532))
+* Update allowedTools in claude.yml workflow ([33ccf22](https://github.com/inference-gateway/inference-gateway/commit/33ccf228ad9a2da036269ddeeceb099fccf92d63))
+
 ## [0.24.6](https://github.com/inference-gateway/inference-gateway/compare/v0.24.5...v0.24.6) (2026-05-21)
 
 ### 🐛 Bug Fixes
