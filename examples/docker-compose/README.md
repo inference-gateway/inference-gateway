@@ -55,11 +55,11 @@ docker compose up -d
 
 Common environment variables used across examples:
 
-| Variable             | Description                    | Default |
-| -------------------- | ------------------------------ | ------- |
-| `SERVER_PORT`        | Port the gateway listens on    | `8080`  |
-| `LOG_LEVEL`          | Logging level                  | `info`  |
-| `PROVIDER_*_API_KEY` | API key for specific providers | -       |
+| Variable             | Description                                    | Default      |
+| -------------------- | ---------------------------------------------- | ------------ |
+| `SERVER_PORT`        | Port the gateway listens on                    | `8080`       |
+| `ENVIRONMENT`        | Runtime environment (affects log verbosity)    | `production` |
+| `<PROVIDER>_API_KEY` | API key for a provider (e.g. `OPENAI_API_KEY`) | -            |
 
 ## Additional Resources
 

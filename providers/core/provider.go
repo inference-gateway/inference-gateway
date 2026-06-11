@@ -103,6 +103,10 @@ func (p *ProviderImpl) createHTTPRequest(ctx context.Context, url string, body [
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Connection", "keep-alive")
 
+	if authToken := ctx.Value("authToken"); authToken != nil {
+		req.Header.Set("Authorization", "Bearer "+authToken.(string))
+	}
+
 	return req, nil
 }
 

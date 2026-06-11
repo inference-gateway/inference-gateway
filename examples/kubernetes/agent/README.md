@@ -95,8 +95,8 @@ kubectl logs -f deployment/logs-analyzer -n logs-analyzer
 - Rebuild and redeploy after changes:
 
 ```bash
-task build-logs-analyzer
-task deploy-agent
+task build-logs-analyzer-agent
+task deploy-logs-analyzer-agent
 ```
 
 ### Test Deployment

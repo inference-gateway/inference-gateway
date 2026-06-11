@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.25.2](https://github.com/inference-gateway/inference-gateway/compare/v0.25.1...v0.25.2) (2026-06-11)
+
+### 🐛 Bug Fixes
+
+* **examples:** correct broken links, env vars, and setup docs ([#360](https://github.com/inference-gateway/inference-gateway/issues/360)) ([b7a38ce](https://github.com/inference-gateway/inference-gateway/commit/b7a38ce16bf0d0693a2fb71eee832d79455e1585))
+
+### 📚 Documentation
+
+* **examples:** add docker-compose authentication example ([#366](https://github.com/inference-gateway/inference-gateway/issues/366)) ([d8f8e21](https://github.com/inference-gateway/inference-gateway/commit/d8f8e21bc60e8b1db50b668a0d0c188045b9dc0b))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code-action v1.0.135 -> v1.0.142 ([#359](https://github.com/inference-gateway/inference-gateway/issues/359)) ([0056e75](https://github.com/inference-gateway/inference-gateway/commit/0056e753a80631daefe0b799db9cbc3838eabd97))
+
 ## [0.25.1](https://github.com/inference-gateway/inference-gateway/compare/v0.25.0...v0.25.1) (2026-06-11)
 
 ### 🐛 Bug Fixes

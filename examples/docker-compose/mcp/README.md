@@ -32,9 +32,13 @@ multiple MCP servers.
 ### Setup
 
 ```bash
-export GROQ_API_KEY=your_groq_api_key
-docker-compose up
+cp .env.example .env
+# Edit .env and set GROQ_API_KEY=your_groq_api_key
+docker compose up
 ```
+
+The gateway reads `GROQ_API_KEY` from the `.env` file (loaded via `env_file`), so
+it must be set there rather than only exported in your shell.
 
 ### Test and Troubleshoot
 
@@ -372,8 +376,8 @@ This example includes four pre-configured servers:
   functionality
 - **Filesystem Server**: `http://mcp-filesystem-server:8083/mcp` - File
   operations
-- **TypeScript Server**: `http://official-ts-server:8084/mcp` - Math and utility
-  functions
+- **Pizza Server**: `http://mcp-pizza-server:8084/mcp` - TypeScript MCP server
+  providing pizza recommendation tools
 
 ### Configuration Options
 
