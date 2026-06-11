@@ -169,7 +169,7 @@ The dashboard supports provider filtering via `$provider` variable:
 ## 🔗 Related Documentation
 
 - [Main Repository](https://github.com/inference-gateway/inference-gateway)
-- [MCP Integration Guide](../../mcp/README.md)
+- [MCP Integration Guide](../mcp/README.md)
 - [Kubernetes Monitoring Example](../../kubernetes/monitoring/README.md)
 
 ## 🧹 Cleanup
