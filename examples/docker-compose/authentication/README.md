@@ -104,11 +104,25 @@ exercise a real completion, add a provider key to `.env` (for example
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "model": "openai/gpt-4o",
-    "messages": [{"role": "user", "content": "Hello!"}]
-  }'
+  -d '{"model": "deepseek/deepseek-v4-flash", "messages": [{"role": "user", "content": "Hello!"}]}'
 ```
+
+## Troubleshooting
+
+The shape of an error tells you which layer rejected the request:
+
+- **`401` with `{"error":"unauthorized"}`** - the gateway rejected _your_ bearer
+  token (missing, expired, or invalid). Re-fetch it with
+  `TOKEN="$(./get-token.sh)"` and resend. `get-token.sh` now prints a clear error
+  and exits non-zero if Keycloak itself rejects the request, so an empty `$TOKEN`
+  no longer slips through silently.
+- **`400` with `Provider requires an API key`** - no key is configured in `.env`
+  for the provider you addressed (for example `DEEPSEEK_API_KEY` for
+  `deepseek/...`).
+- **A _nested_ error such as `{"error":"{\"error\":\"...\"}"}`** - the gateway
+  authenticated you and forwarded the request upstream, but the _provider_
+  rejected it (usually an invalid API key, or a model the provider does not
+  serve). The inner JSON is the provider's own error; fix the key or model.
 
 ## How it works
 
