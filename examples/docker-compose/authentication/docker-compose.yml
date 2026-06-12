@@ -1,0 +1,67 @@
+---
+services:
+  # Identity provider. Started in dev mode with the demo realm imported from
+  # ./keycloak/realm-export.json (realm, confidential client, audience mapper,
+  # and a test user). KC_HOSTNAME pins the public base URL to http://keycloak:8080
+  # so every issued token carries the same issuer the gateway discovers on the
+  # compose network - even when you request the token from the host on port 8081.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.2
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://keycloak:8080
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    ports:
+      - '8081:8080'
+    restart: unless-stopped
+
+  # One-shot gate: blocks the gateway until Keycloak has finished importing the
+  # realm and its OIDC discovery endpoint answers. The gateway performs OIDC
+  # discovery at startup and exits if the issuer is unreachable, so this ordering
+  # is required, not just a nicety.
+  keycloak-ready:
+    image: curlimages/curl:latest
+    depends_on:
+      - keycloak
+    restart: 'no'
+    entrypoint:
+      - sh
+      - -c
+      - |
+        echo 'Waiting for Keycloak realm discovery endpoint...'
+        until curl -sf http://keycloak:8080/realms/inference-gateway-realm/.well-known/openid-configuration > /dev/null; do
+          echo '  not ready yet, retrying in 3s...'
+          sleep 3
+        done
+        echo 'Keycloak realm is ready.'
+
+  # The gateway, started with authentication enabled. The AUTH_* settings are set
+  # here (not in .env) because examples/.../.env.example is generated; this keeps
+  # the generated file untouched while still shipping a working demo.
+  inference-gateway:
+    image: ghcr.io/inference-gateway/inference-gateway:latest
+    env_file:
+      - .env
+    environment:
+      AUTH_ENABLE: 'true'
+      AUTH_OIDC_ISSUER: http://keycloak:8080/realms/inference-gateway-realm
+      AUTH_OIDC_CLIENT_ID: inference-gateway-client
+      AUTH_OIDC_CLIENT_SECRET: very-secret
+    ports:
+      - '8080:8080'
+    depends_on:
+      keycloak-ready:
+        condition: service_completed_successfully
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 100M
+    pull_policy: always
+    restart: unless-stopped

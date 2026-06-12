@@ -32,9 +32,9 @@ Routes (`api/routes.go`):
 - `GET  /v1/models`
 - `GET  /v1/mcp/tools`
 - `POST /v1/chat/completions` — the main inference endpoint
-- `ANY  /proxy/:provider/*path` — raw passthrough that bypasses every middleware
+- `ANY  /proxy/:provider/*path` — passthrough that injects the provider's API key and forwards to the upstream; still subject to the global middleware (notably OIDC auth when enabled)
 
-Middleware chain (registered in `main.go`, defined in `api/middlewares/`): `logger` → `telemetry` (if enabled) → `OIDC auth` (if enabled) → `MCP` (if enabled). The MCP middleware inspects responses for tool calls and re-invokes the upstream provider with tool results; to prevent loops, its internal follow-up requests set `X-MCP-Bypass: true`. Clients can set the same header to opt out. `/proxy/...` skips middleware entirely.
+Middleware chain (registered in `main.go`, defined in `api/middlewares/`): `logger` → `telemetry` (if enabled) → `OIDC auth` (if enabled) → `MCP` (if enabled). The MCP middleware inspects responses for tool calls and re-invokes the upstream provider with tool results; to prevent loops, its internal follow-up requests set `X-MCP-Bypass: true`. Clients can set the same header to opt out. Only `/health` is exempt from the OIDC auth middleware; `/proxy/...` is **not** — so the gateway's own self-proxy calls (chat completions, model listing) must forward the caller's token onto the internal hop (`ctx.Value("authToken")` in `providers/core/provider.go`).
 
 ### Provider abstraction
 

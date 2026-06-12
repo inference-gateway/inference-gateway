@@ -171,6 +171,82 @@ func TestProviderChatCompletions(t *testing.T) {
 	assert.Equal(t, "stop", string(resp.Choices[0].FinishReason))
 }
 
+// TestProviderChatCompletionsForwardsAuthToken verifies the caller's auth token is
+// forwarded onto the gateway's internal /proxy hop. With authentication enabled the
+// OIDC middleware also guards /proxy, so without this header the gateway rejects its
+// own self-proxy request with 401. ListModels already forwards the token; this guards
+// the chat path against regressing.
+func TestProviderChatCompletionsForwardsAuthToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte(`{
+            "id": "test-completion-id",
+            "object": "chat.completion",
+            "created": 1677858242,
+            "model": "gpt-3.5-turbo",
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "This is a test response."
+                    },
+                    "finish_reason": "stop",
+                    "index": 0
+                }
+            ]
+        }`))
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockClient := providersmocks.NewMockClient(ctrl)
+
+	mockClient.EXPECT().
+		Do(gomock.Any()).
+		DoAndReturn(func(req *http.Request) (*http.Response, error) {
+			assert.Equal(t, "Bearer client-token", req.Header.Get("Authorization"))
+			return http.DefaultClient.Post(server.URL+"/proxy/openai/chat/completions", "application/json", nil)
+		})
+
+	log, err := logger.NewLogger("test")
+	require.NoError(t, err)
+
+	config := &registry.ProviderConfig{
+		ID:       constants.OpenaiID,
+		Name:     constants.OpenaiDisplayName,
+		URL:      server.URL,
+		Token:    "test-token",
+		AuthType: constants.AuthTypeBearer,
+		Endpoints: types.Endpoints{
+			Chat: constants.OpenaiChatEndpoint,
+		},
+	}
+
+	providerRegistry := registry.NewProviderRegistry(map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: config,
+	}, log)
+
+	provider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
+	require.NoError(t, err)
+
+	req := types.CreateChatCompletionRequest{
+		Model: "gpt-3.5-turbo",
+		Messages: []types.Message{
+			types.NewTextMessage(t, types.User, "Hello, how are you?"),
+		},
+	}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Set("authToken", "client-token")
+
+	resp, err := provider.ChatCompletions(c, req)
+	require.NoError(t, err)
+	assert.Equal(t, "test-completion-id", resp.ID)
+}
+
 // TestProviderListModels tests listing models functionality
 func TestProviderListModels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
