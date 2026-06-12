@@ -17,25 +17,13 @@ metadata:
     app.kubernetes.io/component: api-gateway
     app.kubernetes.io/part-of: inference-gateway
 spec:
-  environment: production
+  environment: development
   image: 'ghcr.io/inference-gateway/inference-gateway:latest'
   telemetry:
     enabled: true
     metrics:
       enabled: true
       port: 9464
-  hpa:
-    enabled: true
-    config:
-      minReplicas: 3
-      maxReplicas: 10
-      metrics:
-        - type: Resource
-          resource:
-            name: cpu
-            target:
-              type: Utilization
-              averageUtilization: 80
   server:
     host: '0.0.0.0'
     timeouts:
@@ -43,6 +31,14 @@ spec:
       write: '60s'
       idle: '300s'
   providers:
+    - name: Groq
+      enabled: true
+      env:
+        - name: GROQ_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: inference-gateway-secrets
+              key: GROQ_API_KEY
     - name: OpenAI
       enabled: true
       env:
@@ -59,14 +55,26 @@ spec:
             secretKeyRef:
               name: inference-gateway-secrets
               key: ANTHROPIC_API_KEY
-    - name: DeepSeek
-      enabled: true
-      env:
-        - name: DEEPSEEK_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: inference-gateway-secrets
-              key: DEEPSEEK_API_KEY
+  # The three MCP servers are deployed as plain Deployments/Services (see the
+  # time-server/, search-server/ and filesystem-server/ directories). They are
+  # wired into the gateway as static MCP servers — the operator's documented
+  # pattern for externally-hosted MCPs that have no MCP custom resource.
+  mcp:
+    enabled: true
+    expose: true
+    timeouts:
+      client: '5s'
+      dial: '3s'
+      tlsHandshake: '3s'
+      responseHeader: '3s'
+      request: '5s'
+    servers:
+      - name: time-server
+        url: 'http://mcp-time-server:8081/mcp'
+      - name: search-server
+        url: 'http://mcp-search-server:8082/mcp'
+      - name: filesystem-server
+        url: 'http://mcp-filesystem-server:8083/mcp'
   resources:
     requests:
       cpu: '100m'
@@ -94,6 +102,6 @@ metadata:
     app.kubernetes.io/part-of: inference-gateway
 type: Opaque
 stringData:
+  GROQ_API_KEY: ''
   OPENAI_API_KEY: ''
   ANTHROPIC_API_KEY: ''
-  DEEPSEEK_API_KEY: ''

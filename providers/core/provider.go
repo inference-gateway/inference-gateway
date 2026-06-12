@@ -103,6 +103,10 @@ func (p *ProviderImpl) createHTTPRequest(ctx context.Context, url string, body [
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Connection", "keep-alive")
 
+	if authToken := ctx.Value("authToken"); authToken != nil {
+		req.Header.Set("Authorization", "Bearer "+authToken.(string))
+	}
+
 	return req, nil
 }
 
@@ -220,6 +224,13 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 		transformer = &resp
 	case constants.MoonshotID:
 		var resp transformers.ListModelsResponseMoonshot
+		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
+			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
+			return types.ListModelsResponse{}, err
+		}
+		transformer = &resp
+	case constants.MinimaxID:
+		var resp transformers.ListModelsResponseMinimax
 		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
 			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
 			return types.ListModelsResponse{}, err

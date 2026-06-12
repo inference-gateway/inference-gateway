@@ -2,9 +2,12 @@
 
 This example demonstrates secure TLS communication with the Inference Gateway using:
 
-- Cert-manager for certificate management
-- Helm chart for gateway deployment with TLS enabled
-- Automatic certificate issuance
+- The [Inference Gateway Operator](https://github.com/inference-gateway/operator) and a `Gateway` custom resource
+- The Kubernetes Gateway API (Envoy Gateway) terminating TLS at the listener
+- cert-manager for automatic certificate issuance
+
+> **Note:** The Helm chart is deprecated. The gateway is now deployed through the operator, and TLS is
+> configured via `spec.routing.gateway.tls`.
 
 ## Table of Contents
 
@@ -14,15 +17,16 @@ This example demonstrates secure TLS communication with the Inference Gateway us
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
   - [Configuration](#configuration)
-    - [Certificate Setup](#certificate-setup)
-    - [Gateway TLS](#gateway-tls)
   - [Cleanup](#cleanup)
 
 ## Architecture
 
-- **Certificate Management**: Cert-manager handles TLS certificates
-- **Gateway**: Inference Gateway deployed via helm chart with TLS
-- **Ingress**: Configured with automatic HTTPS
+- **Certificate Management**: cert-manager issues the listener certificate from a self-signed `ClusterIssuer`
+  (`cert-manager/clusterissuer.yaml`).
+- **Gateway**: An `inference-gateway` `Gateway` custom resource reconciled by the operator.
+- **Routing & TLS**: The operator creates a Gateway API `Gateway` whose HTTPS listener terminates TLS using
+  the cert-manager-issued secret. cert-manager's Gateway API support is enabled by default (cert-manager
+  v1.15+); the Gateway API CRDs are installed before cert-manager so it watches `Gateway` resources.
 
 ## Prerequisites
 
@@ -33,35 +37,45 @@ This example demonstrates secure TLS communication with the Inference Gateway us
 
 ## Quick Start
 
-1. Deploy infrastructure:
+1. Deploy the infrastructure (cluster, Gateway API CRDs, cert-manager, Envoy Gateway and the operator):
 
-```bash
-task deploy-infrastructure
-```
+   ```bash
+   task deploy-infrastructure
+   ```
 
-1. Deploy Inference Gateway with TLS:
+2. Deploy the gateway with TLS:
 
-```bash
-task deploy-inference-gateway
-```
+   ```bash
+   task deploy-inference-gateway
+   ```
 
-1. Test secure endpoint:
+3. Wait for the certificate and Gateway to become ready:
 
-```bash
-curl -k https://api.inference-gateway.local/v1/models
-```
+   ```bash
+   kubectl get certificate -n inference-gateway -w
+   kubectl get gateway.gateway.networking.k8s.io -n inference-gateway
+   ```
+
+4. Port-forward the Envoy HTTPS listener and test the secure endpoint:
+
+   ```bash
+   ENVOY_SVC=$(kubectl get svc -n envoy-gateway-system \
+     -l gateway.envoyproxy.io/owning-gateway-name=inference-gateway \
+     -o jsonpath='{.items[0].metadata.name}')
+   kubectl -n envoy-gateway-system port-forward "svc/${ENVOY_SVC}" 8443:443 &
+
+   curl -k --resolve api.inference-gateway.local:8443:127.0.0.1 \
+     https://api.inference-gateway.local:8443/v1/models
+   ```
+
+   `-k` accepts the self-signed certificate; `--resolve` points the hostname at the port-forward.
 
 ## Configuration
 
-### Certificate Setup
-
-- Edit YAMLs in `cert-manager/` directory
-- Configure issuer and certificate settings
-
-### Gateway TLS
-
-- TLS settings configured via helm values in Taskfile.yaml
-- Automatic certificate provisioning
+- **Certificate / issuer**: edit `cert-manager/clusterissuer.yaml` (a Let's Encrypt issuer is included,
+  commented, for production).
+- **Gateway TLS**: configured in `gateway.yaml` under `spec.routing.gateway.tls` (`issuer` selects the
+  cert-manager `ClusterIssuer`; `secretName` is where the issued certificate is stored).
 
 ## Cleanup
 

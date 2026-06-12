@@ -1,37 +1,84 @@
 ---
 version: '3'
 
+vars:
+  CERT_MANAGER_VERSION: v1.20.2
+  GATEWAY_API_VERSION: v1.5.1
+  ENVOY_GATEWAY_VERSION: v1.2.0
+  POSTGRES_VERSION: 16.6.2
+  KEYCLOAK_VERSION: 26.2.4
+  # Requires an operator release that wires the OIDC issuer/clientId env vars and
+  # supports spec.auth.oidc.caCertRef (see the operator repo).
+  OPERATOR_VERSION: v0.17.0
+
 tasks:
   deploy-infrastructure:
     desc: 'Deploy authentication infrastructure'
     cmds:
       - ctlptl apply -f Cluster.yaml
-      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - task: deploy-gateway-api
+      - task: deploy-cert-manager
+      - task: deploy-envoy-gateway
+      - task: deploy-postgres
+      - task: deploy-keycloak
+      - task: configure-coredns
+      - task: deploy-inference-gateway-operator
+      - echo "🔐 Authentication infrastructure deployed successfully!"
+
+  deploy-gateway-api:
+    desc: 'Install the Kubernetes Gateway API CRDs (before cert-manager so it watches Gateways)'
+    cmds:
+      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
+      - echo "🌐 Gateway API CRDs installed successfully!"
+
+  deploy-cert-manager:
+    desc: 'Deploy cert-manager and the self-signed ClusterIssuer'
+    cmds:
       - helm repo add jetstack https://charts.jetstack.io
-      - helm repo add bitnami https://charts.bitnami.com/bitnami
       - helm repo update
-      - echo "🚀 Starting authentication infrastructure deployment..."
       - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace kube-system \
-          --set controller.progressDeadlineSeconds=500 \
-          --version 4.14.0 \
-          --wait \
-          ingress-nginx ingress-nginx/ingress-nginx
-      - |
-        helm upgrade --install \
+        helm upgrade --install cert-manager jetstack/cert-manager \
           --create-namespace \
           --namespace cert-manager \
-          --version 1.17.2 \
+          --version {{.CERT_MANAGER_VERSION}} \
           --set crds.enabled=true \
-          --wait \
-          cert-manager jetstack/cert-manager
+          --wait
+      - kubectl apply -f cert-manager/
+      - echo "🔐 Cert-manager deployed successfully!"
+
+  deploy-envoy-gateway:
+    desc: 'Deploy Envoy Gateway and register the envoy GatewayClass'
+    cmds:
       - |
-        helm upgrade --install \
+        helm upgrade --install envoy-gateway \
+          oci://docker.io/envoyproxy/gateway-helm \
+          --version {{.ENVOY_GATEWAY_VERSION}} \
+          --namespace envoy-gateway-system \
+          --create-namespace \
+          --skip-crds \
+          --wait
+      - kubectl -n envoy-gateway-system wait --for=condition=Available --timeout=120s deployment/envoy-gateway
+      - |
+        kubectl apply -f - <<'EOF'
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: GatewayClass
+        metadata:
+          name: envoy
+        spec:
+          controllerName: gateway.envoyproxy.io/gatewayclass-controller
+        EOF
+      - echo "🚪 Envoy Gateway deployed successfully!"
+
+  deploy-postgres:
+    desc: 'Deploy the PostgreSQL database for Keycloak'
+    cmds:
+      - helm repo add bitnami https://charts.bitnami.com/bitnami
+      - helm repo update
+      - |
+        helm upgrade --install keycloak-db bitnami/postgresql \
           --create-namespace \
           --namespace idp \
-          --version 16.6.2 \
+          --version {{.POSTGRES_VERSION}} \
           --set global.postgresql.auth.username=dbusername \
           --set global.postgresql.auth.password=dbpassword \
           --set global.postgresql.auth.database=keycloak \
@@ -39,24 +86,25 @@ tasks:
           --set primary.resources.requests.memory=256Mi \
           --set primary.resources.limits.cpu=500m \
           --set primary.resources.limits.memory=512Mi \
-          --set readReplicas.resources.requests.cpu=100m \
-          --set readReplicas.resources.requests.memory=256Mi \
-          --set readReplicas.resources.limits.cpu=500m \
-          --set readReplicas.resources.limits.memory=512Mi \
-          --wait \
-          keycloak-db bitnami/postgresql
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
-      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/26.2.4/kubernetes/kubernetes.yml
-      - kubectl apply -f cert-manager/
+          --wait
+      - echo "🐘 PostgreSQL deployed successfully!"
+
+  deploy-keycloak:
+    desc: 'Deploy the Keycloak operator and a Keycloak instance'
+    cmds:
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{.KEYCLOAK_VERSION}}/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{.KEYCLOAK_VERSION}}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+      - kubectl -n idp apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{{.KEYCLOAK_VERSION}}/kubernetes/kubernetes.yml
       - kubectl apply --server-side -f keycloak/
+      - echo "🔑 Keycloak deployed successfully!"
+
+  configure-coredns:
+    # Resolve the external Keycloak hostname to the in-cluster Service so the
+    # gateway can reach the OIDC issuer (https://keycloak.inference-gateway.local:8543)
+    # for discovery. Keycloak issues tokens with that same hostname (strict).
+    desc: 'Point keycloak.inference-gateway.local at the in-cluster Keycloak Service'
+    cmds:
       - |
-        # HACK: because the keycloak is deployed on the same cluster and not somewhere else, 
-        # we'll rewrite and resolve to the ingress instead of letting it connect via the internal dns,
-        # Reason is - 
-        # keycloak supports only 1 issuer(iss), in production you most likely deploy keycloak somewhere 
-        # else and the endpoint will be publicly available, so there should be no issues, the hack is only for
-        # this local setup - to make the keycloak.inference-gateway.local available also from within the cluster
         kubectl apply -f - <<EOF
         apiVersion: v1
         kind: ConfigMap
@@ -64,99 +112,68 @@ tasks:
           name: coredns-custom
           namespace: kube-system
         data:
-          keycloak.inference-gateway.server: |
-            keycloak.inference-gateway.local {
-                log
-                rewrite name keycloak.inference-gateway.local host.k3d.internal
-                forward . 127.0.0.1
-            }
+          keycloak.override: |
+            rewrite name keycloak.inference-gateway.local keycloak-service.idp.svc.cluster.local
         EOF
-        kubectl -n kube-system rollout restart deployment coredns
-        kubectl -n kube-system rollout status deployment coredns
-      - echo "🔐 Authentication infrastructure deployed successfully!"
+      - kubectl -n kube-system rollout restart deployment coredns
+      - kubectl -n kube-system rollout status deployment coredns
+      - echo "🧭 CoreDNS configured successfully!"
+
+  deploy-inference-gateway-operator:
+    desc: 'Deploy the Inference Gateway operator'
+    cmds:
+      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/{{.OPERATOR_VERSION}}/install.yaml
+      - kubectl -n inference-gateway-system wait --for=condition=Available --timeout=120s deployment/operator-inference-gateway
+      - echo "🛠️ Inference Gateway operator deployed successfully!"
 
   deploy-inference-gateway:
-    desc: 'Deploy inference-gateway with authentication'
+    desc: 'Deploy the Inference Gateway with authentication via the operator'
     cmds:
       - kubectl create ns inference-gateway -o yaml --dry-run=client | kubectl apply --server-side -f -
       - |
+        # Make Keycloak's self-signed CA available to the gateway (caCertRef).
         kubectl create configmap keycloak-ca \
           -n inference-gateway \
           --from-literal=ca.crt="$(kubectl get secret keycloak-tls -n idp -o jsonpath='{.data.ca\.crt}' | base64 -d)" \
           --dry-run=client -o yaml | kubectl apply --server-side -f -
-      - |
-        kubectl apply -f - <<EOF
-        apiVersion: v1
-        kind: ConfigMap
-        metadata:
-          annotations:
-            meta.helm.sh/release-name: inference-gateway
-            meta.helm.sh/release-namespace: inference-gateway
-          labels:
-            app.kubernetes.io/managed-by: Helm
-          name: inference-gateway
-          namespace: inference-gateway
-        data:
-          AUTH_ENABLE: "true"
-          AUTH_OIDC_ISSUER_URL: https://keycloak.inference-gateway.local/realms/inference-gateway-realm
-        EOF
-      - |
-        kubectl apply -f - <<EOF
-        apiVersion: v1
-        kind: Secret
-        metadata:
-          annotations:
-            meta.helm.sh/release-name: inference-gateway
-            meta.helm.sh/release-namespace: inference-gateway
-          labels:
-            app.kubernetes.io/managed-by: Helm
-          name: inference-gateway
-          namespace: inference-gateway
-        stringData:
-          AUTH_OIDC_CLIENT_ID: inference-gateway-client
-          AUTH_OIDC_CLIENT_SECRET: very-secret
-        type: Opaque
-        EOF
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace inference-gateway \
-          --set ingress.enabled=true \
-          --set ingress.tls.enabled=true \
-          --set envFrom.configMapRef=inference-gateway \
-          --set envFrom.secretRef=inference-gateway \
-          --set extraEnv[0].name=SSL_CERT_FILE \
-          --set extraEnv[0].value=/usr/local/share/ca-certificates/keycloak-ca.crt \
-          --set volumes[0].name=keycloak-ca \
-          --set volumes[0].configMap.name=keycloak-ca \
-          --set volumeMounts[0].name=keycloak-ca \
-          --set volumeMounts[0].mountPath=/usr/local/share/ca-certificates/keycloak-ca.crt \
-          --set volumeMounts[0].subPath=ca.crt \
-          --set volumeMounts[0].readOnly=true \
-          --wait \
-          --version 0.19.5 \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
-      - echo "🔒 Inference Gateway with authentication enabled, deployed successfully!"
+      - kubectl apply -f gateway.yaml
+      - echo "🔒 Inference Gateway with authentication deployed successfully!"
 
   keycloak-admin-password:
-    desc: 'Get Keycloak admin password'
+    desc: 'Get the Keycloak admin password'
     cmds:
       - kubectl -n idp get secret keycloak-initial-admin -o jsonpath="{.data.password}" | base64 --decode
-      - echo "🔑 Retrieved Keycloak admin password!"
+      - echo ""
+
+  port-forward-keycloak:
+    desc: 'Forward Keycloak to https://localhost:8543'
+    cmds:
+      - echo "Keycloak: https://localhost:8543 (Ctrl+C to stop)"
+      - kubectl -n idp port-forward svc/keycloak-service 8543:8543
+
+  port-forward-gateway:
+    desc: 'Forward the gateway HTTPS listener to https://localhost:8443'
+    cmds:
+      - |
+        ENVOY_SVC=$(kubectl get svc -n envoy-gateway-system \
+          -l gateway.envoyproxy.io/owning-gateway-name=inference-gateway \
+          -o jsonpath='{.items[0].metadata.name}')
+        echo "Gateway: https://localhost:8443"
+        kubectl -n envoy-gateway-system port-forward "svc/${ENVOY_SVC}" 8443:443
 
   fetch-access-token:
-    desc: 'Fetch the access token'
+    desc: 'Fetch an access token (requires `task port-forward-keycloak` running)'
     cmds:
       - |
         curl -k -s -X POST \
+          --resolve keycloak.inference-gateway.local:8543:127.0.0.1 \
           -H "Content-Type: application/x-www-form-urlencoded" \
-          "https://keycloak.inference-gateway.local/realms/inference-gateway-realm/protocol/openid-connect/token" \
+          "https://keycloak.inference-gateway.local:8543/realms/inference-gateway-realm/protocol/openid-connect/token" \
           -d "grant_type=password" \
           -d "client_id=inference-gateway-client" \
           -d "client_secret=very-secret" \
           -d "username=user" \
           -d "password=password" | jq -r .access_token
-      - echo "🔑 Access token fetched successfully!"
 
   clean:
     desc: 'Clean up the cluster'

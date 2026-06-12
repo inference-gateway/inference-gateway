@@ -22,12 +22,16 @@ The agent in this example:
 
 ## Setup Instructions
 
-1. Configure your API keys in the `.env` file:
+1. Configure your provider API key in the `.env` file. The agent defaults to the
+   Groq model `groq/deepseek-r1-distill-llama-70b` (configured via the `agent`
+   service's `MODEL` variable in `docker-compose.yml`), so set the matching key:
 
    ```bash
-   MODEL=openai/gpt-3.5-turbo  # Or another model that supports function calling
-   OPENAI_API_KEY=your_openai_api_key_here
+   GROQ_API_KEY=your_groq_api_key_here
    ```
+
+   To use a different provider, change `MODEL` in `docker-compose.yml` and set the
+   corresponding `<PROVIDER>_API_KEY` in `.env`.
 
 2. Start the services:
 
@@ -51,7 +55,7 @@ for clarity.
 The agent currently implements two example tools:
 
 1. `get_weather`: Simulates retrieving weather data for a specified location
-2. `search_web`: Simulates searching the web for information
+2. `web_search`: Simulates searching the web for information
 
 These are simple examples that return mock data. In a real implementation, you
 would connect these to actual APIs.

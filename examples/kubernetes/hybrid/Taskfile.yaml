@@ -1,22 +1,62 @@
 ---
 version: '3'
 
+vars:
+  GATEWAY_API_VERSION: v1.5.1
+  ENVOY_GATEWAY_VERSION: v1.2.0
+  OPERATOR_VERSION: v0.16.3
+
 tasks:
   deploy-infrastructure:
     desc: 'Deploy hybrid infrastructure'
     cmds:
-      - ctlptl apply -f Cluster.yaml
-      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-      - helm repo update
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace kube-system \
-          --set controller.progressDeadlineSeconds=500 \
-          --version 4.14.0 \
-          --wait \
-          ingress-nginx ingress-nginx/ingress-nginx
+      - task: create-cluster
+      - task: deploy-gateway-api
+      - task: deploy-envoy-gateway
+      - task: deploy-inference-gateway-operator
       - echo "🚀 Hybrid infrastructure deployed successfully!"
+
+  create-cluster:
+    desc: 'Create a Kubernetes cluster using ctlptl'
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - echo "🛠️ Cluster created successfully!"
+
+  deploy-gateway-api:
+    desc: 'Install the Kubernetes Gateway API CRDs'
+    cmds:
+      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
+      - echo "🌐 Gateway API CRDs installed successfully!"
+
+  deploy-envoy-gateway:
+    desc: 'Deploy Envoy Gateway and register the envoy GatewayClass'
+    cmds:
+      - |
+        helm upgrade --install envoy-gateway \
+          oci://docker.io/envoyproxy/gateway-helm \
+          --version {{.ENVOY_GATEWAY_VERSION}} \
+          --namespace envoy-gateway-system \
+          --create-namespace \
+          --skip-crds \
+          --wait
+      - kubectl -n envoy-gateway-system wait --for=condition=Available --timeout=120s deployment/envoy-gateway
+      - |
+        kubectl apply -f - <<'EOF'
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: GatewayClass
+        metadata:
+          name: envoy
+        spec:
+          controllerName: gateway.envoyproxy.io/gatewayclass-controller
+        EOF
+      - echo "🚪 Envoy Gateway deployed successfully!"
+
+  deploy-inference-gateway-operator:
+    desc: 'Deploy the Inference Gateway operator'
+    cmds:
+      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/{{.OPERATOR_VERSION}}/install.yaml
+      - kubectl -n inference-gateway-system wait --for=condition=Available --timeout=120s deployment/operator-inference-gateway
+      - echo "🛠️ Inference Gateway operator deployed successfully!"
 
   deploy-ollama:
     desc: 'Deploy deepseek-r1:1.5b with Ollama'
@@ -33,18 +73,9 @@ tasks:
       - echo "👀 Watching Ollama model download progress..."
 
   deploy-inference-gateway:
-    desc: 'Deploy inference-gateway with hybrid providers'
+    desc: 'Deploy the Inference Gateway with hybrid providers via the operator'
     cmds:
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace inference-gateway \
-          --set ingress.enabled=true \
-          --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
-          --set envFrom.secretRef=inference-gateway \
-          --version 0.19.5 \
-          --wait \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - kubectl apply -f gateway.yaml
       - echo "🚪 Inference Gateway with hybrid providers deployed successfully!"
 
   clean:

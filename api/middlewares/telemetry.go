@@ -90,6 +90,8 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			provider = "mistral"
 		case strings.HasPrefix(model, "moonshot/"):
 			provider = "moonshot"
+		case strings.HasPrefix(model, "minimax/"):
+			provider = "minimax"
 		case strings.HasPrefix(model, "ollama_cloud/"):
 			provider = "ollama_cloud"
 		}
@@ -116,6 +118,8 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 				provider = "mistral"
 			case strings.Contains(c.Request.URL.RawQuery, "moonshot"):
 				provider = "moonshot"
+			case strings.Contains(c.Request.URL.RawQuery, "minimax"):
+				provider = "minimax"
 			}
 		}
 

@@ -1,21 +1,33 @@
 ---
 version: '3'
 
+vars:
+  GATEWAY_API_VERSION: v1.5.1
+  OPERATOR_VERSION: v0.16.3
+
 tasks:
   deploy-infrastructure:
-    desc: 'Deploy cluster and registry'
+    desc: 'Deploy cluster, registry, Gateway API CRDs and the operator'
     cmds:
       - ctlptl apply -f Cluster.yaml
-      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-      - helm repo update
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace kube-system \
-          --version 4.14.0 \
-          --wait \
-          ingress-nginx ingress-nginx/ingress-nginx
+      - task: deploy-gateway-api
+      - task: deploy-inference-gateway-operator
       - echo "🚀 Infrastructure with registry deployed successfully!"
+
+  deploy-gateway-api:
+    # The operator watches Gateway API resources, so their CRDs must be present
+    # for it to start — even though this example does not expose the gateway.
+    desc: 'Install the Kubernetes Gateway API CRDs (required by the operator)'
+    cmds:
+      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
+      - echo "🌐 Gateway API CRDs installed successfully!"
+
+  deploy-inference-gateway-operator:
+    desc: 'Deploy the Inference Gateway operator'
+    cmds:
+      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/{{.OPERATOR_VERSION}}/install.yaml
+      - kubectl -n inference-gateway-system wait --for=condition=Available --timeout=120s deployment/operator-inference-gateway
+      - echo "🛠️ Inference Gateway operator deployed successfully!"
 
   build-logs-analyzer-agent:
     desc: 'Build and push logs analyzer image'
@@ -39,18 +51,11 @@ tasks:
       - echo "🧹 Logs analyzer and test deployment deleted successfully!"
 
   deploy-inference-gateway:
-    desc: 'Deploy inference-gateway with monitoring'
+    desc: 'Deploy the Inference Gateway via the operator'
     cmds:
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace inference-gateway \
-          --set config.ENVIRONMENT=development \
-          --set envFrom.secretRef=inference-gateway \
-          --wait \
-          --version 0.19.5 \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
+      - kubectl apply -f gateway.yaml
       - echo "🚪 Inference Gateway deployed successfully!"
+      - echo "ℹ️  Add your GROQ_API_KEY to the inference-gateway-secrets Secret in gateway.yaml."
 
   clean:
     desc: 'Clean up the cluster'

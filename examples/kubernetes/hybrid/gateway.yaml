@@ -24,18 +24,6 @@ spec:
     metrics:
       enabled: true
       port: 9464
-  hpa:
-    enabled: true
-    config:
-      minReplicas: 3
-      maxReplicas: 10
-      metrics:
-        - type: Resource
-          resource:
-            name: cpu
-            target:
-              type: Utilization
-              averageUtilization: 80
   server:
     host: '0.0.0.0'
     timeouts:
@@ -43,14 +31,22 @@ spec:
       write: '60s'
       idle: '300s'
   providers:
-    - name: OpenAI
+    # Local provider: Ollama running inside the cluster. The base URL is passed
+    # straight through to the gateway container via the provider env list.
+    - name: Ollama
       enabled: true
       env:
-        - name: OPENAI_API_KEY
+        - name: OLLAMA_API_URL
+          value: 'http://ollama.ollama:8080/v1'
+    # Cloud providers: API keys are read from the inference-gateway-secrets Secret.
+    - name: Groq
+      enabled: true
+      env:
+        - name: GROQ_API_KEY
           valueFrom:
             secretKeyRef:
               name: inference-gateway-secrets
-              key: OPENAI_API_KEY
+              key: GROQ_API_KEY
     - name: Anthropic
       enabled: true
       env:
@@ -59,14 +55,6 @@ spec:
             secretKeyRef:
               name: inference-gateway-secrets
               key: ANTHROPIC_API_KEY
-    - name: DeepSeek
-      enabled: true
-      env:
-        - name: DEEPSEEK_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: inference-gateway-secrets
-              key: DEEPSEEK_API_KEY
   resources:
     requests:
       cpu: '100m'
@@ -94,6 +82,5 @@ metadata:
     app.kubernetes.io/part-of: inference-gateway
 type: Opaque
 stringData:
-  OPENAI_API_KEY: ''
+  GROQ_API_KEY: ''
   ANTHROPIC_API_KEY: ''
-  DEEPSEEK_API_KEY: ''
