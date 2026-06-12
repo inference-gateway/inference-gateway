@@ -1,3 +1,14 @@
+##############################################################################
+#  DEPRECATION NOTICE                                                        #
+#                                                                            #
+#  The Inference Gateway Helm chart is DEPRECATED and will be removed after  #
+#  2026-09-01. Please migrate to the Inference Gateway Operator:             #
+#    https://github.com/inference-gateway/operator                          #
+#                                                                            #
+#  Migration notes and examples:                                            #
+#    https://docs.inference-gateway.com                                      #
+##############################################################################
+
 1. Get the application URL by running these commands:
 {{- if .Values.ingress.enabled }}
 {{- range $host := .Values.ingress.hosts }}

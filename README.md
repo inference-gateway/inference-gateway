@@ -56,7 +56,9 @@ use of Mixture of Experts.
 - 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
 - 🖼️ **Vision/Multimodal Support**: Process images alongside text with vision-capable models.
 - 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
-- ☸️ **Kubernetes Support**: Ready for deployment in Kubernetes environments.
+- ☸️ **Kubernetes Support**: Deploy with the
+  [Inference Gateway Operator](https://github.com/inference-gateway/operator)
+  (the in-repo Helm chart is deprecated).
 - 📊 **OpenTelemetry**: Monitor and analyze performance.
 - 🛡️ **Enterprise Ready**: Built with production in mind, with configurable timeouts and TLS support.
 - 🌿 **Lightweight**: Includes only essential libraries and runtime, resulting
@@ -206,6 +208,13 @@ For streaming the tokens simply add to the request body `stream: true`.
 > a container is recommended. This provides better isolation, easier updates,
 > and simplified configuration management. See [Docker](examples/docker-compose/)
 > or [Kubernetes](examples/kubernetes/) deployment examples.
+>
+> **Kubernetes**: Deploy with the
+> [Inference Gateway Operator](https://github.com/inference-gateway/operator),
+> which reconciles a `Gateway` custom resource. The in-repo Helm chart is
+> **deprecated** and will be removed after 2026-09-01 — see
+> [charts/inference-gateway/README.md](charts/inference-gateway/README.md) for the
+> migration path and removal timeline.
 
 The Inference Gateway can also be installed as a standalone binary using the
 provided install script or by downloading pre-built binaries from GitHub

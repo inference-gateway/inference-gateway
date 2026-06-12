@@ -3,7 +3,8 @@ name: inference-gateway
 type: application
 version: 0.25.2
 appVersion: 0.25.2
-description: A Helm chart for Kubernetes inference gateway with optional dependencies
+deprecated: true
+description: 'DEPRECATED - deploy with the Inference Gateway Operator (https://github.com/inference-gateway/operator) instead. A Helm chart for the Kubernetes inference gateway with optional dependencies.'
 keywords:
   - inference-gateway
   - llms
