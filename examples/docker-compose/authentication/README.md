@@ -104,7 +104,7 @@ exercise a real completion, add a provider key to `.env` (for example
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d '{"model": "deepseek/deepseek-chat", "messages": [{"role": "user", "content": "Hello!"}]}'
+  -d '{"model": "deepseek/deepseek-v4-flash", "messages": [{"role": "user", "content": "Hello!"}]}'
 ```
 
 ## Troubleshooting
