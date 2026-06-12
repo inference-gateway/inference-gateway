@@ -21,7 +21,7 @@ services:
     image: alpine:latest
     environment:
       INFERENCE_GATEWAY_URL: http://inference-gateway:8080/v1
-      MODEL: groq/deepseek-r1-distill-llama-70b
+      MODEL: ${MODEL:-groq/deepseek-r1-distill-llama-70b}
     depends_on:
       - inference-gateway
     deploy:
