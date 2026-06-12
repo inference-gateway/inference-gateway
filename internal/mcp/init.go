@@ -2,9 +2,9 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	m "github.com/metoro-io/mcp-golang"

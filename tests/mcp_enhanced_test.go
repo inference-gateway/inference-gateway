@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/internal/mcp"
+	"github.com/inference-gateway/inference-gateway/logger"
 )
 
 // TestMCPClientTransportModes tests the transport mode functionality
