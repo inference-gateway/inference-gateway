@@ -19,7 +19,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"

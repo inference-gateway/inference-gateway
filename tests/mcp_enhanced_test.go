@@ -13,7 +13,7 @@ import (
 
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/mcp"
+	"github.com/inference-gateway/inference-gateway/internal/mcp"
 )
 
 // TestMCPClientTransportModes tests the transport mode functionality

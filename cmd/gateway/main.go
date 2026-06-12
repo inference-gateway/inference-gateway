@@ -18,7 +18,7 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"

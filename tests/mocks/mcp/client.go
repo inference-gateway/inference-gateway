@@ -13,7 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 	gomock "go.uber.org/mock/gomock"
 )

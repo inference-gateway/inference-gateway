@@ -13,7 +13,7 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	gomock "go.uber.org/mock/gomock"
 
-	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
