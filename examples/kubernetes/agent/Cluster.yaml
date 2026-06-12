@@ -6,7 +6,7 @@ registry: local-registry
 k3d:
   v1alpha5Simple:
     agents: 1
-    image: docker.io/rancher/k3s:v1.34.1-k3s1
+    image: docker.io/rancher/k3s:v1.36.1-k3s1
     options:
       k3s:
         extraArgs:

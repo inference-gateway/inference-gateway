@@ -1,29 +1,77 @@
 ---
 version: '3'
 
+vars:
+  GATEWAY_API_VERSION: v1.5.1
+  ENVOY_GATEWAY_VERSION: v1.2.0
+  OPERATOR_VERSION: v0.16.3
+  PROMETHEUS_STACK_VERSION: 72.6.2
+  GRAFANA_OPERATOR_VERSION: 5.18.0
+
 tasks:
   deploy-infrastructure:
     desc: 'Deploy monitoring infrastructure'
     cmds:
+      - task: create-cluster
+      - task: deploy-gateway-api
+      - task: deploy-envoy-gateway
+      - task: deploy-inference-gateway-operator
+      - task: deploy-monitoring-stack
+      - echo "📊 Monitoring infrastructure deployed successfully!"
+
+  create-cluster:
+    desc: 'Create a Kubernetes cluster using ctlptl'
+    cmds:
       - ctlptl apply -f Cluster.yaml
-      - helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      - echo "🛠️ Cluster created successfully!"
+
+  deploy-gateway-api:
+    desc: 'Install the Kubernetes Gateway API CRDs'
+    cmds:
+      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
+      - echo "🌐 Gateway API CRDs installed successfully!"
+
+  deploy-envoy-gateway:
+    desc: 'Deploy Envoy Gateway and register the envoy GatewayClass'
+    cmds:
+      - |
+        helm upgrade --install envoy-gateway \
+          oci://docker.io/envoyproxy/gateway-helm \
+          --version {{.ENVOY_GATEWAY_VERSION}} \
+          --namespace envoy-gateway-system \
+          --create-namespace \
+          --skip-crds \
+          --wait
+      - kubectl -n envoy-gateway-system wait --for=condition=Available --timeout=120s deployment/envoy-gateway
+      - |
+        kubectl apply -f - <<'EOF'
+        apiVersion: gateway.networking.k8s.io/v1
+        kind: GatewayClass
+        metadata:
+          name: envoy
+        spec:
+          controllerName: gateway.envoyproxy.io/gatewayclass-controller
+        EOF
+      - echo "🚪 Envoy Gateway deployed successfully!"
+
+  deploy-inference-gateway-operator:
+    desc: 'Deploy the Inference Gateway operator'
+    cmds:
+      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/{{.OPERATOR_VERSION}}/install.yaml
+      - kubectl -n inference-gateway-system wait --for=condition=Available --timeout=120s deployment/operator-inference-gateway
+      - echo "🛠️ Inference Gateway operator deployed successfully!"
+
+  deploy-monitoring-stack:
+    desc: 'Deploy the Prometheus and Grafana operators and their resources'
+    cmds:
       - helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
       - helm repo add grafana https://grafana.github.io/helm-charts
       - helm repo update
-      - echo "🚀 Starting monitoring infrastructure deployment..."
-      - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace kube-system \
-          --set controller.progressDeadlineSeconds=500 \
-          --version 4.14.0 \
-          --wait \
-          ingress-nginx ingress-nginx/ingress-nginx
       - |
         helm upgrade --install \
           --create-namespace \
           --namespace monitoring \
-          --version 72.6.2 \
+          --version {{.PROMETHEUS_STACK_VERSION}} \
           --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
           --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
           --set-string prometheus.prometheusSpec.serviceMonitorNamespaceSelector.matchLabels.monitoring=true \
@@ -38,42 +86,35 @@ tasks:
         helm upgrade --install \
           --create-namespace \
           --namespace monitoring \
-          --version 5.18.0 \
+          --version {{.GRAFANA_OPERATOR_VERSION}} \
           --wait \
           grafana-operator grafana/grafana-operator
       - kubectl label namespace monitoring monitoring="true" --overwrite
       - kubectl apply -f prometheus/
       - kubectl apply -f grafana/
-      - echo "📊 Monitoring infrastructure deployed successfully!"
+      - echo "📈 Monitoring stack deployed successfully!"
 
   deploy-inference-gateway:
-    desc: 'Deploy inference-gateway with monitoring and autoscaling enabled'
+    desc: 'Deploy the Inference Gateway with monitoring and autoscaling via the operator'
+    cmds:
+      - kubectl apply -f gateway.yaml
+      - echo "📈 Inference Gateway with monitoring and autoscaling deployed successfully!"
+
+  port-forward:
+    desc: 'Port-forward the Envoy data plane for the gateway to localhost:8080'
     cmds:
       - |
-        helm upgrade --install \
-          --create-namespace \
-          --namespace inference-gateway \
-          --set config.TELEMETRY_ENABLE=true \
-          --set config.OLLAMA_API_URL="http://ollama.ollama:8080/v1" \
-          --set monitoring.enabled=true \
-          --set ingress.enabled=true \
-          --set autoscaling.enabled=true \
-          --set autoscaling.minReplicas=2 \
-          --set autoscaling.maxReplicas=10 \
-          --set autoscaling.targetCPUUtilizationPercentage=80 \
-          --set autoscaling.targetMemoryUtilizationPercentage=80 \
-          --version 0.19.5 \
-          --wait \
-          inference-gateway oci://ghcr.io/inference-gateway/charts/inference-gateway
-      - kubectl label namespace inference-gateway monitoring="true" --overwrite
-      - echo "📈 Inference Gateway with monitoring and autoscaling deployed successfully!"
+        ENVOY_SVC=$(kubectl get svc -n envoy-gateway-system \
+          -l gateway.envoyproxy.io/owning-gateway-name=inference-gateway \
+          -o jsonpath='{.items[0].metadata.name}')
+        echo "Forwarding ${ENVOY_SVC} to http://localhost:8080"
+        kubectl -n envoy-gateway-system port-forward "svc/${ENVOY_SVC}" 8080:80
 
   deploy-ollama:
     desc: 'Deploy ollama as a provider'
     cmds:
       - kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply -f -
-      - |
-        kubectl apply -f ollama/
+      - kubectl apply -f ollama/
       - kubectl -n ollama rollout status deployment ollama
       - echo "🤖 Ollama provider deployed successfully!"
 
@@ -88,12 +129,13 @@ tasks:
       - echo "✅ Models pulled successfully!"
 
   simulate-requests:
-    desc: 'Generate test requests to simulate monitoring'
+    desc: 'Generate test requests to simulate monitoring (requires `task port-forward` running)'
     cmds:
       - |
         for i in $(seq 1 20); do
-          curl -s -X POST http://api.inference-gateway.local/v1/chat/completions \
+          curl -s -X POST http://localhost:8080/v1/chat/completions \
             -H "Content-Type: application/json" \
+            -H "Host: api.inference-gateway.local" \
             -d '{"model":"ollama/deepseek-r1:1.5b","messages":[{"role":"user","content":"Say hello"}]}' \
             --max-time 10
           echo
@@ -102,12 +144,13 @@ tasks:
       - echo "🧪 Test requests completed successfully!"
 
   simulate-tool-call-requests:
-    desc: 'Generate test requests with tool/function calls to simulate advanced monitoring'
+    desc: 'Generate test requests with tool/function calls (requires `task port-forward` running)'
     cmds:
       - |
         for i in $(seq 1 10); do
-          curl -s -X POST http://api.inference-gateway.local/v1/chat/completions \
+          curl -s -X POST http://localhost:8080/v1/chat/completions \
             -H "Content-Type: application/json" \
+            -H "Host: api.inference-gateway.local" \
             -d '{
               "model": "ollama/llama3.2:1b",
               "messages": [
