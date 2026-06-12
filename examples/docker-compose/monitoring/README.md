@@ -91,7 +91,7 @@ Scrapes gateway metrics every 5 seconds:
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "deepseek/deepseek-v4-pro",
+    "model": "deepseek/deepseek-v4-flash",
     "messages": [
       {"role": "user", "content": "What files are in the current directory?"}
     ],
