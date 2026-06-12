@@ -69,8 +69,8 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 			model:            "vllm/llama-3-8b",
 			expectedProvider: new(constants.VllmID),
 			expectedModel:    "llama-3-8b",
-    },
-    {
+		},
+		{
 			name:             "MiniMax model with prefix",
 			model:            "minimax/MiniMax-Text-01",
 			expectedProvider: new(constants.MinimaxID),
