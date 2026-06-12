@@ -32,11 +32,11 @@ applies a `Gateway` custom resource.
 
 ## Removal timeline
 
-| Date            | Status                                                                                       |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| 2026-06         | Chart marked `deprecated: true`. The final published version surfaces the deprecation notice. |
+| Date            | Status                                                                                                   |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| 2026-06         | Chart marked `deprecated: true`. The final published version surfaces the deprecation notice.            |
 | 2026-06 – 08    | Deprecation window. No new features; critical/security fixes only. Existing OCI artifacts stay pullable. |
-| 2026-09-01      | The `charts/` directory is removed, the CI publish job is removed, and no new versions ship.  |
+| 2026-09-01      | The `charts/` directory is removed, the CI publish job is removed, and no new versions ship.             |
 
 Chart versions already published to `oci://ghcr.io/inference-gateway/charts/inference-gateway` remain
 available after removal but are unmaintained.
