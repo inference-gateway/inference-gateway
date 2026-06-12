@@ -1,4 +1,4 @@
-module github.com/inference-gateway/inference-gateway/examples/docker-compose/mcp/search-server
+module github.com/inference-gateway/inference-gateway/examples/kubernetes/mcp/search-server
 
 go 1.26.2
 

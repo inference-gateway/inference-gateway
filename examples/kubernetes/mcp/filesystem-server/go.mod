@@ -1,4 +1,4 @@
-module github.com/inference-gateway/inference-gateway/examples/docker-compose/mcp/filesystem-server
+module github.com/inference-gateway/inference-gateway/examples/kubernetes/mcp/filesystem-server
 
 go 1.26.2
 
