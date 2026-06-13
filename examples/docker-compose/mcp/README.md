@@ -81,7 +81,7 @@ Once the services are running, you can make requests to the Inference Gateway us
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -101,7 +101,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -120,7 +120,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -138,7 +138,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -157,7 +157,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -177,7 +177,7 @@ Notice the file was created in filesystem-data directory.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -195,7 +195,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -291,7 +291,7 @@ tools:
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
