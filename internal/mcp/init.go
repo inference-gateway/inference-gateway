@@ -90,8 +90,14 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 			continue
 		}
 
-		mc.Logger.Debug("converting tools for server", "server", serverURL, "inputToolCount", len(serverTools))
-		chatTools := mc.ConvertMCPToolsToChatCompletionTools(serverTools)
+		toolsToConvert := mc.filterTools(serverTools)
+		if len(toolsToConvert) == 0 {
+			mc.Logger.Debug("all tools filtered out by include/exclude config for server", "server", serverURL)
+			continue
+		}
+
+		mc.Logger.Debug("converting tools for server", "server", serverURL, "inputToolCount", len(serverTools), "afterFilterCount", len(toolsToConvert))
+		chatTools := mc.ConvertMCPToolsToChatCompletionTools(toolsToConvert)
 		mc.Logger.Debug("converted tools for server", "server", serverURL, "outputCount", len(chatTools))
 		allChatCompletionTools = append(allChatCompletionTools, chatTools...)
 	}

@@ -20,26 +20,28 @@
 
 ### Model Context Protocol (MCP)
 
-| Environment Variable         | Default Value | Description                                              |
-| ---------------------------- | ------------- | -------------------------------------------------------- |
-| MCP_ENABLE                   | `false`       | Enable MCP                                               |
-| MCP_EXPOSE                   | `false`       | Expose MCP tools endpoint                                |
-| MCP_SERVERS                  | `""`          | List of MCP servers                                      |
-| MCP_CLIENT_TIMEOUT           | `5s`          | MCP client HTTP timeout                                  |
-| MCP_DIAL_TIMEOUT             | `3s`          | MCP client dial timeout                                  |
-| MCP_TLS_HANDSHAKE_TIMEOUT    | `3s`          | MCP client TLS handshake timeout                         |
-| MCP_RESPONSE_HEADER_TIMEOUT  | `3s`          | MCP client response header timeout                       |
-| MCP_EXPECT_CONTINUE_TIMEOUT  | `1s`          | MCP client expect continue timeout                       |
-| MCP_REQUEST_TIMEOUT          | `5s`          | MCP client request timeout for initialize and tool calls |
-| MCP_MAX_RETRIES              | `3`           | Maximum number of connection retry attempts              |
-| MCP_RETRY_INTERVAL           | `5s`          | Interval between connection retry attempts               |
-| MCP_INITIAL_BACKOFF          | `1s`          | Initial backoff duration for exponential backoff retry   |
-| MCP_ENABLE_RECONNECT         | `true`        | Enable automatic reconnection for failed servers         |
-| MCP_RECONNECT_INTERVAL       | `30s`         | Interval between reconnection attempts                   |
-| MCP_POLLING_ENABLE           | `true`        | Enable health check polling                              |
-| MCP_POLLING_INTERVAL         | `30s`         | Interval between health check polling requests           |
-| MCP_POLLING_TIMEOUT          | `5s`          | Timeout for individual health check requests             |
-| MCP_DISABLE_HEALTHCHECK_LOGS | `true`        | Disable health check log messages to reduce noise        |
+| Environment Variable         | Default Value | Description                                                                                                                              |
+| ---------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| MCP_ENABLE                   | `false`       | Enable MCP                                                                                                                               |
+| MCP_EXPOSE                   | `false`       | Expose MCP tools endpoint                                                                                                                |
+| MCP_SERVERS                  | `""`          | List of MCP servers                                                                                                                      |
+| MCP_INCLUDE_TOOLS            | `""`          | Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS              |
+| MCP_EXCLUDE_TOOLS            | `""`          | Comma-separated list of MCP tool names to skip injecting. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS |
+| MCP_CLIENT_TIMEOUT           | `5s`          | MCP client HTTP timeout                                                                                                                  |
+| MCP_DIAL_TIMEOUT             | `3s`          | MCP client dial timeout                                                                                                                  |
+| MCP_TLS_HANDSHAKE_TIMEOUT    | `3s`          | MCP client TLS handshake timeout                                                                                                         |
+| MCP_RESPONSE_HEADER_TIMEOUT  | `3s`          | MCP client response header timeout                                                                                                       |
+| MCP_EXPECT_CONTINUE_TIMEOUT  | `1s`          | MCP client expect continue timeout                                                                                                       |
+| MCP_REQUEST_TIMEOUT          | `5s`          | MCP client request timeout for initialize and tool calls                                                                                 |
+| MCP_MAX_RETRIES              | `3`           | Maximum number of connection retry attempts                                                                                              |
+| MCP_RETRY_INTERVAL           | `5s`          | Interval between connection retry attempts                                                                                               |
+| MCP_INITIAL_BACKOFF          | `1s`          | Initial backoff duration for exponential backoff retry                                                                                   |
+| MCP_ENABLE_RECONNECT         | `true`        | Enable automatic reconnection for failed servers                                                                                         |
+| MCP_RECONNECT_INTERVAL       | `30s`         | Interval between reconnection attempts                                                                                                   |
+| MCP_POLLING_ENABLE           | `true`        | Enable health check polling                                                                                                              |
+| MCP_POLLING_INTERVAL         | `30s`         | Interval between health check polling requests                                                                                           |
+| MCP_POLLING_TIMEOUT          | `5s`          | Timeout for individual health check requests                                                                                             |
+| MCP_DISABLE_HEALTHCHECK_LOGS | `true`        | Disable health check log messages to reduce noise                                                                                        |
 
 ### Authentication
 
