@@ -16,13 +16,14 @@ import (
 	require "github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
+	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
+
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
-	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
-	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 func init() {
