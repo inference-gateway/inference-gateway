@@ -12,7 +12,7 @@ Everyday tasks go through `Taskfile.yml`:
 - `task build` — produce `bin/inference-gateway`
 - `task test` — `go test -v ./...`
 - `task benchmark` — benchmarks under `./tests/...` (run when touching routing / transformers / MCP)
-- `task generate` — regenerate everything from `openapi.yaml` + `mcp/mcp-schema.yaml` (see "Code generation")
+- `task generate` — regenerate everything from `openapi.yaml` + `internal/mcp/mcp-schema.yaml` (see "Code generation")
 - `task format` — `prettier --write .` then `go fmt ./...`
 - `task lint` — `golangci-lint run` + `markdownlint` (CLAUDE.md, AGENTS.md, CHANGELOG.md, and Configurations.md are excluded)
 - `task openapi:lint` — Spectral lint of `openapi.yaml`
@@ -49,7 +49,7 @@ A "provider" is one upstream LLM API. The runtime pieces live under `providers/`
 
 ### Code generation
 
-`openapi.yaml` and `mcp/mcp-schema.yaml` are the source of truth. `task generate`:
+`openapi.yaml` and `internal/mcp/mcp-schema.yaml` are the source of truth. `task generate`:
 
 1. Builds the `bin/generator` helper (pinned via `task install:generator`).
 2. Runs `cmd/generate/main.go` (a thin CLI over `internal/codegen`, `internal/dockergen`, `internal/kubegen`, `internal/mdgen`) repeatedly with different `-type` flags to emit: `providers/client/client.go`, `providers/constants/constants.go`, `providers/transformers/*.go`, `providers/registry/registry.go`, `config/config.go`, `Configurations.md`, `charts/inference-gateway/templates/{secrets,configmap}-defaults.yaml`, `charts/inference-gateway/values.yaml`, and every `examples/docker-compose/*/.env.example`.
