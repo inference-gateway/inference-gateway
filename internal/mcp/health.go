@@ -86,7 +86,6 @@ func (mc *MCPClient) checkServerHealth(ctx context.Context, serverURL string) {
 		return
 	}
 
-	// Try to list tools as a health check (similar to how it works in initialization)
 	var cursor *string
 	_, err := client.ListTools(checkCtx, cursor)
 
