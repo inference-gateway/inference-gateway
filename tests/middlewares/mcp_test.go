@@ -16,7 +16,7 @@ import (
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
-	mcp "github.com/inference-gateway/inference-gateway/mcp"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 

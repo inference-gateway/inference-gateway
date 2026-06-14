@@ -17,9 +17,9 @@ import (
 	gin "github.com/gin-gonic/gin"
 
 	config "github.com/inference-gateway/inference-gateway/config"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 	l "github.com/inference-gateway/inference-gateway/logger"
-	mcp "github.com/inference-gateway/inference-gateway/mcp"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"

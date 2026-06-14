@@ -19,7 +19,7 @@ const MaxAgentIterations = 10
 
 // Agent defines the interface for running agent operations
 //
-//go:generate mockgen -source=agent.go -destination=../tests/mocks/mcp/agent.go -package=mcpmocks
+//go:generate mockgen -source=agent.go -destination=../../tests/mocks/mcp/agent.go -package=mcpmocks -typed
 type Agent interface {
 	Run(ctx context.Context, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error
 	RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *types.CreateChatCompletionRequest) error

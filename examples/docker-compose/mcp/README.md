@@ -81,7 +81,7 @@ Once the services are running, you can make requests to the Inference Gateway us
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -101,7 +101,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -120,7 +120,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -138,7 +138,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -157,7 +157,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -177,7 +177,7 @@ Notice the file was created in filesystem-data directory.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -195,7 +195,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -291,7 +291,7 @@ tools:
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/meta-llama/llama-4-scout-17b-16e-instruct",
+  "model": "deepseek/deepseek-v4-flash",
   "messages": [
     {
       "role": "system",
@@ -386,6 +386,32 @@ Environment variables you can configure:
 - `MCP_ENABLE`: Set to "true" to enable MCP middleware
 - `MCP_EXPOSE`: Set to "true" to expose MCP endpoints
 - `MCP_SERVERS`: Comma-separated list of MCP server URLs
+- `MCP_INCLUDE_TOOLS`: Comma-separated allowlist of tool names to inject. When
+  set, only these tools are injected; if empty, all tools are injected
+- `MCP_EXCLUDE_TOOLS`: Comma-separated denylist of tool names to skip injecting.
+  Takes lower precedence than `MCP_INCLUDE_TOOLS`
+
+### Filtering Injected Tools
+
+By default every tool from every connected MCP server is injected into each chat
+completion request. To make requests more token-efficient you can restrict which
+tools are injected with an allowlist or a denylist:
+
+- `MCP_INCLUDE_TOOLS` is an allowlist: when set, only the listed tools are
+  injected.
+- `MCP_EXCLUDE_TOOLS` is a denylist: the listed tools are never injected.
+
+`MCP_INCLUDE_TOOLS` takes precedence over `MCP_EXCLUDE_TOOLS`. Tool names are
+matched case-insensitively and the `mcp_` prefix is optional, so `read_file` and
+`mcp_read_file` are equivalent.
+
+```bash
+# Only inject the time and search tools
+MCP_INCLUDE_TOOLS=time,search
+
+# Inject everything except the destructive filesystem tools
+MCP_EXCLUDE_TOOLS=delete_file,write_file
+```
 
 ## Learn More
 

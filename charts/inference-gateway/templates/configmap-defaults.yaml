@@ -19,6 +19,8 @@ data:
   MCP_ENABLE: {{ .Values.config.MCP_ENABLE | quote }}
   MCP_EXPOSE: {{ .Values.config.MCP_EXPOSE | quote }}
   MCP_SERVERS: {{ .Values.config.MCP_SERVERS | quote }}
+  MCP_INCLUDE_TOOLS: {{ .Values.config.MCP_INCLUDE_TOOLS | quote }}
+  MCP_EXCLUDE_TOOLS: {{ .Values.config.MCP_EXCLUDE_TOOLS | quote }}
   MCP_CLIENT_TIMEOUT: {{ .Values.config.MCP_CLIENT_TIMEOUT | quote }}
   MCP_DIAL_TIMEOUT: {{ .Values.config.MCP_DIAL_TIMEOUT | quote }}
   MCP_TLS_HANDSHAKE_TIMEOUT: {{ .Values.config.MCP_TLS_HANDSHAKE_TIMEOUT | quote }}

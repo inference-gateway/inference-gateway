@@ -11,8 +11,8 @@ import (
 	gin "github.com/gin-gonic/gin"
 
 	config "github.com/inference-gateway/inference-gateway/config"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
-	mcp "github.com/inference-gateway/inference-gateway/mcp"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"

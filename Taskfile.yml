@@ -10,8 +10,8 @@ tasks:
   mcp:schema:download:
     desc: 'Download the latest MCP schema'
     cmds:
-      - curl -o mcp/mcp-schema.json https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.json
-      - curl -o mcp/mcp-schema.yaml https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.yaml
+      - curl -o internal/mcp/mcp-schema.json https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.json
+      - curl -o internal/mcp/mcp-schema.yaml https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.yaml
       - task: format
 
   install:generator:
@@ -41,8 +41,8 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/monitoring/.env.example
-      - ./bin/generator -generator jsonrpc -package mcp mcp/mcp-schema.yaml mcp/generated_types.go
-      - go generate ./providers/... ./api/... ./otel/... ./logger/...  ./mcp/...
+      - ./bin/generator -generator jsonrpc -package mcp internal/mcp/mcp-schema.yaml internal/mcp/generated_types.go
+      - go generate ./providers/... ./api/... ./otel/... ./logger/... ./internal/mcp/...
       - task: format
       - echo "✅ Codegen completed successfully!"
 

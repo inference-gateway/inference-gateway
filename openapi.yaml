@@ -1431,6 +1431,14 @@ components:
                   env: 'MCP_SERVERS'
                   type: string
                   description: 'List of MCP servers'
+                - name: mcp_include_tools
+                  env: 'MCP_INCLUDE_TOOLS'
+                  type: string
+                  description: 'Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS'
+                - name: mcp_exclude_tools
+                  env: 'MCP_EXCLUDE_TOOLS'
+                  type: string
+                  description: 'Comma-separated list of MCP tool names to skip injecting. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS'
                 - name: mcp_client_timeout
                   env: 'MCP_CLIENT_TIMEOUT'
                   type: time.Duration
