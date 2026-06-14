@@ -6,8 +6,6 @@ This document explains how to use the Taskfile.yml in the hack directory to mana
   - [Prerequisites](#prerequisites)
   - [Available Tasks](#available-tasks)
     - [Cluster Management](#cluster-management)
-    - [Helm Testing](#helm-testing)
-    - [Deployment](#deployment)
     - [Keycloak Operations](#keycloak-operations)
     - [LLM Operations](#llm-operations)
   - [Typical Workflow](#typical-workflow)
@@ -43,29 +41,6 @@ task clean
 
 Deletes the entire k3d cluster
 
-### Helm Testing
-
-```bash
-task test-helm
-```
-
-- Updates helm dependencies
-- Lints the inference-gateway chart
-- Dry-runs template with autoscaling
-
-### Deployment
-
-```bash
-task deploy-inference-gateway
-```
-
-Deploys inference-gateway with:
-
-- Autoscaling enabled
-- Ingress enabled
-- Keycloak integration
-- Environment configs
-
 ### Keycloak Operations
 
 ```bash
@@ -97,7 +72,7 @@ Deploys Ollama with deepseek-r1 model
 ## Typical Workflow
 
 1. Start cluster: `task deploy-infrastructure`
-2. Deploy gateway: `task deploy-inference-gateway`
+2. Deploy the gateway with the [operator](https://github.com/inference-gateway/operator)
 3. Test auth: `task fetch-access-token`
 4. Test LLM: `task generate-completions`
 

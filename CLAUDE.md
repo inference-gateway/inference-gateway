@@ -52,7 +52,7 @@ A "provider" is one upstream LLM API. The runtime pieces live under `providers/`
 `openapi.yaml` and `internal/mcp/mcp-schema.yaml` are the source of truth. `task generate`:
 
 1. Builds the `bin/generator` helper (pinned via `task install:generator`).
-2. Runs `cmd/generate/main.go` (a thin CLI over `internal/codegen`, `internal/dockergen`, `internal/kubegen`, `internal/mdgen`) repeatedly with different `-type` flags to emit: `providers/client/client.go`, `providers/constants/constants.go`, `providers/transformers/*.go`, `providers/registry/registry.go`, `config/config.go`, `Configurations.md`, `charts/inference-gateway/templates/{secrets,configmap}-defaults.yaml`, `charts/inference-gateway/values.yaml`, and every `examples/docker-compose/*/.env.example`.
+2. Runs `cmd/generate/main.go` (a thin CLI over `internal/codegen`, `internal/dockergen`, `internal/mdgen`) repeatedly with different `-type` flags to emit: `providers/client/client.go`, `providers/constants/constants.go`, `providers/transformers/*.go`, `providers/registry/registry.go`, `config/config.go`, `Configurations.md`, and every `examples/docker-compose/*/.env.example`.
 3. Runs `oapi-codegen` to emit `providers/types/common_types.go` (then `sed`s `interface{}` → `any`).
 4. Runs `bin/generator` to emit `internal/mcp/generated_types.go` from `mcp-schema.yaml`.
 5. Runs `go generate ./...` to refresh mocks under `tests/mocks/` (driven by `//go:generate mockgen ...` directives at the top of each interface file — `api/routes.go`, `providers/core/interfaces.go`, `providers/registry/registry.go`, `providers/client/client.go`, `internal/mcp/agent.go`, `internal/mcp/client.go`, `logger/logger.go`, plus OTel).

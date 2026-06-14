@@ -53,8 +53,6 @@ plugins:
     - verifyConditions: 'go mod tidy'
       prepareCmd: |
         sed -i 's/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/' config/meta.go
-        sed -i 's/^version: .*/version: ${nextRelease.version}/' charts/inference-gateway/Chart.yaml
-        sed -i 's/^appVersion: .*/appVersion: ${nextRelease.version}/' charts/inference-gateway/Chart.yaml
 
   - - '@semantic-release/github'
     - assets:
@@ -122,5 +120,4 @@ plugins:
     - assets:
         - CHANGELOG.md
         - config/meta.go
-        - charts/inference-gateway/Chart.yaml
       message: "chore(release): 🔖 ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
