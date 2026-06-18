@@ -2,6 +2,8 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -245,6 +247,138 @@ func TestProviderChatCompletionsForwardsAuthToken(t *testing.T) {
 	resp, err := provider.ChatCompletions(c, req)
 	require.NoError(t, err)
 	assert.Equal(t, "test-completion-id", resp.ID)
+}
+
+// ptr returns a pointer to v. The regenerated CreateChatCompletionRequest models the
+// additive OpenAI-compatible parameters as optional (pointer) fields.
+func ptr[T any](v T) *T { return &v }
+
+// TestProviderChatCompletionsForwardsNewParameters verifies the additive request
+// parameters re-vendored from inference-gateway/schemas#71 are actually serialized onto
+// the upstream provider request rather than silently dropped. The gateway forwards the
+// whole request via json.Marshal(clientReq) in ProviderImpl.ChatCompletions, so any field
+// missing from the generated struct (or a oneOf union that fails to marshal) would never
+// reach the provider. This guards both the field-forwarding and the oneOf marshalling.
+func TestProviderChatCompletionsForwardsNewParameters(t *testing.T) {
+	var capturedBody []byte
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte(`{"id":"id","object":"chat.completion","created":1,"model":"gpt-4o","choices":[]}`))
+		assert.NoError(t, err)
+	}))
+	defer server.Close()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockClient := providersmocks.NewMockClient(ctrl)
+
+	mockClient.EXPECT().
+		Do(gomock.Any()).
+		DoAndReturn(func(req *http.Request) (*http.Response, error) {
+			body, err := io.ReadAll(req.Body)
+			require.NoError(t, err)
+			capturedBody = body
+			return http.DefaultClient.Post(server.URL+"/proxy/openai/chat/completions", "application/json", nil)
+		})
+
+	log, err := logger.NewLogger("test")
+	require.NoError(t, err)
+
+	config := &registry.ProviderConfig{
+		ID:        constants.OpenaiID,
+		Name:      constants.OpenaiDisplayName,
+		URL:       server.URL,
+		Token:     "test-token",
+		AuthType:  constants.AuthTypeBearer,
+		Endpoints: types.Endpoints{Chat: constants.OpenaiChatEndpoint},
+	}
+
+	providerRegistry := registry.NewProviderRegistry(map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: config,
+	}, log)
+
+	provider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
+	require.NoError(t, err)
+
+	// oneOf unions: stop (array variant), tool_choice (string-enum variant),
+	// response_format (json_object variant).
+	var stop types.CreateChatCompletionRequest_Stop
+	require.NoError(t, stop.FromCreateChatCompletionRequestStop1([]string{"\n", "STOP"}))
+
+	var toolChoice types.ChatCompletionToolChoiceOption
+	require.NoError(t, toolChoice.FromChatCompletionToolChoiceOption0(types.ChatCompletionToolChoiceOption0Required))
+
+	var responseFormat types.CreateChatCompletionRequest_ResponseFormat
+	require.NoError(t, responseFormat.FromResponseFormatJSONObject(types.ResponseFormatJSONObject{Type: types.JSONObject}))
+
+	req := types.CreateChatCompletionRequest{
+		Model:               "gpt-4o",
+		Messages:            []types.Message{types.NewTextMessage(t, types.User, "Hello")},
+		Temperature:         ptr(float32(0.7)),
+		TopP:                ptr(float32(0.9)),
+		N:                   ptr(2),
+		FrequencyPenalty:    ptr(float32(0.5)),
+		PresencePenalty:     ptr(float32(-0.5)),
+		Seed:                ptr(42),
+		Logprobs:            ptr(true),
+		TopLogprobs:         ptr(5),
+		MaxCompletionTokens: ptr(256),
+		User:                ptr("user-123"),
+		LogitBias:           &map[string]int{"50256": -100},
+		ParallelToolCalls:   ptr(true),
+		ReasoningEffort:     ptr(types.High),
+		Stop:                &stop,
+		ToolChoice:          &toolChoice,
+		ResponseFormat:      &responseFormat,
+	}
+
+	_, err = provider.ChatCompletions(context.Background(), req)
+	require.NoError(t, err)
+	require.NotNil(t, capturedBody)
+
+	// Scalar fields must survive into the outbound JSON body.
+	var forwarded map[string]any
+	require.NoError(t, json.Unmarshal(capturedBody, &forwarded))
+	assert.EqualValues(t, 0.7, forwarded["temperature"])
+	assert.EqualValues(t, 0.9, forwarded["top_p"])
+	assert.EqualValues(t, 2, forwarded["n"])
+	assert.EqualValues(t, 0.5, forwarded["frequency_penalty"])
+	assert.EqualValues(t, -0.5, forwarded["presence_penalty"])
+	assert.EqualValues(t, 42, forwarded["seed"])
+	assert.Equal(t, true, forwarded["logprobs"])
+	assert.EqualValues(t, 5, forwarded["top_logprobs"])
+	assert.EqualValues(t, 256, forwarded["max_completion_tokens"])
+	assert.Equal(t, "user-123", forwarded["user"])
+	assert.Equal(t, true, forwarded["parallel_tool_calls"])
+	assert.Equal(t, "high", forwarded["reasoning_effort"])
+	assert.Equal(t, map[string]any{"50256": float64(-100)}, forwarded["logit_bias"])
+
+	// oneOf unions must marshal to their selected variant, not a flattened/dropped value.
+	assert.Equal(t, []any{"\n", "STOP"}, forwarded["stop"])
+	assert.Equal(t, "required", forwarded["tool_choice"])
+	assert.Equal(t, map[string]any{"type": "json_object"}, forwarded["response_format"])
+
+	// Round-trip the forwarded body back through the generated struct to confirm the
+	// unions unmarshal cleanly into the expected variant (no dropped variants).
+	var roundTrip types.CreateChatCompletionRequest
+	require.NoError(t, json.Unmarshal(capturedBody, &roundTrip))
+
+	require.NotNil(t, roundTrip.Stop)
+	stopArr, err := roundTrip.Stop.AsCreateChatCompletionRequestStop1()
+	require.NoError(t, err)
+	assert.Equal(t, []string{"\n", "STOP"}, stopArr)
+
+	require.NotNil(t, roundTrip.ToolChoice)
+	tc, err := roundTrip.ToolChoice.AsChatCompletionToolChoiceOption0()
+	require.NoError(t, err)
+	assert.Equal(t, types.ChatCompletionToolChoiceOption0Required, tc)
+
+	require.NotNil(t, roundTrip.ResponseFormat)
+	rf, err := roundTrip.ResponseFormat.AsResponseFormatJSONObject()
+	require.NoError(t, err)
+	assert.Equal(t, types.JSONObject, rf.Type)
 }
 
 // TestProviderListModels tests listing models functionality

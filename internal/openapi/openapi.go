@@ -190,7 +190,7 @@ type Property struct {
 	Enum                 []string            `yaml:"enum,omitempty"`
 	Properties           map[string]Property `yaml:"properties,omitempty"`
 	Items                *Property           `yaml:"items,omitempty"`
-	AdditionalProperties *bool               `yaml:"additionalProperties,omitempty"`
+	AdditionalProperties any                 `yaml:"additionalProperties,omitempty"`
 	OneOf                []Property          `yaml:"oneOf,omitempty"`
 }
 
@@ -201,7 +201,7 @@ type SchemaProperty struct {
 	Required             []string            `yaml:"required,omitempty"`
 	Items                *Property           `yaml:"items,omitempty"`
 	Enum                 []string            `yaml:"enum,omitempty"`
-	AdditionalProperties *bool               `yaml:"additionalProperties,omitempty"`
+	AdditionalProperties any                 `yaml:"additionalProperties,omitempty"`
 	OneOf                []Property          `yaml:"oneOf,omitempty"`
 }
 

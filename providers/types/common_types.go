@@ -14,6 +14,27 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for ChatCompletionToolChoiceOption0.
+const (
+	ChatCompletionToolChoiceOption0Auto     ChatCompletionToolChoiceOption0 = "auto"
+	ChatCompletionToolChoiceOption0None     ChatCompletionToolChoiceOption0 = "none"
+	ChatCompletionToolChoiceOption0Required ChatCompletionToolChoiceOption0 = "required"
+)
+
+// Valid indicates whether the value is a known member of the ChatCompletionToolChoiceOption0 enum.
+func (e ChatCompletionToolChoiceOption0) Valid() bool {
+	switch e {
+	case ChatCompletionToolChoiceOption0Auto:
+		return true
+	case ChatCompletionToolChoiceOption0None:
+		return true
+	case ChatCompletionToolChoiceOption0Required:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ChatCompletionToolType.
 const (
 	Function ChatCompletionToolType = "function"
@@ -23,6 +44,30 @@ const (
 func (e ChatCompletionToolType) Valid() bool {
 	switch e {
 	case Function:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateChatCompletionRequestReasoningEffort.
+const (
+	High    CreateChatCompletionRequestReasoningEffort = "high"
+	Low     CreateChatCompletionRequestReasoningEffort = "low"
+	Medium  CreateChatCompletionRequestReasoningEffort = "medium"
+	Minimal CreateChatCompletionRequestReasoningEffort = "minimal"
+)
+
+// Valid indicates whether the value is a known member of the CreateChatCompletionRequestReasoningEffort enum.
+func (e CreateChatCompletionRequestReasoningEffort) Valid() bool {
+	switch e {
+	case High:
+		return true
+	case Low:
+		return true
+	case Medium:
+		return true
+	case Minimal:
 		return true
 	default:
 		return false
@@ -73,19 +118,19 @@ func (e ImageContentPartType) Valid() bool {
 
 // Defines values for ImageURLDetail.
 const (
-	Auto ImageURLDetail = "auto"
-	High ImageURLDetail = "high"
-	Low  ImageURLDetail = "low"
+	ImageURLDetailAuto ImageURLDetail = "auto"
+	ImageURLDetailHigh ImageURLDetail = "high"
+	ImageURLDetailLow  ImageURLDetail = "low"
 )
 
 // Valid indicates whether the value is a known member of the ImageURLDetail enum.
 func (e ImageURLDetail) Valid() bool {
 	switch e {
-	case Auto:
+	case ImageURLDetailAuto:
 		return true
-	case High:
+	case ImageURLDetailHigh:
 		return true
-	case Low:
+	case ImageURLDetailLow:
 		return true
 	default:
 		return false
@@ -188,6 +233,51 @@ func (e ProviderAuthType) Valid() bool {
 	}
 }
 
+// Defines values for ResponseFormatJSONObjectType.
+const (
+	JSONObject ResponseFormatJSONObjectType = "json_object"
+)
+
+// Valid indicates whether the value is a known member of the ResponseFormatJSONObjectType enum.
+func (e ResponseFormatJSONObjectType) Valid() bool {
+	switch e {
+	case JSONObject:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseFormatJSONSchemaType.
+const (
+	JSONSchema ResponseFormatJSONSchemaType = "json_schema"
+)
+
+// Valid indicates whether the value is a known member of the ResponseFormatJSONSchemaType enum.
+func (e ResponseFormatJSONSchemaType) Valid() bool {
+	switch e {
+	case JSONSchema:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseFormatTextType.
+const (
+	ResponseFormatTextTypeText ResponseFormatTextType = "text"
+)
+
+// Valid indicates whether the value is a known member of the ResponseFormatTextType enum.
+func (e ResponseFormatTextType) Valid() bool {
+	switch e {
+	case ResponseFormatTextTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SSEventEvent.
 const (
 	ContentDelta SSEventEvent = "content-delta"
@@ -223,13 +313,13 @@ func (e SSEventEvent) Valid() bool {
 
 // Defines values for TextContentPartType.
 const (
-	Text TextContentPartType = "text"
+	TextContentPartTypeText TextContentPartType = "text"
 )
 
 // Valid indicates whether the value is a known member of the TextContentPartType enum.
 func (e TextContentPartType) Valid() bool {
 	switch e {
-	case Text:
+	case TextContentPartTypeText:
 		return true
 	default:
 		return false
@@ -306,6 +396,17 @@ type ChatCompletionMessageToolCallFunction struct {
 
 	// Name The name of the function to call.
 	Name string `json:"name"`
+}
+
+// ChatCompletionNamedToolChoice Specifies a tool the model should use. Use to force the model to call a specific function.
+type ChatCompletionNamedToolChoice struct {
+	Function struct {
+		// Name The name of the function to call.
+		Name string `json:"name"`
+	} `json:"function"`
+
+	// Type The type of the tool. Currently, only `function` is supported.
+	Type ChatCompletionToolType `json:"type"`
 }
 
 // ChatCompletionStreamChoice defines model for ChatCompletionStreamChoice.
@@ -389,6 +490,15 @@ type ChatCompletionTool struct {
 	Type ChatCompletionToolType `json:"type"`
 }
 
+// ChatCompletionToolChoiceOption Controls which (if any) tool is called by the model. `none` means the model will not call any tool and instead generates a message. `auto` means the model can pick between generating a message or calling one or more tools. `required` means the model must call one or more tools. Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool.
+// `none` is the default when no tools are present. `auto` is the default if tools are present.
+type ChatCompletionToolChoiceOption struct {
+	union json.RawMessage
+}
+
+// ChatCompletionToolChoiceOption0 `none` means the model will not call any tool and instead generates a message. `auto` means the model can pick between generating a message or calling one or more tools. `required` means the model must call one or more tools.
+type ChatCompletionToolChoiceOption0 string
+
 // ChatCompletionToolType The type of the tool. Currently, only `function` is supported.
 type ChatCompletionToolType string
 
@@ -414,7 +524,20 @@ type ContentPart struct {
 
 // CreateChatCompletionRequest defines model for CreateChatCompletionRequest.
 type CreateChatCompletionRequest struct {
-	// MaxTokens An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens.
+	// FrequencyPenalty Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+	FrequencyPenalty *float32 `json:"frequency_penalty,omitempty"`
+
+	// LogitBias Modify the likelihood of specified tokens appearing in the completion. Accepts a JSON object that maps tokens (specified by their token ID in the tokenizer) to an associated bias value from -100 to 100. The bias is added to the logits generated by the model prior to sampling.
+	LogitBias *map[string]int `json:"logit_bias,omitempty"`
+
+	// Logprobs Whether to return log probabilities of the output tokens or not. If true, returns the log probabilities of each output token returned in the `content` of `message`.
+	Logprobs *bool `json:"logprobs,omitempty"`
+
+	// MaxCompletionTokens An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens.
+	MaxCompletionTokens *int `json:"max_completion_tokens,omitempty"`
+
+	// MaxTokens The maximum number of tokens that can be generated in the chat completion. This value can be used to control costs for text generated via API. This value is now deprecated in favor of `max_completion_tokens`, and is not compatible with o-series models.
+	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	MaxTokens *int `json:"max_tokens,omitempty"`
 
 	// Messages A list of messages comprising the conversation so far.
@@ -423,9 +546,30 @@ type CreateChatCompletionRequest struct {
 	// Model Model ID to use
 	Model string `json:"model"`
 
+	// N How many chat completion choices to generate for each input message.
+	N *int `json:"n,omitempty"`
+
+	// ParallelToolCalls Whether to enable parallel function calling during tool use.
+	ParallelToolCalls *bool `json:"parallel_tool_calls,omitempty"`
+
+	// PresencePenalty Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+	PresencePenalty *float32 `json:"presence_penalty,omitempty"`
+
+	// ReasoningEffort Constrains effort on reasoning for reasoning models. Currently supported values are `minimal`, `low`, `medium`, and `high`. Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response.
+	ReasoningEffort *CreateChatCompletionRequestReasoningEffort `json:"reasoning_effort,omitempty"`
+
 	// ReasoningFormat The format of the reasoning content. Can be `raw` or `parsed`.
-	// When specified as raw some reasoning models will output <think /> tags. When specified as parsed the model will output the reasoning under  `reasoning` or `reasoning_content` attribute.
+	// When specified as raw some reasoning models will output <think /> tags. When specified as parsed the model will output the reasoning under `reasoning` or `reasoning_content` attribute.
 	ReasoningFormat *string `json:"reasoning_format,omitempty"`
+
+	// ResponseFormat An object specifying the format that the model must output. Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured Outputs which guarantees the model will match your supplied JSON schema. Setting to `{ "type": "json_object" }` enables the older JSON mode, which ensures the message the model generates is valid JSON.
+	ResponseFormat *CreateChatCompletionRequest_ResponseFormat `json:"response_format,omitempty"`
+
+	// Seed If specified, our system will make a best effort to sample deterministically, such that repeated requests with the same `seed` and parameters should return the same result. Determinism is not guaranteed, and you should refer to the `system_fingerprint` response parameter to monitor changes in the backend.
+	Seed *int `json:"seed,omitempty"`
+
+	// Stop Up to 4 sequences where the API will stop generating further tokens.
+	Stop *CreateChatCompletionRequest_Stop `json:"stop,omitempty"`
 
 	// Stream If set to true, the model response data will be streamed to the client as it is generated using [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).
 	Stream *bool `json:"stream,omitempty"`
@@ -433,8 +577,43 @@ type CreateChatCompletionRequest struct {
 	// StreamOptions Options for streaming response. Only set this when you set `stream: true`.
 	StreamOptions *ChatCompletionStreamOptions `json:"stream_options,omitempty"`
 
+	// Temperature What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic.
+	Temperature *float32 `json:"temperature,omitempty"`
+
+	// ToolChoice Controls which (if any) tool is called by the model. `none` means the model will not call any tool and instead generates a message. `auto` means the model can pick between generating a message or calling one or more tools. `required` means the model must call one or more tools. Specifying a particular tool via `{"type": "function", "function": {"name": "my_function"}}` forces the model to call that tool.
+	// `none` is the default when no tools are present. `auto` is the default if tools are present.
+	ToolChoice *ChatCompletionToolChoiceOption `json:"tool_choice,omitempty"`
+
 	// Tools A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for. A max of 128 functions are supported.
 	Tools *[]ChatCompletionTool `json:"tools,omitempty"`
+
+	// TopLogprobs An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability. `logprobs` must be set to `true` if this parameter is used.
+	TopLogprobs *int `json:"top_logprobs,omitempty"`
+
+	// TopP An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass.
+	TopP *float32 `json:"top_p,omitempty"`
+
+	// User A unique identifier representing your end-user, which can help to monitor and detect abuse.
+	User *string `json:"user,omitempty"`
+}
+
+// CreateChatCompletionRequestReasoningEffort Constrains effort on reasoning for reasoning models. Currently supported values are `minimal`, `low`, `medium`, and `high`. Reducing reasoning effort can result in faster responses and fewer tokens used on reasoning in a response.
+type CreateChatCompletionRequestReasoningEffort string
+
+// CreateChatCompletionRequest_ResponseFormat An object specifying the format that the model must output. Setting to `{ "type": "json_schema", "json_schema": {...} }` enables Structured Outputs which guarantees the model will match your supplied JSON schema. Setting to `{ "type": "json_object" }` enables the older JSON mode, which ensures the message the model generates is valid JSON.
+type CreateChatCompletionRequest_ResponseFormat struct {
+	union json.RawMessage
+}
+
+// CreateChatCompletionRequestStop0 defines model for .
+type CreateChatCompletionRequestStop0 = string
+
+// CreateChatCompletionRequestStop1 defines model for .
+type CreateChatCompletionRequestStop1 = []string
+
+// CreateChatCompletionRequest_Stop Up to 4 sequences where the API will stop generating further tokens.
+type CreateChatCompletionRequest_Stop struct {
+	union json.RawMessage
 }
 
 // CreateChatCompletionResponse Represents a chat completion response returned by model, based on the provided input.
@@ -668,6 +847,51 @@ type ProviderAuthType string
 // ```
 type ProviderSpecificResponse = map[string]any
 
+// ResponseFormatJSONObject JSON object response format. An older method of generating JSON responses. Using `json_schema` is recommended for models that support it. Note that the model will not generate JSON without a system or user message instructing it to do so.
+type ResponseFormatJSONObject struct {
+	// Type The type of response format being defined. Always `json_object`.
+	Type ResponseFormatJSONObjectType `json:"type"`
+}
+
+// ResponseFormatJSONObjectType The type of response format being defined. Always `json_object`.
+type ResponseFormatJSONObjectType string
+
+// ResponseFormatJSONSchema JSON Schema response format. Used to generate structured JSON responses.
+type ResponseFormatJSONSchema struct {
+	// JSONSchema Structured Outputs configuration options, including a JSON Schema.
+	JSONSchema struct {
+		// Description A description of what the response format is for, used by the model to determine how to respond in the format.
+		Description *string `json:"description,omitempty"`
+
+		// Name The name of the response format. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.
+		Name string `json:"name"`
+
+		// Schema The schema for the response format, described as a JSON Schema object.
+		Schema *ResponseFormatJSONSchemaSchema `json:"schema,omitempty"`
+
+		// Strict Whether to enable strict schema adherence when generating the output. If set to true, the model will always follow the exact schema defined in the `schema` field. Only a subset of JSON Schema is supported when `strict` is `true`.
+		Strict *bool `json:"strict,omitempty"`
+	} `json:"json_schema"`
+
+	// Type The type of response format being defined. Always `json_schema`.
+	Type ResponseFormatJSONSchemaType `json:"type"`
+}
+
+// ResponseFormatJSONSchemaType The type of response format being defined. Always `json_schema`.
+type ResponseFormatJSONSchemaType string
+
+// ResponseFormatJSONSchemaSchema The schema for the response format, described as a JSON Schema object.
+type ResponseFormatJSONSchemaSchema map[string]any
+
+// ResponseFormatText Default response format. Used to generate text responses.
+type ResponseFormatText struct {
+	// Type The type of response format being defined. Always `text`.
+	Type ResponseFormatTextType `json:"type"`
+}
+
+// ResponseFormatTextType The type of response format being defined. Always `text`.
+type ResponseFormatTextType string
+
 // SSEvent defines model for SSEvent.
 type SSEvent struct {
 	Data  *[]byte       `json:"data,omitempty"`
@@ -897,6 +1121,68 @@ func (a ToolCallExtraContent_Google) MarshalJSON() ([]byte, error) {
 	return json.Marshal(object)
 }
 
+// AsChatCompletionToolChoiceOption0 returns the union data inside the ChatCompletionToolChoiceOption as a ChatCompletionToolChoiceOption0
+func (t ChatCompletionToolChoiceOption) AsChatCompletionToolChoiceOption0() (ChatCompletionToolChoiceOption0, error) {
+	var body ChatCompletionToolChoiceOption0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromChatCompletionToolChoiceOption0 overwrites any union data inside the ChatCompletionToolChoiceOption as the provided ChatCompletionToolChoiceOption0
+func (t *ChatCompletionToolChoiceOption) FromChatCompletionToolChoiceOption0(v ChatCompletionToolChoiceOption0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeChatCompletionToolChoiceOption0 performs a merge with any union data inside the ChatCompletionToolChoiceOption, using the provided ChatCompletionToolChoiceOption0
+func (t *ChatCompletionToolChoiceOption) MergeChatCompletionToolChoiceOption0(v ChatCompletionToolChoiceOption0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsChatCompletionNamedToolChoice returns the union data inside the ChatCompletionToolChoiceOption as a ChatCompletionNamedToolChoice
+func (t ChatCompletionToolChoiceOption) AsChatCompletionNamedToolChoice() (ChatCompletionNamedToolChoice, error) {
+	var body ChatCompletionNamedToolChoice
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromChatCompletionNamedToolChoice overwrites any union data inside the ChatCompletionToolChoiceOption as the provided ChatCompletionNamedToolChoice
+func (t *ChatCompletionToolChoiceOption) FromChatCompletionNamedToolChoice(v ChatCompletionNamedToolChoice) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeChatCompletionNamedToolChoice performs a merge with any union data inside the ChatCompletionToolChoiceOption, using the provided ChatCompletionNamedToolChoice
+func (t *ChatCompletionToolChoiceOption) MergeChatCompletionNamedToolChoice(v ChatCompletionNamedToolChoice) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ChatCompletionToolChoiceOption) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ChatCompletionToolChoiceOption) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsTextContentPart returns the union data inside the ContentPart as a TextContentPart
 func (t ContentPart) AsTextContentPart() (TextContentPart, error) {
 	var body TextContentPart
@@ -955,6 +1241,156 @@ func (t ContentPart) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ContentPart) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsResponseFormatText returns the union data inside the CreateChatCompletionRequest_ResponseFormat as a ResponseFormatText
+func (t CreateChatCompletionRequest_ResponseFormat) AsResponseFormatText() (ResponseFormatText, error) {
+	var body ResponseFormatText
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseFormatText overwrites any union data inside the CreateChatCompletionRequest_ResponseFormat as the provided ResponseFormatText
+func (t *CreateChatCompletionRequest_ResponseFormat) FromResponseFormatText(v ResponseFormatText) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseFormatText performs a merge with any union data inside the CreateChatCompletionRequest_ResponseFormat, using the provided ResponseFormatText
+func (t *CreateChatCompletionRequest_ResponseFormat) MergeResponseFormatText(v ResponseFormatText) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseFormatJSONSchema returns the union data inside the CreateChatCompletionRequest_ResponseFormat as a ResponseFormatJSONSchema
+func (t CreateChatCompletionRequest_ResponseFormat) AsResponseFormatJSONSchema() (ResponseFormatJSONSchema, error) {
+	var body ResponseFormatJSONSchema
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseFormatJSONSchema overwrites any union data inside the CreateChatCompletionRequest_ResponseFormat as the provided ResponseFormatJSONSchema
+func (t *CreateChatCompletionRequest_ResponseFormat) FromResponseFormatJSONSchema(v ResponseFormatJSONSchema) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseFormatJSONSchema performs a merge with any union data inside the CreateChatCompletionRequest_ResponseFormat, using the provided ResponseFormatJSONSchema
+func (t *CreateChatCompletionRequest_ResponseFormat) MergeResponseFormatJSONSchema(v ResponseFormatJSONSchema) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseFormatJSONObject returns the union data inside the CreateChatCompletionRequest_ResponseFormat as a ResponseFormatJSONObject
+func (t CreateChatCompletionRequest_ResponseFormat) AsResponseFormatJSONObject() (ResponseFormatJSONObject, error) {
+	var body ResponseFormatJSONObject
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseFormatJSONObject overwrites any union data inside the CreateChatCompletionRequest_ResponseFormat as the provided ResponseFormatJSONObject
+func (t *CreateChatCompletionRequest_ResponseFormat) FromResponseFormatJSONObject(v ResponseFormatJSONObject) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseFormatJSONObject performs a merge with any union data inside the CreateChatCompletionRequest_ResponseFormat, using the provided ResponseFormatJSONObject
+func (t *CreateChatCompletionRequest_ResponseFormat) MergeResponseFormatJSONObject(v ResponseFormatJSONObject) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CreateChatCompletionRequest_ResponseFormat) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CreateChatCompletionRequest_ResponseFormat) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCreateChatCompletionRequestStop0 returns the union data inside the CreateChatCompletionRequest_Stop as a CreateChatCompletionRequestStop0
+func (t CreateChatCompletionRequest_Stop) AsCreateChatCompletionRequestStop0() (CreateChatCompletionRequestStop0, error) {
+	var body CreateChatCompletionRequestStop0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCreateChatCompletionRequestStop0 overwrites any union data inside the CreateChatCompletionRequest_Stop as the provided CreateChatCompletionRequestStop0
+func (t *CreateChatCompletionRequest_Stop) FromCreateChatCompletionRequestStop0(v CreateChatCompletionRequestStop0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCreateChatCompletionRequestStop0 performs a merge with any union data inside the CreateChatCompletionRequest_Stop, using the provided CreateChatCompletionRequestStop0
+func (t *CreateChatCompletionRequest_Stop) MergeCreateChatCompletionRequestStop0(v CreateChatCompletionRequestStop0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCreateChatCompletionRequestStop1 returns the union data inside the CreateChatCompletionRequest_Stop as a CreateChatCompletionRequestStop1
+func (t CreateChatCompletionRequest_Stop) AsCreateChatCompletionRequestStop1() (CreateChatCompletionRequestStop1, error) {
+	var body CreateChatCompletionRequestStop1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCreateChatCompletionRequestStop1 overwrites any union data inside the CreateChatCompletionRequest_Stop as the provided CreateChatCompletionRequestStop1
+func (t *CreateChatCompletionRequest_Stop) FromCreateChatCompletionRequestStop1(v CreateChatCompletionRequestStop1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCreateChatCompletionRequestStop1 performs a merge with any union data inside the CreateChatCompletionRequest_Stop, using the provided CreateChatCompletionRequestStop1
+func (t *CreateChatCompletionRequest_Stop) MergeCreateChatCompletionRequestStop1(v CreateChatCompletionRequestStop1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CreateChatCompletionRequest_Stop) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CreateChatCompletionRequest_Stop) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
