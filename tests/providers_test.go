@@ -302,8 +302,6 @@ func TestProviderChatCompletionsForwardsNewParameters(t *testing.T) {
 	provider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 	require.NoError(t, err)
 
-	// oneOf unions: stop (array variant), tool_choice (string-enum variant),
-	// response_format (json_object variant).
 	var stop types.CreateChatCompletionRequest_Stop
 	require.NoError(t, stop.FromCreateChatCompletionRequestStop1([]string{"\n", "STOP"}))
 
@@ -338,7 +336,6 @@ func TestProviderChatCompletionsForwardsNewParameters(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, capturedBody)
 
-	// Scalar fields must survive into the outbound JSON body.
 	var forwarded map[string]any
 	require.NoError(t, json.Unmarshal(capturedBody, &forwarded))
 	assert.EqualValues(t, 0.7, forwarded["temperature"])
@@ -355,13 +352,10 @@ func TestProviderChatCompletionsForwardsNewParameters(t *testing.T) {
 	assert.Equal(t, "high", forwarded["reasoning_effort"])
 	assert.Equal(t, map[string]any{"50256": float64(-100)}, forwarded["logit_bias"])
 
-	// oneOf unions must marshal to their selected variant, not a flattened/dropped value.
 	assert.Equal(t, []any{"\n", "STOP"}, forwarded["stop"])
 	assert.Equal(t, "required", forwarded["tool_choice"])
 	assert.Equal(t, map[string]any{"type": "json_object"}, forwarded["response_format"])
 
-	// Round-trip the forwarded body back through the generated struct to confirm the
-	// unions unmarshal cleanly into the expected variant (no dropped variants).
 	var roundTrip types.CreateChatCompletionRequest
 	require.NoError(t, json.Unmarshal(capturedBody, &roundTrip))
 
