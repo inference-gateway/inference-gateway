@@ -41,6 +41,6 @@ jobs:
       issues: write
     uses: inference-gateway/.github/.github/workflows/infer.yml@v0.10.3
     with:
-      language: "go"
+      language: 'go'
       prompt: ${{ inputs.prompt }}
     secrets: inherit
