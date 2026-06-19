@@ -43,10 +43,10 @@ jobs:
       issues: write
       id-token: write
       actions: read
-    uses: inference-gateway/.github/.github/workflows/claude.yml@v0.10.3
+    uses: inference-gateway/.github/.github/workflows/claude.yml@v0.11.3
     with:
-      language: 'go'
+      language: "go"
       node: true
-      extra-tools: 'Bash(helm:*)'
+      extra-tools: "Bash(helm:*)"
       prompt: ${{ inputs.prompt }}
     secrets: inherit
