@@ -7,6 +7,12 @@ bindings:
     description: send message or insert newline
     category: chat
     enabled: true
+  chat_focus_attachments:
+    keys:
+      - ctrl+g
+    description: focus the attached-snippets tree below the input (↑/↓ move · d remove · c clear · esc done)
+    category: chat
+    enabled: true
   clipboard_copy_text:
     keys:
       - ctrl+shift+c
@@ -185,6 +191,12 @@ bindings:
     description: toggle todo list
     category: display
     enabled: true
+  explorer_annotate:
+    keys:
+      - a
+    description: annotate the selected range with an instruction
+    category: explorer
+    enabled: true
   explorer_cancel:
     keys:
       - esc
@@ -257,6 +269,18 @@ bindings:
     description: scroll the preview up
     category: explorer
     enabled: true
+  explorer_select:
+    keys:
+      - s
+    description: enter line-selection mode on the previewed file
+    category: explorer
+    enabled: true
+  explorer_submit:
+    keys:
+      - enter
+    description: submit annotations and inject into chat
+    category: explorer
+    enabled: true
   explorer_toggle:
     keys:
       - enter
@@ -268,6 +292,13 @@ bindings:
     keys:
       - .
     description: show/hide hidden and ignored files
+    category: explorer
+    enabled: true
+  explorer_toggle_select:
+    keys:
+      - space
+      - v
+    description: start/clear a line-range selection
     category: explorer
     enabled: true
   global_cancel:
