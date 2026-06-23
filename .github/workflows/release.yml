@@ -5,17 +5,23 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  github_release:
-    name: Github Release
+  version:
+    name: Compute Version
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     outputs:
-      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
-      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
+      new_release_published: ${{ steps.semantic.outputs.published }}
+      new_release_version: ${{ steps.semantic.outputs.version }}
     steps:
       - uses: actions/create-github-app-token@v3.2.0
         id: app-token
@@ -42,7 +48,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7.0.0
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
           token: ${{ steps.app-token.outputs.token }}
@@ -54,15 +60,37 @@ jobs:
 
       - name: Install semantic release and plugins
         run: |
-          npm install -g semantic-release@v25.0.2 \
-            conventional-changelog-conventionalcommits \
-            @semantic-release/changelog \
-            @semantic-release/exec \
-            @semantic-release/git \
-            @semantic-release/github
+          npm install -g \
+            semantic-release@25.0.2 \
+            @semantic-release/commit-analyzer@13.0.1 \
+            @semantic-release/release-notes-generator@14.1.0 \
+            @semantic-release/changelog@6.0.3 \
+            @semantic-release/exec@7.1.0 \
+            @semantic-release/git@10.0.1 \
+            @semantic-release/github@12.0.8 \
+            conventional-changelog-conventionalcommits@9.1.0
 
-      - name: Create a release if needed
+      - name: Check for existing releases
+        id: check_releases
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if [ -z "$(gh release list --limit 1)" ]; then
+            echo "create_initial=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "create_initial=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create initial release
+        if: steps.check_releases.outputs.create_initial == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh release create v0.1.0 --title "🚀 Version 0.1.0" --notes "Initial release" --target "${{ github.sha }}"
+
+      - name: Compute next version (dry-run)
         id: semantic
+        if: steps.check_releases.outputs.create_initial == 'false'
         env:
           CI: true
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -71,31 +99,210 @@ jobs:
           GIT_COMMITTER_NAME: ${{ steps.app-token.outputs.app-slug }}[bot]
           GIT_COMMITTER_EMAIL: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com
         run: |
-          if ! gh release view v0.1.0 >/dev/null 2>&1; then
-            gh release create v0.1.0 --title "Initial Release" --notes "Initial Release" --target main
-          fi
+          semantic-release --dry-run
 
-          DRY_OUTPUT=$(semantic-release --dry-run 2>&1 || true)
+  build:
+    name: Build Artifacts
+    needs: version
+    if: needs.version.outputs.new_release_published == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
 
-          if $(echo "$DRY_OUTPUT" | grep -q "no new version is released"); then
-            echo "No new release needed"
-            echo "new_release_published=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
+      - name: Set up Go
+        uses: actions/setup-go@v6.4.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
 
-          VERSION=$(echo "$DRY_OUTPUT" | grep -o "The next release version is [0-9]\+\.[0-9]\+\.[0-9]\+\(-rc\.[0-9]\+\)\?" | cut -d ' ' -f6)
-          if [ -z "$VERSION" ]; then
-            echo "Error: Could not determine version"
-            echo "Output: $DRY_OUTPUT"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4.1.0
+        with:
+          version: latest
+
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v7.2.2
+        with:
+          install-only: true
+          version: v2.16.0
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build artifacts and push images
+        env:
+          GORELEASER_CURRENT_TAG: v${{ needs.version.outputs.new_release_version }}
+        run: |
+          sed -i 's/const VERSION = ".*"/const VERSION = "v${{ needs.version.outputs.new_release_version }}"/' config/meta.go
+
+          goreleaser release --clean --skip=validate
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: release-dist
+          path: |
+            dist/inference-gateway_*.tar.gz
+            dist/checksums.txt
+          retention-days: 1
+
+  release:
+    name: Create Release
+    needs:
+      - version
+      - build
+    if: needs.version.outputs.new_release_published == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/create-github-app-token@v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.BOT_GH_APP_ID }}
+          private-key: ${{ secrets.BOT_GH_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            inference-gateway
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git config --global commit.gpgsign false
+          git config --global commit.signoff true
+
+      - name: Checkout code
+        uses: actions/checkout@v7.0.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 'lts/*'
+
+      - name: Install semantic release and plugins
+        run: |
+          npm install -g \
+            semantic-release@25.0.5 \
+            @semantic-release/commit-analyzer@13.0.1 \
+            @semantic-release/release-notes-generator@14.1.0 \
+            @semantic-release/changelog@6.0.3 \
+            @semantic-release/exec@7.1.0 \
+            @semantic-release/git@10.0.1 \
+            @semantic-release/github@12.0.8 \
+            conventional-changelog-conventionalcommits@9.1.0
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: 'v3.0.6'
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: release-dist
+          path: dist
+
+      - name: Sign checksums
+        run: |
+          cd dist
+          cosign sign-blob --yes checksums.txt --bundle checksums.txt.sigstore.json
+
+      - name: Verify all assets present
+        run: |
+          cd dist
+          missing=0
+          for f in \
+            inference-gateway_Linux_x86_64.tar.gz \
+            inference-gateway_Linux_arm64.tar.gz \
+            inference-gateway_Linux_armv7.tar.gz \
+            inference-gateway_Darwin_x86_64.tar.gz \
+            inference-gateway_Darwin_arm64.tar.gz \
+            checksums.txt \
+            checksums.txt.sigstore.json; do
+            if [ ! -f "$f" ]; then
+              echo "::error::missing release asset: $f"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "refusing to publish an incomplete immutable release"
             exit 1
           fi
+          ls -la
 
-          echo "new_release_version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Semantic Release
+        env:
+          CI: true
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GIT_AUTHOR_NAME: ${{ steps.app-token.outputs.app-slug }}[bot]
+          GIT_AUTHOR_EMAIL: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com
+          GIT_COMMITTER_NAME: ${{ steps.app-token.outputs.app-slug }}[bot]
+          GIT_COMMITTER_EMAIL: ${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com
+        run: |
+          semantic-release
 
-          if semantic-release; then
-            echo "Successfully released version $VERSION"
-            echo "new_release_published=true" >> $GITHUB_OUTPUT
-          else
-            echo "Release failed"
-            exit 1
+  sign_containers:
+    name: Sign Container Images
+    needs:
+      - version
+      - release
+    if: needs.version.outputs.new_release_published == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: 'v3.0.6'
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sign container images
+        env:
+          CONTAINER_REGISTRY: ghcr.io
+          VERSION: ${{ needs.version.outputs.new_release_version }}
+        run: |
+          docker pull "${CONTAINER_REGISTRY}/${{ github.repository }}:${VERSION}"
+          VERSION_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${CONTAINER_REGISTRY}/${{ github.repository }}:${VERSION}")
+          cosign sign --yes "$VERSION_DIGEST"
+
+          if [[ ! "$VERSION" =~ -rc ]]; then
+            docker pull "${CONTAINER_REGISTRY}/${{ github.repository }}:latest"
+            LATEST_DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "${CONTAINER_REGISTRY}/${{ github.repository }}:latest")
+            cosign sign --yes "$LATEST_DIGEST"
           fi

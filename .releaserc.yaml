@@ -51,12 +51,26 @@ plugins:
 
   - - '@semantic-release/exec'
     - verifyConditions: 'go mod tidy'
+      verifyReleaseCmd: |
+        if [ -n "$GITHUB_OUTPUT" ]; then
+          {
+            echo "version=${nextRelease.version}"
+            echo "published=true"
+          } >> "$GITHUB_OUTPUT"
+        fi
       prepareCmd: |
         sed -i 's/const VERSION = ".*"/const VERSION = "v${nextRelease.version}"/' config/meta.go
 
   - - '@semantic-release/github'
     - assets:
-        - CHANGELOG.md
+        - path: CHANGELOG.md
+        - path: dist/inference-gateway_Linux_x86_64.tar.gz
+        - path: dist/inference-gateway_Linux_arm64.tar.gz
+        - path: dist/inference-gateway_Linux_armv7.tar.gz
+        - path: dist/inference-gateway_Darwin_x86_64.tar.gz
+        - path: dist/inference-gateway_Darwin_arm64.tar.gz
+        - path: dist/checksums.txt
+        - path: dist/checksums.txt.sigstore.json
       releasedLabels: ['released']
       releaseNameTemplate: '🚀 Version ${nextRelease.version}'
       releaseBodyTemplate: |
