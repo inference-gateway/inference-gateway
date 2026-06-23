@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.26.1-rc.1](https://github.com/inference-gateway/inference-gateway/compare/v0.26.0...v0.26.1-rc.1) (2026-06-23)
+
+### 👷 CI
+
+* **claude:** centralize claude.yml via reusable workflow ([#398](https://github.com/inference-gateway/inference-gateway/issues/398)) ([34e7226](https://github.com/inference-gateway/inference-gateway/commit/34e7226a7d79fe21a226c029b3735e178c9c1e1b))
+* **deps:** upgrade actions/checkout from v6.0.3 to v7.0.0 across workflows ([0a4bf3d](https://github.com/inference-gateway/inference-gateway/commit/0a4bf3d923e99da615dde1bfbc1118a57992583a))
+* **infer:** centralize infer.yml + sync .infer config ([#392](https://github.com/inference-gateway/inference-gateway/issues/392)) ([5f9a886](https://github.com/inference-gateway/inference-gateway/commit/5f9a8865b0253a9fe69d68428d4e1d0cff970f24))
+* **release:** attach assets before publish for immutable releases ([dcf89ef](https://github.com/inference-gateway/inference-gateway/commit/dcf89ef90015c32069b85e5606d6b3912d5a83f5)), closes [#394](https://github.com/inference-gateway/inference-gateway/issues/394)
+* **release:** update Git author and committer names to use app slug ([b33edf8](https://github.com/inference-gateway/inference-gateway/commit/b33edf805b4776dcdaf9d66930a90b59f90bc0a8))
+
+### 🔧 Miscellaneous
+
+* add .infer/ to .gitignore ([c787eda](https://github.com/inference-gateway/inference-gateway/commit/c787edaaeae7643bae7a29e614657f8fc349a8bd))
+* bump to latest semantic-release ([77a79bd](https://github.com/inference-gateway/inference-gateway/commit/77a79bd33ab0efb009913207eb2800c3ff0edb47))
+* **deps:** bump claude-code-action v1.0.150 -> v1.0.152 ([#391](https://github.com/inference-gateway/inference-gateway/issues/391)) ([9bae62a](https://github.com/inference-gateway/inference-gateway/commit/9bae62a01fea6556925355bc12f6a9c6f759b919))
+* **deps:** bump github.com/coreos/go-oidc/v3 in the gomod group ([#393](https://github.com/inference-gateway/inference-gateway/issues/393)) ([1b2065f](https://github.com/inference-gateway/inference-gateway/commit/1b2065fa47c97d3e64fdda89c8c7c8ceb081b019))
+* **deps:** bump infer CLI v0.121.1 -> v0.122.2, infer-action v0.15.1 -> v0.15.4 ([#395](https://github.com/inference-gateway/inference-gateway/issues/395)) ([4d5f3c7](https://github.com/inference-gateway/inference-gateway/commit/4d5f3c73d4b78ef95c05db7e02ec0df7ccee280f))
+* **deps:** update schema version and dependencies ([b9cdfa7](https://github.com/inference-gateway/inference-gateway/commit/b9cdfa7c0c3fa0780abe62aaff3b7cd8a0158893))
+* remove infer agent configuration files ([67b4bc1](https://github.com/inference-gateway/inference-gateway/commit/67b4bc131edc2c4dd04bb7a7eba78bbb36fb97a2))
+
 ## [0.26.0](https://github.com/inference-gateway/inference-gateway/compare/v0.25.2...v0.26.0) (2026-06-18)
 
 ### ✨ Features
