@@ -929,7 +929,7 @@ type ToolCallExtraContent_Google struct {
 	// ThoughtSignature Opaque signature returned with reasoning-enabled tool calls.
 	// Must be echoed back verbatim in the next request that includes
 	// this tool call, or Google will reject the request.
-	ThoughtSignature     *string        `json:"thought_signature,omitempty"`
+	ThoughtSignature     *string                `json:"thought_signature,omitempty"`
 	AdditionalProperties map[string]any `json:"-"`
 }
 

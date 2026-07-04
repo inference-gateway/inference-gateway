@@ -1,6 +1,7 @@
 package otel
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"strings"
@@ -182,16 +183,23 @@ func bucketValue(bounds []float64, bucket int) float64 {
 }
 
 // pushAttributes filters pushed attributes down to the allowlist and derives
-// the source label: an explicit source attribute wins (unless it impersonates
-// the gateway), then the resource's service.name, then "unknown".
+// the source and team labels. Source: an explicit source attribute wins (unless
+// it impersonates the gateway), then the resource's service.name, then
+// "unknown". Team: an explicit team attribute is carried through, defaulting to
+// TeamUnknown so the label stays present on every series.
 func (o *OpenTelemetryImpl) pushAttributes(kvs []*commonpb.KeyValue, serviceName string) []attribute.KeyValue {
 	source := ""
-	attrs := make([]attribute.KeyValue, 0, len(kvs)+1)
+	team := ""
+	attrs := make([]attribute.KeyValue, 0, len(kvs)+2)
 
 	for _, kv := range kvs {
 		value := kv.GetValue().GetStringValue()
-		if kv.GetKey() == "source" {
+		switch kv.GetKey() {
+		case "source":
 			source = value
+			continue
+		case "team":
+			team = value
 			continue
 		}
 		if allowedAttributes[kv.GetKey()] && value != "" {
@@ -206,7 +214,7 @@ func (o *OpenTelemetryImpl) pushAttributes(kvs []*commonpb.KeyValue, serviceName
 		source = "unknown"
 	}
 
-	return append(attrs, sourceKey.String(source))
+	return append(attrs, sourceKey.String(source), teamKey.String(cmp.Or(team, TeamUnknown)))
 }
 
 func resourceServiceName(rm *metricspb.ResourceMetrics) string {

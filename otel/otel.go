@@ -2,6 +2,7 @@
 package otel
 
 import (
+	"cmp"
 	"context"
 
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -20,10 +21,19 @@ import (
 // gateway itself; pushed metrics must carry a different source.
 const SourceGateway = "gateway"
 
+// TeamUnknown is the team attribute value used when no organizational unit can
+// be attributed to a measurement. Defaulting to it (instead of dropping the
+// label) keeps the label present on every series so dashboards stay stable.
+const TeamUnknown = "unknown"
+
 // sourceKey labels every series with where the measurement came from,
 // distinguishing gateway-observed traffic from subscription clients pushing
 // via the OTLP endpoint.
 const sourceKey = attribute.Key("source")
+
+// teamKey attributes a measurement to an organizational unit (team or
+// department) so usage and failures can be broken down per team.
+const teamKey = attribute.Key("team")
 
 // IngestResult summarizes an OTLP push ingestion.
 type IngestResult struct {
@@ -36,9 +46,9 @@ type IngestResult struct {
 type OpenTelemetry interface {
 	Init(config config.Config, logger logger.Logger) error
 
-	RecordTokenUsage(ctx context.Context, source, provider, model string, inputTokens, outputTokens int64)
-	RecordRequestDuration(ctx context.Context, source, provider, model, errorType string, seconds float64)
-	RecordToolCall(ctx context.Context, source, provider, model, toolType, toolName string)
+	RecordTokenUsage(ctx context.Context, source, team, provider, model string, inputTokens, outputTokens int64)
+	RecordRequestDuration(ctx context.Context, source, team, provider, model, errorType string, seconds float64)
+	RecordToolCall(ctx context.Context, source, team, provider, model, toolType, toolName string)
 
 	// IngestMetrics maps an OTLP push payload onto the gateway's instruments.
 	IngestMetrics(ctx context.Context, req *colmetricspb.ExportMetricsServiceRequest) IngestResult
@@ -169,9 +179,10 @@ func (o *OpenTelemetryImpl) initInstruments(provider *sdkmetric.MeterProvider) e
 	return nil
 }
 
-func (o *OpenTelemetryImpl) RecordTokenUsage(ctx context.Context, source, provider, model string, inputTokens, outputTokens int64) {
+func (o *OpenTelemetryImpl) RecordTokenUsage(ctx context.Context, source, team, provider, model string, inputTokens, outputTokens int64) {
 	base := []attribute.KeyValue{
 		sourceKey.String(source),
+		teamKey.String(cmp.Or(team, TeamUnknown)),
 		semconv.GenAIOperationNameChat,
 		semconv.GenAIProviderNameKey.String(provider),
 		semconv.GenAIRequestModel(model),
@@ -183,9 +194,10 @@ func (o *OpenTelemetryImpl) RecordTokenUsage(ctx context.Context, source, provid
 		metric.WithAttributes(append(base, semconv.GenAITokenTypeOutput)...))
 }
 
-func (o *OpenTelemetryImpl) RecordRequestDuration(ctx context.Context, source, provider, model, errorType string, seconds float64) {
+func (o *OpenTelemetryImpl) RecordRequestDuration(ctx context.Context, source, team, provider, model, errorType string, seconds float64) {
 	attributes := []attribute.KeyValue{
 		sourceKey.String(source),
+		teamKey.String(cmp.Or(team, TeamUnknown)),
 		semconv.GenAIOperationNameChat,
 		semconv.GenAIProviderNameKey.String(provider),
 		semconv.GenAIRequestModel(model),
@@ -197,9 +209,10 @@ func (o *OpenTelemetryImpl) RecordRequestDuration(ctx context.Context, source, p
 	o.serverRequestDuration.Record(ctx, seconds, metric.WithAttributes(attributes...))
 }
 
-func (o *OpenTelemetryImpl) RecordToolCall(ctx context.Context, source, provider, model, toolType, toolName string) {
+func (o *OpenTelemetryImpl) RecordToolCall(ctx context.Context, source, team, provider, model, toolType, toolName string) {
 	attributes := []attribute.KeyValue{
 		sourceKey.String(source),
+		teamKey.String(cmp.Or(team, TeamUnknown)),
 		semconv.GenAIProviderNameKey.String(provider),
 		semconv.GenAIRequestModel(model),
 		semconv.GenAIToolType(toolType),

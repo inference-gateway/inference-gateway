@@ -73,39 +73,39 @@ func (mr *MockOpenTelemetryMockRecorder) Init(arg0, arg1 any) *gomock.Call {
 }
 
 // RecordRequestDuration mocks base method.
-func (m *MockOpenTelemetry) RecordRequestDuration(ctx context.Context, source, provider, model, errorType string, seconds float64) {
+func (m *MockOpenTelemetry) RecordRequestDuration(ctx context.Context, source, team, provider, model, errorType string, seconds float64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordRequestDuration", ctx, source, provider, model, errorType, seconds)
+	m.ctrl.Call(m, "RecordRequestDuration", ctx, source, team, provider, model, errorType, seconds)
 }
 
 // RecordRequestDuration indicates an expected call of RecordRequestDuration.
-func (mr *MockOpenTelemetryMockRecorder) RecordRequestDuration(ctx, source, provider, model, errorType, seconds any) *gomock.Call {
+func (mr *MockOpenTelemetryMockRecorder) RecordRequestDuration(ctx, source, team, provider, model, errorType, seconds any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestDuration", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordRequestDuration), ctx, source, provider, model, errorType, seconds)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordRequestDuration", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordRequestDuration), ctx, source, team, provider, model, errorType, seconds)
 }
 
 // RecordTokenUsage mocks base method.
-func (m *MockOpenTelemetry) RecordTokenUsage(ctx context.Context, source, provider, model string, inputTokens, outputTokens int64) {
+func (m *MockOpenTelemetry) RecordTokenUsage(ctx context.Context, source, team, provider, model string, inputTokens, outputTokens int64) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordTokenUsage", ctx, source, provider, model, inputTokens, outputTokens)
+	m.ctrl.Call(m, "RecordTokenUsage", ctx, source, team, provider, model, inputTokens, outputTokens)
 }
 
 // RecordTokenUsage indicates an expected call of RecordTokenUsage.
-func (mr *MockOpenTelemetryMockRecorder) RecordTokenUsage(ctx, source, provider, model, inputTokens, outputTokens any) *gomock.Call {
+func (mr *MockOpenTelemetryMockRecorder) RecordTokenUsage(ctx, source, team, provider, model, inputTokens, outputTokens any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordTokenUsage", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordTokenUsage), ctx, source, provider, model, inputTokens, outputTokens)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordTokenUsage", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordTokenUsage), ctx, source, team, provider, model, inputTokens, outputTokens)
 }
 
 // RecordToolCall mocks base method.
-func (m *MockOpenTelemetry) RecordToolCall(ctx context.Context, source, provider, model, toolType, toolName string) {
+func (m *MockOpenTelemetry) RecordToolCall(ctx context.Context, source, team, provider, model, toolType, toolName string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RecordToolCall", ctx, source, provider, model, toolType, toolName)
+	m.ctrl.Call(m, "RecordToolCall", ctx, source, team, provider, model, toolType, toolName)
 }
 
 // RecordToolCall indicates an expected call of RecordToolCall.
-func (mr *MockOpenTelemetryMockRecorder) RecordToolCall(ctx, source, provider, model, toolType, toolName any) *gomock.Call {
+func (mr *MockOpenTelemetryMockRecorder) RecordToolCall(ctx, source, team, provider, model, toolType, toolName any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordToolCall", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordToolCall), ctx, source, provider, model, toolType, toolName)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordToolCall", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordToolCall), ctx, source, team, provider, model, toolType, toolName)
 }
 
 // ShutDown mocks base method.

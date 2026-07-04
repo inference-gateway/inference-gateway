@@ -87,6 +87,7 @@ func TestIngestMetrics(t *testing.T) {
 				strAttr("gen_ai.provider.name", "anthropic"),
 				strAttr("gen_ai.token.type", "input"),
 				strAttr("source", "claude-code-subscription"),
+				strAttr("team", "platform"),
 			),
 		))
 
@@ -107,6 +108,24 @@ func TestIngestMetrics(t *testing.T) {
 		provider, ok := dp.Attributes.Value("gen_ai.provider.name")
 		require.True(t, ok)
 		assert.Equal(t, "anthropic", provider.AsString())
+		team, ok := dp.Attributes.Value("team")
+		require.True(t, ok)
+		assert.Equal(t, "platform", team.AsString())
+	})
+
+	t.Run("team defaults to unknown when the pushed data point omits it", func(t *testing.T) {
+		o, reader := newTestTelemetry(t)
+
+		o.IngestMetrics(ctx, requestWith("infer-cli",
+			deltaSum("gen_ai.client.token.usage", 10, false, strAttr("gen_ai.token.type", "input"))))
+
+		m, ok := findMetric(collect(t, reader), "gen_ai.client.token.usage")
+		require.True(t, ok)
+		hist := m.Data.(metricdata.Histogram[int64])
+		require.Len(t, hist.DataPoints, 1)
+		team, ok := hist.DataPoints[0].Attributes.Value("team")
+		require.True(t, ok)
+		assert.Equal(t, TeamUnknown, team.AsString())
 	})
 
 	t.Run("tool calls delta monotonic sum is added to the counter", func(t *testing.T) {

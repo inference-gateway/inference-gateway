@@ -148,7 +148,10 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		if statusCode >= 400 {
 			errorType = strconv.Itoa(statusCode)
 		}
-		t.telemetry.RecordRequestDuration(c.Request.Context(), otel.SourceGateway, provider, model, errorType, duration)
+		// team attribution defaults to unknown for gateway-served requests;
+		// deriving it from OIDC claims is tracked as a follow-up (issue #412).
+		team := otel.TeamUnknown
+		t.telemetry.RecordRequestDuration(c.Request.Context(), otel.SourceGateway, team, provider, model, errorType, duration)
 
 		respData := t.parseResponseData(w.body.Bytes(), requestBody.Stream != nil && *requestBody.Stream, provider, model)
 
@@ -171,13 +174,14 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		t.telemetry.RecordTokenUsage(
 			c.Request.Context(),
 			otel.SourceGateway,
+			team,
 			provider,
 			model,
 			promptTokens,
 			completionTokens,
 		)
 
-		t.recordToolCallMetrics(c.Request.Context(), provider, model, &requestBody, respData)
+		t.recordToolCallMetrics(c.Request.Context(), team, provider, model, &requestBody, respData)
 	}
 }
 
@@ -309,7 +313,7 @@ func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, promptTo
 }
 
 // recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
-func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, model string, request *types.CreateChatCompletionRequest, respData *responseData) {
+func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, team, provider, model string, request *types.CreateChatCompletionRequest, respData *responseData) {
 	availableTools := make(map[string]string) // tool_name -> tool_type
 	if request.Tools != nil {
 		for _, tool := range *request.Tools {
@@ -324,7 +328,7 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, mod
 			toolType = t.classifyToolType(toolCall.Function.Name)
 		}
 
-		t.telemetry.RecordToolCall(ctx, otel.SourceGateway, provider, model, toolType, toolCall.Function.Name)
+		t.telemetry.RecordToolCall(ctx, otel.SourceGateway, team, provider, model, toolType, toolCall.Function.Name)
 	}
 }
 
