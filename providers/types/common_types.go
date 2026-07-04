@@ -1005,6 +1005,9 @@ type CreateChatCompletionParams struct {
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
+// PushMetricsJSONBody defines parameters for PushMetrics.
+type PushMetricsJSONBody = map[string]any
+
 // ListModelsParams defines parameters for ListModels.
 type ListModelsParams struct {
 	// Provider Specific provider to query (optional)
@@ -1043,6 +1046,9 @@ type ProxyPutJSONBody struct {
 
 // CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
 type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
+
+// PushMetricsJSONRequestBody defines body for PushMetrics for application/json ContentType.
+type PushMetricsJSONRequestBody = PushMetricsJSONBody
 
 // ProxyPatchJSONRequestBody defines body for ProxyPatch for application/json ContentType.
 type ProxyPatchJSONRequestBody ProxyPatchJSONBody

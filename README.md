@@ -391,65 +391,45 @@ curl http://localhost:9464/metrics
 
 ### Available Metrics
 
-#### Token Usage Metrics
+Metrics follow the [OpenTelemetry GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/).
+Every series carries a `source` label: `gateway` for gateway-observed traffic, or a client-supplied value
+(e.g. `claude-code-subscription`) for pushed metrics.
 
-Track token consumption across different providers and models:
+| Metric                                                | Type      | Description                                                             |
+| ----------------------------------------------------- | --------- | ----------------------------------------------------------------------- |
+| `gen_ai_client_token_usage`                           | Histogram | Token usage; `gen_ai_token_type` is `input` or `output`                 |
+| `gen_ai_server_request_duration_seconds`              | Histogram | End-to-end request duration in seconds; `error_type` set only on errors |
+| `gen_ai_execute_tool_duration_seconds`                | Histogram | Tool execution duration in seconds (fed via the push endpoint)          |
+| `gen_ai_client_operation_duration_seconds`            | Histogram | Client-side operation duration (push-only)                              |
+| `gen_ai_client_operation_time_to_first_chunk_seconds` | Histogram | Time to first chunk (push-only)                                         |
+| `gen_ai_server_time_to_first_token_seconds`           | Histogram | Time to first token (push-only)                                         |
+| `inference_gateway_tool_calls_total`                  | Counter   | Total function/tool calls                                               |
 
-- **`llm_usage_prompt_tokens_total`** - Counter for prompt tokens consumed
-- **`llm_usage_completion_tokens_total`** - Counter for completion tokens generated
-- **`llm_usage_total_tokens_total`** - Counter for total token usage
-
-**Labels**: `provider`, `model`
-
-```promql
-# Total tokens used by OpenAI models in the last hour
-sum(increase(llm_usage_total_tokens_total{provider="openai"}[1h])) by (model)
-```
-
-#### Request/Response Metrics
-
-Monitor API performance and reliability:
-
-- **`llm_requests_total`** - Counter for total requests processed
-- **`llm_responses_total`** - Counter for responses by HTTP status code
-- **`llm_request_duration`** - Histogram for end-to-end request duration (milliseconds)
-
-**Labels**: `provider`, `request_method`, `request_path`, `status_code` (responses only)
+**Common labels**: `gen_ai_provider_name`, `gen_ai_request_model`, `gen_ai_operation_name`, `source`;
+tool metrics add `gen_ai_tool_type` and `gen_ai_tool_name`; token usage adds `gen_ai_token_type`;
+`error_type` (HTTP status string) is present only on errors.
 
 ```promql
-# 95th percentile request latency by provider
-histogram_quantile(0.95, sum(rate(llm_request_duration_bucket{provider=~"openai|anthropic"}[5m])) by (provider, le))
+# Input tokens used by OpenAI models in the last hour
+sum(increase(gen_ai_client_token_usage_sum{gen_ai_provider_name="openai", gen_ai_token_type="input"}[1h])) by (gen_ai_request_model)
+
+# 95th percentile request latency by provider (seconds)
+histogram_quantile(0.95, sum(rate(gen_ai_server_request_duration_seconds_bucket{gen_ai_provider_name=~"openai|anthropic"}[5m])) by (gen_ai_provider_name, le))
 
 # Error rate percentage by provider
-100 * sum(rate(llm_responses_total{status_code!~"2.."}[5m])) by (provider) / sum(rate(llm_responses_total[5m])) by (provider)
-```
-
-#### Function/Tool Call Metrics
-
-Comprehensive tracking of tool executions for MCP, and standard function calls:
-
-- **`llm_tool_calls_total`** - Counter for total function/tool calls executed
-- **`llm_tool_calls_success_total`** - Counter for successful tool executions
-- **`llm_tool_calls_failure_total`** - Counter for failed tool executions
-- **`llm_tool_call_duration`** - Histogram for tool execution duration (milliseconds)
-
-**Labels**: `provider`, `model`, `tool_type`, `tool_name`, `error_type` (failures only)
-
-**Tool Types**:
-
-- `mcp` - Model Context Protocol tools (prefix: `mcp_`)
-- `standard_tool_use` - Other function calls
-
-```promql
-# Tool call success rate by type
-100 * sum(rate(llm_tool_calls_success_total[5m])) by (tool_type) / sum(rate(llm_tool_calls_total[5m])) by (tool_type)
-
-# Average tool execution time by provider
-sum(rate(llm_tool_call_duration_sum[5m])) by (provider) / sum(rate(llm_tool_call_duration_count[5m])) by (provider)
+100 * sum(rate(gen_ai_server_request_duration_seconds_count{error_type!=""}[5m])) by (gen_ai_provider_name) / sum(rate(gen_ai_server_request_duration_seconds_count[5m])) by (gen_ai_provider_name)
 
 # Most frequently used tools
-topk(10, sum(increase(llm_tool_calls_total[1h])) by (tool_name))
+topk(10, sum(increase(inference_gateway_tool_calls_total[1h])) by (gen_ai_tool_name))
 ```
+
+### Pushing Metrics (OTLP)
+
+Clients such as the infer CLI can push their own metrics (e.g. token usage from subscription-based sessions)
+to the gateway. Enable the opt-in endpoint with `TELEMETRY_METRICS_PUSH_ENABLE=true` (alongside
+`TELEMETRY_ENABLE=true`) and POST OTLP JSON to `POST /v1/metrics`; pushed series are exposed on the same
+Prometheus endpoint with the client-supplied `source` label.
+See [examples/docker-compose/monitoring](examples/docker-compose/monitoring/README.md) for a full example.
 
 ### Monitoring Setup
 

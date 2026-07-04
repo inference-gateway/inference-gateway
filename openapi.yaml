@@ -33,6 +33,8 @@ tags:
     description: List and manage MCP tools.
   - name: Proxy
     description: Proxy requests to provider endpoints.
+  - name: Metrics
+    description: Push metrics to the gateway (OTLP/HTTP).
   - name: Health
     description: Health check
 paths:
@@ -196,6 +198,50 @@ paths:
           $ref: '#/components/responses/MCPNotExposed'
         '500':
           $ref: '#/components/responses/InternalError'
+  /metrics:
+    post:
+      operationId: pushMetrics
+      tags:
+        - Metrics
+      description: |
+        OTLP/HTTP metrics push endpoint. Accepts an OTLP ExportMetricsServiceRequest
+        encoded as protobuf or JSON. Only accessible when TELEMETRY_ENABLE and
+        TELEMETRY_METRICS_PUSH_ENABLE are enabled.
+      summary: Push metrics to the gateway (OTLP/HTTP)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: OTLP ExportMetricsServiceRequest payload
+        content:
+          application/x-protobuf:
+            schema:
+              type: string
+              format: binary
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OTLP ExportMetricsServiceResponse, possibly with partial success details
+          content:
+            application/x-protobuf:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Metrics push is not enabled
+        '413':
+          description: Payload too large
+        '415':
+          description: Unsupported content type
   /proxy/{provider}/{path}:
     parameters:
       - name: provider
@@ -1652,6 +1698,11 @@ components:
                   type: bool
                   default: 'false'
                   description: 'Enable telemetry'
+                - name: telemetry_metrics_push_enable
+                  env: 'TELEMETRY_METRICS_PUSH_ENABLE'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable the OTLP metrics push endpoint (POST /v1/metrics)'
                 - name: telemetry_metrics_port
                   env: 'TELEMETRY_METRICS_PORT'
                   type: string

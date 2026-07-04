@@ -180,7 +180,7 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -278,7 +278,7 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 				},
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -432,7 +432,7 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -607,7 +607,7 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -783,7 +783,7 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -940,7 +940,7 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -1090,7 +1090,7 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 				BuildProvider(constants.OpenaiID, mockClient).
 				Return(mockProvider, nil)
 
-			router := api.NewRouter(cfg, log, mockRegistry, mockClient, nil)
+			router := api.NewRouter(cfg, log, mockRegistry, mockClient, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()

@@ -41,8 +41,9 @@ type Config struct {
 
 // Telemetry configuration
 type TelemetryConfig struct {
-	Enable      bool   `env:"ENABLE, default=false" description:"Enable telemetry"`
-	MetricsPort string `env:"METRICS_PORT, default=9464" description:"Port for telemetry metrics server"`
+	Enable            bool   `env:"ENABLE, default=false" description:"Enable telemetry"`
+	MetricsPushEnable bool   `env:"METRICS_PUSH_ENABLE, default=false" description:"Enable the OTLP metrics push endpoint (POST /v1/metrics)"`
+	MetricsPort       string `env:"METRICS_PORT, default=9464" description:"Port for telemetry metrics server"`
 }
 
 // MCP configuration

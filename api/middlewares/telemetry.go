@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
@@ -141,10 +142,13 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 
 		// Post middleware begins
 		statusCode := c.Writer.Status()
-		duration := float64(time.Since(startTime).Milliseconds())
+		duration := time.Since(startTime).Seconds()
 
-		t.telemetry.RecordResponseStatus(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, statusCode)
-		t.telemetry.RecordRequestDuration(c.Request.Context(), provider, c.Request.Method, c.Request.URL.Path, duration)
+		errorType := ""
+		if statusCode >= 400 {
+			errorType = strconv.Itoa(statusCode)
+		}
+		t.telemetry.RecordRequestDuration(c.Request.Context(), otel.SourceGateway, provider, model, errorType, duration)
 
 		respData := t.parseResponseData(w.body.Bytes(), requestBody.Stream != nil && *requestBody.Stream, provider, model)
 
@@ -160,17 +164,17 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 			"completion_tokens", completionTokens,
 			"total_tokens", totalTokens,
 			"tool_calls", toolCallCount,
-			"duration_ms", duration,
+			"duration_seconds", duration,
 			"status_code", statusCode,
 		)
 
 		t.telemetry.RecordTokenUsage(
 			c.Request.Context(),
+			otel.SourceGateway,
 			provider,
 			model,
 			promptTokens,
 			completionTokens,
-			totalTokens,
 		)
 
 		t.recordToolCallMetrics(c.Request.Context(), provider, model, &requestBody, respData)
@@ -320,7 +324,7 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, provider, mod
 			toolType = t.classifyToolType(toolCall.Function.Name)
 		}
 
-		t.telemetry.RecordToolCallCount(ctx, provider, model, toolType, toolCall.Function.Name)
+		t.telemetry.RecordToolCall(ctx, otel.SourceGateway, provider, model, toolType, toolCall.Function.Name)
 	}
 }
 

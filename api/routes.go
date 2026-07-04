@@ -20,6 +20,7 @@ import (
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 	l "github.com/inference-gateway/inference-gateway/logger"
+	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
@@ -33,6 +34,7 @@ type Router interface {
 	ListModelsHandler(c *gin.Context)
 	ChatCompletionsHandler(c *gin.Context)
 	ListToolsHandler(c *gin.Context)
+	MetricsIngestionHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
 	HealthcheckHandler(c *gin.Context)
 	NotFoundHandler(c *gin.Context)
@@ -44,6 +46,7 @@ type RouterImpl struct {
 	registry  registry.ProviderRegistry
 	client    client.Client
 	mcpClient mcp.MCPClientInterface
+	telemetry otel.OpenTelemetry
 }
 
 type ErrorResponse struct {
@@ -60,6 +63,7 @@ func NewRouter(
 	providerRegistry registry.ProviderRegistry,
 	httpClient client.Client,
 	mcpClient mcp.MCPClientInterface,
+	telemetry otel.OpenTelemetry,
 ) Router {
 	return &RouterImpl{
 		cfg,
@@ -67,6 +71,7 @@ func NewRouter(
 		providerRegistry,
 		httpClient,
 		mcpClient,
+		telemetry,
 	}
 }
 

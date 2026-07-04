@@ -80,7 +80,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(llm_tool_calls_total{provider=~\"$provider\"}[$__range]))",
+          "expr": "sum(increase(inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\"}[$__range]))",
           "refId": "A",
           "legendFormat": "Total Tool Calls"
         }
@@ -145,7 +145,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "100 * sum(increase(llm_tool_calls_success_total{provider=~\"$provider\"}[$__range])) / sum(increase(llm_tool_calls_total{provider=~\"$provider\"}[$__range]))",
+          "expr": "100 * sum(increase(gen_ai_execute_tool_duration_seconds_count{error_type=\"\", gen_ai_provider_name=~\"$provider\"}[$__range])) / sum(increase(gen_ai_execute_tool_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[$__range]))",
           "refId": "A",
           "legendFormat": "Success Rate"
         }
@@ -213,7 +213,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(llm_tool_calls_failure_total{provider=~\"$provider\"}[$__range]))",
+          "expr": "sum(increase(gen_ai_execute_tool_duration_seconds_count{error_type!=\"\", gen_ai_provider_name=~\"$provider\"}[$__range]))",
           "refId": "A",
           "legendFormat": "Failed Calls"
         }
@@ -247,7 +247,7 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -281,7 +281,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(rate(llm_tool_call_duration_sum{provider=~\"$provider\"}[5m])) / sum(rate(llm_tool_call_duration_count{provider=~\"$provider\"}[5m]))",
+          "expr": "sum(rate(gen_ai_execute_tool_duration_seconds_sum{gen_ai_provider_name=~\"$provider\"}[5m])) / sum(rate(gen_ai_execute_tool_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[5m]))",
           "refId": "A",
           "legendFormat": "Avg Duration"
         }
@@ -369,9 +369,9 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by(tool_type) (rate(llm_tool_calls_total{provider=~\"$provider\"}[1m]))",
+          "expr": "sum by(gen_ai_tool_type) (rate(inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\"}[1m]))",
           "refId": "A",
-          "legendFormat": "{{tool_type}}"
+          "legendFormat": "{{gen_ai_tool_type}}"
         }
       ]
     },
@@ -429,7 +429,7 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -461,18 +461,18 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum by(le, provider) (rate(llm_tool_call_duration_bucket{provider=~\"$provider\"}[1m])))",
+          "expr": "histogram_quantile(0.95, sum by(le, gen_ai_provider_name) (rate(gen_ai_execute_tool_duration_seconds_bucket{gen_ai_provider_name=~\"$provider\"}[1m])))",
           "refId": "A",
-          "legendFormat": "{{provider}} - p95"
+          "legendFormat": "{{gen_ai_provider_name}} - p95"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by(provider) (rate(llm_tool_call_duration_sum{provider=~\"$provider\"}[1m])) / sum by(provider) (rate(llm_tool_call_duration_count{provider=~\"$provider\"}[1m]))",
+          "expr": "sum by(gen_ai_provider_name) (rate(gen_ai_execute_tool_duration_seconds_sum{gen_ai_provider_name=~\"$provider\"}[1m])) / sum by(gen_ai_provider_name) (rate(gen_ai_execute_tool_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[1m]))",
           "refId": "B",
-          "legendFormat": "{{provider}} - avg"
+          "legendFormat": "{{gen_ai_provider_name}} - avg"
         }
       ]
     },
@@ -534,9 +534,9 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "topk(10, sum by(tool_name) (increase(llm_tool_calls_total{provider=~\"$provider\"}[$__range])))",
+          "expr": "topk(10, sum by(gen_ai_tool_name) (increase(inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\"}[$__range])))",
           "refId": "A",
-          "legendFormat": "{{tool_name}}"
+          "legendFormat": "{{gen_ai_tool_name}}"
         }
       ]
     },
@@ -598,7 +598,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by(error_type) (increase(llm_tool_calls_failure_total{provider=~\"$provider\"}[$__range]))",
+          "expr": "sum by(error_type) (increase(gen_ai_execute_tool_duration_seconds_count{error_type!=\"\", gen_ai_provider_name=~\"$provider\"}[$__range]))",
           "refId": "A",
           "legendFormat": "{{error_type}}"
         }
@@ -658,7 +658,7 @@
               }
             ]
           },
-          "unit": "ms"
+          "unit": "s"
         },
         "overrides": []
       },
@@ -690,18 +690,18 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95, sum by(le, provider) (rate(llm_request_duration_bucket{provider=~\"$provider\"}[1m])))",
+          "expr": "histogram_quantile(0.95, sum by(le, gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_bucket{gen_ai_provider_name=~\"$provider\"}[1m])))",
           "refId": "A",
-          "legendFormat": "{{provider}} - p95"
+          "legendFormat": "{{gen_ai_provider_name}} - p95"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by(provider) (rate(llm_request_duration_sum{provider=~\"$provider\"}[1m])) / sum by(provider) (rate(llm_request_duration_count{provider=~\"$provider\"}[1m]))",
+          "expr": "sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_sum{gen_ai_provider_name=~\"$provider\"}[1m])) / sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[1m]))",
           "refId": "B",
-          "legendFormat": "{{provider}} - avg"
+          "legendFormat": "{{gen_ai_provider_name}} - avg"
         }
       ]
     },
@@ -787,18 +787,18 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by(provider) (rate(llm_usage_total_tokens_total{provider=~\"$provider\"}[1m]))",
+          "expr": "sum by(gen_ai_provider_name, source) (rate(gen_ai_client_token_usage_sum{gen_ai_provider_name=~\"$provider\"}[1m]))",
           "refId": "A",
-          "legendFormat": "{{provider}} - Total Tokens"
+          "legendFormat": "{{gen_ai_provider_name}}/{{source}} - Total Tokens"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum by(provider) (rate(llm_usage_completion_tokens_total{provider=~\"$provider\"}[1m]))",
+          "expr": "sum by(gen_ai_provider_name, source) (rate(gen_ai_client_token_usage_sum{gen_ai_token_type=\"output\", gen_ai_provider_name=~\"$provider\"}[1m]))",
           "refId": "B",
-          "legendFormat": "{{provider}} - Completion Tokens"
+          "legendFormat": "{{gen_ai_provider_name}}/{{source}} - Completion Tokens"
         }
       ]
     },
@@ -906,9 +906,9 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "100 * sum by(provider) (rate(llm_responses_total{status_code=~\"[45].*\", provider=~\"$provider\"}[5m]) or vector(0)) / clamp_min(sum by(provider) (rate(llm_responses_total{provider=~\"$provider\"}[5m]) or vector(0)), 0.001)",
+          "expr": "100 * sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_count{error_type!=\"\", gen_ai_provider_name=~\"$provider\"}[5m]) or vector(0)) / clamp_min(sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[5m]) or vector(0)), 0.001)",
           "refId": "A",
-          "legendFormat": "{{provider}} error rate"
+          "legendFormat": "{{gen_ai_provider_name}} error rate"
         }
       ]
     },
@@ -989,18 +989,18 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "sum(increase(llm_usage_prompt_tokens_total{provider=~\"$provider\"}[$__range])) by (provider)",
+          "expr": "sum(increase(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\", gen_ai_provider_name=~\"$provider\"}[$__range])) by (gen_ai_provider_name, source)",
           "refId": "A",
-          "legendFormat": "{{provider}} - Total"
+          "legendFormat": "{{gen_ai_provider_name}}/{{source}} - Total"
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "100 * sum(increase(llm_usage_prompt_tokens_total{provider=~\"$provider\"}[$__range])) by (provider) / scalar(sum(increase(llm_usage_prompt_tokens_total{provider=~\"$provider\"}[$__range])))",
+          "expr": "100 * sum(increase(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\", gen_ai_provider_name=~\"$provider\"}[$__range])) by (gen_ai_provider_name, source) / scalar(sum(increase(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\", gen_ai_provider_name=~\"$provider\"}[$__range])))",
           "refId": "B",
-          "legendFormat": "{{provider}} - (%)"
+          "legendFormat": "{{gen_ai_provider_name}}/{{source}} - (%)"
         }
       ]
     },
@@ -1209,14 +1209,14 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "definition": "label_values(llm_usage_total_tokens_total, provider)",
+        "definition": "label_values(gen_ai_client_token_usage_sum, gen_ai_provider_name)",
         "hide": 0,
         "includeAll": true,
         "multi": true,
         "name": "provider",
         "options": [],
         "query": {
-          "query": "label_values(llm_usage_total_tokens_total, provider)",
+          "query": "label_values(gen_ai_client_token_usage_sum, gen_ai_provider_name)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
