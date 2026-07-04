@@ -133,15 +133,167 @@ tasks:
     cmds:
       - |
         for i in $(seq 1 20); do
+          # Alternate between the two available models so per-model panels show both.
+          if [ $((i % 2)) -eq 0 ]; then
+            MODEL="ollama/llama3.2:1b"
+          else
+            MODEL="ollama/deepseek-r1:1.5b"
+          fi
           curl -s -X POST http://localhost:8080/v1/chat/completions \
             -H "Content-Type: application/json" \
             -H "Host: api.inference-gateway.local" \
-            -d '{"model":"ollama/deepseek-r1:1.5b","messages":[{"role":"user","content":"Say hello"}]}' \
-            --max-time 10
+            -d '{"model":"'"${MODEL}"'","messages":[{"role":"user","content":"Say hello"}]}' \
+            --max-time 15
           echo
           sleep 1
         done
       - echo "🧪 Test requests completed successfully!"
+
+  simulate-infer-push:
+    desc: 'Push OTLP metrics simulating a Claude Code subscription client (requires `task port-forward` running and TELEMETRY_METRICS_PUSH_ENABLE=true)'
+    cmds:
+      - |
+        for i in $(seq 1 10); do
+          INPUT_TOKENS=$((RANDOM % 4000 + 500))
+          OUTPUT_TOKENS=$((RANDOM % 1500 + 100))
+          TOOL_CALLS=$((RANDOM % 4 + 1))
+          TOOL_DURATION=$(awk "BEGIN{print $((RANDOM % 2000 + 50))/1000}")
+          OPERATION_DURATION=$(awk "BEGIN{print $((RANDOM % 20000 + 2000))/1000}")
+          TTFT=$(awk "BEGIN{print $((RANDOM % 1500 + 200))/1000}")
+          # Roughly 1-in-5 tool executions fails with a timeout.
+          if [ $((RANDOM % 5)) -eq 0 ]; then
+            TOOL_ERROR_ATTR='{ "key": "error.type", "value": { "stringValue": "timeout" } },'
+            TOOL_RESULT="failure"
+          else
+            TOOL_ERROR_ATTR=""
+            TOOL_RESULT="success"
+          fi
+          curl -s -X POST http://localhost:8080/v1/metrics \
+            -H "Content-Type: application/json" \
+            -H "Host: api.inference-gateway.local" \
+            --max-time 10 \
+            -d '{
+              "resourceMetrics": [{
+                "resource": {
+                  "attributes": [
+                    { "key": "service.name", "value": { "stringValue": "infer-cli" } }
+                  ]
+                },
+                "scopeMetrics": [{
+                  "metrics": [
+                    {
+                      "name": "gen_ai.client.token.usage",
+                      "unit": "{token}",
+                      "sum": {
+                        "aggregationTemporality": 1,
+                        "isMonotonic": true,
+                        "dataPoints": [
+                          {
+                            "asInt": "'"${INPUT_TOKENS}"'",
+                            "attributes": [
+                              { "key": "source", "value": { "stringValue": "claude-code-subscription" } },
+                              { "key": "gen_ai.provider.name", "value": { "stringValue": "anthropic" } },
+                              { "key": "gen_ai.request.model", "value": { "stringValue": "claude-sonnet-5" } },
+                              { "key": "gen_ai.token.type", "value": { "stringValue": "input" } }
+                            ]
+                          },
+                          {
+                            "asInt": "'"${OUTPUT_TOKENS}"'",
+                            "attributes": [
+                              { "key": "source", "value": { "stringValue": "claude-code-subscription" } },
+                              { "key": "gen_ai.provider.name", "value": { "stringValue": "anthropic" } },
+                              { "key": "gen_ai.request.model", "value": { "stringValue": "claude-sonnet-5" } },
+                              { "key": "gen_ai.token.type", "value": { "stringValue": "output" } }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "gen_ai.client.operation.duration",
+                      "unit": "s",
+                      "histogram": {
+                        "aggregationTemporality": 1,
+                        "dataPoints": [
+                          {
+                            "count": "1",
+                            "sum": '"${OPERATION_DURATION}"',
+                            "attributes": [
+                              { "key": "source", "value": { "stringValue": "claude-code-subscription" } },
+                              { "key": "gen_ai.provider.name", "value": { "stringValue": "anthropic" } },
+                              { "key": "gen_ai.request.model", "value": { "stringValue": "claude-sonnet-5" } }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "gen_ai.client.operation.time_to_first_chunk",
+                      "unit": "s",
+                      "histogram": {
+                        "aggregationTemporality": 1,
+                        "dataPoints": [
+                          {
+                            "count": "1",
+                            "sum": '"${TTFT}"',
+                            "attributes": [
+                              { "key": "source", "value": { "stringValue": "claude-code-subscription" } },
+                              { "key": "gen_ai.provider.name", "value": { "stringValue": "anthropic" } },
+                              { "key": "gen_ai.request.model", "value": { "stringValue": "claude-sonnet-5" } }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "gen_ai.execute_tool.duration",
+                      "unit": "s",
+                      "histogram": {
+                        "aggregationTemporality": 1,
+                        "dataPoints": [
+                          {
+                            "count": "1",
+                            "sum": '"${TOOL_DURATION}"',
+                            "attributes": [
+                              '"${TOOL_ERROR_ATTR}"'
+                              { "key": "source", "value": { "stringValue": "claude-code-subscription" } },
+                              { "key": "gen_ai.provider.name", "value": { "stringValue": "anthropic" } },
+                              { "key": "gen_ai.request.model", "value": { "stringValue": "claude-sonnet-5" } },
+                              { "key": "gen_ai.tool.name", "value": { "stringValue": "Bash" } },
+                              { "key": "gen_ai.tool.type", "value": { "stringValue": "function" } }
+                            ]
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "name": "inference_gateway.tool_calls",
+                      "unit": "{call}",
+                      "sum": {
+                        "aggregationTemporality": 1,
+                        "isMonotonic": true,
+                        "dataPoints": [
+                          {
+                            "asInt": "'"${TOOL_CALLS}"'",
+                            "attributes": [
+                              { "key": "source", "value": { "stringValue": "claude-code-subscription" } },
+                              { "key": "gen_ai.provider.name", "value": { "stringValue": "anthropic" } },
+                              { "key": "gen_ai.request.model", "value": { "stringValue": "claude-sonnet-5" } },
+                              { "key": "gen_ai.tool.name", "value": { "stringValue": "Bash" } },
+                              { "key": "gen_ai.tool.type", "value": { "stringValue": "function" } }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }]
+              }]
+            }'
+          echo " pushed ${INPUT_TOKENS} input / ${OUTPUT_TOKENS} output tokens, ${TOOL_CALLS} tool calls, tool exec ${TOOL_RESULT} (${TOOL_DURATION}s)"
+          sleep 2
+        done
+      - echo "📤 Claude subscription metrics pushed successfully!"
 
   simulate-tool-call-requests:
     desc: 'Generate test requests with tool/function calls (requires `task port-forward` running)'

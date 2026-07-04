@@ -9,8 +9,8 @@ metadata:
 spec:
   instanceSelector:
     matchLabels:
-      dashboards: 'grafana'
-  json: |
+      dashboards: grafana
+  json: |-
     {
       "annotations": {
         "list": [
@@ -36,1123 +36,222 @@ spec:
       "liveNow": false,
       "panels": [
         {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
+          "id": 1,
+          "type": "row",
+          "title": "Overview",
+          "collapsed": false,
           "gridPos": {
-            "h": 6,
-            "w": 6,
             "x": 0,
-            "y": 0
-          },
-          "id": 20,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "text": {},
-            "textMode": "auto"
-          },
-          "pluginVersion": "9.5.2",
-          "title": "Total Tool Calls",
-          "description": "Total number of function/tool calls executed across all providers",
-          "type": "stat",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum(increase(inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\"}[$__range]))",
-              "refId": "A",
-              "legendFormat": "Total Tool Calls"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 80
-                  },
-                  {
-                    "color": "green",
-                    "value": 95
-                  }
-                ]
-              },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 6,
-            "x": 6,
-            "y": 0
-          },
-          "id": 21,
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true
-          },
-          "pluginVersion": "9.5.2",
-          "title": "Tool Call Success Rate",
-          "description": "Percentage of successful tool calls",
-          "type": "gauge",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "100 * sum(increase(gen_ai_execute_tool_duration_seconds_count{error_type=\"\", gen_ai_provider_name=~\"$provider\"}[$__range])) / sum(increase(gen_ai_execute_tool_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[$__range]))",
-              "refId": "A",
-              "legendFormat": "Success Rate"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 10
-                  },
-                  {
-                    "color": "red",
-                    "value": 50
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 6,
-            "x": 12,
-            "y": 0
-          },
-          "id": 22,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "text": {},
-            "textMode": "auto"
-          },
-          "pluginVersion": "9.5.2",
-          "title": "Failed Tool Calls",
-          "description": "Total number of failed function/tool calls",
-          "type": "stat",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum(increase(gen_ai_execute_tool_duration_seconds_count{error_type!=\"\", gen_ai_provider_name=~\"$provider\"}[$__range]))",
-              "refId": "A",
-              "legendFormat": "Failed Calls"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "yellow",
-                    "value": 1000
-                  },
-                  {
-                    "color": "red",
-                    "value": 5000
-                  }
-                ]
-              },
-              "unit": "s"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 6,
-            "w": 6,
-            "x": 18,
-            "y": 0
-          },
-          "id": 23,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "auto",
-            "reduceOptions": {
-              "calcs": [
-                "mean"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "text": {},
-            "textMode": "auto"
-          },
-          "pluginVersion": "9.5.2",
-          "title": "Avg Tool Call Duration",
-          "description": "Average tool call execution duration",
-          "type": "stat",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum(rate(gen_ai_execute_tool_duration_seconds_sum{gen_ai_provider_name=~\"$provider\"}[5m])) / sum(rate(gen_ai_execute_tool_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[5m]))",
-              "refId": "A",
-              "legendFormat": "Avg Duration"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "Calls/sec",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0.2,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "reqps"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 6
-          },
-          "id": 24,
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max",
-                "lastNotNull"
-              ],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "title": "Tool Call Rate by Type",
-          "description": "Rate of tool calls per second by tool type",
-          "type": "timeseries",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum by(gen_ai_tool_type) (rate(inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\"}[1m]))",
-              "refId": "A",
-              "legendFormat": "{{gen_ai_tool_type}}"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "Duration (ms)",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0.2,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 5000
-                  }
-                ]
-              },
-              "unit": "s"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 6
-          },
-          "id": 25,
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max",
-                "p95"
-              ],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "title": "Tool Call Duration by Provider",
-          "description": "Tool call execution latency by provider",
-          "type": "timeseries",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "histogram_quantile(0.95, sum by(le, gen_ai_provider_name) (rate(gen_ai_execute_tool_duration_seconds_bucket{gen_ai_provider_name=~\"$provider\"}[1m])))",
-              "refId": "A",
-              "legendFormat": "{{gen_ai_provider_name}} - p95"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum by(gen_ai_provider_name) (rate(gen_ai_execute_tool_duration_seconds_sum{gen_ai_provider_name=~\"$provider\"}[1m])) / sum by(gen_ai_provider_name) (rate(gen_ai_execute_tool_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[1m]))",
-              "refId": "B",
-              "legendFormat": "{{gen_ai_provider_name}} - avg"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "displayMode": "gradient",
-                "fillOpacity": 70
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 0,
-            "y": 14
-          },
-          "id": 26,
-          "options": {
-            "displayMode": "gradient",
-            "minVizHeight": 10,
-            "minVizWidth": 0,
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": ["lastNotNull"],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true,
-            "text": {}
-          },
-          "pluginVersion": "9.5.2",
-          "title": "Top Tool Names by Usage",
-          "description": "Most frequently called tools",
-          "type": "bargauge",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "topk(10, sum by(gen_ai_tool_name) (increase(inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\"}[$__range])))",
-              "refId": "A",
-              "legendFormat": "{{gen_ai_tool_name}}"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "displayMode": "gradient",
-                "fillOpacity": 70
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "red",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 14
-          },
-          "id": 27,
-          "options": {
-            "displayMode": "gradient",
-            "minVizHeight": 10,
-            "minVizWidth": 0,
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": ["lastNotNull"],
-              "fields": "",
-              "values": false
-            },
-            "showUnfilled": true,
-            "text": {}
-          },
-          "pluginVersion": "9.5.2",
-          "title": "Tool Failures by Error Type",
-          "description": "Distribution of tool call failures by error type",
-          "type": "bargauge",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum by(error_type) (increase(gen_ai_execute_tool_duration_seconds_count{error_type!=\"\", gen_ai_provider_name=~\"$provider\"}[$__range]))",
-              "refId": "A",
-              "legendFormat": "{{error_type}}"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "Latency (ms)",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0.2,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  },
-                  {
-                    "color": "red",
-                    "value": 1000
-                  }
-                ]
-              },
-              "unit": "s"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
+            "y": 0,
             "w": 24,
-            "x": 0,
-            "y": 22
+            "h": 1
           },
-          "id": 13,
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max",
-                "p95",
-                "lastNotNull"
-              ],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "title": "Request Latency by Provider",
-          "description": "Shows the average, max, and p95 latency for requests by provider",
-          "type": "timeseries",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "histogram_quantile(0.95, sum by(le, gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_bucket{gen_ai_provider_name=~\"$provider\"}[1m])))",
-              "refId": "A",
-              "legendFormat": "{{gen_ai_provider_name}} - p95"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_sum{gen_ai_provider_name=~\"$provider\"}[1m])) / sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[1m]))",
-              "refId": "B",
-              "legendFormat": "{{gen_ai_provider_name}} - avg"
-            }
-          ]
+          "panels": []
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
+          "id": 2,
+          "type": "stat",
+          "title": "Requests (via gateway)",
+          "gridPos": {
+            "x": 0,
+            "y": 1,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(gen_ai_server_request_duration_seconds_count{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}) or vector(0)",
+              "legendFormat": "requests",
+              "refId": "A",
+              "instant": true
+            }
+          ],
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "palette-classic"
+                "mode": "fixed",
+                "fixedColor": "green"
               },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "Tokens/s",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0.2,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "smooth",
-                "lineWidth": 2,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
+              "unit": "short",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
                     "color": "green",
                     "value": null
-                  }
-                ]
-              },
-              "unit": "tokensps"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 30
-          },
-          "id": 12,
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max",
-                "lastNotNull"
-              ],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          },
-          "title": "Tokens per Second by Provider",
-          "description": "Shows the throughput in tokens per second for each provider",
-          "type": "timeseries",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum by(gen_ai_provider_name, source) (rate(gen_ai_client_token_usage_sum{gen_ai_provider_name=~\"$provider\"}[1m]))",
-              "refId": "A",
-              "legendFormat": "{{gen_ai_provider_name}}/{{source}} - Total Tokens"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum by(gen_ai_provider_name, source) (rate(gen_ai_client_token_usage_sum{gen_ai_token_type=\"output\", gen_ai_provider_name=~\"$provider\"}[1m]))",
-              "refId": "B",
-              "legendFormat": "{{gen_ai_provider_name}}/{{source}} - Completion Tokens"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "thresholds"
-              },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0.5,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "area"
-                }
-              },
-              "mappings": [
-                {
-                  "type": "special",
-                  "options": {
-                    "match": "null",
-                    "result": {
-                      "index": 0,
-                      "text": "0%",
-                      "color": "green"
-                    }
-                  }
-                }
-              ],
-              "min": 0,
-              "max": 1,
-              "thresholds": {
-                "mode": "percentage",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": 0
-                  },
-                  {
-                    "color": "orange",
-                    "value": 10
-                  },
-                  {
-                    "color": "red",
-                    "value": 20
-                  }
-                ]
-              },
-              "unit": "percent"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 38
-          },
-          "id": 11,
-          "options": {
-            "legend": {
-              "calcs": [
-                "mean",
-                "max",
-                "lastNotNull"
-              ],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "title": "API Error Rate by Provider",
-          "description": "Error rate as percentage of total requests by provider",
-          "type": "timeseries",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "100 * sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_count{error_type!=\"\", gen_ai_provider_name=~\"$provider\"}[5m]) or vector(0)) / clamp_min(sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_count{gen_ai_provider_name=~\"$provider\"}[5m]) or vector(0)), 0.001)",
-              "refId": "A",
-              "legendFormat": "{{gen_ai_provider_name}} error rate"
-            }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "displayMode": "gradient",
-                "fillOpacity": 70
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green",
-                    "value": null
-                  }
-                ]
-              },
-              "unit": "tokens"
-            },
-            "overrides": [
-              {
-                "matcher": {
-                  "id": "byRegexp",
-                  "options": ".*\\(%\\)$"
-                },
-                "properties": [
-                  {
-                    "id": "unit",
-                    "value": "percent"
-                  },
-                  {
-                    "id": "color",
-                    "value": {
-                      "mode": "palette-classic"
-                    }
                   }
                 ]
               }
-            ]
+            },
+            "overrides": []
           },
-          "gridPos": {
-            "h": 8,
-            "w": 24,
-            "x": 0,
-            "y": 46
-          },
-          "id": 1,
           "options": {
-            "displayMode": "gradient",
-            "minVizHeight": 10,
-            "minVizWidth": 0,
-            "orientation": "horizontal",
             "reduceOptions": {
-              "calcs": ["lastNotNull"],
-              "fields": "",
-              "values": false
+              "calcs": [
+                "lastNotNull"
+              ]
             },
-            "showUnfilled": true,
-            "text": {}
+            "graphMode": "area",
+            "colorMode": "value",
+            "textMode": "auto"
           },
-          "pluginVersion": "9.5.2",
-          "title": "Prompt Token Usage by Provider",
-          "description": "Total prompt tokens processed and percentage distribution by provider",
-          "type": "bargauge",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "sum(increase(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\", gen_ai_provider_name=~\"$provider\"}[$__range])) by (gen_ai_provider_name, source)",
-              "refId": "A",
-              "legendFormat": "{{gen_ai_provider_name}}/{{source}} - Total"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "100 * sum(increase(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\", gen_ai_provider_name=~\"$provider\"}[$__range])) by (gen_ai_provider_name, source) / scalar(sum(increase(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\", gen_ai_provider_name=~\"$provider\"}[$__range])))",
-              "refId": "B",
-              "legendFormat": "{{gen_ai_provider_name}}/{{source}} - (%)"
-            }
-          ]
+          "description": "Total chat-completion requests served by the gateway since pod start."
         },
         {
           "datasource": {
             "type": "prometheus",
             "uid": "${datasource}"
           },
+          "id": 3,
+          "type": "stat",
+          "title": "Input Tokens",
+          "gridPos": {
+            "x": 4,
+            "y": 1,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(gen_ai_client_token_usage_sum{gen_ai_token_type=\"input\", gen_ai_provider_name=~\"$provider\", source=~\"$source\"}) or vector(0)",
+              "legendFormat": "input",
+              "refId": "A",
+              "instant": true
+            }
+          ],
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "thresholds"
+                "mode": "fixed",
+                "fixedColor": "green"
               },
-              "mappings": [],
+              "unit": "short",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
                   {
                     "color": "green",
                     "value": null
-                  },
-                  {
-                    "color": "orange",
-                    "value": 50
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
                   }
                 ]
-              },
-              "unit": "percent"
+              }
             },
             "overrides": []
           },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "graphMode": "area",
+            "colorMode": "value",
+            "textMode": "auto"
+          },
+          "description": "Cumulative input tokens across gateway traffic and pushed client metrics."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 4,
+          "type": "stat",
+          "title": "Output Tokens",
           "gridPos": {
-            "h": 8,
-            "w": 8,
-            "x": 0,
-            "y": 54
+            "x": 8,
+            "y": 1,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(gen_ai_client_token_usage_sum{gen_ai_token_type=\"output\", gen_ai_provider_name=~\"$provider\", source=~\"$source\"}) or vector(0)",
+              "legendFormat": "output",
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "green"
+              },
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "graphMode": "area",
+            "colorMode": "value",
+            "textMode": "auto"
+          },
+          "description": "Cumulative output tokens across gateway traffic and pushed client metrics."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
           },
           "id": 5,
-          "options": {
-            "orientation": "auto",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showThresholdLabels": false,
-            "showThresholdMarkers": true
+          "type": "stat",
+          "title": "Tool Calls",
+          "gridPos": {
+            "x": 12,
+            "y": 1,
+            "w": 4,
+            "h": 4
           },
-          "title": "Memory Usage",
-          "description": "Memory usage as a percentage of allocated memory (64MB)",
-          "type": "gauge",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "100 * (process_resident_memory_bytes / 1024 / 1024 / 64)",
+              "expr": "sum(inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}) or vector(0)",
+              "legendFormat": "tool calls",
               "refId": "A",
-              "legendFormat": "Memory usage %"
+              "instant": true
             }
-          ]
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${datasource}"
-          },
+          ],
           "fieldConfig": {
             "defaults": {
               "color": {
-                "mode": "palette-classic"
+                "mode": "fixed",
+                "fixedColor": "green"
               },
-              "custom": {
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "drawStyle": "line",
-                "fillOpacity": 0.5,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
+              "unit": "short",
               "thresholds": {
                 "mode": "absolute",
                 "steps": [
@@ -1165,57 +264,1037 @@ spec:
             },
             "overrides": []
           },
-          "gridPos": {
-            "h": 8,
-            "w": 16,
-            "x": 8,
-            "y": 54
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "graphMode": "area",
+            "colorMode": "value",
+            "textMode": "auto"
+          },
+          "description": "Tool calls observed in model responses plus pushed client tool calls."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
           },
           "id": 6,
-          "options": {
-            "legend": {
-              "calcs": ["mean", "max"],
-              "displayMode": "table",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "single",
-              "sort": "none"
-            }
+          "type": "stat",
+          "title": "Sources Reporting",
+          "gridPos": {
+            "x": 16,
+            "y": 1,
+            "w": 4,
+            "h": 4
           },
-          "title": "System Metrics",
-          "description": "System-level metrics including CPU, memory, and goroutines",
-          "type": "timeseries",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "rate(process_cpu_seconds_total[1m])",
+              "expr": "count(count by(source) (gen_ai_client_token_usage_count{gen_ai_provider_name=~\"$provider\", source=~\"$source\"})) or vector(0)",
+              "legendFormat": "sources",
               "refId": "A",
-              "legendFormat": "CPU usage"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "process_resident_memory_bytes / 1024 / 1024",
-              "refId": "B",
-              "legendFormat": "Memory (MB)"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              },
-              "expr": "go_goroutines",
-              "refId": "C",
-              "legendFormat": "Goroutines"
+              "instant": true
             }
-          ]
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "fixed",
+                "fixedColor": "green"
+              },
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "graphMode": "area",
+            "colorMode": "value",
+            "textMode": "auto"
+          },
+          "description": "Distinct `source` label values currently reporting token usage (gateway + pushed clients)."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 7,
+          "type": "gauge",
+          "title": "Error Rate (5m)",
+          "gridPos": {
+            "x": 20,
+            "y": 1,
+            "w": 4,
+            "h": 4
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "100 * (sum(rate(gen_ai_server_request_duration_seconds_count{error_type!=\"\", gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[5m])) or vector(0)) / clamp_min(sum(rate(gen_ai_server_request_duration_seconds_count{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[5m])), 1e-10)",
+              "legendFormat": "error %",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 1
+                  },
+                  {
+                    "color": "red",
+                    "value": 5
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "showThresholdLabels": false
+          },
+          "description": "Share of gateway requests finishing with an error status over the last 5 minutes."
+        },
+        {
+          "id": 8,
+          "type": "row",
+          "title": "Traffic",
+          "collapsed": false,
+          "gridPos": {
+            "x": 0,
+            "y": 5,
+            "w": 24,
+            "h": 1
+          },
+          "panels": []
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 9,
+          "type": "timeseries",
+          "title": "Request Rate by Provider",
+          "gridPos": {
+            "x": 0,
+            "y": 6,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_count{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval]))",
+              "legendFormat": "{{gen_ai_provider_name}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "reqps",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "auto",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 10,
+          "type": "timeseries",
+          "title": "Request Latency by Provider",
+          "gridPos": {
+            "x": 12,
+            "y": 6,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum by(le, gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_bucket{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval])))",
+              "legendFormat": "p95 {{gen_ai_provider_name}}",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_sum{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval])) / sum by(gen_ai_provider_name) (rate(gen_ai_server_request_duration_seconds_count{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval]))",
+              "legendFormat": "avg {{gen_ai_provider_name}}",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "s",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "auto",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 11,
+          "type": "row",
+          "title": "Token Usage",
+          "collapsed": false,
+          "gridPos": {
+            "x": 0,
+            "y": 14,
+            "w": 24,
+            "h": 1
+          },
+          "panels": []
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 12,
+          "type": "timeseries",
+          "title": "Token Rate by Source",
+          "gridPos": {
+            "x": 0,
+            "y": 15,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(source, gen_ai_token_type) (rate(gen_ai_client_token_usage_sum{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval]))",
+              "legendFormat": "{{source}} / {{gen_ai_token_type}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "auto",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "description": "Tokens per second, split by where the measurement came from (gateway vs pushed clients)."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 13,
+          "type": "bargauge",
+          "title": "Total Tokens by Source & Model",
+          "gridPos": {
+            "x": 12,
+            "y": 15,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(source, gen_ai_request_model, gen_ai_token_type) (gen_ai_client_token_usage_sum{gen_ai_provider_name=~\"$provider\", source=~\"$source\"})",
+              "legendFormat": "{{source}} / {{gen_ai_request_model}} / {{gen_ai_token_type}}",
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short",
+              "displayName": "${__series.name}",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "text": {
+              "titleSize": 14,
+              "valueSize": 18
+            },
+            "minVizHeight": 16,
+            "maxVizHeight": 48
+          },
+          "description": "Cumulative token totals. Includes one-shot pushed metrics that rate() panels cannot show."
+        },
+        {
+          "id": 14,
+          "type": "row",
+          "title": "Tool Calls",
+          "collapsed": false,
+          "gridPos": {
+            "x": 0,
+            "y": 23,
+            "w": 24,
+            "h": 1
+          },
+          "panels": []
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 15,
+          "type": "timeseries",
+          "title": "Tool Call Rate by Type",
+          "gridPos": {
+            "x": 0,
+            "y": 24,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(gen_ai_tool_type, source) (rate(inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval]))",
+              "legendFormat": "{{source}} / {{gen_ai_tool_type}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "cps",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "auto",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 16,
+          "type": "bargauge",
+          "title": "Top Tools by Usage",
+          "gridPos": {
+            "x": 12,
+            "y": 24,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "topk(10, sum by(gen_ai_tool_name, source) (inference_gateway_tool_calls_total{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}))",
+              "legendFormat": "{{source}} / {{gen_ai_tool_name}}",
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short",
+              "displayName": "${__series.name}",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "text": {
+              "titleSize": 14,
+              "valueSize": 18
+            },
+            "minVizHeight": 16,
+            "maxVizHeight": 48
+          },
+          "description": "Cumulative tool-call counts by tool name and source."
+        },
+        {
+          "id": 17,
+          "type": "row",
+          "title": "Pushed Client Metrics (OTLP push only)",
+          "collapsed": false,
+          "gridPos": {
+            "x": 0,
+            "y": 32,
+            "w": 24,
+            "h": 1
+          },
+          "panels": []
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 18,
+          "type": "timeseries",
+          "title": "Tool Execution Duration (p95)",
+          "gridPos": {
+            "x": 0,
+            "y": 33,
+            "w": 8,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum by(le, source) (rate(gen_ai_execute_tool_duration_seconds_bucket{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval])))",
+              "legendFormat": "p95 {{source}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "s",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "always",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 19,
+          "type": "timeseries",
+          "title": "Client Operation Duration (p95)",
+          "gridPos": {
+            "x": 8,
+            "y": 33,
+            "w": 8,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum by(le, source) (rate(gen_ai_client_operation_duration_seconds_bucket{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval])))",
+              "legendFormat": "p95 {{source}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "s",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "always",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 20,
+          "type": "timeseries",
+          "title": "Time to First Token / Chunk (p95)",
+          "gridPos": {
+            "x": 16,
+            "y": 33,
+            "w": 8,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum by(le, source) (rate(gen_ai_server_time_to_first_token_seconds_bucket{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval])))",
+              "legendFormat": "TTFT p95 {{source}}",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "histogram_quantile(0.95, sum by(le, source) (rate(gen_ai_client_operation_time_to_first_chunk_seconds_bucket{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}[$__rate_interval])))",
+              "legendFormat": "first chunk p95 {{source}}",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "s",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "always",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          },
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 21,
+          "type": "bargauge",
+          "title": "Tool Failures by Error Type",
+          "gridPos": {
+            "x": 0,
+            "y": 41,
+            "w": 12,
+            "h": 6
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum by(error_type, source) (gen_ai_execute_tool_duration_seconds_count{error_type!=\"\", gen_ai_provider_name=~\"$provider\", source=~\"$source\"})",
+              "legendFormat": "{{source}} / {{error_type}}",
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short",
+              "displayName": "${__series.name}",
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "blue",
+                    "value": null
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "displayMode": "gradient",
+            "orientation": "horizontal",
+            "showUnfilled": true,
+            "text": {
+              "titleSize": 14,
+              "valueSize": 18
+            },
+            "minVizHeight": 16,
+            "maxVizHeight": 48
+          },
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 22,
+          "type": "gauge",
+          "title": "Tool Success Rate",
+          "gridPos": {
+            "x": 12,
+            "y": 41,
+            "w": 12,
+            "h": 6
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "100 * sum(gen_ai_execute_tool_duration_seconds_count{error_type=\"\", gen_ai_provider_name=~\"$provider\", source=~\"$source\"}) / clamp_min(sum(gen_ai_execute_tool_duration_seconds_count{gen_ai_provider_name=~\"$provider\", source=~\"$source\"}), 1e-10)",
+              "legendFormat": "success %",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 101
+                  },
+                  {
+                    "color": "red",
+                    "value": 102
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ]
+            },
+            "showThresholdLabels": false
+          },
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+        },
+        {
+          "id": 23,
+          "type": "row",
+          "title": "Gateway Process",
+          "collapsed": false,
+          "gridPos": {
+            "x": 0,
+            "y": 47,
+            "w": 24,
+            "h": 1
+          },
+          "panels": []
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 24,
+          "type": "timeseries",
+          "title": "CPU & Goroutines",
+          "gridPos": {
+            "x": 0,
+            "y": 48,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(rate(process_cpu_seconds_total[$__rate_interval]))",
+              "legendFormat": "cpu cores",
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(go_goroutines)",
+              "legendFormat": "goroutines",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "short",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "auto",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "id": 25,
+          "type": "timeseries",
+          "title": "Resident Memory",
+          "gridPos": {
+            "x": 12,
+            "y": 48,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              },
+              "expr": "sum(process_resident_memory_bytes)",
+              "legendFormat": "resident",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "unit": "bytes",
+              "min": 0,
+              "custom": {
+                "drawStyle": "line",
+                "lineWidth": 2,
+                "fillOpacity": 25,
+                "spanNulls": true,
+                "gradientMode": "opacity",
+                "lineInterpolation": "smooth",
+                "showPoints": "auto",
+                "pointSize": 6
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "table",
+              "placement": "bottom",
+              "calcs": [
+                "mean",
+                "max",
+                "lastNotNull"
+              ]
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
         }
       ],
       "refresh": "5s",
@@ -1274,16 +1353,43 @@ spec:
             "skipUrlSync": false,
             "sort": 0,
             "type": "query"
+          },
+          {
+            "allValue": ".*",
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${datasource}"
+            },
+            "definition": "label_values(gen_ai_client_token_usage_count, source)",
+            "hide": 0,
+            "includeAll": true,
+            "multi": true,
+            "name": "source",
+            "options": [],
+            "query": {
+              "query": "label_values(gen_ai_client_token_usage_count, source)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "skipUrlSync": false,
+            "sort": 0,
+            "type": "query"
           }
         ]
       },
       "time": {
-        "from": "now-30m",
+        "from": "now-1h",
         "to": "now"
       },
       "timepicker": {},
       "timezone": "",
-      "title": "Inference Gateway - Enhanced Metrics with Function/Tool Calls",
+      "title": "Inference Gateway",
       "uid": "inference-gateway",
       "version": 1,
       "weekStart": ""

@@ -56,6 +56,9 @@ spec:
       env:
         - name: OLLAMA_API_URL
           value: 'http://ollama.ollama:8080/v1'
+        # TODO: move this config to CRD in the operator repoistory
+        - name: TELEMETRY_METRICS_PUSH_ENABLE
+          value: 'true'
   resources:
     requests:
       cpu: '100m'
