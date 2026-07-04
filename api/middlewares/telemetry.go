@@ -148,8 +148,6 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		if statusCode >= 400 {
 			errorType = strconv.Itoa(statusCode)
 		}
-		// team attribution defaults to unknown for gateway-served requests;
-		// deriving it from OIDC claims is tracked as a follow-up (issue #412).
 		team := otel.TeamUnknown
 		t.telemetry.RecordRequestDuration(c.Request.Context(), otel.SourceGateway, team, provider, model, errorType, duration)
 
