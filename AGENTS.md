@@ -26,7 +26,7 @@ Use `task --list` to see available workflows. Common commands:
   OpenAPI-derived files. Run it after changing `openapi.yaml` or generator code.
 - `task pre-commit:install`: installs the repository pre-commit hook.
 
-Use Flox (`flox activate`) for pinned Go 1.26.2 and tooling.
+Use Flox (`flox activate`) for pinned Go 1.26.4 and tooling.
 
 ## Coding Style & Naming Conventions
 

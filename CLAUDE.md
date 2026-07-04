@@ -18,7 +18,7 @@ Everyday tasks go through `Taskfile.yml`:
 - `task openapi:lint` — Spectral lint of `openapi.yaml`
 - `task pre-commit:install` — symlinks `scripts/pre-commit-check.sh` into `.git/hooks/pre-commit`; the hook runs generate → format → lint → openapi:lint → build → test, and CI mirrors it
 
-Running a single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 1.26.2, golangci-lint, mockgen, Spectral, kubectl, helm, etc.) is declared in `.flox/env/manifest.toml`; `flox activate` brings it all in.
+Running a single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 1.26.4, golangci-lint, mockgen, Spectral, kubectl, helm, etc.) is declared in `.flox/env/manifest.toml`; `flox activate` brings it all in.
 
 ## Architecture
 

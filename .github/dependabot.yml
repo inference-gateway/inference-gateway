@@ -26,7 +26,7 @@ updates:
     ignore:
       - dependency-name: golang
         versions:
-          - '>1.26.2'
+          - '>1.26.4'
       - dependency-name: ubuntu
         versions:
           - '>24.04'
