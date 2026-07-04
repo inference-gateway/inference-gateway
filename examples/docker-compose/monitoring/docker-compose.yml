@@ -10,6 +10,7 @@ services:
     environment:
       - TELEMETRY_ENABLE=true
       - TELEMETRY_METRICS_PORT=9464
+      - TELEMETRY_METRICS_PUSH_ENABLE=true
     deploy:
       resources:
         limits:

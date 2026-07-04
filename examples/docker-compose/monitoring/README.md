@@ -8,27 +8,18 @@ This example demonstrates comprehensive monitoring setup for the Inference Gatew
 
 ## 📊 Dashboard Features
 
-The enhanced Grafana dashboard provides:
+The Grafana dashboard (identical to the Kubernetes monitoring example) is organized in rows:
 
-### Function/Tool Call Metrics
+- **Overview** - Requests via gateway, input/output token totals, tool calls, sources reporting, and 5m error rate
+- **Traffic** - Request rate and latency (p95 + avg) by provider
+- **Token Usage** - Token rate by source and cumulative totals by source & model
+- **Tool Calls** - Tool call rate by type and top tools by usage
+- **Pushed Client Metrics (OTLP push only)** - Tool execution duration, client operation duration, time to first
+  token/chunk, tool failures by error type, and tool success rate; fed exclusively by clients pushing to `POST /v1/metrics`
+- **Gateway Process** - CPU, goroutines, and resident memory
 
-- **Total Tool Calls** - Real-time count of all function/tool executions
-- **Tool Call Success Rate** - Percentage of successful tool calls with thresholds
-- **Failed Tool Calls** - Count of failures for quick issue identification
-- **Average Tool Call Duration** - Performance monitoring for tool execution
-- **Tool Call Rate by Type** - Breakdown by MCP and other tool types
-- **Tool Call Duration by Provider** - Latency analysis across providers
-- **Top Tool Names by Usage** - Most frequently called tools
-- **Tool Failures by Error Type** - Detailed failure analysis
-
-### Traditional LLM Metrics
-
-- **Request Latency by Provider** - End-to-end request performance
-- **Tokens per Second by Provider** - Throughput monitoring
-- **API Error Rate by Provider** - Success/failure rates
-- **Prompt Token Usage** - Token consumption patterns
-- **Memory Usage** - System resource monitoring
-- **System Metrics** - CPU, memory, and goroutines
+All panels are filterable by the `provider` and `source` template variables, so gateway-served traffic and pushed
+client metrics (e.g. `source="claude-code-subscription"`) can be viewed together or separately.
 
 ## 🚀 Quick Start
 
@@ -51,7 +42,7 @@ The enhanced Grafana dashboard provides:
    - **Grafana**: <http://localhost:3000> (admin/admin)
 
 4. **View enhanced metrics:**
-   - Navigate to the "Inference Gateway - Enhanced Metrics" dashboard
+   - Navigate to the "Inference Gateway" dashboard
    - Send requests with tool calls to see metrics populate
 
 ## 🔧 Configuration
@@ -64,6 +55,7 @@ The gateway is configured with telemetry enabled:
 environment:
   - TELEMETRY_ENABLE=true
   - TELEMETRY_METRICS_PORT=9464
+  - TELEMETRY_METRICS_PUSH_ENABLE=true
 ```
 
 ### Prometheus Configuration
