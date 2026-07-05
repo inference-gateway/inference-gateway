@@ -32,6 +32,7 @@ func DetermineProviderAndModelName(model string) (provider *types.Provider, mode
 		"minimax/":      constants.MinimaxID,
 		"mistral/":      constants.MistralID,
 		"moonshot/":     constants.MoonshotID,
+		"nvidia/":       constants.NvidiaID,
 	}
 
 	for prefix, providerID := range providerPrefixMapping {

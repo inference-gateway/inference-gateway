@@ -487,6 +487,7 @@ The included Grafana dashboard provides:
 - [Google](https://aistudio.google.com/)
 - [Mistral](https://mistral.ai/)
 - [Moonshot](https://platform.moonshot.ai/)
+- [Nvidia](https://build.nvidia.com/)
 
 ## Configuration
 

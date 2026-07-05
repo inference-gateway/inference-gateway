@@ -71,6 +71,12 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 			expectedModel:    "MiniMax-Text-01",
 		},
 		{
+			name:             "Nvidia model with prefix",
+			model:            "nvidia/meta/llama-3.1-8b-instruct",
+			expectedProvider: new(constants.NvidiaID),
+			expectedModel:    "meta/llama-3.1-8b-instruct",
+		},
+		{
 			name:             "Case insensitive prefix matching",
 			model:            "OpenAI/GPT-4",
 			expectedProvider: new(constants.OpenaiID),
