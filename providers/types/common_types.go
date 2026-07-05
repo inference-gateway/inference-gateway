@@ -172,6 +172,7 @@ const (
 	Minimax     Provider = "minimax"
 	Mistral     Provider = "mistral"
 	Moonshot    Provider = "moonshot"
+	Nvidia      Provider = "nvidia"
 	Ollama      Provider = "ollama"
 	OllamaCloud Provider = "ollama_cloud"
 	Openai      Provider = "openai"
@@ -197,6 +198,8 @@ func (e Provider) Valid() bool {
 	case Mistral:
 		return true
 	case Moonshot:
+		return true
+	case Nvidia:
 		return true
 	case Ollama:
 		return true
@@ -929,7 +932,7 @@ type ToolCallExtraContent_Google struct {
 	// ThoughtSignature Opaque signature returned with reasoning-enabled tool calls.
 	// Must be echoed back verbatim in the next request that includes
 	// this tool call, or Google will reject the request.
-	ThoughtSignature     *string                `json:"thought_signature,omitempty"`
+	ThoughtSignature     *string        `json:"thought_signature,omitempty"`
 	AdditionalProperties map[string]any `json:"-"`
 }
 

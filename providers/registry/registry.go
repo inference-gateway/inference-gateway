@@ -173,6 +173,17 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.MoonshotChatEndpoint,
 		},
 	},
+	constants.NvidiaID: {
+		ID:             constants.NvidiaID,
+		Name:           constants.NvidiaDisplayName,
+		URL:            constants.NvidiaDefaultBaseURL,
+		AuthType:       constants.AuthTypeBearer,
+		SupportsVision: true,
+		Endpoints: types.Endpoints{
+			Models: constants.NvidiaModelsEndpoint,
+			Chat:   constants.NvidiaChatEndpoint,
+		},
+	},
 	constants.OllamaID: {
 		ID:             constants.OllamaID,
 		Name:           constants.OllamaDisplayName,

@@ -210,6 +210,17 @@ func TestLoad(t *testing.T) {
 							Chat:   constants.MoonshotChatEndpoint,
 						},
 					},
+					constants.NvidiaID: {
+						ID:             constants.NvidiaID,
+						Name:           constants.NvidiaDisplayName,
+						URL:            constants.NvidiaDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.NvidiaModelsEndpoint,
+							Chat:   constants.NvidiaChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -419,6 +430,17 @@ func TestLoad(t *testing.T) {
 							Chat:   constants.MoonshotChatEndpoint,
 						},
 					},
+					constants.NvidiaID: {
+						ID:             constants.NvidiaID,
+						Name:           constants.NvidiaDisplayName,
+						URL:            constants.NvidiaDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.NvidiaModelsEndpoint,
+							Chat:   constants.NvidiaChatEndpoint,
+						},
+					},
 				},
 			},
 		},
@@ -615,6 +637,17 @@ func TestLoad(t *testing.T) {
 						Endpoints: types.Endpoints{
 							Models: constants.MoonshotModelsEndpoint,
 							Chat:   constants.MoonshotChatEndpoint,
+						},
+					},
+					constants.NvidiaID: {
+						ID:             constants.NvidiaID,
+						Name:           constants.NvidiaDisplayName,
+						URL:            constants.NvidiaDefaultBaseURL,
+						AuthType:       constants.AuthTypeBearer,
+						SupportsVision: true,
+						Endpoints: types.Endpoints{
+							Models: constants.NvidiaModelsEndpoint,
+							Chat:   constants.NvidiaChatEndpoint,
 						},
 					},
 				},

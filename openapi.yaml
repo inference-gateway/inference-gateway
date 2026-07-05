@@ -539,6 +539,7 @@ components:
         - mistral
         - minimax
         - moonshot
+        - nvidia
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -697,6 +698,20 @@ components:
         moonshot:
           id: 'moonshot'
           url: 'https://api.moonshot.ai/v1'
+          auth_type: 'bearer'
+          supports_vision: true
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        nvidia:
+          id: 'nvidia'
+          url: 'https://integrate.api.nvidia.com/v1'
           auth_type: 'bearer'
           supports_vision: true
           endpoints:
@@ -2033,4 +2048,14 @@ components:
                   env: 'MOONSHOT_API_KEY'
                   type: string
                   description: 'Moonshot API Key'
+                  secret: true
+                - name: nvidia_api_url
+                  env: 'NVIDIA_API_URL'
+                  type: string
+                  default: 'https://integrate.api.nvidia.com/v1'
+                  description: 'NVIDIA API URL'
+                - name: nvidia_api_key
+                  env: 'NVIDIA_API_KEY'
+                  type: string
+                  description: 'NVIDIA API Key'
                   secret: true
