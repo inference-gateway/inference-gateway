@@ -39,7 +39,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.16.1
+    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.16.4
     with:
       language: "go"
       prompt: ${{ inputs.prompt }}
