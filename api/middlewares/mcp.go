@@ -23,9 +23,6 @@ import (
 const (
 	// MCPBypassHeader marks internal MCP requests to prevent middleware loops
 	MCPBypassHeader = "X-MCP-Bypass"
-
-	// MaxMCPAgentIterations limits the number of agent loop iterations
-	MaxMCPAgentIterations = 10
 )
 
 // mcpContextKey is a custom type for context keys to avoid collisions
@@ -246,7 +243,7 @@ func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *t
 
 	go func() {
 		defer close(processedChunk)
-		err := m.mcpAgent.RunWithStream(c.Request.Context(), processedChunk, c, request)
+		err := m.mcpAgent.RunWithStream(c.Request.Context(), processedChunk, request)
 		if err != nil {
 			m.logger.Error("mcp agent streaming failed", err)
 			errCh <- err

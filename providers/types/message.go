@@ -18,30 +18,6 @@ func (m *Message) HasImageContent() bool {
 	return false
 }
 
-// GetTextContent extracts the first text content from the message.
-// For string content, returns the string directly.
-// For multimodal content, returns the text from the first text part found.
-// Returns empty string if no text content is found.
-func (m *Message) GetTextContent() string {
-	if content, err := m.Content.AsMessageContent0(); err == nil {
-		return content
-	}
-
-	parts, err := m.Content.AsMessageContent1()
-	if err != nil {
-		return ""
-	}
-
-	for _, part := range parts {
-		if textPart, err := part.AsTextContentPart(); err == nil {
-			if textPart.Type == "text" {
-				return textPart.Text
-			}
-		}
-	}
-	return ""
-}
-
 // StripImageContent removes all image content from the message, keeping only text parts.
 // For string content, the message is left unchanged.
 // For multimodal content:

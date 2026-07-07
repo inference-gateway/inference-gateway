@@ -750,7 +750,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 				mockLogger.EXPECT().Debug("stream completed for iteration", "iteration", 1, "has_tool_calls", true).Times(1)
 				mockLogger.EXPECT().Debug("parsed tool calls from stream", "count", 2, "iteration", 1).Times(1)
 				mockLogger.EXPECT().Debug("final parsed tool call", "tool_call", gomock.Any()).AnyTimes()
-				mockLogger.EXPECT().Debug("total parsed tool calls", "count", 2).Times(1)
 				mockLogger.EXPECT().Debug("executing tool calls", "count", 2, "iteration", 1).Times(1)
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=mcp_test_tool mcp_name=test_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=mcp_other_tool mcp_name=other_tool args=map[action:execute] server=http://test-server:8080/mcp").Times(1)
@@ -884,7 +883,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 			agentInstance.SetModel(&tt.request.Model)
 
 			middlewareStreamCh := make(chan []byte, 10)
-			c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 			ctx, cancel := tt.setupContext()
 			if cancel != nil {
@@ -893,7 +891,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 
 			errCh := make(chan error, 1)
 			go func() {
-				err := agentInstance.RunWithStream(ctx, middlewareStreamCh, c, tt.request)
+				err := agentInstance.RunWithStream(ctx, middlewareStreamCh, tt.request)
 				errCh <- err
 			}()
 
@@ -958,8 +956,6 @@ func TestMCPClientTransportModes(t *testing.T) {
 		client2 := mcpClient.(*mcp.MCPClient).NewClientWithTransport(serverURL, mcp.TransportModeSSE)
 		assert.NotNil(t, client2)
 
-		client3 := mcpClient.(*mcp.MCPClient).NewClientWithTransport(serverURL, mcp.TransportModeHTTP)
-		assert.NotNil(t, client3)
 	})
 }
 

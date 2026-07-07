@@ -233,44 +233,6 @@ func (c *MockMCPClientInterfaceGetAllServerStatusesCall) DoAndReturn(f func() ma
 	return c
 }
 
-// GetServerCapabilities mocks base method.
-func (m *MockMCPClientInterface) GetServerCapabilities() map[string]mcp.ServerCapabilities {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetServerCapabilities")
-	ret0, _ := ret[0].(map[string]mcp.ServerCapabilities)
-	return ret0
-}
-
-// GetServerCapabilities indicates an expected call of GetServerCapabilities.
-func (mr *MockMCPClientInterfaceMockRecorder) GetServerCapabilities() *MockMCPClientInterfaceGetServerCapabilitiesCall {
-	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerCapabilities", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerCapabilities))
-	return &MockMCPClientInterfaceGetServerCapabilitiesCall{Call: call}
-}
-
-// MockMCPClientInterfaceGetServerCapabilitiesCall wrap *gomock.Call
-type MockMCPClientInterfaceGetServerCapabilitiesCall struct {
-	*gomock.Call
-}
-
-// Return rewrite *gomock.Call.Return
-func (c *MockMCPClientInterfaceGetServerCapabilitiesCall) Return(arg0 map[string]mcp.ServerCapabilities) *MockMCPClientInterfaceGetServerCapabilitiesCall {
-	c.Call = c.Call.Return(arg0)
-	return c
-}
-
-// Do rewrite *gomock.Call.Do
-func (c *MockMCPClientInterfaceGetServerCapabilitiesCall) Do(f func() map[string]mcp.ServerCapabilities) *MockMCPClientInterfaceGetServerCapabilitiesCall {
-	c.Call = c.Call.Do(f)
-	return c
-}
-
-// DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockMCPClientInterfaceGetServerCapabilitiesCall) DoAndReturn(f func() map[string]mcp.ServerCapabilities) *MockMCPClientInterfaceGetServerCapabilitiesCall {
-	c.Call = c.Call.DoAndReturn(f)
-	return c
-}
-
 // GetServerForTool mocks base method.
 func (m *MockMCPClientInterface) GetServerForTool(toolName string) (string, error) {
 	m.ctrl.T.Helper()
@@ -306,44 +268,6 @@ func (c *MockMCPClientInterfaceGetServerForToolCall) Do(f func(string) (string, 
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockMCPClientInterfaceGetServerForToolCall) DoAndReturn(f func(string) (string, error)) *MockMCPClientInterfaceGetServerForToolCall {
-	c.Call = c.Call.DoAndReturn(f)
-	return c
-}
-
-// GetServerStatus mocks base method.
-func (m *MockMCPClientInterface) GetServerStatus(serverURL string) mcp.ServerStatus {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetServerStatus", serverURL)
-	ret0, _ := ret[0].(mcp.ServerStatus)
-	return ret0
-}
-
-// GetServerStatus indicates an expected call of GetServerStatus.
-func (mr *MockMCPClientInterfaceMockRecorder) GetServerStatus(serverURL any) *MockMCPClientInterfaceGetServerStatusCall {
-	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerStatus", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerStatus), serverURL)
-	return &MockMCPClientInterfaceGetServerStatusCall{Call: call}
-}
-
-// MockMCPClientInterfaceGetServerStatusCall wrap *gomock.Call
-type MockMCPClientInterfaceGetServerStatusCall struct {
-	*gomock.Call
-}
-
-// Return rewrite *gomock.Call.Return
-func (c *MockMCPClientInterfaceGetServerStatusCall) Return(arg0 mcp.ServerStatus) *MockMCPClientInterfaceGetServerStatusCall {
-	c.Call = c.Call.Return(arg0)
-	return c
-}
-
-// Do rewrite *gomock.Call.Do
-func (c *MockMCPClientInterfaceGetServerStatusCall) Do(f func(string) mcp.ServerStatus) *MockMCPClientInterfaceGetServerStatusCall {
-	c.Call = c.Call.Do(f)
-	return c
-}
-
-// DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockMCPClientInterfaceGetServerStatusCall) DoAndReturn(f func(string) mcp.ServerStatus) *MockMCPClientInterfaceGetServerStatusCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

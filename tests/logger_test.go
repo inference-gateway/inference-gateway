@@ -87,15 +87,6 @@ func TestLoggerMethods(t *testing.T) {
 			},
 		},
 		{
-			name: "notice logging",
-			setup: func() {
-				mockLogger.EXPECT().Notice("test notice", "key1", "value1")
-			},
-			execute: func(l logger.Logger) {
-				l.Notice("test notice", "key1", "value1")
-			},
-		},
-		{
 			name: "error logging",
 			setup: func() {
 				mockLogger.EXPECT().Error("test error", gomock.Any(), "key1", "value1")

@@ -41,10 +41,6 @@ type customResponseWriter struct {
 	writeToClient bool
 }
 
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
-
 // WriteHeader captures the status code but doesn't write it to the client
 // unless writeToClient is true
 func (w *customResponseWriter) WriteHeader(code int) {

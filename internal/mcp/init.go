@@ -21,7 +21,6 @@ func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) 
 		Logger:              logger,
 		Config:              cfg,
 		clients:             make(map[string]*m.Client),
-		serverCapabilities:  make(map[string]ServerCapabilities),
 		serverTools:         make(map[string][]Tool),
 		chatCompletionTools: make([]types.ChatCompletionTool, 0),
 		serverStatuses:      make(map[string]ServerStatus),
@@ -206,7 +205,6 @@ func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) err
 
 		mc.mu.Lock()
 		mc.clients[serverURL] = client
-		mc.serverCapabilities[serverURL] = newServerCapabilities()
 		mc.serverTools[serverURL] = tools
 		mc.serverStatuses[serverURL] = ServerStatusAvailable
 		if mc.initialized {
@@ -247,18 +245,6 @@ func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverUR
 	}
 
 	return client, nil
-}
-
-// newServerCapabilities returns the capability entry recorded for a server
-func newServerCapabilities() ServerCapabilities {
-	return ServerCapabilities{
-		Completions:  make(map[string]any),
-		Experimental: make(map[string]map[string]any),
-		Logging:      make(map[string]any),
-		Prompts:      make(map[string]any),
-		Resources:    make(map[string]any),
-		Tools:        make(map[string]any),
-	}
 }
 
 // rebuildChatCompletionToolsLocked re-aggregates the pre-converted chat completion tools; mc.mu must be held

@@ -22,7 +22,6 @@ type TransportMode string
 const (
 	TransportModeStreamableHTTP TransportMode = "streamable-http"
 	TransportModeSSE            TransportMode = "sse"
-	TransportModeHTTP           TransportMode = "http"
 )
 
 // customRoundTripper wraps http.RoundTripper to add streaming headers and handle SSE responses
@@ -181,11 +180,6 @@ func (c *customRoundTripper) attemptSSEFallback(req *http.Request, bodyBytes []b
 	}
 
 	return nil, fmt.Errorf("streamable HTTP transport failed and no SSE fallback URL configured")
-}
-
-// NewClient creates a new MCP client for a given server URL with enhanced transport support
-func (mc *MCPClient) NewClient(url string) *m.Client {
-	return mc.NewClientWithTransport(url, TransportModeStreamableHTTP)
 }
 
 // NewClientWithTransport creates a new MCP client with specific transport mode

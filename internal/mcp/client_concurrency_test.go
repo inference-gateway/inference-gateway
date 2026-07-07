@@ -118,7 +118,6 @@ func TestMCPClientConcurrentReadersDuringReconnection(t *testing.T) {
 				mc.GetServers()
 				mc.GetAllChatCompletionTools()
 				mc.GetAllServerStatuses()
-				mc.GetServerCapabilities()
 				mc.IsInitialized()
 				_, _ = mc.GetServerTools(srv.URL)
 				_, _ = mc.GetServerForTool("echo")
@@ -195,7 +194,7 @@ func TestRunWithStreamReturnsWhenConsumerAbandons(t *testing.T) {
 
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- agent.RunWithStream(ctx, middlewareCh, nil, &types.CreateChatCompletionRequest{})
+		errCh <- agent.RunWithStream(ctx, middlewareCh, &types.CreateChatCompletionRequest{})
 	}()
 
 	time.Sleep(100 * time.Millisecond)

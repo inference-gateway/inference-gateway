@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"errors"
 	"os"
 	"strings"
 
@@ -14,9 +13,7 @@ type Logger interface {
 	Info(message string, fields ...any)
 	Debug(message string, fields ...any)
 	Warn(message string, fields ...any)
-	Notice(message string, fields ...any)
 	Error(message string, err error, fields ...any)
-	Fatal(message string, err error, fields ...any)
 }
 
 type LoggerZapImpl struct {
@@ -31,9 +28,7 @@ type NoopLogger struct{}
 func (l *NoopLogger) Info(message string, fields ...any)             {}
 func (l *NoopLogger) Debug(message string, fields ...any)            {}
 func (l *NoopLogger) Warn(message string, fields ...any)             {}
-func (l *NoopLogger) Notice(message string, fields ...any)           {}
 func (l *NoopLogger) Error(message string, err error, fields ...any) {}
-func (l *NoopLogger) Fatal(message string, err error, fields ...any) {}
 
 // NewNoopLogger returns a logger that discards all logs
 func NewNoopLogger() Logger {
@@ -89,11 +84,6 @@ func (l *LoggerZapImpl) Warn(message string, fields ...any) {
 	l.logger.Warn(message, parseFields(fields...)...)
 }
 
-func (l *LoggerZapImpl) Notice(message string, fields ...any) {
-	fields = append(fields, "level", "notice")
-	l.logger.Info(message, parseFields(fields...)...)
-}
-
 func (l *LoggerZapImpl) Error(message string, err error, fields ...any) {
 	if err == nil {
 		l.logger.Error(message, parseFields(fields...)...)
@@ -101,14 +91,6 @@ func (l *LoggerZapImpl) Error(message string, err error, fields ...any) {
 	}
 	fields = append(fields, "error", err.Error())
 	l.logger.Error(message, parseFields(fields...)...)
-}
-
-func (l *LoggerZapImpl) Fatal(message string, err error, fields ...any) {
-	if err == nil {
-		err = errors.New("unknown error")
-	}
-	fields = append(fields, "error", err.Error())
-	l.logger.Fatal(message, parseFields(fields...)...)
 }
 
 func parseFields(kv ...any) []zap.Field {

@@ -6,17 +6,6 @@ import (
 	"time"
 )
 
-// GetServerStatus returns the status of a specific server
-func (mc *MCPClient) GetServerStatus(serverURL string) ServerStatus {
-	mc.mu.RLock()
-	defer mc.mu.RUnlock()
-
-	if status, exists := mc.serverStatuses[serverURL]; exists {
-		return status
-	}
-	return ServerStatusUnknown
-}
-
 // GetAllServerStatuses returns the status of all servers
 func (mc *MCPClient) GetAllServerStatuses() map[string]ServerStatus {
 	mc.mu.RLock()

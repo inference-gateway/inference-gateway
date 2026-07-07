@@ -48,9 +48,6 @@ type MCPClientInterface interface {
 	// ExecuteTool invokes a tool on the appropriate MCP server
 	ExecuteTool(ctx context.Context, request Request, serverURL string) (*CallToolResult, error)
 
-	// GetServerCapabilities returns the server capabilities map
-	GetServerCapabilities() map[string]ServerCapabilities
-
 	// GetServers returns the list of MCP server URLs
 	GetServers() []string
 
@@ -68,9 +65,6 @@ type MCPClientInterface interface {
 
 	// BuildSSEFallbackURL creates an SSE fallback URL from the main server URL (exposed for testing)
 	BuildSSEFallbackURL(serverURL string) string
-
-	// GetServerStatus returns the status of a specific server
-	GetServerStatus(serverURL string) ServerStatus
 
 	// GetAllServerStatuses returns the status of all servers
 	GetAllServerStatuses() map[string]ServerStatus
@@ -95,7 +89,6 @@ type MCPClient struct {
 	Config              config.Config
 	mu                  sync.RWMutex
 	clients             map[string]*m.Client
-	serverCapabilities  map[string]ServerCapabilities
 	serverTools         map[string][]Tool
 	chatCompletionTools []types.ChatCompletionTool
 	initialized         bool

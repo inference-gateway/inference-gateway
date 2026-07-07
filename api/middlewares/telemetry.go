@@ -180,7 +180,6 @@ func (t *TelemetryImpl) parseResponseData(responseBytes []byte, isStreaming bool
 func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []types.ChatCompletionMessageToolCall {
 	responseStr := string(responseBytes)
 	chunks := strings.Split(responseStr, "\n\n")
-	toolCallsMap := make(map[int]*types.ChatCompletionMessageToolCall)
 
 	usageChunks := chunks
 	if len(chunks) > 4 {
@@ -213,57 +212,7 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 		}
 	}
 
-	for _, chunk := range chunks {
-		if !strings.HasPrefix(chunk, "data: ") {
-			continue
-		}
-		chunk = strings.TrimPrefix(chunk, "data: ")
-		if chunk == "[DONE]" || chunk == "" {
-			continue
-		}
-
-		var streamResponse types.CreateChatCompletionStreamResponse
-		if err := json.Unmarshal([]byte(chunk), &streamResponse); err != nil {
-			continue
-		}
-
-		if len(streamResponse.Choices) == 0 || streamResponse.Choices[0].Delta.ToolCalls == nil {
-			continue
-		}
-
-		for _, toolCallChunk := range *streamResponse.Choices[0].Delta.ToolCalls {
-			index := toolCallChunk.Index
-			if _, exists := toolCallsMap[index]; !exists {
-				toolCallsMap[index] = &types.ChatCompletionMessageToolCall{
-					ID:       "",
-					Type:     types.Function,
-					Function: types.ChatCompletionMessageToolCallFunction{Name: "", Arguments: ""},
-				}
-			}
-
-			toolCall := toolCallsMap[index]
-			if toolCallChunk.ID != nil {
-				toolCall.ID = *toolCallChunk.ID
-			}
-			if toolCallChunk.Function != nil {
-				if toolCallChunk.Function.Name != "" {
-					toolCall.Function.Name = toolCallChunk.Function.Name
-				}
-				if toolCallChunk.Function.Arguments != "" {
-					toolCall.Function.Arguments += toolCallChunk.Function.Arguments
-				}
-			}
-		}
-	}
-
-	var toolCalls []types.ChatCompletionMessageToolCall
-	for i := 0; i < len(toolCallsMap); i++ {
-		if toolCall, exists := toolCallsMap[i]; exists && toolCall.Function.Name != "" {
-			toolCalls = append(toolCalls, *toolCall)
-		}
-	}
-
-	return toolCalls
+	return types.AccumulateStreamingToolCalls(responseStr)
 }
 
 // parseNonStreamingResponse handles non-streaming response parsing for both tokens and tool calls

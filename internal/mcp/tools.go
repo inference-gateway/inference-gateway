@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
@@ -56,16 +55,6 @@ func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL
 	}
 
 	return &response, nil
-}
-
-// GetServerCapabilities implements MCPClientInterface.
-func (mc *MCPClient) GetServerCapabilities() map[string]ServerCapabilities {
-	mc.mu.RLock()
-	defer mc.mu.RUnlock()
-
-	capabilities := make(map[string]ServerCapabilities, len(mc.serverCapabilities))
-	maps.Copy(capabilities, mc.serverCapabilities)
-	return capabilities
 }
 
 func (mc *MCPClient) GetServers() []string {

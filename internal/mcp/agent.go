@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"strings"
 
-	gin "github.com/gin-gonic/gin"
-
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -22,7 +20,7 @@ const MaxAgentIterations = 10
 //go:generate mockgen -source=agent.go -destination=../../tests/mocks/mcp/agent.go -package=mcpmocks -typed
 type Agent interface {
 	Run(ctx context.Context, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error
-	RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *types.CreateChatCompletionRequest) error
+	RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error
 	ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error)
 	SetProvider(provider core.IProvider)
 	SetModel(model *string)
@@ -118,10 +116,6 @@ func (a *agentImpl) Run(ctx context.Context, request *types.CreateChatCompletion
 	return nil
 }
 
-type ErrorResponse struct {
-	Error string `json:"error"`
-}
-
 func send(ctx context.Context, ch chan<- []byte, b []byte) bool {
 	select {
 	case ch <- b:
@@ -132,7 +126,7 @@ func send(ctx context.Context, ch chan<- []byte, b []byte) bool {
 }
 
 // RunWithStream executes the agent with the provided streaming response channel
-func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *types.CreateChatCompletionRequest) error {
+func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error {
 	if a.provider == nil {
 		return errors.New("provider is not set for agent")
 	}
@@ -141,18 +135,17 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	}
 
 	currentRequest := *body
-	maxIterations := 10
 
 	currentRequest.Model = *a.model
-	a.logger.Debug("starting agent streaming", "model", currentRequest.Model, "max_iterations", maxIterations)
+	a.logger.Debug("starting agent streaming", "model", currentRequest.Model, "max_iterations", MaxAgentIterations)
 
 	defer func() {
 		a.logger.Debug("sending agent completion signal")
 		send(ctx, middlewareStreamCh, []byte("data: [DONE]\n\n"))
 	}()
 
-	for iteration := 0; iteration < maxIterations; iteration++ {
-		a.logger.Debug("streaming iteration", "iteration", iteration+1, "max_iterations", maxIterations)
+	for iteration := range MaxAgentIterations {
+		a.logger.Debug("streaming iteration", "iteration", iteration+1, "max_iterations", MaxAgentIterations)
 
 		streamCh, err := a.provider.StreamChatCompletions(ctx, currentRequest)
 		if err != nil {
@@ -263,12 +256,8 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		var toolCalls []types.ChatCompletionMessageToolCall
 		if hasToolCalls {
-			toolCalls, err = a.parseStreamingToolCalls(responseBodyBuilder.String())
-			if err != nil {
-				a.logger.Error("failed to parse streaming tool calls", err, "iteration", iteration+1)
-			} else {
-				a.logger.Debug("parsed tool calls from stream", "count", len(toolCalls), "iteration", iteration+1)
-			}
+			toolCalls = types.AccumulateStreamingToolCalls(responseBodyBuilder.String())
+			a.logger.Debug("parsed tool calls from stream", "count", len(toolCalls), "iteration", iteration+1)
 		}
 
 		if len(toolCalls) > 0 {
@@ -297,7 +286,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 			"tool_results", len(toolResults), "total_messages", len(currentRequest.Messages), "iteration", iteration+1)
 	}
 
-	a.logger.Warn("agent streaming reached maximum iterations", "max_iterations", maxIterations, "iterations_completed", maxIterations)
+	a.logger.Warn("agent streaming reached maximum iterations", "max_iterations", MaxAgentIterations, "iterations_completed", MaxAgentIterations)
 	return nil
 }
 
@@ -383,111 +372,4 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 	}
 
 	return results, nil
-}
-
-// parseStreamingToolCalls parses streaming response to extract tool calls
-func (a *agentImpl) parseStreamingToolCalls(responseBodyBuilder string) ([]types.ChatCompletionMessageToolCall, error) {
-	toolCallsMap := make(map[int]*types.ChatCompletionMessageToolCall)
-	lines := strings.Split(responseBodyBuilder, "\n")
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-
-		var data string
-		switch {
-		case strings.HasPrefix(line, "data: "):
-			data = strings.TrimPrefix(line, "data: ")
-		case line != "" && line != "[DONE]":
-			data = line
-		default:
-			continue
-		}
-
-		if data == "[DONE]" || data == "" {
-			break
-		}
-
-		var chunk types.CreateChatCompletionStreamResponse
-		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
-			a.logger.Debug("failed to parse streaming chunk", "data", data, "error", err)
-			continue
-		}
-
-		if len(chunk.Choices) == 0 || chunk.Choices[0].Delta.ToolCalls == nil {
-			continue
-		}
-
-		for _, toolCallChunk := range *chunk.Choices[0].Delta.ToolCalls {
-			index := toolCallChunk.Index
-
-			if _, exists := toolCallsMap[index]; !exists {
-				toolCallsMap[index] = &types.ChatCompletionMessageToolCall{
-					ID:   "",
-					Type: types.Function,
-					Function: types.ChatCompletionMessageToolCallFunction{
-						Name:      "",
-						Arguments: "",
-					},
-				}
-			}
-
-			toolCall := toolCallsMap[index]
-
-			if toolCallChunk.ID != nil {
-				toolCall.ID = *toolCallChunk.ID
-			}
-
-			if toolCallChunk.Type != nil {
-				toolCall.Type = types.ChatCompletionToolType(*toolCallChunk.Type)
-			}
-
-			if toolCallChunk.Function != nil {
-				type TempToolCallFunction struct {
-					Name      string `json:"name,omitempty"`
-					Arguments string `json:"arguments,omitempty"`
-				}
-				type TempToolCall struct {
-					Index    int                  `json:"index"`
-					Function TempToolCallFunction `json:"function"`
-				}
-				type TempChoice struct {
-					Delta struct {
-						ToolCalls []TempToolCall `json:"tool_calls"`
-					} `json:"delta"`
-				}
-				type TempResponse struct {
-					Choices []TempChoice `json:"choices"`
-				}
-
-				var tempResp TempResponse
-				if err := json.Unmarshal([]byte(data), &tempResp); err == nil {
-					if len(tempResp.Choices) > 0 {
-						for _, tc := range tempResp.Choices[0].Delta.ToolCalls {
-							if tc.Index == index {
-								if tc.Function.Name != "" {
-									toolCall.Function.Name = tc.Function.Name
-									a.logger.Debug("parsed tool name from stream", "name", tc.Function.Name)
-								}
-								if tc.Function.Arguments != "" {
-									toolCall.Function.Arguments += tc.Function.Arguments
-									a.logger.Debug("parsed tool arguments from stream", "args", tc.Function.Arguments)
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	var toolCalls []types.ChatCompletionMessageToolCall
-	for i := 0; i < len(toolCallsMap); i++ {
-		if toolCall, exists := toolCallsMap[i]; exists {
-			a.logger.Debug("final parsed tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%s", toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments))
-			toolCalls = append(toolCalls, *toolCall)
-		}
-	}
-
-	a.logger.Debug("total parsed tool calls", "count", len(toolCalls))
-	return toolCalls, nil
 }

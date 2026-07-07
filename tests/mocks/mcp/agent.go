@@ -13,7 +13,6 @@ import (
 	context "context"
 	reflect "reflect"
 
-	gin "github.com/gin-gonic/gin"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 	gomock "go.uber.org/mock/gomock"
@@ -121,17 +120,17 @@ func (c *MockAgentRunCall) DoAndReturn(f func(context.Context, *types.CreateChat
 }
 
 // RunWithStream mocks base method.
-func (m *MockAgent) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *types.CreateChatCompletionRequest) error {
+func (m *MockAgent) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunWithStream", ctx, middlewareStreamCh, c, body)
+	ret := m.ctrl.Call(m, "RunWithStream", ctx, middlewareStreamCh, body)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RunWithStream indicates an expected call of RunWithStream.
-func (mr *MockAgentMockRecorder) RunWithStream(ctx, middlewareStreamCh, c, body any) *MockAgentRunWithStreamCall {
+func (mr *MockAgentMockRecorder) RunWithStream(ctx, middlewareStreamCh, body any) *MockAgentRunWithStreamCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunWithStream", reflect.TypeOf((*MockAgent)(nil).RunWithStream), ctx, middlewareStreamCh, c, body)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunWithStream", reflect.TypeOf((*MockAgent)(nil).RunWithStream), ctx, middlewareStreamCh, body)
 	return &MockAgentRunWithStreamCall{Call: call}
 }
 
@@ -141,21 +140,21 @@ type MockAgentRunWithStreamCall struct {
 }
 
 // Return rewrite *gomock.Call.Return
-func (c_2 *MockAgentRunWithStreamCall) Return(arg0 error) *MockAgentRunWithStreamCall {
-	c_2.Call = c_2.Call.Return(arg0)
-	return c_2
+func (c *MockAgentRunWithStreamCall) Return(arg0 error) *MockAgentRunWithStreamCall {
+	c.Call = c.Call.Return(arg0)
+	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c_2 *MockAgentRunWithStreamCall) Do(f func(context.Context, chan []byte, *gin.Context, *types.CreateChatCompletionRequest) error) *MockAgentRunWithStreamCall {
-	c_2.Call = c_2.Call.Do(f)
-	return c_2
+func (c *MockAgentRunWithStreamCall) Do(f func(context.Context, chan []byte, *types.CreateChatCompletionRequest) error) *MockAgentRunWithStreamCall {
+	c.Call = c.Call.Do(f)
+	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c_2 *MockAgentRunWithStreamCall) DoAndReturn(f func(context.Context, chan []byte, *gin.Context, *types.CreateChatCompletionRequest) error) *MockAgentRunWithStreamCall {
-	c_2.Call = c_2.Call.DoAndReturn(f)
-	return c_2
+func (c *MockAgentRunWithStreamCall) DoAndReturn(f func(context.Context, chan []byte, *types.CreateChatCompletionRequest) error) *MockAgentRunWithStreamCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
 }
 
 // SetModel mocks base method.

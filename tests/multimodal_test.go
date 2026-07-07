@@ -57,56 +57,6 @@ func TestMessage_HasImageContent(t *testing.T) {
 	}
 }
 
-func TestMessage_GetTextContent(t *testing.T) {
-	tests := []struct {
-		name     string
-		makeMsg  func(t *testing.T) types.Message
-		expected string
-	}{
-		{
-			name: "String content returns text",
-			makeMsg: func(t *testing.T) types.Message {
-				return types.NewTextMessage(t, types.User, "Hello, world!")
-			},
-			expected: "Hello, world!",
-		},
-		{
-			name: "Array content with text returns first text part",
-			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewTextContentPart(t, "First text part"),
-					types.NewTextContentPart(t, "Second text part"))
-			},
-			expected: "First text part",
-		},
-		{
-			name: "Array content with mixed types returns first text",
-			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewImageContentPart(t, "https://example.com/image.jpg", nil),
-					types.NewTextContentPart(t, "What's in this image?"))
-			},
-			expected: "What's in this image?",
-		},
-		{
-			name: "Array content with only image returns empty string",
-			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewImageContentPart(t, "https://example.com/image.jpg", nil))
-			},
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			msg := tt.makeMsg(t)
-			result := msg.GetTextContent()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestMessage_StripImageContent(t *testing.T) {
 	tests := []struct {
 		name            string

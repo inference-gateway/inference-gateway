@@ -73,23 +73,6 @@ func (mr *MockLoggerMockRecorder) Error(message, err any, fields ...any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Error", reflect.TypeOf((*MockLogger)(nil).Error), varargs...)
 }
 
-// Fatal mocks base method.
-func (m *MockLogger) Fatal(message string, err error, fields ...any) {
-	m.ctrl.T.Helper()
-	varargs := []any{message, err}
-	for _, a := range fields {
-		varargs = append(varargs, a)
-	}
-	m.ctrl.Call(m, "Fatal", varargs...)
-}
-
-// Fatal indicates an expected call of Fatal.
-func (mr *MockLoggerMockRecorder) Fatal(message, err any, fields ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{message, err}, fields...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fatal", reflect.TypeOf((*MockLogger)(nil).Fatal), varargs...)
-}
-
 // Info mocks base method.
 func (m *MockLogger) Info(message string, fields ...any) {
 	m.ctrl.T.Helper()
@@ -105,23 +88,6 @@ func (mr *MockLoggerMockRecorder) Info(message any, fields ...any) *gomock.Call 
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{message}, fields...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Info", reflect.TypeOf((*MockLogger)(nil).Info), varargs...)
-}
-
-// Notice mocks base method.
-func (m *MockLogger) Notice(message string, fields ...any) {
-	m.ctrl.T.Helper()
-	varargs := []any{message}
-	for _, a := range fields {
-		varargs = append(varargs, a)
-	}
-	m.ctrl.Call(m, "Notice", varargs...)
-}
-
-// Notice indicates an expected call of Notice.
-func (mr *MockLoggerMockRecorder) Notice(message any, fields ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{message}, fields...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Notice", reflect.TypeOf((*MockLogger)(nil).Notice), varargs...)
 }
 
 // Warn mocks base method.
