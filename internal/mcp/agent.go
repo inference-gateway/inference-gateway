@@ -122,6 +122,15 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
+func send(ctx context.Context, ch chan<- []byte, b []byte) bool {
+	select {
+	case ch <- b:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
 // RunWithStream executes the agent with the provided streaming response channel
 func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, c *gin.Context, body *types.CreateChatCompletionRequest) error {
 	if a.provider == nil {
@@ -139,7 +148,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 	defer func() {
 		a.logger.Debug("sending agent completion signal")
-		middlewareStreamCh <- []byte("data: [DONE]\n\n")
+		send(ctx, middlewareStreamCh, []byte("data: [DONE]\n\n"))
 	}()
 
 	for iteration := 0; iteration < maxIterations; iteration++ {
@@ -149,7 +158,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 		if err != nil {
 			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", *a.model)
 			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to start streaming: %s\"}\n\n", err.Error()))
-			middlewareStreamCh <- errorData
+			send(ctx, middlewareStreamCh, errorData)
 			return err
 		}
 
@@ -193,7 +202,10 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 				}
 
 				formattedData := []byte(fmt.Sprintf("data: %s\n\n", chunkData))
-				middlewareStreamCh <- formattedData
+				if !send(ctx, middlewareStreamCh, formattedData) {
+					a.logger.Debug("context cancelled while sending stream chunk", "iteration", iteration+1)
+					return ctx.Err()
+				}
 				responseBodyBuilder.Write(formattedData)
 
 				var resp types.CreateChatCompletionStreamResponse
@@ -273,7 +285,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 		if err != nil {
 			a.logger.Error("failed to execute tool calls", err, "iteration", iteration+1, "tool_count", len(toolCalls))
 			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to execute tools: %s\"}\n\n", err.Error()))
-			middlewareStreamCh <- errorData
+			send(ctx, middlewareStreamCh, errorData)
 			return err
 		}
 

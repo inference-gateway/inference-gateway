@@ -4,22 +4,30 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // ExecuteTool implements MCPClientInterface.
 func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL string) (*CallToolResult, error) {
-	if !mc.Initialized {
+	mc.mu.RLock()
+	initialized := mc.initialized
+	client, exists := mc.clients[serverURL]
+	mc.mu.RUnlock()
+
+	if !initialized {
 		return nil, ErrClientNotInitialized
 	}
 
-	client, exists := mc.Clients[serverURL]
 	if !exists {
 		return nil, ErrServerNotFound
 	}
 
-	toolName := request.Params["name"].(string)
+	toolName, ok := request.Params["name"].(string)
+	if !ok {
+		return nil, fmt.Errorf("tool request is missing a string 'name' parameter")
+	}
 	toolArgs := request.Params["arguments"]
 
 	result, err := client.CallTool(ctx, toolName, toolArgs)
@@ -52,27 +60,38 @@ func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverURL
 
 // GetServerCapabilities implements MCPClientInterface.
 func (mc *MCPClient) GetServerCapabilities() map[string]ServerCapabilities {
-	return mc.ServerCapabilities
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
+
+	capabilities := make(map[string]ServerCapabilities, len(mc.serverCapabilities))
+	maps.Copy(capabilities, mc.serverCapabilities)
+	return capabilities
 }
 
 func (mc *MCPClient) GetServers() []string {
-	if !mc.Initialized {
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
+
+	if !mc.initialized {
 		return nil
 	}
 
-	servers := make([]string, 0, len(mc.Clients))
-	for serverURL := range mc.Clients {
+	servers := make([]string, 0, len(mc.clients))
+	for serverURL := range mc.clients {
 		servers = append(servers, serverURL)
 	}
 	return servers
 }
 
 func (mc *MCPClient) GetServerTools(serverURL string) ([]Tool, error) {
-	if !mc.Initialized {
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
+
+	if !mc.initialized {
 		return nil, ErrClientNotInitialized
 	}
 
-	tools := mc.ServerTools[serverURL]
+	tools := mc.serverTools[serverURL]
 	if tools == nil {
 		return nil, fmt.Errorf("no tools found for server %s", serverURL)
 	}
@@ -107,11 +126,14 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 
 // GetServerForTool returns the server URL that provides the specified tool
 func (mc *MCPClient) GetServerForTool(toolName string) (string, error) {
-	if !mc.Initialized {
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
+
+	if !mc.initialized {
 		return "", fmt.Errorf("mcp client not initialized")
 	}
 
-	for serverURL, serverTools := range mc.ServerTools {
+	for serverURL, serverTools := range mc.serverTools {
 		for _, tool := range serverTools {
 			if tool.Name == toolName {
 				return serverURL, nil
@@ -124,13 +146,18 @@ func (mc *MCPClient) GetServerForTool(toolName string) (string, error) {
 
 // GetAllChatCompletionTools returns all pre-converted chat completion tools from all servers
 func (mc *MCPClient) GetAllChatCompletionTools() []types.ChatCompletionTool {
-	if !mc.Initialized {
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
+
+	if !mc.initialized {
 		return []types.ChatCompletionTool{}
 	}
-	return mc.ChatCompletionTools
+	return mc.chatCompletionTools
 }
 
 // IsInitialized implements MCPClientInterface.
 func (mc *MCPClient) IsInitialized() bool {
-	return mc.Initialized
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
+	return mc.initialized
 }
