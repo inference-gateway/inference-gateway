@@ -31,9 +31,9 @@ func TestDetermineProviderAndModelNameEdgeCases(t *testing.T) {
 	}{
 		{
 			name:             "Case insensitive prefix matching",
-			model:            "OpenAI/GPT-4",
+			model:            "OpenAI/GPT-5.5",
 			expectedProvider: new(constants.OpenaiID),
-			expectedModel:    "GPT-4",
+			expectedModel:    "GPT-5.5",
 		},
 		{
 			name:             "Model name containing slashes",

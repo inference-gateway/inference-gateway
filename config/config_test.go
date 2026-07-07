@@ -4,13 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/providers/client"
-	"github.com/inference-gateway/inference-gateway/providers/constants"
-	"github.com/inference-gateway/inference-gateway/providers/registry"
-	"github.com/inference-gateway/inference-gateway/providers/types"
-	"github.com/sethvargo/go-envconfig"
-	"github.com/stretchr/testify/assert"
+	envconfig "github.com/sethvargo/go-envconfig"
+	assert "github.com/stretchr/testify/assert"
+
+	config "github.com/inference-gateway/inference-gateway/config"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 func defaultProviders(overrides map[types.Provider]func(*registry.ProviderConfig)) map[types.Provider]*registry.ProviderConfig {
