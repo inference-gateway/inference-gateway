@@ -157,10 +157,7 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		if originalRequestBody.Stream != nil && *originalRequestBody.Stream {
 			m.logger.Debug("starting mcp streaming mode")
-			c.Header("Content-Type", "text/event-stream")
-			c.Header("Cache-Control", "no-cache")
-			c.Header("Connection", "keep-alive")
-			c.Header("Transfer-Encoding", "chunked")
+			SetSSEHeaders(c)
 
 			if err := m.handleMCPStreamingRequest(c, &originalRequestBody, result); err != nil {
 				m.logger.Error("failed to handle mcp streaming", err)
@@ -263,6 +260,8 @@ func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *t
 				m.logger.Debug("mcp agent stream channel closed unexpectedly")
 				return false
 			}
+
+			ResetWriteDeadline(c, m.config.Server.WriteTimeout)
 
 			if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
 				m.logger.Debug("mcp agent completed all iterations, sending [DONE]")

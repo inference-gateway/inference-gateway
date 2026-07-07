@@ -52,7 +52,6 @@ func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
 	}
 
 	httpClient := &http.Client{
-		Timeout: cfg.ClientTimeout,
 		Transport: &http.Transport{
 			MaxIdleConns:        cfg.ClientMaxIdleConns,
 			MaxIdleConnsPerHost: cfg.ClientMaxIdleConnsPerHost,

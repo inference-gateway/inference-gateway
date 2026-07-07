@@ -2,6 +2,8 @@ package middlewares
 
 import (
 	"bytes"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -10,6 +12,25 @@ const (
 	// ChatCompletionsPath is the endpoint path for chat completions
 	ChatCompletionsPath = "/v1/chat/completions"
 )
+
+// SetSSEHeaders sets the response headers required for server-sent event streaming
+func SetSSEHeaders(c *gin.Context) {
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Transfer-Encoding", "chunked")
+	c.Header("X-Accel-Buffering", "no")
+}
+
+// ResetWriteDeadline extends the response write deadline by d so streaming
+// responses are not cut off by the server's global write timeout
+func ResetWriteDeadline(c *gin.Context, d time.Duration) {
+	var deadline time.Time
+	if d > 0 {
+		deadline = time.Now().Add(d)
+	}
+	_ = http.NewResponseController(c.Writer).SetWriteDeadline(deadline)
+}
 
 // customResponseWriter captures the response body but doesn't write it
 // to the client until we're ready, allowing us to intercept tool calls
@@ -41,4 +62,8 @@ func (w *customResponseWriter) Write(b []byte) (int, error) {
 		return w.ResponseWriter.Write(b)
 	}
 	return len(b), nil
+}
+
+func (w *customResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }

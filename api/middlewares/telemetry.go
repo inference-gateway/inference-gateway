@@ -63,6 +63,10 @@ func (w *responseBodyWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+func (w *responseBodyWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
 func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTime := time.Now()

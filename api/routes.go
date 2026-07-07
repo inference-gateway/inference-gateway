@@ -15,6 +15,7 @@ import (
 
 	gin "github.com/gin-gonic/gin"
 
+	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
@@ -131,14 +132,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 }
 
 func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *RouterImpl) {
-	for k, v := range map[string]string{
-		"Content-Type":      "text/event-stream",
-		"Cache-Control":     "no-cache",
-		"Connection":        "keep-alive",
-		"Transfer-Encoding": "chunked",
-	} {
-		c.Header(k, v)
-	}
+	middlewares.SetSSEHeaders(c)
 
 	fullURL, err := constructProviderURL(provider, c.Param("path"), c.Request.URL.RawQuery)
 	if err != nil {
@@ -187,6 +181,8 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 			return false
 		default:
 		}
+
+		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
 
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -582,13 +578,10 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
 
 	if req.Stream != nil && *req.Stream {
-		c.Header("Content-Type", "text/event-stream")
-		c.Header("Cache-Control", "no-cache")
-		c.Header("Connection", "keep-alive")
-		c.Header("Transfer-Encoding", "chunked")
-		c.Header("X-Accel-Buffering", "no")
+		middlewares.SetSSEHeaders(c)
 
-		streamCh, err := provider.StreamChatCompletions(ctx, req)
+		streamCtx := c.Request.Context()
+		streamCh, err := provider.StreamChatCompletions(streamCtx, req)
 		if err != nil {
 			router.logger.Error("failed to start streaming", err, "provider", providerID)
 
@@ -609,6 +602,8 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 					return false
 				}
 
+				middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
+
 				router.logger.Debug("stream chunk",
 					"provider", providerID,
 					"bytes", len(line),
@@ -623,7 +618,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 					flusher.Flush()
 				}
 				return true
-			case <-ctx.Done():
+			case <-streamCtx.Done():
 				return false
 			}
 		})
