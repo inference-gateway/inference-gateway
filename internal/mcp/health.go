@@ -2,15 +2,16 @@ package mcp
 
 import (
 	"context"
+	"maps"
 	"time"
 )
 
 // GetServerStatus returns the status of a specific server
 func (mc *MCPClient) GetServerStatus(serverURL string) ServerStatus {
-	mc.statusMutex.RLock()
-	defer mc.statusMutex.RUnlock()
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
 
-	if status, exists := mc.ServerStatuses[serverURL]; exists {
+	if status, exists := mc.serverStatuses[serverURL]; exists {
 		return status
 	}
 	return ServerStatusUnknown
@@ -18,13 +19,11 @@ func (mc *MCPClient) GetServerStatus(serverURL string) ServerStatus {
 
 // GetAllServerStatuses returns the status of all servers
 func (mc *MCPClient) GetAllServerStatuses() map[string]ServerStatus {
-	mc.statusMutex.RLock()
-	defer mc.statusMutex.RUnlock()
+	mc.mu.RLock()
+	defer mc.mu.RUnlock()
 
-	statusCopy := make(map[string]ServerStatus)
-	for url, status := range mc.ServerStatuses {
-		statusCopy[url] = status
-	}
+	statusCopy := make(map[string]ServerStatus, len(mc.serverStatuses))
+	maps.Copy(statusCopy, mc.serverStatuses)
 	return statusCopy
 }
 
@@ -80,7 +79,10 @@ func (mc *MCPClient) checkServerHealth(ctx context.Context, serverURL string) {
 	checkCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.PollingTimeout)
 	defer cancel()
 
-	client, exists := mc.Clients[serverURL]
+	mc.mu.RLock()
+	client, exists := mc.clients[serverURL]
+	mc.mu.RUnlock()
+
 	if !exists {
 		mc.Logger.Debug("server client not found for health check", "server", serverURL, "component", "mcp_client")
 		return
@@ -95,25 +97,21 @@ func (mc *MCPClient) checkServerHealth(ctx context.Context, serverURL string) {
 		if !mc.Config.MCP.DisableHealthcheckLogs {
 			mc.Logger.Debug("server health check failed", "server", serverURL, "error", err, "component", "mcp_client")
 		}
-
-		mc.statusMutex.RLock()
-		oldStatus := mc.ServerStatuses[serverURL]
-		mc.statusMutex.RUnlock()
-
-		if oldStatus == ServerStatusAvailable && mc.Config.MCP.EnableReconnect {
-			mc.Logger.Info("server became unavailable, scheduling reconnection", "server", serverURL, "component", "mcp_client")
-			go mc.attemptServerReconnection(ctx, serverURL)
-		}
 	} else if !mc.Config.MCP.DisableHealthcheckLogs {
 		mc.Logger.Debug("server health check passed", "server", serverURL, "component", "mcp_client")
 	}
 
-	mc.statusMutex.Lock()
-	oldStatus := mc.ServerStatuses[serverURL]
-	mc.ServerStatuses[serverURL] = newStatus
-	mc.statusMutex.Unlock()
+	mc.mu.Lock()
+	oldStatus := mc.serverStatuses[serverURL]
+	mc.serverStatuses[serverURL] = newStatus
+	mc.mu.Unlock()
 
 	if oldStatus != newStatus {
 		mc.Logger.Info("server status changed", "server", serverURL, "oldStatus", string(oldStatus), "newStatus", string(newStatus), "component", "mcp_client")
+	}
+
+	if newStatus == ServerStatusUnavailable && oldStatus == ServerStatusAvailable && mc.Config.MCP.EnableReconnect {
+		mc.Logger.Info("server became unavailable, scheduling reconnection", "server", serverURL, "component", "mcp_client")
+		go mc.attemptServerReconnection(ctx, serverURL)
 	}
 }

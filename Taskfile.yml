@@ -88,7 +88,7 @@ tasks:
   test:
     desc: 'Run tests'
     cmds:
-      - go test -v ./...
+      - go test -race -v ./...
 
   benchmark:
     desc: 'Run benchmarks'

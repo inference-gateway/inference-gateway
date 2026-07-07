@@ -91,18 +91,20 @@ type MCPClientInterface interface {
 // MCPClient provides methods to interact with MCP servers
 type MCPClient struct {
 	ServerURLs          []string
-	Clients             map[string]*m.Client
 	Logger              logger.Logger
 	Config              config.Config
-	ServerCapabilities  map[string]ServerCapabilities
-	ServerTools         map[string][]Tool
-	ChatCompletionTools []types.ChatCompletionTool
-	Initialized         bool
-	ServerStatuses      map[string]ServerStatus
-	statusMutex         sync.RWMutex
-	pollingCancel       context.CancelFunc
-	pollingDone         chan struct{}
-	reconnectCancel     context.CancelFunc
-	reconnectDone       chan struct{}
-	reconnectMutex      sync.Mutex
+	mu                  sync.RWMutex
+	clients             map[string]*m.Client
+	serverCapabilities  map[string]ServerCapabilities
+	serverTools         map[string][]Tool
+	chatCompletionTools []types.ChatCompletionTool
+	initialized         bool
+	serverStatuses      map[string]ServerStatus
+	reconnecting        map[string]struct{}
+
+	pollingCancel   context.CancelFunc
+	pollingDone     chan struct{}
+	reconnectCancel context.CancelFunc
+	reconnectDone   chan struct{}
+	reconnectMutex  sync.Mutex
 }

@@ -1,6 +1,7 @@
 package mcp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	m "github.com/metoro-io/mcp-golang"
@@ -26,9 +28,11 @@ const (
 // customRoundTripper wraps http.RoundTripper to add streaming headers and handle SSE responses
 type customRoundTripper struct {
 	base        http.RoundTripper
-	sessionID   string
-	mode        TransportMode
 	fallbackURL string
+
+	mu        sync.Mutex
+	sessionID string
+	mode      TransportMode
 }
 
 // parseSSEResponse extracts JSON data from SSE formatted response
@@ -55,7 +59,12 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	req.Header.Del("Cookie")
 	req.Header.Del("X-API-Key")
 
-	switch c.mode {
+	c.mu.Lock()
+	mode := c.mode
+	sessionID := c.sessionID
+	c.mu.Unlock()
+
+	switch mode {
 	case TransportModeStreamableHTTP:
 		req.Header.Set("Accept", "application/json, text/event-stream")
 		req.Header.Set("Cache-Control", "no-cache")
@@ -70,12 +79,14 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 		req.Header.Set("Connection", "keep-alive")
 	}
 
-	if c.sessionID != "" {
-		req.Header.Set("mcp-session-id", c.sessionID)
+	if sessionID != "" {
+		req.Header.Set("mcp-session-id", sessionID)
 	}
 
+	var bodyBytes []byte
 	if req.Method == "POST" && req.Body != nil {
-		bodyBytes, err := io.ReadAll(req.Body)
+		var err error
+		bodyBytes, err = io.ReadAll(req.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -102,12 +113,16 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 		return resp, err
 	}
 
-	if sessionID := resp.Header.Get("mcp-session-id"); sessionID != "" {
-		c.sessionID = sessionID
+	if respSessionID := resp.Header.Get("mcp-session-id"); respSessionID != "" {
+		c.mu.Lock()
+		c.sessionID = respSessionID
+		c.mu.Unlock()
 	}
 
-	if resp.StatusCode >= 400 && resp.StatusCode < 500 && c.mode == TransportModeStreamableHTTP {
-		return c.attemptSSEFallback(req)
+	if resp.StatusCode >= 400 && resp.StatusCode < 500 && mode == TransportModeStreamableHTTP {
+		_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 4096))
+		resp.Body.Close()
+		return c.attemptSSEFallback(req, bodyBytes)
 	}
 
 	contentType := resp.Header.Get("Content-Type")
@@ -139,8 +154,10 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 }
 
 // attemptSSEFallback tries to fallback to SSE transport when Streamable HTTP fails
-func (c *customRoundTripper) attemptSSEFallback(req *http.Request) (*http.Response, error) {
+func (c *customRoundTripper) attemptSSEFallback(req *http.Request, bodyBytes []byte) (*http.Response, error) {
+	c.mu.Lock()
 	c.mode = TransportModeSSE
+	c.mu.Unlock()
 
 	if c.fallbackURL != "" {
 		originalURL := req.URL
@@ -148,6 +165,11 @@ func (c *customRoundTripper) attemptSSEFallback(req *http.Request) (*http.Respon
 		if err == nil {
 			req.URL = fallbackURL
 			req.Header.Set("Accept", "text/event-stream")
+
+			if bodyBytes != nil {
+				req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+				req.ContentLength = int64(len(bodyBytes))
+			}
 
 			resp, err := c.base.RoundTrip(req)
 			if err != nil {

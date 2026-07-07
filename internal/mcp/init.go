@@ -18,14 +18,14 @@ import (
 func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) MCPClientInterface {
 	return &MCPClient{
 		ServerURLs:          serverURLs,
-		Clients:             make(map[string]*m.Client),
 		Logger:              logger,
 		Config:              cfg,
-		ServerCapabilities:  make(map[string]ServerCapabilities),
-		ServerTools:         make(map[string][]Tool),
-		ChatCompletionTools: make([]types.ChatCompletionTool, 0),
-		Initialized:         false,
-		ServerStatuses:      make(map[string]ServerStatus),
+		clients:             make(map[string]*m.Client),
+		serverCapabilities:  make(map[string]ServerCapabilities),
+		serverTools:         make(map[string][]Tool),
+		chatCompletionTools: make([]types.ChatCompletionTool, 0),
+		serverStatuses:      make(map[string]ServerStatus),
+		reconnecting:        make(map[string]struct{}),
 		pollingDone:         make(chan struct{}),
 	}
 }
@@ -40,11 +40,11 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	successfulInitializations := 0
 	failedServers := make([]string, 0)
 
-	mc.statusMutex.Lock()
+	mc.mu.Lock()
 	for _, serverURL := range mc.ServerURLs {
-		mc.ServerStatuses[serverURL] = ServerStatusUnknown
+		mc.serverStatuses[serverURL] = ServerStatusUnknown
 	}
-	mc.statusMutex.Unlock()
+	mc.mu.Unlock()
 
 	for _, serverURL := range mc.ServerURLs {
 		if err := mc.initializeServer(ctx, serverURL); err != nil {
@@ -58,7 +58,9 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 		mc.Logger.Info("successfully initialized mcp server", "server", serverURL, "component", "mcp_client")
 	}
 
-	mc.Initialized = true
+	mc.mu.Lock()
+	mc.initialized = true
+	mc.mu.Unlock()
 
 	if successfulInitializations == 0 {
 		if mc.scheduleReconnectionIfEnabled(failedServers) {
@@ -76,34 +78,10 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	}
 
 	mc.Logger.Debug("mcp pre-converting all tools to chat completion format")
-	mc.Logger.Debug("mcp serverTools map status", "serverCount", len(mc.ServerTools))
 
-	for serverURL, serverTools := range mc.ServerTools {
-		mc.Logger.Debug("mcp server tools status", "server", serverURL, "toolCount", len(serverTools))
-	}
-
-	allChatCompletionTools := make([]types.ChatCompletionTool, 0)
-
-	for serverURL, serverTools := range mc.ServerTools {
-		if len(serverTools) == 0 {
-			mc.Logger.Debug("no tools to convert for server", "server", serverURL)
-			continue
-		}
-
-		toolsToConvert := mc.filterTools(serverTools)
-		if len(toolsToConvert) == 0 {
-			mc.Logger.Debug("all tools filtered out by include/exclude config for server", "server", serverURL)
-			continue
-		}
-
-		mc.Logger.Debug("converting tools for server", "server", serverURL, "inputToolCount", len(serverTools), "afterFilterCount", len(toolsToConvert))
-		chatTools := mc.ConvertMCPToolsToChatCompletionTools(toolsToConvert)
-		mc.Logger.Debug("converted tools for server", "server", serverURL, "outputCount", len(chatTools))
-		allChatCompletionTools = append(allChatCompletionTools, chatTools...)
-	}
-
-	mc.ChatCompletionTools = allChatCompletionTools
-	mc.Logger.Debug("total pre-converted tools", "count", len(mc.ChatCompletionTools))
+	mc.mu.Lock()
+	mc.rebuildChatCompletionToolsLocked()
+	mc.mu.Unlock()
 
 	mc.Logger.Info("mcp client initialization completed",
 		"successful_servers", successfulInitializations,
@@ -143,6 +121,7 @@ func (mc *MCPClient) spawnBackgroundReconnection(failedServers []string) {
 
 	go func() {
 		defer close(done)
+		defer cancel()
 		mc.startBackgroundReconnection(reconnectCtx, failedServers)
 	}()
 }
@@ -214,9 +193,8 @@ func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) err
 			mc.Logger.Debug("successfully connected using streamable http transport", "server", serverURL)
 		}
 
-		mc.Clients[serverURL] = client
-
-		if err := mc.discoverServerCapabilities(ctx, client, serverURL); err != nil {
+		tools, err := mc.discoverServerTools(ctx, client, serverURL)
+		if err != nil {
 			lastErr = fmt.Errorf("failed to discover server capabilities: %w", err)
 			mc.Logger.Debug("failed to discover capabilities",
 				"server", serverURL,
@@ -226,9 +204,15 @@ func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) err
 			continue
 		}
 
-		mc.statusMutex.Lock()
-		mc.ServerStatuses[serverURL] = ServerStatusAvailable
-		mc.statusMutex.Unlock()
+		mc.mu.Lock()
+		mc.clients[serverURL] = client
+		mc.serverCapabilities[serverURL] = newServerCapabilities()
+		mc.serverTools[serverURL] = tools
+		mc.serverStatuses[serverURL] = ServerStatusAvailable
+		if mc.initialized {
+			mc.rebuildChatCompletionToolsLocked()
+		}
+		mc.mu.Unlock()
 
 		mc.Logger.Info("server initialized successfully",
 			"server", serverURL,
@@ -238,9 +222,9 @@ func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) err
 		return nil
 	}
 
-	mc.statusMutex.Lock()
-	mc.ServerStatuses[serverURL] = ServerStatusUnavailable
-	mc.statusMutex.Unlock()
+	mc.mu.Lock()
+	mc.serverStatuses[serverURL] = ServerStatusUnavailable
+	mc.mu.Unlock()
 
 	return fmt.Errorf("failed to initialize server after %d attempts: %w", maxRetries+1, lastErr)
 }
@@ -265,9 +249,9 @@ func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverUR
 	return client, nil
 }
 
-// discoverServerCapabilities discovers and stores server capabilities and tools
-func (mc *MCPClient) discoverServerCapabilities(ctx context.Context, client *m.Client, serverURL string) error {
-	capabilities := ServerCapabilities{
+// newServerCapabilities returns the capability entry recorded for a server
+func newServerCapabilities() ServerCapabilities {
+	return ServerCapabilities{
 		Completions:  make(map[string]any),
 		Experimental: make(map[string]map[string]any),
 		Logging:      make(map[string]any),
@@ -275,15 +259,34 @@ func (mc *MCPClient) discoverServerCapabilities(ctx context.Context, client *m.C
 		Resources:    make(map[string]any),
 		Tools:        make(map[string]any),
 	}
-
-	mc.ServerCapabilities[serverURL] = capabilities
-	mc.Logger.Debug("mcp server capabilities discovered", "server", serverURL)
-
-	return mc.discoverServerTools(ctx, client, serverURL)
 }
 
-// discoverServerTools discovers and stores server tools
-func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, serverURL string) error {
+// rebuildChatCompletionToolsLocked re-aggregates the pre-converted chat completion tools; mc.mu must be held
+func (mc *MCPClient) rebuildChatCompletionToolsLocked() {
+	all := make([]types.ChatCompletionTool, 0)
+	for serverURL, serverTools := range mc.serverTools {
+		if len(serverTools) == 0 {
+			mc.Logger.Debug("no tools to convert for server", "server", serverURL)
+			continue
+		}
+
+		toolsToConvert := mc.filterTools(serverTools)
+		if len(toolsToConvert) == 0 {
+			mc.Logger.Debug("all tools filtered out by include/exclude config for server", "server", serverURL)
+			continue
+		}
+
+		chatTools := mc.ConvertMCPToolsToChatCompletionTools(toolsToConvert)
+		mc.Logger.Debug("converted tools for server", "server", serverURL, "inputToolCount", len(serverTools), "outputCount", len(chatTools))
+		all = append(all, chatTools...)
+	}
+
+	mc.chatCompletionTools = all
+	mc.Logger.Debug("total pre-converted tools", "count", len(all))
+}
+
+// discoverServerTools fetches and converts the server's tool list
+func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, serverURL string) ([]Tool, error) {
 	mc.Logger.Debug("fetching available tools", "server", serverURL)
 
 	toolsCtx, toolsCancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
@@ -299,7 +302,7 @@ func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, 
 			mc.Logger.Error("failed to list tools", err, "server", serverURL)
 			mc.Logger.Debug("tools listing error details", "error", err.Error(), "server", serverURL)
 		}
-		return err
+		return nil, err
 	}
 
 	mc.Logger.Debug("successfully retrieved tools list", "server", serverURL, "rawToolsCount", len(toolsResult.Tools))
@@ -332,10 +335,9 @@ func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, 
 		mc.Logger.Debug("processed tool", "server", serverURL, "toolName", tool.Name, "enhancedDesc", *enhancedDesc)
 	}
 
-	mc.ServerTools[serverURL] = serverTools
 	mc.Logger.Debug("found tools for server", "server", serverURL, "count", len(serverTools))
 
-	return nil
+	return serverTools, nil
 }
 
 // startBackgroundReconnection starts a background goroutine to reconnect failed servers
@@ -365,10 +367,10 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 			mc.Logger.Info("background reconnection stopped due to context cancellation", "component", "mcp_client")
 			return
 		case <-ticker.C:
-			mc.statusMutex.RLock()
+			mc.mu.RLock()
 			serversToReconnect := make([]string, 0)
 			for serverURL := range reconnectingServers {
-				if status, exists := mc.ServerStatuses[serverURL]; exists && status == ServerStatusUnavailable {
+				if status, exists := mc.serverStatuses[serverURL]; exists && status == ServerStatusUnavailable {
 					serversToReconnect = append(serversToReconnect, serverURL)
 				} else if status == ServerStatusAvailable {
 					delete(reconnectingServers, serverURL)
@@ -376,7 +378,7 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 						"server", serverURL, "component", "mcp_client")
 				}
 			}
-			mc.statusMutex.RUnlock()
+			mc.mu.RUnlock()
 
 			if len(reconnectingServers) == 0 {
 				mc.Logger.Info("all servers successfully reconnected, stopping background reconnection", "component", "mcp_client")
@@ -392,6 +394,20 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 
 // attemptServerReconnection attempts to reconnect a single failed server
 func (mc *MCPClient) attemptServerReconnection(ctx context.Context, serverURL string) {
+	mc.mu.Lock()
+	if _, busy := mc.reconnecting[serverURL]; busy {
+		mc.mu.Unlock()
+		return
+	}
+	mc.reconnecting[serverURL] = struct{}{}
+	mc.mu.Unlock()
+
+	defer func() {
+		mc.mu.Lock()
+		delete(mc.reconnecting, serverURL)
+		mc.mu.Unlock()
+	}()
+
 	mc.Logger.Info("attempting server reconnection", "server", serverURL, "component", "mcp_client")
 
 	reconnectCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.ClientTimeout)
