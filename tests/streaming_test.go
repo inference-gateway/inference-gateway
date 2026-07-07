@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	gin "github.com/gin-gonic/gin"
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+
+	gin "github.com/gin-gonic/gin"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 )
