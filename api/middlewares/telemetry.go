@@ -14,6 +14,8 @@ import (
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/otel"
+	"github.com/inference-gateway/inference-gateway/providers/registry"
+	"github.com/inference-gateway/inference-gateway/providers/routing"
 	"github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -94,61 +96,11 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		model := requestBody.Model
 
 		provider := "unknown"
-		switch {
-		case strings.HasPrefix(model, "openai/"):
-			provider = "openai"
-		case strings.HasPrefix(model, "anthropic/"):
-			provider = "anthropic"
-		case strings.HasPrefix(model, "groq/"):
-			provider = "groq"
-		case strings.HasPrefix(model, "cohere/"):
-			provider = "cohere"
-		case strings.HasPrefix(model, "ollama/"):
-			provider = "ollama"
-		case strings.HasPrefix(model, "cloudflare/"):
-			provider = "cloudflare"
-		case strings.HasPrefix(model, "deepseek/"):
-			provider = "deepseek"
-		case strings.HasPrefix(model, "google/"):
-			provider = "google"
-		case strings.HasPrefix(model, "mistral/"):
-			provider = "mistral"
-		case strings.HasPrefix(model, "moonshot/"):
-			provider = "moonshot"
-		case strings.HasPrefix(model, "minimax/"):
-			provider = "minimax"
-		case strings.HasPrefix(model, "nvidia/"):
-			provider = "nvidia"
-		case strings.HasPrefix(model, "ollama_cloud/"):
-			provider = "ollama_cloud"
-		}
-
-		if provider == "unknown" {
-			switch {
-			case strings.Contains(c.Request.URL.RawQuery, "openai"):
-				provider = "openai"
-			case strings.Contains(c.Request.URL.RawQuery, "anthropic"):
-				provider = "anthropic"
-			case strings.Contains(c.Request.URL.RawQuery, "groq"):
-				provider = "groq"
-			case strings.Contains(c.Request.URL.RawQuery, "cohere"):
-				provider = "cohere"
-			case strings.Contains(c.Request.URL.RawQuery, "ollama"):
-				provider = "ollama"
-			case strings.Contains(c.Request.URL.RawQuery, "cloudflare"):
-				provider = "cloudflare"
-			case strings.Contains(c.Request.URL.RawQuery, "deepseek"):
-				provider = "deepseek"
-			case strings.Contains(c.Request.URL.RawQuery, "google"):
-				provider = "google"
-			case strings.Contains(c.Request.URL.RawQuery, "mistral"):
-				provider = "mistral"
-			case strings.Contains(c.Request.URL.RawQuery, "moonshot"):
-				provider = "moonshot"
-			case strings.Contains(c.Request.URL.RawQuery, "minimax"):
-				provider = "minimax"
-			case strings.Contains(c.Request.URL.RawQuery, "nvidia"):
-				provider = "nvidia"
+		if detected, _ := routing.DetermineProviderAndModelName(model); detected != nil {
+			provider = string(*detected)
+		} else if queried := types.Provider(c.Query("provider")); queried != "" {
+			if _, exists := registry.Registry[queried]; exists {
+				provider = string(queried)
 			}
 		}
 

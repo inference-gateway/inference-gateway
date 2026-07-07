@@ -158,99 +158,10 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 		return types.ListModelsResponse{}, err
 	}
 
-	var transformer constants.ListModelsTransformer
-	switch *p.GetID() {
-	case constants.OllamaID:
-		var resp transformers.ListModelsResponseOllama
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.CloudflareID:
-		var resp transformers.ListModelsResponseCloudflare
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.AnthropicID:
-		var resp transformers.ListModelsResponseAnthropic
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.CohereID:
-		var resp transformers.ListModelsResponseCohere
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.GroqID:
-		var resp transformers.ListModelsResponseGroq
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.DeepseekID:
-		var resp transformers.ListModelsResponseDeepseek
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.GoogleID:
-		var resp transformers.ListModelsResponseGoogle
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.MistralID:
-		var resp transformers.ListModelsResponseMistral
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.OllamaCloudID:
-		var resp transformers.ListModelsResponseOllamaCloud
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.MoonshotID:
-		var resp transformers.ListModelsResponseMoonshot
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.MinimaxID:
-		var resp transformers.ListModelsResponseMinimax
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	case constants.NvidiaID:
-		var resp transformers.ListModelsResponseNvidia
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
-	default:
-		var resp transformers.ListModelsResponseOpenai
-		if err := json.NewDecoder(response.Body).Decode(&resp); err != nil {
-			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
-			return types.ListModelsResponse{}, err
-		}
-		transformer = &resp
+	transformer := transformers.NewListModelsTransformer(*p.GetID())
+	if err := json.NewDecoder(response.Body).Decode(transformer); err != nil {
+		p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
+		return types.ListModelsResponse{}, err
 	}
 
 	return transformer.Transform(), nil

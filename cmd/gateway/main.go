@@ -156,19 +156,12 @@ func main() {
 		return
 	}
 
-	// Initialize provider registry and HTTP client
-	clientConfig, err := client.NewClientConfig()
-	if err != nil {
-		log.Printf("fatal: failed to initialize client configuration: %v", err)
-		return
-	}
-
 	scheme := "http"
 	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
 		scheme = "https"
 	}
 
-	httpClient := client.NewHTTPClient(clientConfig, scheme, cfg.Server.Host, cfg.Server.Port)
+	httpClient := client.NewHTTPClient(cfg.Client, scheme, cfg.Server.Host, cfg.Server.Port)
 	providerRegistry := registry.NewProviderRegistry(cfg.Providers, logger)
 
 	// Log registered providers

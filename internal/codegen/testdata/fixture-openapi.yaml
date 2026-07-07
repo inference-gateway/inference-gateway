@@ -1,0 +1,67 @@
+openapi: 3.1.0
+info:
+  title: Codegen fixture
+  version: 0.0.0
+components:
+  schemas:
+    Provider:
+      type: string
+      enum:
+        - acme
+        - local
+      x-provider-configs:
+        acme:
+          id: 'acme'
+          url: 'https://api.acme.test/v1'
+          auth_type: 'bearer'
+          supports_vision: true
+          extra_headers:
+            x-acme-version: 'v1'
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        local:
+          id: 'local'
+          url: 'http://localhost:9999/v1'
+          auth_type: 'none'
+          supports_vision: false
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+    Config:
+      type: object
+      x-config:
+        sections:
+          - general:
+              title: 'General settings'
+              settings:
+                - env: 'ENVIRONMENT'
+                  type: 'string'
+                  default: 'production'
+                  description: 'The environment'
+          - server:
+              title: 'Server settings'
+              settings:
+                - env: 'SERVER_HOST'
+                  type: 'string'
+                  default: '0.0.0.0'
+                  description: 'Server host'
+          - client:
+              title: 'Client settings'
+              settings:
+                - env: 'CLIENT_TIMEOUT'
+                  type: 'time.Duration'
+                  default: '30s'
+                  description: 'Client timeout'

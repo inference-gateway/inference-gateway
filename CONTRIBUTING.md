@@ -136,9 +136,21 @@ necessary provider files automatically from the OpenAPI specification.
 
 To add a new provider, follow these simple steps:
 
-1. **Add provider configuration** to `openapi.yaml` under the `Provider` schema's `x-provider-configs` section
+1. **Add provider configuration** to `openapi.yaml` in two places: the
+   `Provider` schema (`enum` + `x-provider-configs`) and the `Config` schema's
+   `x-config` providers section (`<ID>_API_URL` and `<ID>_API_KEY` settings)
 2. **Run code generation** with `task generate`
 3. **Configure environment variables** for the new provider
+
+No hand-written Go is required: routing, telemetry detection, and the
+list-models transformer selection all derive from the generated registry, and
+`tests/provider_drift_test.go` fails if a registered provider is not fully
+wired.
+
+> **Note**: `openapi.yaml` is vendored from the
+> [inference-gateway/schemas](https://github.com/inference-gateway/schemas)
+> repository (`task openapi:download`). Land the spec change there as well, or
+> the next download will revert it.
 
 ### Step-by-Step Guide
 
@@ -190,12 +202,15 @@ task generate
 
 This command will:
 
-- Generate a new provider file (`providers/newai.go`) with OpenAI-compatible
-  structure
-- Update the provider registry (`providers/registry.go`) to include your
-  provider
-- Update configuration files to support the new provider
-- Generate constants and types for the new provider
+- Generate a new transformer file (`providers/transformers/newai.go`) with
+  OpenAI-compatible structure, and add the provider to the generated
+  transformer factory (`providers/transformers/transformers.go`)
+- Update the provider registry (`providers/registry/registry.go`) to include
+  your provider
+- Update configuration files (`config/config.go`, `Configurations.md`, the
+  docker-compose `.env.example` files) to support the new provider
+- Generate constants and types (`providers/constants/constants.go`,
+  `providers/types/common_types.go`) for the new provider
 
 #### 3. Set Environment Variables
 
@@ -221,34 +236,31 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 ### Protected Files
 
 The code generation system respects existing custom implementations through the
-`.openapi-ignore` file. Files listed there will not be overwritten during
+`.openapi-ignore` file. Transformer files listed there (as
+`providers/transformers/<provider>.go`) will not be overwritten during
 generation:
 
 ```text
 # .openapi-ignore
-providers/anthropic.go
-providers/cohere.go
-providers/cloudflare.go
-providers/ollama.go
-providers/openai.go
-providers/deepseek.go
-providers/groq.go
+providers/transformers/newai.go
 ```
 
-If you need custom implementation details for your provider, add it to this
-ignore file after generation.
+If your provider's models endpoint is not OpenAI-compatible, hand-edit its
+generated transformer and add it to this ignore file. New OpenAI-compatible
+providers do not need an entry.
 
 ### Generated Files
 
 The code generation process creates:
 
-- **Provider implementation** (`providers/{provider}.go`): Contains the
-  `ListModelsResponse` struct and `Transform()` method
-- **Provider registry updates** (`providers/registry.go`): Adds your provider
-  to the central registry
+- **Provider transformer** (`providers/transformers/{provider}.go`): Contains
+  the `ListModelsResponse` struct and `Transform()` method, plus the shared
+  factory in `providers/transformers/transformers.go`
+- **Provider registry updates** (`providers/registry/registry.go`): Adds your
+  provider to the central registry
 - **Configuration updates** (`config/config.go`): Includes environment variable
   support
-- **Common types** (`providers/common_types.go`): Provider constants and
+- **Common types** (`providers/types/common_types.go`): Provider constants and
   endpoints
 
 ### Authentication Types

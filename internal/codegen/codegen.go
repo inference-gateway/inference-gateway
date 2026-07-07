@@ -47,6 +47,7 @@ import (
 
 	envconfig "github.com/sethvargo/go-envconfig"
 
+	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -75,7 +76,7 @@ type Config struct {
 	Server *ServerConfig ` + "`env:\", prefix=SERVER_\" description:\"Server configuration\"`" + `
 	{{- else if eq $name "client" }}
 	// Client settings
-	Client *ClientConfig ` + "`env:\", prefix=CLIENT_\" description:\"Client configuration\"`" + `
+	Client *client.ClientConfig ` + "`description:\"Client configuration\"`" + `
 	{{- end }}
 	{{- end }}
 	{{- end }}
@@ -118,14 +119,6 @@ type ServerConfig struct {
 	{{ pascalCase (trimPrefix $field.Env "SERVER_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"SERVER_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
 }
-{{- else if eq $name "client" }}
-
-// Client configuration
-type ClientConfig struct {
-	{{- range $field := $section.Settings }}
-	{{ pascalCase (trimPrefix $field.Env "CLIENT_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"CLIENT_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
-	{{- end }}
-}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -147,14 +140,15 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	// Set defaults for each provider
 	for id, defaults := range registry.Registry {
 		if _, exists := cfg.Providers[id]; !exists {
-			providerCfg := defaults
+			cp := *defaults
+			providerCfg := &cp
 			url, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_URL")
 			if ok {
 				providerCfg.URL = url
 			}
 
 			token, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_KEY")
-			if (!ok || token == "") && id != constants.OllamaID {
+			if (!ok || token == "") && defaults.AuthType != constants.AuthTypeNone {
 				t := time.Now().UTC().Format(time.RFC3339)
 				log.SetFlags(0)
 				log.Printf("{\"level\":\"notice\",\"timestamp\":\"%s\",\"caller\":\"config/config.go:103\",\"msg\":\"provider is not configured\",\"provider\":\"%s\"}", t, string(id))
@@ -204,7 +198,7 @@ func (cfg *Config) String() string {
 		return err
 	}
 
-	cmd := exec.Command("go", "fmt", destination)
+	cmd := exec.Command("gofmt", "-w", destination)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to format %s: %w", destination, err)
 	}
@@ -305,7 +299,7 @@ type ListModelsTransformer interface {
 		return err
 	}
 
-	cmd := exec.Command("go", "fmt", destination)
+	cmd := exec.Command("gofmt", "-w", destination)
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
 	}
@@ -347,14 +341,11 @@ func GenerateProvidersClientConfig(destination, oas string) error {
 package client
 
 import (
-    "context"
     "crypto/tls"
     "io"
     "net/http"
     "strings"
     "time"
-
-    envconfig "github.com/sethvargo/go-envconfig"
 )
 
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
@@ -375,14 +366,6 @@ type ClientConfig struct {
     {{- range $setting := .ClientSettings }}
     {{ pascalCase $setting.Env }} {{ $setting.Type }} ` + "`" + `env:"{{ $setting.Env }}, default={{ $setting.Default }}" description:"{{ $setting.Description }}"` + "`" + `
     {{- end }}
-}
-
-func NewClientConfig() (*ClientConfig, error) {
-    var cfg ClientConfig
-    if err := envconfig.Process(context.Background(), &cfg); err != nil {
-        return nil, err
-    }
-    return &cfg, nil
 }
 
 func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
@@ -462,7 +445,7 @@ func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Respo
 		return fmt.Errorf("failed to execute template: %w", err)
 	}
 
-	cmd := exec.Command("go", "fmt", destination)
+	cmd := exec.Command("gofmt", "-w", destination)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to format %s: %w", destination, err)
 	}
@@ -585,13 +568,17 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() types.ListModelsRespon
 		if err != nil {
 			return fmt.Errorf("failed to create %s: %w", fullPath, err)
 		}
-		defer f.Close()
 
 		if err := tmpl.Execute(f, data); err != nil {
+			f.Close()
 			return fmt.Errorf("failed to execute template for %s: %w", providerName, err)
 		}
 
-		cmd := exec.Command("go", "fmt", fullPath)
+		if err := f.Close(); err != nil {
+			return fmt.Errorf("failed to close %s: %w", fullPath, err)
+		}
+
+		cmd := exec.Command("gofmt", "-w", fullPath)
 		if err := cmd.Run(); err != nil {
 			fmt.Printf("Warning: Failed to format %s: %v\n", fullPath, err)
 		}
@@ -599,6 +586,60 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() types.ListModelsRespon
 		fmt.Printf("Generated %s\n", fullPath)
 	}
 
+	factoryTemplate := `// Code generated from OpenAPI schema. DO NOT EDIT.
+package transformers
+
+import (
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
+)
+
+// NewListModelsTransformer returns the list-models transformer for the given
+// provider, falling back to the OpenAI-compatible transformer.
+func NewListModelsTransformer(provider types.Provider) constants.ListModelsTransformer {
+	switch provider {
+	{{- range $name, $config := .Providers }}
+	case constants.{{pascalCase $name}}ID:
+		return &ListModelsResponse{{pascalCase $name}}{}
+	{{- end }}
+	default:
+		return &ListModelsResponseOpenai{}
+	}
+}
+`
+
+	factoryPath := fmt.Sprintf("%s/transformers.go", outputDir)
+	tmpl, err := template.New("transformers").Funcs(funcMap).Parse(factoryTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to parse transformers factory template: %w", err)
+	}
+
+	data := struct {
+		Providers map[string]openapi.ProviderConfig
+	}{
+		Providers: schema.Components.Schemas.Provider.XProviderConfigs,
+	}
+
+	f, err := os.Create(factoryPath)
+	if err != nil {
+		return fmt.Errorf("failed to create %s: %w", factoryPath, err)
+	}
+
+	if err := tmpl.Execute(f, data); err != nil {
+		f.Close()
+		return fmt.Errorf("failed to execute transformers factory template: %w", err)
+	}
+
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("failed to close %s: %w", factoryPath, err)
+	}
+
+	cmd := exec.Command("gofmt", "-w", factoryPath)
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Warning: Failed to format %s: %v\n", factoryPath, err)
+	}
+
+	fmt.Printf("Generated %s\n", factoryPath)
 	return nil
 }
 
@@ -723,9 +764,11 @@ var Registry = map[types.Provider]*ProviderConfig{
 		URL:            constants.{{pascalCase $name}}DefaultBaseURL,
 		AuthType:       constants.{{getAuthType $config.AuthType}},
 		SupportsVision: {{if $config.SupportsVision}}true{{else}}false{{end}},
-		{{- if eq $name "anthropic" }}
+		{{- if $config.ExtraHeaders }}
 		ExtraHeaders: map[string][]string{
-			"anthropic-version": {"2023-06-01"},
+			{{- range $header, $value := $config.ExtraHeaders }}
+			"{{ $header }}": { {{- range $i, $v := $value.Values }}{{ if $i }}, {{ end }}"{{ $v }}"{{- end }}},
+			{{- end }}
 		},
 		{{- end }}
 		Endpoints: types.Endpoints{
@@ -758,7 +801,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		return fmt.Errorf("failed to execute registry template: %w", err)
 	}
 
-	cmd := exec.Command("go", "fmt", destination)
+	cmd := exec.Command("gofmt", "-w", destination)
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
 	}

@@ -574,6 +574,8 @@ components:
           url: 'https://api.anthropic.com/v1'
           auth_type: 'xheader'
           supports_vision: true
+          extra_headers:
+            anthropic-version: '2023-06-01'
           endpoints:
             models:
               name: 'list_models'

@@ -44,7 +44,7 @@ A "provider" is one upstream LLM API. The runtime pieces live under `providers/`
 - `client/` — shared HTTP client config (`client.go` is generated).
 - `registry/` — `ProviderRegistry.BuildProvider(id, client)` constructs a provider on demand from `cfg.Providers` (`registry.go` is generated).
 - `transformers/` — per-provider request/response transformers, one file per provider. All are generated from `openapi.yaml` and start with `// Code generated from OpenAPI schema. DO NOT EDIT.`; protect any that need hand-edits via `.openapi-ignore`.
-- `routing/model_mapping.go` — maps a model string like `openai/gpt-4o` to a provider. The only routing rule is the explicit prefix (`openai/`, `groq/`, `anthropic/`, ...); without a prefix, the request must include `?provider=...`.
+- `routing/model_mapping.go` — maps a model string like `openai/gpt-4o` to a provider by checking the prefix against the generated `registry.Registry`, so new providers route automatically; without a prefix, the request must include `?provider=...`.
 - `constants/`, `types/` — generated identifiers and OpenAPI-derived Go types.
 
 ### Code generation
@@ -57,7 +57,7 @@ A "provider" is one upstream LLM API. The runtime pieces live under `providers/`
 4. Runs `bin/generator` to emit `internal/mcp/generated_types.go` from `mcp-schema.yaml`.
 5. Runs `go generate ./...` to refresh mocks under `tests/mocks/` (driven by `//go:generate mockgen ...` directives at the top of each interface file — `api/routes.go`, `providers/core/interfaces.go`, `providers/registry/registry.go`, `providers/client/client.go`, `internal/mcp/agent.go`, `internal/mcp/client.go`, `logger/logger.go`, plus OTel).
 
-Anything with the "DO NOT EDIT" header will be clobbered on the next run. Adding a new provider: edit `openapi.yaml`'s `Provider` enum + `x-provider-configs` and run `task generate` — full flow in `CONTRIBUTING.md`. Provider IDs must be lowercase Go-identifier-safe (`openai`, `deepseek`, `newai`).
+Anything with the "DO NOT EDIT" header will be clobbered on the next run. Adding a new provider: edit `openapi.yaml` in two places (`Provider` enum + `x-provider-configs`, and the `Config` schema's `x-config` providers section for `<ID>_API_URL`/`<ID>_API_KEY`) and run `task generate`; `tests/provider_drift_test.go` fails if wiring is incomplete — full flow in `CONTRIBUTING.md`. Provider IDs must be lowercase Go-identifier-safe (`openai`, `deepseek`, `newai`).
 
 CI runs `task generate` and fails the build if the working tree is dirty afterwards, so always commit the regenerated files.
 

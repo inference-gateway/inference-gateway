@@ -10,6 +10,7 @@ import (
 
 	envconfig "github.com/sethvargo/go-envconfig"
 
+	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -33,7 +34,7 @@ type Config struct {
 	// Server settings
 	Server *ServerConfig `env:", prefix=SERVER_" description:"Server configuration"`
 	// Client settings
-	Client *ClientConfig `env:", prefix=CLIENT_" description:"Client configuration"`
+	Client *client.ClientConfig `description:"Client configuration"`
 
 	// Providers map
 	Providers map[types.Provider]*registry.ProviderConfig
@@ -89,18 +90,6 @@ type ServerConfig struct {
 	TlsKeyPath   string        `env:"TLS_KEY_PATH" description:"TLS key path"`
 }
 
-// Client configuration
-type ClientConfig struct {
-	Timeout               time.Duration `env:"TIMEOUT, default=30s" description:"Client timeout"`
-	MaxIdleConns          int           `env:"MAX_IDLE_CONNS, default=20" description:"Maximum idle connections"`
-	MaxIdleConnsPerHost   int           `env:"MAX_IDLE_CONNS_PER_HOST, default=20" description:"Maximum idle connections per host"`
-	IdleConnTimeout       time.Duration `env:"IDLE_CONN_TIMEOUT, default=30s" description:"Idle connection timeout"`
-	TlsMinVersion         string        `env:"TLS_MIN_VERSION, default=TLS12" description:"Minimum TLS version"`
-	DisableCompression    bool          `env:"DISABLE_COMPRESSION, default=true" description:"Disable compression for faster streaming"`
-	ResponseHeaderTimeout time.Duration `env:"RESPONSE_HEADER_TIMEOUT, default=10s" description:"Response header timeout"`
-	ExpectContinueTimeout time.Duration `env:"EXPECT_CONTINUE_TIMEOUT, default=1s" description:"Expect continue timeout"`
-}
-
 // Load configuration
 func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	if err := envconfig.ProcessWith(context.Background(), &envconfig.Config{
@@ -118,14 +107,15 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	// Set defaults for each provider
 	for id, defaults := range registry.Registry {
 		if _, exists := cfg.Providers[id]; !exists {
-			providerCfg := defaults
+			cp := *defaults
+			providerCfg := &cp
 			url, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_URL")
 			if ok {
 				providerCfg.URL = url
 			}
 
 			token, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_KEY")
-			if (!ok || token == "") && id != constants.OllamaID {
+			if (!ok || token == "") && defaults.AuthType != constants.AuthTypeNone {
 				t := time.Now().UTC().Format(time.RFC3339)
 				log.SetFlags(0)
 				log.Printf("{\"level\":\"notice\",\"timestamp\":\"%s\",\"caller\":\"config/config.go:103\",\"msg\":\"provider is not configured\",\"provider\":\"%s\"}", t, string(id))

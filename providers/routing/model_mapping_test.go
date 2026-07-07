@@ -4,12 +4,25 @@ import (
 	"testing"
 
 	assert "github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
 
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-func TestDetermineProviderAndModelName(t *testing.T) {
+func TestDetermineProviderAndModelNameForEveryRegisteredProvider(t *testing.T) {
+	for id := range registry.Registry {
+		t.Run(string(id), func(t *testing.T) {
+			provider, model := DetermineProviderAndModelName(string(id) + "/some-model")
+			require.NotNil(t, provider)
+			assert.Equal(t, id, *provider)
+			assert.Equal(t, "some-model", model)
+		})
+	}
+}
+
+func TestDetermineProviderAndModelNameEdgeCases(t *testing.T) {
 	tests := []struct {
 		name             string
 		model            string
@@ -17,88 +30,28 @@ func TestDetermineProviderAndModelName(t *testing.T) {
 		expectedModel    string
 	}{
 		{
-			name:             "OpenAI model with prefix",
-			model:            "openai/gpt-4",
-			expectedProvider: new(constants.OpenaiID),
-			expectedModel:    "gpt-4",
-		},
-		{
-			name:             "Anthropic model with prefix",
-			model:            "anthropic/claude-3",
-			expectedProvider: new(constants.AnthropicID),
-			expectedModel:    "claude-3",
-		},
-		{
-			name:             "Groq model with prefix",
-			model:            "groq/llama-7b",
-			expectedProvider: new(constants.GroqID),
-			expectedModel:    "llama-7b",
-		},
-		{
-			name:             "Ollama model with prefix",
-			model:            "ollama/mistral",
-			expectedProvider: new(constants.OllamaID),
-			expectedModel:    "mistral",
-		},
-		{
-			name:             "Ollama Cloud model with prefix",
-			model:            "ollama_cloud/llama3.2:latest",
-			expectedProvider: new(constants.OllamaCloudID),
-			expectedModel:    "llama3.2:latest",
-		},
-		{
-			name:             "Cloudflare model with prefix",
-			model:            "cloudflare/@cf/meta/llama-2-7b-chat-fp16",
-			expectedProvider: new(constants.CloudflareID),
-			expectedModel:    "@cf/meta/llama-2-7b-chat-fp16",
-		},
-		{
-			name:             "Cohere model with prefix",
-			model:            "cohere/command-nightly",
-			expectedProvider: new(constants.CohereID),
-			expectedModel:    "command-nightly",
-		},
-		{
-			name:             "Deepseek model with prefix",
-			model:            "deepseek/deepseek-coder",
-			expectedProvider: new(constants.DeepseekID),
-			expectedModel:    "deepseek-coder",
-		},
-		{
-			name:             "MiniMax model with prefix",
-			model:            "minimax/MiniMax-Text-01",
-			expectedProvider: new(constants.MinimaxID),
-			expectedModel:    "MiniMax-Text-01",
-		},
-		{
-			name:             "Nvidia model with prefix",
-			model:            "nvidia/meta/llama-3.1-8b-instruct",
-			expectedProvider: new(constants.NvidiaID),
-			expectedModel:    "meta/llama-3.1-8b-instruct",
-		},
-		{
 			name:             "Case insensitive prefix matching",
 			model:            "OpenAI/GPT-4",
 			expectedProvider: new(constants.OpenaiID),
 			expectedModel:    "GPT-4",
 		},
 		{
-			name:             "Model without explicit prefix - OpenAI style",
+			name:             "Model name containing slashes",
+			model:            "cloudflare/@cf/meta/llama-2-7b-chat-fp16",
+			expectedProvider: new(constants.CloudflareID),
+			expectedModel:    "@cf/meta/llama-2-7b-chat-fp16",
+		},
+		{
+			name:             "Model without explicit prefix",
 			model:            "gpt-4",
 			expectedProvider: nil,
 			expectedModel:    "gpt-4",
 		},
 		{
-			name:             "Model without explicit prefix - Anthropic style",
-			model:            "claude-3",
+			name:             "Unknown provider prefix",
+			model:            "unknownai/some-model",
 			expectedProvider: nil,
-			expectedModel:    "claude-3",
-		},
-		{
-			name:             "Model without explicit prefix - DeepSeek style",
-			model:            "deepseek-coder",
-			expectedProvider: nil,
-			expectedModel:    "deepseek-coder",
+			expectedModel:    "unknownai/some-model",
 		},
 		{
 			name:             "Unknown model",

@@ -5,12 +5,86 @@ import (
 	"time"
 
 	"github.com/inference-gateway/inference-gateway/config"
+	"github.com/inference-gateway/inference-gateway/providers/client"
 	"github.com/inference-gateway/inference-gateway/providers/constants"
 	"github.com/inference-gateway/inference-gateway/providers/registry"
 	"github.com/inference-gateway/inference-gateway/providers/types"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/stretchr/testify/assert"
 )
+
+func defaultProviders(overrides map[types.Provider]func(*registry.ProviderConfig)) map[types.Provider]*registry.ProviderConfig {
+	providers := make(map[types.Provider]*registry.ProviderConfig, len(registry.Registry))
+	for id, defaults := range registry.Registry {
+		cp := *defaults
+		if override, ok := overrides[id]; ok {
+			override(&cp)
+		}
+		providers[id] = &cp
+	}
+	return providers
+}
+
+func defaultConfig(mutate func(*config.Config)) config.Config {
+	cfg := config.Config{
+		Environment:               "production",
+		AllowedModels:             "",
+		DebugContentTruncateWords: 10,
+		DebugMaxMessages:          100,
+		Telemetry: &config.TelemetryConfig{
+			Enable:      false,
+			MetricsPort: "9464",
+		},
+		MCP: &config.MCPConfig{
+			Enable:                 false,
+			Expose:                 false,
+			Servers:                "",
+			ClientTimeout:          5 * time.Second,
+			DialTimeout:            3 * time.Second,
+			TlsHandshakeTimeout:    3 * time.Second,
+			ResponseHeaderTimeout:  3 * time.Second,
+			ExpectContinueTimeout:  1 * time.Second,
+			RequestTimeout:         5 * time.Second,
+			MaxRetries:             3,
+			RetryInterval:          5 * time.Second,
+			InitialBackoff:         1 * time.Second,
+			EnableReconnect:        true,
+			ReconnectInterval:      30 * time.Second,
+			PollingEnable:          true,
+			PollingInterval:        30 * time.Second,
+			PollingTimeout:         5 * time.Second,
+			DisableHealthcheckLogs: true,
+		},
+		Auth: &config.AuthConfig{
+			Enable:           false,
+			OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
+			OidcClientId:     "inference-gateway-client",
+			OidcClientSecret: "",
+		},
+		Server: &config.ServerConfig{
+			Host:         "0.0.0.0",
+			Port:         "8080",
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
+			IdleTimeout:  120 * time.Second,
+		},
+		Client: &client.ClientConfig{
+			ClientTimeout:               30 * time.Second,
+			ClientMaxIdleConns:          20,
+			ClientMaxIdleConnsPerHost:   20,
+			ClientIdleConnTimeout:       30 * time.Second,
+			ClientTlsMinVersion:         "TLS12",
+			ClientDisableCompression:    true,
+			ClientResponseHeaderTimeout: 10 * time.Second,
+			ClientExpectContinueTimeout: 1 * time.Second,
+		},
+		Providers: defaultProviders(nil),
+	}
+	if mutate != nil {
+		mutate(&cfg)
+	}
+	return cfg
+}
 
 func TestLoad(t *testing.T) {
 	tests := []struct {
@@ -20,209 +94,9 @@ func TestLoad(t *testing.T) {
 		expectedError string
 	}{
 		{
-			name: "Success_Defaults",
-			env:  map[string]string{},
-			expectedCfg: config.Config{
-				Environment:               "production",
-				AllowedModels:             "",
-				DebugContentTruncateWords: 10,
-				DebugMaxMessages:          100,
-				Telemetry: &config.TelemetryConfig{
-					Enable:      false,
-					MetricsPort: "9464",
-				},
-				MCP: &config.MCPConfig{
-					Enable:                 false,
-					Expose:                 false,
-					Servers:                "",
-					ClientTimeout:          5 * time.Second,
-					DialTimeout:            3 * time.Second,
-					TlsHandshakeTimeout:    3 * time.Second,
-					ResponseHeaderTimeout:  3 * time.Second,
-					ExpectContinueTimeout:  1 * time.Second,
-					RequestTimeout:         5 * time.Second,
-					MaxRetries:             3,
-					RetryInterval:          5 * time.Second,
-					InitialBackoff:         1 * time.Second,
-					EnableReconnect:        true,
-					ReconnectInterval:      30 * time.Second,
-					PollingEnable:          true,
-					PollingInterval:        30 * time.Second,
-					PollingTimeout:         5 * time.Second,
-					DisableHealthcheckLogs: true,
-				},
-				Auth: &config.AuthConfig{
-					Enable:           false,
-					OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
-					OidcClientId:     "inference-gateway-client",
-					OidcClientSecret: "",
-				},
-				Server: &config.ServerConfig{
-					Host:         "0.0.0.0",
-					Port:         "8080",
-					ReadTimeout:  30 * time.Second,
-					WriteTimeout: 30 * time.Second,
-					IdleTimeout:  120 * time.Second,
-				},
-				Client: &config.ClientConfig{
-					Timeout:               30 * time.Second,
-					MaxIdleConns:          20,
-					MaxIdleConnsPerHost:   20,
-					IdleConnTimeout:       30 * time.Second,
-					TlsMinVersion:         "TLS12",
-					DisableCompression:    true,
-					ResponseHeaderTimeout: 10 * time.Second,
-					ExpectContinueTimeout: 1 * time.Second,
-				},
-				Providers: map[types.Provider]*registry.ProviderConfig{
-					constants.AnthropicID: {
-						ID:             constants.AnthropicID,
-						Name:           constants.AnthropicDisplayName,
-						URL:            constants.AnthropicDefaultBaseURL,
-						AuthType:       constants.AuthTypeXheader,
-						SupportsVision: true,
-						ExtraHeaders: map[string][]string{
-							"anthropic-version": {"2023-06-01"},
-						},
-						Endpoints: types.Endpoints{
-							Models: constants.AnthropicModelsEndpoint,
-							Chat:   constants.AnthropicChatEndpoint,
-						},
-					},
-					constants.CloudflareID: {
-						ID:             constants.CloudflareID,
-						Name:           constants.CloudflareDisplayName,
-						URL:            constants.CloudflareDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
-						Endpoints: types.Endpoints{
-							Models: constants.CloudflareModelsEndpoint,
-							Chat:   constants.CloudflareChatEndpoint,
-						},
-					},
-					constants.CohereID: {
-						ID:             constants.CohereID,
-						Name:           constants.CohereDisplayName,
-						URL:            constants.CohereDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.CohereModelsEndpoint,
-							Chat:   constants.CohereChatEndpoint,
-						},
-					},
-					constants.GroqID: {
-						ID:             constants.GroqID,
-						Name:           constants.GroqDisplayName,
-						URL:            constants.GroqDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.GroqModelsEndpoint,
-							Chat:   constants.GroqChatEndpoint,
-						},
-					},
-					constants.OllamaID: {
-						ID:             constants.OllamaID,
-						Name:           constants.OllamaDisplayName,
-						URL:            constants.OllamaDefaultBaseURL,
-						AuthType:       constants.AuthTypeNone,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OllamaModelsEndpoint,
-							Chat:   constants.OllamaChatEndpoint,
-						},
-					},
-					constants.OllamaCloudID: {
-						ID:             constants.OllamaCloudID,
-						Name:           constants.OllamaCloudDisplayName,
-						URL:            constants.OllamaCloudDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OllamaCloudModelsEndpoint,
-							Chat:   constants.OllamaCloudChatEndpoint,
-						},
-					},
-					constants.OpenaiID: {
-						ID:             constants.OpenaiID,
-						Name:           constants.OpenaiDisplayName,
-						URL:            constants.OpenaiDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OpenaiModelsEndpoint,
-							Chat:   constants.OpenaiChatEndpoint,
-						},
-					},
-					constants.DeepseekID: {
-						ID:             constants.DeepseekID,
-						Name:           constants.DeepseekDisplayName,
-						URL:            constants.DeepseekDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
-						Endpoints: types.Endpoints{
-							Models: constants.DeepseekModelsEndpoint,
-							Chat:   constants.DeepseekChatEndpoint,
-						},
-					},
-					constants.GoogleID: {
-						ID:             constants.GoogleID,
-						Name:           constants.GoogleDisplayName,
-						URL:            constants.GoogleDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.GoogleModelsEndpoint,
-							Chat:   constants.GoogleChatEndpoint,
-						},
-					},
-					constants.MinimaxID: {
-						ID:             constants.MinimaxID,
-						Name:           constants.MinimaxDisplayName,
-						URL:            constants.MinimaxDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MinimaxModelsEndpoint,
-							Chat:   constants.MinimaxChatEndpoint,
-						},
-					},
-					constants.MistralID: {
-						ID:             constants.MistralID,
-						Name:           constants.MistralDisplayName,
-						URL:            constants.MistralDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MistralModelsEndpoint,
-							Chat:   constants.MistralChatEndpoint,
-						},
-					},
-					constants.MoonshotID: {
-						ID:             constants.MoonshotID,
-						Name:           constants.MoonshotDisplayName,
-						URL:            constants.MoonshotDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MoonshotModelsEndpoint,
-							Chat:   constants.MoonshotChatEndpoint,
-						},
-					},
-					constants.NvidiaID: {
-						ID:             constants.NvidiaID,
-						Name:           constants.NvidiaDisplayName,
-						URL:            constants.NvidiaDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.NvidiaModelsEndpoint,
-							Chat:   constants.NvidiaChatEndpoint,
-						},
-					},
-				},
-			},
+			name:        "Success_Defaults",
+			env:         map[string]string{},
+			expectedCfg: defaultConfig(nil),
 		},
 		{
 			name: "Success_AllEnvVariablesSet",
@@ -239,210 +113,21 @@ func TestLoad(t *testing.T) {
 				"GROQ_API_KEY":                  "groq123",
 				"OPENAI_API_KEY":                "openai123",
 			},
-			expectedCfg: config.Config{
-				Environment:               "development",
-				AllowedModels:             "",
-				DebugContentTruncateWords: 10,
-				DebugMaxMessages:          100,
-				Telemetry: &config.TelemetryConfig{
-					Enable:            true,
-					MetricsPushEnable: true,
-					MetricsPort:       "9464",
-				},
-				MCP: &config.MCPConfig{
-					Enable:                 false,
-					Expose:                 false,
-					Servers:                "",
-					ClientTimeout:          5 * time.Second,
-					DialTimeout:            3 * time.Second,
-					TlsHandshakeTimeout:    3 * time.Second,
-					ResponseHeaderTimeout:  3 * time.Second,
-					ExpectContinueTimeout:  1 * time.Second,
-					RequestTimeout:         5 * time.Second,
-					MaxRetries:             3,
-					RetryInterval:          5 * time.Second,
-					InitialBackoff:         1 * time.Second,
-					EnableReconnect:        true,
-					ReconnectInterval:      30 * time.Second,
-					PollingEnable:          true,
-					PollingInterval:        30 * time.Second,
-					PollingTimeout:         5 * time.Second,
-					DisableHealthcheckLogs: true,
-				},
-				Auth: &config.AuthConfig{
-					Enable:           false,
-					OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
-					OidcClientId:     "inference-gateway-client",
-					OidcClientSecret: "",
-				},
-				Server: &config.ServerConfig{
-					Host:         "localhost",
-					Port:         "9090",
-					ReadTimeout:  60 * time.Second,
-					WriteTimeout: 60 * time.Second,
-					IdleTimeout:  180 * time.Second,
-				},
-				Client: &config.ClientConfig{
-					Timeout:               30 * time.Second,
-					MaxIdleConns:          20,
-					MaxIdleConnsPerHost:   20,
-					IdleConnTimeout:       30 * time.Second,
-					TlsMinVersion:         "TLS12",
-					DisableCompression:    true,
-					ResponseHeaderTimeout: 10 * time.Second,
-					ExpectContinueTimeout: 1 * time.Second,
-				},
-				Providers: map[types.Provider]*registry.ProviderConfig{
-					constants.OllamaID: {
-						ID:             constants.OllamaID,
-						Name:           constants.OllamaDisplayName,
-						URL:            "http://custom-ollama:8080",
-						AuthType:       constants.AuthTypeNone,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OllamaModelsEndpoint,
-							Chat:   constants.OllamaChatEndpoint,
-						},
-					},
-					constants.OllamaCloudID: {
-						ID:             constants.OllamaCloudID,
-						Name:           constants.OllamaCloudDisplayName,
-						URL:            constants.OllamaCloudDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OllamaCloudModelsEndpoint,
-							Chat:   constants.OllamaCloudChatEndpoint,
-						},
-					},
-					constants.GroqID: {
-						ID:             constants.GroqID,
-						Name:           constants.GroqDisplayName,
-						URL:            constants.GroqDefaultBaseURL,
-						Token:          "groq123",
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.GroqModelsEndpoint,
-							Chat:   constants.GroqChatEndpoint,
-						},
-					},
-					constants.OpenaiID: {
-						ID:             constants.OpenaiID,
-						Name:           constants.OpenaiDisplayName,
-						URL:            constants.OpenaiDefaultBaseURL,
-						Token:          "openai123",
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OpenaiModelsEndpoint,
-							Chat:   constants.OpenaiChatEndpoint,
-						},
-					},
-					constants.CloudflareID: {
-						ID:             constants.CloudflareID,
-						Name:           constants.CloudflareDisplayName,
-						URL:            constants.CloudflareDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
-						Endpoints: types.Endpoints{
-							Models: constants.CloudflareModelsEndpoint,
-							Chat:   constants.CloudflareChatEndpoint,
-						},
-					},
-					constants.CohereID: {
-						ID:             constants.CohereID,
-						Name:           constants.CohereDisplayName,
-						URL:            constants.CohereDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.CohereModelsEndpoint,
-							Chat:   constants.CohereChatEndpoint,
-						},
-					},
-					constants.AnthropicID: {
-						ID:             constants.AnthropicID,
-						Name:           constants.AnthropicDisplayName,
-						URL:            constants.AnthropicDefaultBaseURL,
-						AuthType:       constants.AuthTypeXheader,
-						SupportsVision: true,
-						ExtraHeaders: map[string][]string{
-							"anthropic-version": {"2023-06-01"},
-						},
-						Endpoints: types.Endpoints{
-							Models: constants.AnthropicModelsEndpoint,
-							Chat:   constants.AnthropicChatEndpoint,
-						},
-					},
-					constants.DeepseekID: {
-						ID:             constants.DeepseekID,
-						Name:           constants.DeepseekDisplayName,
-						URL:            constants.DeepseekDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
-						Endpoints: types.Endpoints{
-							Models: constants.DeepseekModelsEndpoint,
-							Chat:   constants.DeepseekChatEndpoint,
-						},
-					},
-					constants.GoogleID: {
-						ID:             constants.GoogleID,
-						Name:           constants.GoogleDisplayName,
-						URL:            constants.GoogleDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.GoogleModelsEndpoint,
-							Chat:   constants.GoogleChatEndpoint,
-						},
-					},
-					constants.MinimaxID: {
-						ID:             constants.MinimaxID,
-						Name:           constants.MinimaxDisplayName,
-						URL:            constants.MinimaxDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MinimaxModelsEndpoint,
-							Chat:   constants.MinimaxChatEndpoint,
-						},
-					},
-					constants.MistralID: {
-						ID:             constants.MistralID,
-						Name:           constants.MistralDisplayName,
-						URL:            constants.MistralDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MistralModelsEndpoint,
-							Chat:   constants.MistralChatEndpoint,
-						},
-					},
-					constants.MoonshotID: {
-						ID:             constants.MoonshotID,
-						Name:           constants.MoonshotDisplayName,
-						URL:            constants.MoonshotDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MoonshotModelsEndpoint,
-							Chat:   constants.MoonshotChatEndpoint,
-						},
-					},
-					constants.NvidiaID: {
-						ID:             constants.NvidiaID,
-						Name:           constants.NvidiaDisplayName,
-						URL:            constants.NvidiaDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.NvidiaModelsEndpoint,
-							Chat:   constants.NvidiaChatEndpoint,
-						},
-					},
-				},
-			},
+			expectedCfg: defaultConfig(func(cfg *config.Config) {
+				cfg.Environment = "development"
+				cfg.Telemetry.Enable = true
+				cfg.Telemetry.MetricsPushEnable = true
+				cfg.Server.Host = "localhost"
+				cfg.Server.Port = "9090"
+				cfg.Server.ReadTimeout = 60 * time.Second
+				cfg.Server.WriteTimeout = 60 * time.Second
+				cfg.Server.IdleTimeout = 180 * time.Second
+				cfg.Providers = defaultProviders(map[types.Provider]func(*registry.ProviderConfig){
+					constants.OllamaID: func(p *registry.ProviderConfig) { p.URL = "http://custom-ollama:8080" },
+					constants.GroqID:   func(p *registry.ProviderConfig) { p.Token = "groq123" },
+					constants.OpenaiID: func(p *registry.ProviderConfig) { p.Token = "openai123" },
+				})
+			}),
 		},
 		{
 			name: "PartialEnvVariables",
@@ -451,207 +136,13 @@ func TestLoad(t *testing.T) {
 				"ENVIRONMENT":      "development",
 				"OLLAMA_API_URL":   "http://custom-ollama:8080",
 			},
-			expectedCfg: config.Config{
-				Environment:               "development",
-				AllowedModels:             "",
-				DebugContentTruncateWords: 10,
-				DebugMaxMessages:          100,
-				Telemetry: &config.TelemetryConfig{
-					Enable:      true,
-					MetricsPort: "9464",
-				},
-				MCP: &config.MCPConfig{
-					Enable:                 false,
-					Expose:                 false,
-					Servers:                "",
-					ClientTimeout:          5 * time.Second,
-					DialTimeout:            3 * time.Second,
-					TlsHandshakeTimeout:    3 * time.Second,
-					ResponseHeaderTimeout:  3 * time.Second,
-					ExpectContinueTimeout:  1 * time.Second,
-					RequestTimeout:         5 * time.Second,
-					MaxRetries:             3,
-					RetryInterval:          5 * time.Second,
-					InitialBackoff:         1 * time.Second,
-					EnableReconnect:        true,
-					ReconnectInterval:      30 * time.Second,
-					PollingEnable:          true,
-					PollingInterval:        30 * time.Second,
-					PollingTimeout:         5 * time.Second,
-					DisableHealthcheckLogs: true,
-				},
-				Auth: &config.AuthConfig{
-					Enable:           false,
-					OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
-					OidcClientId:     "inference-gateway-client",
-					OidcClientSecret: "",
-				},
-				Server: &config.ServerConfig{
-					Host:         "0.0.0.0",
-					Port:         "8080",
-					ReadTimeout:  30 * time.Second,
-					WriteTimeout: 30 * time.Second,
-					IdleTimeout:  120 * time.Second,
-				},
-				Client: &config.ClientConfig{
-					Timeout:               30 * time.Second,
-					MaxIdleConns:          20,
-					MaxIdleConnsPerHost:   20,
-					IdleConnTimeout:       30 * time.Second,
-					TlsMinVersion:         "TLS12",
-					DisableCompression:    true,
-					ResponseHeaderTimeout: 10 * time.Second,
-					ExpectContinueTimeout: 1 * time.Second,
-				},
-				Providers: map[types.Provider]*registry.ProviderConfig{
-					constants.OllamaID: {
-						ID:             constants.OllamaID,
-						Name:           constants.OllamaDisplayName,
-						URL:            "http://custom-ollama:8080",
-						AuthType:       constants.AuthTypeNone,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OllamaModelsEndpoint,
-							Chat:   constants.OllamaChatEndpoint,
-						},
-					},
-					constants.OllamaCloudID: {
-						ID:             constants.OllamaCloudID,
-						Name:           constants.OllamaCloudDisplayName,
-						URL:            constants.OllamaCloudDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OllamaCloudModelsEndpoint,
-							Chat:   constants.OllamaCloudChatEndpoint,
-						},
-					},
-					constants.GroqID: {
-						ID:             constants.GroqID,
-						Name:           constants.GroqDisplayName,
-						URL:            constants.GroqDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.GroqModelsEndpoint,
-							Chat:   constants.GroqChatEndpoint,
-						},
-					},
-					constants.OpenaiID: {
-						ID:             constants.OpenaiID,
-						Name:           constants.OpenaiDisplayName,
-						URL:            constants.OpenaiDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.OpenaiModelsEndpoint,
-							Chat:   constants.OpenaiChatEndpoint,
-						},
-					},
-					constants.CloudflareID: {
-						ID:             constants.CloudflareID,
-						Name:           constants.CloudflareDisplayName,
-						URL:            constants.CloudflareDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
-						Endpoints: types.Endpoints{
-							Models: constants.CloudflareModelsEndpoint,
-							Chat:   constants.CloudflareChatEndpoint,
-						},
-					},
-					constants.CohereID: {
-						ID:             constants.CohereID,
-						Name:           constants.CohereDisplayName,
-						URL:            constants.CohereDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.CohereModelsEndpoint,
-							Chat:   constants.CohereChatEndpoint,
-						},
-					},
-					constants.AnthropicID: {
-						ID:             constants.AnthropicID,
-						Name:           constants.AnthropicDisplayName,
-						URL:            constants.AnthropicDefaultBaseURL,
-						AuthType:       constants.AuthTypeXheader,
-						SupportsVision: true,
-						ExtraHeaders: map[string][]string{
-							"anthropic-version": {"2023-06-01"},
-						},
-						Endpoints: types.Endpoints{
-							Models: constants.AnthropicModelsEndpoint,
-							Chat:   constants.AnthropicChatEndpoint,
-						},
-					},
-					constants.DeepseekID: {
-						ID:             constants.DeepseekID,
-						Name:           constants.DeepseekDisplayName,
-						URL:            constants.DeepseekDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: false,
-						Endpoints: types.Endpoints{
-							Models: constants.DeepseekModelsEndpoint,
-							Chat:   constants.DeepseekChatEndpoint,
-						},
-					},
-					constants.GoogleID: {
-						ID:             constants.GoogleID,
-						Name:           constants.GoogleDisplayName,
-						URL:            constants.GoogleDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.GoogleModelsEndpoint,
-							Chat:   constants.GoogleChatEndpoint,
-						},
-					},
-					constants.MinimaxID: {
-						ID:             constants.MinimaxID,
-						Name:           constants.MinimaxDisplayName,
-						URL:            constants.MinimaxDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MinimaxModelsEndpoint,
-							Chat:   constants.MinimaxChatEndpoint,
-						},
-					},
-					constants.MistralID: {
-						ID:             constants.MistralID,
-						Name:           constants.MistralDisplayName,
-						URL:            constants.MistralDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MistralModelsEndpoint,
-							Chat:   constants.MistralChatEndpoint,
-						},
-					},
-					constants.MoonshotID: {
-						ID:             constants.MoonshotID,
-						Name:           constants.MoonshotDisplayName,
-						URL:            constants.MoonshotDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.MoonshotModelsEndpoint,
-							Chat:   constants.MoonshotChatEndpoint,
-						},
-					},
-					constants.NvidiaID: {
-						ID:             constants.NvidiaID,
-						Name:           constants.NvidiaDisplayName,
-						URL:            constants.NvidiaDefaultBaseURL,
-						AuthType:       constants.AuthTypeBearer,
-						SupportsVision: true,
-						Endpoints: types.Endpoints{
-							Models: constants.NvidiaModelsEndpoint,
-							Chat:   constants.NvidiaChatEndpoint,
-						},
-					},
-				},
-			},
+			expectedCfg: defaultConfig(func(cfg *config.Config) {
+				cfg.Environment = "development"
+				cfg.Telemetry.Enable = true
+				cfg.Providers = defaultProviders(map[types.Provider]func(*registry.ProviderConfig){
+					constants.OllamaID: func(p *registry.ProviderConfig) { p.URL = "http://custom-ollama:8080" },
+				})
+			}),
 		},
 		{
 			name: "Error_InvalidServerReadTimeout",
@@ -679,28 +170,28 @@ func TestLoad(t *testing.T) {
 			env: map[string]string{
 				"CLIENT_TIMEOUT": "invalid",
 			},
-			expectedError: "Client: Timeout: time: invalid duration \"invalid\"",
+			expectedError: "Client: ClientTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidClientIdleConnTimeout",
 			env: map[string]string{
 				"CLIENT_IDLE_CONN_TIMEOUT": "invalid",
 			},
-			expectedError: "Client: IdleConnTimeout: time: invalid duration \"invalid\"",
+			expectedError: "Client: ClientIdleConnTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidClientResponseHeaderTimeout",
 			env: map[string]string{
 				"CLIENT_RESPONSE_HEADER_TIMEOUT": "invalid",
 			},
-			expectedError: "Client: ResponseHeaderTimeout: time: invalid duration \"invalid\"",
+			expectedError: "Client: ClientResponseHeaderTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidClientExpectContinueTimeout",
 			env: map[string]string{
 				"CLIENT_EXPECT_CONTINUE_TIMEOUT": "invalid",
 			},
-			expectedError: "Client: ExpectContinueTimeout: time: invalid duration \"invalid\"",
+			expectedError: "Client: ClientExpectContinueTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidMCPClientTimeout",
@@ -762,4 +253,19 @@ func TestLoad(t *testing.T) {
 			assert.Equal(t, tt.expectedCfg, result)
 		})
 	}
+}
+
+func TestLoadDoesNotMutateRegistryDefaults(t *testing.T) {
+	originalURL := registry.Registry[constants.OllamaID].URL
+	originalToken := registry.Registry[constants.GroqID].Token
+
+	cfg := &config.Config{}
+	_, err := cfg.Load(envconfig.MapLookuper(map[string]string{
+		"OLLAMA_API_URL": "http://mutated:1234",
+		"GROQ_API_KEY":   "leaked-token",
+	}))
+
+	assert.NoError(t, err)
+	assert.Equal(t, originalURL, registry.Registry[constants.OllamaID].URL)
+	assert.Equal(t, originalToken, registry.Registry[constants.GroqID].Token)
 }

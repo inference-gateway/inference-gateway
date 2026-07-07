@@ -2,14 +2,11 @@
 package client
 
 import (
-	"context"
 	"crypto/tls"
 	"io"
 	"net/http"
 	"strings"
 	"time"
-
-	envconfig "github.com/sethvargo/go-envconfig"
 )
 
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
@@ -35,14 +32,6 @@ type ClientConfig struct {
 	ClientDisableCompression    bool          `env:"CLIENT_DISABLE_COMPRESSION, default=true" description:"Disable compression for faster streaming"`
 	ClientResponseHeaderTimeout time.Duration `env:"CLIENT_RESPONSE_HEADER_TIMEOUT, default=10s" description:"Response header timeout"`
 	ClientExpectContinueTimeout time.Duration `env:"CLIENT_EXPECT_CONTINUE_TIMEOUT, default=1s" description:"Expect continue timeout"`
-}
-
-func NewClientConfig() (*ClientConfig, error) {
-	var cfg ClientConfig
-	if err := envconfig.Process(context.Background(), &cfg); err != nil {
-		return nil, err
-	}
-	return &cfg, nil
 }
 
 func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {

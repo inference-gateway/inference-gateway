@@ -3,7 +3,7 @@ package routing
 import (
 	"strings"
 
-	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -17,30 +17,15 @@ import (
 // Returns nil provider if no explicit provider prefix is found.
 // In such cases, the provider must be specified via query parameter.
 func DetermineProviderAndModelName(model string) (provider *types.Provider, modelName string) {
-	modelLower := strings.ToLower(model)
-
-	providerPrefixMapping := map[string]types.Provider{
-		"ollama/":       constants.OllamaID,
-		"ollama_cloud/": constants.OllamaCloudID,
-		"groq/":         constants.GroqID,
-		"cloudflare/":   constants.CloudflareID,
-		"openai/":       constants.OpenaiID,
-		"anthropic/":    constants.AnthropicID,
-		"cohere/":       constants.CohereID,
-		"deepseek/":     constants.DeepseekID,
-		"google/":       constants.GoogleID,
-		"minimax/":      constants.MinimaxID,
-		"mistral/":      constants.MistralID,
-		"moonshot/":     constants.MoonshotID,
-		"nvidia/":       constants.NvidiaID,
+	prefix, rest, ok := strings.Cut(model, "/")
+	if !ok {
+		return nil, model
 	}
 
-	for prefix, providerID := range providerPrefixMapping {
-		if strings.HasPrefix(modelLower, prefix) {
-			originalPrefix := model[:len(prefix)]
-			return &providerID, strings.TrimPrefix(model, originalPrefix)
-		}
+	id := types.Provider(strings.ToLower(prefix))
+	if _, exists := registry.Registry[id]; !exists {
+		return nil, model
 	}
 
-	return nil, model
+	return &id, rest
 }
