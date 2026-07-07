@@ -103,8 +103,8 @@ func (p *ProviderImpl) createHTTPRequest(ctx context.Context, url string, body [
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Connection", "keep-alive")
 
-	if authToken := ctx.Value("authToken"); authToken != nil {
-		req.Header.Set("Authorization", "Bearer "+authToken.(string))
+	if authToken, ok := ctx.Value(types.AuthTokenContextKey).(string); ok && authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
 
 	return req, nil
@@ -143,8 +143,8 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 		return types.ListModelsResponse{}, err
 	}
 
-	if authToken := ctx.Value("authToken"); authToken != nil {
-		req.Header.Set("Authorization", "Bearer "+authToken.(string))
+	if authToken, ok := ctx.Value(types.AuthTokenContextKey).(string); ok && authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
 
 	response, err := p.Client.Do(req)
@@ -152,6 +152,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 		p.Logger.Error("Failed to list models", err, "provider", p.GetName(), "url", url)
 		return types.ListModelsResponse{}, err
 	}
+	defer response.Body.Close()
 
 	if err := p.handleHTTPError(response, "Error fetching models"); err != nil {
 		return types.ListModelsResponse{}, err

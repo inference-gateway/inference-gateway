@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -34,6 +35,11 @@ func NewTelemetryMiddleware(cfg config.Config, telemetry otel.OpenTelemetry, log
 	}, nil
 }
 
+const (
+	maxCapturedResponseBytes = 1 << 20
+	maxTelemetryRequestBytes = 32 << 20
+)
+
 // responseBodyWriter is a wrapper for the response writer that captures the body
 type responseBodyWriter struct {
 	gin.ResponseWriter
@@ -51,6 +57,9 @@ type responseData struct {
 // Write captures the response body
 func (w *responseBodyWriter) Write(b []byte) (int, error) {
 	w.body.Write(b)
+	if w.body.Len() > maxCapturedResponseBytes {
+		w.body.Next(w.body.Len() - maxCapturedResponseBytes)
+	}
 	return w.ResponseWriter.Write(b)
 }
 
@@ -64,7 +73,18 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		}
 
 		var requestBody types.CreateChatCompletionRequest
-		bodyBytes, _ := io.ReadAll(c.Request.Body)
+		bodyBytes, err := io.ReadAll(io.LimitReader(c.Request.Body, maxTelemetryRequestBytes+1))
+		if err != nil {
+			t.logger.Error("failed to read request body", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
+			c.Abort()
+			return
+		}
+		if len(bodyBytes) > maxTelemetryRequestBytes {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "request body too large"})
+			c.Abort()
+			return
+		}
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		_ = json.Unmarshal(bodyBytes, &requestBody)
 		model := requestBody.Model

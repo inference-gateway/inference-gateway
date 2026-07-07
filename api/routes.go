@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"strings"
 	"sync"
-	"time"
 
 	gin "github.com/gin-gonic/gin"
 
@@ -348,7 +347,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
 		defer cancel()
 
 		response, err := provider.ListModels(ctx)
@@ -372,7 +371,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 		ch := make(chan types.ListModelsResponse, len(providersCfg))
 
-		ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout*time.Millisecond)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
 		defer cancel()
 
 		for providerID := range providersCfg {
@@ -539,7 +538,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(c, router.cfg.Server.ReadTimeout)
+	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
 	defer cancel()
 
 	if router.cfg.EnableVision {

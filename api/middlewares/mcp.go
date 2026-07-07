@@ -182,6 +182,12 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		c.Next()
 
+		if customWriter.statusCode >= http.StatusBadRequest {
+			c.Writer = customWriter.ResponseWriter
+			c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), customWriter.body.Bytes())
+			return
+		}
+
 		var response types.CreateChatCompletionResponse
 		if err := json.Unmarshal(customWriter.body.Bytes(), &response); err != nil {
 			m.logger.Error("failed to parse response body", err)

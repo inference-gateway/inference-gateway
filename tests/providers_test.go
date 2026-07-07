@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	gin "github.com/gin-gonic/gin"
@@ -241,10 +242,9 @@ func TestProviderChatCompletionsForwardsAuthToken(t *testing.T) {
 		},
 	}
 
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	c.Set("authToken", "client-token")
+	ctx := context.WithValue(context.Background(), types.AuthTokenContextKey, "client-token")
 
-	resp, err := provider.ChatCompletions(c, req)
+	resp, err := provider.ChatCompletions(ctx, req)
 	require.NoError(t, err)
 	assert.Equal(t, "test-completion-id", resp.ID)
 }
@@ -683,4 +683,48 @@ func BenchmarkProviderTransformations(b *testing.B) {
 			_ = mistralData.Transform()
 		}
 	})
+}
+
+type recordingReadCloser struct {
+	io.Reader
+	closed bool
+}
+
+func (r *recordingReadCloser) Close() error {
+	r.closed = true
+	return nil
+}
+
+func TestProviderListModelsClosesResponseBody(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockClient := providersmocks.NewMockClient(ctrl)
+
+	body := &recordingReadCloser{Reader: strings.NewReader(`{"object":"list","data":[]}`)}
+	mockClient.EXPECT().
+		Do(gomock.Any()).
+		Return(&http.Response{StatusCode: http.StatusOK, Body: body}, nil)
+
+	log, err := logger.NewLogger("test")
+	require.NoError(t, err)
+
+	providerRegistry := registry.NewProviderRegistry(map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: {
+			ID:       constants.OpenaiID,
+			Name:     constants.OpenaiDisplayName,
+			URL:      "http://localhost",
+			Token:    "test-token",
+			AuthType: constants.AuthTypeBearer,
+			Endpoints: types.Endpoints{
+				Models: constants.OpenaiModelsEndpoint,
+			},
+		},
+	}, log)
+
+	provider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
+	require.NoError(t, err)
+
+	_, err = provider.ListModels(context.Background())
+	require.NoError(t, err)
+	assert.True(t, body.closed)
 }

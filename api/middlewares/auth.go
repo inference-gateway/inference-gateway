@@ -9,14 +9,7 @@ import (
 	gin "github.com/gin-gonic/gin"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
-	oauth2 "golang.org/x/oauth2"
-)
-
-type contextKey string
-
-const (
-	AuthTokenContextKey contextKey = "authToken"
-	IDTokenContextKey   contextKey = "idToken"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 type OIDCAuthenticator interface {
@@ -26,7 +19,6 @@ type OIDCAuthenticator interface {
 type OIDCAuthenticatorImpl struct {
 	logger   logger.Logger
 	verifier *oidcV3.IDTokenVerifier
-	config   oauth2.Config
 }
 
 type OIDCAuthenticatorNoop struct{}
@@ -49,12 +41,6 @@ func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OI
 	return &OIDCAuthenticatorImpl{
 		logger:   logger,
 		verifier: provider.Verifier(oidcConfig),
-		config: oauth2.Config{
-			ClientID:     cfg.Auth.OidcClientId,
-			ClientSecret: cfg.Auth.OidcClientSecret,
-			Endpoint:     provider.Endpoint(),
-			Scopes:       []string{oidcV3.ScopeOpenID, "profile", "email"},
-		},
 	}, nil
 }
 
@@ -81,16 +67,15 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 		}
 
 		token := strings.TrimPrefix(authHeader, "Bearer ")
-		idToken, err := a.verifier.Verify(context.Background(), token)
-		if err != nil {
-			a.logger.Error("Failed to verify ID token: %v", err)
+		if _, err := a.verifier.Verify(c.Request.Context(), token); err != nil {
+			a.logger.Error("failed to verify id token", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			c.Abort()
 			return
 		}
 
-		c.Set(string(AuthTokenContextKey), token)
-		c.Set(string(IDTokenContextKey), idToken)
+		ctx := context.WithValue(c.Request.Context(), types.AuthTokenContextKey, token)
+		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
 	}

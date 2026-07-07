@@ -916,3 +916,43 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		assert.True(t, len(collectedChunks) > 10, "Should have collected multiple chunks from all iterations")
 	})
 }
+
+func TestMCPMiddleware_PassesThroughUpstreamErrors(t *testing.T) {
+	ctrl, mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider := createMockDependencies(t)
+	defer ctrl.Finish()
+
+	cfg := createTestConfig()
+
+	mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+	mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
+	mockMCPClient.EXPECT().GetAllChatCompletionTools().Return([]types.ChatCompletionTool{}).AnyTimes()
+	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockRegistry.EXPECT().BuildProvider(constants.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
+
+	requestData := types.CreateChatCompletionRequest{
+		Model: "openai/gpt-3.5-turbo",
+		Messages: []types.Message{
+			types.NewTextMessage(t, types.User, "Hello"),
+		},
+	}
+	requestBody, _ := json.Marshal(requestData)
+
+	mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
+	middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
+	assert.NoError(t, err)
+
+	router := gin.New()
+	router.Use(middleware.Middleware())
+	router.POST("/v1/chat/completions", func(c *gin.Context) {
+		c.JSON(http.StatusBadGateway, gin.H{"error": "upstream provider rejected the request"})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadGateway, w.Code)
+	assert.Contains(t, w.Body.String(), "upstream provider rejected the request")
+}
