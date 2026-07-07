@@ -24,9 +24,14 @@ tasks:
     deps:
       - install:generator
     cmds:
+      # Order matters: constants must exist before the transformers, registry
+      # and config generators that reference constants.<Provider>ID, and
+      # common_types.go must exist before the registry and config packages
+      # compile.
       - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client/client.go
       - go run cmd/generate/main.go -type ProvidersConstants -output providers/constants/constants.go
       - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest --config=.oapi-codegen.yaml -o providers/types/common_types.go openapi.yaml
+      # oapi-codegen has no option to emit `any`; rewrite interface{} after the fact
       - sed -i.bak 's/interface{}/any/g' providers/types/common_types.go && rm providers/types/common_types.go.bak
       - go run cmd/generate/main.go -type Providers -output providers/transformers
       - go run cmd/generate/main.go -type ProviderRegistry -output providers/registry/registry.go

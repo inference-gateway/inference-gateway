@@ -2,10 +2,10 @@ package codegen
 
 import (
 	"fmt"
-	"html/template"
 	"os"
 	"os/exec"
 	"strings"
+	"text/template"
 
 	cases "golang.org/x/text/cases"
 	language "golang.org/x/text/language"
@@ -301,7 +301,7 @@ type ListModelsTransformer interface {
 
 	cmd := exec.Command("gofmt", "-w", destination)
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
+		return fmt.Errorf("failed to format %s: %w", destination, err)
 	}
 
 	return nil
@@ -580,7 +580,7 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() types.ListModelsRespon
 
 		cmd := exec.Command("gofmt", "-w", fullPath)
 		if err := cmd.Run(); err != nil {
-			fmt.Printf("Warning: Failed to format %s: %v\n", fullPath, err)
+			return fmt.Errorf("failed to format %s: %w", fullPath, err)
 		}
 
 		fmt.Printf("Generated %s\n", fullPath)
@@ -636,7 +636,7 @@ func NewListModelsTransformer(provider types.Provider) constants.ListModelsTrans
 
 	cmd := exec.Command("gofmt", "-w", factoryPath)
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Warning: Failed to format %s: %v\n", factoryPath, err)
+		return fmt.Errorf("failed to format %s: %w", factoryPath, err)
 	}
 
 	fmt.Printf("Generated %s\n", factoryPath)
@@ -803,7 +803,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 
 	cmd := exec.Command("gofmt", "-w", destination)
 	if err := cmd.Run(); err != nil {
-		fmt.Printf("Warning: Failed to format %s: %v\n", destination, err)
+		return fmt.Errorf("failed to format %s: %w", destination, err)
 	}
 
 	fmt.Printf("Generated provider registry: %s\n", destination)
