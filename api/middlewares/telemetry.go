@@ -10,13 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/otel"
-	"github.com/inference-gateway/inference-gateway/providers/registry"
-	"github.com/inference-gateway/inference-gateway/providers/routing"
-	"github.com/inference-gateway/inference-gateway/providers/types"
+	gin "github.com/gin-gonic/gin"
+
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	otel "github.com/inference-gateway/inference-gateway/otel"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	routing "github.com/inference-gateway/inference-gateway/providers/routing"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 type Telemetry interface {
