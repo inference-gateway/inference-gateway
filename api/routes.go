@@ -274,7 +274,7 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		proxy.ModifyResponse = devModifier.Modify
 	}
 
-	proxy.ServeHTTP(c.Writer, c.Request)
+	proxy.ServeHTTP(&middlewares.DeadlineResetWriter{ResponseWriter: c.Writer, Timeout: router.cfg.Server.WriteTimeout}, c.Request)
 }
 
 // constructProviderURL builds the provider URL consistently to avoid path duplication.

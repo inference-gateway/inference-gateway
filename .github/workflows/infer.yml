@@ -39,8 +39,10 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.16.4
+    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.18.1
     with:
       language: "go"
+      plugins: "DietrichGebert/ponytail
+"
       prompt: ${{ inputs.prompt }}
     secrets: inherit
