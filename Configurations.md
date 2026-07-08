@@ -105,8 +105,4 @@
 | MINIMAX_API_KEY | `""` | MiniMax API Key |
 | MOONSHOT_API_URL | `https://api.moonshot.ai/v1` | Moonshot API URL |
 | MOONSHOT_API_KEY | `""` | Moonshot API Key |
-| NVIDIA_API_URL | `https://integrate.api.nvidia.com/v1` | NVIDIA API URL |
-| NVIDIA_API_KEY | `""` | NVIDIA API Key |
-| ZAI_API_URL | `https://open.bigmodel.cn/api/paas/v4` | Z-AI API URL |
-| ZAI_API_KEY | `""` | Z-AI API Key |
 

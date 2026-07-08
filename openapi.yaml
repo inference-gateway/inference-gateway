@@ -17,18 +17,28 @@ info:
 servers:
   - url: http://localhost:8080
     description: Default server without version prefix for healthcheck and proxy and points
-    x-server-tags: ['Health', 'Proxy']
+    x-server-tags:
+      - Health
+      - Proxy
   - url: http://localhost:8080/v1
     description: Default server with version prefix for listing models and chat completions
-    x-server-tags: ['Models', 'Completions']
+    x-server-tags:
+      - Models
+      - Completions
+      - Responses
   - url: https://api.inference-gateway.local/v1
     description: Local server with version prefix for listing models and chat completions
-    x-server-tags: ['Models', 'Completions']
+    x-server-tags:
+      - Models
+      - Completions
+      - Responses
 tags:
   - name: Models
     description: List and describe the various models available in the API.
   - name: Completions
     description: Generate completions from the models.
+  - name: Responses
+    description: Generate model responses using the OpenAI-compatible Responses API.
   - name: MCP
     description: List and manage MCP tools.
   - name: Proxy
@@ -171,6 +181,57 @@ paths:
                   - $ref: '#/components/schemas/CreateChatCompletionStreamResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /responses:
+    post:
+      operationId: createResponse
+      tags:
+        - Responses
+      description: |
+        Creates a model response using the OpenAI-compatible Responses API.
+        The request accepts either a single text input or a list of input
+        items (allowing batched, multi-turn input in one request), and the
+        result can be streamed to the client as it is generated.
+
+        Not every provider implements the Responses API. Requests routed to a
+        provider that does not support it return `400 Bad Request` with an
+        explanatory error message; use `/chat/completions` for those providers.
+      summary: Create a model response
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Provider'
+          description: Specific provider to use (default determined by model)
+      requestBody:
+        $ref: '#/components/requestBodies/CreateResponseRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+            text/event-stream:
+              schema:
+                description: |
+                  Server-Sent Events stream. Each frame is an `SSEvent` whose
+                  `data` field contains the JSON-serialized payload for that
+                  event. For Responses streaming the payload is a
+                  `ResponseStreamEvent`. The `oneOf` here makes the streaming
+                  payload schemas reachable from this operation so that code
+                  generators emit types for them.
+                oneOf:
+                  - $ref: '#/components/schemas/SSEvent'
+                  - $ref: '#/components/schemas/ResponseStreamEvent'
+        '400':
+          $ref: '#/components/responses/ResponsesNotSupported'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -436,6 +497,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/CreateChatCompletionRequest'
+    CreateResponseRequest:
+      required: true
+      description: |
+        Request payload for the Responses API. Mirrors the OpenAI
+        `POST /v1/responses` request body.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateResponseRequest'
   responses:
     BadRequest:
       description: Bad request
@@ -463,6 +533,17 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: 'MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable.'
+    ResponsesNotSupported:
+      description: |
+        The selected provider does not implement the Responses API. The
+        gateway returns this when a request is routed to a provider without
+        Responses support.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'The Responses API is not supported by this provider yet.'
     ProviderResponse:
       description: |
         ProviderResponse depends on the specific provider and endpoint being called
@@ -628,6 +709,10 @@ components:
               name: 'chat_completions'
               method: 'POST'
               endpoint: '/chat/completions'
+            responses:
+              name: 'responses'
+              method: 'POST'
+              endpoint: '/responses'
         cloudflare:
           id: 'cloudflare'
           url: 'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai'
@@ -728,7 +813,7 @@ components:
               endpoint: '/chat/completions'
         zai:
           id: 'zai'
-          url: 'https://open.bigmodel.cn/api/paas/v4'
+          url: 'https://api.z.ai/v1'
           auth_type: 'bearer'
           supports_vision: true
           endpoints:
@@ -811,6 +896,8 @@ components:
           type: string
         chat:
           type: string
+        responses:
+          type: string
       required:
         - models
         - chat
@@ -827,6 +914,11 @@ components:
         - user
         - assistant
         - tool
+      x-enum-varnames:
+        - System
+        - User
+        - Assistant
+        - Tool
     Message:
       type: object
       description: Message structure for provider requests
@@ -871,7 +963,8 @@ components:
       properties:
         type:
           type: string
-          enum: [text]
+          enum:
+            - text
           description: Content type identifier
         text:
           type: string
@@ -885,7 +978,8 @@ components:
       properties:
         type:
           type: string
-          enum: [image_url]
+          enum:
+            - image_url
           description: Content type identifier
         image_url:
           $ref: '#/components/schemas/ImageURL'
@@ -901,7 +995,14 @@ components:
           description: URL of the image (data URLs supported)
         detail:
           type: string
-          enum: [auto, low, high]
+          enum:
+            - auto
+            - low
+            - high
+          x-enum-varnames:
+            - ImageURLDetailAuto
+            - ImageURLDetailLow
+            - ImageURLDetailHigh
           default: auto
           description: Image detail level for vision processing
       required:
@@ -985,7 +1086,8 @@ components:
               file_path:
                 type: 'string'
                 description: 'Path to the file to read'
-            required: ['file_path']
+            required:
+              - file_path
           additionalProperties: true
       required:
         - name
@@ -1253,6 +1355,11 @@ components:
             supported values are `minimal`, `low`, `medium`, and `high`.
             Reducing reasoning effort can result in faster responses and fewer
             tokens used on reasoning in a response.
+          x-enum-varnames:
+            - Minimal
+            - Low
+            - Medium
+            - High
           enum:
             - minimal
             - low
@@ -1631,6 +1738,12 @@ components:
         - tool_calls
         - content_filter
         - function_call
+      x-enum-varnames:
+        - Stop
+        - Length
+        - ToolCalls
+        - ContentFilter
+        - FunctionCall
     CreateChatCompletionStreamResponse:
       type: object
       description: |
@@ -1686,6 +1799,661 @@ components:
         - id
         - model
         - object
+    CreateResponseRequest:
+      type: object
+      description: |
+        Request body for creating a model response via the Responses API.
+      properties:
+        model:
+          type: string
+          description: Model ID used to generate the response.
+        input:
+          $ref: '#/components/schemas/ResponseInput'
+        instructions:
+          type: string
+          nullable: true
+          description: >
+            A system (or developer) message inserted into the model's context.
+            When used with `previous_response_id`, instructions from previous
+            responses are not carried over.
+        max_output_tokens:
+          type: integer
+          nullable: true
+          description: >
+            An upper bound for the number of tokens that can be generated for a
+            response, including visible output tokens and reasoning tokens.
+        stream:
+          type: boolean
+          default: false
+          description: >
+            If set to true, the model response data is streamed to the client
+            as it is generated using
+            [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).
+        temperature:
+          type: number
+          format: float
+          nullable: true
+          default: 1
+          description: >
+            What sampling temperature to use, between 0 and 2. Higher values
+            make the output more random; lower values make it more focused.
+        top_p:
+          type: number
+          format: float
+          nullable: true
+          default: 1
+          description: >
+            An alternative to sampling with temperature, called nucleus
+            sampling, where the model considers the tokens with `top_p`
+            probability mass.
+        tools:
+          type: array
+          description: >
+            An array of tools the model may call while generating a response.
+          items:
+            $ref: '#/components/schemas/ResponseTool'
+        tool_choice:
+          $ref: '#/components/schemas/ResponseToolChoice'
+        reasoning:
+          $ref: '#/components/schemas/ResponseReasoning'
+        text:
+          $ref: '#/components/schemas/ResponseTextConfig'
+        previous_response_id:
+          type: string
+          nullable: true
+          description: >
+            The unique ID of the previous response to the model. Use this to
+            create multi-turn conversations.
+        store:
+          type: boolean
+          default: true
+          description: >
+            Whether to store the generated model response for later retrieval.
+        background:
+          type: boolean
+          default: false
+          description: >
+            Whether to run the model response in the background. Useful for
+            long-running or batched requests.
+        parallel_tool_calls:
+          type: boolean
+          default: true
+          description: Whether to allow the model to run tool calls in parallel.
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+          description: >
+            Set of up to 16 key-value pairs that can be attached to the object
+            and returned when retrieving the response.
+        user:
+          type: string
+          description: >
+            A stable identifier for your end-users, used to help detect and
+            prevent abuse.
+      required:
+        - model
+        - input
+    ResponseInput:
+      description: >
+        Text, image, or file inputs to the model. Either a single text prompt
+        or a list of input items representing a (possibly batched) conversation.
+      oneOf:
+        - type: string
+          description: A text input to the model, equivalent to a user message.
+        - type: array
+          description: A list of input items.
+          items:
+            $ref: '#/components/schemas/ResponseInputItem'
+    ResponseInputItem:
+      type: object
+      description: >
+        A single input item. Most commonly an input message with a role and
+        content.
+      properties:
+        type:
+          type: string
+          default: message
+          description: The type of the input item. Defaults to `message`.
+        role:
+          $ref: '#/components/schemas/ResponseRole'
+        content:
+          $ref: '#/components/schemas/ResponseInputMessageContent'
+      required:
+        - role
+        - content
+    ResponseRole:
+      type: string
+      description: The role of the message input.
+      enum:
+        - user
+        - assistant
+        - system
+        - developer
+      x-enum-varnames:
+        - ResponseRoleUser
+        - ResponseRoleAssistant
+        - ResponseRoleSystem
+        - ResponseRoleDeveloper
+    ResponseInputMessageContent:
+      description: >
+        Text or multimodal content for an input message. Either a string or a
+        list of content parts.
+      oneOf:
+        - type: string
+          description: A text input to the model.
+        - type: array
+          items:
+            $ref: '#/components/schemas/ResponseInputContentPart'
+    ResponseInputContentPart:
+      type: object
+      description: A content part within an input message.
+      oneOf:
+        - $ref: '#/components/schemas/ResponseInputText'
+        - $ref: '#/components/schemas/ResponseInputImage'
+    ResponseInputText:
+      type: object
+      description: A text input to the model.
+      properties:
+        type:
+          type: string
+          enum:
+            - input_text
+          description: The type of the input item. Always `input_text`.
+        text:
+          type: string
+          description: The text input to the model.
+      required:
+        - type
+        - text
+    ResponseInputImage:
+      type: object
+      description: An image input to the model.
+      properties:
+        type:
+          type: string
+          enum:
+            - input_image
+          description: The type of the input item. Always `input_image`.
+        image_url:
+          type: string
+          description: The URL of the image (data URLs supported).
+        detail:
+          type: string
+          enum:
+            - auto
+            - low
+            - high
+          x-enum-varnames:
+            - ResponseInputImageDetailAuto
+            - ResponseInputImageDetailLow
+            - ResponseInputImageDetailHigh
+          default: auto
+          description: The detail level of the image to send to the model.
+      required:
+        - type
+    ResponseTool:
+      type: object
+      description: >
+        A tool the model may call. Only function tools are modeled here. Note
+        the Responses API uses a flattened function tool shape (`name`,
+        `description`, and `parameters` at the top level) rather than nesting
+        them under a `function` object as `/chat/completions` does.
+      properties:
+        type:
+          type: string
+          enum:
+            - function
+          x-enum-varnames:
+            - ResponseToolTypeFunction
+          description: The type of the tool. Currently only `function`.
+        name:
+          type: string
+          description: The name of the function to call.
+        description:
+          type: string
+          description: >
+            A description of the function, used by the model to decide when and
+            how to call it.
+        parameters:
+          $ref: '#/components/schemas/FunctionParameters'
+        strict:
+          type: boolean
+          default: false
+          description: Whether to enforce strict parameter validation.
+      required:
+        - type
+        - name
+    ResponseToolChoice:
+      description: >
+        How the model should select which tool (or tools) to use. Either a mode
+        string (`none`, `auto`, `required`) or an object forcing a specific
+        tool.
+      oneOf:
+        - type: string
+          enum:
+            - none
+            - auto
+            - required
+          description: The tool-choice mode.
+        - type: object
+          description: Forces the model to call a specific function tool.
+          properties:
+            type:
+              type: string
+              enum:
+                - function
+              x-enum-varnames:
+                - ResponseToolChoiceTypeFunction
+            name:
+              type: string
+          required:
+            - type
+            - name
+    ResponseReasoning:
+      type: object
+      description: Configuration options for reasoning models.
+      properties:
+        effort:
+          type: string
+          enum:
+            - minimal
+            - low
+            - medium
+            - high
+          default: medium
+          nullable: true
+          x-enum-varnames:
+            - ResponseReasoningEffortMinimal
+            - ResponseReasoningEffortLow
+            - ResponseReasoningEffortMedium
+            - ResponseReasoningEffortHigh
+          description: >
+            Constrains the effort on reasoning for reasoning models. Reducing
+            effort can result in faster responses and fewer reasoning tokens.
+        summary:
+          type: string
+          enum:
+            - auto
+            - concise
+            - detailed
+          nullable: true
+          description: >
+            A summary of the reasoning performed by the model, useful for
+            debugging and understanding the model's reasoning process.
+    ResponseTextConfig:
+      type: object
+      description: >
+        Configuration options for a text response from the model. Can be plain
+        text or structured JSON data.
+      properties:
+        format:
+          type: object
+          description: An object specifying the format that the model must output.
+          properties:
+            type:
+              type: string
+              enum:
+                - text
+                - json_schema
+                - json_object
+              x-enum-varnames:
+                - ResponseTextConfigFormatTypeText
+                - ResponseTextConfigFormatTypeJSONSchema
+                - ResponseTextConfigFormatTypeJSONObject
+              description: The type of response format being defined.
+            name:
+              type: string
+              description: The name of the response format (used with `json_schema`).
+            schema:
+              $ref: '#/components/schemas/FunctionParameters'
+            strict:
+              type: boolean
+              default: false
+              description: Whether to enable strict schema adherence.
+          required:
+            - type
+    Response:
+      type: object
+      description: Represents a model response returned by the Responses API.
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this response.
+        object:
+          type: string
+          description: The object type, which is always `response`.
+        created_at:
+          type: integer
+          format: int64
+          description: Unix timestamp (in seconds) of when the response was created.
+        status:
+          $ref: '#/components/schemas/ResponseStatus'
+        model:
+          type: string
+          description: The model used to generate the response.
+        output:
+          type: array
+          description: An array of content items generated by the model.
+          items:
+            $ref: '#/components/schemas/ResponseOutputItem'
+        error:
+          $ref: '#/components/schemas/ResponseError'
+        incomplete_details:
+          $ref: '#/components/schemas/ResponseIncompleteDetails'
+        instructions:
+          type: string
+          nullable: true
+          description: The system/developer message used to generate the response.
+        max_output_tokens:
+          type: integer
+          nullable: true
+          description: An upper bound for the number of generated tokens.
+        previous_response_id:
+          type: string
+          nullable: true
+          description: The unique ID of the previous response, if any.
+        reasoning:
+          $ref: '#/components/schemas/ResponseReasoning'
+        temperature:
+          type: number
+          format: float
+          nullable: true
+        top_p:
+          type: number
+          format: float
+          nullable: true
+        tool_choice:
+          $ref: '#/components/schemas/ResponseToolChoice'
+        tools:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponseTool'
+        text:
+          $ref: '#/components/schemas/ResponseTextConfig'
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        usage:
+          $ref: '#/components/schemas/ResponseUsage'
+      required:
+        - id
+        - object
+        - created_at
+        - status
+        - model
+        - output
+    ResponseStatus:
+      type: string
+      description: The status of the response generation.
+      enum:
+        - completed
+        - failed
+        - in_progress
+        - cancelled
+        - queued
+        - incomplete
+    ResponseError:
+      type: object
+      nullable: true
+      description: An error object returned when the model fails to generate a response.
+      properties:
+        code:
+          type: string
+          description: The error code for the response.
+        message:
+          type: string
+          description: A human-readable description of the error.
+      required:
+        - code
+        - message
+    ResponseIncompleteDetails:
+      type: object
+      nullable: true
+      description: Details about why the response is incomplete.
+      properties:
+        reason:
+          type: string
+          description: The reason why the response is incomplete.
+    ResponseOutputItem:
+      type: object
+      description: >
+        An output item generated by the model: an output message, a function
+        tool call, or a reasoning item.
+      oneOf:
+        - $ref: '#/components/schemas/ResponseOutputMessage'
+        - $ref: '#/components/schemas/ResponseFunctionToolCall'
+        - $ref: '#/components/schemas/ResponseReasoningItem'
+    ResponseOutputMessage:
+      type: object
+      description: An output message from the model.
+      properties:
+        type:
+          type: string
+          enum:
+            - message
+          description: The type of the output item. Always `message`.
+        id:
+          type: string
+          description: The unique ID of the output message.
+        role:
+          type: string
+          enum:
+            - assistant
+          x-enum-varnames:
+            - ResponseOutputMessageRoleAssistant
+          description: The role of the output message. Always `assistant`.
+        status:
+          type: string
+          enum:
+            - in_progress
+            - completed
+            - incomplete
+          description: The status of the message.
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponseOutputContent'
+      required:
+        - type
+        - id
+        - role
+        - content
+    ResponseOutputContent:
+      type: object
+      description: A content part of an output message.
+      oneOf:
+        - $ref: '#/components/schemas/ResponseOutputText'
+        - $ref: '#/components/schemas/ResponseOutputRefusal'
+    ResponseOutputText:
+      type: object
+      description: A text output from the model.
+      properties:
+        type:
+          type: string
+          enum:
+            - output_text
+          description: The type of the output text. Always `output_text`.
+        text:
+          type: string
+          description: The text output from the model.
+      required:
+        - type
+        - text
+    ResponseOutputRefusal:
+      type: object
+      description: A refusal generated by the model.
+      properties:
+        type:
+          type: string
+          enum:
+            - refusal
+          description: The type of the refusal. Always `refusal`.
+        refusal:
+          type: string
+          description: The refusal explanation from the model.
+      required:
+        - type
+        - refusal
+    ResponseFunctionToolCall:
+      type: object
+      description: A tool call to a function generated by the model.
+      properties:
+        type:
+          type: string
+          enum:
+            - function_call
+          x-enum-varnames:
+            - ResponseFunctionToolCallTypeFunctionCall
+          description: The type of the output item. Always `function_call`.
+        id:
+          type: string
+          description: The unique ID of the function tool call.
+        call_id:
+          type: string
+          description: >
+            The unique ID of the function tool call generated by the model,
+            used to associate the call with its output.
+        name:
+          type: string
+          description: The name of the function to run.
+        arguments:
+          type: string
+          description: A JSON string of the arguments to pass to the function.
+        status:
+          type: string
+          enum:
+            - in_progress
+            - completed
+            - incomplete
+          description: The status of the function tool call.
+      required:
+        - type
+        - call_id
+        - name
+        - arguments
+    ResponseReasoningItem:
+      type: object
+      description: A reasoning item describing the model's chain of thought.
+      properties:
+        type:
+          type: string
+          enum:
+            - reasoning
+          description: The type of the output item. Always `reasoning`.
+        id:
+          type: string
+          description: The unique ID of the reasoning item.
+        summary:
+          type: array
+          description: Reasoning summary content.
+          items:
+            $ref: '#/components/schemas/ResponseReasoningSummary'
+        status:
+          type: string
+          enum:
+            - in_progress
+            - completed
+            - incomplete
+          description: The status of the reasoning item.
+      required:
+        - type
+        - id
+        - summary
+    ResponseReasoningSummary:
+      type: object
+      x-go-name: ResponseReasoningSummaryPart
+      description: A summary part of a reasoning item.
+      properties:
+        type:
+          type: string
+          enum:
+            - summary_text
+          description: The type of the summary. Always `summary_text`.
+        text:
+          type: string
+          description: A summary of the reasoning output from the model.
+      required:
+        - type
+        - text
+    ResponseUsage:
+      type: object
+      description: Token usage details for the response.
+      properties:
+        input_tokens:
+          type: integer
+          format: int64
+          default: 0
+          description: The number of input tokens.
+        input_tokens_details:
+          type: object
+          description: A detailed breakdown of the input tokens.
+          properties:
+            cached_tokens:
+              type: integer
+              format: int64
+              default: 0
+              description: The number of tokens retrieved from the cache.
+        output_tokens:
+          type: integer
+          format: int64
+          default: 0
+          description: The number of output tokens.
+        output_tokens_details:
+          type: object
+          description: A detailed breakdown of the output tokens.
+          properties:
+            reasoning_tokens:
+              type: integer
+              format: int64
+              default: 0
+              description: The number of reasoning tokens.
+        total_tokens:
+          type: integer
+          format: int64
+          default: 0
+          description: The total number of tokens used (input + output).
+      required:
+        - input_tokens
+        - output_tokens
+        - total_tokens
+    ResponseStreamEvent:
+      type: object
+      description: >
+        A server-sent event emitted while streaming a response. The Responses
+        API emits a sequence of typed events (for example `response.created`,
+        `response.output_text.delta`, and `response.completed`). This schema
+        models the common event envelope; which fields are populated depends on
+        the event `type`.
+      properties:
+        type:
+          type: string
+          description: >
+            The type of the streamed event, for example
+            `response.output_text.delta` or `response.completed`.
+        sequence_number:
+          type: integer
+          description: The sequence number of this event.
+        response:
+          $ref: '#/components/schemas/Response'
+        item_id:
+          type: string
+          description: The ID of the output item this event relates to.
+        output_index:
+          type: integer
+          description: The index of the output item in the response's output array.
+        content_index:
+          type: integer
+          description: The index of the content part within the output item.
+        delta:
+          type: string
+          description: The incremental text delta for `*.delta` events.
+        text:
+          type: string
+          description: The finalized text for `*.done` events.
+      required:
+        - type
     Config:
       x-config:
         sections:
@@ -2065,24 +2833,4 @@ components:
                   env: 'MOONSHOT_API_KEY'
                   type: string
                   description: 'Moonshot API Key'
-                  secret: true
-                - name: nvidia_api_url
-                  env: 'NVIDIA_API_URL'
-                  type: string
-                  default: 'https://integrate.api.nvidia.com/v1'
-                  description: 'NVIDIA API URL'
-                - name: nvidia_api_key
-                  env: 'NVIDIA_API_KEY'
-                  type: string
-                  description: 'NVIDIA API Key'
-                  secret: true
-                - name: zai_api_url
-                  env: 'ZAI_API_URL'
-                  type: string
-                  default: 'https://open.bigmodel.cn/api/paas/v4'
-                  description: 'Z-AI API URL'
-                - name: zai_api_key
-                  env: 'ZAI_API_KEY'
-                  type: string
-                  description: 'Z-AI API Key'
                   secret: true

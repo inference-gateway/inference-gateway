@@ -1,3 +1,13 @@
+# oapi-codegen config for the gateway's OpenAPI-derived Go types.
+#
+# Aligned with the Go SDK (inference-gateway/sdk) oapi-codegen.yaml:
+#   - generate.models: true
+#   - output-options.name-normalizer: ToCamelCaseWithInitialisms
+#   - post-processing uses gofmt -r 'interface{} -> any' (in Taskfile.yml)
+#
+# skip-prune is kept true because schemas guards streaming-payload
+# reachability with bun scripts/check-reachable.js; oapi-codegen drops
+# unreachable schemas unless this is set.
 package: types
 generate:
   models: true

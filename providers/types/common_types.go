@@ -217,22 +217,22 @@ func (e Provider) Valid() bool {
 
 // Defines values for ProviderAuthType.
 const (
-	Bearer  ProviderAuthType = "bearer"
-	None    ProviderAuthType = "none"
-	Query   ProviderAuthType = "query"
-	Xheader ProviderAuthType = "xheader"
+	ProviderAuthTypeBearer  ProviderAuthType = "bearer"
+	ProviderAuthTypeNone    ProviderAuthType = "none"
+	ProviderAuthTypeQuery   ProviderAuthType = "query"
+	ProviderAuthTypeXheader ProviderAuthType = "xheader"
 )
 
 // Valid indicates whether the value is a known member of the ProviderAuthType enum.
 func (e ProviderAuthType) Valid() bool {
 	switch e {
-	case Bearer:
+	case ProviderAuthTypeBearer:
 		return true
-	case None:
+	case ProviderAuthTypeNone:
 		return true
-	case Query:
+	case ProviderAuthTypeQuery:
 		return true
-	case Xheader:
+	case ProviderAuthTypeXheader:
 		return true
 	default:
 		return false
@@ -278,6 +278,396 @@ const (
 func (e ResponseFormatTextType) Valid() bool {
 	switch e {
 	case ResponseFormatTextTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseFunctionToolCallStatus.
+const (
+	ResponseFunctionToolCallStatusCompleted  ResponseFunctionToolCallStatus = "completed"
+	ResponseFunctionToolCallStatusInProgress ResponseFunctionToolCallStatus = "in_progress"
+	ResponseFunctionToolCallStatusIncomplete ResponseFunctionToolCallStatus = "incomplete"
+)
+
+// Valid indicates whether the value is a known member of the ResponseFunctionToolCallStatus enum.
+func (e ResponseFunctionToolCallStatus) Valid() bool {
+	switch e {
+	case ResponseFunctionToolCallStatusCompleted:
+		return true
+	case ResponseFunctionToolCallStatusInProgress:
+		return true
+	case ResponseFunctionToolCallStatusIncomplete:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseFunctionToolCallType.
+const (
+	ResponseFunctionToolCallTypeFunctionCall ResponseFunctionToolCallType = "function_call"
+)
+
+// Valid indicates whether the value is a known member of the ResponseFunctionToolCallType enum.
+func (e ResponseFunctionToolCallType) Valid() bool {
+	switch e {
+	case ResponseFunctionToolCallTypeFunctionCall:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseInputImageDetail.
+const (
+	ResponseInputImageDetailAuto ResponseInputImageDetail = "auto"
+	ResponseInputImageDetailHigh ResponseInputImageDetail = "high"
+	ResponseInputImageDetailLow  ResponseInputImageDetail = "low"
+)
+
+// Valid indicates whether the value is a known member of the ResponseInputImageDetail enum.
+func (e ResponseInputImageDetail) Valid() bool {
+	switch e {
+	case ResponseInputImageDetailAuto:
+		return true
+	case ResponseInputImageDetailHigh:
+		return true
+	case ResponseInputImageDetailLow:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseInputImageType.
+const (
+	InputImage ResponseInputImageType = "input_image"
+)
+
+// Valid indicates whether the value is a known member of the ResponseInputImageType enum.
+func (e ResponseInputImageType) Valid() bool {
+	switch e {
+	case InputImage:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseInputTextType.
+const (
+	InputText ResponseInputTextType = "input_text"
+)
+
+// Valid indicates whether the value is a known member of the ResponseInputTextType enum.
+func (e ResponseInputTextType) Valid() bool {
+	switch e {
+	case InputText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseOutputMessageRole.
+const (
+	ResponseOutputMessageRoleAssistant ResponseOutputMessageRole = "assistant"
+)
+
+// Valid indicates whether the value is a known member of the ResponseOutputMessageRole enum.
+func (e ResponseOutputMessageRole) Valid() bool {
+	switch e {
+	case ResponseOutputMessageRoleAssistant:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseOutputMessageStatus.
+const (
+	ResponseOutputMessageStatusCompleted  ResponseOutputMessageStatus = "completed"
+	ResponseOutputMessageStatusInProgress ResponseOutputMessageStatus = "in_progress"
+	ResponseOutputMessageStatusIncomplete ResponseOutputMessageStatus = "incomplete"
+)
+
+// Valid indicates whether the value is a known member of the ResponseOutputMessageStatus enum.
+func (e ResponseOutputMessageStatus) Valid() bool {
+	switch e {
+	case ResponseOutputMessageStatusCompleted:
+		return true
+	case ResponseOutputMessageStatusInProgress:
+		return true
+	case ResponseOutputMessageStatusIncomplete:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseOutputMessageType.
+const (
+	ResponseOutputMessageTypeMessage ResponseOutputMessageType = "message"
+)
+
+// Valid indicates whether the value is a known member of the ResponseOutputMessageType enum.
+func (e ResponseOutputMessageType) Valid() bool {
+	switch e {
+	case ResponseOutputMessageTypeMessage:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseOutputRefusalType.
+const (
+	Refusal ResponseOutputRefusalType = "refusal"
+)
+
+// Valid indicates whether the value is a known member of the ResponseOutputRefusalType enum.
+func (e ResponseOutputRefusalType) Valid() bool {
+	switch e {
+	case Refusal:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseOutputTextType.
+const (
+	OutputText ResponseOutputTextType = "output_text"
+)
+
+// Valid indicates whether the value is a known member of the ResponseOutputTextType enum.
+func (e ResponseOutputTextType) Valid() bool {
+	switch e {
+	case OutputText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseReasoningEffort.
+const (
+	ResponseReasoningEffortHigh    ResponseReasoningEffort = "high"
+	ResponseReasoningEffortLow     ResponseReasoningEffort = "low"
+	ResponseReasoningEffortMedium  ResponseReasoningEffort = "medium"
+	ResponseReasoningEffortMinimal ResponseReasoningEffort = "minimal"
+)
+
+// Valid indicates whether the value is a known member of the ResponseReasoningEffort enum.
+func (e ResponseReasoningEffort) Valid() bool {
+	switch e {
+	case ResponseReasoningEffortHigh:
+		return true
+	case ResponseReasoningEffortLow:
+		return true
+	case ResponseReasoningEffortMedium:
+		return true
+	case ResponseReasoningEffortMinimal:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseReasoningSummary.
+const (
+	ResponseReasoningSummaryAuto     ResponseReasoningSummary = "auto"
+	ResponseReasoningSummaryConcise  ResponseReasoningSummary = "concise"
+	ResponseReasoningSummaryDetailed ResponseReasoningSummary = "detailed"
+)
+
+// Valid indicates whether the value is a known member of the ResponseReasoningSummary enum.
+func (e ResponseReasoningSummary) Valid() bool {
+	switch e {
+	case ResponseReasoningSummaryAuto:
+		return true
+	case ResponseReasoningSummaryConcise:
+		return true
+	case ResponseReasoningSummaryDetailed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseReasoningItemStatus.
+const (
+	ResponseReasoningItemStatusCompleted  ResponseReasoningItemStatus = "completed"
+	ResponseReasoningItemStatusInProgress ResponseReasoningItemStatus = "in_progress"
+	ResponseReasoningItemStatusIncomplete ResponseReasoningItemStatus = "incomplete"
+)
+
+// Valid indicates whether the value is a known member of the ResponseReasoningItemStatus enum.
+func (e ResponseReasoningItemStatus) Valid() bool {
+	switch e {
+	case ResponseReasoningItemStatusCompleted:
+		return true
+	case ResponseReasoningItemStatusInProgress:
+		return true
+	case ResponseReasoningItemStatusIncomplete:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseReasoningItemType.
+const (
+	Reasoning ResponseReasoningItemType = "reasoning"
+)
+
+// Valid indicates whether the value is a known member of the ResponseReasoningItemType enum.
+func (e ResponseReasoningItemType) Valid() bool {
+	switch e {
+	case Reasoning:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseReasoningSummaryType.
+const (
+	SummaryText ResponseReasoningSummaryType = "summary_text"
+)
+
+// Valid indicates whether the value is a known member of the ResponseReasoningSummaryType enum.
+func (e ResponseReasoningSummaryType) Valid() bool {
+	switch e {
+	case SummaryText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseRole.
+const (
+	ResponseRoleAssistant ResponseRole = "assistant"
+	ResponseRoleDeveloper ResponseRole = "developer"
+	ResponseRoleSystem    ResponseRole = "system"
+	ResponseRoleUser      ResponseRole = "user"
+)
+
+// Valid indicates whether the value is a known member of the ResponseRole enum.
+func (e ResponseRole) Valid() bool {
+	switch e {
+	case ResponseRoleAssistant:
+		return true
+	case ResponseRoleDeveloper:
+		return true
+	case ResponseRoleSystem:
+		return true
+	case ResponseRoleUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseStatus.
+const (
+	ResponseStatusCancelled  ResponseStatus = "cancelled"
+	ResponseStatusCompleted  ResponseStatus = "completed"
+	ResponseStatusFailed     ResponseStatus = "failed"
+	ResponseStatusInProgress ResponseStatus = "in_progress"
+	ResponseStatusIncomplete ResponseStatus = "incomplete"
+	ResponseStatusQueued     ResponseStatus = "queued"
+)
+
+// Valid indicates whether the value is a known member of the ResponseStatus enum.
+func (e ResponseStatus) Valid() bool {
+	switch e {
+	case ResponseStatusCancelled:
+		return true
+	case ResponseStatusCompleted:
+		return true
+	case ResponseStatusFailed:
+		return true
+	case ResponseStatusInProgress:
+		return true
+	case ResponseStatusIncomplete:
+		return true
+	case ResponseStatusQueued:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseTextConfigFormatType.
+const (
+	ResponseTextConfigFormatTypeJSONObject ResponseTextConfigFormatType = "json_object"
+	ResponseTextConfigFormatTypeJSONSchema ResponseTextConfigFormatType = "json_schema"
+	ResponseTextConfigFormatTypeText       ResponseTextConfigFormatType = "text"
+)
+
+// Valid indicates whether the value is a known member of the ResponseTextConfigFormatType enum.
+func (e ResponseTextConfigFormatType) Valid() bool {
+	switch e {
+	case ResponseTextConfigFormatTypeJSONObject:
+		return true
+	case ResponseTextConfigFormatTypeJSONSchema:
+		return true
+	case ResponseTextConfigFormatTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseToolType.
+const (
+	ResponseToolTypeFunction ResponseToolType = "function"
+)
+
+// Valid indicates whether the value is a known member of the ResponseToolType enum.
+func (e ResponseToolType) Valid() bool {
+	switch e {
+	case ResponseToolTypeFunction:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseToolChoice0.
+const (
+	ResponseToolChoice0Auto     ResponseToolChoice0 = "auto"
+	ResponseToolChoice0None     ResponseToolChoice0 = "none"
+	ResponseToolChoice0Required ResponseToolChoice0 = "required"
+)
+
+// Valid indicates whether the value is a known member of the ResponseToolChoice0 enum.
+func (e ResponseToolChoice0) Valid() bool {
+	switch e {
+	case ResponseToolChoice0Auto:
+		return true
+	case ResponseToolChoice0None:
+		return true
+	case ResponseToolChoice0Required:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ResponseToolChoice1Type.
+const (
+	ResponseToolChoiceTypeFunction ResponseToolChoice1Type = "function"
+)
+
+// Valid indicates whether the value is a known member of the ResponseToolChoice1Type enum.
+func (e ResponseToolChoice1Type) Valid() bool {
+	switch e {
+	case ResponseToolChoiceTypeFunction:
 		return true
 	default:
 		return false
@@ -674,10 +1064,65 @@ type CreateChatCompletionStreamResponse struct {
 	Usage *CompletionUsage `json:"usage,omitempty"`
 }
 
+// CreateResponseRequest Request body for creating a model response via the Responses API.
+type CreateResponseRequest struct {
+	// Background Whether to run the model response in the background. Useful for long-running or batched requests.
+	Background *bool `json:"background,omitempty"`
+
+	// Input Text, image, or file inputs to the model. Either a single text prompt or a list of input items representing a (possibly batched) conversation.
+	Input ResponseInput `json:"input"`
+
+	// Instructions A system (or developer) message inserted into the model's context. When used with `previous_response_id`, instructions from previous responses are not carried over.
+	Instructions *string `json:"instructions,omitempty"`
+
+	// MaxOutputTokens An upper bound for the number of tokens that can be generated for a response, including visible output tokens and reasoning tokens.
+	MaxOutputTokens *int `json:"max_output_tokens,omitempty"`
+
+	// Metadata Set of up to 16 key-value pairs that can be attached to the object and returned when retrieving the response.
+	Metadata *map[string]string `json:"metadata,omitempty"`
+
+	// Model Model ID used to generate the response.
+	Model string `json:"model"`
+
+	// ParallelToolCalls Whether to allow the model to run tool calls in parallel.
+	ParallelToolCalls *bool `json:"parallel_tool_calls,omitempty"`
+
+	// PreviousResponseID The unique ID of the previous response to the model. Use this to create multi-turn conversations.
+	PreviousResponseID *string `json:"previous_response_id,omitempty"`
+
+	// Reasoning Configuration options for reasoning models.
+	Reasoning *ResponseReasoning `json:"reasoning,omitempty"`
+
+	// Store Whether to store the generated model response for later retrieval.
+	Store *bool `json:"store,omitempty"`
+
+	// Stream If set to true, the model response data is streamed to the client as it is generated using [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).
+	Stream *bool `json:"stream,omitempty"`
+
+	// Temperature What sampling temperature to use, between 0 and 2. Higher values make the output more random; lower values make it more focused.
+	Temperature *float32 `json:"temperature,omitempty"`
+
+	// Text Configuration options for a text response from the model. Can be plain text or structured JSON data.
+	Text *ResponseTextConfig `json:"text,omitempty"`
+
+	// ToolChoice How the model should select which tool (or tools) to use. Either a mode string (`none`, `auto`, `required`) or an object forcing a specific tool.
+	ToolChoice *ResponseToolChoice `json:"tool_choice,omitempty"`
+
+	// Tools An array of tools the model may call while generating a response.
+	Tools *[]ResponseTool `json:"tools,omitempty"`
+
+	// TopP An alternative to sampling with temperature, called nucleus sampling, where the model considers the tokens with `top_p` probability mass.
+	TopP *float32 `json:"top_p,omitempty"`
+
+	// User A stable identifier for your end-users, used to help detect and prevent abuse.
+	User *string `json:"user,omitempty"`
+}
+
 // Endpoints defines model for Endpoints.
 type Endpoints struct {
-	Chat   string `json:"chat"`
-	Models string `json:"models"`
+	Chat      string  `json:"chat"`
+	Models    string  `json:"models"`
+	Responses *string `json:"responses,omitempty"`
 }
 
 // Error defines model for Error.
@@ -853,6 +1298,67 @@ type ProviderAuthType string
 // ```
 type ProviderSpecificResponse = map[string]any
 
+// Response Represents a model response returned by the Responses API.
+type Response struct {
+	// CreatedAt Unix timestamp (in seconds) of when the response was created.
+	CreatedAt int64 `json:"created_at"`
+
+	// Error An error object returned when the model fails to generate a response.
+	Error *ResponseError `json:"error,omitempty"`
+
+	// ID Unique identifier for this response.
+	ID string `json:"id"`
+
+	// IncompleteDetails Details about why the response is incomplete.
+	IncompleteDetails *ResponseIncompleteDetails `json:"incomplete_details,omitempty"`
+
+	// Instructions The system/developer message used to generate the response.
+	Instructions *string `json:"instructions,omitempty"`
+
+	// MaxOutputTokens An upper bound for the number of generated tokens.
+	MaxOutputTokens *int               `json:"max_output_tokens,omitempty"`
+	Metadata        *map[string]string `json:"metadata,omitempty"`
+
+	// Model The model used to generate the response.
+	Model string `json:"model"`
+
+	// Object The object type, which is always `response`.
+	Object string `json:"object"`
+
+	// Output An array of content items generated by the model.
+	Output []ResponseOutputItem `json:"output"`
+
+	// PreviousResponseID The unique ID of the previous response, if any.
+	PreviousResponseID *string `json:"previous_response_id,omitempty"`
+
+	// Reasoning Configuration options for reasoning models.
+	Reasoning *ResponseReasoning `json:"reasoning,omitempty"`
+
+	// Status The status of the response generation.
+	Status      ResponseStatus `json:"status"`
+	Temperature *float32       `json:"temperature,omitempty"`
+
+	// Text Configuration options for a text response from the model. Can be plain text or structured JSON data.
+	Text *ResponseTextConfig `json:"text,omitempty"`
+
+	// ToolChoice How the model should select which tool (or tools) to use. Either a mode string (`none`, `auto`, `required`) or an object forcing a specific tool.
+	ToolChoice *ResponseToolChoice `json:"tool_choice,omitempty"`
+	Tools      *[]ResponseTool     `json:"tools,omitempty"`
+	TopP       *float32            `json:"top_p,omitempty"`
+
+	// Usage Token usage details for the response.
+	Usage *ResponseUsage `json:"usage,omitempty"`
+}
+
+// ResponseError An error object returned when the model fails to generate a response.
+type ResponseError struct {
+	// Code The error code for the response.
+	Code string `json:"code"`
+
+	// Message A human-readable description of the error.
+	Message string `json:"message"`
+}
+
 // ResponseFormatJSONObject JSON object response format. An older method of generating JSON responses. Using `json_schema` is recommended for models that support it. Note that the model will not generate JSON without a system or user message instructing it to do so.
 type ResponseFormatJSONObject struct {
 	// Type The type of response format being defined. Always `json_object`.
@@ -898,6 +1404,334 @@ type ResponseFormatText struct {
 // ResponseFormatTextType The type of response format being defined. Always `text`.
 type ResponseFormatTextType string
 
+// ResponseFunctionToolCall A tool call to a function generated by the model.
+type ResponseFunctionToolCall struct {
+	// Arguments A JSON string of the arguments to pass to the function.
+	Arguments string `json:"arguments"`
+
+	// CallID The unique ID of the function tool call generated by the model, used to associate the call with its output.
+	CallID string `json:"call_id"`
+
+	// ID The unique ID of the function tool call.
+	ID *string `json:"id,omitempty"`
+
+	// Name The name of the function to run.
+	Name string `json:"name"`
+
+	// Status The status of the function tool call.
+	Status *ResponseFunctionToolCallStatus `json:"status,omitempty"`
+
+	// Type The type of the output item. Always `function_call`.
+	Type ResponseFunctionToolCallType `json:"type"`
+}
+
+// ResponseFunctionToolCallStatus The status of the function tool call.
+type ResponseFunctionToolCallStatus string
+
+// ResponseFunctionToolCallType The type of the output item. Always `function_call`.
+type ResponseFunctionToolCallType string
+
+// ResponseIncompleteDetails Details about why the response is incomplete.
+type ResponseIncompleteDetails struct {
+	// Reason The reason why the response is incomplete.
+	Reason *string `json:"reason,omitempty"`
+}
+
+// ResponseInput Text, image, or file inputs to the model. Either a single text prompt or a list of input items representing a (possibly batched) conversation.
+type ResponseInput struct {
+	union json.RawMessage
+}
+
+// ResponseInput0 A text input to the model, equivalent to a user message.
+type ResponseInput0 = string
+
+// ResponseInput1 A list of input items.
+type ResponseInput1 = []ResponseInputItem
+
+// ResponseInputContentPart A content part within an input message.
+type ResponseInputContentPart struct {
+	union json.RawMessage
+}
+
+// ResponseInputImage An image input to the model.
+type ResponseInputImage struct {
+	// Detail The detail level of the image to send to the model.
+	Detail *ResponseInputImageDetail `json:"detail,omitempty"`
+
+	// ImageURL The URL of the image (data URLs supported).
+	ImageURL *string `json:"image_url,omitempty"`
+
+	// Type The type of the input item. Always `input_image`.
+	Type ResponseInputImageType `json:"type"`
+}
+
+// ResponseInputImageDetail The detail level of the image to send to the model.
+type ResponseInputImageDetail string
+
+// ResponseInputImageType The type of the input item. Always `input_image`.
+type ResponseInputImageType string
+
+// ResponseInputItem A single input item. Most commonly an input message with a role and content.
+type ResponseInputItem struct {
+	// Content Text or multimodal content for an input message. Either a string or a list of content parts.
+	Content ResponseInputMessageContent `json:"content"`
+
+	// Role The role of the message input.
+	Role ResponseRole `json:"role"`
+
+	// Type The type of the input item. Defaults to `message`.
+	Type *string `json:"type,omitempty"`
+}
+
+// ResponseInputMessageContent Text or multimodal content for an input message. Either a string or a list of content parts.
+type ResponseInputMessageContent struct {
+	union json.RawMessage
+}
+
+// ResponseInputMessageContent0 A text input to the model.
+type ResponseInputMessageContent0 = string
+
+// ResponseInputMessageContent1 defines model for .
+type ResponseInputMessageContent1 = []ResponseInputContentPart
+
+// ResponseInputText A text input to the model.
+type ResponseInputText struct {
+	// Text The text input to the model.
+	Text string `json:"text"`
+
+	// Type The type of the input item. Always `input_text`.
+	Type ResponseInputTextType `json:"type"`
+}
+
+// ResponseInputTextType The type of the input item. Always `input_text`.
+type ResponseInputTextType string
+
+// ResponseOutputContent A content part of an output message.
+type ResponseOutputContent struct {
+	union json.RawMessage
+}
+
+// ResponseOutputItem An output item generated by the model: an output message, a function tool call, or a reasoning item.
+type ResponseOutputItem struct {
+	union json.RawMessage
+}
+
+// ResponseOutputMessage An output message from the model.
+type ResponseOutputMessage struct {
+	Content []ResponseOutputContent `json:"content"`
+
+	// ID The unique ID of the output message.
+	ID string `json:"id"`
+
+	// Role The role of the output message. Always `assistant`.
+	Role ResponseOutputMessageRole `json:"role"`
+
+	// Status The status of the message.
+	Status *ResponseOutputMessageStatus `json:"status,omitempty"`
+
+	// Type The type of the output item. Always `message`.
+	Type ResponseOutputMessageType `json:"type"`
+}
+
+// ResponseOutputMessageRole The role of the output message. Always `assistant`.
+type ResponseOutputMessageRole string
+
+// ResponseOutputMessageStatus The status of the message.
+type ResponseOutputMessageStatus string
+
+// ResponseOutputMessageType The type of the output item. Always `message`.
+type ResponseOutputMessageType string
+
+// ResponseOutputRefusal A refusal generated by the model.
+type ResponseOutputRefusal struct {
+	// Refusal The refusal explanation from the model.
+	Refusal string `json:"refusal"`
+
+	// Type The type of the refusal. Always `refusal`.
+	Type ResponseOutputRefusalType `json:"type"`
+}
+
+// ResponseOutputRefusalType The type of the refusal. Always `refusal`.
+type ResponseOutputRefusalType string
+
+// ResponseOutputText A text output from the model.
+type ResponseOutputText struct {
+	// Text The text output from the model.
+	Text string `json:"text"`
+
+	// Type The type of the output text. Always `output_text`.
+	Type ResponseOutputTextType `json:"type"`
+}
+
+// ResponseOutputTextType The type of the output text. Always `output_text`.
+type ResponseOutputTextType string
+
+// ResponseReasoning Configuration options for reasoning models.
+type ResponseReasoning struct {
+	// Effort Constrains the effort on reasoning for reasoning models. Reducing effort can result in faster responses and fewer reasoning tokens.
+	Effort *ResponseReasoningEffort `json:"effort,omitempty"`
+
+	// Summary A summary of the reasoning performed by the model, useful for debugging and understanding the model's reasoning process.
+	Summary *ResponseReasoningSummary `json:"summary,omitempty"`
+}
+
+// ResponseReasoningEffort Constrains the effort on reasoning for reasoning models. Reducing effort can result in faster responses and fewer reasoning tokens.
+type ResponseReasoningEffort string
+
+// ResponseReasoningSummary A summary of the reasoning performed by the model, useful for debugging and understanding the model's reasoning process.
+type ResponseReasoningSummary string
+
+// ResponseReasoningItem A reasoning item describing the model's chain of thought.
+type ResponseReasoningItem struct {
+	// ID The unique ID of the reasoning item.
+	ID string `json:"id"`
+
+	// Status The status of the reasoning item.
+	Status *ResponseReasoningItemStatus `json:"status,omitempty"`
+
+	// Summary Reasoning summary content.
+	Summary []ResponseReasoningSummaryPart `json:"summary"`
+
+	// Type The type of the output item. Always `reasoning`.
+	Type ResponseReasoningItemType `json:"type"`
+}
+
+// ResponseReasoningItemStatus The status of the reasoning item.
+type ResponseReasoningItemStatus string
+
+// ResponseReasoningItemType The type of the output item. Always `reasoning`.
+type ResponseReasoningItemType string
+
+// ResponseReasoningSummaryPart A summary part of a reasoning item.
+type ResponseReasoningSummaryPart struct {
+	// Text A summary of the reasoning output from the model.
+	Text string `json:"text"`
+
+	// Type The type of the summary. Always `summary_text`.
+	Type ResponseReasoningSummaryType `json:"type"`
+}
+
+// ResponseReasoningSummaryType The type of the summary. Always `summary_text`.
+type ResponseReasoningSummaryType string
+
+// ResponseRole The role of the message input.
+type ResponseRole string
+
+// ResponseStatus The status of the response generation.
+type ResponseStatus string
+
+// ResponseStreamEvent A server-sent event emitted while streaming a response. The Responses API emits a sequence of typed events (for example `response.created`, `response.output_text.delta`, and `response.completed`). This schema models the common event envelope; which fields are populated depends on the event `type`.
+type ResponseStreamEvent struct {
+	// ContentIndex The index of the content part within the output item.
+	ContentIndex *int `json:"content_index,omitempty"`
+
+	// Delta The incremental text delta for `*.delta` events.
+	Delta *string `json:"delta,omitempty"`
+
+	// ItemID The ID of the output item this event relates to.
+	ItemID *string `json:"item_id,omitempty"`
+
+	// OutputIndex The index of the output item in the response's output array.
+	OutputIndex *int `json:"output_index,omitempty"`
+
+	// Response Represents a model response returned by the Responses API.
+	Response *Response `json:"response,omitempty"`
+
+	// SequenceNumber The sequence number of this event.
+	SequenceNumber *int `json:"sequence_number,omitempty"`
+
+	// Text The finalized text for `*.done` events.
+	Text *string `json:"text,omitempty"`
+
+	// Type The type of the streamed event, for example `response.output_text.delta` or `response.completed`.
+	Type string `json:"type"`
+}
+
+// ResponseTextConfig Configuration options for a text response from the model. Can be plain text or structured JSON data.
+type ResponseTextConfig struct {
+	// Format An object specifying the format that the model must output.
+	Format *struct {
+		// Name The name of the response format (used with `json_schema`).
+		Name *string `json:"name,omitempty"`
+
+		// Schema The parameters the functions accepts, described as a JSON Schema object. See the [guide](/docs/guides/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
+		// Omitting `parameters` defines a function with an empty parameter list.
+		Schema *FunctionParameters `json:"schema,omitempty"`
+
+		// Strict Whether to enable strict schema adherence.
+		Strict *bool `json:"strict,omitempty"`
+
+		// Type The type of response format being defined.
+		Type ResponseTextConfigFormatType `json:"type"`
+	} `json:"format,omitempty"`
+}
+
+// ResponseTextConfigFormatType The type of response format being defined.
+type ResponseTextConfigFormatType string
+
+// ResponseTool A tool the model may call. Only function tools are modeled here. Note the Responses API uses a flattened function tool shape (`name`, `description`, and `parameters` at the top level) rather than nesting them under a `function` object as `/chat/completions` does.
+type ResponseTool struct {
+	// Description A description of the function, used by the model to decide when and how to call it.
+	Description *string `json:"description,omitempty"`
+
+	// Name The name of the function to call.
+	Name string `json:"name"`
+
+	// Parameters The parameters the functions accepts, described as a JSON Schema object. See the [guide](/docs/guides/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
+	// Omitting `parameters` defines a function with an empty parameter list.
+	Parameters *FunctionParameters `json:"parameters,omitempty"`
+
+	// Strict Whether to enforce strict parameter validation.
+	Strict *bool `json:"strict,omitempty"`
+
+	// Type The type of the tool. Currently only `function`.
+	Type ResponseToolType `json:"type"`
+}
+
+// ResponseToolType The type of the tool. Currently only `function`.
+type ResponseToolType string
+
+// ResponseToolChoice How the model should select which tool (or tools) to use. Either a mode string (`none`, `auto`, `required`) or an object forcing a specific tool.
+type ResponseToolChoice struct {
+	union json.RawMessage
+}
+
+// ResponseToolChoice0 The tool-choice mode.
+type ResponseToolChoice0 string
+
+// ResponseToolChoice1 Forces the model to call a specific function tool.
+type ResponseToolChoice1 struct {
+	Name string                  `json:"name"`
+	Type ResponseToolChoice1Type `json:"type"`
+}
+
+// ResponseToolChoice1Type defines model for ResponseToolChoice.1.Type.
+type ResponseToolChoice1Type string
+
+// ResponseUsage Token usage details for the response.
+type ResponseUsage struct {
+	// InputTokens The number of input tokens.
+	InputTokens int64 `json:"input_tokens"`
+
+	// InputTokensDetails A detailed breakdown of the input tokens.
+	InputTokensDetails *struct {
+		// CachedTokens The number of tokens retrieved from the cache.
+		CachedTokens *int64 `json:"cached_tokens,omitempty"`
+	} `json:"input_tokens_details,omitempty"`
+
+	// OutputTokens The number of output tokens.
+	OutputTokens int64 `json:"output_tokens"`
+
+	// OutputTokensDetails A detailed breakdown of the output tokens.
+	OutputTokensDetails *struct {
+		// ReasoningTokens The number of reasoning tokens.
+		ReasoningTokens *int64 `json:"reasoning_tokens,omitempty"`
+	} `json:"output_tokens_details,omitempty"`
+
+	// TotalTokens The total number of tokens used (input + output).
+	TotalTokens int64 `json:"total_tokens"`
+}
+
 // SSEvent defines model for SSEvent.
 type SSEvent struct {
 	Data  *[]byte       `json:"data,omitempty"`
@@ -935,7 +1769,7 @@ type ToolCallExtraContent_Google struct {
 	// ThoughtSignature Opaque signature returned with reasoning-enabled tool calls.
 	// Must be echoed back verbatim in the next request that includes
 	// this tool call, or Google will reject the request.
-	ThoughtSignature     *string                `json:"thought_signature,omitempty"`
+	ThoughtSignature     *string        `json:"thought_signature,omitempty"`
 	AdditionalProperties map[string]any `json:"-"`
 }
 
@@ -988,6 +1822,9 @@ type MCPNotExposed = Error
 //
 // ```
 type ProviderResponse = ProviderSpecificResponse
+
+// ResponsesNotSupported defines model for ResponsesNotSupported.
+type ResponsesNotSupported = Error
 
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
@@ -1050,6 +1887,12 @@ type ProxyPutJSONBody struct {
 	Temperature *float32 `json:"temperature,omitempty"`
 }
 
+// CreateResponseParams defines parameters for CreateResponse.
+type CreateResponseParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
 // CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
 type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
 
@@ -1064,6 +1907,9 @@ type ProxyPostJSONRequestBody ProxyPostJSONBody
 
 // ProxyPutJSONRequestBody defines body for ProxyPut for application/json ContentType.
 type ProxyPutJSONRequestBody ProxyPutJSONBody
+
+// CreateResponseJSONRequestBody defines body for CreateResponse for application/json ContentType.
+type CreateResponseJSONRequestBody = CreateResponseRequest
 
 // Getter for additional properties for ToolCallExtraContent_Google. Returns the specified
 // element and whether it was found
@@ -1465,6 +2311,404 @@ func (t MessageContent) MarshalJSON() ([]byte, error) {
 }
 
 func (t *MessageContent) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsResponseInput0 returns the union data inside the ResponseInput as a ResponseInput0
+func (t ResponseInput) AsResponseInput0() (ResponseInput0, error) {
+	var body ResponseInput0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseInput0 overwrites any union data inside the ResponseInput as the provided ResponseInput0
+func (t *ResponseInput) FromResponseInput0(v ResponseInput0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseInput0 performs a merge with any union data inside the ResponseInput, using the provided ResponseInput0
+func (t *ResponseInput) MergeResponseInput0(v ResponseInput0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseInput1 returns the union data inside the ResponseInput as a ResponseInput1
+func (t ResponseInput) AsResponseInput1() (ResponseInput1, error) {
+	var body ResponseInput1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseInput1 overwrites any union data inside the ResponseInput as the provided ResponseInput1
+func (t *ResponseInput) FromResponseInput1(v ResponseInput1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseInput1 performs a merge with any union data inside the ResponseInput, using the provided ResponseInput1
+func (t *ResponseInput) MergeResponseInput1(v ResponseInput1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ResponseInput) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ResponseInput) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsResponseInputText returns the union data inside the ResponseInputContentPart as a ResponseInputText
+func (t ResponseInputContentPart) AsResponseInputText() (ResponseInputText, error) {
+	var body ResponseInputText
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseInputText overwrites any union data inside the ResponseInputContentPart as the provided ResponseInputText
+func (t *ResponseInputContentPart) FromResponseInputText(v ResponseInputText) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseInputText performs a merge with any union data inside the ResponseInputContentPart, using the provided ResponseInputText
+func (t *ResponseInputContentPart) MergeResponseInputText(v ResponseInputText) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseInputImage returns the union data inside the ResponseInputContentPart as a ResponseInputImage
+func (t ResponseInputContentPart) AsResponseInputImage() (ResponseInputImage, error) {
+	var body ResponseInputImage
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseInputImage overwrites any union data inside the ResponseInputContentPart as the provided ResponseInputImage
+func (t *ResponseInputContentPart) FromResponseInputImage(v ResponseInputImage) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseInputImage performs a merge with any union data inside the ResponseInputContentPart, using the provided ResponseInputImage
+func (t *ResponseInputContentPart) MergeResponseInputImage(v ResponseInputImage) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ResponseInputContentPart) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ResponseInputContentPart) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsResponseInputMessageContent0 returns the union data inside the ResponseInputMessageContent as a ResponseInputMessageContent0
+func (t ResponseInputMessageContent) AsResponseInputMessageContent0() (ResponseInputMessageContent0, error) {
+	var body ResponseInputMessageContent0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseInputMessageContent0 overwrites any union data inside the ResponseInputMessageContent as the provided ResponseInputMessageContent0
+func (t *ResponseInputMessageContent) FromResponseInputMessageContent0(v ResponseInputMessageContent0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseInputMessageContent0 performs a merge with any union data inside the ResponseInputMessageContent, using the provided ResponseInputMessageContent0
+func (t *ResponseInputMessageContent) MergeResponseInputMessageContent0(v ResponseInputMessageContent0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseInputMessageContent1 returns the union data inside the ResponseInputMessageContent as a ResponseInputMessageContent1
+func (t ResponseInputMessageContent) AsResponseInputMessageContent1() (ResponseInputMessageContent1, error) {
+	var body ResponseInputMessageContent1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseInputMessageContent1 overwrites any union data inside the ResponseInputMessageContent as the provided ResponseInputMessageContent1
+func (t *ResponseInputMessageContent) FromResponseInputMessageContent1(v ResponseInputMessageContent1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseInputMessageContent1 performs a merge with any union data inside the ResponseInputMessageContent, using the provided ResponseInputMessageContent1
+func (t *ResponseInputMessageContent) MergeResponseInputMessageContent1(v ResponseInputMessageContent1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ResponseInputMessageContent) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ResponseInputMessageContent) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsResponseOutputText returns the union data inside the ResponseOutputContent as a ResponseOutputText
+func (t ResponseOutputContent) AsResponseOutputText() (ResponseOutputText, error) {
+	var body ResponseOutputText
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseOutputText overwrites any union data inside the ResponseOutputContent as the provided ResponseOutputText
+func (t *ResponseOutputContent) FromResponseOutputText(v ResponseOutputText) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseOutputText performs a merge with any union data inside the ResponseOutputContent, using the provided ResponseOutputText
+func (t *ResponseOutputContent) MergeResponseOutputText(v ResponseOutputText) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseOutputRefusal returns the union data inside the ResponseOutputContent as a ResponseOutputRefusal
+func (t ResponseOutputContent) AsResponseOutputRefusal() (ResponseOutputRefusal, error) {
+	var body ResponseOutputRefusal
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseOutputRefusal overwrites any union data inside the ResponseOutputContent as the provided ResponseOutputRefusal
+func (t *ResponseOutputContent) FromResponseOutputRefusal(v ResponseOutputRefusal) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseOutputRefusal performs a merge with any union data inside the ResponseOutputContent, using the provided ResponseOutputRefusal
+func (t *ResponseOutputContent) MergeResponseOutputRefusal(v ResponseOutputRefusal) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ResponseOutputContent) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ResponseOutputContent) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsResponseOutputMessage returns the union data inside the ResponseOutputItem as a ResponseOutputMessage
+func (t ResponseOutputItem) AsResponseOutputMessage() (ResponseOutputMessage, error) {
+	var body ResponseOutputMessage
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseOutputMessage overwrites any union data inside the ResponseOutputItem as the provided ResponseOutputMessage
+func (t *ResponseOutputItem) FromResponseOutputMessage(v ResponseOutputMessage) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseOutputMessage performs a merge with any union data inside the ResponseOutputItem, using the provided ResponseOutputMessage
+func (t *ResponseOutputItem) MergeResponseOutputMessage(v ResponseOutputMessage) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseFunctionToolCall returns the union data inside the ResponseOutputItem as a ResponseFunctionToolCall
+func (t ResponseOutputItem) AsResponseFunctionToolCall() (ResponseFunctionToolCall, error) {
+	var body ResponseFunctionToolCall
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseFunctionToolCall overwrites any union data inside the ResponseOutputItem as the provided ResponseFunctionToolCall
+func (t *ResponseOutputItem) FromResponseFunctionToolCall(v ResponseFunctionToolCall) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseFunctionToolCall performs a merge with any union data inside the ResponseOutputItem, using the provided ResponseFunctionToolCall
+func (t *ResponseOutputItem) MergeResponseFunctionToolCall(v ResponseFunctionToolCall) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseReasoningItem returns the union data inside the ResponseOutputItem as a ResponseReasoningItem
+func (t ResponseOutputItem) AsResponseReasoningItem() (ResponseReasoningItem, error) {
+	var body ResponseReasoningItem
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseReasoningItem overwrites any union data inside the ResponseOutputItem as the provided ResponseReasoningItem
+func (t *ResponseOutputItem) FromResponseReasoningItem(v ResponseReasoningItem) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseReasoningItem performs a merge with any union data inside the ResponseOutputItem, using the provided ResponseReasoningItem
+func (t *ResponseOutputItem) MergeResponseReasoningItem(v ResponseReasoningItem) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ResponseOutputItem) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ResponseOutputItem) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsResponseToolChoice0 returns the union data inside the ResponseToolChoice as a ResponseToolChoice0
+func (t ResponseToolChoice) AsResponseToolChoice0() (ResponseToolChoice0, error) {
+	var body ResponseToolChoice0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseToolChoice0 overwrites any union data inside the ResponseToolChoice as the provided ResponseToolChoice0
+func (t *ResponseToolChoice) FromResponseToolChoice0(v ResponseToolChoice0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseToolChoice0 performs a merge with any union data inside the ResponseToolChoice, using the provided ResponseToolChoice0
+func (t *ResponseToolChoice) MergeResponseToolChoice0(v ResponseToolChoice0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsResponseToolChoice1 returns the union data inside the ResponseToolChoice as a ResponseToolChoice1
+func (t ResponseToolChoice) AsResponseToolChoice1() (ResponseToolChoice1, error) {
+	var body ResponseToolChoice1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromResponseToolChoice1 overwrites any union data inside the ResponseToolChoice as the provided ResponseToolChoice1
+func (t *ResponseToolChoice) FromResponseToolChoice1(v ResponseToolChoice1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeResponseToolChoice1 performs a merge with any union data inside the ResponseToolChoice, using the provided ResponseToolChoice1
+func (t *ResponseToolChoice) MergeResponseToolChoice1(v ResponseToolChoice1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ResponseToolChoice) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ResponseToolChoice) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

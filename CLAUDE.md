@@ -52,18 +52,23 @@ A "provider" is one upstream LLM API. The runtime pieces live under `providers/`
 `openapi.yaml` and `internal/mcp/mcp-schema.yaml` are the source of truth. `task generate`:
 
 1. Builds the `bin/generator` helper (pinned via `task install:generator`).
-2. Runs `cmd/generate/main.go` (a thin CLI over `internal/codegen`, `internal/dockergen`, `internal/mdgen`) repeatedly with different `-type` flags to emit: `providers/client/client.go`, `providers/constants/constants.go`, `providers/transformers/*.go`, `providers/registry/registry.go`, `config/config.go`, `Configurations.md`, and every `examples/docker-compose/*/.env.example`.
-3. Runs `oapi-codegen` to emit `providers/types/common_types.go` (then `sed`s `interface{}` → `any`).
-4. Runs `bin/generator` to emit `internal/mcp/generated_types.go` from `mcp-schema.yaml`.
-5. Runs `go generate ./...` to refresh mocks under `tests/mocks/` (driven by `//go:generate mockgen ...` directives at the top of each interface file — `api/routes.go`, `providers/core/interfaces.go`, `providers/registry/registry.go`, `providers/client/client.go`, `internal/mcp/agent.go`, `internal/mcp/client.go`, `logger/logger.go`, plus OTel).
+2. Runs `cmd/generate/main.go` (a thin CLI over `internal/codegen`, `internal/dockergen`, `internal/mdgen`) repeatedly with different `-type` flags to emit gateway-specific artifacts that `oapi-codegen` cannot produce: `providers/client/client.go`, `providers/constants/constants.go`, `providers/transformers/*.go`, `providers/registry/registry.go`, `config/config.go`, `Configurations.md`, and every `examples/docker-compose/*/.env.example`.
+3. Runs `oapi-codegen` (config in `.oapi-codegen.yaml`) to emit `providers/types/common_types.go` from `openapi.yaml`, then `gofmt -r 'interface{} -> any'` to normalize generated types. The config is aligned with the Go SDK (`inference-gateway/sdk`): `generate.models: true`, `output-options.name-normalizer: ToCamelCaseWithInitialisms`. The `skip-prune: true` option is kept because `schemas` guards streaming-payload reachability and `oapi-codegen` would drop unreachable schemas otherwise. This honors `x-go-name` and `x-enum-varnames` annotations so Go type/const names match the SDK.
+4. Runs `bin/generator` to emit `internal/mcp/generated_types.go` from `mcp-schema.yaml` (separate JSON-RPC schema, outside `oapi-codegen`'s scope).
+5. Runs `go generate ./...` to refresh mocks under `tests/mocks/` (driven by `//go:generate mockgen ...` directives at the top of each interface file - `api/routes.go`, `providers/core/interfaces.go`, `providers/registry/registry.go`, `providers/client/client.go`, `internal/mcp/agent.go`, `internal/mcp/client.go`, `logger/logger.go`, plus OTel).
 
-Anything with the "DO NOT EDIT" header will be clobbered on the next run. Adding a new provider: edit `openapi.yaml` in two places (`Provider` enum + `x-provider-configs`, and the `Config` schema's `x-config` providers section for `<ID>_API_URL`/`<ID>_API_KEY`) and run `task generate`; `tests/provider_drift_test.go` fails if wiring is incomplete — full flow in `CONTRIBUTING.md`. Provider IDs must be lowercase Go-identifier-safe (`openai`, `deepseek`, `newai`).
+The gateway uses two generation paths over `openapi.yaml`:
+
+- **`oapi-codegen`** - the single source of OpenAPI-derived Go **types** (`providers/types/common_types.go`). This is the same tool and config approach as the Go SDK, so `x-go-name` / `x-enum-varnames` annotations in the spec are honored identically and exported names stay consistent across repos.
+- **Bespoke generator** (`cmd/generate/main.go` + `internal/codegen`, `internal/dockergen`, `internal/mdgen`) - emits gateway-specific artifacts (provider registry, `Config` struct, env examples, `Configurations.md`) that `oapi-codegen` cannot produce. These re-parse `openapi.yaml` directly because they need custom `x-config` / `x-provider-configs` extensions, not just schema types.
+
+Anything with the "DO NOT EDIT" header will be clobbered on the next run. Adding a new provider: edit `openapi.yaml` in two places (`Provider` enum + `x-provider-configs`, and the `Config` schema's `x-config` providers section for `<ID>_API_URL`/`<ID>_API_KEY`) and run `task generate`; `tests/provider_drift_test.go` fails if wiring is incomplete - full flow in `CONTRIBUTING.md`. Provider IDs must be lowercase Go-identifier-safe (`openai`, `deepseek`, `newai`).
 
 CI runs `task generate` and fails the build if the working tree is dirty afterwards, so always commit the regenerated files.
 
 ### Configuration
 
-`config/config.go` is generated — every supported env var lives in struct tags there and is mirrored into `Configurations.md`. Link users to `Configurations.md` rather than enumerating vars in prose; it'll go stale.
+`config/config.go` is generated - every supported env var lives in struct tags there and is mirrored into `Configurations.md`. Link users to `Configurations.md` rather than enumerating vars in prose; it'll go stale.
 
 ### MCP
 
