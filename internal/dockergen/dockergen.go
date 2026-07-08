@@ -29,7 +29,6 @@ func GenerateEnvExample(output string, oas string) error {
 {{ if .Providers }}
 # Providers
 {{- range $name, $config := .Providers }}
-{{ upper $name }}_API_URL={{ $config.URL }}
 {{ upper $name }}_API_KEY=
 {{- end }}
 {{- end }}
