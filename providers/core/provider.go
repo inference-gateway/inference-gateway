@@ -303,6 +303,8 @@ func (p *ProviderImpl) SupportsVision(ctx context.Context, model string) (bool, 
 			strings.Contains(modelLower, "opus-4") ||
 			strings.Contains(modelLower, "sonnet-4") ||
 			strings.Contains(modelLower, "haiku-4"), nil
+	case constants.ZaiID:
+		return true, nil
 	default:
 		return strings.Contains(modelLower, "vision") ||
 			strings.Contains(modelLower, "multimodal") ||

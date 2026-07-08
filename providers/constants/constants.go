@@ -28,6 +28,7 @@ const (
 	OllamaDefaultBaseURL      = "http://ollama:8080/v1"
 	OllamaCloudDefaultBaseURL = "https://ollama.com/v1"
 	OpenaiDefaultBaseURL      = "https://api.openai.com/v1"
+	ZaiDefaultBaseURL         = "https://open.bigmodel.cn/api/paas/v4"
 )
 
 // The default endpoints of each provider
@@ -58,6 +59,8 @@ const (
 	OllamaCloudChatEndpoint   = "/chat/completions"
 	OpenaiModelsEndpoint      = "/models"
 	OpenaiChatEndpoint        = "/chat/completions"
+	ZaiModelsEndpoint         = "/models"
+	ZaiChatEndpoint           = "/chat/completions"
 )
 
 // The ID's of each provider
@@ -75,6 +78,7 @@ const (
 	OllamaID      types.Provider = "ollama"
 	OllamaCloudID types.Provider = "ollama_cloud"
 	OpenaiID      types.Provider = "openai"
+	ZaiID         types.Provider = "zai"
 )
 
 // Display names for providers
@@ -92,6 +96,7 @@ const (
 	OllamaDisplayName      = "Ollama"
 	OllamaCloudDisplayName = "OllamaCloud"
 	OpenaiDisplayName      = "Openai"
+	ZaiDisplayName         = "Zai"
 )
 
 // ListModelsTransformer interface for transforming provider-specific responses

@@ -176,6 +176,7 @@ const (
 	Ollama      Provider = "ollama"
 	OllamaCloud Provider = "ollama_cloud"
 	Openai      Provider = "openai"
+	Zai         Provider = "zai"
 )
 
 // Valid indicates whether the value is a known member of the Provider enum.
@@ -206,6 +207,8 @@ func (e Provider) Valid() bool {
 	case OllamaCloud:
 		return true
 	case Openai:
+		return true
+	case Zai:
 		return true
 	default:
 		return false
@@ -932,7 +935,7 @@ type ToolCallExtraContent_Google struct {
 	// ThoughtSignature Opaque signature returned with reasoning-enabled tool calls.
 	// Must be echoed back verbatim in the next request that includes
 	// this tool call, or Google will reject the request.
-	ThoughtSignature     *string        `json:"thought_signature,omitempty"`
+	ThoughtSignature     *string                `json:"thought_signature,omitempty"`
 	AdditionalProperties map[string]any `json:"-"`
 }
 

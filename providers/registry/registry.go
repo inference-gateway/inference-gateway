@@ -217,4 +217,15 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.OpenaiChatEndpoint,
 		},
 	},
+	constants.ZaiID: {
+		ID:             constants.ZaiID,
+		Name:           constants.ZaiDisplayName,
+		URL:            constants.ZaiDefaultBaseURL,
+		AuthType:       constants.AuthTypeBearer,
+		SupportsVision: true,
+		Endpoints: types.Endpoints{
+			Models: constants.ZaiModelsEndpoint,
+			Chat:   constants.ZaiChatEndpoint,
+		},
+	},
 }

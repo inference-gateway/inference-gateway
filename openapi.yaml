@@ -540,6 +540,7 @@ components:
         - minimax
         - moonshot
         - nvidia
+        - zai
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -714,6 +715,20 @@ components:
         nvidia:
           id: 'nvidia'
           url: 'https://integrate.api.nvidia.com/v1'
+          auth_type: 'bearer'
+          supports_vision: true
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        zai:
+          id: 'zai'
+          url: 'https://open.bigmodel.cn/api/paas/v4'
           auth_type: 'bearer'
           supports_vision: true
           endpoints:
@@ -2060,4 +2075,14 @@ components:
                   env: 'NVIDIA_API_KEY'
                   type: string
                   description: 'NVIDIA API Key'
+                  secret: true
+                - name: zai_api_url
+                  env: 'ZAI_API_URL'
+                  type: string
+                  default: 'https://open.bigmodel.cn/api/paas/v4'
+                  description: 'Z-AI API URL'
+                - name: zai_api_key
+                  env: 'ZAI_API_KEY'
+                  type: string
+                  description: 'Z-AI API Key'
                   secret: true
