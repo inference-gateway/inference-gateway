@@ -25,11 +25,32 @@ func SetSSEHeaders(c *gin.Context) {
 // ResetWriteDeadline extends the response write deadline by d so streaming
 // responses are not cut off by the server's global write timeout
 func ResetWriteDeadline(c *gin.Context, d time.Duration) {
+	resetWriteDeadline(c.Writer, d)
+}
+
+func resetWriteDeadline(w http.ResponseWriter, d time.Duration) {
 	var deadline time.Time
 	if d > 0 {
 		deadline = time.Now().Add(d)
 	}
-	_ = http.NewResponseController(c.Writer).SetWriteDeadline(deadline)
+	_ = http.NewResponseController(w).SetWriteDeadline(deadline)
+}
+
+// DeadlineResetWriter resets the write deadline before every write so that
+// proxied streaming responses are not cut off by the server's write timeout.
+// Wrap the writer handed to httputil.ReverseProxy, which offers no per-write hook.
+type DeadlineResetWriter struct {
+	gin.ResponseWriter
+	Timeout time.Duration
+}
+
+func (w *DeadlineResetWriter) Write(b []byte) (int, error) {
+	resetWriteDeadline(w.ResponseWriter, w.Timeout)
+	return w.ResponseWriter.Write(b)
+}
+
+func (w *DeadlineResetWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }
 
 // customResponseWriter captures the response body but doesn't write it

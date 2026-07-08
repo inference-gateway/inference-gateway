@@ -159,7 +159,7 @@ tasks:
   port-forward:
     desc: 'Forward the MCP Inspector to http://localhost:6274'
     cmds:
-      - echo "MCP Inspector: http://localhost:6274 (Ctrl+C to stop)"
+      - 'echo "MCP Inspector: http://localhost:6274 (Ctrl+C to stop)"'
       - kubectl port-forward -n {{.NAMESPACE}} service/mcp-inspector 6274:6274
 
   port-forward-gateway:
