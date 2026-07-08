@@ -2,9 +2,9 @@
 package mcp
 
 // The user action in response to the elicitation.
-// - "accept": User submitted the form/confirmed the action
-// - "decline": User explicitly decline the action
-// - "cancel": User dismissed without making an explicit choice
+// - `"accept"`: User submitted the form/confirmed the action
+// - `"decline"`: User explicitly declined the action
+// - `"cancel"`: User dismissed without making an explicit choice
 type Action string
 
 // Action enum values
@@ -12,6 +12,24 @@ const (
 	ActionAccept  Action = "accept"
 	ActionCancel  Action = "cancel"
 	ActionDecline Action = "decline"
+)
+
+// Indicates the intended scope of the cached response, analogous to HTTP
+// `Cache-Control: public` vs `Cache-Control: private`.
+//
+// - `"public"`: The response does not contain user-specific data. Any
+// client or intermediary (e.g., shared gateway, caching proxy) MAY cache
+// the response and serve it across authorization contexts.
+// - `"private"`: The response MAY be cached and reused only within the
+// same authorization context. Caches MUST NOT be shared across
+// authorization contexts (e.g., a different access token requires a
+// different cache).
+type CacheScope string
+
+// CacheScope enum values
+const (
+	CacheScopePrivate CacheScope = "private"
+	CacheScopePublic  CacheScope = "public"
 )
 
 type Format string
@@ -22,6 +40,47 @@ const (
 	FormatDateTime Format = "date-time"
 	FormatEmail    Format = "email"
 	FormatURI      Format = "uri"
+)
+
+// A request to include context from one or more MCP servers (including the caller), to be attached to the prompt.
+// The client MAY ignore this request.
+//
+// Default is `"none"`. The values `"thisServer"` and `"allServers"` are deprecated (SEP-2596): servers SHOULD
+// omit this field or use `"none"`, and SHOULD only use the deprecated values if the client declares
+// {@link ClientCapabilities.sampling.context}.
+type IncludeContext string
+
+// IncludeContext enum values
+const (
+	IncludeContextAllServers IncludeContext = "allServers"
+	IncludeContextNone       IncludeContext = "none"
+	IncludeContextThisServer IncludeContext = "thisServer"
+)
+
+// Controls the tool use ability of the model:
+// - `"auto"`: Model decides whether to use tools (default)
+// - `"required"`: Model MUST use at least one tool before completing
+// - `"none"`: Model MUST NOT use any tools
+type Mode string
+
+// Mode enum values
+const (
+	ModeAuto     Mode = "auto"
+	ModeNone     Mode = "none"
+	ModeRequired Mode = "required"
+)
+
+// Optional specifier for the theme this icon is designed for. `"light"` indicates
+// the icon is designed to be used with a light background, and `"dark"` indicates
+// the icon is designed to be used with a dark background.
+//
+// If not provided, the client should assume the icon can be used with any theme.
+type Theme string
+
+// Theme enum values
+const (
+	ThemeDark  Theme = "dark"
+	ThemeLight Theme = "light"
 )
 
 type Type string
@@ -68,11 +127,11 @@ type Annotations struct {
 
 // Audio provided to or from an LLM.
 type AudioContent struct {
-	Meta        map[string]any `json:"_meta,omitempty"`
-	Annotations *Annotations   `json:"annotations,omitempty"`
-	Data        []byte         `json:"data"`
-	MIMEType    string         `json:"mimeType"`
-	Type        string         `json:"type"`
+	Meta        *MetaObject  `json:"_meta,omitempty"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Data        []byte       `json:"data"`
+	MIMEType    string       `json:"mimeType"`
+	Type        string       `json:"type"`
 }
 
 // Base interface for metadata with name (identifier) and title (display name) properties.
@@ -82,10 +141,10 @@ type BaseMetadata struct {
 }
 
 type BlobResourceContents struct {
-	Meta     map[string]any `json:"_meta,omitempty"`
-	Blob     []byte         `json:"blob"`
-	MIMEType *string        `json:"mimeType,omitempty"`
-	URI      string         `json:"uri"`
+	Meta     *MetaObject `json:"_meta,omitempty"`
+	Blob     []byte      `json:"blob"`
+	MIMEType *string     `json:"mimeType,omitempty"`
+	URI      string      `json:"uri"`
 }
 
 type BooleanSchema struct {
@@ -95,87 +154,216 @@ type BooleanSchema struct {
 	Type        string  `json:"type"`
 }
 
+// A result that supports a time-to-live (TTL) hint for client-side caching.
+type CacheableResult struct {
+	Meta       *MetaObject `json:"_meta,omitempty"`
+	CacheScope CacheScope  `json:"cacheScope"`
+	ResultType string      `json:"resultType"`
+	TtlMs      int         `json:"ttlMs"`
+}
+
 // Used by the client to invoke a tool provided by the server.
 type CallToolRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	ID      RequestId             `json:"id"`
+	JSONRPC string                `json:"jsonrpc"`
+	Method  string                `json:"method"`
+	Params  CallToolRequestParams `json:"params"`
 }
 
-// The server's response to a tool call.
+// Parameters for a `tools/call` request.
+type CallToolRequestParams struct {
+	Meta           RequestMetaObject `json:"_meta"`
+	Arguments      map[string]any    `json:"arguments,omitempty"`
+	InputResponses *InputResponses   `json:"inputResponses,omitempty"`
+	Name           string            `json:"name"`
+	RequestState   *string           `json:"requestState,omitempty"`
+}
+
+// The result returned by the server for a {@link CallToolRequesttools/call} request.
 type CallToolResult struct {
-	Meta              map[string]any `json:"_meta,omitempty"`
+	Meta              *MetaObject    `json:"_meta,omitempty"`
 	Content           []ContentBlock `json:"content"`
 	IsError           *bool          `json:"isError,omitempty"`
-	StructuredContent map[string]any `json:"structuredContent,omitempty"`
+	ResultType        string         `json:"resultType"`
+	StructuredContent *any           `json:"structuredContent,omitempty"`
 }
 
-// This notification can be sent by either side to indicate that it is cancelling a previously-issued request.
+// A successful response from the server for a {@link CallToolRequesttools/call} request.
+type CallToolResultResponse struct {
+	ID      RequestId `json:"id"`
+	JSONRPC string    `json:"jsonrpc"`
+	Result  any       `json:"result"`
+}
+
+// This notification is sent by the client to indicate that it is cancelling a request it previously issued.
+//
+// On stdio, the server also sends this notification, solely to terminate a {@link SubscriptionsListenRequestsubscriptions/listen} stream: it references the ID of the `subscriptions/listen` request that opened the stream. Servers MUST NOT use this notification to cancel any other request.
 //
 // The request SHOULD still be in-flight, but due to communication latency, it is always possible that this notification MAY arrive after the request has already finished.
 //
 // This notification indicates that the result will be unused, so any associated processing SHOULD cease.
-//
-// A client MUST NOT attempt to cancel its `initialize` request.
 type CancelledNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	JSONRPC string                      `json:"jsonrpc"`
+	Method  string                      `json:"method"`
+	Params  CancelledNotificationParams `json:"params"`
+}
+
+// Parameters for a `notifications/cancelled` notification.
+type CancelledNotificationParams struct {
+	Meta      *NotificationMetaObject `json:"_meta,omitempty"`
+	Reason    *string                 `json:"reason,omitempty"`
+	RequestID RequestId               `json:"requestId"`
 }
 
 // Capabilities a client may support. Known capabilities are defined here, in this schema, but this is not a closed set: any client can define its own, additional capabilities.
 type ClientCapabilities struct {
-	Elicitation  map[string]any            `json:"elicitation,omitempty"`
-	Experimental map[string]map[string]any `json:"experimental,omitempty"`
-	Roots        map[string]any            `json:"roots,omitempty"`
-	Sampling     map[string]any            `json:"sampling,omitempty"`
+	Elicitation  map[string]any        `json:"elicitation,omitempty"`
+	Experimental map[string]JSONObject `json:"experimental,omitempty"`
+	Extensions   map[string]JSONObject `json:"extensions,omitempty"`
+	Roots        map[string]any        `json:"roots,omitempty"`
+	Sampling     map[string]any        `json:"sampling,omitempty"`
 }
 
-type ClientNotification any
+// This notification is sent by the client to indicate that it is cancelling a request it previously issued.
+//
+// On stdio, the server also sends this notification, solely to terminate a {@link SubscriptionsListenRequestsubscriptions/listen} stream: it references the ID of the `subscriptions/listen` request that opened the stream. Servers MUST NOT use this notification to cancel any other request.
+//
+// The request SHOULD still be in-flight, but due to communication latency, it is always possible that this notification MAY arrive after the request has already finished.
+//
+// This notification indicates that the result will be unused, so any associated processing SHOULD cease.
+type ClientNotification struct {
+	JSONRPC string                      `json:"jsonrpc"`
+	Method  string                      `json:"method"`
+	Params  CancelledNotificationParams `json:"params"`
+}
 
 type ClientRequest any
 
-type ClientResult any
+// Common result fields.
+type ClientResult struct {
+}
 
 // A request from the client to the server, to ask for completion options.
 type CompleteRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	ID      RequestId             `json:"id"`
+	JSONRPC string                `json:"jsonrpc"`
+	Method  string                `json:"method"`
+	Params  CompleteRequestParams `json:"params"`
 }
 
-// The server's response to a completion/complete request
+// Parameters for a `completion/complete` request.
+type CompleteRequestParams struct {
+	Meta     RequestMetaObject `json:"_meta"`
+	Argument map[string]any    `json:"argument"`
+	Context  map[string]any    `json:"context,omitempty"`
+	Ref      any               `json:"ref"`
+}
+
+// The result returned by the server for a {@link CompleteRequestcompletion/complete} request.
 type CompleteResult struct {
-	Meta       map[string]any `json:"_meta,omitempty"`
+	Meta       *MetaObject    `json:"_meta,omitempty"`
 	Completion map[string]any `json:"completion"`
+	ResultType string         `json:"resultType"`
+}
+
+// A successful response from the server for a {@link CompleteRequestcompletion/complete} request.
+type CompleteResultResponse struct {
+	ID      RequestId      `json:"id"`
+	JSONRPC string         `json:"jsonrpc"`
+	Result  CompleteResult `json:"result"`
 }
 
 type ContentBlock any
 
 // A request from the server to sample an LLM via the client. The client has full discretion over which model to select. The client should also inform the user before beginning sampling, to allow them to inspect the request (human in the loop) and decide whether to approve it.
 type CreateMessageRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	Method string                     `json:"method"`
+	Params CreateMessageRequestParams `json:"params"`
 }
 
-// The client's response to a sampling/create_message request from the server. The client should inform the user before returning the sampled message, to allow them to inspect the response (human in the loop) and decide whether to allow the server to see it.
+// Parameters for a `sampling/createMessage` request.
+type CreateMessageRequestParams struct {
+	IncludeContext   *IncludeContext   `json:"includeContext,omitempty"`
+	MaxTokens        int               `json:"maxTokens"`
+	Messages         []SamplingMessage `json:"messages"`
+	Metadata         *JSONObject       `json:"metadata,omitempty"`
+	ModelPreferences *ModelPreferences `json:"modelPreferences,omitempty"`
+	StopSequences    []string          `json:"stopSequences,omitempty"`
+	SystemPrompt     *string           `json:"systemPrompt,omitempty"`
+	Temperature      *float64          `json:"temperature,omitempty"`
+	ToolChoice       *ToolChoice       `json:"toolChoice,omitempty"`
+	Tools            []Tool            `json:"tools,omitempty"`
+}
+
+// The result returned by the client for a {@link CreateMessageRequestsampling/createMessage} request.
+// The client should inform the user before returning the sampled message, to allow them
+// to inspect the response (human in the loop) and decide whether to allow the server to see it.
 type CreateMessageResult struct {
-	Meta       map[string]any `json:"_meta,omitempty"`
-	Content    any            `json:"content"`
-	Model      string         `json:"model"`
-	Role       Role           `json:"role"`
-	StopReason *string        `json:"stopReason,omitempty"`
+	Meta       *MetaObject `json:"_meta,omitempty"`
+	Content    any         `json:"content"`
+	Model      string      `json:"model"`
+	Role       Role        `json:"role"`
+	StopReason *string     `json:"stopReason,omitempty"`
 }
 
 // An opaque token used to represent a cursor for pagination.
 type Cursor = string
 
-// A request from the server to elicit additional information from the user via the client.
-type ElicitRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+// A request from the client asking the server to advertise its supported
+// protocol versions, capabilities, and other metadata. Servers **MUST**
+// implement `server/discover`. Clients **MAY** call it but are not required
+// to — version negotiation can also happen inline via per-request `_meta`.
+type DiscoverRequest struct {
+	ID      RequestId     `json:"id"`
+	JSONRPC string        `json:"jsonrpc"`
+	Method  string        `json:"method"`
+	Params  RequestParams `json:"params"`
 }
 
-// The client's response to an elicitation request.
+// The result returned by the server for a {@link DiscoverRequestserver/discover} request.
+type DiscoverResult struct {
+	Meta              *MetaObject        `json:"_meta,omitempty"`
+	CacheScope        CacheScope         `json:"cacheScope"`
+	Capabilities      ServerCapabilities `json:"capabilities"`
+	Instructions      *string            `json:"instructions,omitempty"`
+	ResultType        string             `json:"resultType"`
+	ServerInfo        Implementation     `json:"serverInfo"`
+	SupportedVersions []string           `json:"supportedVersions"`
+	TtlMs             int                `json:"ttlMs"`
+}
+
+// A successful response from the server for a {@link DiscoverRequestserver/discover} request.
+type DiscoverResultResponse struct {
+	ID      RequestId      `json:"id"`
+	JSONRPC string         `json:"jsonrpc"`
+	Result  DiscoverResult `json:"result"`
+}
+
+// A request from the server to elicit additional information from the user via the client.
+type ElicitRequest struct {
+	Method string              `json:"method"`
+	Params ElicitRequestParams `json:"params"`
+}
+
+// The parameters for a request to elicit non-sensitive information from the user via a form in the client.
+type ElicitRequestFormParams struct {
+	Message         string         `json:"message"`
+	Mode            *string        `json:"mode,omitempty"`
+	RequestedSchema map[string]any `json:"requestedSchema"`
+}
+
+// The parameters for a request to elicit additional information from the user via the client.
+type ElicitRequestParams any
+
+// The parameters for a request to elicit information from the user via a URL in the client.
+type ElicitRequestURLParams struct {
+	Message string `json:"message"`
+	Mode    string `json:"mode"`
+	URL     string `json:"url"`
+}
+
+// The result returned by the client for an {@link ElicitRequestelicitation/create} request.
 type ElicitResult struct {
-	Meta    map[string]any `json:"_meta,omitempty"`
 	Action  Action         `json:"action"`
 	Content map[string]any `json:"content,omitempty"`
 }
@@ -185,78 +373,167 @@ type ElicitResult struct {
 // It is up to the client how best to render embedded resources for the benefit
 // of the LLM and/or the user.
 type EmbeddedResource struct {
-	Meta        map[string]any `json:"_meta,omitempty"`
-	Annotations *Annotations   `json:"annotations,omitempty"`
-	Resource    any            `json:"resource"`
-	Type        string         `json:"type"`
+	Meta        *MetaObject  `json:"_meta,omitempty"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Resource    any          `json:"resource"`
+	Type        string       `json:"type"`
 }
 
+// Common result fields.
 type EmptyResult struct {
 }
 
-type EnumSchema struct {
-	Description *string  `json:"description,omitempty"`
-	Enum        []string `json:"enum"`
-	EnumNames   []string `json:"enumNames,omitempty"`
-	Title       *string  `json:"title,omitempty"`
-	Type        string   `json:"type"`
+type EnumSchema any
+
+type Error struct {
+	Code    int    `json:"code"`
+	Data    *any   `json:"data,omitempty"`
+	Message string `json:"message"`
 }
 
 // Used by the client to get a prompt provided by the server.
 type GetPromptRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	ID      RequestId              `json:"id"`
+	JSONRPC string                 `json:"jsonrpc"`
+	Method  string                 `json:"method"`
+	Params  GetPromptRequestParams `json:"params"`
 }
 
-// The server's response to a prompts/get request from the client.
+// Parameters for a `prompts/get` request.
+type GetPromptRequestParams struct {
+	Meta           RequestMetaObject `json:"_meta"`
+	Arguments      map[string]string `json:"arguments,omitempty"`
+	InputResponses *InputResponses   `json:"inputResponses,omitempty"`
+	Name           string            `json:"name"`
+	RequestState   *string           `json:"requestState,omitempty"`
+}
+
+// The result returned by the server for a {@link GetPromptRequestprompts/get} request.
 type GetPromptResult struct {
-	Meta        map[string]any  `json:"_meta,omitempty"`
+	Meta        *MetaObject     `json:"_meta,omitempty"`
 	Description *string         `json:"description,omitempty"`
 	Messages    []PromptMessage `json:"messages"`
+	ResultType  string          `json:"resultType"`
+}
+
+// A successful response from the server for a {@link GetPromptRequestprompts/get} request.
+type GetPromptResultResponse struct {
+	ID      RequestId `json:"id"`
+	JSONRPC string    `json:"jsonrpc"`
+	Result  any       `json:"result"`
+}
+
+// Returned when a server rejects a request because the values in the HTTP
+// headers do not match the corresponding values in the request body, or
+// because required headers are missing or malformed. For HTTP, the response
+// status code MUST be `400 Bad Request`.
+type HeaderMismatchError struct {
+	Error   any        `json:"error"`
+	ID      *RequestId `json:"id,omitempty"`
+	JSONRPC string     `json:"jsonrpc"`
+}
+
+// An optionally-sized icon that can be displayed in a user interface.
+type Icon struct {
+	MIMEType *string  `json:"mimeType,omitempty"`
+	Sizes    []string `json:"sizes,omitempty"`
+	Src      string   `json:"src"`
+	Theme    *Theme   `json:"theme,omitempty"`
+}
+
+// Base interface to add `icons` property.
+type Icons struct {
+	Icons []Icon `json:"icons,omitempty"`
 }
 
 // An image provided to or from an LLM.
 type ImageContent struct {
-	Meta        map[string]any `json:"_meta,omitempty"`
-	Annotations *Annotations   `json:"annotations,omitempty"`
-	Data        []byte         `json:"data"`
-	MIMEType    string         `json:"mimeType"`
-	Type        string         `json:"type"`
+	Meta        *MetaObject  `json:"_meta,omitempty"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Data        []byte       `json:"data"`
+	MIMEType    string       `json:"mimeType"`
+	Type        string       `json:"type"`
 }
 
-// Describes the name and version of an MCP implementation, with an optional title for UI representation.
+// Describes the MCP implementation.
 type Implementation struct {
-	Name    string  `json:"name"`
-	Title   *string `json:"title,omitempty"`
-	Version string  `json:"version"`
+	Description *string `json:"description,omitempty"`
+	Icons       []Icon  `json:"icons,omitempty"`
+	Name        string  `json:"name"`
+	Title       *string `json:"title,omitempty"`
+	Version     string  `json:"version"`
+	WebsiteURL  *string `json:"websiteUrl,omitempty"`
 }
 
-// This request is sent from the client to the server when it first connects, asking it to begin initialization.
-type InitializeRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+type InputRequest any
+
+// A map of server-initiated requests that the client must fulfill.
+// Keys are server-assigned identifiers; values are the request objects.
+type InputRequests = map[string]InputRequest
+
+// An InputRequiredResult sent by the server to indicate that additional input is needed
+// before the request can be completed.
+//
+// At least one of `inputRequests` or `requestState` MUST be present.
+type InputRequiredResult struct {
+	Meta          *MetaObject    `json:"_meta,omitempty"`
+	InputRequests *InputRequests `json:"inputRequests,omitempty"`
+	RequestState  *string        `json:"requestState,omitempty"`
+	ResultType    string         `json:"resultType"`
 }
 
-// After receiving an initialize request from the client, the server sends this response.
-type InitializeResult struct {
-	Meta            map[string]any     `json:"_meta,omitempty"`
-	Capabilities    ServerCapabilities `json:"capabilities"`
-	Instructions    *string            `json:"instructions,omitempty"`
-	ProtocolVersion string             `json:"protocolVersion"`
-	ServerInfo      Implementation     `json:"serverInfo"`
+type InputResponse any
+
+type InputResponseRequestParams struct {
+	Meta           RequestMetaObject `json:"_meta"`
+	InputResponses *InputResponses   `json:"inputResponses,omitempty"`
+	RequestState   *string           `json:"requestState,omitempty"`
 }
 
-// This notification is sent from the client to the server after initialization has finished.
-type InitializedNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+// A map of client responses to server-initiated requests.
+// Keys correspond to the keys in the {@link InputRequests} map;
+// values are the client's result for each request.
+type InputResponses = map[string]InputResponse
+
+// A JSON-RPC error indicating that an internal error occurred on the receiver. This error is returned when the receiver encounters an unexpected condition that prevents it from fulfilling the request.
+type InternalError struct {
+	Code    int    `json:"code"`
+	Data    *any   `json:"data,omitempty"`
+	Message string `json:"message"`
 }
+
+// A JSON-RPC error indicating that the method parameters are invalid or malformed.
+//
+// In MCP, this error is returned in various contexts when request parameters fail validation:
+//
+// - **Tools**: Unknown tool name or invalid tool arguments
+// - **Prompts**: Unknown prompt name or missing required arguments
+// - **Pagination**: Invalid or expired cursor values
+// - **Logging**: Invalid log level
+// - **Elicitation**: Server requests an elicitation mode not declared in client capabilities
+// - **Sampling**: Missing tool result or tool results mixed with other content
+type InvalidParamsError struct {
+	Code    int    `json:"code"`
+	Data    *any   `json:"data,omitempty"`
+	Message string `json:"message"`
+}
+
+// A JSON-RPC error indicating that the request is not a valid request object. This error is returned when the message structure does not conform to the JSON-RPC 2.0 specification requirements for a request (e.g., missing required fields like `jsonrpc` or `method`, or using invalid types for these fields).
+type InvalidRequestError struct {
+	Code    int    `json:"code"`
+	Data    *any   `json:"data,omitempty"`
+	Message string `json:"message"`
+}
+
+type JSONArray = []JSONValue
+
+type JSONObject = map[string]JSONValue
 
 // A response to a request that indicates an error occurred.
-type JSONRPCError struct {
-	Error   map[string]any `json:"error"`
-	ID      RequestId      `json:"id"`
-	JSONRPC string         `json:"jsonrpc"`
+type JSONRPCErrorResponse struct {
+	Error   Error      `json:"error"`
+	ID      *RequestId `json:"id,omitempty"`
+	JSONRPC string     `json:"jsonrpc"`
 }
 
 // Refers to any valid JSON-RPC object that can be decoded off the wire, or encoded to be sent.
@@ -277,50 +554,102 @@ type JSONRPCRequest struct {
 	Params  map[string]any `json:"params,omitempty"`
 }
 
+// A response to a request, containing either the result or error.
+type JSONRPCResponse any
+
 // A successful (non-error) response to a request.
-type JSONRPCResponse struct {
+type JSONRPCResultResponse struct {
 	ID      RequestId `json:"id"`
 	JSONRPC string    `json:"jsonrpc"`
 	Result  Result    `json:"result"`
 }
 
-// Sent from the client to request a list of prompts and prompt templates the server has.
-type ListPromptsRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+type JSONValue any
+
+// Use {@link TitledSingleSelectEnumSchema} instead.
+// This interface will be removed in a future version.
+type LegacyTitledEnumSchema struct {
+	Default     *string  `json:"default,omitempty"`
+	Description *string  `json:"description,omitempty"`
+	Enum        []string `json:"enum"`
+	EnumNames   []string `json:"enumNames,omitempty"`
+	Title       *string  `json:"title,omitempty"`
+	Type        string   `json:"type"`
 }
 
-// The server's response to a prompts/list request from the client.
+// Sent from the client to request a list of prompts and prompt templates the server has.
+type ListPromptsRequest struct {
+	ID      RequestId              `json:"id"`
+	JSONRPC string                 `json:"jsonrpc"`
+	Method  string                 `json:"method"`
+	Params  PaginatedRequestParams `json:"params"`
+}
+
+// The result returned by the server for a {@link ListPromptsRequestprompts/list} request.
 type ListPromptsResult struct {
-	Meta       map[string]any `json:"_meta,omitempty"`
-	NextCursor *string        `json:"nextCursor,omitempty"`
-	Prompts    []Prompt       `json:"prompts"`
+	Meta       *MetaObject `json:"_meta,omitempty"`
+	CacheScope CacheScope  `json:"cacheScope"`
+	NextCursor *string     `json:"nextCursor,omitempty"`
+	Prompts    []Prompt    `json:"prompts"`
+	ResultType string      `json:"resultType"`
+	TtlMs      int         `json:"ttlMs"`
+}
+
+// A successful response from the server for a {@link ListPromptsRequestprompts/list} request.
+type ListPromptsResultResponse struct {
+	ID      RequestId         `json:"id"`
+	JSONRPC string            `json:"jsonrpc"`
+	Result  ListPromptsResult `json:"result"`
 }
 
 // Sent from the client to request a list of resource templates the server has.
 type ListResourceTemplatesRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+	ID      RequestId              `json:"id"`
+	JSONRPC string                 `json:"jsonrpc"`
+	Method  string                 `json:"method"`
+	Params  PaginatedRequestParams `json:"params"`
 }
 
-// The server's response to a resources/templates/list request from the client.
+// The result returned by the server for a {@link ListResourceTemplatesRequestresources/templates/list} request.
 type ListResourceTemplatesResult struct {
-	Meta              map[string]any     `json:"_meta,omitempty"`
+	Meta              *MetaObject        `json:"_meta,omitempty"`
+	CacheScope        CacheScope         `json:"cacheScope"`
 	NextCursor        *string            `json:"nextCursor,omitempty"`
 	ResourceTemplates []ResourceTemplate `json:"resourceTemplates"`
+	ResultType        string             `json:"resultType"`
+	TtlMs             int                `json:"ttlMs"`
+}
+
+// A successful response from the server for a {@link ListResourceTemplatesRequestresources/templates/list} request.
+type ListResourceTemplatesResultResponse struct {
+	ID      RequestId                   `json:"id"`
+	JSONRPC string                      `json:"jsonrpc"`
+	Result  ListResourceTemplatesResult `json:"result"`
 }
 
 // Sent from the client to request a list of resources the server has.
 type ListResourcesRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+	ID      RequestId              `json:"id"`
+	JSONRPC string                 `json:"jsonrpc"`
+	Method  string                 `json:"method"`
+	Params  PaginatedRequestParams `json:"params"`
 }
 
-// The server's response to a resources/list request from the client.
+// The result returned by the server for a {@link ListResourcesRequestresources/list} request.
 type ListResourcesResult struct {
-	Meta       map[string]any `json:"_meta,omitempty"`
-	NextCursor *string        `json:"nextCursor,omitempty"`
-	Resources  []Resource     `json:"resources"`
+	Meta       *MetaObject `json:"_meta,omitempty"`
+	CacheScope CacheScope  `json:"cacheScope"`
+	NextCursor *string     `json:"nextCursor,omitempty"`
+	Resources  []Resource  `json:"resources"`
+	ResultType string      `json:"resultType"`
+	TtlMs      int         `json:"ttlMs"`
+}
+
+// A successful response from the server for a {@link ListResourcesRequestresources/list} request.
+type ListResourcesResultResponse struct {
+	ID      RequestId           `json:"id"`
+	JSONRPC string              `json:"jsonrpc"`
+	Result  ListResourcesResult `json:"result"`
 }
 
 // Sent from the server to request a list of root URIs from the client. Roots allow
@@ -335,31 +664,88 @@ type ListRootsRequest struct {
 	Params map[string]any `json:"params,omitempty"`
 }
 
-// The client's response to a roots/list request from the server.
-// This result contains an array of Root objects, each representing a root directory
+// The result returned by the client for a {@link ListRootsRequestroots/list} request.
+// This result contains an array of {@link Root} objects, each representing a root directory
 // or file that the server can operate on.
 type ListRootsResult struct {
-	Meta  map[string]any `json:"_meta,omitempty"`
-	Roots []Root         `json:"roots"`
+	Roots []Root `json:"roots"`
 }
 
 // Sent from the client to request a list of tools the server has.
 type ListToolsRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+	ID      RequestId              `json:"id"`
+	JSONRPC string                 `json:"jsonrpc"`
+	Method  string                 `json:"method"`
+	Params  PaginatedRequestParams `json:"params"`
 }
 
-// The server's response to a tools/list request from the client.
+// The result returned by the server for a {@link ListToolsRequesttools/list} request.
 type ListToolsResult struct {
-	Meta       map[string]any `json:"_meta,omitempty"`
-	NextCursor *string        `json:"nextCursor,omitempty"`
-	Tools      []Tool         `json:"tools"`
+	Meta       *MetaObject `json:"_meta,omitempty"`
+	CacheScope CacheScope  `json:"cacheScope"`
+	NextCursor *string     `json:"nextCursor,omitempty"`
+	ResultType string      `json:"resultType"`
+	Tools      []Tool      `json:"tools"`
+	TtlMs      int         `json:"ttlMs"`
 }
 
-// Notification of a log message passed from server to client. If no logging/setLevel request has been sent from the client, the server MAY decide which messages to send automatically.
+// A successful response from the server for a {@link ListToolsRequesttools/list} request.
+type ListToolsResultResponse struct {
+	ID      RequestId       `json:"id"`
+	JSONRPC string          `json:"jsonrpc"`
+	Result  ListToolsResult `json:"result"`
+}
+
+// JSONRPCNotification of a log message passed from server to client. The client opts in by setting `"io.modelcontextprotocol/logLevel"` in a request's `_meta`.
 type LoggingMessageNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	JSONRPC string                           `json:"jsonrpc"`
+	Method  string                           `json:"method"`
+	Params  LoggingMessageNotificationParams `json:"params"`
+}
+
+// Parameters for a `notifications/message` notification.
+type LoggingMessageNotificationParams struct {
+	Meta   *NotificationMetaObject `json:"_meta,omitempty"`
+	Data   any                     `json:"data"`
+	Level  LoggingLevel            `json:"level"`
+	Logger *string                 `json:"logger,omitempty"`
+}
+
+// Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
+//
+// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
+//
+// Valid keys have two segments:
+//
+// **Prefix:**
+// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
+// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
+// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
+// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
+//
+// **Name:**
+// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
+// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
+type MetaObject = map[string]any
+
+// A JSON-RPC error indicating that the requested method does not exist or is not available.
+//
+// In MCP, a server returns this error when a client invokes a method the server does not implement — either a genuinely unknown method, or one gated behind a server capability the server did not advertise (e.g., calling `prompts/list` when the `prompts` capability was not advertised).
+//
+// A request that requires a client capability the client did not declare is signalled instead by {@link MissingRequiredClientCapabilityError} (`-32021`).
+type MethodNotFoundError struct {
+	Code    int    `json:"code"`
+	Data    *any   `json:"data,omitempty"`
+	Message string `json:"message"`
+}
+
+// Returned when processing a request requires a capability the client did not
+// declare in `clientCapabilities`. For HTTP, the response status code MUST be
+// `400 Bad Request`.
+type MissingRequiredClientCapabilityError struct {
+	Error   any        `json:"error"`
+	ID      *RequestId `json:"id,omitempty"`
+	JSONRPC string     `json:"jsonrpc"`
 }
 
 // Hints to use for model selection.
@@ -388,33 +774,56 @@ type ModelPreferences struct {
 	SpeedPriority        *float64    `json:"speedPriority,omitempty"`
 }
 
+type MultiSelectEnumSchema any
+
 type Notification struct {
 	Method string         `json:"method"`
 	Params map[string]any `json:"params,omitempty"`
 }
 
+// Extends {@link MetaObject} with additional notification-specific fields. All key naming rules from `MetaObject` apply.
+type NotificationMetaObject struct {
+	IoModelcontextprotocolsubscriptionID *RequestId `json:"io.modelcontextprotocol/subscriptionId,omitempty"`
+}
+
+// Common params for any notification.
+type NotificationParams struct {
+	Meta *NotificationMetaObject `json:"_meta,omitempty"`
+}
+
 type NumberSchema struct {
-	Description *string `json:"description,omitempty"`
-	Maximum     *int    `json:"maximum,omitempty"`
-	Minimum     *int    `json:"minimum,omitempty"`
-	Title       *string `json:"title,omitempty"`
-	Type        Type    `json:"type"`
+	Default     *float64 `json:"default,omitempty"`
+	Description *string  `json:"description,omitempty"`
+	Maximum     *float64 `json:"maximum,omitempty"`
+	Minimum     *float64 `json:"minimum,omitempty"`
+	Title       *string  `json:"title,omitempty"`
+	Type        Type     `json:"type"`
 }
 
 type PaginatedRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+	ID      RequestId              `json:"id"`
+	JSONRPC string                 `json:"jsonrpc"`
+	Method  string                 `json:"method"`
+	Params  PaginatedRequestParams `json:"params"`
+}
+
+// Common params for paginated requests.
+type PaginatedRequestParams struct {
+	Meta   RequestMetaObject `json:"_meta"`
+	Cursor *string           `json:"cursor,omitempty"`
 }
 
 type PaginatedResult struct {
-	Meta       map[string]any `json:"_meta,omitempty"`
-	NextCursor *string        `json:"nextCursor,omitempty"`
+	Meta       *MetaObject `json:"_meta,omitempty"`
+	NextCursor *string     `json:"nextCursor,omitempty"`
+	ResultType string      `json:"resultType"`
 }
 
-// A ping, issued by either the server or the client, to check that the other party is still alive. The receiver must promptly respond, or else may be disconnected.
-type PingRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+// A JSON-RPC error indicating that invalid JSON was received by the server. This error is returned when the server cannot parse the JSON text of a message.
+type ParseError struct {
+	Code    int    `json:"code"`
+	Data    *any   `json:"data,omitempty"`
+	Message string `json:"message"`
 }
 
 // Restricted schema definitions that only allow primitive types
@@ -423,8 +832,18 @@ type PrimitiveSchemaDefinition any
 
 // An out-of-band notification used to inform the receiver of a progress update for a long-running request.
 type ProgressNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	JSONRPC string                     `json:"jsonrpc"`
+	Method  string                     `json:"method"`
+	Params  ProgressNotificationParams `json:"params"`
+}
+
+// Parameters for a {@link ProgressNotificationnotifications/progress} notification.
+type ProgressNotificationParams struct {
+	Meta          *NotificationMetaObject `json:"_meta,omitempty"`
+	Message       *string                 `json:"message,omitempty"`
+	Progress      float64                 `json:"progress"`
+	ProgressToken ProgressToken           `json:"progressToken"`
+	Total         *float64                `json:"total,omitempty"`
 }
 
 // A progress token, used to associate progress notifications with the original request.
@@ -433,9 +852,10 @@ type ProgressToken struct {
 
 // A prompt or prompt template that the server offers.
 type Prompt struct {
-	Meta        map[string]any   `json:"_meta,omitempty"`
+	Meta        *MetaObject      `json:"_meta,omitempty"`
 	Arguments   []PromptArgument `json:"arguments,omitempty"`
 	Description *string          `json:"description,omitempty"`
+	Icons       []Icon           `json:"icons,omitempty"`
 	Name        string           `json:"name"`
 	Title       *string          `json:"title,omitempty"`
 }
@@ -448,15 +868,16 @@ type PromptArgument struct {
 	Title       *string `json:"title,omitempty"`
 }
 
-// An optional notification from the server to the client, informing it that the list of prompts it offers has changed. This may be issued by servers without any previous subscription from the client.
+// An optional notification from the server to the client, informing it that the list of prompts it offers has changed. This is only delivered on a {@link SubscriptionsListenRequestsubscriptions/listen} stream when the client requested it via the `promptsListChanged` filter field.
 type PromptListChangedNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+	JSONRPC string              `json:"jsonrpc"`
+	Method  string              `json:"method"`
+	Params  *NotificationParams `json:"params,omitempty"`
 }
 
 // Describes a message returned as part of a prompt.
 //
-// This is similar to `SamplingMessage`, but also supports the embedding of
+// This is similar to {@link SamplingMessage}, but also supports the embedding of
 // resources from the MCP server.
 type PromptMessage struct {
 	Content ContentBlock `json:"content"`
@@ -472,14 +893,34 @@ type PromptReference struct {
 
 // Sent from the client to the server, to read a specific resource URI.
 type ReadResourceRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	ID      RequestId                 `json:"id"`
+	JSONRPC string                    `json:"jsonrpc"`
+	Method  string                    `json:"method"`
+	Params  ReadResourceRequestParams `json:"params"`
 }
 
-// The server's response to a resources/read request from the client.
+// Parameters for a `resources/read` request.
+type ReadResourceRequestParams struct {
+	Meta           RequestMetaObject `json:"_meta"`
+	InputResponses *InputResponses   `json:"inputResponses,omitempty"`
+	RequestState   *string           `json:"requestState,omitempty"`
+	URI            string            `json:"uri"`
+}
+
+// The result returned by the server for a {@link ReadResourceRequestresources/read} request.
 type ReadResourceResult struct {
-	Meta     map[string]any `json:"_meta,omitempty"`
-	Contents []any          `json:"contents"`
+	Meta       *MetaObject `json:"_meta,omitempty"`
+	CacheScope CacheScope  `json:"cacheScope"`
+	Contents   []any       `json:"contents"`
+	ResultType string      `json:"resultType"`
+	TtlMs      int         `json:"ttlMs"`
+}
+
+// A successful response from the server for a {@link ReadResourceRequestresources/read} request.
+type ReadResourceResultResponse struct {
+	ID      RequestId `json:"id"`
+	JSONRPC string    `json:"jsonrpc"`
+	Result  any       `json:"result"`
 }
 
 type Request struct {
@@ -491,55 +932,79 @@ type Request struct {
 type RequestId struct {
 }
 
+// Extends {@link MetaObject} with additional request-specific fields. All key naming rules from `MetaObject` apply.
+type RequestMetaObject struct {
+	IoModelcontextprotocolclientCapabilities ClientCapabilities `json:"io.modelcontextprotocol/clientCapabilities"`
+	IoModelcontextprotocolclientInfo         Implementation     `json:"io.modelcontextprotocol/clientInfo"`
+	IoModelcontextprotocollogLevel           *LoggingLevel      `json:"io.modelcontextprotocol/logLevel,omitempty"`
+	IoModelcontextprotocolprotocolVersion    string             `json:"io.modelcontextprotocol/protocolVersion"`
+	ProgressToken                            *ProgressToken     `json:"progressToken,omitempty"`
+}
+
+// Common params for any request.
+type RequestParams struct {
+	Meta RequestMetaObject `json:"_meta"`
+}
+
 // A known resource that the server is capable of reading.
 type Resource struct {
-	Meta        map[string]any `json:"_meta,omitempty"`
-	Annotations *Annotations   `json:"annotations,omitempty"`
-	Description *string        `json:"description,omitempty"`
-	MIMEType    *string        `json:"mimeType,omitempty"`
-	Name        string         `json:"name"`
-	Size        *int           `json:"size,omitempty"`
-	Title       *string        `json:"title,omitempty"`
-	URI         string         `json:"uri"`
+	Meta        *MetaObject  `json:"_meta,omitempty"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	Icons       []Icon       `json:"icons,omitempty"`
+	MIMEType    *string      `json:"mimeType,omitempty"`
+	Name        string       `json:"name"`
+	Size        *int         `json:"size,omitempty"`
+	Title       *string      `json:"title,omitempty"`
+	URI         string       `json:"uri"`
 }
 
 // The contents of a specific resource or sub-resource.
 type ResourceContents struct {
-	Meta     map[string]any `json:"_meta,omitempty"`
-	MIMEType *string        `json:"mimeType,omitempty"`
-	URI      string         `json:"uri"`
+	Meta     *MetaObject `json:"_meta,omitempty"`
+	MIMEType *string     `json:"mimeType,omitempty"`
+	URI      string      `json:"uri"`
 }
 
 // A resource that the server is capable of reading, included in a prompt or tool call result.
 //
-// Note: resource links returned by tools are not guaranteed to appear in the results of `resources/list` requests.
+// Note: resource links returned by tools are not guaranteed to appear in the results of {@link ListResourcesRequestresources/list} requests.
 type ResourceLink struct {
-	Meta        map[string]any `json:"_meta,omitempty"`
-	Annotations *Annotations   `json:"annotations,omitempty"`
-	Description *string        `json:"description,omitempty"`
-	MIMEType    *string        `json:"mimeType,omitempty"`
-	Name        string         `json:"name"`
-	Size        *int           `json:"size,omitempty"`
-	Title       *string        `json:"title,omitempty"`
-	Type        string         `json:"type"`
-	URI         string         `json:"uri"`
+	Meta        *MetaObject  `json:"_meta,omitempty"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	Icons       []Icon       `json:"icons,omitempty"`
+	MIMEType    *string      `json:"mimeType,omitempty"`
+	Name        string       `json:"name"`
+	Size        *int         `json:"size,omitempty"`
+	Title       *string      `json:"title,omitempty"`
+	Type        string       `json:"type"`
+	URI         string       `json:"uri"`
 }
 
-// An optional notification from the server to the client, informing it that the list of resources it can read from has changed. This may be issued by servers without any previous subscription from the client.
+// An optional notification from the server to the client, informing it that the list of resources it can read from has changed. This is only delivered on a {@link SubscriptionsListenRequestsubscriptions/listen} stream when the client requested it via the `resourcesListChanged` filter field.
 type ResourceListChangedNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+	JSONRPC string              `json:"jsonrpc"`
+	Method  string              `json:"method"`
+	Params  *NotificationParams `json:"params,omitempty"`
+}
+
+// Common params for resource-related requests.
+type ResourceRequestParams struct {
+	Meta RequestMetaObject `json:"_meta"`
+	URI  string            `json:"uri"`
 }
 
 // A template description for resources available on the server.
 type ResourceTemplate struct {
-	Meta        map[string]any `json:"_meta,omitempty"`
-	Annotations *Annotations   `json:"annotations,omitempty"`
-	Description *string        `json:"description,omitempty"`
-	MIMEType    *string        `json:"mimeType,omitempty"`
-	Name        string         `json:"name"`
-	Title       *string        `json:"title,omitempty"`
-	URITemplate string         `json:"uriTemplate"`
+	Meta        *MetaObject  `json:"_meta,omitempty"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	Icons       []Icon       `json:"icons,omitempty"`
+	MIMEType    *string      `json:"mimeType,omitempty"`
+	Name        string       `json:"name"`
+	Title       *string      `json:"title,omitempty"`
+	URITemplate string       `json:"uriTemplate"`
 }
 
 // A reference to a resource or resource template definition.
@@ -548,60 +1013,67 @@ type ResourceTemplateReference struct {
 	URI  string `json:"uri"`
 }
 
-// A notification from the server to the client, informing it that a resource has changed and may need to be read again. This should only be sent if the client previously sent a resources/subscribe request.
+// A notification from the server to the client, informing it that a resource has changed and may need to be read again. This is only sent for resources the client opted in to via the `resourceSubscriptions` field of a {@link SubscriptionsListenRequestsubscriptions/listen} request.
 type ResourceUpdatedNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+	JSONRPC string                            `json:"jsonrpc"`
+	Method  string                            `json:"method"`
+	Params  ResourceUpdatedNotificationParams `json:"params"`
 }
 
-type Result struct {
-	Meta map[string]any `json:"_meta,omitempty"`
+// Parameters for a `notifications/resources/updated` notification.
+type ResourceUpdatedNotificationParams struct {
+	Meta *NotificationMetaObject `json:"_meta,omitempty"`
+	URI  string                  `json:"uri"`
 }
+
+// Common result fields.
+type Result struct {
+	Meta       *MetaObject `json:"_meta,omitempty"`
+	ResultType string      `json:"resultType"`
+}
+
+// Indicates the type of a {@link Result} object, allowing the client to
+// determine how to parse the response.
+//
+// complete - the request completed successfully and the result contains the final content.
+// input_required - the request requires additional input and the result contains an {@link InputRequiredResult} object with instructions for the client to provide additional input before retrying the original request.
+type ResultType = string
 
 // Represents a root directory or file that the server can operate on.
 type Root struct {
-	Meta map[string]any `json:"_meta,omitempty"`
-	Name *string        `json:"name,omitempty"`
-	URI  string         `json:"uri"`
-}
-
-// A notification from the client to the server, informing it that the list of roots has changed.
-// This notification should be sent whenever the client adds, removes, or modifies any root.
-// The server should then request an updated list of roots using the ListRootsRequest.
-type RootsListChangedNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+	Meta *MetaObject `json:"_meta,omitempty"`
+	Name *string     `json:"name,omitempty"`
+	URI  string      `json:"uri"`
 }
 
 // Describes a message issued to or received from an LLM API.
 type SamplingMessage struct {
-	Content any  `json:"content"`
-	Role    Role `json:"role"`
+	Meta    *MetaObject `json:"_meta,omitempty"`
+	Content any         `json:"content"`
+	Role    Role        `json:"role"`
 }
+
+type SamplingMessageContentBlock any
 
 // Capabilities that a server may support. Known capabilities are defined here, in this schema, but this is not a closed set: any server can define its own, additional capabilities.
 type ServerCapabilities struct {
-	Completions  map[string]any            `json:"completions,omitempty"`
-	Experimental map[string]map[string]any `json:"experimental,omitempty"`
-	Logging      map[string]any            `json:"logging,omitempty"`
-	Prompts      map[string]any            `json:"prompts,omitempty"`
-	Resources    map[string]any            `json:"resources,omitempty"`
-	Tools        map[string]any            `json:"tools,omitempty"`
+	Completions  *JSONObject           `json:"completions,omitempty"`
+	Experimental map[string]JSONObject `json:"experimental,omitempty"`
+	Extensions   map[string]JSONObject `json:"extensions,omitempty"`
+	Logging      *JSONObject           `json:"logging,omitempty"`
+	Prompts      map[string]any        `json:"prompts,omitempty"`
+	Resources    map[string]any        `json:"resources,omitempty"`
+	Tools        map[string]any        `json:"tools,omitempty"`
 }
 
 type ServerNotification any
 
-type ServerRequest any
-
 type ServerResult any
 
-// A request from the client to the server, to enable or adjust logging.
-type SetLevelRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
-}
+type SingleSelectEnumSchema any
 
 type StringSchema struct {
+	Default     *string `json:"default,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Format      *Format `json:"format,omitempty"`
 	MaxLength   *int    `json:"maxLength,omitempty"`
@@ -610,45 +1082,120 @@ type StringSchema struct {
 	Type        string  `json:"type"`
 }
 
-// Sent from the client to request resources/updated notifications from the server whenever a particular resource changes.
-type SubscribeRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+// The set of notification types a client may opt in to on a
+// {@link SubscriptionsListenRequestsubscriptions/listen} request.
+//
+// Each notification type is **opt-in**; the server **MUST NOT** send
+// notification types the client has not explicitly requested here.
+type SubscriptionFilter struct {
+	PromptsListChanged    *bool    `json:"promptsListChanged,omitempty"`
+	ResourceSubscriptions []string `json:"resourceSubscriptions,omitempty"`
+	ResourcesListChanged  *bool    `json:"resourcesListChanged,omitempty"`
+	ToolsListChanged      *bool    `json:"toolsListChanged,omitempty"`
+}
+
+// Sent by the server as the first message on a
+// {@link SubscriptionsListenRequestsubscriptions/listen} stream to acknowledge
+// that the subscription has been established and to report which notification
+// types it agreed to honor.
+type SubscriptionsAcknowledgedNotification struct {
+	JSONRPC string                                      `json:"jsonrpc"`
+	Method  string                                      `json:"method"`
+	Params  SubscriptionsAcknowledgedNotificationParams `json:"params"`
+}
+
+// Parameters for a {@link SubscriptionsAcknowledgedNotificationnotifications/subscriptions/acknowledged} notification.
+type SubscriptionsAcknowledgedNotificationParams struct {
+	Meta          *NotificationMetaObject `json:"_meta,omitempty"`
+	Notifications SubscriptionFilter      `json:"notifications"`
+}
+
+// Sent from the client to open a long-lived channel for receiving notifications
+// outside the context of a specific request. Replaces the previous HTTP GET
+// endpoint and ensures consistent behavior between HTTP and STDIO.
+type SubscriptionsListenRequest struct {
+	ID      RequestId                        `json:"id"`
+	JSONRPC string                           `json:"jsonrpc"`
+	Method  string                           `json:"method"`
+	Params  SubscriptionsListenRequestParams `json:"params"`
+}
+
+// Parameters for a {@link SubscriptionsListenRequestsubscriptions/listen} request.
+type SubscriptionsListenRequestParams struct {
+	Meta          RequestMetaObject  `json:"_meta"`
+	Notifications SubscriptionFilter `json:"notifications"`
+}
+
+// The response to a {@link SubscriptionsListenRequestsubscriptions/listen}
+// request, signalling that the subscription has ended gracefully (for example,
+// during server shutdown). Because the listen stream is long-lived, this result
+// is sent only when the server tears the subscription down; an abrupt transport
+// close carries no response. The result body is otherwise empty.
+type SubscriptionsListenResult struct {
+	Meta       SubscriptionsListenResultMeta `json:"_meta"`
+	ResultType string                        `json:"resultType"`
+}
+
+// Extends {@link MetaObject} with the subscription-stream identifier carried by a
+// {@link SubscriptionsListenResult}. All key naming rules from `MetaObject` apply.
+type SubscriptionsListenResultMeta struct {
+	IoModelcontextprotocolsubscriptionID RequestId `json:"io.modelcontextprotocol/subscriptionId"`
 }
 
 // Text provided to or from an LLM.
 type TextContent struct {
-	Meta        map[string]any `json:"_meta,omitempty"`
-	Annotations *Annotations   `json:"annotations,omitempty"`
-	Text        string         `json:"text"`
-	Type        string         `json:"type"`
+	Meta        *MetaObject  `json:"_meta,omitempty"`
+	Annotations *Annotations `json:"annotations,omitempty"`
+	Text        string       `json:"text"`
+	Type        string       `json:"type"`
 }
 
 type TextResourceContents struct {
-	Meta     map[string]any `json:"_meta,omitempty"`
-	MIMEType *string        `json:"mimeType,omitempty"`
-	Text     string         `json:"text"`
-	URI      string         `json:"uri"`
+	Meta     *MetaObject `json:"_meta,omitempty"`
+	MIMEType *string     `json:"mimeType,omitempty"`
+	Text     string      `json:"text"`
+	URI      string      `json:"uri"`
+}
+
+// Schema for multiple-selection enumeration with display titles for each option.
+type TitledMultiSelectEnumSchema struct {
+	Default     []string       `json:"default,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Items       map[string]any `json:"items"`
+	MaxItems    *int           `json:"maxItems,omitempty"`
+	MinItems    *int           `json:"minItems,omitempty"`
+	Title       *string        `json:"title,omitempty"`
+	Type        string         `json:"type"`
+}
+
+// Schema for single-selection enumeration with display titles for each option.
+type TitledSingleSelectEnumSchema struct {
+	Default     *string          `json:"default,omitempty"`
+	Description *string          `json:"description,omitempty"`
+	OneOf       []map[string]any `json:"oneOf"`
+	Title       *string          `json:"title,omitempty"`
+	Type        string           `json:"type"`
 }
 
 // Definition for a tool the client can call.
 type Tool struct {
-	Meta         map[string]any   `json:"_meta,omitempty"`
+	Meta         *MetaObject      `json:"_meta,omitempty"`
 	Annotations  *ToolAnnotations `json:"annotations,omitempty"`
 	Description  *string          `json:"description,omitempty"`
+	Icons        []Icon           `json:"icons,omitempty"`
 	InputSchema  map[string]any   `json:"inputSchema"`
 	Name         string           `json:"name"`
 	OutputSchema map[string]any   `json:"outputSchema,omitempty"`
 	Title        *string          `json:"title,omitempty"`
 }
 
-// Additional properties describing a Tool to clients.
+// Additional properties describing a {@link Tool} to clients.
 //
-// NOTE: all properties in ToolAnnotations are **hints**.
+// NOTE: all properties in `ToolAnnotations` are **hints**.
 // They are not guaranteed to provide a faithful description of
 // tool behavior (including descriptive properties like `title`).
 //
-// Clients should never make tool use decisions based on ToolAnnotations
+// Clients should never make tool use decisions based on `ToolAnnotations`
 // received from untrusted servers.
 type ToolAnnotations struct {
 	DestructiveHint *bool   `json:"destructiveHint,omitempty"`
@@ -658,14 +1205,63 @@ type ToolAnnotations struct {
 	Title           *string `json:"title,omitempty"`
 }
 
-// An optional notification from the server to the client, informing it that the list of tools it offers has changed. This may be issued by servers without any previous subscription from the client.
-type ToolListChangedNotification struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params,omitempty"`
+// Controls tool selection behavior for sampling requests.
+type ToolChoice struct {
+	Mode *Mode `json:"mode,omitempty"`
 }
 
-// Sent from the client to request cancellation of resources/updated notifications from the server. This should follow a previous resources/subscribe request.
-type UnsubscribeRequest struct {
-	Method string         `json:"method"`
-	Params map[string]any `json:"params"`
+// An optional notification from the server to the client, informing it that the list of tools it offers has changed. This is only delivered on a {@link SubscriptionsListenRequestsubscriptions/listen} stream when the client requested it via the `toolsListChanged` filter field.
+type ToolListChangedNotification struct {
+	JSONRPC string              `json:"jsonrpc"`
+	Method  string              `json:"method"`
+	Params  *NotificationParams `json:"params,omitempty"`
+}
+
+// The result of a tool use, provided by the user back to the assistant.
+type ToolResultContent struct {
+	Meta              *MetaObject    `json:"_meta,omitempty"`
+	Content           []ContentBlock `json:"content"`
+	IsError           *bool          `json:"isError,omitempty"`
+	StructuredContent *any           `json:"structuredContent,omitempty"`
+	ToolUseID         string         `json:"toolUseId"`
+	Type              string         `json:"type"`
+}
+
+// A request from the assistant to call a tool.
+type ToolUseContent struct {
+	Meta  *MetaObject    `json:"_meta,omitempty"`
+	ID    string         `json:"id"`
+	Input map[string]any `json:"input"`
+	Name  string         `json:"name"`
+	Type  string         `json:"type"`
+}
+
+// Returned when the request's protocol version is unknown to the server or
+// unsupported (e.g., a known experimental or draft version the server has
+// chosen not to implement). For HTTP, the response status code MUST be
+// `400 Bad Request`.
+type UnsupportedProtocolVersionError struct {
+	Error   any        `json:"error"`
+	ID      *RequestId `json:"id,omitempty"`
+	JSONRPC string     `json:"jsonrpc"`
+}
+
+// Schema for multiple-selection enumeration without display titles for options.
+type UntitledMultiSelectEnumSchema struct {
+	Default     []string       `json:"default,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Items       map[string]any `json:"items"`
+	MaxItems    *int           `json:"maxItems,omitempty"`
+	MinItems    *int           `json:"minItems,omitempty"`
+	Title       *string        `json:"title,omitempty"`
+	Type        string         `json:"type"`
+}
+
+// Schema for single-selection enumeration without display titles for options.
+type UntitledSingleSelectEnumSchema struct {
+	Default     *string  `json:"default,omitempty"`
+	Description *string  `json:"description,omitempty"`
+	Enum        []string `json:"enum"`
+	Title       *string  `json:"title,omitempty"`
+	Type        string   `json:"type"`
 }
