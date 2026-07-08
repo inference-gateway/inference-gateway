@@ -18,9 +18,11 @@ func GenerateEnvExample(output string, oas string) error {
 
 	tmpl := `{{- range $section := .Sections }}
 {{- range $name, $section := $section }}
+{{- if eq $name "providers" }}{{ else }}
 # {{ $section.Title }}
 {{- range $setting := $section.Settings }}
 {{ $setting.Env }}={{ if $setting.Default }}{{ $setting.Default }}{{ end }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
