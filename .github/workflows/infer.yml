@@ -39,7 +39,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.18.1
+    uses: inference-gateway/.github/.github/workflows/infer.yml@v0.18.2
     with:
       language: "go"
       plugins: "DietrichGebert/ponytail
