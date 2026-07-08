@@ -8,10 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	gin "github.com/gin-gonic/gin"
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
+
+	gin "github.com/gin-gonic/gin"
+
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -19,7 +22,6 @@ import (
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
 	transformers "github.com/inference-gateway/inference-gateway/providers/transformers"
-	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 )
 
 // TestProviderWiringDrift fails when a provider exists in the generated
