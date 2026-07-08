@@ -2834,3 +2834,23 @@ components:
                   type: string
                   description: 'Moonshot API Key'
                   secret: true
+                - name: nvidia_api_url
+                  env: 'NVIDIA_API_URL'
+                  type: string
+                  default: 'https://integrate.api.nvidia.com/v1'
+                  description: 'NVIDIA API URL'
+                - name: nvidia_api_key
+                  env: 'NVIDIA_API_KEY'
+                  type: string
+                  description: 'NVIDIA API Key'
+                  secret: true
+                - name: zai_api_url
+                  env: 'ZAI_API_URL'
+                  type: string
+                  default: 'https://api.z.ai/v1'
+                  description: 'ZAI API URL'
+                - name: zai_api_key
+                  env: 'ZAI_API_KEY'
+                  type: string
+                  description: 'ZAI API Key'
+                  secret: true
