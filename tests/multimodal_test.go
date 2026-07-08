@@ -3,8 +3,9 @@ package tests
 import (
 	"testing"
 
-	"github.com/inference-gateway/inference-gateway/providers/types"
 	assert "github.com/stretchr/testify/assert"
+
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 func TestMessage_HasImageContent(t *testing.T) {
