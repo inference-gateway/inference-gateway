@@ -53,6 +53,8 @@ jobs:
       language: "go"
       node: true
       extra-tools: "Bash(helm:*)"
+      plugins: |
+        DietrichGebert/ponytail
       browser: ${{ inputs.browser || false }}
       prompt: ${{ inputs.prompt }}
     secrets: inherit
