@@ -167,6 +167,7 @@ jobs:
           name: release-dist
           path: |
             dist/inference-gateway_*.tar.gz
+            dist/inference-gateway_*.zip
             dist/checksums.txt
           retention-days: 1
 
@@ -268,6 +269,8 @@ jobs:
             inference-gateway_Linux_armv7.tar.gz \
             inference-gateway_Darwin_x86_64.tar.gz \
             inference-gateway_Darwin_arm64.tar.gz \
+            inference-gateway_Windows_x86_64.zip \
+            inference-gateway_Windows_arm64.zip \
             checksums.txt \
             checksums.txt.sigstore.json; do
             if [ ! -f "$f" ]; then
