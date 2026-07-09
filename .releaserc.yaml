@@ -69,6 +69,8 @@ plugins:
         - path: dist/inference-gateway_Linux_armv7.tar.gz
         - path: dist/inference-gateway_Darwin_x86_64.tar.gz
         - path: dist/inference-gateway_Darwin_arm64.tar.gz
+        - path: dist/inference-gateway_Windows_x86_64.zip
+        - path: dist/inference-gateway_Windows_arm64.zip
         - path: dist/checksums.txt
         - path: dist/checksums.txt.sigstore.json
       releasedLabels: ['released']

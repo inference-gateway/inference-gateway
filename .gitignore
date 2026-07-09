@@ -6,4 +6,4 @@ bin/
 **/*.tgz
 **/node_modules
 .infer/
-gateway
+/gateway
