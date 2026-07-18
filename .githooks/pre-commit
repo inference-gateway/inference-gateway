@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# Pre-commit hook: run go fmt, go vet, and markdownlint on staged files.
+#
+# Configure the repository to use this directory:
+#   git config core.hooksPath .githooks
+#
+# To skip these checks (emergency only):
+#   git commit --no-verify
+
+set -e
+
+echo "=== pre-commit: checking staged files ==="
+
+# Collect staged file names (filter out deleted files).
+staged_go=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.go$' || true)
+staged_md=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.md$' || true)
+
+# --- go fmt ---
+if [ -n "$staged_go" ]; then
+  echo "  go fmt ./... (staged Go files)"
+  go fmt ./...
+  # Re-stage any formatting changes so the commit includes them.
+  if [ -n "$staged_go" ]; then
+    echo "$staged_go" | xargs git add
+  fi
+fi
+
+# --- go vet ---
+if [ -n "$staged_go" ]; then
+  echo "  go vet ./... (staged Go files)"
+  go vet ./...
+fi
+
+# --- markdownlint ---
+if [ -n "$staged_md" ]; then
+  echo "  markdownlint (staged Markdown files)"
+  echo "$staged_md" | xargs markdownlint --ignore '{AGENTS,CLAUDE,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md
+fi
+
+echo "=== pre-commit checks passed ==="

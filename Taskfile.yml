@@ -96,18 +96,18 @@ tasks:
       - go test -bench=. -run=^$ -benchmem -benchtime=100x -count=20 ./tests/...
 
   pre-commit:install:
-    desc: 'Install pre-commit hooks'
+    desc: 'Install git hooks from .githooks/'
     cmds:
-      - echo "Installing pre-commit checks..."
-      - ln -sf ../../scripts/pre-commit-check.sh .git/hooks/pre-commit
-      - chmod +x .git/hooks/pre-commit
-      - echo "✅ Pre-commit hook installed successfully!"
+      - echo "Installing git hooks from .githooks/..."
+      - chmod +x .githooks/pre-commit .githooks/pre-push
+      - git config core.hooksPath .githooks
+      - echo "✅ Git hooks installed successfully! (core.hooksPath = .githooks)"
 
   pre-commit:uninstall:
-    desc: 'Uninstall pre-commit hooks'
+    desc: 'Uninstall git hooks'
     cmds:
-      - rm -f .git/hooks/pre-commit
-      - echo "✅ Pre-commit hook uninstalled successfully!"
+      - git config --unset core.hooksPath || true
+      - echo "✅ Git hooks uninstalled successfully!"
 
   package:
     desc: 'Package the gateway'
