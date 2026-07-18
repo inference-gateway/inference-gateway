@@ -698,8 +698,8 @@ components:
               endpoint: '/chat/completions'
         llamacpp:
           id: 'llamacpp'
-          url: 'http://llamacpp:8000/v1'
-          auth_type: 'bearer'
+          url: 'http://llamacpp:8080/v1'
+          auth_type: 'none'
           supports_vision: true
           endpoints:
             models:
@@ -2772,7 +2772,7 @@ components:
                 - name: llamacpp_api_url
                   env: 'LLAMACPP_API_URL'
                   type: string
-                  default: 'http://llamacpp:8000/v1'
+                  default: 'http://llamacpp:8080/v1'
                   description: 'llama.cpp API URL'
                 - name: llamacpp_api_key
                   env: 'LLAMACPP_API_KEY'

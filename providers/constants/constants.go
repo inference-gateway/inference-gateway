@@ -21,7 +21,7 @@ const (
 	DeepseekDefaultBaseURL    = "https://api.deepseek.com"
 	GoogleDefaultBaseURL      = "https://generativelanguage.googleapis.com/v1beta/openai"
 	GroqDefaultBaseURL        = "https://api.groq.com/openai/v1"
-	LlamacppDefaultBaseURL    = "http://llamacpp:8000/v1"
+	LlamacppDefaultBaseURL    = "http://llamacpp:8080/v1"
 	MinimaxDefaultBaseURL     = "https://api.minimax.io/v1"
 	MistralDefaultBaseURL     = "https://api.mistral.ai/v1"
 	MoonshotDefaultBaseURL    = "https://api.moonshot.ai/v1"

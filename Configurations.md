@@ -89,7 +89,7 @@
 | COHERE_API_KEY | `""` | Cohere API Key |
 | GROQ_API_URL | `https://api.groq.com/openai/v1` | Groq API URL |
 | GROQ_API_KEY | `""` | Groq API Key |
-| LLAMACPP_API_URL | `http://llamacpp:8000/v1` | llama.cpp API URL |
+| LLAMACPP_API_URL | `http://llamacpp:8080/v1` | llama.cpp API URL |
 | LLAMACPP_API_KEY | `""` | llama.cpp API Key |
 | OLLAMA_API_URL | `http://ollama:8080/v1` | Ollama API URL |
 | OLLAMA_API_KEY | `""` | Ollama API Key |

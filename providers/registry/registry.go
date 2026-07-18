@@ -144,7 +144,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		ID:             constants.LlamacppID,
 		Name:           constants.LlamacppDisplayName,
 		URL:            constants.LlamacppDefaultBaseURL,
-		AuthType:       constants.AuthTypeBearer,
+		AuthType:       constants.AuthTypeNone,
 		SupportsVision: true,
 		Endpoints: types.Endpoints{
 			Models: constants.LlamacppModelsEndpoint,
