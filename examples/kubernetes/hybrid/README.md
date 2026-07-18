@@ -3,6 +3,7 @@
 This example demonstrates a hybrid deployment of the Inference Gateway using:
 
 - A local Ollama provider running in the cluster
+- An optional local llama.cpp (`llama-server`) provider, off by default
 - Cloud-based providers
 - The [Inference Gateway Operator](https://github.com/inference-gateway/operator) and a `Gateway` custom resource
 
@@ -16,6 +17,7 @@ This example demonstrates a hybrid deployment of the Inference Gateway using:
   - [Architecture](#architecture)
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
+  - [Optional: local llama.cpp server](#optional-local-llamacpp-server)
   - [Configuration](#configuration)
     - [Local Provider](#local-provider)
     - [Cloud Providers](#cloud-providers)
@@ -102,6 +104,39 @@ This example demonstrates a hybrid deployment of the Inference Gateway using:
      }
    }
    ```
+
+## Optional: local llama.cpp server
+
+A local [`llama.cpp`](https://github.com/ggml-org/llama.cpp) server
+(`llama-server`, OpenAI-compatible) is available as an **opt-in** provider. It is
+not part of the default deploy because the first start downloads a GGUF model
+from HuggingFace, which can take a while.
+
+1. Deploy the llama.cpp server (namespace, service and deployment live in
+   `llamacpp/`):
+
+   ```bash
+   task deploy-llamacpp
+   ```
+
+   The default model is `Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M` (tiny, no
+   HuggingFace token required). Edit `llamacpp/deployment.yaml` to use a
+   different one. Watch the download with:
+
+   ```bash
+   kubectl -n llamacpp logs -f deploy/llamacpp
+   ```
+
+2. Wire it into the gateway: uncomment the `Llamacpp` provider block in
+   `gateway.yaml` and re-apply. This requires an operator release that knows the
+   `Llamacpp` provider (schemas `>= v0.6.1`).
+
+   ```bash
+   kubectl apply -f gateway.yaml
+   ```
+
+   Once the model has loaded, call it just like Ollama, e.g. with
+   `"model": "llamacpp/Qwen2.5-0.5B-Instruct"`.
 
 ## Configuration
 

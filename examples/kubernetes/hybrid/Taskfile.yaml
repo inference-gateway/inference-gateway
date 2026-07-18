@@ -72,6 +72,13 @@ tasks:
       - kubectl -n ollama logs deployments/ollama -c ollama-model-puller -f
       - echo "👀 Watching Ollama model download progress..."
 
+  deploy-llamacpp:
+    desc: 'Deploy an optional local llama.cpp server (downloads a GGUF model on first start)'
+    cmds:
+      - kubectl apply -f llamacpp/
+      - echo "🦙 llama.cpp server deploying - the model downloads on first start."
+      - echo "   Watch it with: kubectl -n llamacpp logs -f deploy/llamacpp"
+
   deploy-inference-gateway:
     desc: 'Deploy the Inference Gateway with hybrid providers via the operator'
     cmds:

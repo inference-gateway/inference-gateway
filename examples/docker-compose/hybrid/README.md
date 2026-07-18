@@ -78,3 +78,42 @@ curl -X POST http://localhost:8080/v1/chat/completions \
     "stream": true
   }'
 ```
+
+## Optional: local llama.cpp server
+
+An optional [`llama.cpp`](https://github.com/ggml-org/llama.cpp) server
+(`llama-server`, OpenAI-compatible) is included behind a Compose profile, so it
+is **not** started by `docker compose up`. It is opt-in because the first start
+downloads a GGUF model from HuggingFace, which can take a while.
+
+1. Start the gateway together with the llama.cpp server:
+
+```bash
+docker compose --profile llamacpp up -d
+```
+
+The default model is `Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M` (tiny, no
+HuggingFace token required). To use a different one, set `LLAMACPP_MODEL` in
+`.env` to any HuggingFace GGUF repo (e.g. `LLAMACPP_MODEL=ggml-org/gemma-3-1b-it-GGUF`).
+
+1. Follow the download / startup progress (first run only):
+
+```bash
+docker compose logs -f llamacpp
+```
+
+1. Call it once the model has loaded:
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "llamacpp/Qwen2.5-0.5B-Instruct",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hi, can you tell me a joke?"
+      }
+    ]
+  }' | jq '.'
+```

@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llamacpp
+  namespace: llamacpp
+  labels:
+    app: llamacpp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llamacpp
+  template:
+    metadata:
+      labels:
+        app: llamacpp
+    spec:
+      serviceAccountName: llamacpp
+      containers:
+        - name: llama-server
+          image: ghcr.io/ggml-org/llama.cpp:server
+          # Downloads the GGUF model from HuggingFace on first start (can take a
+          # while). Swap the -hf value for any HuggingFace GGUF repo you prefer.
+          args:
+            - -hf
+            - Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M
+            - --host
+            - 0.0.0.0
+            - --port
+            - '8080'
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: 4000m
+              memory: 6000Mi
+              # nvidia.com/gpu: 1 # When deploying on GPU, otherwise let it use the CPU
+            requests:
+              cpu: 1000m
+              memory: 2000Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            # Allow up to ~15 min for the model to download and load.
+            failureThreshold: 60
+          volumeMounts:
+            - name: llamacpp-model-cache
+              mountPath: /root/.cache/llama.cpp
+      volumes:
+        - name: llamacpp-model-cache
+          emptyDir: {}

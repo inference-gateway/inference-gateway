@@ -38,6 +38,14 @@ spec:
       env:
         - name: OLLAMA_API_URL
           value: 'http://ollama.ollama:8080/v1'
+    # Optional local provider: llama.cpp server. Deploy it with `task deploy-llamacpp`,
+    # then uncomment this block and re-apply. Requires an operator release that knows
+    # the `Llamacpp` provider (schemas >= v0.6.1).
+    # - name: Llamacpp
+    #   enabled: true
+    #   env:
+    #     - name: LLAMACPP_API_URL
+    #       value: 'http://llamacpp.llamacpp:8080/v1'
     # Cloud providers: API keys are read from the inference-gateway-secrets Secret.
     - name: Groq
       enabled: true

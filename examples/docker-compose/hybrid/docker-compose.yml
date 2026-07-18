@@ -85,8 +85,40 @@ services:
       - app_network
       - external_network
 
+  # Optional local llama.cpp server (OpenAI-compatible). Off by default: the
+  # first start downloads a GGUF model from HuggingFace, which can take a while.
+  # Start it explicitly with:  docker compose --profile llamacpp up -d
+  # Pick a different model with LLAMACPP_MODEL in .env (any HuggingFace GGUF repo).
+  llamacpp:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    profiles:
+      - llamacpp
+    command:
+      - -hf
+      - ${LLAMACPP_MODEL:-Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M}
+      - --host
+      - 0.0.0.0
+      - --port
+      - '8080'
+    volumes:
+      - type: volume
+        source: docker-compose-llamacpp-cache
+        target: /root/.cache/llama.cpp
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          memory: 2G
+          cpus: '2'
+    networks:
+      - app_network
+      - external_network
+
 volumes:
   docker-compose-ollama-data:
+  docker-compose-llamacpp-cache:
 
 networks:
   app_network:
