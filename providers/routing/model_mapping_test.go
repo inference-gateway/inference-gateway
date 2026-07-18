@@ -42,6 +42,12 @@ func TestDetermineProviderAndModelNameEdgeCases(t *testing.T) {
 			expectedModel:    "@cf/meta/llama-2-7b-chat-fp16",
 		},
 		{
+			name:             "llama.cpp provider prefix",
+			model:            "llamacpp/qwen2.5-coder-7b-instruct-q4_k_m.gguf",
+			expectedProvider: new(constants.LlamacppID),
+			expectedModel:    "qwen2.5-coder-7b-instruct-q4_k_m.gguf",
+		},
+		{
 			name:             "Model without explicit prefix",
 			model:            "gpt-4",
 			expectedProvider: nil,

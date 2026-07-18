@@ -93,6 +93,8 @@
 | OLLAMA_API_KEY | `""` | Ollama API Key |
 | OLLAMA_CLOUD_API_URL | `https://ollama.com/v1` | Ollama Cloud API URL |
 | OLLAMA_CLOUD_API_KEY | `""` | Ollama Cloud API Key |
+| LLAMACPP_API_URL | `http://llamacpp:8080/v1` | Llamacpp API URL |
+| LLAMACPP_API_KEY | `""` | Llamacpp API Key |
 | OPENAI_API_URL | `https://api.openai.com/v1` | OpenAI API URL |
 | OPENAI_API_KEY | `""` | OpenAI API Key |
 | DEEPSEEK_API_URL | `https://api.deepseek.com` | DeepSeek API URL |

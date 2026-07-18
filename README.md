@@ -479,6 +479,7 @@ The included Grafana dashboard provides:
 - [OpenAI](https://platform.openai.com/)
 - [Ollama](https://ollama.com/)
 - [Ollama Cloud](https://ollama.com/cloud) (Preview)
+- [llama.cpp](https://github.com/ggml-org/llama.cpp) (llama-server)
 - [Groq](https://console.groq.com/)
 - [Cloudflare](https://www.cloudflare.com/)
 - [Cohere](https://docs.cohere.com/docs/the-cohere-platform)
@@ -509,6 +510,7 @@ ENABLE_VISION=true
 - Google (Gemini 2.5)
 - Cohere (Command A Vision, Aya Vision)
 - Ollama (LLaVA, Llama 4, Llama 3.2 Vision)
+- llama.cpp (multimodal GGUF models loaded with --mmproj)
 - Groq (vision models)
 - Mistral (Pixtral)
 

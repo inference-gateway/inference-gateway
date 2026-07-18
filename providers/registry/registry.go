@@ -140,6 +140,17 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.GroqChatEndpoint,
 		},
 	},
+	constants.LlamacppID: {
+		ID:             constants.LlamacppID,
+		Name:           constants.LlamacppDisplayName,
+		URL:            constants.LlamacppDefaultBaseURL,
+		AuthType:       constants.AuthTypeNone,
+		SupportsVision: true,
+		Endpoints: types.Endpoints{
+			Models: constants.LlamacppModelsEndpoint,
+			Chat:   constants.LlamacppChatEndpoint,
+		},
+	},
 	constants.MinimaxID: {
 		ID:             constants.MinimaxID,
 		Name:           constants.MinimaxDisplayName,

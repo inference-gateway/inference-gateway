@@ -610,6 +610,7 @@ components:
       enum:
         - ollama
         - ollama_cloud
+        - llamacpp
         - groq
         - openai
         - cloudflare
@@ -641,6 +642,20 @@ components:
           id: 'ollama_cloud'
           url: 'https://ollama.com/v1'
           auth_type: 'bearer'
+          supports_vision: true
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        llamacpp:
+          id: 'llamacpp'
+          url: 'http://llamacpp:8080/v1'
+          auth_type: 'none'
           supports_vision: true
           endpoints:
             models:
@@ -2773,6 +2788,16 @@ components:
                   env: 'OLLAMA_CLOUD_API_KEY'
                   type: string
                   description: 'Ollama Cloud API Key'
+                  secret: true
+                - name: llamacpp_api_url
+                  env: 'LLAMACPP_API_URL'
+                  type: string
+                  default: 'http://llamacpp:8080/v1'
+                  description: 'Llamacpp API URL'
+                - name: llamacpp_api_key
+                  env: 'LLAMACPP_API_KEY'
+                  type: string
+                  description: 'Llamacpp API Key'
                   secret: true
                 - name: openai_api_url
                   env: 'OPENAI_API_URL'
