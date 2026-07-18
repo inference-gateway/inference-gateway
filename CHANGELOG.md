@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.32.0](https://github.com/inference-gateway/inference-gateway/compare/v0.31.0...v0.32.0) (2026-07-18)
+
+### ✨ Features
+
+* **providers:** add llamacpp provider ([#448](https://github.com/inference-gateway/inference-gateway/issues/448)) ([402702d](https://github.com/inference-gateway/inference-gateway/commit/402702dde9aaf5b011ac98bfa674515488bcc874))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump infer CLI v0.138.0 -> v0.141.0 ([#442](https://github.com/inference-gateway/inference-gateway/issues/442)) ([00fa80e](https://github.com/inference-gateway/inference-gateway/commit/00fa80ed7dbc4031a1b5dcd0e541ab70ba4a9d58))
+* **deps:** bump infer CLI v0.141.0 -> v0.147.1 ([#445](https://github.com/inference-gateway/inference-gateway/issues/445)) ([db661bd](https://github.com/inference-gateway/inference-gateway/commit/db661bdda5b089ca91714c0190bb7d26ca24d21b))
+* **deps:** bump the github-actions group with 2 updates ([#447](https://github.com/inference-gateway/inference-gateway/issues/447)) ([c18ece0](https://github.com/inference-gateway/inference-gateway/commit/c18ece0b3b608e4c5702b498ca7971b7230410b2))
+* **deps:** bump the gomod group with 2 updates ([#446](https://github.com/inference-gateway/inference-gateway/issues/446)) ([311af22](https://github.com/inference-gateway/inference-gateway/commit/311af22ca75608d300080ff4df981582826d213b))
+* **deps:** bump the gomod group with 3 updates ([#443](https://github.com/inference-gateway/inference-gateway/issues/443)) ([0a1fcc0](https://github.com/inference-gateway/inference-gateway/commit/0a1fcc0ac9490570b089edec0fb924425ec9b74c))
+* **release:** update GitHub App credentials to use RELEASER_APP_ID and RELEASER_APP_PRIVATE_KEY ([7047f99](https://github.com/inference-gateway/inference-gateway/commit/7047f9976f127a9fca4e2f5db79b3ba1bae53d8b))
+
 ## [0.31.0](https://github.com/inference-gateway/inference-gateway/compare/v0.30.0...v0.31.0) (2026-07-09)
 
 ### ✨ Features

@@ -250,7 +250,9 @@ curl -fsSL https://raw.githubusercontent.com/inference-gateway/inference-gateway
 - Extracts and installs to `/usr/local/bin` (or custom directory)
 - Verifies the installation
 
-> **Windows users**: The install script is a bash script and does not run on Windows natively. Download the Windows binary (`.zip`) directly from the [releases page](https://github.com/inference-gateway/inference-gateway/releases) instead.
+> **Windows users**: The install script is a bash script and does not run on Windows
+> natively. Download the Windows binary (`.zip`) directly from the
+> [releases page](https://github.com/inference-gateway/inference-gateway/releases) instead.
 
 **Supported platforms:**
 
