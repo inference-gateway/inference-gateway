@@ -99,7 +99,7 @@ tasks:
     desc: 'Install git hooks from .githooks/'
     cmds:
       - echo "Installing git hooks from .githooks/..."
-      - chmod +x .githooks/pre-commit .githooks/pre-push
+      - chmod +x .githooks/pre-commit
       - git config core.hooksPath .githooks
       - echo "✅ Git hooks installed successfully! (core.hooksPath = .githooks)"
 

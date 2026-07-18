@@ -74,8 +74,8 @@ This ensures all contributors have identical tooling and configurations.
    task pre-commit:install
    ```
 
-   This configures `core.hooksPath = .githooks` and makes the hooks executable.
-   The hooks run automatically on `git commit` and `git push`.
+   This configures `core.hooksPath = .githooks` and makes the hook executable.
+   The hook runs automatically on `git commit`.
 
 The Flox environment provides all necessary development tools with pinned versions:
 
@@ -86,18 +86,16 @@ The Flox environment provides all necessary development tools with pinned versio
 
 For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md).
 
-**Git Hooks:** The installed hooks from `.githooks/` automatically run:
+**Git Hooks:** The installed hook from `.githooks/` runs automatically on
+`git commit`:
 
-- **pre-commit** (on `git commit`):
+- **pre-commit**:
   - `go fmt ./...` - format Go source files
   - `go vet ./...` - static analysis on Go code
   - `markdownlint` - lint Markdown files
-- **pre-push** (on `git push`):
-  - `go test -race -v ./...` - run all tests
-  - `task lint` - run Go and Markdown linting
 
-The hooks provide fast local feedback before CI runs. To skip them in an
-emergency, use `git commit --no-verify` or `git push --no-verify`.
+The hook provides fast local feedback before CI runs. To skip it in an
+emergency, use `git commit --no-verify`.
 
 #### Alternative: Dev Container
 

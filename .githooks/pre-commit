@@ -21,9 +21,7 @@ if [ -n "$staged_go" ]; then
   echo "  go fmt ./... (staged Go files)"
   go fmt ./...
   # Re-stage any formatting changes so the commit includes them.
-  if [ -n "$staged_go" ]; then
-    echo "$staged_go" | xargs git add
-  fi
+  echo "$staged_go" | xargs git add
 fi
 
 # --- go vet ---
