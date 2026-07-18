@@ -15,7 +15,15 @@ Copy `.env.example` to `.env` and adjust the values (`.env` is added to gitignor
 docker compose up -d
 ```
 
-1. List the available models of a specific API, for example Groq:
+The local model servers (Ollama and llama.cpp) are optional and off by default.
+Pick one with its Compose profile:
+
+```bash
+docker compose --profile ollama up -d    # gateway + Ollama
+docker compose --profile llamacpp up -d  # gateway + llama.cpp
+```
+
+2. List the available models of a specific API, for example Groq:
 
 ```bash
 curl -X GET http://localhost:8080/v1/models?provider=groq | jq '.'
@@ -27,7 +35,7 @@ Or the local models:
 curl -X GET http://localhost:8080/v1/models?provider=ollama | jq '.'
 ```
 
-1. Use a specific API models, for example Groq:
+3. Use a specific API models, for example Groq:
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
@@ -47,7 +55,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   }' | jq '.'
 ```
 
-1. Or with streaming using Ollama:
+4. Or with streaming using Ollama (start it first with `docker compose --profile ollama up -d`):
 
 ```bash
 # Download the models first
@@ -96,13 +104,19 @@ The default model is `Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M` (tiny, no
 HuggingFace token required). To use a different one, set `LLAMACPP_MODEL` in
 `.env` to any HuggingFace GGUF repo (e.g. `LLAMACPP_MODEL=ggml-org/gemma-3-1b-it-GGUF`).
 
-1. Follow the download / startup progress (first run only):
+2. Follow the download / startup progress (first run only):
 
 ```bash
 docker compose logs -f llamacpp
 ```
 
-1. Call it once the model has loaded:
+3. List the loaded model:
+
+```bash
+curl -X GET http://localhost:8080/v1/models?provider=llamacpp | jq '.'
+```
+
+4. Call it once the model has loaded:
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \

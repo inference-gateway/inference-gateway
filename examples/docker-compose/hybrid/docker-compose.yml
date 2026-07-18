@@ -14,16 +14,17 @@ services:
         reservations:
           memory: 100M
           cpus: '0.1'
-    depends_on:
-      ollama:
-        condition: service_healthy
     networks:
       - app_network
       - external_network
     pull_policy: always
 
+  # Optional local Ollama server. Off by default.
+  # Start it explicitly with:  docker compose --profile ollama up -d
   ollama:
     image: ollama/ollama:latest
+    profiles:
+      - ollama
     environment:
       OLLAMA_HOST: 0.0.0.0:8080
       OLLAMA_KEEP_ALIVE: '10m'
@@ -64,6 +65,8 @@ services:
 
   ollama-model-downloader:
     image: ollama/ollama:latest
+    profiles:
+      - ollama
     entrypoint:
       - /bin/sh
       - -c

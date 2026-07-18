@@ -22,6 +22,7 @@ interact with the Inference Gateway using curl commands.
 | List MiniMax models      | `curl -X GET http://localhost:8080/v1/models?provider=minimax`      |
 | List Moonshot models     | `curl -X GET http://localhost:8080/v1/models?provider=moonshot`     |
 | List Nvidia models       | `curl -X GET http://localhost:8080/v1/models?provider=nvidia`       |
+| List llama.cpp models    | `curl -X GET http://localhost:8080/v1/models?provider=llamacpp`     |
 
 ## POST Endpoints
 
@@ -40,6 +41,7 @@ interact with the Inference Gateway using curl commands.
 | api.minimax.io                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"minimax/MiniMax-M3","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                        |
 | api.moonshot.ai                   | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"moonshot/moonshot-v1-8k","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                   |
 | integrate.api.nvidia.com          | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"nvidia/moonshotai/kimi-k2.6","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`               |
+| llamacpp.local                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"llamacpp/Qwen2.5-0.5B-Instruct","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`            |
 
 You can set the stream as an optional flag in the request body to enable
 streaming of tokens. The default value is `false`.
