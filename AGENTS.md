@@ -26,6 +26,11 @@ Use `task --list` to see available workflows. Common commands:
   OpenAPI-derived files. Run it after changing `openapi.yaml` or generator code.
 - `task pre-commit:install`: installs the repository pre-commit hook.
 
+Run `task pre-commit:install` once after cloning. The pre-commit hook
+(`.githooks/pre-commit`) runs `go fmt`, `go vet`, and `markdownlint` on staged
+files before each commit; bypass it in an emergency with `git commit
+--no-verify`.
+
 Use Flox (`flox activate`) for pinned Go 1.26.4 and tooling.
 
 ## Coding Style & Naming Conventions
