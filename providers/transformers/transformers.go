@@ -22,6 +22,8 @@ func NewListModelsTransformer(provider types.Provider) constants.ListModelsTrans
 		return &ListModelsResponseGoogle{}
 	case constants.GroqID:
 		return &ListModelsResponseGroq{}
+	case constants.LlamacppID:
+		return &ListModelsResponseLlamacpp{}
 	case constants.MinimaxID:
 		return &ListModelsResponseMinimax{}
 	case constants.MistralID:
