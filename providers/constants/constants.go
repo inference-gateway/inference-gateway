@@ -29,7 +29,7 @@ const (
 	OllamaDefaultBaseURL      = "http://ollama:8080/v1"
 	OllamaCloudDefaultBaseURL = "https://ollama.com/v1"
 	OpenaiDefaultBaseURL      = "https://api.openai.com/v1"
-	ZaiDefaultBaseURL         = "https://api.z.ai/v1"
+	ZaiDefaultBaseURL         = "https://api.z.ai/api/paas/v4"
 )
 
 // The default endpoints of each provider

@@ -828,7 +828,7 @@ components:
               endpoint: '/chat/completions'
         zai:
           id: 'zai'
-          url: 'https://api.z.ai/v1'
+          url: 'https://api.z.ai/api/paas/v4'
           auth_type: 'bearer'
           supports_vision: true
           endpoints:
@@ -2871,7 +2871,7 @@ components:
                 - name: zai_api_url
                   env: 'ZAI_API_URL'
                   type: string
-                  default: 'https://api.z.ai/v1'
+                  default: 'https://api.z.ai/api/paas/v4'
                   description: 'ZAI API URL'
                 - name: zai_api_key
                   env: 'ZAI_API_KEY'
