@@ -699,7 +699,7 @@ components:
         llamacpp:
           id: 'llamacpp'
           url: 'http://llamacpp:8080/v1'
-          auth_type: 'none'
+          auth_type: 'bearer'
           supports_vision: true
           endpoints:
             models:
@@ -2364,7 +2364,7 @@ components:
           type: array
           description: Reasoning summary content.
           items:
-            $ref: '#/components/schemas/ResponseReasoningSummary'
+            $ref: '#/components/schemas/ResponseReasoningSummaryPart'
         status:
           type: string
           enum:
@@ -2376,9 +2376,8 @@ components:
         - type
         - id
         - summary
-    ResponseReasoningSummary:
+    ResponseReasoningSummaryPart:
       type: object
-      x-go-name: ResponseReasoningSummaryPart
       description: A summary part of a reasoning item.
       properties:
         type:

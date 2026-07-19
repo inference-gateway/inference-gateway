@@ -532,13 +532,13 @@ func (e ResponseReasoningItemType) Valid() bool {
 	}
 }
 
-// Defines values for ResponseReasoningSummaryType.
+// Defines values for ResponseReasoningSummaryPartType.
 const (
-	SummaryText ResponseReasoningSummaryType = "summary_text"
+	SummaryText ResponseReasoningSummaryPartType = "summary_text"
 )
 
-// Valid indicates whether the value is a known member of the ResponseReasoningSummaryType enum.
-func (e ResponseReasoningSummaryType) Valid() bool {
+// Valid indicates whether the value is a known member of the ResponseReasoningSummaryPartType enum.
+func (e ResponseReasoningSummaryPartType) Valid() bool {
 	switch e {
 	case SummaryText:
 		return true
@@ -1607,11 +1607,11 @@ type ResponseReasoningSummaryPart struct {
 	Text string `json:"text"`
 
 	// Type The type of the summary. Always `summary_text`.
-	Type ResponseReasoningSummaryType `json:"type"`
+	Type ResponseReasoningSummaryPartType `json:"type"`
 }
 
-// ResponseReasoningSummaryType The type of the summary. Always `summary_text`.
-type ResponseReasoningSummaryType string
+// ResponseReasoningSummaryPartType The type of the summary. Always `summary_text`.
+type ResponseReasoningSummaryPartType string
 
 // ResponseRole The role of the message input.
 type ResponseRole string
