@@ -1,0 +1,64 @@
+---
+name: Sync Community Tables
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # weekly, Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/create-github-app-token@v3.2.0
+        id: app-token
+        with:
+          client-id: ${{ secrets.RELEASER_APP_ID }}
+          private-key: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
+
+      - name: Get app user id
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Checkout code
+        uses: actions/checkout@v7.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Sync tables from models.dev
+        run: |
+          gh api repos/sst/models.dev/tarball > /tmp/models.dev.tar.gz
+          go run cmd/generate/main.go -type CommunityPricing -input /tmp/models.dev.tar.gz -output providers/core/community_pricing.json
+          go run cmd/generate/main.go -type CommunityContextWindows -input /tmp/models.dev.tar.gz -output providers/core/community_context_windows.json
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Open pull request if tables changed
+        run: |
+          if git diff --quiet; then
+            echo "Community tables are up to date."
+            exit 0
+          fi
+          git config user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git checkout -B chore/sync-community-tables
+          git add providers/core/community_pricing.json providers/core/community_context_windows.json
+          git commit -m 'fix: sync community pricing and context-window tables from models.dev'
+          git push -f origin chore/sync-community-tables
+          gh pr create \
+            --title 'fix: sync community pricing and context-window tables from models.dev' \
+            --body 'Automated weekly sync of `community_pricing.json` and `community_context_windows.json` from the [models.dev](https://github.com/sst/models.dev) dataset. Only entries whose values changed carry a new `updated_at`.' \
+            || echo "PR already open; branch updated."
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
