@@ -75,6 +75,70 @@ The parameter combines with `provider`, e.g.
 Without `include=context_window` the payload is unchanged and stays byte-for-byte
 OpenAI-compatible.
 
+### Pricing
+
+Pass `include=pricing` to enrich each model with its normalized public per-token
+pricing, resolved from rates the upstream provider publishes in its model
+listing. Monetary values are decimal strings to avoid floating-point precision
+loss. Rates the provider does not publish (e.g. zero cache rates) are omitted
+entirely; models whose provider publishes no per-token pricing carry an explicit
+`null`.
+
+```bash
+curl -X GET 'http://localhost:8080/v1/models?include=pricing' | jq .
+```
+
+Response:
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "deepseek/deepseek-chat",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "deepseek",
+      "served_by": "deepseek",
+      "pricing": {
+        "currency": "USD",
+        "input_per_token": "0.00000027",
+        "output_per_token": "0.00000110",
+        "cache_read_per_token": "0.00000007",
+        "cache_write_per_token": "0.00000027",
+        "source": "provider"
+      }
+    },
+    {
+      "id": "groq/llama-3.3-70b",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "meta",
+      "served_by": "groq",
+      "pricing": {
+        "currency": "USD",
+        "input_per_token": "0.00000059",
+        "output_per_token": "0.00000079",
+        "source": "provider"
+      }
+    },
+    {
+      "id": "openai/gpt-4o",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "openai",
+      "served_by": "openai",
+      "pricing": null
+    }
+  ]
+}
+```
+
+The parameter combines with `provider`, e.g.
+`curl -X GET 'http://localhost:8080/v1/models?provider=deepseek&include=pricing'`.
+Without `include=pricing` the payload is unchanged and stays byte-for-byte
+OpenAI-compatible.
+
 ## POST Endpoints
 
 | Domain                            | Curl Command                                                                                                                                                                                                               |
