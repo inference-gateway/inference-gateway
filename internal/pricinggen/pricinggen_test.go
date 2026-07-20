@@ -136,6 +136,45 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 	}
 }
 
+// TestGenerate_PreservesTimestampsForUnchangedRates re-syncs over an existing
+// table: entries whose rates did not change keep their prior updated_at, while
+// changed entries get a fresh stamp.
+func TestGenerate_PreservesTimestampsForUnchangedRates(t *testing.T) {
+	tarball := writeTarball(t, map[string]string{
+		"sst-models.dev-abc/providers/openai/models/gpt-same.toml":    "[cost]\ninput = 3.0\noutput = 15.0\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-changed.toml": "[cost]\ninput = 4.0\noutput = 15.0\n",
+	})
+
+	output := filepath.Join(t.TempDir(), "pricing.json")
+	prior := `{
+		"openai/gpt-same": {"currency":"USD","input_per_token":"0.000003","output_per_token":"0.000015","source":"community","updated_at":"2020-01-02T03:04:05Z"},
+		"openai/gpt-changed": {"currency":"USD","input_per_token":"0.000003","output_per_token":"0.000015","source":"community","updated_at":"2020-01-02T03:04:05Z"}
+	}`
+	if err := os.WriteFile(output, []byte(prior), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := Generate(output, tarball); err != nil {
+		t.Fatalf("Generate() = %v", err)
+	}
+
+	data, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var table map[string]types.Pricing
+	if err := json.Unmarshal(data, &table); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := table["openai/gpt-same"].UpdatedAt.Format("2006-01-02T15:04:05Z"); got != "2020-01-02T03:04:05Z" {
+		t.Errorf("unchanged entry updated_at = %s, want prior timestamp preserved", got)
+	}
+	if got := table["openai/gpt-changed"].UpdatedAt.Year(); got == 2020 {
+		t.Error("changed entry must get a fresh updated_at, kept the prior one")
+	}
+}
+
 // TestGenerateContextWindows covers the limit states in models.dev files: a
 // published context limit emits an entry (with output tokens when present),
 // an absent limit section emits no entry, and unsupported providers are

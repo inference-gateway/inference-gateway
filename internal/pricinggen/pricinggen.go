@@ -73,6 +73,10 @@ type contextWindowEntry struct {
 func Generate(output, tarballPath string) error {
 	table := make(map[string]types.Pricing)
 	syncedAt := time.Now().UTC().Truncate(time.Second)
+	prior := make(map[string]types.Pricing)
+	if data, err := os.ReadFile(output); err == nil {
+		_ = json.Unmarshal(data, &prior)
+	}
 	err := forEachModel(tarballPath, func(key string, model modelTOML) {
 		if model.Cost == nil {
 			return
@@ -82,7 +86,7 @@ func Generate(output, tarballPath string) error {
 		if input == nil || outputRate == nil {
 			return
 		}
-		table[key] = types.Pricing{
+		entry := types.Pricing{
 			Currency:           "USD",
 			InputPerToken:      *input,
 			OutputPerToken:     *outputRate,
@@ -91,6 +95,10 @@ func Generate(output, tarballPath string) error {
 			Source:             types.PricingSourceCommunity,
 			UpdatedAt:          syncedAt,
 		}
+		if old, ok := prior[key]; ok && sameRates(old, entry) {
+			entry.UpdatedAt = old.UpdatedAt
+		}
+		table[key] = entry
 	})
 	if err != nil {
 		return err
@@ -198,6 +206,22 @@ func tableKey(name string) (string, bool) {
 		return "", false
 	}
 	return provider + "/" + model, true
+}
+
+// sameRates reports whether two pricing entries carry identical rates,
+// ignoring UpdatedAt, so re-syncs keep the prior timestamp for unchanged
+// entries instead of rewriting the whole committed table.
+func sameRates(a, b types.Pricing) bool {
+	return a.Currency == b.Currency &&
+		a.InputPerToken == b.InputPerToken &&
+		a.OutputPerToken == b.OutputPerToken &&
+		a.Source == b.Source &&
+		eqRate(a.CacheReadPerToken, b.CacheReadPerToken) &&
+		eqRate(a.CacheWritePerToken, b.CacheWritePerToken)
+}
+
+func eqRate(a, b *string) bool {
+	return a == b || (a != nil && b != nil && *a == *b)
 }
 
 // freeOrRate maps an input/output rate from a present cost section: an

@@ -38,7 +38,7 @@ func applyProviderPricing(raw []byte, models []types.Model) {
 			CacheReadPerToken:  pricingRate(pricing, "cache_read_per_token", "input_cache_read", "cached"),
 			CacheWritePerToken: pricingRate(pricing, "cache_write_per_token", "input_cache_write", "cache_creation"),
 			Source:             types.PricingSourceProvider,
-			UpdatedAt:          time.Now().UTC(),
+			UpdatedAt:          time.Now().UTC().Truncate(time.Second),
 		}
 	}
 }
