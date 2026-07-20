@@ -176,6 +176,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 
 	resp := transformer.Transform()
 	applyProviderContextWindows(body, resp.Data)
+	applyProviderPricing(body, resp.Data)
 	return resp, nil
 }
 

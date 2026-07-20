@@ -1061,13 +1061,7 @@ components:
         context_window:
           $ref: '#/components/schemas/ModelContextWindow'
         pricing:
-          type: object
-          nullable: true
-          additionalProperties: true
-          description: >
-            Per-model pricing metadata. Present only when requested via
-            `include=pricing`; `null` when requested but not yet resolved. The
-            object shape is defined by a follow-up change.
+          $ref: '#/components/schemas/ModelPricing'
       required:
         - id
         - object
@@ -1102,6 +1096,53 @@ components:
             - ContextWindowSourceProvider
       required:
         - tokens
+        - source
+    ModelPricing:
+      type: object
+      description: >
+        Normalized public per-token pricing for the model. Present only when
+        requested via `include=pricing`; `null` when requested but the model
+        has no public per-token cost (subscription-based providers, locally
+        hosted models, or providers that publish no pricing). Monetary values
+        are decimal strings to avoid floating-point precision loss. Rates the
+        provider does not publish are omitted entirely, never `0` or `null`.
+      properties:
+        currency:
+          type: string
+          description: ISO 4217 currency code the rates are denominated in.
+        input_per_token:
+          type: string
+          description: Cost per input (prompt) token, as a decimal string.
+        output_per_token:
+          type: string
+          description: Cost per output (completion) token, as a decimal string.
+        cache_read_per_token:
+          type: string
+          description: >
+            Cost per token read from the provider's prompt cache, as a decimal
+            string. Present only when the provider publishes a cached-input
+            rate.
+        cache_write_per_token:
+          type: string
+          description: >
+            Cost per token written to the provider's prompt cache, as a decimal
+            string. Present only when the provider publishes a cache-creation
+            rate.
+        source:
+          type: string
+          description: >
+            Where the rates were resolved from. `provider` means the upstream
+            provider published them in its model listing.
+          enum:
+            - provider
+          x-enum-varnames:
+            - PricingSourceProvider
+        updated_at:
+          type: string
+          format: date-time
+          description: When the rates were last refreshed, if known.
+      required:
+        - currency
         - source
     ListModelsResponse:
       type: object

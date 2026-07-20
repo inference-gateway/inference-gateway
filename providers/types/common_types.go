@@ -6,6 +6,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
@@ -169,6 +170,21 @@ func (e ModelContextWindowSource) Valid() bool {
 	case ContextWindowSourceProvider:
 		return true
 	case ContextWindowSourceRuntime:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ModelPricingSource.
+const (
+	PricingSourceProvider ModelPricingSource = "provider"
+)
+
+// Valid indicates whether the value is a known member of the ModelPricingSource enum.
+func (e ModelPricingSource) Valid() bool {
+	switch e {
+	case PricingSourceProvider:
 		return true
 	default:
 		return false
@@ -1310,9 +1326,9 @@ type Model struct {
 	Object        string              `json:"object"`
 	OwnedBy       string              `json:"owned_by"`
 
-	// Pricing Per-model pricing metadata. Present only when requested via `include=pricing`; `null` when requested but not yet resolved. The object shape is defined by a follow-up change.
-	Pricing  *map[string]any `json:"pricing,omitempty"`
-	ServedBy Provider        `json:"served_by"`
+	// Pricing Normalized public per-token pricing for the model. Present only when requested via `include=pricing`; `null` when requested but the model has no public per-token cost (subscription-based providers, locally hosted models, or providers that publish no pricing). Monetary values are decimal strings to avoid floating-point precision loss. Rates the provider does not publish are omitted entirely, never `0` or `null`.
+	Pricing  *ModelPricing `json:"pricing,omitempty"`
+	ServedBy Provider      `json:"served_by"`
 }
 
 // ModelContextWindow Effective context window a client may safely use for the model. Present only when requested via `include=context_window`; `null` when requested but the window could not be resolved. The value reflects what the serving runtime is actually configured with when available, which can be smaller than the model's theoretical maximum.
@@ -1326,6 +1342,33 @@ type ModelContextWindow struct {
 
 // ModelContextWindowSource Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing.
 type ModelContextWindowSource string
+
+// ModelPricing Normalized public per-token pricing for the model. Present only when requested via `include=pricing`; `null` when requested but the model has no public per-token cost (subscription-based providers, locally hosted models, or providers that publish no pricing). Monetary values are decimal strings to avoid floating-point precision loss. Rates the provider does not publish are omitted entirely, never `0` or `null`.
+type ModelPricing struct {
+	// CacheReadPerToken Cost per token read from the provider's prompt cache, as a decimal string. Present only when the provider publishes a cached-input rate.
+	CacheReadPerToken *string `json:"cache_read_per_token,omitempty"`
+
+	// CacheWritePerToken Cost per token written to the provider's prompt cache, as a decimal string. Present only when the provider publishes a cache-creation rate.
+	CacheWritePerToken *string `json:"cache_write_per_token,omitempty"`
+
+	// Currency ISO 4217 currency code the rates are denominated in.
+	Currency string `json:"currency"`
+
+	// InputPerToken Cost per input (prompt) token, as a decimal string.
+	InputPerToken *string `json:"input_per_token,omitempty"`
+
+	// OutputPerToken Cost per output (completion) token, as a decimal string.
+	OutputPerToken *string `json:"output_per_token,omitempty"`
+
+	// Source Where the rates were resolved from. `provider` means the upstream provider published them in its model listing.
+	Source ModelPricingSource `json:"source"`
+
+	// UpdatedAt When the rates were last refreshed, if known.
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+}
+
+// ModelPricingSource Where the rates were resolved from. `provider` means the upstream provider published them in its model listing.
+type ModelPricingSource string
 
 // Provider defines model for Provider.
 type Provider string

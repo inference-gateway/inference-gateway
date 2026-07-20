@@ -11,29 +11,33 @@ import (
 // Mistral max_context_length, vLLM max_model_len).
 var providerContextWindowKeys = []string{"context_window", "context_length", "max_context_length", "max_model_len"}
 
-// applyProviderContextWindows scans the raw upstream models payload for
-// published context-window fields and fills ContextWindow (source: provider) on
-// the transformed models. Entries are matched to models by position, so it
-// bails unless both lists have the same length. A runtime-sourced value set
-// later overrides these.
-func applyProviderContextWindows(raw []byte, models []types.Model) {
+// modelEntries decodes the raw upstream models payload into one map per model
+// entry. Entries are matched to transformed models by position, so it returns
+// nil unless the payload holds exactly want entries.
+func modelEntries(raw []byte, want int) []map[string]any {
 	var payload struct {
 		Data   []map[string]any `json:"data"`
 		Models []map[string]any `json:"models"`
 	}
 	if err := json.Unmarshal(raw, &payload); err != nil {
-		return
+		return nil
 	}
 
 	entries := payload.Data
 	if entries == nil {
 		entries = payload.Models
 	}
-	if len(entries) != len(models) {
-		return
+	if len(entries) != want {
+		return nil
 	}
+	return entries
+}
 
-	for i, entry := range entries {
+// applyProviderContextWindows scans the raw upstream models payload for
+// published context-window fields and fills ContextWindow (source: provider) on
+// the transformed models. A runtime-sourced value set later overrides these.
+func applyProviderContextWindows(raw []byte, models []types.Model) {
+	for i, entry := range modelEntries(raw, len(models)) {
 		if models[i].ContextWindow != nil {
 			continue
 		}
