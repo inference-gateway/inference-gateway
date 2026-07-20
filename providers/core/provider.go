@@ -3,6 +3,7 @@ package core
 import (
 	"bufio"
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -175,8 +176,12 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 	}
 
 	resp := transformer.Transform()
+	// some upstreams (e.g. anthropic) publish no top-level `object`; default it
+	// so the gateway response never carries an empty object field
+	resp.Object = cmp.Or(resp.Object, "list")
 	applyProviderContextWindows(body, resp.Data)
 	applyProviderPricing(body, resp.Data)
+	applyCommunityPricing(resp.Data)
 	return resp, nil
 }
 

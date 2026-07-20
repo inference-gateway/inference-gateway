@@ -43,6 +43,13 @@ tasks:
       - task: format
       - echo "✅ Codegen completed successfully!"
 
+  pricing:sync:
+    desc: 'Sync the community model-pricing fallback table from models.dev (needs network + gh); commit the regenerated JSON'
+    cmds:
+      - gh api repos/sst/models.dev/tarball > /tmp/models.dev.tar.gz
+      - go run cmd/generate/main.go -type CommunityPricing -input /tmp/models.dev.tar.gz -output providers/core/community_pricing.json
+      - rm -f /tmp/models.dev.tar.gz
+
   tidy:
     desc: 'Tidy the gateway'
     cmds:

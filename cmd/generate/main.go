@@ -8,16 +8,19 @@ import (
 	codegen "github.com/inference-gateway/inference-gateway/internal/codegen"
 	dockergen "github.com/inference-gateway/inference-gateway/internal/dockergen"
 	mdgen "github.com/inference-gateway/inference-gateway/internal/mdgen"
+	pricinggen "github.com/inference-gateway/inference-gateway/internal/pricinggen"
 )
 
 var (
 	output string
+	input  string
 	_type  string
 )
 
 func init() {
 	flag.StringVar(&output, "output", "", "Path to the output file")
-	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, or ProvidersConstants)")
+	flag.StringVar(&input, "input", "", "Path to the input file (CommunityPricing: a models.dev repository tarball)")
+	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, or CommunityPricing)")
 }
 
 func main() {
@@ -69,6 +72,17 @@ func main() {
 		err := codegen.GenerateProviders(output, "openapi.yaml")
 		if err != nil {
 			fmt.Printf("Error generating providers: %v\n", err)
+			os.Exit(1)
+		}
+	case "CommunityPricing":
+		fmt.Printf("Generating community pricing table to %s\n", output)
+		if input == "" {
+			fmt.Println("-input must point to a models.dev repository tarball")
+			os.Exit(1)
+		}
+		err := pricinggen.Generate(output, input)
+		if err != nil {
+			fmt.Printf("Error generating community pricing table: %v\n", err)
 			os.Exit(1)
 		}
 	case "ProviderRegistry":

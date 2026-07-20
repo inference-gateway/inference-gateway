@@ -178,12 +178,15 @@ func (e ModelContextWindowSource) Valid() bool {
 
 // Defines values for ModelPricingSource.
 const (
-	PricingSourceProvider ModelPricingSource = "provider"
+	PricingSourceCommunity ModelPricingSource = "community"
+	PricingSourceProvider  ModelPricingSource = "provider"
 )
 
 // Valid indicates whether the value is a known member of the ModelPricingSource enum.
 func (e ModelPricingSource) Valid() bool {
 	switch e {
+	case PricingSourceCommunity:
+		return true
 	case PricingSourceProvider:
 		return true
 	default:
@@ -1360,14 +1363,14 @@ type ModelPricing struct {
 	// OutputPerToken Cost per output (completion) token, as a decimal string.
 	OutputPerToken *string `json:"output_per_token,omitempty"`
 
-	// Source Where the rates were resolved from. `provider` means the upstream provider published them in its model listing.
+	// Source Where the rates were resolved from. `provider` means the upstream provider published them in its model listing; `community` means they were synced from the community-maintained models.dev dataset.
 	Source ModelPricingSource `json:"source"`
 
 	// UpdatedAt When the rates were last refreshed, if known.
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
-// ModelPricingSource Where the rates were resolved from. `provider` means the upstream provider published them in its model listing.
+// ModelPricingSource Where the rates were resolved from. `provider` means the upstream provider published them in its model listing; `community` means they were synced from the community-maintained models.dev dataset.
 type ModelPricingSource string
 
 // Provider defines model for Provider.

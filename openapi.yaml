@@ -1132,11 +1132,14 @@ components:
           type: string
           description: >
             Where the rates were resolved from. `provider` means the upstream
-            provider published them in its model listing.
+            provider published them in its model listing; `community` means
+            they were synced from the community-maintained models.dev dataset.
           enum:
             - provider
+            - community
           x-enum-varnames:
             - PricingSourceProvider
+            - PricingSourceCommunity
         updated_at:
           type: string
           format: date-time
