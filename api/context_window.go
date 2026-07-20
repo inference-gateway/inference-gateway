@@ -66,6 +66,11 @@ func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []ty
 						router.logger.Debug("failed to resolve runtime context window", "provider", providerID, "model", models[i].ID, "error", err)
 						return
 					}
+					maxInt := int64(^uint(0) >> 1)
+					if tokens <= 0 || tokens > maxInt {
+						router.logger.Debug("invalid runtime context window", "provider", providerID, "model", models[i].ID, "tokens", tokens)
+						return
+					}
 					models[i].ContextWindow = &types.ContextWindow{
 						Tokens: int(tokens),
 						Source: types.ContextWindowSourceRuntime,
