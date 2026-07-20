@@ -108,8 +108,6 @@ func TestListModelsHandler_ContextWindowResolution(t *testing.T) {
 		_, _ = w.Write([]byte(payload))
 	}
 
-	// llama.cpp: the models listing publishes the theoretical maximum, /props
-	// reports the reduced --ctx-size the server actually runs with.
 	mux.HandleFunc("/proxy/llamacpp/models", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"object":"list","data":[{"id":"qwen3-coder","object":"model","created":1750000000,"owned_by":"qwen","max_context_length":131072}]}`)
 	})
@@ -117,8 +115,6 @@ func TestListModelsHandler_ContextWindowResolution(t *testing.T) {
 		writeJSON(w, `{"default_generation_settings":{"n_ctx":32768}}`)
 	})
 
-	// Ollama: the show API reports a modelfile num_ctx override alongside the
-	// architecture's larger context_length.
 	mux.HandleFunc("/proxy/ollama/models", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"object":"list","data":[{"id":"llama3","object":"model","created":1750000000,"owned_by":"meta"}]}`)
 	})
@@ -126,12 +122,10 @@ func TestListModelsHandler_ContextWindowResolution(t *testing.T) {
 		writeJSON(w, `{"parameters":"num_ctx 8192\nstop \"<|end|>\"","model_info":{"llama.context_length":131072}}`)
 	})
 
-	// Mistral publishes the window in its model listing; no runtime exists.
 	mux.HandleFunc("/proxy/mistral/models", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"object":"list","data":[{"id":"mistral-large","object":"model","created":1750000000,"owned_by":"mistralai","max_context_length":32768}]}`)
 	})
 
-	// OpenAI publishes nothing; the window stays unresolved.
 	mux.HandleFunc("/proxy/openai/models", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4","object":"model","created":1750000000,"owned_by":"openai"}]}`)
 	})

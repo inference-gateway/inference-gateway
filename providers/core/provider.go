@@ -167,9 +167,6 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 
 	transformer := transformers.NewListModelsTransformer(*p.GetID())
 	if err := json.Unmarshal(body, transformer); err != nil {
-		// Tolerate shape mismatches on optional metadata fields (e.g. an
-		// upstream publishing context_window as a bare integer); the typed
-		// fields that matter still decode.
 		var typeErr *json.UnmarshalTypeError
 		if !errors.As(err, &typeErr) {
 			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
