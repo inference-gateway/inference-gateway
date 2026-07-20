@@ -14,7 +14,7 @@ import (
 
 	l "github.com/inference-gateway/inference-gateway/logger"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
-	"github.com/inference-gateway/inference-gateway/providers/constants"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	transformers "github.com/inference-gateway/inference-gateway/providers/transformers"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
