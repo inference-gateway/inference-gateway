@@ -19,8 +19,8 @@ var (
 
 func init() {
 	flag.StringVar(&output, "output", "", "Path to the output file")
-	flag.StringVar(&input, "input", "", "Path to the input file (CommunityPricing: a models.dev repository tarball)")
-	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, or CommunityPricing)")
+	flag.StringVar(&input, "input", "", "Path to the input file (CommunityPricing, CommunityContextWindows: a models.dev repository tarball)")
+	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, CommunityPricing, or CommunityContextWindows)")
 }
 
 func main() {
@@ -83,6 +83,17 @@ func main() {
 		err := pricinggen.Generate(output, input)
 		if err != nil {
 			fmt.Printf("Error generating community pricing table: %v\n", err)
+			os.Exit(1)
+		}
+	case "CommunityContextWindows":
+		fmt.Printf("Generating community context-window table to %s\n", output)
+		if input == "" {
+			fmt.Println("-input must point to a models.dev repository tarball")
+			os.Exit(1)
+		}
+		err := pricinggen.GenerateContextWindows(output, input)
+		if err != nil {
+			fmt.Printf("Error generating community context-window table: %v\n", err)
 			os.Exit(1)
 		}
 	case "ProviderRegistry":

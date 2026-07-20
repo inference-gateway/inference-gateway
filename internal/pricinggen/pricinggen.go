@@ -1,9 +1,9 @@
-// Package pricinggen syncs the community model-pricing fallback table from the
-// models.dev dataset (https://github.com/sst/models.dev). It reads a GitHub
-// tarball of that repository, filters it to the gateway's supported cloud
-// providers, converts the USD-per-million-token rates to the gateway's
-// per-token decimal-string format, and emits the JSON table embedded by
-// providers/core. Run it via `task pricing:sync`.
+// Package pricinggen syncs the community fallback tables from the models.dev
+// dataset (https://github.com/sst/models.dev). It reads a GitHub tarball of
+// that repository, filters it to the gateway's supported cloud providers, and
+// emits the JSON tables embedded by providers/core: model pricing (USD
+// per-million-token rates converted to the gateway's per-token decimal-string
+// format, `task pricing:sync`) and context windows (`task contextwindow:sync`).
 package pricinggen
 
 import (
@@ -52,12 +52,73 @@ type modelTOML struct {
 		CacheRead  float64 `toml:"cache_read"`
 		CacheWrite float64 `toml:"cache_write"`
 	} `toml:"cost"`
+	Limit struct {
+		Context int64 `toml:"context"`
+		Output  int64 `toml:"output"`
+	} `toml:"limit"`
+}
+
+// contextWindowEntry is one row of the community context-window table: the
+// model's context window in tokens and, when published, its maximum output
+// tokens.
+type contextWindowEntry struct {
+	Context int64 `json:"context"`
+	Output  int64 `json:"output,omitempty"`
 }
 
 // Generate reads a models.dev repository tarball (as served by
 // `gh api repos/sst/models.dev/tarball`) and writes the community pricing
 // table keyed by "<provider>/<model>" to output.
 func Generate(output, tarballPath string) error {
+	table := make(map[string]types.ModelPricing)
+	err := forEachModel(tarballPath, func(key string, model modelTOML) {
+		if model.Cost == nil {
+			return
+		}
+		input := freeOrRate(model.Cost.Input)
+		outputRate := freeOrRate(model.Cost.Output)
+		if input == nil && outputRate == nil {
+			return
+		}
+		table[key] = types.ModelPricing{
+			Currency:           "USD",
+			InputPerToken:      input,
+			OutputPerToken:     outputRate,
+			CacheReadPerToken:  perMTokToPerToken(model.Cost.CacheRead),
+			CacheWritePerToken: perMTokToPerToken(model.Cost.CacheWrite),
+			Source:             types.PricingSourceCommunity,
+		}
+	})
+	if err != nil {
+		return err
+	}
+	return writeTable(output, tarballPath, table)
+}
+
+// GenerateContextWindows reads a models.dev repository tarball and writes the
+// community context-window table keyed by "<provider>/<model>" to output.
+// Models without a published context limit get no entry and keep rendering as
+// explicit nulls.
+func GenerateContextWindows(output, tarballPath string) error {
+	table := make(map[string]contextWindowEntry)
+	err := forEachModel(tarballPath, func(key string, model modelTOML) {
+		if model.Limit.Context <= 0 {
+			return
+		}
+		table[key] = contextWindowEntry{
+			Context: model.Limit.Context,
+			Output:  max(model.Limit.Output, 0),
+		}
+	})
+	if err != nil {
+		return err
+	}
+	return writeTable(output, tarballPath, table)
+}
+
+// forEachModel walks a models.dev repository tarball and calls visit for every
+// model file that maps to a supported gateway provider.
+func forEachModel(tarballPath string, visit func(key string, model modelTOML)) error {
 	f, err := os.Open(tarballPath)
 	if err != nil {
 		return fmt.Errorf("opening models.dev tarball: %w", err)
@@ -70,7 +131,6 @@ func Generate(output, tarballPath string) error {
 	}
 	defer gz.Close()
 
-	table := make(map[string]types.ModelPricing)
 	tr := tar.NewReader(gz)
 	for {
 		hdr, err := tr.Next()
@@ -95,31 +155,20 @@ func Generate(output, tarballPath string) error {
 		if err := toml.Unmarshal(data, &model); err != nil {
 			return fmt.Errorf("parsing %s: %w", hdr.Name, err)
 		}
-		if model.Cost == nil {
-			continue
-		}
-		input := freeOrRate(model.Cost.Input)
-		outputRate := freeOrRate(model.Cost.Output)
-		if input == nil && outputRate == nil {
-			continue
-		}
-		table[key] = types.ModelPricing{
-			Currency:           "USD",
-			InputPerToken:      input,
-			OutputPerToken:     outputRate,
-			CacheReadPerToken:  perMTokToPerToken(model.Cost.CacheRead),
-			CacheWritePerToken: perMTokToPerToken(model.Cost.CacheWrite),
-			Source:             types.PricingSourceCommunity,
-		}
+		visit(key, model)
 	}
+	return nil
+}
 
+// writeTable writes a community table as indented JSON, refusing to emit an
+// empty table (that means the tarball was not a models.dev checkout).
+func writeTable[V any](output, tarballPath string, table map[string]V) error {
 	if len(table) == 0 {
 		return fmt.Errorf("no supported provider models found in %s", tarballPath)
 	}
-
 	data, err := json.MarshalIndent(table, "", "  ")
 	if err != nil {
-		return fmt.Errorf("encoding pricing table: %w", err)
+		return fmt.Errorf("encoding community table: %w", err)
 	}
 	return os.WriteFile(output, append(data, '\n'), 0o644)
 }

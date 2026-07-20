@@ -127,7 +127,7 @@ func TestListModelsHandler_ContextWindowResolution(t *testing.T) {
 	})
 
 	mux.HandleFunc("/proxy/openai/models", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4","object":"model","created":1750000000,"owned_by":"openai"}]}`)
+		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4","object":"model","created":1750000000,"owned_by":"openai"},{"id":"gpt-nonexistent","object":"model","created":1750000000,"owned_by":"openai"}]}`)
 	})
 
 	server := httptest.NewServer(mux)
@@ -137,7 +137,7 @@ func TestListModelsHandler_ContextWindowResolution(t *testing.T) {
 		constants.LlamacppID, constants.OllamaID, constants.MistralID, constants.OpenaiID)
 	r := newContextWindowRouter(t, server, providerCfg)
 
-	t.Run("include resolves runtime, provider, and null windows", func(t *testing.T) {
+	t.Run("include resolves runtime, provider, community, and null windows", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", "/v1/models?include=context_window", nil)
 		require.NoError(t, err)
@@ -145,13 +145,14 @@ func TestListModelsHandler_ContextWindowResolution(t *testing.T) {
 		require.Equal(t, http.StatusOK, w.Code)
 
 		models := modelsByID(t, w.Body.Bytes())
-		require.Len(t, models, 4)
+		require.Len(t, models, 5)
 
 		expected := map[string]map[string]any{
-			"llamacpp/qwen3-coder":  {"tokens": float64(32768), "source": "runtime"},
-			"ollama/llama3":         {"tokens": float64(8192), "source": "runtime"},
-			"mistral/mistral-large": {"tokens": float64(32768), "source": "provider"},
-			"openai/gpt-4":          nil,
+			"llamacpp/qwen3-coder":   {"tokens": float64(32768), "source": "runtime"},
+			"ollama/llama3":          {"tokens": float64(8192), "source": "runtime"},
+			"mistral/mistral-large":  {"tokens": float64(32768), "source": "provider"},
+			"openai/gpt-4":           {"tokens": float64(8192), "source": "community"},
+			"openai/gpt-nonexistent": nil,
 		}
 		for id, want := range expected {
 			model, ok := models[id]

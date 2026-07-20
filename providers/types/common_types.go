@@ -160,13 +160,16 @@ func (e MessageRole) Valid() bool {
 
 // Defines values for ModelContextWindowSource.
 const (
-	ContextWindowSourceProvider ModelContextWindowSource = "provider"
-	ContextWindowSourceRuntime  ModelContextWindowSource = "runtime"
+	ContextWindowSourceCommunity ModelContextWindowSource = "community"
+	ContextWindowSourceProvider  ModelContextWindowSource = "provider"
+	ContextWindowSourceRuntime   ModelContextWindowSource = "runtime"
 )
 
 // Valid indicates whether the value is a known member of the ModelContextWindowSource enum.
 func (e ModelContextWindowSource) Valid() bool {
 	switch e {
+	case ContextWindowSourceCommunity:
+		return true
 	case ContextWindowSourceProvider:
 		return true
 	case ContextWindowSourceRuntime:
@@ -1336,14 +1339,14 @@ type Model struct {
 
 // ModelContextWindow Effective context window a client may safely use for the model. Present only when requested via `include=context_window`; `null` when requested but the window could not be resolved. The value reflects what the serving runtime is actually configured with when available, which can be smaller than the model's theoretical maximum.
 type ModelContextWindow struct {
-	// Source Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing.
+	// Source Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing; `community` means it was synced from the community-maintained models.dev dataset.
 	Source ModelContextWindowSource `json:"source"`
 
 	// Tokens Effective context window size in tokens.
 	Tokens int64 `json:"tokens"`
 }
 
-// ModelContextWindowSource Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing.
+// ModelContextWindowSource Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing; `community` means it was synced from the community-maintained models.dev dataset.
 type ModelContextWindowSource string
 
 // ModelPricing Normalized public per-token pricing for the model. Present only when requested via `include=pricing`; `null` when requested but the model has no public per-token cost (subscription-based providers, locally hosted models, or providers that publish no pricing). Monetary values are decimal strings to avoid floating-point precision loss. Rates the provider does not publish are omitted entirely, never `0` or `null`.

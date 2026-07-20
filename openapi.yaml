@@ -1087,13 +1087,16 @@ components:
             Where the value was resolved from. `runtime` means the serving
             runtime reported its configured window (e.g. llama.cpp `/props`,
             Ollama's show API); `provider` means the upstream provider published
-            the window in its model listing.
+            the window in its model listing; `community` means it was synced
+            from the community-maintained models.dev dataset.
           enum:
             - runtime
             - provider
+            - community
           x-enum-varnames:
             - ContextWindowSourceRuntime
             - ContextWindowSourceProvider
+            - ContextWindowSourceCommunity
       required:
         - tokens
         - source
