@@ -52,8 +52,8 @@ func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []ty
 					return
 				}
 				for _, i := range indexes {
-					models[i].ContextWindow = &types.ModelContextWindow{
-						Tokens: tokens,
+					models[i].ContextWindow = &types.ContextWindow{
+						Tokens: int(tokens),
 						Source: types.ContextWindowSourceRuntime,
 					}
 				}
@@ -66,8 +66,8 @@ func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []ty
 						router.logger.Debug("failed to resolve runtime context window", "provider", providerID, "model", models[i].ID, "error", err)
 						return
 					}
-					models[i].ContextWindow = &types.ModelContextWindow{
-						Tokens: tokens,
+					models[i].ContextWindow = &types.ContextWindow{
+						Tokens: int(tokens),
 						Source: types.ContextWindowSourceRuntime,
 					}
 				})

@@ -80,15 +80,10 @@ paths:
               enum:
                 - context_window
                 - pricing
-          description: >
-            Optional comma-separated list of additional per-model metadata
-            fields to include in the response. Supported keys: `context_window`,
-            `pricing`. Keys are trimmed and de-duplicated; an unknown key returns
-            400. When omitted, the response contains no metadata fields and stays
-            byte-for-byte OpenAI-compatible. A requested key that cannot be
-            resolved is returned as an explicit `null`, distinguishing "not
-            requested" (key absent) from "requested but unavailable" (key present,
-            value null).
+          description: |
+            Comma-separated list of metadata keys to include in the response.
+            Supported values: `pricing`, `context_window`.
+            When omitted, the response remains unchanged (backward compatible).
       responses:
         '200':
           description: List of available models
@@ -157,6 +152,99 @@ paths:
                         created: 1677649963
                         owned_by: 'openai'
                         served_by: 'openai'
+                includePricing:
+                  summary: Models with pricing metadata
+                  value:
+                    object: 'list'
+                    data:
+                      - id: 'openai/gpt-4o'
+                        object: 'model'
+                        created: 1686935002
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                        pricing:
+                          currency: 'USD'
+                          input_per_token: '0.0000025'
+                          output_per_token: '0.00001'
+                          cache_read_per_token: '0.00000125'
+                          cache_write_per_token: '0.0000025'
+                          source: 'provider'
+                          updated_at: '2025-01-01T00:00:00Z'
+                      - id: 'openai/gpt-4-turbo'
+                        object: 'model'
+                        created: 1687882410
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                        pricing:
+                          currency: 'USD'
+                          input_per_token: '0.00001'
+                          output_per_token: '0.00003'
+                          source: 'provider'
+                          updated_at: '2025-01-01T00:00:00Z'
+                includeContextWindow:
+                  summary: Models with context window metadata
+                  value:
+                    object: 'list'
+                    data:
+                      - id: 'openai/gpt-4o'
+                        object: 'model'
+                        created: 1686935002
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                        context_window:
+                          tokens: 128000
+                          source: 'provider'
+                      - id: 'openai/gpt-4-turbo'
+                        object: 'model'
+                        created: 1687882410
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                        context_window:
+                          tokens: 128000
+                          source: 'provider'
+                includePricingContextWindow:
+                  summary: Models with pricing and context window metadata
+                  value:
+                    object: 'list'
+                    data:
+                      - id: 'openai/gpt-4o'
+                        object: 'model'
+                        created: 1686935002
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                        pricing:
+                          currency: 'USD'
+                          input_per_token: '0.0000025'
+                          output_per_token: '0.00001'
+                          cache_read_per_token: '0.00000125'
+                          cache_write_per_token: '0.0000025'
+                          source: 'provider'
+                          updated_at: '2025-01-01T00:00:00Z'
+                        context_window:
+                          tokens: 128000
+                          source: 'provider'
+                      - id: 'openai/gpt-4-turbo'
+                        object: 'model'
+                        created: 1687882410
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                        pricing:
+                          currency: 'USD'
+                          input_per_token: '0.00001'
+                          output_per_token: '0.00003'
+                          source: 'provider'
+                          updated_at: '2025-01-01T00:00:00Z'
+                        context_window:
+                          tokens: 128000
+                          source: 'provider'
+        '400':
+          description: Bad request - unsupported include value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unsupported include value: 'unsupported'. Supported values: pricing, context_window"
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -1043,6 +1131,65 @@ components:
           description: Image detail level for vision processing
       required:
         - url
+    ContextWindow:
+      type: object
+      description: Context window information for a model
+      properties:
+        tokens:
+          type: integer
+          description: Maximum number of tokens the model can process in a single request
+        source:
+          type: string
+          enum:
+            - runtime
+            - provider
+            - community
+          x-enum-varnames:
+            - ContextWindowSourceRuntime
+            - ContextWindowSourceProvider
+            - ContextWindowSourceCommunity
+          description: Source of the context window information
+      required:
+        - tokens
+        - source
+    Pricing:
+      type: object
+      description: Pricing information for a model
+      properties:
+        currency:
+          type: string
+          description: Currency code for the pricing (e.g. USD)
+        input_per_token:
+          type: string
+          description: Price per input token
+        output_per_token:
+          type: string
+          description: Price per output token
+        cache_read_per_token:
+          type: string
+          description: Price per cached input token read
+        cache_write_per_token:
+          type: string
+          description: Price per cached input token write
+        source:
+          type: string
+          enum:
+            - provider
+            - community
+          x-enum-varnames:
+            - PricingSourceProvider
+            - PricingSourceCommunity
+          description: Source of the pricing information
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp when the pricing was last updated
+      required:
+        - currency
+        - input_per_token
+        - output_per_token
+        - source
+        - updated_at
     Model:
       type: object
       description: Common model information
@@ -1059,97 +1206,21 @@ components:
         served_by:
           $ref: '#/components/schemas/Provider'
         context_window:
-          $ref: '#/components/schemas/ModelContextWindow'
+          oneOf:
+            - $ref: '#/components/schemas/ContextWindow'
+            - type: 'null'
+          description: Context window information for the model (included when `include=context_window`)
         pricing:
-          $ref: '#/components/schemas/ModelPricing'
+          oneOf:
+            - $ref: '#/components/schemas/Pricing'
+            - type: 'null'
+          description: Pricing information for the model (included when `include=pricing`)
       required:
         - id
         - object
         - created
         - owned_by
         - served_by
-    ModelContextWindow:
-      type: object
-      description: >
-        Effective context window a client may safely use for the model. Present
-        only when requested via `include=context_window`; `null` when requested
-        but the window could not be resolved. The value reflects what the
-        serving runtime is actually configured with when available, which can be
-        smaller than the model's theoretical maximum.
-      properties:
-        tokens:
-          type: integer
-          format: int64
-          description: Effective context window size in tokens.
-        source:
-          type: string
-          description: >
-            Where the value was resolved from. `runtime` means the serving
-            runtime reported its configured window (e.g. llama.cpp `/props`,
-            Ollama's show API); `provider` means the upstream provider published
-            the window in its model listing; `community` means it was synced
-            from the community-maintained models.dev dataset.
-          enum:
-            - runtime
-            - provider
-            - community
-          x-enum-varnames:
-            - ContextWindowSourceRuntime
-            - ContextWindowSourceProvider
-            - ContextWindowSourceCommunity
-      required:
-        - tokens
-        - source
-    ModelPricing:
-      type: object
-      description: >
-        Normalized public per-token pricing for the model. Present only when
-        requested via `include=pricing`; `null` when requested but the model
-        has no public per-token cost (subscription-based providers, locally
-        hosted models, or providers that publish no pricing). Monetary values
-        are decimal strings to avoid floating-point precision loss. Rates the
-        provider does not publish are omitted entirely, never `0` or `null`.
-      properties:
-        currency:
-          type: string
-          description: ISO 4217 currency code the rates are denominated in.
-        input_per_token:
-          type: string
-          description: Cost per input (prompt) token, as a decimal string.
-        output_per_token:
-          type: string
-          description: Cost per output (completion) token, as a decimal string.
-        cache_read_per_token:
-          type: string
-          description: >
-            Cost per token read from the provider's prompt cache, as a decimal
-            string. Present only when the provider publishes a cached-input
-            rate.
-        cache_write_per_token:
-          type: string
-          description: >
-            Cost per token written to the provider's prompt cache, as a decimal
-            string. Present only when the provider publishes a cache-creation
-            rate.
-        source:
-          type: string
-          description: >
-            Where the rates were resolved from. `provider` means the upstream
-            provider published them in its model listing; `community` means
-            they were synced from the community-maintained models.dev dataset.
-          enum:
-            - provider
-            - community
-          x-enum-varnames:
-            - PricingSourceProvider
-            - PricingSourceCommunity
-        updated_at:
-          type: string
-          format: date-time
-          description: When the rates were last refreshed, if known.
-      required:
-        - currency
-        - source
     ListModelsResponse:
       type: object
       description: Response structure for listing models

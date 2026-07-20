@@ -15,6 +15,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	toml "github.com/pelletier/go-toml/v2"
 
@@ -70,23 +71,25 @@ type contextWindowEntry struct {
 // `gh api repos/sst/models.dev/tarball`) and writes the community pricing
 // table keyed by "<provider>/<model>" to output.
 func Generate(output, tarballPath string) error {
-	table := make(map[string]types.ModelPricing)
+	table := make(map[string]types.Pricing)
+	syncedAt := time.Now().UTC().Truncate(time.Second)
 	err := forEachModel(tarballPath, func(key string, model modelTOML) {
 		if model.Cost == nil {
 			return
 		}
 		input := freeOrRate(model.Cost.Input)
 		outputRate := freeOrRate(model.Cost.Output)
-		if input == nil && outputRate == nil {
+		if input == nil || outputRate == nil {
 			return
 		}
-		table[key] = types.ModelPricing{
+		table[key] = types.Pricing{
 			Currency:           "USD",
-			InputPerToken:      input,
-			OutputPerToken:     outputRate,
+			InputPerToken:      *input,
+			OutputPerToken:     *outputRate,
 			CacheReadPerToken:  perMTokToPerToken(model.Cost.CacheRead),
 			CacheWritePerToken: perMTokToPerToken(model.Cost.CacheWrite),
 			Source:             types.PricingSourceCommunity,
+			UpdatedAt:          syncedAt,
 		}
 	})
 	if err != nil {

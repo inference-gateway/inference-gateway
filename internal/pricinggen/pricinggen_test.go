@@ -115,7 +115,7 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var table map[string]types.ModelPricing
+	var table map[string]types.Pricing
 	if err := json.Unmarshal(data, &table); err != nil {
 		t.Fatal(err)
 	}
@@ -124,14 +124,14 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 	if !ok {
 		t.Fatal("free-tier model with explicit zero cost missing from table")
 	}
-	if free.InputPerToken == nil || *free.InputPerToken != "0" || free.OutputPerToken == nil || *free.OutputPerToken != "0" {
+	if free.InputPerToken != "0" || free.OutputPerToken != "0" {
 		t.Errorf("free-tier rates = %v/%v, want \"0\"/\"0\"", free.InputPerToken, free.OutputPerToken)
 	}
 	if _, ok := table["ollama_cloud/kimi-sub"]; ok {
 		t.Error("model without a cost section must not get an entry")
 	}
 	paid, ok := table["openai/gpt-paid"]
-	if !ok || paid.InputPerToken == nil || *paid.InputPerToken != "0.000003" {
+	if !ok || paid.InputPerToken != "0.000003" {
 		t.Errorf("paid model entry = %+v, want input_per_token 0.000003", paid)
 	}
 }

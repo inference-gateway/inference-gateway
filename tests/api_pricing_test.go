@@ -56,8 +56,10 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		models := modelsByID(t, w.Body.Bytes())
 		require.Len(t, models, 6)
 
-		full, exists := models["deepseek/deepseek-chat"]["pricing"]
-		require.True(t, exists)
+		full, ok := models["deepseek/deepseek-chat"]["pricing"].(map[string]any)
+		require.True(t, ok)
+		assert.NotEmpty(t, full["updated_at"], "required updated_at must be stamped")
+		delete(full, "updated_at")
 		assert.Equal(t, map[string]any{
 			"currency":              "USD",
 			"input_per_token":       "0.00000027",

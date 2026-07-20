@@ -45,8 +45,8 @@ func applyCommunityContextWindows(models []types.Model) {
 		}
 		for _, key := range communityLookupKeys(models[i].ID) {
 			if entry, ok := table[key]; ok {
-				models[i].ContextWindow = &types.ModelContextWindow{
-					Tokens: entry.Context,
+				models[i].ContextWindow = &types.ContextWindow{
+					Tokens: int(entry.Context),
 					Source: types.ContextWindowSourceCommunity,
 				}
 				break

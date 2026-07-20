@@ -19,8 +19,8 @@ var communityPricingJSON []byte
 // communityPricing lazily parses the embedded table once. The file is
 // generated and committed, so a parse failure is a build defect, not a
 // runtime condition; it degrades to an empty table (pricing stays null).
-var communityPricing = sync.OnceValue(func() map[string]types.ModelPricing {
-	table := make(map[string]types.ModelPricing)
+var communityPricing = sync.OnceValue(func() map[string]types.Pricing {
+	table := make(map[string]types.Pricing)
 	_ = json.Unmarshal(communityPricingJSON, &table)
 	return table
 })

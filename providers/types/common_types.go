@@ -47,6 +47,27 @@ func (e ChatCompletionToolType) Valid() bool {
 	}
 }
 
+// Defines values for ContextWindowSource.
+const (
+	ContextWindowSourceCommunity ContextWindowSource = "community"
+	ContextWindowSourceProvider  ContextWindowSource = "provider"
+	ContextWindowSourceRuntime   ContextWindowSource = "runtime"
+)
+
+// Valid indicates whether the value is a known member of the ContextWindowSource enum.
+func (e ContextWindowSource) Valid() bool {
+	switch e {
+	case ContextWindowSourceCommunity:
+		return true
+	case ContextWindowSourceProvider:
+		return true
+	case ContextWindowSourceRuntime:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreateChatCompletionRequestReasoningEffort.
 const (
 	High    CreateChatCompletionRequestReasoningEffort = "high"
@@ -158,35 +179,14 @@ func (e MessageRole) Valid() bool {
 	}
 }
 
-// Defines values for ModelContextWindowSource.
+// Defines values for PricingSource.
 const (
-	ContextWindowSourceCommunity ModelContextWindowSource = "community"
-	ContextWindowSourceProvider  ModelContextWindowSource = "provider"
-	ContextWindowSourceRuntime   ModelContextWindowSource = "runtime"
+	PricingSourceCommunity PricingSource = "community"
+	PricingSourceProvider  PricingSource = "provider"
 )
 
-// Valid indicates whether the value is a known member of the ModelContextWindowSource enum.
-func (e ModelContextWindowSource) Valid() bool {
-	switch e {
-	case ContextWindowSourceCommunity:
-		return true
-	case ContextWindowSourceProvider:
-		return true
-	case ContextWindowSourceRuntime:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for ModelPricingSource.
-const (
-	PricingSourceCommunity ModelPricingSource = "community"
-	PricingSourceProvider  ModelPricingSource = "provider"
-)
-
-// Valid indicates whether the value is a known member of the ModelPricingSource enum.
-func (e ModelPricingSource) Valid() bool {
+// Valid indicates whether the value is a known member of the PricingSource enum.
+func (e PricingSource) Valid() bool {
 	switch e {
 	case PricingSourceCommunity:
 		return true
@@ -763,16 +763,16 @@ func (e TextContentPartType) Valid() bool {
 
 // Defines values for ListModelsParamsInclude.
 const (
-	ContextWindow ListModelsParamsInclude = "context_window"
-	Pricing       ListModelsParamsInclude = "pricing"
+	ListModelsParamsIncludeContextWindow ListModelsParamsInclude = "context_window"
+	ListModelsParamsIncludePricing       ListModelsParamsInclude = "pricing"
 )
 
 // Valid indicates whether the value is a known member of the ListModelsParamsInclude enum.
 func (e ListModelsParamsInclude) Valid() bool {
 	switch e {
-	case ContextWindow:
+	case ListModelsParamsIncludeContextWindow:
 		return true
-	case Pricing:
+	case ListModelsParamsIncludePricing:
 		return true
 	default:
 		return false
@@ -998,6 +998,18 @@ type Config = any
 type ContentPart struct {
 	union json.RawMessage
 }
+
+// ContextWindow Context window information for a model
+type ContextWindow struct {
+	// Source Source of the context window information
+	Source ContextWindowSource `json:"source"`
+
+	// Tokens Maximum number of tokens the model can process in a single request
+	Tokens int `json:"tokens"`
+}
+
+// ContextWindowSource Source of the context window information
+type ContextWindowSource string
 
 // CreateChatCompletionRequest defines model for CreateChatCompletionRequest.
 type CreateChatCompletionRequest struct {
@@ -1325,56 +1337,44 @@ type MessageRole string
 
 // Model Common model information
 type Model struct {
-	// ContextWindow Effective context window a client may safely use for the model. Present only when requested via `include=context_window`; `null` when requested but the window could not be resolved. The value reflects what the serving runtime is actually configured with when available, which can be smaller than the model's theoretical maximum.
-	ContextWindow *ModelContextWindow `json:"context_window,omitempty"`
-	Created       int64               `json:"created"`
-	ID            string              `json:"id"`
-	Object        string              `json:"object"`
-	OwnedBy       string              `json:"owned_by"`
+	// ContextWindow Context window information for the model (included when `include=context_window`)
+	ContextWindow *ContextWindow `json:"context_window,omitempty"`
+	Created       int64          `json:"created"`
+	ID            string         `json:"id"`
+	Object        string         `json:"object"`
+	OwnedBy       string         `json:"owned_by"`
 
-	// Pricing Normalized public per-token pricing for the model. Present only when requested via `include=pricing`; `null` when requested but the model has no public per-token cost (subscription-based providers, locally hosted models, or providers that publish no pricing). Monetary values are decimal strings to avoid floating-point precision loss. Rates the provider does not publish are omitted entirely, never `0` or `null`.
-	Pricing  *ModelPricing `json:"pricing,omitempty"`
-	ServedBy Provider      `json:"served_by"`
+	// Pricing Pricing information for the model (included when `include=pricing`)
+	Pricing  *Pricing `json:"pricing,omitempty"`
+	ServedBy Provider `json:"served_by"`
 }
 
-// ModelContextWindow Effective context window a client may safely use for the model. Present only when requested via `include=context_window`; `null` when requested but the window could not be resolved. The value reflects what the serving runtime is actually configured with when available, which can be smaller than the model's theoretical maximum.
-type ModelContextWindow struct {
-	// Source Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing; `community` means it was synced from the community-maintained models.dev dataset.
-	Source ModelContextWindowSource `json:"source"`
-
-	// Tokens Effective context window size in tokens.
-	Tokens int64 `json:"tokens"`
-}
-
-// ModelContextWindowSource Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing; `community` means it was synced from the community-maintained models.dev dataset.
-type ModelContextWindowSource string
-
-// ModelPricing Normalized public per-token pricing for the model. Present only when requested via `include=pricing`; `null` when requested but the model has no public per-token cost (subscription-based providers, locally hosted models, or providers that publish no pricing). Monetary values are decimal strings to avoid floating-point precision loss. Rates the provider does not publish are omitted entirely, never `0` or `null`.
-type ModelPricing struct {
-	// CacheReadPerToken Cost per token read from the provider's prompt cache, as a decimal string. Present only when the provider publishes a cached-input rate.
+// Pricing Pricing information for a model
+type Pricing struct {
+	// CacheReadPerToken Price per cached input token read
 	CacheReadPerToken *string `json:"cache_read_per_token,omitempty"`
 
-	// CacheWritePerToken Cost per token written to the provider's prompt cache, as a decimal string. Present only when the provider publishes a cache-creation rate.
+	// CacheWritePerToken Price per cached input token write
 	CacheWritePerToken *string `json:"cache_write_per_token,omitempty"`
 
-	// Currency ISO 4217 currency code the rates are denominated in.
+	// Currency Currency code for the pricing (e.g. USD)
 	Currency string `json:"currency"`
 
-	// InputPerToken Cost per input (prompt) token, as a decimal string.
-	InputPerToken *string `json:"input_per_token,omitempty"`
+	// InputPerToken Price per input token
+	InputPerToken string `json:"input_per_token"`
 
-	// OutputPerToken Cost per output (completion) token, as a decimal string.
-	OutputPerToken *string `json:"output_per_token,omitempty"`
+	// OutputPerToken Price per output token
+	OutputPerToken string `json:"output_per_token"`
 
-	// Source Where the rates were resolved from. `provider` means the upstream provider published them in its model listing; `community` means they were synced from the community-maintained models.dev dataset.
-	Source ModelPricingSource `json:"source"`
+	// Source Source of the pricing information
+	Source PricingSource `json:"source"`
 
-	// UpdatedAt When the rates were last refreshed, if known.
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	// UpdatedAt Timestamp when the pricing was last updated
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// ModelPricingSource Where the rates were resolved from. `provider` means the upstream provider published them in its model listing; `community` means they were synced from the community-maintained models.dev dataset.
-type ModelPricingSource string
+// PricingSource Source of the pricing information
+type PricingSource string
 
 // Provider defines model for Provider.
 type Provider string
@@ -1978,7 +1978,9 @@ type ListModelsParams struct {
 	// Provider Specific provider to query (optional)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 
-	// Include Optional comma-separated list of additional per-model metadata fields to include in the response. Supported keys: `context_window`, `pricing`. Keys are trimmed and de-duplicated; an unknown key returns 400. When omitted, the response contains no metadata fields and stays byte-for-byte OpenAI-compatible. A requested key that cannot be resolved is returned as an explicit `null`, distinguishing "not requested" (key absent) from "requested but unavailable" (key present, value null).
+	// Include Comma-separated list of metadata keys to include in the response.
+	// Supported values: `pricing`, `context_window`.
+	// When omitted, the response remains unchanged (backward compatible).
 	Include *[]ListModelsParamsInclude `form:"include,omitempty" json:"include,omitempty"`
 }
 

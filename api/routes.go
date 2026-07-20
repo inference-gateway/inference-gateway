@@ -338,12 +338,12 @@ func parseIncludeParam(raw string) ([]string, error) {
 // is written unchanged so the default payload stays byte-for-byte
 // OpenAI-compatible.
 func (router *RouterImpl) renderModelsResponse(c *gin.Context, resp types.ListModelsResponse, includeKeys []string) {
-	if !slices.Contains(includeKeys, string(types.ContextWindow)) {
+	if !slices.Contains(includeKeys, string(types.ListModelsParamsIncludeContextWindow)) {
 		for i := range resp.Data {
 			resp.Data[i].ContextWindow = nil
 		}
 	}
-	if !slices.Contains(includeKeys, string(types.Pricing)) {
+	if !slices.Contains(includeKeys, string(types.ListModelsParamsIncludePricing)) {
 		for i := range resp.Data {
 			resp.Data[i].Pricing = nil
 		}
@@ -456,7 +456,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 		response.Data = routing.FilterModels(response.Data, router.cfg.AllowedModels, router.cfg.DisallowedModels)
 
-		if slices.Contains(includeKeys, string(types.ContextWindow)) {
+		if slices.Contains(includeKeys, string(types.ListModelsParamsIncludeContextWindow)) {
 			router.resolveContextWindows(ctx, response.Data)
 		}
 
@@ -512,7 +512,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 		allModels = routing.FilterModels(allModels, router.cfg.AllowedModels, router.cfg.DisallowedModels)
 
-		if slices.Contains(includeKeys, string(types.ContextWindow)) {
+		if slices.Contains(includeKeys, string(types.ListModelsParamsIncludeContextWindow)) {
 			router.resolveContextWindows(ctx, allModels)
 		}
 

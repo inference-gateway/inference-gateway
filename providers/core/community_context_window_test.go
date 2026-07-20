@@ -12,7 +12,7 @@ import (
 // the table stay nil.
 func TestApplyCommunityContextWindows(t *testing.T) {
 	models := []types.Model{
-		{ID: "openai/gpt-4", ContextWindow: &types.ModelContextWindow{Tokens: 4096, Source: types.ContextWindowSourceProvider}},
+		{ID: "openai/gpt-4", ContextWindow: &types.ContextWindow{Tokens: 4096, Source: types.ContextWindowSourceProvider}},
 		{ID: "openai/gpt-4"},
 		{ID: "anthropic/claude-sonnet-4-5-19990101"},
 		{ID: "openai/gpt-nonexistent"},

@@ -2,6 +2,7 @@ package core
 
 import (
 	"strconv"
+	"time"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
@@ -27,16 +28,17 @@ func applyProviderPricing(raw []byte, models []types.Model) {
 
 		input := pricingRate(pricing, "input_per_token", "prompt", "input")
 		output := pricingRate(pricing, "output_per_token", "completion", "output")
-		if input == nil && output == nil {
+		if input == nil || output == nil {
 			continue
 		}
-		models[i].Pricing = &types.ModelPricing{
+		models[i].Pricing = &types.Pricing{
 			Currency:           "USD",
-			InputPerToken:      input,
-			OutputPerToken:     output,
+			InputPerToken:      *input,
+			OutputPerToken:     *output,
 			CacheReadPerToken:  pricingRate(pricing, "cache_read_per_token", "input_cache_read", "cached"),
 			CacheWritePerToken: pricingRate(pricing, "cache_write_per_token", "input_cache_write", "cache_creation"),
 			Source:             types.PricingSourceProvider,
+			UpdatedAt:          time.Now().UTC(),
 		}
 	}
 }

@@ -46,8 +46,8 @@ func applyProviderContextWindows(raw []byte, models []types.Model) {
 			if !ok || tokens <= 0 {
 				continue
 			}
-			models[i].ContextWindow = &types.ModelContextWindow{
-				Tokens: int64(tokens),
+			models[i].ContextWindow = &types.ContextWindow{
+				Tokens: int(tokens),
 				Source: types.ContextWindowSourceProvider,
 			}
 			break
