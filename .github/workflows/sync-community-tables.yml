@@ -3,7 +3,7 @@ name: Sync Community Tables
 
 on:
   schedule:
-    - cron: '0 6 * * 1' # weekly, Monday 06:00 UTC
+    - cron: '0 6 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -18,12 +18,6 @@ jobs:
         with:
           client-id: ${{ secrets.RELEASER_APP_ID }}
           private-key: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
-
-      - name: Get app user id
-        id: get-user-id
-        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Checkout code
         uses: actions/checkout@v7.0.0
@@ -45,20 +39,16 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Open pull request if tables changed
-        run: |
-          if git diff --quiet; then
-            echo "Community tables are up to date."
-            exit 0
-          fi
-          git config user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
-          git config user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
-          git checkout -B chore/sync-community-tables
-          git add providers/core/community_pricing.json providers/core/community_context_windows.json
-          git commit -m 'fix: sync community pricing and context-window tables from models.dev'
-          git push -f origin chore/sync-community-tables
-          gh pr create \
-            --title 'fix: sync community pricing and context-window tables from models.dev' \
-            --body 'Automated weekly sync of `community_pricing.json` and `community_context_windows.json` from the [models.dev](https://github.com/sst/models.dev) dataset. Only entries whose values changed carry a new `updated_at`.' \
-            || echo "PR already open; branch updated."
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        uses: peter-evans/create-pull-request@v7.0.8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: chore/sync-community-tables
+          add-paths: providers/core/community_pricing.json,providers/core/community_context_windows.json
+          commit-message: 'fix: sync community pricing and context-window tables from models.dev'
+          title: 'fix: sync community pricing and context-window tables from models.dev'
+          body: >-
+            Automated weekly sync of `community_pricing.json` and
+            `community_context_windows.json` from the
+            [models.dev](https://github.com/sst/models.dev) dataset. Only
+            entries whose values changed carry a new `updated_at`.
+          delete-branch: true
