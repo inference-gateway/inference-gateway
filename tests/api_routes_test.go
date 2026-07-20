@@ -311,8 +311,6 @@ func TestListModelsHandler_Include(t *testing.T) {
 		response := types.ListModelsResponse{
 			Object: "list",
 			Data: []types.Model{
-				// IDs deliberately absent from the community pricing table so
-				// requested-but-unresolved keys render as explicit nulls
 				{ID: "test-model-a", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 				{ID: "test-model-b", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
 			},

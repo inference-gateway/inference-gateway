@@ -31,7 +31,6 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4","object":"model","created":1750000000,"owned_by":"openai"},{"id":"gpt-nonexistent","object":"model","created":1750000000,"owned_by":"openai"}]}`)
 	})
 
-	// anthropic's real /v1/models has no top-level "object" field
 	mux.HandleFunc("/proxy/anthropic/models", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"data":[{"id":"claude-sonnet-4-5-20250929","object":"model","created":1750000000,"owned_by":"anthropic"}]}`)
 	})

@@ -95,7 +95,6 @@ func Generate(output, tarballPath string) error {
 		input := perMTokToPerToken(model.Cost.Input)
 		outputRate := perMTokToPerToken(model.Cost.Output)
 		if input == nil && outputRate == nil {
-			// no per-token price published (free tier or paid gate) - stays null
 			continue
 		}
 		table[key] = types.ModelPricing{
