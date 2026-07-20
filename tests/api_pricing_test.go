@@ -35,11 +35,15 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		writeJSON(w, `{"data":[{"id":"claude-sonnet-4-5-20250929","object":"model","created":1750000000,"owned_by":"anthropic"}]}`)
 	})
 
+	mux.HandleFunc("/proxy/nvidia/models", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, `{"object":"list","data":[{"id":"meta/llama-3.1-8b-instruct","object":"model","created":1750000000,"owned_by":"meta"}]}`)
+	})
+
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
 	providerCfg := contextWindowProviderConfig(server.URL,
-		constants.DeepseekID, constants.GroqID, constants.OpenaiID, constants.AnthropicID)
+		constants.DeepseekID, constants.GroqID, constants.OpenaiID, constants.AnthropicID, constants.NvidiaID)
 	r := newContextWindowRouter(t, server, providerCfg)
 
 	t.Run("include resolves provider, community, and null pricing", func(t *testing.T) {
@@ -50,7 +54,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		require.Equal(t, http.StatusOK, w.Code)
 
 		models := modelsByID(t, w.Body.Bytes())
-		require.Len(t, models, 5)
+		require.Len(t, models, 6)
 
 		full, exists := models["deepseek/deepseek-chat"]["pricing"]
 		require.True(t, exists)
@@ -85,6 +89,12 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		dated, ok := models["anthropic/claude-sonnet-4-5-20250929"]["pricing"].(map[string]any)
 		require.True(t, ok, "date-pinned model IDs must resolve in the community table")
 		assert.Equal(t, "community", dated["source"])
+
+		free, ok := models["nvidia/meta/llama-3.1-8b-instruct"]["pricing"].(map[string]any)
+		require.True(t, ok, "free-tier models must resolve in the community table")
+		assert.Equal(t, "community", free["source"])
+		assert.Equal(t, "0", free["input_per_token"], `free-tier models carry explicit "0" rates, not null pricing`)
+		assert.Equal(t, "0", free["output_per_token"])
 	})
 
 	t.Run("anthropic listing defaults object to list", func(t *testing.T) {

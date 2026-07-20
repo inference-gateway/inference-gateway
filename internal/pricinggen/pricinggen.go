@@ -41,9 +41,12 @@ var providerDirs = map[string]string{
 }
 
 // modelTOML is the subset of a models.dev model file the sync needs. Cost
-// rates are USD per million tokens.
+// rates are USD per million tokens. The cost table is a pointer so an absent
+// section ("no per-token price published", e.g. subscription-gated Ollama
+// Cloud models) stays distinguishable from an explicit zero rate, which
+// models.dev uses for free tiers (e.g. nvidia's free NIM endpoints).
 type modelTOML struct {
-	Cost struct {
+	Cost *struct {
 		Input      float64 `toml:"input"`
 		Output     float64 `toml:"output"`
 		CacheRead  float64 `toml:"cache_read"`
@@ -92,8 +95,11 @@ func Generate(output, tarballPath string) error {
 		if err := toml.Unmarshal(data, &model); err != nil {
 			return fmt.Errorf("parsing %s: %w", hdr.Name, err)
 		}
-		input := perMTokToPerToken(model.Cost.Input)
-		outputRate := perMTokToPerToken(model.Cost.Output)
+		if model.Cost == nil {
+			continue
+		}
+		input := freeOrRate(model.Cost.Input)
+		outputRate := freeOrRate(model.Cost.Output)
 		if input == nil && outputRate == nil {
 			continue
 		}
@@ -140,6 +146,18 @@ func tableKey(name string) (string, bool) {
 		return "", false
 	}
 	return provider + "/" + model, true
+}
+
+// freeOrRate maps an input/output rate from a present cost section: an
+// explicit zero is a published free-tier rate and becomes "0", anything else
+// converts as usual. Cache rates keep the plain conversion — a zero cache
+// rate means "not applicable", matching the gateway's omit-zero convention.
+func freeOrRate(perMTok float64) *string {
+	if perMTok == 0 {
+		zero := "0"
+		return &zero
+	}
+	return perMTokToPerToken(perMTok)
 }
 
 // perMTokToPerToken converts a USD-per-million-token rate to a per-token

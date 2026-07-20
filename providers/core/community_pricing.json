@@ -300,6 +300,12 @@
     "output_per_token": "0.00000015",
     "source": "community"
   },
+  "cohere/north-mini-code-1-0": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
   "deepseek/deepseek-chat": {
     "cache_read_per_token": "0.0000000028",
     "currency": "USD",
@@ -445,6 +451,7 @@
   "google/gemini-embedding-001": {
     "currency": "USD",
     "input_per_token": "0.00000015",
+    "output_per_token": "0",
     "source": "community"
   },
   "google/gemini-flash-latest": {
@@ -616,6 +623,12 @@
     "output_per_token": "0.0000003",
     "source": "community"
   },
+  "mistral/labs-devstral-small-2512": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
   "mistral/magistral-medium-latest": {
     "currency": "USD",
     "input_per_token": "0.000002",
@@ -643,6 +656,7 @@
   "mistral/mistral-embed": {
     "currency": "USD",
     "input_per_token": "0.0000001",
+    "output_per_token": "0",
     "source": "community"
   },
   "mistral/mistral-large-2411": {
@@ -817,6 +831,48 @@
     "output_per_token": "0.000015",
     "source": "community"
   },
+  "nvidia/abacusai/dracarys-llama-3_1-70b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/baai/bge-m3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/black-forest-labs/flux.1-dev": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/black-forest-labs/flux_1-kontext-dev": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/black-forest-labs/flux_1-schnell": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/black-forest-labs/flux_2-klein-4b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/bytedance/seed-oss-36b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
   "nvidia/deepseek-ai/deepseek-v4-flash": {
     "cache_read_per_token": "0.0000000028",
     "currency": "USD",
@@ -831,6 +887,270 @@
     "output_per_token": "0.00000087",
     "source": "community"
   },
+  "nvidia/google/gemma-2-2b-it": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/google/gemma-3n-e2b-it": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/google/gemma-3n-e4b-it": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/google/gemma-4-31b-it": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/google/google-paligemma": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/esm2-650m": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/esmfold": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-3.1-70b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-3.1-8b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-3.2-11b-vision-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-3.2-1b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-3.2-3b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-3.2-90b-vision-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-3.3-70b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-4-maverick-17b-128e-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/meta/llama-guard-4-12b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/microsoft/phi-4-mini-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/microsoft/phi-4-multimodal-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/minimaxai/minimax-m2.7": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/minimaxai/minimax-m3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/mistralai/magistral-small-2506": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/mistralai/mistral-7b-instruct-v03": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/mistralai/mistral-large-3-675b-instruct-2512": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/mistralai/mistral-medium-3-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/mistralai/mistral-nemotron": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/mistralai/mistral-small-4-119b-2603": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/mistralai/mixtral-8x22b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/mistralai/mixtral-8x7b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/moonshotai/kimi-k2-instruct-0905": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/moonshotai/kimi-k2.6": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/active-speaker-detection": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/bevformer": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/cosmos-predict1-5b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/cosmos-transfer1-7b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/cosmos-transfer2_5-2b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/gliner-pii": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/llama-3_1-nemotron-safety-guard-8b-v3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/llama-3_2-nemoretriever-300m-embed-v1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/llama-nemotron-embed-vl-1b-v2": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/llama-nemotron-rerank-vl-1b-v2": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/magpie-tts-zeroshot": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/nemotron-3-content-safety": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/nemotron-3-nano-30b-a3b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
   "nvidia/nvidia/nemotron-3-super-120b-a12b": {
     "currency": "USD",
     "input_per_token": "0.0000002",
@@ -842,6 +1162,180 @@
     "currency": "USD",
     "input_per_token": "0.0000005",
     "output_per_token": "0.0000025",
+    "source": "community"
+  },
+  "nvidia/nvidia/nemotron-content-safety-reasoning-4b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/nemotron-mini-4b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/nemotron-voicechat": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/nv-embed-v1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/nv-embedcode-7b-v1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/nvidia-nemotron-nano-9b-v2": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/rerank-qa-mistral-4b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/riva-translate-4b-instruct-v1_1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/sparsedrive": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/streampetr": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/studiovoice": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/synthetic-video-detector": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/usdcode": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/nvidia/usdvalidate": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/openai/gpt-oss-120b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/openai/gpt-oss-20b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/openai/whisper-large-v3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/qwen/qwen-image": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/qwen/qwen-image-edit": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/qwen/qwen2.5-coder-32b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/qwen/qwen3-coder-480b-a35b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/qwen/qwen3-next-80b-a3b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/qwen/qwen3.5-122b-a10b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/qwen/qwen3.5-397b-a17b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/sarvamai/sarvam-m": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/stepfun-ai/step-3.5-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/stepfun-ai/step-3.7-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/upstage/solar-10_7b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community"
+  },
+  "nvidia/z-ai/glm-5.2": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
     "source": "community"
   },
   "openai/gpt-3.5-turbo": {
@@ -1184,16 +1678,19 @@
   "openai/text-embedding-3-large": {
     "currency": "USD",
     "input_per_token": "0.00000013",
+    "output_per_token": "0",
     "source": "community"
   },
   "openai/text-embedding-3-small": {
     "currency": "USD",
     "input_per_token": "0.00000002",
+    "output_per_token": "0",
     "source": "community"
   },
   "openai/text-embedding-ada-002": {
     "currency": "USD",
     "input_per_token": "0.0000001",
+    "output_per_token": "0",
     "source": "community"
   },
   "zai/glm-4.5": {
@@ -1208,6 +1705,12 @@
     "currency": "USD",
     "input_per_token": "0.0000002",
     "output_per_token": "0.0000011",
+    "source": "community"
+  },
+  "zai/glm-4.5-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
     "source": "community"
   },
   "zai/glm-4.5v": {
@@ -1234,6 +1737,12 @@
     "currency": "USD",
     "input_per_token": "0.0000006",
     "output_per_token": "0.0000022",
+    "source": "community"
+  },
+  "zai/glm-4.7-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
     "source": "community"
   },
   "zai/glm-4.7-flashx": {
