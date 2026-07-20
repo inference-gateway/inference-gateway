@@ -24,6 +24,57 @@ interact with the Inference Gateway using curl commands.
 | List Nvidia models       | `curl -X GET http://localhost:8080/v1/models?provider=nvidia`       |
 | List llama.cpp models    | `curl -X GET http://localhost:8080/v1/models?provider=llamacpp`     |
 
+### Context Windows
+
+Pass `include=context_window` to enrich each model with its effective context
+window. The value is resolved from the serving runtime when possible (llama.cpp
+`/props`, Ollama `/api/show`), falling back to the window the provider publishes
+in its model listing; models the gateway cannot resolve carry an explicit
+`null`.
+
+```bash
+curl -X GET 'http://localhost:8080/v1/models?include=context_window' | jq .
+```
+
+Response:
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "llamacpp/qwen3-coder",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "qwen",
+      "served_by": "llamacpp",
+      "context_window": { "tokens": 32768, "source": "runtime" }
+    },
+    {
+      "id": "mistral/mistral-large",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "mistralai",
+      "served_by": "mistral",
+      "context_window": { "tokens": 32768, "source": "provider" }
+    },
+    {
+      "id": "openai/gpt-4o",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "openai",
+      "served_by": "openai",
+      "context_window": null
+    }
+  ]
+}
+```
+
+The parameter combines with `provider`, e.g.
+`curl -X GET 'http://localhost:8080/v1/models?provider=ollama&include=context_window'`.
+Without `include=context_window` the payload is unchanged and stays byte-for-byte
+OpenAI-compatible.
+
 ## POST Endpoints
 
 | Domain                            | Curl Command                                                                                                                                                                                                               |

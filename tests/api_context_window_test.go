@@ -24,7 +24,7 @@ import (
 // newContextWindowRouter builds a models router whose mock client forwards
 // every request to the given test server: self-proxy calls (relative URLs) by
 // path, runtime lookups (absolute URLs pointing at the server) as-is.
-func newContextWindowRouter(t *testing.T, server *httptest.Server, providerCfg map[types.Provider]*registry.ProviderConfig) *gin.Engine {
+func newContextWindowRouter(t testing.TB, server *httptest.Server, providerCfg map[types.Provider]*registry.ProviderConfig) *gin.Engine {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
