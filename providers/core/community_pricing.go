@@ -47,7 +47,10 @@ func applyCommunityPricing(models []types.Model) {
 // communityLookupKeys returns candidate table keys for a gateway model ID in
 // preference order: exact, without Google's "models/" path prefix, without a
 // "-latest" alias suffix, and without a trailing "-YYYYMMDD" date pin, so
-// upstream listing IDs still match the dataset's canonical names.
+// upstream listing IDs still match the dataset's canonical names. Each
+// candidate containing dots also gets an underscored variant, because
+// models.dev file names replace dots in model ids (e.g. NIM's
+// "solar-10.7b-instruct" is committed as "solar-10_7b-instruct").
 func communityLookupKeys(id string) []string {
 	keys := []string{id}
 	provider, model, ok := strings.Cut(id, "/")
@@ -63,6 +66,11 @@ func communityLookupKeys(id string) []string {
 	}
 	if len(model) > 9 && model[len(model)-9] == '-' && isDigits(model[len(model)-8:]) {
 		keys = append(keys, provider+"/"+model[:len(model)-9])
+	}
+	for _, key := range keys {
+		if strings.Contains(key, ".") {
+			keys = append(keys, strings.ReplaceAll(key, ".", "_"))
+		}
 	}
 	return keys
 }
