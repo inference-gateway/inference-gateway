@@ -45,8 +45,6 @@ func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []ty
 	for providerID, indexes := range byProvider {
 		switch providerID {
 		case constants.LlamacppID:
-			// llama.cpp serves one configuration; a single /props call covers
-			// every model it lists.
 			lookup(func() {
 				tokens, err := router.fetchLlamacppContextWindow(ctx, providerID)
 				if err != nil {
