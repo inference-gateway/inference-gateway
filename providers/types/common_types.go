@@ -157,6 +157,24 @@ func (e MessageRole) Valid() bool {
 	}
 }
 
+// Defines values for ModelContextWindowSource.
+const (
+	ContextWindowSourceProvider ModelContextWindowSource = "provider"
+	ContextWindowSourceRuntime  ModelContextWindowSource = "runtime"
+)
+
+// Valid indicates whether the value is a known member of the ModelContextWindowSource enum.
+func (e ModelContextWindowSource) Valid() bool {
+	switch e {
+	case ContextWindowSourceProvider:
+		return true
+	case ContextWindowSourceRuntime:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for Provider.
 const (
 	Anthropic   Provider = "anthropic"
@@ -1285,17 +1303,29 @@ type MessageRole string
 
 // Model Common model information
 type Model struct {
-	// ContextWindow Maximum context window in tokens. Present only when requested via `include=context_window`; `null` when requested but not yet resolved.
-	ContextWindow *int64 `json:"context_window,omitempty"`
-	Created       int64  `json:"created"`
-	ID            string `json:"id"`
-	Object        string `json:"object"`
-	OwnedBy       string `json:"owned_by"`
+	// ContextWindow Effective context window a client may safely use for the model. Present only when requested via `include=context_window`; `null` when requested but the window could not be resolved. The value reflects what the serving runtime is actually configured with when available, which can be smaller than the model's theoretical maximum.
+	ContextWindow *ModelContextWindow `json:"context_window,omitempty"`
+	Created       int64               `json:"created"`
+	ID            string              `json:"id"`
+	Object        string              `json:"object"`
+	OwnedBy       string              `json:"owned_by"`
 
 	// Pricing Per-model pricing metadata. Present only when requested via `include=pricing`; `null` when requested but not yet resolved. The object shape is defined by a follow-up change.
 	Pricing  *map[string]any `json:"pricing,omitempty"`
 	ServedBy Provider        `json:"served_by"`
 }
+
+// ModelContextWindow Effective context window a client may safely use for the model. Present only when requested via `include=context_window`; `null` when requested but the window could not be resolved. The value reflects what the serving runtime is actually configured with when available, which can be smaller than the model's theoretical maximum.
+type ModelContextWindow struct {
+	// Source Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing.
+	Source ModelContextWindowSource `json:"source"`
+
+	// Tokens Effective context window size in tokens.
+	Tokens int64 `json:"tokens"`
+}
+
+// ModelContextWindowSource Where the value was resolved from. `runtime` means the serving runtime reported its configured window (e.g. llama.cpp `/props`, Ollama's show API); `provider` means the upstream provider published the window in its model listing.
+type ModelContextWindowSource string
 
 // Provider defines model for Provider.
 type Provider string

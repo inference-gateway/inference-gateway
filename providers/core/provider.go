@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -158,13 +159,27 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 		return types.ListModelsResponse{}, err
 	}
 
-	transformer := transformers.NewListModelsTransformer(*p.GetID())
-	if err := json.NewDecoder(response.Body).Decode(transformer); err != nil {
-		p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		p.Logger.Error("Failed to read response body", err, "provider", p.GetName(), "url", url)
 		return types.ListModelsResponse{}, err
 	}
 
-	return transformer.Transform(), nil
+	transformer := transformers.NewListModelsTransformer(*p.GetID())
+	if err := json.Unmarshal(body, transformer); err != nil {
+		// Tolerate shape mismatches on optional metadata fields (e.g. an
+		// upstream publishing context_window as a bare integer); the typed
+		// fields that matter still decode.
+		var typeErr *json.UnmarshalTypeError
+		if !errors.As(err, &typeErr) {
+			p.Logger.Error("Failed to unmarshal response", err, "provider", p.GetName(), "url", url)
+			return types.ListModelsResponse{}, err
+		}
+	}
+
+	resp := transformer.Transform()
+	applyProviderContextWindows(body, resp.Data)
+	return resp, nil
 }
 
 // ChatCompletions generates chat completions from the provider
