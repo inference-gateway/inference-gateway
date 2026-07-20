@@ -338,9 +338,6 @@ func parseIncludeParam(raw string) ([]string, error) {
 // is written unchanged so the default payload stays byte-for-byte
 // OpenAI-compatible.
 func (router *RouterImpl) renderModelsResponse(c *gin.Context, resp types.ListModelsResponse, includeKeys []string) {
-	// ListModels populates provider-published context windows unconditionally;
-	// drop them unless explicitly requested so the default payload stays
-	// byte-for-byte OpenAI-compatible.
 	if !slices.Contains(includeKeys, string(types.ContextWindow)) {
 		for i := range resp.Data {
 			resp.Data[i].ContextWindow = nil
