@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.35.1](https://github.com/inference-gateway/inference-gateway/compare/v0.35.0...v0.35.1) (2026-07-20)
+
+### 🐛 Bug Fixes
+
+* align pricing and context-window types with upstream openapi schema ([#473](https://github.com/inference-gateway/inference-gateway/issues/473)) ([7e427bf](https://github.com/inference-gateway/inference-gateway/commit/7e427bf41a2326025086190f19127914bac30ee4))
+
 ## [0.35.0](https://github.com/inference-gateway/inference-gateway/compare/v0.34.0...v0.35.0) (2026-07-20)
 
 ### ✨ Features
