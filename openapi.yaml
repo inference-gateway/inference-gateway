@@ -68,6 +68,27 @@ paths:
           schema:
             $ref: '#/components/schemas/Provider'
           description: Specific provider to query (optional)
+        - name: include
+          in: query
+          required: false
+          style: form
+          explode: false
+          schema:
+            type: array
+            items:
+              type: string
+              enum:
+                - context_window
+                - pricing
+          description: >
+            Optional comma-separated list of additional per-model metadata
+            fields to include in the response. Supported keys: `context_window`,
+            `pricing`. Keys are trimmed and de-duplicated; an unknown key returns
+            400. When omitted, the response contains no metadata fields and stays
+            byte-for-byte OpenAI-compatible. A requested key that cannot be
+            resolved is returned as an explicit `null`, distinguishing "not
+            requested" (key absent) from "requested but unavailable" (key present,
+            value null).
       responses:
         '200':
           description: List of available models
@@ -1037,6 +1058,21 @@ components:
           type: string
         served_by:
           $ref: '#/components/schemas/Provider'
+        context_window:
+          type: integer
+          format: int64
+          nullable: true
+          description: >
+            Maximum context window in tokens. Present only when requested via
+            `include=context_window`; `null` when requested but not yet resolved.
+        pricing:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: >
+            Per-model pricing metadata. Present only when requested via
+            `include=pricing`; `null` when requested but not yet resolved. The
+            object shape is defined by a follow-up change.
       required:
         - id
         - object

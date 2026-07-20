@@ -300,6 +300,79 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, ResponseJSON{Message: "OK"})
 }
 
+// parseIncludeParam splits the comma-separated `include` value into a
+// de-duplicated list of known metadata keys, preserving first-seen order. An
+// empty value yields no keys; an unrecognized key is rejected so typos fail
+// loudly instead of silently returning less data. Validity is checked against
+// the generated ListModelsParamsInclude enum, keeping the accepted set in sync
+// with openapi.yaml as new metadata fields are added.
+func parseIncludeParam(raw string) ([]string, error) {
+	if strings.TrimSpace(raw) == "" {
+		return nil, nil
+	}
+
+	seen := make(map[string]struct{})
+	keys := make([]string, 0)
+	for _, part := range strings.Split(raw, ",") {
+		key := strings.TrimSpace(part)
+		if key == "" {
+			continue
+		}
+		if !types.ListModelsParamsInclude(key).Valid() {
+			return nil, fmt.Errorf("unknown include value %q", key)
+		}
+		if _, dup := seen[key]; dup {
+			continue
+		}
+		seen[key] = struct{}{}
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
+// renderModelsResponse writes the models list as JSON. When include keys are
+// present it injects each requested key as an explicit null on every model
+// unless already populated, keeping the requested-but-unavailable state
+// distinguishable from an absent field. With no include keys the typed response
+// is written unchanged so the default payload stays byte-for-byte
+// OpenAI-compatible.
+func (router *RouterImpl) renderModelsResponse(c *gin.Context, resp types.ListModelsResponse, includeKeys []string) {
+	if len(includeKeys) == 0 {
+		c.JSON(http.StatusOK, resp)
+		return
+	}
+
+	raw, err := json.Marshal(resp)
+	if err != nil {
+		router.logger.Error("failed to marshal models response", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode response"})
+		return
+	}
+
+	var envelope map[string]any
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		router.logger.Error("failed to decode models response", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode response"})
+		return
+	}
+
+	if data, ok := envelope["data"].([]any); ok {
+		for _, item := range data {
+			model, ok := item.(map[string]any)
+			if !ok {
+				continue
+			}
+			for _, key := range includeKeys {
+				if _, exists := model[key]; !exists {
+					model[key] = nil
+				}
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, envelope)
+}
+
 // ListModelsHandler implements an OpenAI-compatible API endpoint
 // that returns model information in the standard OpenAI format.
 //
@@ -309,6 +382,10 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 // Parameters:
 //   - provider (query): Optional. When specified, returns models from only that provider.
 //     If not specified, returns models from all configured providers.
+//   - include (query): Optional. Comma-separated list of extra per-model metadata
+//     fields to include (context_window, pricing). Keys are trimmed and
+//     de-duplicated; an unknown key returns 400. Requested-but-unresolved keys are
+//     returned as explicit null. When omitted, no metadata fields are added.
 //
 // Response format:
 //
@@ -329,6 +406,13 @@ func (router *RouterImpl) HealthcheckHandler(c *gin.Context) {
 // This endpoint allows applications built for OpenAI's API to work seamlessly
 // with the Inference Gateway's multi-provider architecture.
 func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
+	includeKeys, err := parseIncludeParam(c.Query("include"))
+	if err != nil {
+		router.logger.Error("invalid include parameter", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
 	providerID := types.Provider(c.Query("provider"))
 	if providerID != "" {
 		provider, err := router.registry.BuildProvider(providerID, router.client)
@@ -360,7 +444,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 		response.Data = routing.FilterModels(response.Data, router.cfg.AllowedModels, router.cfg.DisallowedModels)
 
-		c.JSON(http.StatusOK, response)
+		router.renderModelsResponse(c, response, includeKeys)
 	} else {
 		var wg sync.WaitGroup
 		providersCfg := router.cfg.Providers
@@ -417,7 +501,7 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 			Data:   allModels,
 		}
 
-		c.JSON(http.StatusOK, unifiedResponse)
+		router.renderModelsResponse(c, unifiedResponse, includeKeys)
 	}
 }
 

@@ -303,6 +303,176 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 	}
 }
 
+func TestListModelsHandler_Include(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		response := types.ListModelsResponse{
+			Object: "list",
+			Data: []types.Model{
+				{ID: "gpt-4", Object: "model", Created: 1677649963, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+				{ID: "gpt-3.5-turbo", Object: "model", Created: 1677610602, OwnedBy: "openai", ServedBy: constants.OpenaiID},
+			},
+		}
+
+		jsonResponse, err := json.Marshal(response)
+		require.NoError(t, err)
+		_, err = w.Write(jsonResponse)
+		require.NoError(t, err)
+	}))
+	defer server.Close()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient.EXPECT().
+		Do(gomock.Any()).
+		DoAndReturn(func(req *http.Request) (*http.Response, error) {
+			return http.DefaultClient.Get(server.URL + "/models")
+		}).
+		AnyTimes()
+
+	log, err := logger.NewLogger("test")
+	require.NoError(t, err)
+
+	providerCfg := map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: {
+			ID:       constants.OpenaiID,
+			Name:     constants.OpenaiDisplayName,
+			URL:      server.URL,
+			Token:    "test-token",
+			AuthType: constants.AuthTypeBearer,
+			Endpoints: types.Endpoints{
+				Models: constants.OpenaiModelsEndpoint,
+			},
+		},
+	}
+
+	reg := registry.NewProviderRegistry(providerCfg, log)
+	cfg := config.Config{
+		Server: &config.ServerConfig{
+			ReadTimeout: time.Duration(5000) * time.Millisecond,
+		},
+		Providers: providerCfg,
+	}
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.GET("/v1/models", router.ListModelsHandler)
+
+	tests := []struct {
+		name         string
+		query        string
+		expectStatus int
+		presentNull  []string // keys that must be present with a null value
+		absent       []string // keys that must not appear at all
+	}{
+		{
+			name:         "no include returns no metadata keys",
+			query:        "",
+			expectStatus: http.StatusOK,
+			absent:       []string{"context_window", "pricing"},
+		},
+		{
+			name:         "provider only returns no metadata keys",
+			query:        "?provider=openai",
+			expectStatus: http.StatusOK,
+			absent:       []string{"context_window", "pricing"},
+		},
+		{
+			name:         "single key context_window",
+			query:        "?include=context_window",
+			expectStatus: http.StatusOK,
+			presentNull:  []string{"context_window"},
+			absent:       []string{"pricing"},
+		},
+		{
+			name:         "single key pricing",
+			query:        "?include=pricing",
+			expectStatus: http.StatusOK,
+			presentNull:  []string{"pricing"},
+			absent:       []string{"context_window"},
+		},
+		{
+			name:         "multiple keys",
+			query:        "?include=context_window,pricing",
+			expectStatus: http.StatusOK,
+			presentNull:  []string{"context_window", "pricing"},
+		},
+		{
+			name:         "include combined with provider",
+			query:        "?provider=openai&include=pricing,context_window",
+			expectStatus: http.StatusOK,
+			presentNull:  []string{"context_window", "pricing"},
+		},
+		{
+			name:         "duplicate key behaves like single",
+			query:        "?include=pricing,pricing",
+			expectStatus: http.StatusOK,
+			presentNull:  []string{"pricing"},
+			absent:       []string{"context_window"},
+		},
+		{
+			name:         "whitespace around keys is trimmed",
+			query:        "?include=%20context_window%20,%20pricing%20",
+			expectStatus: http.StatusOK,
+			presentNull:  []string{"context_window", "pricing"},
+		},
+		{
+			name:         "unknown key returns 400",
+			query:        "?include=contextwindow",
+			expectStatus: http.StatusBadRequest,
+		},
+		{
+			name:         "unknown key mixed with valid key returns 400",
+			query:        "?include=context_window,bogus",
+			expectStatus: http.StatusBadRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			req, err := http.NewRequest("GET", "/v1/models"+tt.query, nil)
+			require.NoError(t, err)
+
+			r.ServeHTTP(w, req)
+
+			require.Equal(t, tt.expectStatus, w.Code)
+			if tt.expectStatus != http.StatusOK {
+				return
+			}
+
+			var response map[string]any
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+
+			data, ok := response["data"].([]any)
+			require.True(t, ok, "response must contain a data array")
+			require.NotEmpty(t, data, "expected at least one model")
+
+			for _, item := range data {
+				model, ok := item.(map[string]any)
+				require.True(t, ok)
+
+				assert.Contains(t, model, "id", "baseline OpenAI fields must remain")
+				assert.Contains(t, model, "object", "baseline OpenAI fields must remain")
+
+				for _, key := range tt.presentNull {
+					val, exists := model[key]
+					assert.True(t, exists, "key %q should be present", key)
+					assert.Nil(t, val, "key %q should be null", key)
+				}
+				for _, key := range tt.absent {
+					_, exists := model[key]
+					assert.False(t, exists, "key %q should be absent", key)
+				}
+			}
+		})
+	}
+}
+
 func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 	tests := []struct {
 		name           string

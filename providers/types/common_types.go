@@ -721,6 +721,24 @@ func (e TextContentPartType) Valid() bool {
 	}
 }
 
+// Defines values for ListModelsParamsInclude.
+const (
+	ContextWindow ListModelsParamsInclude = "context_window"
+	Pricing       ListModelsParamsInclude = "pricing"
+)
+
+// Valid indicates whether the value is a known member of the ListModelsParamsInclude enum.
+func (e ListModelsParamsInclude) Valid() bool {
+	switch e {
+	case ContextWindow:
+		return true
+	case Pricing:
+		return true
+	default:
+		return false
+	}
+}
+
 // ChatCompletionChoice defines model for ChatCompletionChoice.
 type ChatCompletionChoice struct {
 	// FinishReason The reason the model stopped generating tokens. This will be `stop` if the model hit a natural stop point or a provided stop sequence,
@@ -1267,11 +1285,16 @@ type MessageRole string
 
 // Model Common model information
 type Model struct {
-	Created  int64    `json:"created"`
-	ID       string   `json:"id"`
-	Object   string   `json:"object"`
-	OwnedBy  string   `json:"owned_by"`
-	ServedBy Provider `json:"served_by"`
+	// ContextWindow Maximum context window in tokens. Present only when requested via `include=context_window`; `null` when requested but not yet resolved.
+	ContextWindow *int64 `json:"context_window,omitempty"`
+	Created       int64  `json:"created"`
+	ID            string `json:"id"`
+	Object        string `json:"object"`
+	OwnedBy       string `json:"owned_by"`
+
+	// Pricing Per-model pricing metadata. Present only when requested via `include=pricing`; `null` when requested but not yet resolved. The object shape is defined by a follow-up change.
+	Pricing  *map[string]any `json:"pricing,omitempty"`
+	ServedBy Provider        `json:"served_by"`
 }
 
 // Provider defines model for Provider.
@@ -1875,7 +1898,13 @@ type PushMetricsJSONBody = map[string]any
 type ListModelsParams struct {
 	// Provider Specific provider to query (optional)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+
+	// Include Optional comma-separated list of additional per-model metadata fields to include in the response. Supported keys: `context_window`, `pricing`. Keys are trimmed and de-duplicated; an unknown key returns 400. When omitted, the response contains no metadata fields and stays byte-for-byte OpenAI-compatible. A requested key that cannot be resolved is returned as an explicit `null`, distinguishing "not requested" (key absent) from "requested but unavailable" (key present, value null).
+	Include *[]ListModelsParamsInclude `form:"include,omitempty" json:"include,omitempty"`
 }
+
+// ListModelsParamsInclude defines parameters for ListModels.
+type ListModelsParamsInclude string
 
 // ProxyPatchJSONBody defines parameters for ProxyPatch.
 type ProxyPatchJSONBody struct {
