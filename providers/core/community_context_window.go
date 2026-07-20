@@ -3,6 +3,7 @@ package core
 import (
 	_ "embed"
 	"encoding/json"
+	"math"
 	"sync"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -44,7 +45,7 @@ func applyCommunityContextWindows(models []types.Model) {
 			continue
 		}
 		for _, key := range communityLookupKeys(models[i].ID) {
-			if entry, ok := table[key]; ok {
+			if entry, ok := table[key]; ok && entry.Context > 0 && entry.Context <= math.MaxInt {
 				models[i].ContextWindow = &types.ContextWindow{
 					Tokens: int(entry.Context),
 					Source: types.ContextWindowSourceCommunity,

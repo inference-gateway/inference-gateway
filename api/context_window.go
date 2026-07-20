@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -53,7 +54,7 @@ func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []ty
 				}
 				for _, i := range indexes {
 					models[i].ContextWindow = &types.ContextWindow{
-						Tokens: int(tokens),
+						Tokens: tokens,
 						Source: types.ContextWindowSourceRuntime,
 					}
 				}
@@ -66,13 +67,8 @@ func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []ty
 						router.logger.Debug("failed to resolve runtime context window", "provider", providerID, "model", models[i].ID, "error", err)
 						return
 					}
-					maxInt := int64(^uint(0) >> 1)
-					if tokens <= 0 || tokens > maxInt {
-						router.logger.Debug("invalid runtime context window", "provider", providerID, "model", models[i].ID, "tokens", tokens)
-						return
-					}
 					models[i].ContextWindow = &types.ContextWindow{
-						Tokens: int(tokens),
+						Tokens: tokens,
 						Source: types.ContextWindowSourceRuntime,
 					}
 				})
@@ -85,8 +81,9 @@ func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []ty
 // fetchLlamacppContextWindow reads the serving configuration from llama.cpp's
 // /props endpoint; default_generation_settings.n_ctx is the effective context
 // size the server was started with (--ctx-size), which can be smaller than the
-// model's theoretical maximum.
-func (router *RouterImpl) fetchLlamacppContextWindow(ctx context.Context, providerID types.Provider) (int64, error) {
+// model's theoretical maximum. Fetchers validate range and return int so call
+// sites never convert untrusted 64-bit values themselves.
+func (router *RouterImpl) fetchLlamacppContextWindow(ctx context.Context, providerID types.Provider) (int, error) {
 	var props struct {
 		DefaultGenerationSettings struct {
 			NCtx int64 `json:"n_ctx"`
@@ -95,16 +92,17 @@ func (router *RouterImpl) fetchLlamacppContextWindow(ctx context.Context, provid
 	if err := router.runtimeAPICall(ctx, providerID, http.MethodGet, "/props", nil, &props); err != nil {
 		return 0, err
 	}
-	if props.DefaultGenerationSettings.NCtx <= 0 {
-		return 0, fmt.Errorf("llama.cpp /props returned no context size")
+	tokens := props.DefaultGenerationSettings.NCtx
+	if tokens <= 0 || tokens > math.MaxInt {
+		return 0, fmt.Errorf("llama.cpp /props returned no usable context size (%d)", tokens)
 	}
-	return props.DefaultGenerationSettings.NCtx, nil
+	return int(tokens), nil
 }
 
 // fetchOllamaContextWindow reads per-model metadata from Ollama's show API: a
 // num_ctx entry in parameters when the modelfile overrides the context size,
 // falling back to the architecture's context_length in model_info.
-func (router *RouterImpl) fetchOllamaContextWindow(ctx context.Context, providerID types.Provider, modelID string) (int64, error) {
+func (router *RouterImpl) fetchOllamaContextWindow(ctx context.Context, providerID types.Provider, modelID string) (int, error) {
 	name := strings.TrimPrefix(modelID, string(providerID)+"/")
 	body, err := json.Marshal(map[string]string{"model": name})
 	if err != nil {
@@ -122,7 +120,7 @@ func (router *RouterImpl) fetchOllamaContextWindow(ctx context.Context, provider
 	for line := range strings.Lines(show.Parameters) {
 		fields := strings.Fields(line)
 		if len(fields) == 2 && fields[0] == "num_ctx" {
-			if tokens, err := strconv.ParseInt(fields[1], 10, 64); err == nil && tokens > 0 {
+			if tokens, err := strconv.Atoi(fields[1]); err == nil && tokens > 0 {
 				return tokens, nil
 			}
 		}
@@ -131,8 +129,8 @@ func (router *RouterImpl) fetchOllamaContextWindow(ctx context.Context, provider
 		if !strings.HasSuffix(key, ".context_length") {
 			continue
 		}
-		if tokens, ok := value.(float64); ok && tokens > 0 {
-			return int64(tokens), nil
+		if tokens, ok := value.(float64); ok && tokens > 0 && tokens < math.MaxInt {
+			return int(tokens), nil
 		}
 	}
 	return 0, fmt.Errorf("ollama show returned no context length for %s", name)
