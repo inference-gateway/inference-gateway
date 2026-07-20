@@ -18,19 +18,14 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		_, _ = w.Write([]byte(payload))
 	}
 
-	// Full pricing published with provider-specific field names, including
-	// cache rates.
 	mux.HandleFunc("/proxy/deepseek/models", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"object":"list","data":[{"id":"deepseek-chat","object":"model","created":1750000000,"owned_by":"deepseek","pricing":{"prompt":"0.00000027","completion":"0.00000110","input_cache_read":"0.00000007","input_cache_write":"0.00000027"}}]}`)
 	})
 
-	// Partial pricing: cache rates published as "0" must be omitted; numeric
-	// rates must come back as decimal strings.
 	mux.HandleFunc("/proxy/groq/models", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"object":"list","data":[{"id":"llama-3.3-70b","object":"model","created":1750000000,"owned_by":"meta","pricing":{"prompt":0.00000059,"completion":"0.00000079","input_cache_read":"0","input_cache_write":0}}]}`)
 	})
 
-	// No published pricing at all.
 	mux.HandleFunc("/proxy/openai/models", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4","object":"model","created":1750000000,"owned_by":"openai"}]}`)
 	})

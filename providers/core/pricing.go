@@ -16,10 +16,6 @@ import (
 func applyProviderPricing(raw []byte, models []types.Model) {
 	entries := modelEntries(raw, len(models))
 	for i := range models {
-		// Always overwrite: transformers may have unmarshalled an upstream
-		// `pricing` object with provider-specific field names into an empty
-		// ModelPricing, and only rates normalized from the raw payload may
-		// reach clients.
 		models[i].Pricing = nil
 		if entries == nil {
 			continue
@@ -35,8 +31,6 @@ func applyProviderPricing(raw []byte, models []types.Model) {
 			continue
 		}
 		models[i].Pricing = &types.ModelPricing{
-			// Providers that publish machine-readable per-token rates
-			// denominate them in USD.
 			Currency:           "USD",
 			InputPerToken:      input,
 			OutputPerToken:     output,
