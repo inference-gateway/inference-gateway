@@ -14,6 +14,11 @@ on:
         required: false
         type: string
         default: ''
+      dry_run:
+        description: 'Preview the regeneration diff in the job summary without opening/updating a PR'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,5 +29,6 @@ jobs:
     with:
       language: go
       ref: ${{ inputs.ref }}
+      dry_run: ${{ inputs.dry_run }}
       setup: npm install -g prettier
     secrets: inherit
