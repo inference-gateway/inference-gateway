@@ -26,7 +26,7 @@ tasks:
     cmds:
       - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client/client.go
       - go run cmd/generate/main.go -type ProvidersConstants -output providers/constants/constants.go
-      - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest --config=.oapi-codegen.yaml -o providers/types/common_types.go openapi.yaml
+      - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0 --config=.oapi-codegen.yaml -o providers/types/common_types.go openapi.yaml
       - gofmt -r 'interface{} -> any' -w providers/types/common_types.go
       - go run cmd/generate/main.go -type Providers -output providers/transformers
       - go run cmd/generate/main.go -type ProviderRegistry -output providers/registry/registry.go
@@ -95,9 +95,20 @@ tasks:
       - npx @stoplight/spectral@6.5.0 lint --verbose openapi.yaml
 
   openapi:download:
-    desc: 'Download the latest OpenAPI Spec'
+    desc: 'Download the latest OpenAPI Spec (alias of oas-download)'
     cmds:
-      - curl -o openapi.yaml https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/openapi.yaml
+      - task: oas-download
+
+  oas-download:
+    desc: 'Download OpenAPI specification (pin with SCHEMAS_REF=refs/tags/vX.Y.Z, a branch ref, or a SHA)'
+    cmds:
+      - curl -fsSL -o openapi.yaml "https://raw.githubusercontent.com/inference-gateway/schemas/{{.SCHEMAS_REF | default "refs/heads/main"}}/openapi.yaml"
+
+  oas-sync:
+    desc: 'Fetch the OpenAPI spec (pin with SCHEMAS_REF) and regenerate the gateway'
+    cmds:
+      - task: oas-download
+      - task: generate
 
   test:
     desc: 'Run tests'

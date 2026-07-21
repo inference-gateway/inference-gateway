@@ -1,0 +1,28 @@
+---
+name: Schemas Sync
+
+# Thin caller of the org reusable deterministic schemas->types sync. Runs
+# `task oas-sync SCHEMAS_REF=<ref>` and opens/updates an idempotent PR on the
+# fixed `schemas-sync` branch. Dispatched per repo, or fanned out from
+# inference-gateway/schemas' sync-downstream.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'schemas ref to sync (refs/tags/vX.Y.Z, refs/heads/main, or a SHA). Empty = latest schemas release.'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    uses: inference-gateway/.github/.github/workflows/schemas-sync.yml@main
+    with:
+      language: go
+      ref: ${{ inputs.ref }}
+      setup: npm install -g prettier
+    secrets: inherit
