@@ -30,5 +30,7 @@ jobs:
       language: go
       ref: ${{ inputs.ref }}
       dry_run: ${{ inputs.dry_run }}
-      setup: npm install -g prettier
+      setup: |
+        npm install -g prettier
+        go install go.uber.org/mock/mockgen@v0.6.0
     secrets: inherit
