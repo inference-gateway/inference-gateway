@@ -8,10 +8,10 @@ tasks:
       - task --list
 
   mcp:schema:download:
-    desc: 'Download the latest MCP schema'
+    desc: 'Download the MCP schema (pin with SCHEMAS_REF=refs/tags/vX.Y.Z, a branch ref, or a SHA)'
     cmds:
-      - curl -o internal/mcp/mcp-schema.json https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.json
-      - curl -o internal/mcp/mcp-schema.yaml https://raw.githubusercontent.com/inference-gateway/schemas/refs/heads/main/mcp/mcp-schema.yaml
+      - curl -fsSL -o internal/mcp/mcp-schema.json "https://raw.githubusercontent.com/inference-gateway/schemas/{{.SCHEMAS_REF | default "refs/heads/main"}}/mcp/mcp-schema.json"
+      - curl -fsSL -o internal/mcp/mcp-schema.yaml "https://raw.githubusercontent.com/inference-gateway/schemas/{{.SCHEMAS_REF | default "refs/heads/main"}}/mcp/mcp-schema.yaml"
       - task: format
 
   install:generator:
