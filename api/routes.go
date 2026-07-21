@@ -160,8 +160,6 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 	c.Stream(func(w io.Writer) bool {
 		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
 
-		// The upstream request carries the client's context, so cancellation
-		// surfaces here as a read error - no separate ctx.Done() check needed.
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
 			if err != io.EOF {
