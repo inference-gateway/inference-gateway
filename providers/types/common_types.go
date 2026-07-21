@@ -11,6 +11,21 @@ import (
 	"github.com/oapi-codegen/runtime"
 )
 
+// Defines values for CacheControlType.
+const (
+	Ephemeral CacheControlType = "ephemeral"
+)
+
+// Valid indicates whether the value is a known member of the CacheControlType enum.
+func (e CacheControlType) Valid() bool {
+	switch e {
+	case Ephemeral:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ChatCompletionToolChoiceOption0.
 const (
 	ChatCompletionToolChoiceOption0Auto     ChatCompletionToolChoiceOption0 = "auto"
@@ -86,6 +101,21 @@ func (e CreateChatCompletionRequestReasoningEffort) Valid() bool {
 	case Medium:
 		return true
 	case Minimal:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateMessagesRequestThinkingType.
+const (
+	Enabled CreateMessagesRequestThinkingType = "enabled"
+)
+
+// Valid indicates whether the value is a known member of the CreateMessagesRequestThinkingType enum.
+func (e CreateMessagesRequestThinkingType) Valid() bool {
+	switch e {
+	case Enabled:
 		return true
 	default:
 		return false
@@ -173,6 +203,309 @@ func (e MessageRole) Valid() bool {
 	case Tool:
 		return true
 	case User:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesDocumentBlockType.
+const (
+	Document MessagesDocumentBlockType = "document"
+)
+
+// Valid indicates whether the value is a known member of the MessagesDocumentBlockType enum.
+func (e MessagesDocumentBlockType) Valid() bool {
+	switch e {
+	case Document:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesDocumentSourceType.
+const (
+	MessagesDocumentSourceTypeBase64 MessagesDocumentSourceType = "base64"
+	MessagesDocumentSourceTypeURL    MessagesDocumentSourceType = "url"
+)
+
+// Valid indicates whether the value is a known member of the MessagesDocumentSourceType enum.
+func (e MessagesDocumentSourceType) Valid() bool {
+	switch e {
+	case MessagesDocumentSourceTypeBase64:
+		return true
+	case MessagesDocumentSourceTypeURL:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesErrorType.
+const (
+	MessagesErrorTypeError MessagesErrorType = "error"
+)
+
+// Valid indicates whether the value is a known member of the MessagesErrorType enum.
+func (e MessagesErrorType) Valid() bool {
+	switch e {
+	case MessagesErrorTypeError:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesImageBlockType.
+const (
+	Image MessagesImageBlockType = "image"
+)
+
+// Valid indicates whether the value is a known member of the MessagesImageBlockType enum.
+func (e MessagesImageBlockType) Valid() bool {
+	switch e {
+	case Image:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesImageSourceType.
+const (
+	MessagesImageSourceTypeBase64 MessagesImageSourceType = "base64"
+	MessagesImageSourceTypeURL    MessagesImageSourceType = "url"
+)
+
+// Valid indicates whether the value is a known member of the MessagesImageSourceType enum.
+func (e MessagesImageSourceType) Valid() bool {
+	switch e {
+	case MessagesImageSourceTypeBase64:
+		return true
+	case MessagesImageSourceTypeURL:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesMessageRole.
+const (
+	MessagesMessageRoleAssistant MessagesMessageRole = "assistant"
+	MessagesMessageRoleUser      MessagesMessageRole = "user"
+)
+
+// Valid indicates whether the value is a known member of the MessagesMessageRole enum.
+func (e MessagesMessageRole) Valid() bool {
+	switch e {
+	case MessagesMessageRoleAssistant:
+		return true
+	case MessagesMessageRoleUser:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesRedactedThinkingBlockType.
+const (
+	RedactedThinking MessagesRedactedThinkingBlockType = "redacted_thinking"
+)
+
+// Valid indicates whether the value is a known member of the MessagesRedactedThinkingBlockType enum.
+func (e MessagesRedactedThinkingBlockType) Valid() bool {
+	switch e {
+	case RedactedThinking:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesResponseRole.
+const (
+	MessagesResponseRoleAssistant MessagesResponseRole = "assistant"
+)
+
+// Valid indicates whether the value is a known member of the MessagesResponseRole enum.
+func (e MessagesResponseRole) Valid() bool {
+	switch e {
+	case MessagesResponseRoleAssistant:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesResponseStopReason.
+const (
+	MessagesResponseStopReasonEndTurn      MessagesResponseStopReason = "end_turn"
+	MessagesResponseStopReasonMaxTokens    MessagesResponseStopReason = "max_tokens"
+	MessagesResponseStopReasonPauseTurn    MessagesResponseStopReason = "pause_turn"
+	MessagesResponseStopReasonRefusal      MessagesResponseStopReason = "refusal"
+	MessagesResponseStopReasonStopSequence MessagesResponseStopReason = "stop_sequence"
+	MessagesResponseStopReasonToolUse      MessagesResponseStopReason = "tool_use"
+)
+
+// Valid indicates whether the value is a known member of the MessagesResponseStopReason enum.
+func (e MessagesResponseStopReason) Valid() bool {
+	switch e {
+	case MessagesResponseStopReasonEndTurn:
+		return true
+	case MessagesResponseStopReasonMaxTokens:
+		return true
+	case MessagesResponseStopReasonPauseTurn:
+		return true
+	case MessagesResponseStopReasonRefusal:
+		return true
+	case MessagesResponseStopReasonStopSequence:
+		return true
+	case MessagesResponseStopReasonToolUse:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesResponseType.
+const (
+	MessagesResponseTypeMessage MessagesResponseType = "message"
+)
+
+// Valid indicates whether the value is a known member of the MessagesResponseType enum.
+func (e MessagesResponseType) Valid() bool {
+	switch e {
+	case MessagesResponseTypeMessage:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesStreamEventType.
+const (
+	MessagesStreamEventTypeContentBlockDelta MessagesStreamEventType = "content_block_delta"
+	MessagesStreamEventTypeContentBlockStart MessagesStreamEventType = "content_block_start"
+	MessagesStreamEventTypeContentBlockStop  MessagesStreamEventType = "content_block_stop"
+	MessagesStreamEventTypeError             MessagesStreamEventType = "error"
+	MessagesStreamEventTypeMessageDelta      MessagesStreamEventType = "message_delta"
+	MessagesStreamEventTypeMessageStart      MessagesStreamEventType = "message_start"
+	MessagesStreamEventTypeMessageStop       MessagesStreamEventType = "message_stop"
+	MessagesStreamEventTypePing              MessagesStreamEventType = "ping"
+)
+
+// Valid indicates whether the value is a known member of the MessagesStreamEventType enum.
+func (e MessagesStreamEventType) Valid() bool {
+	switch e {
+	case MessagesStreamEventTypeContentBlockDelta:
+		return true
+	case MessagesStreamEventTypeContentBlockStart:
+		return true
+	case MessagesStreamEventTypeContentBlockStop:
+		return true
+	case MessagesStreamEventTypeError:
+		return true
+	case MessagesStreamEventTypeMessageDelta:
+		return true
+	case MessagesStreamEventTypeMessageStart:
+		return true
+	case MessagesStreamEventTypeMessageStop:
+		return true
+	case MessagesStreamEventTypePing:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesTextBlockType.
+const (
+	MessagesTextBlockTypeText MessagesTextBlockType = "text"
+)
+
+// Valid indicates whether the value is a known member of the MessagesTextBlockType enum.
+func (e MessagesTextBlockType) Valid() bool {
+	switch e {
+	case MessagesTextBlockTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesThinkingBlockType.
+const (
+	Thinking MessagesThinkingBlockType = "thinking"
+)
+
+// Valid indicates whether the value is a known member of the MessagesThinkingBlockType enum.
+func (e MessagesThinkingBlockType) Valid() bool {
+	switch e {
+	case Thinking:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesToolChoice0.
+const (
+	MessagesToolChoice0Any  MessagesToolChoice0 = "any"
+	MessagesToolChoice0Auto MessagesToolChoice0 = "auto"
+)
+
+// Valid indicates whether the value is a known member of the MessagesToolChoice0 enum.
+func (e MessagesToolChoice0) Valid() bool {
+	switch e {
+	case MessagesToolChoice0Any:
+		return true
+	case MessagesToolChoice0Auto:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesToolChoice1Type.
+const (
+	MessagesToolChoiceTypeTool MessagesToolChoice1Type = "tool"
+)
+
+// Valid indicates whether the value is a known member of the MessagesToolChoice1Type enum.
+func (e MessagesToolChoice1Type) Valid() bool {
+	switch e {
+	case MessagesToolChoiceTypeTool:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesToolResultBlockType.
+const (
+	ToolResult MessagesToolResultBlockType = "tool_result"
+)
+
+// Valid indicates whether the value is a known member of the MessagesToolResultBlockType enum.
+func (e MessagesToolResultBlockType) Valid() bool {
+	switch e {
+	case ToolResult:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MessagesToolUseBlockType.
+const (
+	MessagesToolUseBlockTypeToolUse MessagesToolUseBlockType = "tool_use"
+)
+
+// Valid indicates whether the value is a known member of the MessagesToolUseBlockType enum.
+func (e MessagesToolUseBlockType) Valid() bool {
+	switch e {
+	case MessagesToolUseBlockTypeToolUse:
 		return true
 	default:
 		return false
@@ -463,13 +796,13 @@ func (e ResponseOutputMessageType) Valid() bool {
 
 // Defines values for ResponseOutputRefusalType.
 const (
-	Refusal ResponseOutputRefusalType = "refusal"
+	ResponseOutputRefusalTypeRefusal ResponseOutputRefusalType = "refusal"
 )
 
 // Valid indicates whether the value is a known member of the ResponseOutputRefusalType enum.
 func (e ResponseOutputRefusalType) Valid() bool {
 	switch e {
-	case Refusal:
+	case ResponseOutputRefusalTypeRefusal:
 		return true
 	default:
 		return false
@@ -715,31 +1048,31 @@ func (e ResponseToolChoice1Type) Valid() bool {
 
 // Defines values for SSEventEvent.
 const (
-	ContentDelta SSEventEvent = "content-delta"
-	ContentEnd   SSEventEvent = "content-end"
-	ContentStart SSEventEvent = "content-start"
-	MessageEnd   SSEventEvent = "message-end"
-	MessageStart SSEventEvent = "message-start"
-	StreamEnd    SSEventEvent = "stream-end"
-	StreamStart  SSEventEvent = "stream-start"
+	SSEventEventContentDelta SSEventEvent = "content-delta"
+	SSEventEventContentEnd   SSEventEvent = "content-end"
+	SSEventEventContentStart SSEventEvent = "content-start"
+	SSEventEventMessageEnd   SSEventEvent = "message-end"
+	SSEventEventMessageStart SSEventEvent = "message-start"
+	SSEventEventStreamEnd    SSEventEvent = "stream-end"
+	SSEventEventStreamStart  SSEventEvent = "stream-start"
 )
 
 // Valid indicates whether the value is a known member of the SSEventEvent enum.
 func (e SSEventEvent) Valid() bool {
 	switch e {
-	case ContentDelta:
+	case SSEventEventContentDelta:
 		return true
-	case ContentEnd:
+	case SSEventEventContentEnd:
 		return true
-	case ContentStart:
+	case SSEventEventContentStart:
 		return true
-	case MessageEnd:
+	case SSEventEventMessageEnd:
 		return true
-	case MessageStart:
+	case SSEventEventMessageStart:
 		return true
-	case StreamEnd:
+	case SSEventEventStreamEnd:
 		return true
-	case StreamStart:
+	case SSEventEventStreamStart:
 		return true
 	default:
 		return false
@@ -778,6 +1111,16 @@ func (e ListModelsParamsInclude) Valid() bool {
 		return false
 	}
 }
+
+// CacheControl Cache control settings for prompt caching. Currently only
+// `ephemeral` caching is supported.
+type CacheControl struct {
+	// Type The cache control type. Currently only `ephemeral`.
+	Type CacheControlType `json:"type"`
+}
+
+// CacheControlType The cache control type. Currently only `ephemeral`.
+type CacheControlType string
 
 // ChatCompletionChoice defines model for ChatCompletionChoice.
 type ChatCompletionChoice struct {
@@ -1157,6 +1500,80 @@ type CreateChatCompletionStreamResponse struct {
 	Usage *CompletionUsage `json:"usage,omitempty"`
 }
 
+// CreateMessagesRequest Request body for creating a message via the Anthropic-compatible
+// Messages API.
+type CreateMessagesRequest struct {
+	// MaxTokens The maximum number of tokens to generate before stopping.
+	MaxTokens int `json:"max_tokens"`
+
+	// Messages The messages to generate a response for. Each message has a
+	// `role` (user or assistant) and `content`.
+	Messages []MessagesMessage `json:"messages"`
+
+	// Metadata Metadata for a Messages API request.
+	Metadata *MessagesMetadata `json:"metadata,omitempty"`
+
+	// Model The model to use for generating the message.
+	Model string `json:"model"`
+
+	// StopSequences Custom text sequences that will cause the model to stop
+	// generating.
+	StopSequences *[]string `json:"stop_sequences,omitempty"`
+
+	// Stream Whether to stream the response using server-sent events.
+	Stream *bool `json:"stream,omitempty"`
+
+	// System The system prompt. Can be a string or an array of system content
+	// blocks (for prompt caching).
+	System *CreateMessagesRequest_System `json:"system,omitempty"`
+
+	// Temperature Amount of randomness injected into the response. Ranges from
+	// 0.0 to 1.0. Use closer to 0 for analytical / multiple choice,
+	// closer to 1 for creative and generative tasks.
+	Temperature *float32 `json:"temperature,omitempty"`
+
+	// Thinking Configuration for extended thinking.
+	Thinking *struct {
+		// BudgetTokens The maximum number of tokens the model is allowed to use
+		// for thinking.
+		BudgetTokens int `json:"budget_tokens"`
+
+		// Type Always `enabled`.
+		Type CreateMessagesRequestThinkingType `json:"type"`
+	} `json:"thinking,omitempty"`
+
+	// ToolChoice Controls which (if any) tool is called by the model. `auto` means
+	// the model can decide, `any` means the model must use a tool, and
+	// `tool` forces a specific tool.
+	ToolChoice *MessagesToolChoice `json:"tool_choice,omitempty"`
+
+	// Tools Definitions of tools the model may call. Each tool can include
+	// `cache_control` for prompt caching.
+	Tools *[]MessagesTool `json:"tools,omitempty"`
+
+	// TopK Only sample from the top K options for each subsequent token.
+	TopK *int `json:"top_k,omitempty"`
+
+	// TopP Use nucleus sampling. Only consider the tokens with top_p
+	// probability mass.
+	TopP *float32 `json:"top_p,omitempty"`
+}
+
+// CreateMessagesRequestSystem0 System prompt as a string.
+type CreateMessagesRequestSystem0 = string
+
+// CreateMessagesRequestSystem1 defines model for CreateMessagesRequest.System.1.
+type CreateMessagesRequestSystem1 = []MessagesTextBlock
+
+// CreateMessagesRequest_System The system prompt. Can be a string or an array of system content
+// blocks (for prompt caching).
+type CreateMessagesRequest_System struct {
+	union json.RawMessage
+}
+
+// CreateMessagesRequestThinkingType Always `enabled`.
+type CreateMessagesRequestThinkingType string
+
 // CreateResponseRequest Request body for creating a model response via the Responses API.
 type CreateResponseRequest struct {
 	// Background Whether to run the model response in the background. Useful for long-running or batched requests.
@@ -1334,6 +1751,389 @@ type MessageContent1 = []ContentPart
 
 // MessageRole Role of the message sender
 type MessageRole string
+
+// MessagesDocumentBlock A document content block in a Messages API request.
+type MessagesDocumentBlock struct {
+	// CacheControl Cache control settings for prompt caching. Currently only
+	// `ephemeral` caching is supported.
+	CacheControl *CacheControl `json:"cache_control,omitempty"`
+
+	// Source The source of a document content block. Can be a base64-encoded
+	// document or a URL.
+	Source MessagesDocumentSource `json:"source"`
+
+	// Type Content type identifier. Always `document`.
+	Type MessagesDocumentBlockType `json:"type"`
+}
+
+// MessagesDocumentBlockType Content type identifier. Always `document`.
+type MessagesDocumentBlockType string
+
+// MessagesDocumentSource The source of a document content block. Can be a base64-encoded
+// document or a URL.
+type MessagesDocumentSource struct {
+	// Data Base64-encoded document data. Required when `type` is `base64`.
+	Data *string `json:"data,omitempty"`
+
+	// MediaType The media type of the document (e.g. `application/pdf`).
+	// Required when `type` is `base64`.
+	MediaType *string `json:"media_type,omitempty"`
+
+	// Type The source type.
+	Type MessagesDocumentSourceType `json:"type"`
+
+	// URL URL of the document. Required when `type` is `url`.
+	URL *string `json:"url,omitempty"`
+}
+
+// MessagesDocumentSourceType The source type.
+type MessagesDocumentSourceType string
+
+// MessagesError An error response in the Anthropic error format.
+type MessagesError struct {
+	// Error The error details.
+	Error struct {
+		// Message A human-readable error message.
+		Message string `json:"message"`
+
+		// Type The error type (e.g. `invalid_request_error`, `api_error`).
+		Type string `json:"type"`
+	} `json:"error"`
+
+	// Type Always `error`.
+	Type MessagesErrorType `json:"type"`
+}
+
+// MessagesErrorType Always `error`.
+type MessagesErrorType string
+
+// MessagesImageBlock An image content block in a Messages API request.
+type MessagesImageBlock struct {
+	// CacheControl Cache control settings for prompt caching. Currently only
+	// `ephemeral` caching is supported.
+	CacheControl *CacheControl `json:"cache_control,omitempty"`
+
+	// Source The source of an image content block. Can be a base64-encoded
+	// image or a URL.
+	Source MessagesImageSource `json:"source"`
+
+	// Type Content type identifier. Always `image`.
+	Type MessagesImageBlockType `json:"type"`
+}
+
+// MessagesImageBlockType Content type identifier. Always `image`.
+type MessagesImageBlockType string
+
+// MessagesImageSource The source of an image content block. Can be a base64-encoded
+// image or a URL.
+type MessagesImageSource struct {
+	// Data Base64-encoded image data. Required when `type` is `base64`.
+	Data *string `json:"data,omitempty"`
+
+	// MediaType The media type of the image (e.g. `image/jpeg`, `image/png`,
+	// `image/gif`, `image/webp`). Required when `type` is `base64`.
+	MediaType *string `json:"media_type,omitempty"`
+
+	// Type The source type.
+	Type MessagesImageSourceType `json:"type"`
+
+	// URL URL of the image. Required when `type` is `url`.
+	URL *string `json:"url,omitempty"`
+}
+
+// MessagesImageSourceType The source type.
+type MessagesImageSourceType string
+
+// MessagesMessage A message in a Messages API request.
+type MessagesMessage struct {
+	// Content The content of the message. Can be a string or an array of
+	// content blocks.
+	Content MessagesMessage_Content `json:"content"`
+
+	// Role The role of the message sender.
+	Role MessagesMessageRole `json:"role"`
+}
+
+// MessagesMessageContent0 Text content.
+type MessagesMessageContent0 = string
+
+// MessagesMessageContent1 defines model for MessagesMessage.Content.1.
+type MessagesMessageContent1 = []MessagesRequestContentBlock
+
+// MessagesMessage_Content The content of the message. Can be a string or an array of
+// content blocks.
+type MessagesMessage_Content struct {
+	union json.RawMessage
+}
+
+// MessagesMessageRole The role of the message sender.
+type MessagesMessageRole string
+
+// MessagesMetadata Metadata for a Messages API request.
+type MessagesMetadata struct {
+	// UserID An external identifier for the user.
+	UserID *string `json:"user_id,omitempty"`
+}
+
+// MessagesRedactedThinkingBlock A redacted thinking content block in a Messages API request or
+// response. Emitted when thinking content is encrypted for safety
+// reasons; must be passed back unchanged in multi-turn conversations.
+type MessagesRedactedThinkingBlock struct {
+	// Data The encrypted thinking content.
+	Data string `json:"data"`
+
+	// Type Content type identifier. Always `redacted_thinking`.
+	Type MessagesRedactedThinkingBlockType `json:"type"`
+}
+
+// MessagesRedactedThinkingBlockType Content type identifier. Always `redacted_thinking`.
+type MessagesRedactedThinkingBlockType string
+
+// MessagesRequestContentBlock A content block within a Messages API request message.
+type MessagesRequestContentBlock struct {
+	union json.RawMessage
+}
+
+// MessagesResponse A message response from the Anthropic-compatible Messages API.
+type MessagesResponse struct {
+	// Content The content blocks generated by the model.
+	Content []MessagesResponseContentBlock `json:"content"`
+
+	// ID Unique identifier for this message.
+	ID string `json:"id"`
+
+	// Model The model used to generate the message.
+	Model string `json:"model"`
+
+	// Role Always `assistant`.
+	Role MessagesResponseRole `json:"role"`
+
+	// StopReason The reason the model stopped generating.
+	StopReason MessagesResponseStopReason `json:"stop_reason"`
+
+	// StopSequence The stop sequence that caused the model to stop, if any.
+	StopSequence *string `json:"stop_sequence,omitempty"`
+
+	// Type Always `message`.
+	Type MessagesResponseType `json:"type"`
+
+	// Usage Token usage statistics for a Messages API response, including
+	// cache metrics.
+	Usage MessagesUsage `json:"usage"`
+}
+
+// MessagesResponseRole Always `assistant`.
+type MessagesResponseRole string
+
+// MessagesResponseStopReason The reason the model stopped generating.
+type MessagesResponseStopReason string
+
+// MessagesResponseType Always `message`.
+type MessagesResponseType string
+
+// MessagesResponseContentBlock A content block within a Messages API response.
+type MessagesResponseContentBlock struct {
+	union json.RawMessage
+}
+
+// MessagesStreamEvent A server-sent event emitted while streaming a Messages API response.
+// The Anthropic Messages API emits a sequence of typed events
+// (`message_start`, `content_block_start`, `content_block_delta`,
+// `content_block_stop`, `message_delta`, `message_stop`, `ping`).
+type MessagesStreamEvent struct {
+	// ContentBlock Present in `content_block_start` events. Contains the content
+	// block.
+	ContentBlock *MessagesResponseContentBlock `json:"content_block,omitempty"`
+
+	// Delta Present in `content_block_delta` and `message_delta` events.
+	// Contains the incremental update.
+	Delta *struct {
+		// PartialJSON The incremental JSON string of the tool input
+		// (for `input_json_delta`).
+		PartialJSON *string `json:"partial_json,omitempty"`
+
+		// Signature The thinking signature (for `signature_delta`).
+		Signature *string `json:"signature,omitempty"`
+
+		// StopReason The stop reason (for `message_delta`).
+		StopReason *string `json:"stop_reason,omitempty"`
+
+		// StopSequence The stop sequence (for `message_delta`).
+		StopSequence *string `json:"stop_sequence,omitempty"`
+
+		// Text The incremental text (for `text_delta`).
+		Text *string `json:"text,omitempty"`
+
+		// Thinking The incremental thinking content (for `thinking_delta`).
+		Thinking *string `json:"thinking,omitempty"`
+
+		// Type The type of delta. For text deltas this is `text_delta`,
+		// for streamed tool inputs this is `input_json_delta`, for
+		// thinking deltas this is `thinking_delta`, for thinking
+		// signatures this is `signature_delta`.
+		Type *string `json:"type,omitempty"`
+	} `json:"delta,omitempty"`
+
+	// Error Present in `error` events. Contains the error details.
+	Error *MessagesError `json:"error,omitempty"`
+
+	// Index Present in `content_block_*` events. The index of the content
+	// block.
+	Index *int `json:"index,omitempty"`
+
+	// Message Present in `message_start` events. Contains the initial message.
+	Message *MessagesResponse `json:"message,omitempty"`
+
+	// Type The type of the streamed event.
+	Type MessagesStreamEventType `json:"type"`
+
+	// Usage Present in `message_delta` events as a sibling of `delta`.
+	// Contains cumulative usage for the message.
+	Usage *MessagesUsage `json:"usage,omitempty"`
+}
+
+// MessagesStreamEventType The type of the streamed event.
+type MessagesStreamEventType string
+
+// MessagesTextBlock A text content block in a Messages API request or response.
+type MessagesTextBlock struct {
+	// CacheControl Cache control settings for prompt caching. Currently only
+	// `ephemeral` caching is supported.
+	CacheControl *CacheControl `json:"cache_control,omitempty"`
+
+	// Text The text content.
+	Text string `json:"text"`
+
+	// Type Content type identifier. Always `text`.
+	Type MessagesTextBlockType `json:"type"`
+}
+
+// MessagesTextBlockType Content type identifier. Always `text`.
+type MessagesTextBlockType string
+
+// MessagesThinkingBlock A thinking content block in a Messages API request or response.
+type MessagesThinkingBlock struct {
+	// Signature The signature for verifying the thinking content. Must be
+	// passed back when continuing a conversation with extended thinking.
+	Signature string `json:"signature"`
+
+	// Thinking The thinking content.
+	Thinking string `json:"thinking"`
+
+	// Type Content type identifier. Always `thinking`.
+	Type MessagesThinkingBlockType `json:"type"`
+}
+
+// MessagesThinkingBlockType Content type identifier. Always `thinking`.
+type MessagesThinkingBlockType string
+
+// MessagesTool A tool definition in the Messages API format. Uses the same
+// function tool shape as the Responses API but with an optional
+// `cache_control` field for prompt caching.
+type MessagesTool struct {
+	// CacheControl Cache control settings for prompt caching. Currently only
+	// `ephemeral` caching is supported.
+	CacheControl *CacheControl `json:"cache_control,omitempty"`
+
+	// Description A description of what the tool does.
+	Description *string `json:"description,omitempty"`
+
+	// InputSchema The parameters the functions accepts, described as a JSON Schema object. See the [guide](/docs/guides/function-calling) for examples, and the [JSON Schema reference](https://json-schema.org/understanding-json-schema/) for documentation about the format.
+	// Omitting `parameters` defines a function with an empty parameter list.
+	InputSchema FunctionParameters `json:"input_schema"`
+
+	// Name The name of the tool.
+	Name string `json:"name"`
+}
+
+// MessagesToolChoice Controls which (if any) tool is called by the model. `auto` means
+// the model can decide, `any` means the model must use a tool, and
+// `tool` forces a specific tool.
+type MessagesToolChoice struct {
+	union json.RawMessage
+}
+
+// MessagesToolChoice0 The tool choice mode.
+type MessagesToolChoice0 string
+
+// MessagesToolChoice1 Forces the model to use a specific tool.
+type MessagesToolChoice1 struct {
+	// Name The name of the tool to use.
+	Name string `json:"name"`
+
+	// Type Always `tool`.
+	Type MessagesToolChoice1Type `json:"type"`
+}
+
+// MessagesToolChoice1Type Always `tool`.
+type MessagesToolChoice1Type string
+
+// MessagesToolResultBlock A tool result content block in a Messages API request.
+type MessagesToolResultBlock struct {
+	// CacheControl Cache control settings for prompt caching. Currently only
+	// `ephemeral` caching is supported.
+	CacheControl *CacheControl `json:"cache_control,omitempty"`
+
+	// Content The result content. Can be a string or an array of content blocks.
+	Content *MessagesToolResultBlock_Content `json:"content,omitempty"`
+
+	// IsError Whether the tool execution resulted in an error.
+	IsError *bool `json:"is_error,omitempty"`
+
+	// ToolUseID The ID of the tool use this result is for.
+	ToolUseID string `json:"tool_use_id"`
+
+	// Type Content type identifier. Always `tool_result`.
+	Type MessagesToolResultBlockType `json:"type"`
+}
+
+// MessagesToolResultBlockContent0 Text result content.
+type MessagesToolResultBlockContent0 = string
+
+// MessagesToolResultBlockContent1 defines model for MessagesToolResultBlock.Content.1.
+type MessagesToolResultBlockContent1 = []MessagesTextBlock
+
+// MessagesToolResultBlock_Content The result content. Can be a string or an array of content blocks.
+type MessagesToolResultBlock_Content struct {
+	union json.RawMessage
+}
+
+// MessagesToolResultBlockType Content type identifier. Always `tool_result`.
+type MessagesToolResultBlockType string
+
+// MessagesToolUseBlock A tool use content block in a Messages API request or response.
+type MessagesToolUseBlock struct {
+	// ID The unique identifier for this tool use block.
+	ID string `json:"id"`
+
+	// Input The input parameters for the tool.
+	Input map[string]any `json:"input"`
+
+	// Name The name of the tool being called.
+	Name string `json:"name"`
+
+	// Type Content type identifier. Always `tool_use`.
+	Type MessagesToolUseBlockType `json:"type"`
+}
+
+// MessagesToolUseBlockType Content type identifier. Always `tool_use`.
+type MessagesToolUseBlockType string
+
+// MessagesUsage Token usage statistics for a Messages API response, including
+// cache metrics.
+type MessagesUsage struct {
+	// CacheCreationInputTokens The number of tokens used for cache creation.
+	CacheCreationInputTokens *int64 `json:"cache_creation_input_tokens,omitempty"`
+
+	// CacheReadInputTokens The number of tokens read from the cache.
+	CacheReadInputTokens *int64 `json:"cache_read_input_tokens,omitempty"`
+
+	// InputTokens The number of input tokens.
+	InputTokens int64 `json:"input_tokens"`
+
+	// OutputTokens The number of output tokens.
+	OutputTokens int64 `json:"output_tokens"`
+}
 
 // Model Common model information
 type Model struct {
@@ -1910,6 +2710,9 @@ type InternalError = Error
 // MCPNotExposed defines model for MCPNotExposed.
 type MCPNotExposed = Error
 
+// MessagesNotSupported An error response in the Anthropic error format.
+type MessagesNotSupported = MessagesError
+
 // ProviderResponse Provider-specific response format. Examples:
 //
 // OpenAI GET /v1/models?provider=openai response:
@@ -1973,6 +2776,12 @@ type CreateChatCompletionParams struct {
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
+// CreateMessageParams defines parameters for CreateMessage.
+type CreateMessageParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
 // PushMetricsJSONBody defines parameters for PushMetrics.
 type PushMetricsJSONBody = map[string]any
 
@@ -2028,6 +2837,9 @@ type CreateResponseParams struct {
 
 // CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
 type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
+
+// CreateMessageJSONRequestBody defines body for CreateMessage for application/json ContentType.
+type CreateMessageJSONRequestBody = CreateMessagesRequest
 
 // PushMetricsJSONRequestBody defines body for PushMetrics for application/json ContentType.
 type PushMetricsJSONRequestBody = PushMetricsJSONBody
@@ -2386,6 +3198,68 @@ func (t *CreateChatCompletionRequest_Stop) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsCreateMessagesRequestSystem0 returns the union data inside the CreateMessagesRequest_System as a CreateMessagesRequestSystem0
+func (t CreateMessagesRequest_System) AsCreateMessagesRequestSystem0() (CreateMessagesRequestSystem0, error) {
+	var body CreateMessagesRequestSystem0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCreateMessagesRequestSystem0 overwrites any union data inside the CreateMessagesRequest_System as the provided CreateMessagesRequestSystem0
+func (t *CreateMessagesRequest_System) FromCreateMessagesRequestSystem0(v CreateMessagesRequestSystem0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCreateMessagesRequestSystem0 performs a merge with any union data inside the CreateMessagesRequest_System, using the provided CreateMessagesRequestSystem0
+func (t *CreateMessagesRequest_System) MergeCreateMessagesRequestSystem0(v CreateMessagesRequestSystem0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCreateMessagesRequestSystem1 returns the union data inside the CreateMessagesRequest_System as a CreateMessagesRequestSystem1
+func (t CreateMessagesRequest_System) AsCreateMessagesRequestSystem1() (CreateMessagesRequestSystem1, error) {
+	var body CreateMessagesRequestSystem1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCreateMessagesRequestSystem1 overwrites any union data inside the CreateMessagesRequest_System as the provided CreateMessagesRequestSystem1
+func (t *CreateMessagesRequest_System) FromCreateMessagesRequestSystem1(v CreateMessagesRequestSystem1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCreateMessagesRequestSystem1 performs a merge with any union data inside the CreateMessagesRequest_System, using the provided CreateMessagesRequestSystem1
+func (t *CreateMessagesRequest_System) MergeCreateMessagesRequestSystem1(v CreateMessagesRequestSystem1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CreateMessagesRequest_System) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CreateMessagesRequest_System) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsMessageContent0 returns the union data inside the MessageContent as a MessageContent0
 func (t MessageContent) AsMessageContent0() (MessageContent0, error) {
 	var body MessageContent0
@@ -2444,6 +3318,498 @@ func (t MessageContent) MarshalJSON() ([]byte, error) {
 }
 
 func (t *MessageContent) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMessagesMessageContent0 returns the union data inside the MessagesMessage_Content as a MessagesMessageContent0
+func (t MessagesMessage_Content) AsMessagesMessageContent0() (MessagesMessageContent0, error) {
+	var body MessagesMessageContent0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesMessageContent0 overwrites any union data inside the MessagesMessage_Content as the provided MessagesMessageContent0
+func (t *MessagesMessage_Content) FromMessagesMessageContent0(v MessagesMessageContent0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesMessageContent0 performs a merge with any union data inside the MessagesMessage_Content, using the provided MessagesMessageContent0
+func (t *MessagesMessage_Content) MergeMessagesMessageContent0(v MessagesMessageContent0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesMessageContent1 returns the union data inside the MessagesMessage_Content as a MessagesMessageContent1
+func (t MessagesMessage_Content) AsMessagesMessageContent1() (MessagesMessageContent1, error) {
+	var body MessagesMessageContent1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesMessageContent1 overwrites any union data inside the MessagesMessage_Content as the provided MessagesMessageContent1
+func (t *MessagesMessage_Content) FromMessagesMessageContent1(v MessagesMessageContent1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesMessageContent1 performs a merge with any union data inside the MessagesMessage_Content, using the provided MessagesMessageContent1
+func (t *MessagesMessage_Content) MergeMessagesMessageContent1(v MessagesMessageContent1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MessagesMessage_Content) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MessagesMessage_Content) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMessagesTextBlock returns the union data inside the MessagesRequestContentBlock as a MessagesTextBlock
+func (t MessagesRequestContentBlock) AsMessagesTextBlock() (MessagesTextBlock, error) {
+	var body MessagesTextBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesTextBlock overwrites any union data inside the MessagesRequestContentBlock as the provided MessagesTextBlock
+func (t *MessagesRequestContentBlock) FromMessagesTextBlock(v MessagesTextBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesTextBlock performs a merge with any union data inside the MessagesRequestContentBlock, using the provided MessagesTextBlock
+func (t *MessagesRequestContentBlock) MergeMessagesTextBlock(v MessagesTextBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesImageBlock returns the union data inside the MessagesRequestContentBlock as a MessagesImageBlock
+func (t MessagesRequestContentBlock) AsMessagesImageBlock() (MessagesImageBlock, error) {
+	var body MessagesImageBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesImageBlock overwrites any union data inside the MessagesRequestContentBlock as the provided MessagesImageBlock
+func (t *MessagesRequestContentBlock) FromMessagesImageBlock(v MessagesImageBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesImageBlock performs a merge with any union data inside the MessagesRequestContentBlock, using the provided MessagesImageBlock
+func (t *MessagesRequestContentBlock) MergeMessagesImageBlock(v MessagesImageBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesToolUseBlock returns the union data inside the MessagesRequestContentBlock as a MessagesToolUseBlock
+func (t MessagesRequestContentBlock) AsMessagesToolUseBlock() (MessagesToolUseBlock, error) {
+	var body MessagesToolUseBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesToolUseBlock overwrites any union data inside the MessagesRequestContentBlock as the provided MessagesToolUseBlock
+func (t *MessagesRequestContentBlock) FromMessagesToolUseBlock(v MessagesToolUseBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesToolUseBlock performs a merge with any union data inside the MessagesRequestContentBlock, using the provided MessagesToolUseBlock
+func (t *MessagesRequestContentBlock) MergeMessagesToolUseBlock(v MessagesToolUseBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesToolResultBlock returns the union data inside the MessagesRequestContentBlock as a MessagesToolResultBlock
+func (t MessagesRequestContentBlock) AsMessagesToolResultBlock() (MessagesToolResultBlock, error) {
+	var body MessagesToolResultBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesToolResultBlock overwrites any union data inside the MessagesRequestContentBlock as the provided MessagesToolResultBlock
+func (t *MessagesRequestContentBlock) FromMessagesToolResultBlock(v MessagesToolResultBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesToolResultBlock performs a merge with any union data inside the MessagesRequestContentBlock, using the provided MessagesToolResultBlock
+func (t *MessagesRequestContentBlock) MergeMessagesToolResultBlock(v MessagesToolResultBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesDocumentBlock returns the union data inside the MessagesRequestContentBlock as a MessagesDocumentBlock
+func (t MessagesRequestContentBlock) AsMessagesDocumentBlock() (MessagesDocumentBlock, error) {
+	var body MessagesDocumentBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesDocumentBlock overwrites any union data inside the MessagesRequestContentBlock as the provided MessagesDocumentBlock
+func (t *MessagesRequestContentBlock) FromMessagesDocumentBlock(v MessagesDocumentBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesDocumentBlock performs a merge with any union data inside the MessagesRequestContentBlock, using the provided MessagesDocumentBlock
+func (t *MessagesRequestContentBlock) MergeMessagesDocumentBlock(v MessagesDocumentBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesThinkingBlock returns the union data inside the MessagesRequestContentBlock as a MessagesThinkingBlock
+func (t MessagesRequestContentBlock) AsMessagesThinkingBlock() (MessagesThinkingBlock, error) {
+	var body MessagesThinkingBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesThinkingBlock overwrites any union data inside the MessagesRequestContentBlock as the provided MessagesThinkingBlock
+func (t *MessagesRequestContentBlock) FromMessagesThinkingBlock(v MessagesThinkingBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesThinkingBlock performs a merge with any union data inside the MessagesRequestContentBlock, using the provided MessagesThinkingBlock
+func (t *MessagesRequestContentBlock) MergeMessagesThinkingBlock(v MessagesThinkingBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesRedactedThinkingBlock returns the union data inside the MessagesRequestContentBlock as a MessagesRedactedThinkingBlock
+func (t MessagesRequestContentBlock) AsMessagesRedactedThinkingBlock() (MessagesRedactedThinkingBlock, error) {
+	var body MessagesRedactedThinkingBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesRedactedThinkingBlock overwrites any union data inside the MessagesRequestContentBlock as the provided MessagesRedactedThinkingBlock
+func (t *MessagesRequestContentBlock) FromMessagesRedactedThinkingBlock(v MessagesRedactedThinkingBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesRedactedThinkingBlock performs a merge with any union data inside the MessagesRequestContentBlock, using the provided MessagesRedactedThinkingBlock
+func (t *MessagesRequestContentBlock) MergeMessagesRedactedThinkingBlock(v MessagesRedactedThinkingBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MessagesRequestContentBlock) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MessagesRequestContentBlock) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMessagesTextBlock returns the union data inside the MessagesResponseContentBlock as a MessagesTextBlock
+func (t MessagesResponseContentBlock) AsMessagesTextBlock() (MessagesTextBlock, error) {
+	var body MessagesTextBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesTextBlock overwrites any union data inside the MessagesResponseContentBlock as the provided MessagesTextBlock
+func (t *MessagesResponseContentBlock) FromMessagesTextBlock(v MessagesTextBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesTextBlock performs a merge with any union data inside the MessagesResponseContentBlock, using the provided MessagesTextBlock
+func (t *MessagesResponseContentBlock) MergeMessagesTextBlock(v MessagesTextBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesToolUseBlock returns the union data inside the MessagesResponseContentBlock as a MessagesToolUseBlock
+func (t MessagesResponseContentBlock) AsMessagesToolUseBlock() (MessagesToolUseBlock, error) {
+	var body MessagesToolUseBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesToolUseBlock overwrites any union data inside the MessagesResponseContentBlock as the provided MessagesToolUseBlock
+func (t *MessagesResponseContentBlock) FromMessagesToolUseBlock(v MessagesToolUseBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesToolUseBlock performs a merge with any union data inside the MessagesResponseContentBlock, using the provided MessagesToolUseBlock
+func (t *MessagesResponseContentBlock) MergeMessagesToolUseBlock(v MessagesToolUseBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesThinkingBlock returns the union data inside the MessagesResponseContentBlock as a MessagesThinkingBlock
+func (t MessagesResponseContentBlock) AsMessagesThinkingBlock() (MessagesThinkingBlock, error) {
+	var body MessagesThinkingBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesThinkingBlock overwrites any union data inside the MessagesResponseContentBlock as the provided MessagesThinkingBlock
+func (t *MessagesResponseContentBlock) FromMessagesThinkingBlock(v MessagesThinkingBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesThinkingBlock performs a merge with any union data inside the MessagesResponseContentBlock, using the provided MessagesThinkingBlock
+func (t *MessagesResponseContentBlock) MergeMessagesThinkingBlock(v MessagesThinkingBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesRedactedThinkingBlock returns the union data inside the MessagesResponseContentBlock as a MessagesRedactedThinkingBlock
+func (t MessagesResponseContentBlock) AsMessagesRedactedThinkingBlock() (MessagesRedactedThinkingBlock, error) {
+	var body MessagesRedactedThinkingBlock
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesRedactedThinkingBlock overwrites any union data inside the MessagesResponseContentBlock as the provided MessagesRedactedThinkingBlock
+func (t *MessagesResponseContentBlock) FromMessagesRedactedThinkingBlock(v MessagesRedactedThinkingBlock) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesRedactedThinkingBlock performs a merge with any union data inside the MessagesResponseContentBlock, using the provided MessagesRedactedThinkingBlock
+func (t *MessagesResponseContentBlock) MergeMessagesRedactedThinkingBlock(v MessagesRedactedThinkingBlock) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MessagesResponseContentBlock) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MessagesResponseContentBlock) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMessagesToolChoice0 returns the union data inside the MessagesToolChoice as a MessagesToolChoice0
+func (t MessagesToolChoice) AsMessagesToolChoice0() (MessagesToolChoice0, error) {
+	var body MessagesToolChoice0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesToolChoice0 overwrites any union data inside the MessagesToolChoice as the provided MessagesToolChoice0
+func (t *MessagesToolChoice) FromMessagesToolChoice0(v MessagesToolChoice0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesToolChoice0 performs a merge with any union data inside the MessagesToolChoice, using the provided MessagesToolChoice0
+func (t *MessagesToolChoice) MergeMessagesToolChoice0(v MessagesToolChoice0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesToolChoice1 returns the union data inside the MessagesToolChoice as a MessagesToolChoice1
+func (t MessagesToolChoice) AsMessagesToolChoice1() (MessagesToolChoice1, error) {
+	var body MessagesToolChoice1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesToolChoice1 overwrites any union data inside the MessagesToolChoice as the provided MessagesToolChoice1
+func (t *MessagesToolChoice) FromMessagesToolChoice1(v MessagesToolChoice1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesToolChoice1 performs a merge with any union data inside the MessagesToolChoice, using the provided MessagesToolChoice1
+func (t *MessagesToolChoice) MergeMessagesToolChoice1(v MessagesToolChoice1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MessagesToolChoice) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MessagesToolChoice) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMessagesToolResultBlockContent0 returns the union data inside the MessagesToolResultBlock_Content as a MessagesToolResultBlockContent0
+func (t MessagesToolResultBlock_Content) AsMessagesToolResultBlockContent0() (MessagesToolResultBlockContent0, error) {
+	var body MessagesToolResultBlockContent0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesToolResultBlockContent0 overwrites any union data inside the MessagesToolResultBlock_Content as the provided MessagesToolResultBlockContent0
+func (t *MessagesToolResultBlock_Content) FromMessagesToolResultBlockContent0(v MessagesToolResultBlockContent0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesToolResultBlockContent0 performs a merge with any union data inside the MessagesToolResultBlock_Content, using the provided MessagesToolResultBlockContent0
+func (t *MessagesToolResultBlock_Content) MergeMessagesToolResultBlockContent0(v MessagesToolResultBlockContent0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMessagesToolResultBlockContent1 returns the union data inside the MessagesToolResultBlock_Content as a MessagesToolResultBlockContent1
+func (t MessagesToolResultBlock_Content) AsMessagesToolResultBlockContent1() (MessagesToolResultBlockContent1, error) {
+	var body MessagesToolResultBlockContent1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessagesToolResultBlockContent1 overwrites any union data inside the MessagesToolResultBlock_Content as the provided MessagesToolResultBlockContent1
+func (t *MessagesToolResultBlock_Content) FromMessagesToolResultBlockContent1(v MessagesToolResultBlockContent1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessagesToolResultBlockContent1 performs a merge with any union data inside the MessagesToolResultBlock_Content, using the provided MessagesToolResultBlockContent1
+func (t *MessagesToolResultBlock_Content) MergeMessagesToolResultBlockContent1(v MessagesToolResultBlockContent1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MessagesToolResultBlock_Content) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MessagesToolResultBlock_Content) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

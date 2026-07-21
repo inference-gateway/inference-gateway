@@ -26,6 +26,7 @@ servers:
       - Models
       - Completions
       - Responses
+      - Messages
   - url: https://api.inference-gateway.local/v1
     description: Local server with version prefix for listing models and chat completions
     x-server-tags:
@@ -39,6 +40,8 @@ tags:
     description: Generate completions from the models.
   - name: Responses
     description: Generate model responses using the OpenAI-compatible Responses API.
+  - name: Messages
+    description: Generate messages using the Anthropic-compatible Messages API.
   - name: MCP
     description: List and manage MCP tools.
   - name: Proxy
@@ -345,6 +348,57 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
+  /messages:
+    post:
+      operationId: createMessage
+      tags:
+        - Messages
+      description: |
+        Creates a message using the Anthropic-compatible Messages API.
+        The request follows the Anthropic Messages API format with `model`,
+        `max_tokens`, `messages`, optional `system`, `tools`, and streaming
+        support.
+
+        Not every provider implements the Messages API. Requests routed to a
+        provider that does not support it return `400 Bad Request` with an
+        explanatory error message; use `/chat/completions` for those providers.
+      summary: Create a message
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Provider'
+          description: Specific provider to use (default determined by model)
+      requestBody:
+        $ref: '#/components/requestBodies/CreateMessagesRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagesResponse'
+            text/event-stream:
+              schema:
+                description: |
+                  Server-Sent Events stream. Each frame is an `SSEvent` whose
+                  `data` field contains the JSON-serialized payload for that
+                  event. For Messages streaming the payload is a
+                  `MessagesStreamEvent`. The `oneOf` here makes the streaming
+                  payload schemas reachable from this operation so that code
+                  generators emit types for them.
+                oneOf:
+                  - $ref: '#/components/schemas/SSEvent'
+                  - $ref: '#/components/schemas/MessagesStreamEvent'
+        '400':
+          $ref: '#/components/responses/MessagesNotSupported'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /mcp/tools:
     get:
       operationId: listTools
@@ -615,6 +669,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/CreateResponseRequest'
+    CreateMessagesRequest:
+      required: true
+      description: |
+        Request payload for the Messages API. Mirrors the Anthropic
+        `POST /v1/messages` request body.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateMessagesRequest'
   responses:
     BadRequest:
       description: Bad request
@@ -653,6 +716,20 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: 'The Responses API is not supported by this provider yet.'
+    MessagesNotSupported:
+      description: |
+        The selected provider does not implement the Messages API. The
+        gateway returns this when a request is routed to a provider without
+        Messages support.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessagesError'
+          example:
+            type: error
+            error:
+              type: not_supported_error
+              message: 'The Messages API is not supported by this provider yet.'
     ProviderResponse:
       description: |
         ProviderResponse depends on the specific provider and endpoint being called
@@ -2686,6 +2763,595 @@ components:
         text:
           type: string
           description: The finalized text for `*.done` events.
+      required:
+        - type
+    MessagesError:
+      type: object
+      description: |
+        An error response in the Anthropic error format.
+      properties:
+        type:
+          type: string
+          enum:
+            - error
+          description: Always `error`.
+        error:
+          type: object
+          description: The error details.
+          properties:
+            type:
+              type: string
+              description: The error type (e.g. `invalid_request_error`, `api_error`).
+            message:
+              type: string
+              description: A human-readable error message.
+          required:
+            - type
+            - message
+      required:
+        - type
+        - error
+    CacheControl:
+      type: object
+      description: |
+        Cache control settings for prompt caching. Currently only
+        `ephemeral` caching is supported.
+      properties:
+        type:
+          type: string
+          enum:
+            - ephemeral
+          description: The cache control type. Currently only `ephemeral`.
+      required:
+        - type
+    MessagesTextBlock:
+      type: object
+      description: A text content block in a Messages API request or response.
+      properties:
+        type:
+          type: string
+          enum:
+            - text
+          description: Content type identifier. Always `text`.
+        text:
+          type: string
+          description: The text content.
+        cache_control:
+          $ref: '#/components/schemas/CacheControl'
+      required:
+        - type
+        - text
+    MessagesImageSource:
+      type: object
+      description: |
+        The source of an image content block. Can be a base64-encoded
+        image or a URL.
+      properties:
+        type:
+          type: string
+          enum:
+            - base64
+            - url
+          description: The source type.
+        media_type:
+          type: string
+          description: |
+            The media type of the image (e.g. `image/jpeg`, `image/png`,
+            `image/gif`, `image/webp`). Required when `type` is `base64`.
+        data:
+          type: string
+          description: |
+            Base64-encoded image data. Required when `type` is `base64`.
+        url:
+          type: string
+          description: |
+            URL of the image. Required when `type` is `url`.
+      required:
+        - type
+    MessagesImageBlock:
+      type: object
+      description: An image content block in a Messages API request.
+      properties:
+        type:
+          type: string
+          enum:
+            - image
+          description: Content type identifier. Always `image`.
+        source:
+          $ref: '#/components/schemas/MessagesImageSource'
+        cache_control:
+          $ref: '#/components/schemas/CacheControl'
+      required:
+        - type
+        - source
+    MessagesDocumentSource:
+      type: object
+      description: |
+        The source of a document content block. Can be a base64-encoded
+        document or a URL.
+      properties:
+        type:
+          type: string
+          enum:
+            - base64
+            - url
+          description: The source type.
+        media_type:
+          type: string
+          description: |
+            The media type of the document (e.g. `application/pdf`).
+            Required when `type` is `base64`.
+        data:
+          type: string
+          description: |
+            Base64-encoded document data. Required when `type` is `base64`.
+        url:
+          type: string
+          description: |
+            URL of the document. Required when `type` is `url`.
+      required:
+        - type
+    MessagesDocumentBlock:
+      type: object
+      description: A document content block in a Messages API request.
+      properties:
+        type:
+          type: string
+          enum:
+            - document
+          description: Content type identifier. Always `document`.
+        source:
+          $ref: '#/components/schemas/MessagesDocumentSource'
+        cache_control:
+          $ref: '#/components/schemas/CacheControl'
+      required:
+        - type
+        - source
+    MessagesToolUseBlock:
+      type: object
+      description: A tool use content block in a Messages API request or response.
+      properties:
+        type:
+          type: string
+          enum:
+            - tool_use
+          description: Content type identifier. Always `tool_use`.
+        id:
+          type: string
+          description: The unique identifier for this tool use block.
+        name:
+          type: string
+          description: The name of the tool being called.
+        input:
+          type: object
+          description: The input parameters for the tool.
+          additionalProperties: true
+      required:
+        - type
+        - id
+        - name
+        - input
+    MessagesToolResultBlock:
+      type: object
+      description: A tool result content block in a Messages API request.
+      properties:
+        type:
+          type: string
+          enum:
+            - tool_result
+          description: Content type identifier. Always `tool_result`.
+        tool_use_id:
+          type: string
+          description: The ID of the tool use this result is for.
+        content:
+          description: |
+            The result content. Can be a string or an array of content blocks.
+          oneOf:
+            - type: string
+              description: Text result content.
+            - type: array
+              items:
+                $ref: '#/components/schemas/MessagesTextBlock'
+        is_error:
+          type: boolean
+          description: Whether the tool execution resulted in an error.
+        cache_control:
+          $ref: '#/components/schemas/CacheControl'
+      required:
+        - type
+        - tool_use_id
+    MessagesThinkingBlock:
+      type: object
+      description: A thinking content block in a Messages API request or response.
+      properties:
+        type:
+          type: string
+          enum:
+            - thinking
+          description: Content type identifier. Always `thinking`.
+        thinking:
+          type: string
+          description: The thinking content.
+        signature:
+          type: string
+          description: |
+            The signature for verifying the thinking content. Must be
+            passed back when continuing a conversation with extended thinking.
+      required:
+        - type
+        - thinking
+        - signature
+    MessagesRedactedThinkingBlock:
+      type: object
+      description: |
+        A redacted thinking content block in a Messages API request or
+        response. Emitted when thinking content is encrypted for safety
+        reasons; must be passed back unchanged in multi-turn conversations.
+      properties:
+        type:
+          type: string
+          enum:
+            - redacted_thinking
+          description: Content type identifier. Always `redacted_thinking`.
+        data:
+          type: string
+          description: The encrypted thinking content.
+      required:
+        - type
+        - data
+    MessagesRequestContentBlock:
+      type: object
+      description: A content block within a Messages API request message.
+      oneOf:
+        - $ref: '#/components/schemas/MessagesTextBlock'
+        - $ref: '#/components/schemas/MessagesImageBlock'
+        - $ref: '#/components/schemas/MessagesToolUseBlock'
+        - $ref: '#/components/schemas/MessagesToolResultBlock'
+        - $ref: '#/components/schemas/MessagesDocumentBlock'
+        - $ref: '#/components/schemas/MessagesThinkingBlock'
+        - $ref: '#/components/schemas/MessagesRedactedThinkingBlock'
+    MessagesMessage:
+      type: object
+      description: A message in a Messages API request.
+      properties:
+        role:
+          type: string
+          enum:
+            - user
+            - assistant
+          x-enum-varnames:
+            - MessagesMessageRoleUser
+            - MessagesMessageRoleAssistant
+          description: The role of the message sender.
+        content:
+          description: |
+            The content of the message. Can be a string or an array of
+            content blocks.
+          oneOf:
+            - type: string
+              description: Text content.
+            - type: array
+              items:
+                $ref: '#/components/schemas/MessagesRequestContentBlock'
+      required:
+        - role
+        - content
+    MessagesTool:
+      type: object
+      description: |
+        A tool definition in the Messages API format. Uses the same
+        function tool shape as the Responses API but with an optional
+        `cache_control` field for prompt caching.
+      properties:
+        name:
+          type: string
+          description: The name of the tool.
+        description:
+          type: string
+          description: A description of what the tool does.
+        input_schema:
+          $ref: '#/components/schemas/FunctionParameters'
+        cache_control:
+          $ref: '#/components/schemas/CacheControl'
+      required:
+        - name
+        - input_schema
+    MessagesToolChoice:
+      description: |
+        Controls which (if any) tool is called by the model. `auto` means
+        the model can decide, `any` means the model must use a tool, and
+        `tool` forces a specific tool.
+      oneOf:
+        - type: string
+          enum:
+            - auto
+            - any
+          description: The tool choice mode.
+        - type: object
+          description: Forces the model to use a specific tool.
+          properties:
+            type:
+              type: string
+              enum:
+                - tool
+              x-enum-varnames:
+                - MessagesToolChoiceTypeTool
+              description: Always `tool`.
+            name:
+              type: string
+              description: The name of the tool to use.
+          required:
+            - type
+            - name
+    MessagesMetadata:
+      type: object
+      description: Metadata for a Messages API request.
+      properties:
+        user_id:
+          type: string
+          description: An external identifier for the user.
+    CreateMessagesRequest:
+      type: object
+      description: |
+        Request body for creating a message via the Anthropic-compatible
+        Messages API.
+      properties:
+        model:
+          type: string
+          description: The model to use for generating the message.
+        max_tokens:
+          type: integer
+          description: |
+            The maximum number of tokens to generate before stopping.
+        system:
+          description: |
+            The system prompt. Can be a string or an array of system content
+            blocks (for prompt caching).
+          oneOf:
+            - type: string
+              description: System prompt as a string.
+            - type: array
+              items:
+                $ref: '#/components/schemas/MessagesTextBlock'
+        messages:
+          type: array
+          description: |
+            The messages to generate a response for. Each message has a
+            `role` (user or assistant) and `content`.
+          items:
+            $ref: '#/components/schemas/MessagesMessage'
+        tools:
+          type: array
+          description: |
+            Definitions of tools the model may call. Each tool can include
+            `cache_control` for prompt caching.
+          items:
+            $ref: '#/components/schemas/MessagesTool'
+        tool_choice:
+          $ref: '#/components/schemas/MessagesToolChoice'
+        stream:
+          type: boolean
+          default: false
+          description: |
+            Whether to stream the response using server-sent events.
+        temperature:
+          type: number
+          format: float
+          description: |
+            Amount of randomness injected into the response. Ranges from
+            0.0 to 1.0. Use closer to 0 for analytical / multiple choice,
+            closer to 1 for creative and generative tasks.
+        top_p:
+          type: number
+          format: float
+          description: |
+            Use nucleus sampling. Only consider the tokens with top_p
+            probability mass.
+        top_k:
+          type: integer
+          description: |
+            Only sample from the top K options for each subsequent token.
+        stop_sequences:
+          type: array
+          description: |
+            Custom text sequences that will cause the model to stop
+            generating.
+          items:
+            type: string
+        metadata:
+          $ref: '#/components/schemas/MessagesMetadata'
+        thinking:
+          type: object
+          description: |
+            Configuration for extended thinking.
+          properties:
+            type:
+              type: string
+              enum:
+                - enabled
+              description: Always `enabled`.
+            budget_tokens:
+              type: integer
+              description: |
+                The maximum number of tokens the model is allowed to use
+                for thinking.
+          required:
+            - type
+            - budget_tokens
+      required:
+        - model
+        - max_tokens
+        - messages
+    MessagesResponseContentBlock:
+      type: object
+      description: A content block within a Messages API response.
+      oneOf:
+        - $ref: '#/components/schemas/MessagesTextBlock'
+        - $ref: '#/components/schemas/MessagesToolUseBlock'
+        - $ref: '#/components/schemas/MessagesThinkingBlock'
+        - $ref: '#/components/schemas/MessagesRedactedThinkingBlock'
+    MessagesUsage:
+      type: object
+      description: |
+        Token usage statistics for a Messages API response, including
+        cache metrics.
+      properties:
+        input_tokens:
+          type: integer
+          format: int64
+          default: 0
+          description: The number of input tokens.
+        output_tokens:
+          type: integer
+          format: int64
+          default: 0
+          description: The number of output tokens.
+        cache_creation_input_tokens:
+          type: integer
+          format: int64
+          default: 0
+          description: |
+            The number of tokens used for cache creation.
+        cache_read_input_tokens:
+          type: integer
+          format: int64
+          default: 0
+          description: |
+            The number of tokens read from the cache.
+      required:
+        - input_tokens
+        - output_tokens
+    MessagesResponse:
+      type: object
+      description: |
+        A message response from the Anthropic-compatible Messages API.
+      properties:
+        id:
+          type: string
+          description: Unique identifier for this message.
+        type:
+          type: string
+          enum:
+            - message
+          description: Always `message`.
+        role:
+          type: string
+          enum:
+            - assistant
+          x-enum-varnames:
+            - MessagesResponseRoleAssistant
+          description: Always `assistant`.
+        content:
+          type: array
+          description: The content blocks generated by the model.
+          items:
+            $ref: '#/components/schemas/MessagesResponseContentBlock'
+        model:
+          type: string
+          description: The model used to generate the message.
+        stop_reason:
+          type: string
+          enum:
+            - end_turn
+            - max_tokens
+            - stop_sequence
+            - tool_use
+            - pause_turn
+            - refusal
+          description: |
+            The reason the model stopped generating.
+        stop_sequence:
+          type: string
+          nullable: true
+          description: |
+            The stop sequence that caused the model to stop, if any.
+        usage:
+          $ref: '#/components/schemas/MessagesUsage'
+      required:
+        - id
+        - type
+        - role
+        - content
+        - model
+        - stop_reason
+        - usage
+    MessagesStreamEvent:
+      type: object
+      description: |
+        A server-sent event emitted while streaming a Messages API response.
+        The Anthropic Messages API emits a sequence of typed events
+        (`message_start`, `content_block_start`, `content_block_delta`,
+        `content_block_stop`, `message_delta`, `message_stop`, `ping`).
+      properties:
+        type:
+          type: string
+          enum:
+            - message_start
+            - content_block_start
+            - content_block_delta
+            - content_block_stop
+            - message_delta
+            - message_stop
+            - ping
+            - error
+          description: The type of the streamed event.
+        message:
+          $ref: '#/components/schemas/MessagesResponse'
+          description: |
+            Present in `message_start` events. Contains the initial message.
+        index:
+          type: integer
+          description: |
+            Present in `content_block_*` events. The index of the content
+            block.
+        content_block:
+          $ref: '#/components/schemas/MessagesResponseContentBlock'
+          description: |
+            Present in `content_block_start` events. Contains the content
+            block.
+        delta:
+          type: object
+          description: |
+            Present in `content_block_delta` and `message_delta` events.
+            Contains the incremental update.
+          properties:
+            type:
+              type: string
+              description: |
+                The type of delta. For text deltas this is `text_delta`,
+                for streamed tool inputs this is `input_json_delta`, for
+                thinking deltas this is `thinking_delta`, for thinking
+                signatures this is `signature_delta`.
+            text:
+              type: string
+              description: The incremental text (for `text_delta`).
+            partial_json:
+              type: string
+              description: |
+                The incremental JSON string of the tool input
+                (for `input_json_delta`).
+            thinking:
+              type: string
+              description: The incremental thinking content (for `thinking_delta`).
+            signature:
+              type: string
+              description: The thinking signature (for `signature_delta`).
+            stop_reason:
+              type: string
+              description: The stop reason (for `message_delta`).
+            stop_sequence:
+              type: string
+              nullable: true
+              description: The stop sequence (for `message_delta`).
+        usage:
+          $ref: '#/components/schemas/MessagesUsage'
+          description: |
+            Present in `message_delta` events as a sibling of `delta`.
+            Contains cumulative usage for the message.
+        error:
+          $ref: '#/components/schemas/MessagesError'
+          description: |
+            Present in `error` events. Contains the error details.
       required:
         - type
     Config:
