@@ -166,11 +166,8 @@ func (router *RouterImpl) runtimeAPICall(ctx context.Context, providerID types.P
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	switch provider.GetAuthType() {
-	case constants.AuthTypeBearer:
-		req.Header.Set("Authorization", "Bearer "+provider.GetToken())
-	case constants.AuthTypeXheader:
-		req.Header.Set("x-api-key", provider.GetToken())
+	if err := applyProviderAuth(req, provider); err != nil {
+		return err
 	}
 
 	resp, err := router.client.Do(req)

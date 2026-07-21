@@ -96,29 +96,9 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 		return
 	}
 
-	// Setup authentication headers or query params
-	token := provider.GetToken()
-	switch provider.GetAuthType() {
-	case constants.AuthTypeBearer:
-		c.Request.Header.Set("Authorization", "Bearer "+token)
-	case constants.AuthTypeXheader:
-		c.Request.Header.Set("x-api-key", token)
-	case constants.AuthTypeQuery:
-		query := c.Request.URL.Query()
-		query.Set("key", token)
-		c.Request.URL.RawQuery = query.Encode()
-	case constants.AuthTypeNone:
-		// Do Nothing
-	default:
+	if err := applyProviderAuth(c.Request, provider); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
 		return
-	}
-
-	// Add extra headers
-	for key, values := range provider.GetExtraHeaders() {
-		for _, value := range values {
-			c.Request.Header.Add(key, value)
-		}
 	}
 
 	// Check if streaming is requested
@@ -277,6 +257,35 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 	}
 
 	proxy.ServeHTTP(&middlewares.DeadlineResetWriter{ResponseWriter: c.Writer, Timeout: router.cfg.Server.WriteTimeout}, c.Request)
+}
+
+// applyProviderAuth sets the provider's auth credential (header or query
+// param) and extra headers on req. An unrecognized auth type is returned as an
+// error so misconfigured providers fail loudly instead of sending
+// unauthenticated requests upstream.
+func applyProviderAuth(req *http.Request, provider core.IProvider) error {
+	token := provider.GetToken()
+	switch provider.GetAuthType() {
+	case constants.AuthTypeBearer:
+		req.Header.Set("Authorization", "Bearer "+token)
+	case constants.AuthTypeXheader:
+		req.Header.Set("x-api-key", token)
+	case constants.AuthTypeQuery:
+		query := req.URL.Query()
+		query.Set("key", token)
+		req.URL.RawQuery = query.Encode()
+	case constants.AuthTypeNone:
+		// Do Nothing
+	default:
+		return fmt.Errorf("unsupported auth type %q", provider.GetAuthType())
+	}
+
+	for key, values := range provider.GetExtraHeaders() {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
+	return nil
 }
 
 // constructProviderURL builds the provider URL consistently to avoid path duplication.
@@ -884,21 +893,10 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 		upstreamReq.Header.Set("Accept", "application/json")
 	}
 
-	token := provider.GetToken()
-	switch provider.GetAuthType() {
-	case constants.AuthTypeBearer:
-		upstreamReq.Header.Set("Authorization", "Bearer "+token)
-	case constants.AuthTypeXheader:
-		upstreamReq.Header.Set("x-api-key", token)
-	case constants.AuthTypeQuery:
-		query := upstreamReq.URL.Query()
-		query.Set("key", token)
-		upstreamReq.URL.RawQuery = query.Encode()
-	}
-	for key, values := range provider.GetExtraHeaders() {
-		for _, value := range values {
-			upstreamReq.Header.Add(key, value)
-		}
+	if err := applyProviderAuth(upstreamReq, provider); err != nil {
+		router.logger.Error("unsupported auth type", err, "provider", providerID)
+		messagesError(c, http.StatusUnprocessableEntity, "api_error", "Unsupported auth type")
+		return
 	}
 
 	resp, err := router.client.Do(upstreamReq)
@@ -923,14 +921,10 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 	middlewares.SetSSEHeaders(c)
 	reader := bufio.NewReaderSize(resp.Body, 4096)
 	c.Stream(func(w io.Writer) bool {
-		select {
-		case <-ctx.Done():
-			return false
-		default:
-		}
-
 		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
 
+		// The upstream request carries the client's context, so cancellation
+		// surfaces here as a read error - no separate ctx.Done() check needed.
 		line, err := reader.ReadBytes('\n')
 		if len(line) > 0 {
 			if _, werr := w.Write(line); werr != nil {
