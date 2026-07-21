@@ -9,10 +9,13 @@ import (
 	"testing"
 	"time"
 
-	gin "github.com/gin-gonic/gin"
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
+
+	gin "github.com/gin-gonic/gin"
+
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -20,7 +23,6 @@ import (
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 func newMessagesTestRouter(t *testing.T, upstreamURL string) api.Router {
