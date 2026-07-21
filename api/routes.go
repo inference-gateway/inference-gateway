@@ -34,6 +34,7 @@ import (
 type Router interface {
 	ListModelsHandler(c *gin.Context)
 	ChatCompletionsHandler(c *gin.Context)
+	MessagesHandler(c *gin.Context)
 	ListToolsHandler(c *gin.Context)
 	MetricsIngestionHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
@@ -749,6 +750,210 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// messagesError writes a gateway-generated error in the Anthropic error
+// envelope ({"type": "error", "error": {"type": ..., "message": ...}}), which
+// is what native Messages API clients expect to parse.
+func messagesError(c *gin.Context, status int, errType, message string) {
+	resp := types.MessagesError{Type: types.MessagesErrorTypeError}
+	resp.Error.Type = errType
+	resp.Error.Message = message
+	c.JSON(status, resp)
+}
+
+// MessagesHandler implements an Anthropic-compatible POST /v1/messages
+// endpoint: https://docs.anthropic.com/en/api/messages
+//
+// The request body is forwarded to the upstream provider byte-for-byte (only
+// the `model` field is rewritten when the provider prefix is stripped), so
+// `cache_control` breakpoints and any future Anthropic request fields pass
+// through untouched, and the upstream response - including
+// `cache_creation_input_tokens` / `cache_read_input_tokens` usage and the
+// Anthropic SSE event envelope when streaming - is relayed verbatim.
+//
+// Only providers that natively implement the Messages API are supported
+// (currently Anthropic); other providers receive a 400 in the Anthropic error
+// envelope, mirroring the schema's MessagesNotSupported response.
+func (router *RouterImpl) MessagesHandler(c *gin.Context) {
+	const maxBodySize = 10 << 20
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, maxBodySize))
+	if err != nil {
+		router.logger.Error("failed to read request body", err)
+		messagesError(c, http.StatusBadRequest, "invalid_request_error", "Failed to read request")
+		return
+	}
+	if len(body) >= maxBodySize {
+		messagesError(c, http.StatusRequestEntityTooLarge, "invalid_request_error", "Request body too large")
+		return
+	}
+
+	var req struct {
+		Model  string `json:"model"`
+		Stream *bool  `json:"stream"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		router.logger.Error("failed to decode request", err)
+		messagesError(c, http.StatusBadRequest, "invalid_request_error", "Failed to decode request")
+		return
+	}
+
+	originalModel := req.Model
+	model := req.Model
+	providerID := types.Provider(c.Query("provider"))
+	if providerID == "" {
+		var providerPtr *types.Provider
+		providerPtr, model = routing.DetermineProviderAndModelName(model)
+		if providerPtr == nil {
+			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
+			messagesError(c, http.StatusBadRequest, "invalid_request_error", "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., anthropic/claude-sonnet-4-5).")
+			return
+		}
+		providerID = *providerPtr
+	}
+
+	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
+		if !routing.ModelMatches(allowed, originalModel) {
+			router.logger.Error("model not in allowed list", nil, "model", originalModel, "allowed_models", router.cfg.AllowedModels)
+			messagesError(c, http.StatusForbidden, "invalid_request_error", "Model not allowed. Please check the list of allowed models.")
+			return
+		}
+	} else if disallowed := routing.ParseModelSet(router.cfg.DisallowedModels); len(disallowed) > 0 {
+		if routing.ModelMatches(disallowed, originalModel) {
+			router.logger.Error("model is disallowed", nil, "model", originalModel, "disallowed_models", router.cfg.DisallowedModels)
+			messagesError(c, http.StatusForbidden, "invalid_request_error", "Model is disallowed. Please use a different model.")
+			return
+		}
+	}
+
+	if providerID != constants.AnthropicID {
+		router.logger.Error("messages api not supported by provider", nil, "provider", providerID)
+		messagesError(c, http.StatusBadRequest, "not_supported_error", "The Messages API is not supported by this provider yet.")
+		return
+	}
+
+	provider, err := router.registry.BuildProvider(providerID, router.client)
+	if err != nil {
+		if strings.Contains(err.Error(), "token not configured") {
+			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
+			messagesError(c, http.StatusBadRequest, "invalid_request_error", "Provider requires an API key. Please configure the provider's API key.")
+			return
+		}
+		router.logger.Error("provider not found or not supported", err, "provider", providerID)
+		messagesError(c, http.StatusBadRequest, "invalid_request_error", "Provider not found. Please check the list of supported providers.")
+		return
+	}
+
+	if model != originalModel {
+		// Rewrite only the model field; decode into a map with UseNumber so
+		// every other field (cache_control, thinking, future additions)
+		// round-trips unchanged.
+		dec := json.NewDecoder(bytes.NewReader(body))
+		dec.UseNumber()
+		var payload map[string]any
+		if err := dec.Decode(&payload); err != nil {
+			router.logger.Error("failed to decode request", err)
+			messagesError(c, http.StatusBadRequest, "invalid_request_error", "Failed to decode request")
+			return
+		}
+		payload["model"] = model
+		if body, err = json.Marshal(payload); err != nil {
+			router.logger.Error("failed to encode request", err)
+			messagesError(c, http.StatusInternalServerError, "api_error", "Failed to encode request")
+			return
+		}
+	}
+
+	isStreaming := req.Stream != nil && *req.Stream
+
+	ctx := c.Request.Context()
+	if !isStreaming {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, router.cfg.Server.ReadTimeout)
+		defer cancel()
+	}
+
+	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + "/messages"
+	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
+	if err != nil {
+		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
+		messagesError(c, http.StatusInternalServerError, "api_error", "Failed to create upstream request")
+		return
+	}
+	upstreamReq.Header.Set("Content-Type", "application/json")
+	if isStreaming {
+		upstreamReq.Header.Set("Accept", "text/event-stream")
+	} else {
+		upstreamReq.Header.Set("Accept", "application/json")
+	}
+
+	token := provider.GetToken()
+	switch provider.GetAuthType() {
+	case constants.AuthTypeBearer:
+		upstreamReq.Header.Set("Authorization", "Bearer "+token)
+	case constants.AuthTypeXheader:
+		upstreamReq.Header.Set("x-api-key", token)
+	case constants.AuthTypeQuery:
+		query := upstreamReq.URL.Query()
+		query.Set("key", token)
+		upstreamReq.URL.RawQuery = query.Encode()
+	}
+	for key, values := range provider.GetExtraHeaders() {
+		for _, value := range values {
+			upstreamReq.Header.Add(key, value)
+		}
+	}
+
+	resp, err := router.client.Do(upstreamReq)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			router.logger.Error("request timed out", err, "provider", providerID)
+			messagesError(c, http.StatusGatewayTimeout, "api_error", "Request timed out")
+			return
+		}
+		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
+		messagesError(c, http.StatusBadGateway, "api_error", "Failed to reach upstream server")
+		return
+	}
+	defer resp.Body.Close()
+
+	contentType := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "text/event-stream") {
+		// Non-streaming responses (and upstream errors, which arrive as JSON
+		// in the Anthropic error envelope) are relayed verbatim.
+		c.DataFromReader(resp.StatusCode, resp.ContentLength, contentType, resp.Body, nil)
+		return
+	}
+
+	middlewares.SetSSEHeaders(c)
+	reader := bufio.NewReaderSize(resp.Body, 4096)
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		default:
+		}
+
+		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
+
+		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			if _, werr := w.Write(line); werr != nil {
+				router.logger.Error("failed to write chunk", werr)
+				return false
+			}
+			if flusher, ok := w.(http.Flusher); ok {
+				flusher.Flush()
+			}
+		}
+		if err != nil {
+			if err != io.EOF {
+				router.logger.Error("failed to read stream", err, "url", upstreamURL)
+			}
+			return false
+		}
+		return true
+	})
 }
 
 // ListToolsHandler implements an endpoint that returns available MCP tools
