@@ -845,9 +845,6 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 	}
 
 	if model != originalModel {
-		// Rewrite only the model field; decode into a map with UseNumber so
-		// every other field (cache_control, thinking, future additions)
-		// round-trips unchanged.
 		dec := json.NewDecoder(bytes.NewReader(body))
 		dec.UseNumber()
 		var payload map[string]any
@@ -919,8 +916,6 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "text/event-stream") {
-		// Non-streaming responses (and upstream errors, which arrive as JSON
-		// in the Anthropic error envelope) are relayed verbatim.
 		c.DataFromReader(resp.StatusCode, resp.ContentLength, contentType, resp.Body, nil)
 		return
 	}

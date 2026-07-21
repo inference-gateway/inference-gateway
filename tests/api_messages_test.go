@@ -119,8 +119,6 @@ func TestMessagesHandler_StreamingPassthrough(t *testing.T) {
 	r := gin.New()
 	r.POST("/v1/messages", router.MessagesHandler)
 
-	// c.Stream requires http.CloseNotifier, which httptest.NewRecorder does
-	// not implement - serve the engine over a real listener instead.
 	gatewayServer := httptest.NewServer(r)
 	defer gatewayServer.Close()
 
