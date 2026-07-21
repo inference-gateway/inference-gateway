@@ -1549,6 +1549,22 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "ollama_cloud/deepseek-v4-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-07-21T10:29:38Z"
+  },
+  "ollama_cloud/deepseek-v4-pro": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-07-21T10:29:38Z"
+  },
   "openai/gpt-3.5-turbo": {
     "currency": "USD",
     "input_per_token": "0.0000005",

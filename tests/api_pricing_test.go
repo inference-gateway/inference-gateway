@@ -39,11 +39,16 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		writeJSON(w, `{"object":"list","data":[{"id":"meta/llama-3.1-8b-instruct","object":"model","created":1750000000,"owned_by":"meta"}]}`)
 	})
 
+	mux.HandleFunc("/proxy/ollama_cloud/models", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, `{"object":"list","data":[{"id":"deepseek-v4-pro","object":"model","created":1750000000,"owned_by":"ollama"}]}`)
+	})
+
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
 	providerCfg := contextWindowProviderConfig(server.URL,
-		constants.DeepseekID, constants.GroqID, constants.OpenaiID, constants.AnthropicID, constants.NvidiaID)
+		constants.DeepseekID, constants.GroqID, constants.OpenaiID, constants.AnthropicID, constants.NvidiaID,
+		constants.OllamaCloudID)
 	r := newContextWindowRouter(t, server, providerCfg)
 
 	t.Run("include resolves provider, community, and null pricing", func(t *testing.T) {
@@ -54,7 +59,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		require.Equal(t, http.StatusOK, w.Code)
 
 		models := modelsByID(t, w.Body.Bytes())
-		require.Len(t, models, 6)
+		require.Len(t, models, 7)
 
 		full, ok := models["deepseek/deepseek-chat"]["pricing"].(map[string]any)
 		require.True(t, ok)
@@ -97,6 +102,14 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		assert.Equal(t, "community", free["source"])
 		assert.Equal(t, "0", free["input_per_token"], `free-tier models carry explicit "0" rates, not null pricing`)
 		assert.Equal(t, "0", free["output_per_token"])
+		assert.NotContains(t, free, "subscription", "free-tier models must not carry a subscription flag")
+
+		gated, ok := models["ollama_cloud/deepseek-v4-pro"]["pricing"].(map[string]any)
+		require.True(t, ok, "subscription-gated models must resolve in the community table")
+		assert.Equal(t, "community", gated["source"])
+		assert.Equal(t, "0", gated["input_per_token"])
+		assert.Equal(t, "0", gated["output_per_token"])
+		assert.Equal(t, true, gated["subscription"], "subscription-gated models must report subscription=true")
 	})
 
 	t.Run("anthropic listing defaults object to list", func(t *testing.T) {

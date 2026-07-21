@@ -41,6 +41,16 @@ var providerDirs = map[string]string{
 	"zai":                   "zai",
 }
 
+// subscriptionModels is the curated set of "<provider>/<model>" keys for
+// models with no per-token price that are gated behind a paid subscription
+// (e.g. Ollama Cloud Pro). models.dev carries no subscription marker in its
+// model files, so the set is maintained here and emitted into the community
+// table as zero-rate entries with subscription=true.
+var subscriptionModels = map[string]bool{
+	"ollama_cloud/deepseek-v4-pro":   true,
+	"ollama_cloud/deepseek-v4-flash": true,
+}
+
 // modelTOML is the subset of a models.dev model file the sync needs. Cost
 // rates are USD per million tokens. The cost table is a pointer so an absent
 // section ("no per-token price published", e.g. subscription-gated Ollama
@@ -78,22 +88,9 @@ func Generate(output, tarballPath string) error {
 		_ = json.Unmarshal(data, &prior)
 	}
 	err := forEachModel(tarballPath, func(key string, model modelTOML) {
-		if model.Cost == nil {
+		entry, ok := pricingEntry(key, model, syncedAt)
+		if !ok {
 			return
-		}
-		input := freeOrRate(model.Cost.Input)
-		outputRate := freeOrRate(model.Cost.Output)
-		if input == nil || outputRate == nil {
-			return
-		}
-		entry := types.Pricing{
-			Currency:           "USD",
-			InputPerToken:      *input,
-			OutputPerToken:     *outputRate,
-			CacheReadPerToken:  perMTokToPerToken(model.Cost.CacheRead),
-			CacheWritePerToken: perMTokToPerToken(model.Cost.CacheWrite),
-			Source:             types.PricingSourceCommunity,
-			UpdatedAt:          syncedAt,
 		}
 		if old, ok := prior[key]; ok && sameRates(old, entry) {
 			entry.UpdatedAt = old.UpdatedAt
@@ -208,6 +205,41 @@ func tableKey(name string) (string, bool) {
 	return provider + "/" + model, true
 }
 
+// pricingEntry maps one models.dev model file to a community pricing entry.
+// Models with a published cost section convert as usual; curated
+// subscription-gated models (no cost section) become zero-rate entries with
+// subscription=true; everything else gets no entry.
+func pricingEntry(key string, model modelTOML, syncedAt time.Time) (types.Pricing, bool) {
+	if model.Cost == nil {
+		if !subscriptionModels[key] {
+			return types.Pricing{}, false
+		}
+		subscription := true
+		return types.Pricing{
+			Currency:       "USD",
+			InputPerToken:  "0",
+			OutputPerToken: "0",
+			Source:         types.PricingSourceCommunity,
+			Subscription:   &subscription,
+			UpdatedAt:      syncedAt,
+		}, true
+	}
+	input := freeOrRate(model.Cost.Input)
+	output := freeOrRate(model.Cost.Output)
+	if input == nil || output == nil {
+		return types.Pricing{}, false
+	}
+	return types.Pricing{
+		Currency:           "USD",
+		InputPerToken:      *input,
+		OutputPerToken:     *output,
+		CacheReadPerToken:  perMTokToPerToken(model.Cost.CacheRead),
+		CacheWritePerToken: perMTokToPerToken(model.Cost.CacheWrite),
+		Source:             types.PricingSourceCommunity,
+		UpdatedAt:          syncedAt,
+	}, true
+}
+
 // sameRates reports whether two pricing entries carry identical rates,
 // ignoring UpdatedAt, so re-syncs keep the prior timestamp for unchanged
 // entries instead of rewriting the whole committed table.
@@ -217,7 +249,12 @@ func sameRates(a, b types.Pricing) bool {
 		a.OutputPerToken == b.OutputPerToken &&
 		a.Source == b.Source &&
 		eqRate(a.CacheReadPerToken, b.CacheReadPerToken) &&
-		eqRate(a.CacheWritePerToken, b.CacheWritePerToken)
+		eqRate(a.CacheWritePerToken, b.CacheWritePerToken) &&
+		subscribed(a) == subscribed(b)
+}
+
+func subscribed(p types.Pricing) bool {
+	return p.Subscription != nil && *p.Subscription
 }
 
 func eqRate(a, b *string) bool {

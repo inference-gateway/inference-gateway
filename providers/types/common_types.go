@@ -1369,6 +1369,9 @@ type Pricing struct {
 	// Source Source of the pricing information
 	Source PricingSource `json:"source"`
 
+	// Subscription Model has no per-token price but is gated behind a paid subscription
+	Subscription *bool `json:"subscription,omitempty"`
+
 	// UpdatedAt Timestamp when the pricing was last updated
 	UpdatedAt time.Time `json:"updated_at"`
 }

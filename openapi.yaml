@@ -1184,6 +1184,10 @@ components:
           type: string
           format: date-time
           description: Timestamp when the pricing was last updated
+        subscription:
+          type: boolean
+          default: false
+          description: Model has no per-token price but is gated behind a paid subscription
       required:
         - currency
         - input_per_token
