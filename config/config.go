@@ -25,8 +25,6 @@ type Config struct {
 	EnableVision              bool   `env:"ENABLE_VISION, default=false" description:"Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision"`
 	DebugContentTruncateWords int    `env:"DEBUG_CONTENT_TRUNCATE_WORDS, default=10" description:"Number of words to truncate per content section in debug logs (development mode only)"`
 	DebugMaxMessages          int    `env:"DEBUG_MAX_MESSAGES, default=100" description:"Maximum number of messages to show in debug logs (development mode only)"`
-	// Routing settings
-	Routing *RoutingConfig `env:", prefix=ROUTING_" description:"Routing configuration"`
 	// Telemetry settings
 	Telemetry *TelemetryConfig `env:", prefix=TELEMETRY_" description:"Telemetry configuration"`
 	// MCP settings
@@ -37,15 +35,11 @@ type Config struct {
 	Server *ServerConfig `env:", prefix=SERVER_" description:"Server configuration"`
 	// Client settings
 	Client *client.ClientConfig `description:"Client configuration"`
+	// Routing settings
+	Routing *RoutingConfig `env:", prefix=ROUTING_" description:"Routing configuration"`
 
 	// Providers map
 	Providers map[types.Provider]*registry.ProviderConfig
-}
-
-// Routing configuration
-type RoutingConfig struct {
-	Enabled    bool   `env:"ENABLED, default=false" description:"Enable gateway-native model routing: logical model aliases backed by a pool of upstream provider deployments, selected round-robin per replica. Opt-in; when disabled, direct provider/model routing is unchanged"`
-	ConfigPath string `env:"CONFIG_PATH" description:"Path to a YAML file mapping logical model aliases to their upstream deployment pools. Required when ROUTING_ENABLED is true"`
 }
 
 // Telemetry configuration
@@ -98,6 +92,12 @@ type ServerConfig struct {
 	IdleTimeout  time.Duration `env:"IDLE_TIMEOUT, default=120s" description:"Idle timeout"`
 	TlsCertPath  string        `env:"TLS_CERT_PATH" description:"TLS certificate path"`
 	TlsKeyPath   string        `env:"TLS_KEY_PATH" description:"TLS key path"`
+}
+
+// Routing configuration
+type RoutingConfig struct {
+	Enabled    bool   `env:"ENABLED, default=false" description:"Enable gateway-native model routing: logical model aliases backed by a pool of upstream provider deployments, selected round-robin per replica. Opt-in; when disabled, direct provider/model routing is unchanged"`
+	ConfigPath string `env:"CONFIG_PATH" description:"Path to a YAML file mapping logical model aliases to their upstream deployment pools. Required when ROUTING_ENABLED is true"`
 }
 
 // Load configuration
