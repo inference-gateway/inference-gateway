@@ -22,7 +22,7 @@ Use `task --list` to see available workflows. Common commands:
 - `task format`: runs `prettier --write .` and `go fmt ./...`.
 - `task lint`: runs `golangci-lint` and Markdown linting.
 - `task openapi:lint`: validates `openapi.yaml` with Spectral.
-- `task generate`: regenerates provider, config, Helm, environment, MCP, and
+- `task generate`: regenerates provider, config, environment, MCP, and
   OpenAPI-derived files. Run it after changing `openapi.yaml` or generator code.
 - `task pre-commit:install`: installs the repository pre-commit hook.
 
@@ -55,7 +55,7 @@ History uses Conventional Commits, for example `fix(ci): Ignore Markdown files`
 and `chore(deps): Add codex and bump infer CLI`. Use concise subjects with an
 optional scope. Pull requests should describe the change, link issues, include
 test results, and mention generated-file updates. For user-visible API,
-configuration, Helm, or example changes, update the matching docs or examples.
+configuration, or example changes, update the matching docs or examples.
 
 ## Release Automation
 

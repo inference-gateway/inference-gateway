@@ -8,7 +8,7 @@ This example demonstrates monitoring integration with the Inference Gateway usin
   autoscaling enabled via the `Gateway` custom resource
 - **Function/Tool Call Metrics** tracking MCP tool executions
 
-> **Note:** The Helm chart is deprecated. The gateway is deployed through the operator with
+> **Note:** The gateway is deployed through the operator with
 > `spec.telemetry.metrics` and `spec.hpa` enabled.
 
 ## Table of Contents

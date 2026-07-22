@@ -6,7 +6,7 @@ This example demonstrates secure TLS communication with the Inference Gateway us
 - The Kubernetes Gateway API (Envoy Gateway) terminating TLS at the listener
 - cert-manager for automatic certificate issuance
 
-> **Note:** The Helm chart is deprecated. The gateway is now deployed through the operator, and TLS is
+> **Note:** The gateway is now deployed through the operator, and TLS is
 > configured via `spec.routing.gateway.tls`.
 
 ## Table of Contents

@@ -210,8 +210,7 @@ For streaming the tokens simply add to the request body `stream: true`.
 >
 > **Kubernetes**: Deploy with the
 > [Inference Gateway Operator](https://github.com/inference-gateway/operator),
-> which reconciles a `Gateway` custom resource. (The legacy in-repo Helm chart
-> has been removed; use the operator instead.)
+> which reconciles a `Gateway` custom resource.
 
 The Inference Gateway can also be installed as a standalone binary using the
 provided install script or by downloading pre-built binaries from GitHub

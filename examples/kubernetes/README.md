@@ -3,7 +3,7 @@
 This directory contains examples that demonstrate how to deploy the Inference Gateway on Kubernetes with the
 [Inference Gateway Operator](https://github.com/inference-gateway/operator).
 
-> **Note:** The Inference Gateway Helm chart is deprecated. Each example now installs the operator and applies
+> **Note:** Each example installs the operator and applies
 > a `Gateway` custom resource (`gateway.yaml`). North-south traffic is served via the Kubernetes Gateway API
 > (Envoy Gateway) using `spec.routing`, rather than ingress-nginx.
 
