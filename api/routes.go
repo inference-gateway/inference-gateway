@@ -11,6 +11,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -923,7 +924,7 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 
 	if resp.StatusCode >= 400 {
 		span.SetStatus(codes.Error, resp.Status)
-		span.SetAttributes(semconv.ErrorTypeKey.String(fmt.Sprintf("%d", resp.StatusCode)))
+		span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
 	}
 
 	contentType := resp.Header.Get("Content-Type")
