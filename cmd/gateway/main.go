@@ -14,6 +14,10 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
+	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
+	envconfig "github.com/sethvargo/go-envconfig"
+	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -22,9 +26,6 @@ import (
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
-	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
-	envconfig "github.com/sethvargo/go-envconfig"
-	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 var (
@@ -218,7 +219,6 @@ func main() {
 	api := api.NewRouter(cfg, logger, providerRegistry, httpClient, mcpClient, telemetryImpl)
 	r := gin.New()
 	if cfg.Telemetry.Enable && cfg.Telemetry.TracingEnable {
-		// the config package identifier is shadowed by the local config variable
 		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {
 			return req.URL.Path != "/health" && req.URL.Path != "/v1/metrics"
 		})))

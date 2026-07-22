@@ -11,6 +11,9 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
+	codes "go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+	trace "go.opentelemetry.io/otel/trace"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -18,9 +21,6 @@ import (
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
-	codes "go.opentelemetry.io/otel/codes"
-	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
-	trace "go.opentelemetry.io/otel/trace"
 )
 
 type Telemetry interface {

@@ -123,8 +123,6 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 			return err
 		}
 
-		// Sampler defaults to ParentBased(AlwaysSample) and honors the
-		// standard OTEL_TRACES_SAMPLER / OTEL_TRACES_SAMPLER_ARG env vars.
 		o.tracerProvider = sdktrace.NewTracerProvider(
 			sdktrace.WithResource(res),
 			sdktrace.WithBatcher(traceExporter),

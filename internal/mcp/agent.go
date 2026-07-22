@@ -316,7 +316,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 
 		var server string
 		toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
-		// tool arguments are deliberately not recorded on the span (PII / unbounded size)
 		toolCtx, span := otelapi.Tracer("github.com/inference-gateway/inference-gateway/internal/mcp").
 			Start(ctx, "execute_tool "+toolName, trace.WithAttributes(semconv.GenAIToolName(toolName)))
 		server, err := a.mcpClient.GetServerForTool(toolName)
