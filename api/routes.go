@@ -616,10 +616,6 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	originalModel := req.Model
 	providerID := types.Provider(c.Query("provider"))
 
-	// Gateway-native routing: resolve a logical model alias to an upstream
-	// deployment before dispatch, so streaming and non-streaming are both
-	// covered. Explicit ?provider= and direct provider/model routing take
-	// precedence and are left unchanged. See issue #397.
 	var routedProvider, routedModel string
 	if router.selector != nil && providerID == "" {
 		if dep, ok := router.selector.Select(model); ok {
@@ -711,8 +707,6 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 
 	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
 
-	// Report the routed selection only once the request has passed validation,
-	// so a rejected request (e.g. a disallowed alias) does not leak topology.
 	if routedProvider != "" {
 		c.Header("X-Selected-Provider", routedProvider)
 		c.Header("X-Selected-Model", routedModel)
