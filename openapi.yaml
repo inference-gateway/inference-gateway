@@ -3390,6 +3390,19 @@ components:
                   type: int
                   default: '100'
                   description: 'Maximum number of messages to show in debug logs (development mode only)'
+          - routing:
+              title: 'Routing'
+              settings:
+                - name: routing_enabled
+                  env: 'ROUTING_ENABLED'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable gateway-native model routing: logical model aliases backed by a pool of upstream provider deployments, selected round-robin per replica. Opt-in; when disabled, direct provider/model routing is unchanged'
+                - name: routing_config_path
+                  env: 'ROUTING_CONFIG_PATH'
+                  type: string
+                  default: ''
+                  description: 'Path to a YAML file mapping logical model aliases to their upstream deployment pools. Required when ROUTING_ENABLED is true'
           - telemetry:
               title: 'Telemetry'
               settings:

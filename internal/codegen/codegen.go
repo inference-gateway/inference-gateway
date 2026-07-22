@@ -74,6 +74,9 @@ type Config struct {
 	{{- else if eq $name "server" }}
 	// Server settings
 	Server *ServerConfig ` + "`env:\", prefix=SERVER_\" description:\"Server configuration\"`" + `
+	{{- else if eq $name "routing" }}
+	// Routing settings
+	Routing *RoutingConfig ` + "`env:\", prefix=ROUTING_\" description:\"Routing configuration\"`" + `
 	{{- else if eq $name "client" }}
 	// Client settings
 	Client *client.ClientConfig ` + "`description:\"Client configuration\"`" + `
@@ -117,6 +120,14 @@ type AuthConfig struct {
 type ServerConfig struct {
 	{{- range $field := $section.Settings }}
 	{{ pascalCase (trimPrefix $field.Env "SERVER_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"SERVER_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+	{{- end }}
+}
+{{- else if eq $name "routing" }}
+
+// Routing configuration
+type RoutingConfig struct {
+	{{- range $field := $section.Settings }}
+	{{ pascalCase (trimPrefix $field.Env "ROUTING_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"ROUTING_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
 }
 {{- end }}
@@ -165,7 +176,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 func (cfg *Config) String() string {
     return fmt.Sprintf(
         "Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, "+
-            "MCP:%+v, Auth:%+v, Server:%+v, Client:%+v, Providers:%+v}",
+            "MCP:%+v, Auth:%+v, Server:%+v, Routing:%+v, Client:%+v, Providers:%+v}",
         APPLICATION_NAME,
         VERSION,
         cfg.Environment,
@@ -173,6 +184,7 @@ func (cfg *Config) String() string {
         cfg.MCP,
         cfg.Auth,
         cfg.Server,
+        cfg.Routing,
         cfg.Client,
         cfg.Providers,
     )

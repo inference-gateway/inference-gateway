@@ -1,0 +1,33 @@
+# Example gateway-native model routing config (Phase 1: round-robin).
+#
+# Enable with:
+#   ROUTING_ENABLED=true
+#   ROUTING_CONFIG_PATH=/etc/inference-gateway/routing.yaml
+#
+# Each top-level key under `models` is a logical alias a client requests as the
+# `model` field (e.g. {"model": "fast-chat"}). The gateway rotates round-robin
+# through the alias's deployments and forwards to the resolved provider/model.
+# The selection is reported back via the X-Selected-Provider / X-Selected-Model
+# response headers.
+#
+# Notes:
+# - Opt-in: with ROUTING_ENABLED unset/false the gateway behaves exactly as
+#   before (direct `provider/model` prefix and `?provider=` routing only).
+# - Explicit `?provider=` and `provider/model` prefixes always bypass routing.
+# - Each deployment `provider` must be an already-configured provider (its
+#   API key/URL are set the usual way, e.g. OPENAI_API_KEY, GROQ_API_KEY).
+# - ALLOWED_MODELS / DISALLOWED_MODELS are matched against the logical alias.
+# - Round-robin state is per replica: under multiple gateway replicas the
+#   rotation is best-effort per replica, not globally coordinated.
+models:
+  fast-chat:
+    strategy: round_robin # only strategy in Phase 1; omit to default to round_robin
+    deployments:
+      - provider: groq
+        model: llama-3.3-70b-versatile
+      - provider: openai
+        model: gpt-4o-mini
+  cheap-chat:
+    deployments:
+      - provider: openai
+        model: gpt-4o-mini

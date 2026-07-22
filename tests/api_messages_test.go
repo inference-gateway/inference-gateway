@@ -69,7 +69,7 @@ func newMessagesTestRouter(t *testing.T, upstreamURL string) api.Router {
 		Providers: providerCfg,
 	}
 
-	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil)
+	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil)
 }
 
 func TestMessagesHandler_NonStreamingPassthrough(t *testing.T) {

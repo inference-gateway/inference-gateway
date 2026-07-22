@@ -54,7 +54,7 @@ func newContextWindowRouter(t testing.TB, server *httptest.Server, providerCfg m
 		},
 		Providers: providerCfg,
 	}
-	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil)
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil)
 
 	r := gin.New()
 	r.GET("/v1/models", router.ListModelsHandler)

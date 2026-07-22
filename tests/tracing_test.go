@@ -254,7 +254,7 @@ func TestTracingProxyPropagation(t *testing.T) {
 		},
 		Providers: providerCfg,
 	}
-	router := api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), providersmocks.NewMockClient(ctrl), nil, nil)
+	router := api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), providersmocks.NewMockClient(ctrl), nil, nil, nil)
 
 	r := gin.New()
 	r.Use(otelgin.Middleware("inference-gateway"))

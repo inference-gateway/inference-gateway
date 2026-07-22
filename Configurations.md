@@ -11,6 +11,13 @@
 | DEBUG_CONTENT_TRUNCATE_WORDS | `10`          | Number of words to truncate per content section in debug logs (development mode only)                                                          |
 | DEBUG_MAX_MESSAGES           | `100`         | Maximum number of messages to show in debug logs (development mode only)                                                                       |
 
+### Routing
+
+| Environment Variable | Default Value | Description                                                                                                                                                                                                       |
+| -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ROUTING_ENABLED      | `false`       | Enable gateway-native model routing: logical model aliases backed by a pool of upstream provider deployments, selected round-robin per replica. Opt-in; when disabled, direct provider/model routing is unchanged |
+| ROUTING_CONFIG_PATH  | `""`          | Path to a YAML file mapping logical model aliases to their upstream deployment pools. Required when ROUTING_ENABLED is true                                                                                       |
+
 ### Telemetry
 
 | Environment Variable            | Default Value           | Description                                                    |

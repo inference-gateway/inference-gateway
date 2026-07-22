@@ -26,6 +26,7 @@ import (
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	routing "github.com/inference-gateway/inference-gateway/providers/routing"
 )
 
 var (
@@ -211,12 +212,28 @@ func main() {
 		}
 	}
 
+	// Build the model routing selector if enabled (opt-in, default off).
+	var selector *routing.Selector
+	if cfg.Routing != nil && cfg.Routing.Enabled {
+		poolsCfg, err := routing.LoadPoolsConfig(cfg.Routing.ConfigPath)
+		if err != nil {
+			logger.Error("failed to load routing config", err, "path", cfg.Routing.ConfigPath)
+			return
+		}
+		selector, err = routing.NewSelector(poolsCfg)
+		if err != nil {
+			logger.Error("invalid routing config", err, "path", cfg.Routing.ConfigPath)
+			return
+		}
+		logger.Info("model routing enabled", "aliases", selector.Aliases())
+	}
+
 	// Set GIN mode based on environment
 	if cfg.Environment != "development" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, httpClient, mcpClient, telemetryImpl)
+	api := api.NewRouter(cfg, logger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector)
 	r := gin.New()
 	if cfg.Telemetry.Enable && cfg.Telemetry.TracingEnable {
 		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {

@@ -69,6 +69,10 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			WriteTimeout: 30 * time.Second,
 			IdleTimeout:  120 * time.Second,
 		},
+		Routing: &config.RoutingConfig{
+			Enabled:    false,
+			ConfigPath: "",
+		},
 		Client: &client.ClientConfig{
 			ClientTimeout:               30 * time.Second,
 			ClientMaxIdleConns:          20,

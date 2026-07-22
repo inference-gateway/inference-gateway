@@ -25,6 +25,8 @@ type Config struct {
 	EnableVision              bool   `env:"ENABLE_VISION, default=false" description:"Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision"`
 	DebugContentTruncateWords int    `env:"DEBUG_CONTENT_TRUNCATE_WORDS, default=10" description:"Number of words to truncate per content section in debug logs (development mode only)"`
 	DebugMaxMessages          int    `env:"DEBUG_MAX_MESSAGES, default=100" description:"Maximum number of messages to show in debug logs (development mode only)"`
+	// Routing settings
+	Routing *RoutingConfig `env:", prefix=ROUTING_" description:"Routing configuration"`
 	// Telemetry settings
 	Telemetry *TelemetryConfig `env:", prefix=TELEMETRY_" description:"Telemetry configuration"`
 	// MCP settings
@@ -38,6 +40,12 @@ type Config struct {
 
 	// Providers map
 	Providers map[types.Provider]*registry.ProviderConfig
+}
+
+// Routing configuration
+type RoutingConfig struct {
+	Enabled    bool   `env:"ENABLED, default=false" description:"Enable gateway-native model routing: logical model aliases backed by a pool of upstream provider deployments, selected round-robin per replica. Opt-in; when disabled, direct provider/model routing is unchanged"`
+	ConfigPath string `env:"CONFIG_PATH" description:"Path to a YAML file mapping logical model aliases to their upstream deployment pools. Required when ROUTING_ENABLED is true"`
 }
 
 // Telemetry configuration
@@ -134,7 +142,7 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 func (cfg *Config) String() string {
 	return fmt.Sprintf(
 		"Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, "+
-			"MCP:%+v, Auth:%+v, Server:%+v, Client:%+v, Providers:%+v}",
+			"MCP:%+v, Auth:%+v, Server:%+v, Routing:%+v, Client:%+v, Providers:%+v}",
 		APPLICATION_NAME,
 		VERSION,
 		cfg.Environment,
@@ -142,6 +150,7 @@ func (cfg *Config) String() string {
 		cfg.MCP,
 		cfg.Auth,
 		cfg.Server,
+		cfg.Routing,
 		cfg.Client,
 		cfg.Providers,
 	)
