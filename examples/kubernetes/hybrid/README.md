@@ -7,7 +7,7 @@ This example demonstrates a hybrid deployment of the Inference Gateway using:
 - Cloud-based providers
 - The [Inference Gateway Operator](https://github.com/inference-gateway/operator) and a `Gateway` custom resource
 
-> **Note:** The Helm chart is deprecated. The gateway is now deployed through the operator. The Ollama base
+> **Note:** The gateway is now deployed through the operator. The Ollama base
 > URL and cloud provider API keys are configured under `spec.providers` in `gateway.yaml`.
 
 ## Table of Contents

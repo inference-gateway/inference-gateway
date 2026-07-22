@@ -3,7 +3,7 @@
 This example demonstrates Keycloak (OIDC) authentication with the Inference Gateway using the
 [Inference Gateway Operator](https://github.com/inference-gateway/operator).
 
-> **Note:** The Helm chart is deprecated. Authentication is configured declaratively under `spec.auth.oidc`
+> **Note:** Authentication is configured declaratively under `spec.auth.oidc`
 > in `gateway.yaml`, including `caCertRef` to trust Keycloak's self-signed CA.
 >
 > **Operator version:** This example requires an operator release that wires the OIDC issuer/clientId env

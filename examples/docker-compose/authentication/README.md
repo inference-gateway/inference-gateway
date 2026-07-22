@@ -156,5 +156,5 @@ docker compose down -v
 
 - [Configuration Guide](../../../Configurations.md) - all `AUTH_*` settings
 - [Kubernetes Authentication Example](../../kubernetes/authentication/README.md) -
-  the same idea on Kubernetes with Helm
+  the same idea on Kubernetes with the operator
 - [Main Documentation](../../../README.md)

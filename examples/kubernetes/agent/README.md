@@ -6,7 +6,7 @@ This example demonstrates an agent-based deployment pattern with the Inference G
 - The [Inference Gateway Operator](https://github.com/inference-gateway/operator) and a `Gateway` custom resource
 - A failing test deployment for the agent to analyze
 
-> **Note:** The Helm chart is deprecated. The gateway is deployed through the operator. The logs-analyzer is
+> **Note:** The gateway is deployed through the operator. The logs-analyzer is
 > a bespoke workload (it needs a cluster-wide RBAC role to read pod logs), so it remains a plain Deployment
 > rather than an operator `Agent` resource.
 

@@ -3,7 +3,7 @@
 This example demonstrates the simplest deployment of the Inference Gateway using the
 [Inference Gateway Operator](https://github.com/inference-gateway/operator) and the Kubernetes Gateway API.
 
-> **Note:** The Helm chart is deprecated. All Kubernetes examples now deploy the gateway through the operator
+> **Note:** All Kubernetes examples now deploy the gateway through the operator
 > by applying a `Gateway` custom resource.
 
 ## Table of Contents

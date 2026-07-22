@@ -9,7 +9,7 @@ MCP servers (time, search, filesystem) and exposes their tools through the OpenA
 > be used in production environments without proper security hardening, input validation, authentication,
 > authorization, and error handling.
 >
-> **Note:** The Helm chart is deprecated. The gateway is deployed through the operator. MCP is configured
+> **Note:** The gateway is deployed through the operator. MCP is configured
 > under `spec.mcp` in `gateway.yaml`.
 
 ## Table of Contents
