@@ -14,6 +14,8 @@ import (
 
 	m "github.com/metoro-io/mcp-golang"
 	transport "github.com/metoro-io/mcp-golang/transport/http"
+	otelapi "go.opentelemetry.io/otel"
+	propagation "go.opentelemetry.io/otel/propagation"
 )
 
 // TransportMode represents the type of transport being used
@@ -57,6 +59,8 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	req.Header.Del("Authorization")
 	req.Header.Del("Cookie")
 	req.Header.Del("X-API-Key")
+
+	otelapi.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
 
 	c.mu.Lock()
 	mode := c.mode

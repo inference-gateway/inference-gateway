@@ -10,6 +10,11 @@ import (
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	otelapi "go.opentelemetry.io/otel"
+	attribute "go.opentelemetry.io/otel/attribute"
+	codes "go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+	trace "go.opentelemetry.io/otel/trace"
 )
 
 // MaxAgentIterations limits the number of agent loop iterations
@@ -311,8 +316,13 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 
 		var server string
 		toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
+		// tool arguments are deliberately not recorded on the span (PII / unbounded size)
+		toolCtx, span := otelapi.Tracer("github.com/inference-gateway/inference-gateway/internal/mcp").
+			Start(ctx, "execute_tool "+toolName, trace.WithAttributes(semconv.GenAIToolName(toolName)))
 		server, err := a.mcpClient.GetServerForTool(toolName)
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+			span.End()
 			a.logger.Error("failed to find server for tool", err, "tool", toolCall.Function.Name, "tool_name", toolName)
 			msg := types.Message{
 				Role:       types.Tool,
@@ -324,6 +334,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 			results = append(results, msg)
 			continue
 		}
+		span.SetAttributes(attribute.String("mcp.server.url", server))
 
 		mcpRequest := Request{
 			Method: "tools/call",
@@ -334,8 +345,10 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 		}
 
 		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s mcp_name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, toolName, args, server))
-		result, err := a.mcpClient.ExecuteTool(ctx, mcpRequest, server)
+		result, err := a.mcpClient.ExecuteTool(toolCtx, mcpRequest, server)
 		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+			span.End()
 			a.logger.Error("failed to execute tool call", err, "tool", toolCall.Function.Name, "server", server)
 			msg := types.Message{
 				Role:       types.Tool,
@@ -347,6 +360,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 			results = append(results, msg)
 			continue
 		}
+		span.End()
 
 		var resultStr string
 		if result == nil {

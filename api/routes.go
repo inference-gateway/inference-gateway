@@ -15,6 +15,11 @@ import (
 	"sync"
 
 	gin "github.com/gin-gonic/gin"
+	otelapi "go.opentelemetry.io/otel"
+	codes "go.opentelemetry.io/otel/codes"
+	propagation "go.opentelemetry.io/otel/propagation"
+	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+	trace "go.opentelemetry.io/otel/trace"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -146,6 +151,7 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 	}
 
 	upstreamReq.Header = c.Request.Header.Clone()
+	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
 
 	resp, err := router.client.Do(upstreamReq)
 	if err != nil {
@@ -235,6 +241,7 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		pr.Out.Header = pr.In.Header.Clone()
 		pr.Out.Header.Set("Content-Type", "application/json")
 		pr.Out.Header.Set("Accept", "application/json")
+		otelapi.GetTextMapPropagator().Inject(pr.Out.Context(), propagation.HeaderCarrier(pr.Out.Header))
 
 		if router.cfg.Environment == "development" {
 			reqModifier := proxymodifier.NewDevRequestModifier(router.logger, &router.cfg)
@@ -815,6 +822,12 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 		providerID = *providerPtr
 	}
 
+	span := trace.SpanFromContext(c.Request.Context())
+	span.SetAttributes(
+		semconv.GenAIProviderNameKey.String(string(providerID)),
+		semconv.GenAIRequestModel(originalModel),
+	)
+
 	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
 		if !routing.ModelMatches(allowed, originalModel) {
 			router.logger.Error("model not in allowed list", nil, "model", originalModel, "allowed_models", router.cfg.AllowedModels)
@@ -893,6 +906,8 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 		return
 	}
 
+	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
+
 	resp, err := router.client.Do(upstreamReq)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
@@ -905,6 +920,11 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 		return
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		span.SetStatus(codes.Error, resp.Status)
+		span.SetAttributes(semconv.ErrorTypeKey.String(fmt.Sprintf("%d", resp.StatusCode)))
+	}
 
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "text/event-stream") {

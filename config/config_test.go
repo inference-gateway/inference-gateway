@@ -32,8 +32,9 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 		DebugContentTruncateWords: 10,
 		DebugMaxMessages:          100,
 		Telemetry: &config.TelemetryConfig{
-			Enable:      false,
-			MetricsPort: "9464",
+			Enable:              false,
+			MetricsPort:         "9464",
+			TracingOtlpEndpoint: "http://localhost:4318",
 		},
 		MCP: &config.MCPConfig{
 			Enable:                 false,

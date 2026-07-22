@@ -4,15 +4,19 @@ package otel
 import (
 	"cmp"
 	"context"
+	"errors"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "go.opentelemetry.io/otel"
 	attribute "go.opentelemetry.io/otel/attribute"
+	otlptracehttp "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	prometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	metric "go.opentelemetry.io/otel/metric"
+	propagation "go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	resource "go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 )
@@ -57,9 +61,10 @@ type OpenTelemetry interface {
 }
 
 type OpenTelemetryImpl struct {
-	logger        logger.Logger
-	meterProvider *sdkmetric.MeterProvider
-	meter         metric.Meter
+	logger         logger.Logger
+	meterProvider  *sdkmetric.MeterProvider
+	tracerProvider *sdktrace.TracerProvider
+	meter          metric.Meter
 
 	// GenAI semantic-convention instruments
 	tokenUsageHistogram     metric.Int64Histogram   // gen_ai.client.token.usage
@@ -108,6 +113,27 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 
 	if err := o.initInstruments(o.meterProvider); err != nil {
 		return err
+	}
+
+	if cfg.Telemetry.TracingEnable {
+		traceExporter, err := otlptracehttp.New(context.Background(),
+			otlptracehttp.WithEndpointURL(cfg.Telemetry.TracingOtlpEndpoint))
+		if err != nil {
+			o.logger.Error("failed to create otlp trace exporter", err)
+			return err
+		}
+
+		// Sampler defaults to ParentBased(AlwaysSample) and honors the
+		// standard OTEL_TRACES_SAMPLER / OTEL_TRACES_SAMPLER_ARG env vars.
+		o.tracerProvider = sdktrace.NewTracerProvider(
+			sdktrace.WithResource(res),
+			sdktrace.WithBatcher(traceExporter),
+		)
+		otel.SetTracerProvider(o.tracerProvider)
+		otel.SetTextMapPropagator(propagation.TraceContext{})
+
+		o.logger.Info("opentelemetry tracing enabled",
+			"otlp_endpoint", cfg.Telemetry.TracingOtlpEndpoint)
 	}
 
 	o.logger.Info("opentelemetry initialization completed successfully",
@@ -223,5 +249,9 @@ func (o *OpenTelemetryImpl) RecordToolCall(ctx context.Context, source, team, pr
 }
 
 func (o *OpenTelemetryImpl) ShutDown(ctx context.Context) error {
-	return o.meterProvider.Shutdown(ctx)
+	err := o.meterProvider.Shutdown(ctx)
+	if o.tracerProvider != nil {
+		err = errors.Join(err, o.tracerProvider.Shutdown(ctx))
+	}
+	return err
 }

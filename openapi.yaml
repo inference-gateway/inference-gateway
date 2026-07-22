@@ -3408,6 +3408,16 @@ components:
                   type: string
                   default: '9464'
                   description: 'Port for telemetry metrics server'
+                - name: telemetry_tracing_enable
+                  env: 'TELEMETRY_TRACING_ENABLE'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLE)'
+                - name: telemetry_tracing_otlp_endpoint
+                  env: 'TELEMETRY_TRACING_OTLP_ENDPOINT'
+                  type: string
+                  default: 'http://localhost:4318'
+                  description: 'OTLP HTTP endpoint for trace export'
           - mcp:
               title: 'Model Context Protocol (MCP)'
               settings:

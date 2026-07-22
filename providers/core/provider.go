@@ -12,6 +12,9 @@ import (
 	"net/http"
 	"strings"
 
+	otelapi "go.opentelemetry.io/otel"
+	propagation "go.opentelemetry.io/otel/propagation"
+
 	l "github.com/inference-gateway/inference-gateway/logger"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
@@ -107,6 +110,8 @@ func (p *ProviderImpl) createHTTPRequest(ctx context.Context, url string, body [
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
 
+	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+
 	return req, nil
 }
 
@@ -146,6 +151,8 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 	if authToken, ok := ctx.Value(types.AuthTokenContextKey).(string); ok && authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
+
+	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 	response, err := p.Client.Do(req)
 	if err != nil {
