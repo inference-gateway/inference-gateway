@@ -62,8 +62,9 @@ func LoadPoolsConfig(path string) (*PoolsConfig, error) {
 }
 
 // NewSelector builds a Selector from parsed pools, validating that every alias
-// has a supported strategy, at least one deployment, and references a known
-// provider. It returns an error rather than start routing to a broken pool.
+// has a supported strategy, at least two deployments to rotate over, and
+// references a known provider. It returns an error rather than start routing to
+// a broken pool.
 func NewSelector(cfg *PoolsConfig) (*Selector, error) {
 	if cfg == nil || len(cfg.Models) == 0 {
 		return nil, fmt.Errorf("routing enabled but no models configured")
@@ -73,8 +74,8 @@ func NewSelector(cfg *PoolsConfig) (*Selector, error) {
 		if pc.Strategy != "" && pc.Strategy != StrategyRoundRobin {
 			return nil, fmt.Errorf("model %q: unsupported strategy %q (only %q is supported)", alias, pc.Strategy, StrategyRoundRobin)
 		}
-		if len(pc.Deployments) == 0 {
-			return nil, fmt.Errorf("model %q: at least one deployment is required", alias)
+		if len(pc.Deployments) < 2 {
+			return nil, fmt.Errorf("model %q: round-robin requires at least 2 deployments, got %d", alias, len(pc.Deployments))
 		}
 		for i, d := range pc.Deployments {
 			if d.Provider == "" || d.Model == "" {

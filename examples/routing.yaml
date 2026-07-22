@@ -19,6 +19,8 @@
 # - ALLOWED_MODELS / DISALLOWED_MODELS are matched against the logical alias.
 # - Round-robin state is per replica: under multiple gateway replicas the
 #   rotation is best-effort per replica, not globally coordinated.
+# - Each pool needs at least 2 deployments; round-robin has nothing to rotate
+#   over otherwise.
 models:
   fast-chat:
     strategy: round_robin # only strategy in Phase 1; omit to default to round_robin
@@ -31,3 +33,5 @@ models:
     deployments:
       - provider: openai
         model: gpt-4o-mini
+      - provider: groq
+        model: llama-3.1-8b-instant

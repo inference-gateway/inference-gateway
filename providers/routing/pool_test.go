@@ -34,7 +34,10 @@ func TestSelectRoundRobinRotation(t *testing.T) {
 }
 
 func TestSelectUnknownAliasFallsThrough(t *testing.T) {
-	sel := poolFor(t, Deployment{Provider: "groq", Model: "llama-3.3-70b-versatile"})
+	sel := poolFor(t,
+		Deployment{Provider: "groq", Model: "llama-3.3-70b-versatile"},
+		Deployment{Provider: "openai", Model: "gpt-4o-mini"},
+	)
 	got, ok := sel.Select("not-a-pool")
 	assert.False(t, ok)
 	assert.Equal(t, Deployment{}, got)
@@ -43,7 +46,7 @@ func TestSelectUnknownAliasFallsThrough(t *testing.T) {
 func TestSelectEmptyStrategyDefaultsToRoundRobin(t *testing.T) {
 	sel, err := NewSelector(&PoolsConfig{
 		Models: map[string]PoolConfig{
-			"cheap": {Deployments: []Deployment{{Provider: "groq", Model: "x"}}},
+			"cheap": {Deployments: []Deployment{{Provider: "groq", Model: "x"}, {Provider: "openai", Model: "y"}}},
 		},
 	})
 	require.NoError(t, err)
@@ -68,12 +71,16 @@ func TestNewSelectorValidation(t *testing.T) {
 			&PoolsConfig{Models: map[string]PoolConfig{"a": {Strategy: StrategyRoundRobin}}},
 		},
 		{
+			"single deployment",
+			&PoolsConfig{Models: map[string]PoolConfig{"a": {Deployments: []Deployment{{Provider: "groq", Model: "x"}}}}},
+		},
+		{
 			"missing model",
-			&PoolsConfig{Models: map[string]PoolConfig{"a": {Deployments: []Deployment{{Provider: "groq"}}}}},
+			&PoolsConfig{Models: map[string]PoolConfig{"a": {Deployments: []Deployment{{Provider: "groq", Model: "x"}, {Provider: "groq"}}}}},
 		},
 		{
 			"unknown provider",
-			&PoolsConfig{Models: map[string]PoolConfig{"a": {Deployments: []Deployment{{Provider: "nope", Model: "x"}}}}},
+			&PoolsConfig{Models: map[string]PoolConfig{"a": {Deployments: []Deployment{{Provider: "nope", Model: "x"}, {Provider: "groq", Model: "y"}}}}},
 		},
 	}
 	for _, tt := range tests {
