@@ -2,7 +2,9 @@ package routing
 
 import (
 	"fmt"
+	"maps"
 	"os"
+	"slices"
 	"sync/atomic"
 
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
@@ -89,23 +91,19 @@ func NewSelector(cfg *PoolsConfig) (*Selector, error) {
 
 // Select returns the next deployment for a logical alias in round-robin order.
 // ok is false when alias is not a routed model, so callers fall back to the
-// existing direct provider/model routing unchanged.
+// existing direct provider/model routing unchanged. Round-robin state is per
+// Selector (per replica), not globally coordinated; a shared-store
+// implementation is deferred to a later phase (#397).
 func (s *Selector) Select(alias string) (deployment Deployment, ok bool) {
 	p, found := s.pools[alias]
 	if !found {
 		return Deployment{}, false
 	}
-	// ponytail: per-replica cursor. Strictly-coordinated round-robin across
-	// replicas needs a shared store and is deferred to a later phase (#397).
 	i := p.cursor.Add(1) - 1
 	return p.deployments[i%uint64(len(p.deployments))], true
 }
 
 // Aliases returns the configured logical model names, for startup logging.
 func (s *Selector) Aliases() []string {
-	names := make([]string, 0, len(s.pools))
-	for name := range s.pools {
-		names = append(names, name)
-	}
-	return names
+	return slices.Sorted(maps.Keys(s.pools))
 }

@@ -25,7 +25,6 @@ func TestSelectRoundRobinRotation(t *testing.T) {
 	d2 := Deployment{Provider: "ollama", Model: "phi3"}
 	sel := poolFor(t, d0, d1, d2)
 
-	// Rotation is deterministic and cycles through the pool in order.
 	want := []Deployment{d0, d1, d2, d0, d1, d2, d0}
 	for i, expected := range want {
 		got, ok := sel.Select("fast-chat")

@@ -129,8 +129,6 @@ func TestChatCompletionsRouting_StreamingPassthrough(t *testing.T) {
 	r := gin.New()
 	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
-	// A real server is needed: gin's c.Stream requires http.CloseNotifier, which
-	// httptest.ResponseRecorder does not implement.
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
@@ -152,7 +150,7 @@ func TestChatCompletionsRouting_DisabledPassthrough(t *testing.T) {
 	log, cfg := routingTestSetup(t)
 
 	mockClient := providersmocks.NewMockClient(ctrl)
-	reg := providersmocks.NewMockProviderRegistry(ctrl) // BuildProvider must not be called
+	reg := providersmocks.NewMockProviderRegistry(ctrl)
 
 	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil)
 	r := gin.New()
@@ -178,7 +176,7 @@ func TestChatCompletionsRouting_ExplicitProviderWins(t *testing.T) {
 
 	prov.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ any, req types.CreateChatCompletionRequest) (types.CreateChatCompletionResponse, error) {
-			assert.Equal(t, "fast-chat", req.Model) // unresolved
+			assert.Equal(t, "fast-chat", req.Model)
 			return types.CreateChatCompletionResponse{ID: "x", Model: req.Model}, nil
 		})
 	reg.EXPECT().BuildProvider(constants.GroqID, mockClient).Return(prov, nil)
@@ -235,7 +233,6 @@ func TestChatCompletionsRouting_AllowedModelsFiltersAlias(t *testing.T) {
 			r.ServeHTTP(rec, chatRequest(t, "fast-chat", false))
 			assert.Equal(t, tt.wantStatus, rec.Code)
 			if !tt.wantCall {
-				// A rejected alias must not leak the resolved upstream topology.
 				assert.Empty(t, rec.Header().Get("X-Selected-Provider"))
 			}
 		})
