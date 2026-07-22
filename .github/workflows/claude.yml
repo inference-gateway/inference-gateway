@@ -51,6 +51,7 @@ jobs:
     uses: inference-gateway/.github/.github/workflows/claude.yml@main
     with:
       language: "go"
+      prettier: true
       node: true
       extra-tools: "Bash(helm:*)"
       plugins: |
