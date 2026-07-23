@@ -23,19 +23,20 @@ on:
         required: false
         type: choice
         options:
-              - low
-              - medium
-              - high
-              - xhigh
-              - max
+          - low
+          - medium
+          - high
+          - xhigh
+          - max
         default: medium
       model:
         description: 'Claude model'
         required: false
         type: choice
         options:
-              - claude-opus-4-8
-              - claude-fable-5
+          - claude-opus-4-8
+          - claude-fable-5
+          - claude-sonnet-5
         default: claude-opus-4-8
   issue_comment:
     types:
