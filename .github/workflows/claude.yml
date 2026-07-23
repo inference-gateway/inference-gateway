@@ -18,6 +18,25 @@ on:
         required: false
         type: boolean
         default: false
+      effort:
+        description: 'Claude effort level'
+        required: false
+        type: choice
+        options:
+              - low
+              - medium
+              - high
+              - xhigh
+              - max
+        default: medium
+      model:
+        description: 'Claude model'
+        required: false
+        type: choice
+        options:
+              - claude-opus-8
+              - claude-fable-5
+        default: claude-opus-4-8
   issue_comment:
     types:
       - created
@@ -57,5 +76,7 @@ jobs:
       plugins: |
         DietrichGebert/ponytail
       browser: ${{ inputs.browser || false }}
+      effort: ${{ inputs.effort || 'medium' }}
+      model: ${{ inputs.model || 'claude-opus-8' }}
       prompt: ${{ inputs.prompt }}
     secrets: inherit
