@@ -24,15 +24,14 @@ func GenerateMCPWrap(output, input string) error {
 		return fmt.Errorf("parsing MCP schema: %w", err)
 	}
 
-	schemas, ok := doc["$defs"]
+	schemas, ok := doc["$defs"].(map[string]any)
 	if !ok {
-		return fmt.Errorf("MCP schema %s has no top-level $defs", input)
+		return fmt.Errorf("MCP schema %s: $defs must be a mapping", input)
 	}
 
 	dropMultiTypeArrays(schemas)
-
 	annotateLooseObjects(schemas)
-	if cb, ok := schemas.(map[string]any)["ContentBlock"].(map[string]any); ok {
+	if cb, ok := schemas["ContentBlock"].(map[string]any); ok {
 		cb["x-go-type"] = "interface{}"
 	}
 
