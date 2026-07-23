@@ -1,0 +1,15 @@
+# oapi-codegen config for the MCP JSON-RPC Go types.
+#
+# The MCP schema (internal/mcp/mcp-schema.yaml) is raw JSON Schema 2020-12; the
+# `MCPWrap` step (cmd/generate) first turns it into a minimal OpenAPI 3.1 doc.
+# Settings mirror .oapi-codegen.yaml so this path is consistent with the SDK and
+# the provider types (same version, skip-prune, name-normalizer).
+#
+# skip-prune is required: the wrapped document has empty `paths`, so every schema
+# is unreachable and oapi-codegen would otherwise prune all of them.
+package: mcp
+generate:
+  models: true
+output-options:
+  skip-prune: true
+  name-normalizer: ToCamelCaseWithInitialisms

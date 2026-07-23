@@ -14,15 +14,8 @@ tasks:
       - curl -fsSL -o internal/mcp/mcp-schema.yaml "https://raw.githubusercontent.com/inference-gateway/schemas/{{.SCHEMAS_REF | default "refs/heads/main"}}/mcp/mcp-schema.yaml"
       - task: format
 
-  install:generator:
-    desc: 'Install the generator tool'
-    cmds:
-      - GOBIN=${PWD}/bin go install github.com/inference-gateway/tools/cmd/generator@v0.2.2
-
   generate:
     desc: 'Generate the gateway from OpenAPI Spec'
-    deps:
-      - install:generator
     cmds:
       - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client/client.go
       - go run cmd/generate/main.go -type ProvidersConstants -output providers/constants/constants.go
@@ -38,7 +31,10 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/monitoring/.env.example
-      - ./bin/generator -generator jsonrpc -package mcp internal/mcp/mcp-schema.yaml internal/mcp/generated_types.go
+      - go run cmd/generate/main.go -type MCPWrap -output internal/mcp/mcp-schema.openapi.yaml
+      - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0 --config=.oapi-codegen.mcp.yaml -o internal/mcp/generated_types.go internal/mcp/mcp-schema.openapi.yaml
+      - gofmt -r 'interface{} -> any' -w internal/mcp/generated_types.go
+      - rm -f internal/mcp/mcp-schema.openapi.yaml
       - go generate ./providers/... ./api/... ./otel/... ./logger/... ./internal/mcp/...
       - task: format
       - echo "✅ Codegen completed successfully!"

@@ -20,7 +20,7 @@ var (
 func init() {
 	flag.StringVar(&output, "output", "", "Path to the output file")
 	flag.StringVar(&input, "input", "", "Path to the input file (CommunityPricing, CommunityContextWindows: a models.dev repository tarball)")
-	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, CommunityPricing, or CommunityContextWindows)")
+	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, MCPWrap, CommunityPricing, or CommunityContextWindows)")
 }
 
 func main() {
@@ -94,6 +94,13 @@ func main() {
 		err := pricinggen.GenerateContextWindows(output, input)
 		if err != nil {
 			fmt.Printf("Error generating community context-window table: %v\n", err)
+			os.Exit(1)
+		}
+	case "MCPWrap":
+		fmt.Printf("Wrapping MCP JSON schema as OpenAPI 3.1 to %s\n", output)
+		err := codegen.GenerateMCPWrap(output, "internal/mcp/mcp-schema.yaml")
+		if err != nil {
+			fmt.Printf("Error wrapping MCP schema: %v\n", err)
 			os.Exit(1)
 		}
 	case "ProviderRegistry":
