@@ -29,18 +29,8 @@ func GenerateMCPWrap(output, input string) error {
 		return fmt.Errorf("MCP schema %s has no top-level $defs", input)
 	}
 
-	// oapi-codegen v2.8 does not support JSON Schema 2020-12 multi-type arrays
-	// (e.g. `type: [string, integer, boolean]`). Drop the `type` on those nodes
-	// so they generate as `any`, matching the previous generator's handling of
-	// JSONValue/RequestId/ProgressToken.
 	dropMultiTypeArrays(schemas)
 
-	// Pin the types the internal/mcp consumers treat loosely to the same shapes
-	// the previous generator produced, so migrating tools -> oapi-codegen is a
-	// no-op for those files:
-	//   - arbitrary-JSON objects (`additionalProperties: {}`) -> map[string]any
-	//     (oapi-codegen would otherwise mint a named *_InputSchema type / pointer)
-	//   - the ContentBlock union -> any (consumers assign raw maps into it)
 	annotateLooseObjects(schemas)
 	if cb, ok := schemas.(map[string]any)["ContentBlock"].(map[string]any); ok {
 		cb["x-go-type"] = "interface{}"
