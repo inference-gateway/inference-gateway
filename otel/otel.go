@@ -255,6 +255,7 @@ func (o *OpenTelemetryImpl) RecordToolCall(ctx context.Context, source, team, pr
 func (o *OpenTelemetryImpl) RecordGuardrail(ctx context.Context, source, phase, action, path, model string) {
 	attributes := []attribute.KeyValue{
 		sourceKey.String(source),
+		teamKey.String(TeamUnknown),
 		attribute.String("guardrail.phase", phase),
 		attribute.String("guardrail.action", action),
 		attribute.String("guardrail.path", path),

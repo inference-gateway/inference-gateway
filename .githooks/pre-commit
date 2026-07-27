@@ -36,13 +36,25 @@ if [ -n "$staged_md" ]; then
   echo "$staged_md" | xargs markdownlint --ignore '{AGENTS,CLAUDE,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md
 fi
 
-# --- Regenerate mocks and check for dirty tree ---
+# --- Regenerate generated files and check for dirty tree ---
 if [ -n "$staged_go" ]; then
   echo "  go generate (regenerate mocks)"
   go generate ./otel/... ./api/... ./logger/... ./internal/mcp/... ./providers/...
   if ! git diff --quiet -- '*.go'; then
     echo "ERROR: Generated Go files are out of date. Run 'go generate ./...' and commit the result."
     git diff --name-only -- '*.go'
+    exit 1
+  fi
+fi
+
+# --- task generate (regenerate config, docs, env files from openapi.yaml) ---
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE 'openapi\.yaml$|internal/codegen/'; then
+  echo "  task generate (regenerate config, docs, env files)"
+  task generate
+  if ! git diff --quiet; then
+    echo "ERROR: Code generation produced changes that are not committed."
+    echo "   Run 'task generate' and commit the result."
+    git diff --name-only
     exit 1
   fi
 fi
