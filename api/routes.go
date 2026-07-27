@@ -37,20 +37,6 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// defaultMaxRequestBodySize is the fallback body-size limit used when
-// Server.MaxRequestBodySize is unset (e.g. a config built without env parsing).
-const defaultMaxRequestBodySize = 10 << 20 // 10 MiB
-
-// resolveMaxRequestBodySize returns the configured request body limit, falling
-// back to defaultMaxRequestBodySize when unset or non-positive. It is the single
-// source of the fallback shared by every handler that reads a request body.
-func resolveMaxRequestBodySize(configured int) int {
-	if configured > 0 {
-		return configured
-	}
-	return defaultMaxRequestBodySize
-}
-
 //go:generate mockgen -source=routes.go -destination=../tests/mocks/routes.go -package=mocks
 type Router interface {
 	ListModelsHandler(c *gin.Context)
@@ -147,7 +133,7 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 		return
 	}
 
-	maxBodySize := resolveMaxRequestBodySize(router.cfg.Server.MaxRequestBodySize)
+	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
 	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
 	if err != nil {
 		router.logger.Error("failed to read request body", err, "maxBodySize", maxBodySize)
@@ -628,7 +614,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			return
 		}
 	} else {
-		maxBodySize := resolveMaxRequestBodySize(router.cfg.Server.MaxRequestBodySize)
+		maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(maxBodySize))
 		if err := c.ShouldBindJSON(&req); err != nil {
 			var maxBytesErr *http.MaxBytesError
@@ -837,7 +823,7 @@ func messagesError(c *gin.Context, status int, errType, message string) {
 // (currently Anthropic); other providers receive a 400 in the Anthropic error
 // envelope, mirroring the schema's MessagesNotSupported response.
 func (router *RouterImpl) MessagesHandler(c *gin.Context) {
-	maxBodySize := resolveMaxRequestBodySize(router.cfg.Server.MaxRequestBodySize)
+	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
 	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
 	if err != nil {
 		router.logger.Error("failed to read request body", err)
