@@ -1160,8 +1160,6 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 	c.Stream(func(w io.Writer) bool {
 		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
 
-		// The upstream request carries the client's context, so cancellation
-		// surfaces here as a read error - no separate ctx.Done() check needed.
 		line, err := reader.ReadBytes('\n')
 		if len(line) > 0 {
 			if _, werr := w.Write(line); werr != nil {
