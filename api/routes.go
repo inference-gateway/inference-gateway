@@ -268,12 +268,17 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 // param) and extra headers on req. An unrecognized auth type is returned as an
 // error so misconfigured providers fail loudly instead of sending
 // unauthenticated requests upstream.
+//
+// The caller's inbound Authorization header is always removed first so it is
+// never forwarded to the upstream provider: the client authenticates to the
+// gateway (and the gateway's self-proxy hop carries that token so OIDC can
+// re-verify /proxy), but only the provider's own credential must leave the
+// gateway. Bearer providers overwrite the header below; the others (x-api-key,
+// query key, none) authenticate elsewhere, so without this removal the caller's
+// bearer/OIDC token would leak to third-party providers.
 func applyProviderAuth(req *http.Request, provider core.IProvider) error {
-	// Strip any caller-supplied Authorization before applying the provider's
-	// own credential. For bearer providers it is overwritten below; for
-	// xheader/query/none providers it would otherwise leak the caller's
-	// identity/credential to the upstream (CWE-200).
 	req.Header.Del("Authorization")
+
 	token := provider.GetToken()
 	switch provider.GetAuthType() {
 	case constants.AuthTypeBearer:
