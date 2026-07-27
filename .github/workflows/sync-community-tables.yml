@@ -16,8 +16,17 @@ jobs:
       - uses: actions/create-github-app-token@v3.2.0
         id: app-token
         with:
-          client-id: ${{ secrets.RELEASER_APP_ID }}
-          private-key: ${{ secrets.RELEASER_APP_PRIVATE_KEY }}
+          client-id: ${{ secrets.INFERENCE_GATEWAY_MAINTAINER_APP_ID }}
+          private-key: ${{ secrets.INFERENCE_GATEWAY_MAINTAINER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: |
+            inference-gateway
+
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.app-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Checkout code
         uses: actions/checkout@v7.0.1
@@ -44,8 +53,10 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           branch: chore/sync-community-tables
           add-paths: providers/core/community_pricing.json,providers/core/community_context_windows.json
-          commit-message: 'fix: sync community pricing and context-window tables from models.dev'
-          title: 'fix: sync community pricing and context-window tables from models.dev'
+          committer: '${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>'
+          author: '${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>'
+          commit-message: 'chore: sync community pricing and context-window tables from models.dev'
+          title: 'chore: sync community pricing and context-window tables from models.dev'
           body: >-
             Automated weekly sync of `community_pricing.json` and
             `community_context_windows.json` from the
