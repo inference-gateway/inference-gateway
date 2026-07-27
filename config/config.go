@@ -85,13 +85,14 @@ type AuthConfig struct {
 
 // Server configuration
 type ServerConfig struct {
-	Host         string        `env:"HOST, default=0.0.0.0" description:"Server host"`
-	Port         string        `env:"PORT, default=8080" description:"Server port"`
-	ReadTimeout  time.Duration `env:"READ_TIMEOUT, default=30s" description:"Read timeout"`
-	WriteTimeout time.Duration `env:"WRITE_TIMEOUT, default=30s" description:"Write timeout"`
-	IdleTimeout  time.Duration `env:"IDLE_TIMEOUT, default=120s" description:"Idle timeout"`
-	TlsCertPath  string        `env:"TLS_CERT_PATH" description:"TLS certificate path"`
-	TlsKeyPath   string        `env:"TLS_KEY_PATH" description:"TLS key path"`
+	Host               string        `env:"HOST, default=0.0.0.0" description:"Server host"`
+	Port               string        `env:"PORT, default=8080" description:"Server port"`
+	ReadTimeout        time.Duration `env:"READ_TIMEOUT, default=30s" description:"Read timeout"`
+	WriteTimeout       time.Duration `env:"WRITE_TIMEOUT, default=30s" description:"Write timeout"`
+	IdleTimeout        time.Duration `env:"IDLE_TIMEOUT, default=120s" description:"Idle timeout"`
+	MaxRequestBodySize int           `env:"MAX_REQUEST_BODY_SIZE, default=10485760" description:"Maximum request body size in bytes (10 MiB)"`
+	TlsCertPath        string        `env:"TLS_CERT_PATH" description:"TLS certificate path"`
+	TlsKeyPath         string        `env:"TLS_KEY_PATH" description:"TLS key path"`
 }
 
 // Routing configuration

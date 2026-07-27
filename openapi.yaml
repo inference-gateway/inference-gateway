@@ -3570,6 +3570,11 @@ components:
                   type: time.Duration
                   default: '120s'
                   description: 'Idle timeout'
+                - name: max_request_body_size
+                  env: 'SERVER_MAX_REQUEST_BODY_SIZE'
+                  type: int
+                  default: '10485760'
+                  description: 'Maximum request body size in bytes (10 MiB)'
                 - name: tls_cert_path
                   env: 'SERVER_TLS_CERT_PATH'
                   type: string

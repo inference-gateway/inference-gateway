@@ -57,15 +57,16 @@
 
 ### Server settings
 
-| Environment Variable | Default Value | Description          |
-| -------------------- | ------------- | -------------------- |
-| SERVER_HOST          | `0.0.0.0`     | Server host          |
-| SERVER_PORT          | `8080`        | Server port          |
-| SERVER_READ_TIMEOUT  | `30s`         | Read timeout         |
-| SERVER_WRITE_TIMEOUT | `30s`         | Write timeout        |
-| SERVER_IDLE_TIMEOUT  | `120s`        | Idle timeout         |
-| SERVER_TLS_CERT_PATH | `""`          | TLS certificate path |
-| SERVER_TLS_KEY_PATH  | `""`          | TLS key path         |
+| Environment Variable         | Default Value | Description                                 |
+| ---------------------------- | ------------- | ------------------------------------------- |
+| SERVER_HOST                  | `0.0.0.0`     | Server host                                 |
+| SERVER_PORT                  | `8080`        | Server port                                 |
+| SERVER_READ_TIMEOUT          | `30s`         | Read timeout                                |
+| SERVER_WRITE_TIMEOUT         | `30s`         | Write timeout                               |
+| SERVER_IDLE_TIMEOUT          | `120s`        | Idle timeout                                |
+| SERVER_MAX_REQUEST_BODY_SIZE | `10485760`    | Maximum request body size in bytes (10 MiB) |
+| SERVER_TLS_CERT_PATH         | `""`          | TLS certificate path                        |
+| SERVER_TLS_KEY_PATH          | `""`          | TLS key path                                |
 
 ### Client settings
 
