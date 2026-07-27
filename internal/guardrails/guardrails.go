@@ -44,15 +44,15 @@ type Input struct {
 
 // Req is the request portion of the guardrail input.
 type Req struct {
-	Body    string `json:"body,omitempty"`
-	Model   string `json:"model,omitempty"`
+	Body    string            `json:"body,omitempty"`
+	Model   string            `json:"model,omitempty"`
 	Headers map[string]string `json:"headers,omitempty"`
 }
 
 // Decision is the structured result returned by a policy evaluation.
 type Decision struct {
-	Action      string `json:"action"`
-	Message     string `json:"message,omitempty"`
+	Action      string   `json:"action"`
+	Message     string   `json:"message,omitempty"`
 	RedactPaths []string `json:"redact_paths,omitempty"`
 }
 

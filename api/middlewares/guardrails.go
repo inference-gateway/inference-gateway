@@ -24,12 +24,12 @@ type GuardrailsMiddleware interface {
 
 // GuardrailsMiddlewareImpl implements the guardrails middleware.
 type GuardrailsMiddlewareImpl struct {
-	evaluator       *guardrails.Evaluator
-	externalClient  *guardrails.ExternalClient
-	detectors       []guardrails.Detector
-	logger          logger.Logger
-	telemetry       otel.OpenTelemetry
-	cfg             config.Config
+	evaluator      *guardrails.Evaluator
+	externalClient *guardrails.ExternalClient
+	detectors      []guardrails.Detector
+	logger         logger.Logger
+	telemetry      otel.OpenTelemetry
+	cfg            config.Config
 }
 
 // NoopGuardrailsMiddlewareImpl is a no-op implementation of GuardrailsMiddleware.
