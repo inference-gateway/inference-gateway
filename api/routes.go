@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -146,10 +147,12 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 		return
 	}
 
+	token := provider.GetToken()
+
 	ctx := c.Request.Context()
 	upstreamReq, err := http.NewRequestWithContext(ctx, c.Request.Method, fullURL.String(), bytes.NewReader(body))
 	if err != nil {
-		router.logger.Error("failed to create upstream request", err, "method", c.Request.Method, "url", fullURL.String())
+		router.logger.Error("failed to create upstream request", err, "method", c.Request.Method, "url", redactSecret(fullURL.String(), token))
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
 		return
 	}
@@ -159,7 +162,7 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 
 	resp, err := router.client.Do(upstreamReq)
 	if err != nil {
-		router.logger.Error("failed to make upstream request", err, "url", fullURL.String())
+		router.logger.Error("failed to make upstream request", err, "url", redactSecret(fullURL.String(), token))
 		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
 		return
 	}
@@ -174,7 +177,7 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 		if err != nil {
 			if err != io.EOF {
 				router.logger.Error("failed to read stream", err,
-					"url", fullURL.String(),
+					"url", redactSecret(fullURL.String(), token),
 					"method", c.Request.Method)
 			}
 			return false
@@ -224,17 +227,20 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
 		return
 	}
+	token := provider.GetToken()
 	proxy := &httputil.ReverseProxy{}
 
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		router.logger.Error("proxy request failed", err, "url", fullURL.String())
+		// err is typically a *url.Error wrapping the upstream URL, which for
+		// query-auth providers contains the API key; redact it and never echo
+		// the raw error to the client.
+		router.logger.Error("proxy request failed", errors.New(redactSecret(err.Error(), token)), "url", redactSecret(fullURL.String(), token))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadGateway)
-		err = json.NewEncoder(w).Encode(ErrorResponse{
-			Error: fmt.Sprintf("Failed to reach upstream server: %v", err),
-		})
-		if err != nil {
-			router.logger.Error("failed to write error response", err)
+		if encErr := json.NewEncoder(w).Encode(ErrorResponse{
+			Error: "Failed to reach upstream server",
+		}); encErr != nil {
+			router.logger.Error("failed to write error response", encErr)
 		}
 	}
 
@@ -301,6 +307,18 @@ func applyProviderAuth(req *http.Request, provider core.IProvider) error {
 		}
 	}
 	return nil
+}
+
+// redactSecret masks the provider credential in text destined for logs or
+// client responses. Query-auth providers carry their API key in the URL query
+// (see applyProviderAuth), so it can otherwise leak through fullURL.String()
+// log fields and the url.Error strings returned by the upstream transport.
+// No-op for an empty token, so bearer/xheader/none providers are unaffected.
+func redactSecret(text, token string) string {
+	if token == "" {
+		return text
+	}
+	return strings.ReplaceAll(text, token, "REDACTED")
 }
 
 // constructProviderURL builds the provider URL consistently to avoid path duplication.
