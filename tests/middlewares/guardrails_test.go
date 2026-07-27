@@ -147,7 +147,7 @@ func TestGuardrailsMiddleware_Detectors(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected int // number of matches
+		expected int
 	}{
 		{
 			name:     "detect API key",
