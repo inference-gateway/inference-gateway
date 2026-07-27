@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -15,6 +16,8 @@ import (
 	codes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	trace "go.opentelemetry.io/otel/trace"
+
+	otel "github.com/inference-gateway/inference-gateway/otel"
 )
 
 // MaxAgentIterations limits the number of agent loop iterations
@@ -29,6 +32,7 @@ type Agent interface {
 	ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error)
 	SetProvider(provider core.IProvider)
 	SetModel(model *string)
+	SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string)
 }
 
 // Ensure agentImpl implements Agent interface at compile time
@@ -36,10 +40,13 @@ var _ Agent = (*agentImpl)(nil)
 
 // agentImpl is the concrete implementation of the Agent interface
 type agentImpl struct {
-	logger    logger.Logger
-	mcpClient MCPClientInterface
-	provider  core.IProvider
-	model     *string
+	logger              logger.Logger
+	mcpClient           MCPClientInterface
+	provider            core.IProvider
+	model               *string
+	guardrailsEvaluator *guardrails.Evaluator
+	guardrailsTelemetry otel.OpenTelemetry
+	guardrailsFailMode  string
 }
 
 // NewAgent creates a new Agent instance
@@ -68,6 +75,16 @@ func (a *agentImpl) SetModel(model *string) {
 	}
 	a.model = model
 	a.logger.Debug("model set for agent", "model", *model)
+}
+
+// SetGuardrails configures the guardrails evaluator for tool call evaluation.
+func (a *agentImpl) SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string) {
+	a.guardrailsEvaluator = evaluator
+	a.guardrailsTelemetry = telemetry
+	a.guardrailsFailMode = failMode
+	if evaluator != nil {
+		a.logger.Debug("guardrails set for agent", "fail_mode", failMode)
+	}
 }
 
 func (a *agentImpl) Run(ctx context.Context, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error {
@@ -316,6 +333,21 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 
 		var server string
 		toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
+
+		// Evaluate tool arguments against guardrails before execution.
+		if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, toolCall.Function.Arguments, "", "tool_args"); err != nil {
+			a.logger.Error("guardrails blocked tool call", err, "tool", toolName)
+			msg := types.Message{
+				Role:       types.Tool,
+				ToolCallID: &toolCall.ID,
+			}
+			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
+				a.logger.Error("failed to set error content", contentErr)
+			}
+			results = append(results, msg)
+			continue
+		}
+
 		toolCtx, span := otelapi.Tracer("github.com/inference-gateway/inference-gateway/internal/mcp").
 			Start(ctx, "execute_tool "+toolName, trace.WithAttributes(semconv.GenAIToolName(toolName)))
 		server, err := a.mcpClient.GetServerForTool(toolName)
@@ -371,6 +403,20 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 			} else {
 				resultStr = string(resultBytes)
 			}
+		}
+
+		// Evaluate tool output against guardrails before feeding back to the model.
+		if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, toolCall.Function.Arguments, resultStr, "tool_output"); err != nil {
+			a.logger.Error("guardrails blocked tool output", err, "tool", toolName)
+			msg := types.Message{
+				Role:       types.Tool,
+				ToolCallID: &toolCall.ID,
+			}
+			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
+				a.logger.Error("failed to set error content", contentErr)
+			}
+			results = append(results, msg)
+			continue
 		}
 
 		msg := types.Message{

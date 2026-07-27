@@ -13,6 +13,8 @@ import (
 	context "context"
 	reflect "reflect"
 
+	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
+	otel "github.com/inference-gateway/inference-gateway/otel"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 	gomock "go.uber.org/mock/gomock"
@@ -153,6 +155,42 @@ func (c *MockAgentRunWithStreamCall) Do(f func(context.Context, chan []byte, *ty
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockAgentRunWithStreamCall) DoAndReturn(f func(context.Context, chan []byte, *types.CreateChatCompletionRequest) error) *MockAgentRunWithStreamCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// SetGuardrails mocks base method.
+func (m *MockAgent) SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetGuardrails", evaluator, telemetry, failMode)
+}
+
+// SetGuardrails indicates an expected call of SetGuardrails.
+func (mr *MockAgentMockRecorder) SetGuardrails(evaluator, telemetry, failMode any) *MockAgentSetGuardrailsCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGuardrails", reflect.TypeOf((*MockAgent)(nil).SetGuardrails), evaluator, telemetry, failMode)
+	return &MockAgentSetGuardrailsCall{Call: call}
+}
+
+// MockAgentSetGuardrailsCall wrap *gomock.Call
+type MockAgentSetGuardrailsCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockAgentSetGuardrailsCall) Return() *MockAgentSetGuardrailsCall {
+	c.Call = c.Call.Return()
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockAgentSetGuardrailsCall) Do(f func(*guardrails.Evaluator, otel.OpenTelemetry, string)) *MockAgentSetGuardrailsCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockAgentSetGuardrailsCall) DoAndReturn(f func(*guardrails.Evaluator, otel.OpenTelemetry, string)) *MockAgentSetGuardrailsCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

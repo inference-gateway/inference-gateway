@@ -238,6 +238,11 @@ func main() {
 			cfg,
 		)
 		logger.Info("guardrails middleware initialized", "policy_dir", cfg.Guardrails.PolicyDir)
+
+		// Wire guardrails evaluator into the MCP agent for tool_call phase evaluation.
+		if mcpAgent != nil {
+			mcpAgent.SetGuardrails(evaluator, telemetryImpl, cfg.Guardrails.FailMode)
+		}
 	} else {
 		guardrailsMiddleware = middlewares.NewGuardrailsMiddleware(nil, nil, nil, logger, telemetryImpl, cfg)
 	}
