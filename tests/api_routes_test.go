@@ -665,7 +665,6 @@ func TestChatCompletionsHandler_RejectsOversizedBody(t *testing.T) {
 	r := gin.New()
 	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
-	// 11 MiB body exceeds the 10 MiB cap; must be rejected without allocating it all.
 	oversized := `{"model":"openai/gpt-4","messages":[{"role":"user","content":"` + strings.Repeat("a", 11<<20) + `"}]}`
 
 	w := httptest.NewRecorder()
