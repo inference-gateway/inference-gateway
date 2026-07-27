@@ -58,10 +58,10 @@ const (
 
 // Input is the document passed to every Rego policy query.
 type Input struct {
-	Method string `json:"method"`
-	Path   string `json:"path"`
-	Phase  Phase  `json:"phase"`
-	Request *Req  `json:"request,omitempty"`
+	Method   string         `json:"method"`
+	Path     string         `json:"path"`
+	Phase    Phase          `json:"phase"`
+	Request  *Req           `json:"request,omitempty"`
 	Identity map[string]any `json:"identity,omitempty"`
 }
 
