@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -615,7 +616,15 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			return
 		}
 	} else {
+		const maxBodySize = 10 << 20
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBodySize)
 		if err := c.ShouldBindJSON(&req); err != nil {
+			var maxBytesErr *http.MaxBytesError
+			if errors.As(err, &maxBytesErr) {
+				router.logger.Error("request body too large", err)
+				c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+				return
+			}
 			router.logger.Error("failed to decode request", err)
 			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
 			return

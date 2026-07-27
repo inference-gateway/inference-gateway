@@ -646,6 +646,38 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 	}
 }
 
+func TestChatCompletionsHandler_RejectsOversizedBody(t *testing.T) {
+	log, err := logger.NewLogger("test")
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockClient := providersmocks.NewMockClient(ctrl)
+
+	providerCfg := map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: {ID: constants.OpenaiID, Name: constants.OpenaiDisplayName, URL: "http://example.com", Token: "test-token", AuthType: constants.AuthTypeBearer},
+	}
+	reg := registry.NewProviderRegistry(providerCfg, log)
+	cfg := config.Config{Server: &config.ServerConfig{ReadTimeout: 5 * time.Second}, Providers: providerCfg}
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil)
+
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+
+	// 11 MiB body exceeds the 10 MiB cap; must be rejected without allocating it all.
+	oversized := `{"model":"openai/gpt-4","messages":[{"role":"user","content":"` + strings.Repeat("a", 11<<20) + `"}]}`
+
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/v1/chat/completions", strings.NewReader(oversized))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/json")
+
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusRequestEntityTooLarge, w.Code)
+}
+
 func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 	tests := []struct {
 		name                         string
