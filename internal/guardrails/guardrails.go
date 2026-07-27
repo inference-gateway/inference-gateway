@@ -82,7 +82,7 @@ type Decision struct {
 // Evaluator compiles .rego files at startup and evaluates them concurrently.
 type Evaluator struct {
 	query    rego.PreparedEvalQuery
-	decision *Decision // cached default decision (e.g. allow when no policies)
+	decision *Decision
 }
 
 // NewEvaluator loads and compiles all .rego files from dir, then prepares
