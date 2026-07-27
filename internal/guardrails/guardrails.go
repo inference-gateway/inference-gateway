@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/open-policy-agent/opa/v1/rego"
+	rego "github.com/open-policy-agent/opa/v1/rego"
 
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
@@ -62,8 +62,6 @@ type Input struct {
 	Path   string `json:"path"`
 	Phase  Phase  `json:"phase"`
 	Request *Req  `json:"request,omitempty"`
-	// Identity holds the verified OIDC claims of the caller (sub, email, groups, ...).
-	// nil when auth is disabled or the request is unauthenticated.
 	Identity map[string]any `json:"identity,omitempty"`
 }
 
