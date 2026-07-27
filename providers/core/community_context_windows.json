@@ -3,25 +3,13 @@
     "context": 1000000,
     "output": 128000
   },
-  "anthropic/claude-haiku-4-5": {
-    "context": 200000,
-    "output": 64000
-  },
   "anthropic/claude-haiku-4-5-20251001": {
     "context": 200000,
     "output": 64000
   },
-  "anthropic/claude-opus-4-1": {
-    "context": 200000,
-    "output": 32000
-  },
   "anthropic/claude-opus-4-1-20250805": {
     "context": 200000,
     "output": 32000
-  },
-  "anthropic/claude-opus-4-5": {
-    "context": 200000,
-    "output": 64000
   },
   "anthropic/claude-opus-4-5-20251101": {
     "context": 200000,
@@ -40,8 +28,7 @@
     "output": 128000
   },
   "anthropic/claude-sonnet-4-5": {
-    "context": 1000000,
-    "output": 64000
+    "context": 1000000
   },
   "anthropic/claude-sonnet-4-5-20250929": {
     "context": 1000000,
@@ -150,6 +137,12 @@
     "context": 1000000,
     "output": 384000
   },
+  "google/deep-research-max-preview-04-2026": {
+    "context": 131072
+  },
+  "google/deep-research-preview-04-2026": {
+    "context": 131072
+  },
   "google/gemini-2.0-flash": {
     "context": 1048576,
     "output": 8192
@@ -157,6 +150,10 @@
   "google/gemini-2.0-flash-lite": {
     "context": 1048576,
     "output": 8192
+  },
+  "google/gemini-2.5-computer-use-preview-10-2025": {
+    "context": 131072,
+    "output": 65536
   },
   "google/gemini-2.5-flash-lite": {
     "context": 1048576,
@@ -174,11 +171,18 @@
     "context": 1048576,
     "output": 65536
   },
+  "google/gemini-3-pro-image": {
+    "context": 131072
+  },
   "google/gemini-3-pro-image-preview": {
     "context": 131072
   },
   "google/gemini-3-pro-preview": {
     "context": 1048576,
+    "output": 65536
+  },
+  "google/gemini-3.1-flash-image": {
+    "context": 65536,
     "output": 65536
   },
   "google/gemini-3.1-flash-image-preview": {
@@ -205,6 +209,10 @@
     "context": 1048576,
     "output": 65536
   },
+  "google/gemini-3.5-live-translate-preview": {
+    "context": 16384,
+    "output": 32768
+  },
   "google/gemini-embedding-001": {
     "context": 2048,
     "output": 1
@@ -228,6 +236,25 @@
   "google/gemma-4-31b-it": {
     "context": 262144,
     "output": 32768
+  },
+  "google/lyria-3-clip-preview": {
+    "context": 1048576
+  },
+  "google/lyria-3-pro-preview": {
+    "context": 1048576,
+    "output": 65536
+  },
+  "google/veo-3.1-fast-generate-preview": {
+    "context": 480,
+    "output": 8192
+  },
+  "google/veo-3.1-generate-preview": {
+    "context": 480,
+    "output": 8192
+  },
+  "google/veo-3.1-lite-generate-preview": {
+    "context": 480,
+    "output": 8192
   },
   "groq/canopylabs/orpheus-arabic-saudi": {
     "context": 4000,
@@ -849,14 +876,6 @@
     "context": 128000,
     "output": 16384
   },
-  "openai/gpt-5-chat-latest": {
-    "context": 400000,
-    "output": 128000
-  },
-  "openai/gpt-5-codex": {
-    "context": 400000,
-    "output": 128000
-  },
   "openai/gpt-5-mini": {
     "context": 400000,
     "output": 128000
@@ -873,22 +892,6 @@
     "context": 400000,
     "output": 128000
   },
-  "openai/gpt-5.1-chat-latest": {
-    "context": 128000,
-    "output": 16384
-  },
-  "openai/gpt-5.1-codex": {
-    "context": 400000,
-    "output": 128000
-  },
-  "openai/gpt-5.1-codex-max": {
-    "context": 400000,
-    "output": 128000
-  },
-  "openai/gpt-5.1-codex-mini": {
-    "context": 400000,
-    "output": 128000
-  },
   "openai/gpt-5.2": {
     "context": 400000,
     "output": 128000
@@ -896,10 +899,6 @@
   "openai/gpt-5.2-chat-latest": {
     "context": 128000,
     "output": 16384
-  },
-  "openai/gpt-5.2-codex": {
-    "context": 400000,
-    "output": 128000
   },
   "openai/gpt-5.2-pro": {
     "context": 400000,
@@ -953,10 +952,6 @@
     "context": 200000,
     "output": 100000
   },
-  "openai/o3-deep-research": {
-    "context": 200000,
-    "output": 100000
-  },
   "openai/o3-mini": {
     "context": 200000,
     "output": 100000
@@ -966,10 +961,6 @@
     "output": 100000
   },
   "openai/o4-mini": {
-    "context": 200000,
-    "output": 100000
-  },
-  "openai/o4-mini-deep-research": {
     "context": 200000,
     "output": 100000
   },
