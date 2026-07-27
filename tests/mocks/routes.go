@@ -100,6 +100,18 @@ func (mr *MockRouterMockRecorder) MessagesHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MessagesHandler", reflect.TypeOf((*MockRouter)(nil).MessagesHandler), c)
 }
 
+// ResponsesHandler mocks base method.
+func (m *MockRouter) ResponsesHandler(c *gin.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ResponsesHandler", c)
+}
+
+// ResponsesHandler indicates an expected call of ResponsesHandler.
+func (mr *MockRouterMockRecorder) ResponsesHandler(c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResponsesHandler", reflect.TypeOf((*MockRouter)(nil).ResponsesHandler), c)
+}
+
 // MetricsIngestionHandler mocks base method.
 func (m *MockRouter) MetricsIngestionHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
