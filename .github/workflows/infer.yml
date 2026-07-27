@@ -50,6 +50,7 @@ jobs:
     uses: inference-gateway/.github/.github/workflows/infer.yml@main
     with:
       language: "go"
+      prettier: true
       plugins: |
         DietrichGebert/ponytail
       prompt: ${{ inputs.prompt }}
