@@ -11,6 +11,14 @@ import (
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 )
 
+// TestResolveMaxRequestBodySize verifies the configured limit is honored and the
+// default kicks in for unset/non-positive values (e.g. a config built without env parsing).
+func TestResolveMaxRequestBodySize(t *testing.T) {
+	assert.Equal(t, defaultMaxRequestBodySize, resolveMaxRequestBodySize(0), "unset falls back to default")
+	assert.Equal(t, defaultMaxRequestBodySize, resolveMaxRequestBodySize(-1), "negative falls back to default")
+	assert.Equal(t, 1234, resolveMaxRequestBodySize(1234), "configured value is honored")
+}
+
 // TestApplyProviderAuth_StripsCallerAuthorization verifies the caller's inbound
 // Authorization header never leaks to the upstream provider: bearer providers
 // overwrite it with their own token, and every other auth type removes it while
