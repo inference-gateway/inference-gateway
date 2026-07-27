@@ -312,12 +312,14 @@ Response:
 {
   "id": "resp_67b5cf1e3e3481928c7a3b2f1a2b3c4d",
   "object": "response",
-  "created": 1741879542,
+  "created_at": 1741879542,
+  "status": "completed",
   "model": "gpt-4o-2024-08-06",
   "output": [
     {
       "type": "message",
       "id": "msg_67b5cf1e3e3481928c7a3b2f1a2b3c4d",
+      "status": "completed",
       "role": "assistant",
       "content": [
         {
@@ -340,7 +342,7 @@ Set `"stream": true` to receive `ResponseStreamEvent` SSE frames verbatim:
 
 ```bash
 curl -N -X POST http://localhost:8080/v1/responses -d '{
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "openai/gpt-4o",
   "input": "Hi",
   "stream": true
 }'
