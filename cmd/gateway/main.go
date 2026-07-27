@@ -21,6 +21,7 @@ import (
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
+	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	l "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
@@ -212,6 +213,35 @@ func main() {
 		}
 	}
 
+	// Initialize guardrails middleware if enabled
+	var guardrailsMiddleware middlewares.GuardrailsMiddleware
+	if cfg.Guardrails != nil && cfg.Guardrails.Enabled {
+		ctx := context.Background()
+		evaluator, err := guardrails.NewEvaluator(ctx, cfg.Guardrails.PolicyDir)
+		if err != nil {
+			logger.Error("failed to initialize guardrails evaluator", err)
+			return
+		}
+
+		var externalClient *guardrails.ExternalClient
+		if cfg.Guardrails.ExternalUrl != "" {
+			externalClient = guardrails.NewExternalClient(cfg.Guardrails.ExternalUrl, cfg.Guardrails.ExternalTimeout)
+		}
+
+		detectors := guardrails.DefaultDetectors()
+		guardrailsMiddleware = middlewares.NewGuardrailsMiddleware(
+			evaluator,
+			externalClient,
+			detectors,
+			logger,
+			telemetryImpl,
+			cfg,
+		)
+		logger.Info("guardrails middleware initialized", "policy_dir", cfg.Guardrails.PolicyDir)
+	} else {
+		guardrailsMiddleware = middlewares.NewGuardrailsMiddleware(nil, nil, nil, logger, telemetryImpl, cfg)
+	}
+
 	// Build the model routing selector if enabled (opt-in, default off).
 	var selector *routing.Selector
 	if cfg.Routing != nil && cfg.Routing.Enabled {
@@ -246,6 +276,10 @@ func main() {
 		r.Use(telemetry.Middleware())
 	}
 	r.Use(oidcAuthenticator.Middleware())
+
+	// Add guardrails middleware (before MCP so it wraps MCP's writer for post_call).
+	r.Use(guardrailsMiddleware.Middleware())
+	logger.Info("guardrails middleware added to request pipeline")
 
 	// Add MCP middleware if enabled
 	if cfg.MCP.Enable {

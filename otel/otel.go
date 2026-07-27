@@ -53,6 +53,7 @@ type OpenTelemetry interface {
 	RecordTokenUsage(ctx context.Context, source, team, provider, model string, inputTokens, outputTokens int64)
 	RecordRequestDuration(ctx context.Context, source, team, provider, model, errorType string, seconds float64)
 	RecordToolCall(ctx context.Context, source, team, provider, model, toolType, toolName string)
+	RecordGuardrail(ctx context.Context, source, phase, action, path, model string)
 
 	// IngestMetrics maps an OTLP push payload onto the gateway's instruments.
 	IngestMetrics(ctx context.Context, req *colmetricspb.ExportMetricsServiceRequest) IngestResult
@@ -74,6 +75,7 @@ type OpenTelemetryImpl struct {
 	serverTimeToFirstToken  metric.Float64Histogram // gen_ai.server.time_to_first_token (push only)
 	executeToolDuration     metric.Float64Histogram // gen_ai.execute_tool.duration (push only)
 	toolCallCounter         metric.Int64Counter     // inference_gateway.tool_calls
+	guardrailCounter        metric.Int64Counter     // inference_gateway.guardrails
 }
 
 // Semconv-recommended bucket boundaries: durations in seconds, token counts in powers of 4.
@@ -161,7 +163,7 @@ func metricViews() []sdkmetric.View {
 func (o *OpenTelemetryImpl) initInstruments(provider *sdkmetric.MeterProvider) error {
 	o.meter = provider.Meter(config.APPLICATION_NAME)
 
-	var errs [7]error
+	var errs [8]error
 
 	o.tokenUsageHistogram, errs[0] = o.meter.Int64Histogram("gen_ai.client.token.usage",
 		metric.WithDescription("Number of input and output tokens used per operation"),
@@ -190,6 +192,10 @@ func (o *OpenTelemetryImpl) initInstruments(provider *sdkmetric.MeterProvider) e
 	o.toolCallCounter, errs[6] = o.meter.Int64Counter("inference_gateway.tool_calls",
 		metric.WithDescription("Number of tool calls observed in model responses"),
 		metric.WithUnit("{call}"))
+
+	o.guardrailCounter, errs[7] = o.meter.Int64Counter("inference_gateway.guardrails",
+		metric.WithDescription("Number of guardrail evaluations"),
+		metric.WithUnit("{evaluation}"))
 
 	for _, err := range errs {
 		if err != nil {
@@ -244,6 +250,19 @@ func (o *OpenTelemetryImpl) RecordToolCall(ctx context.Context, source, team, pr
 	}
 
 	o.toolCallCounter.Add(ctx, 1, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordGuardrail(ctx context.Context, source, phase, action, path, model string) {
+	attributes := []attribute.KeyValue{
+		sourceKey.String(source),
+		attribute.String("guardrail.phase", phase),
+		attribute.String("guardrail.action", action),
+		attribute.String("guardrail.path", path),
+	}
+	if model != "" {
+		attributes = append(attributes, semconv.GenAIRequestModel(model))
+	}
+	o.guardrailCounter.Add(ctx, 1, metric.WithAttributes(attributes...))
 }
 
 func (o *OpenTelemetryImpl) ShutDown(ctx context.Context) error {
