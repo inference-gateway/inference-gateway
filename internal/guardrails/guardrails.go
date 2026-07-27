@@ -13,10 +13,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/open-policy-agent/opa/v1/rego"
+
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	otel "github.com/inference-gateway/inference-gateway/otel"
 )
 
 // ---------------------------------------------------------------------------
@@ -44,16 +46,14 @@ type Input struct {
 
 // Req is the request portion of the guardrail input.
 type Req struct {
-	Body    string            `json:"body,omitempty"`
-	Model   string            `json:"model,omitempty"`
-	Headers map[string]string `json:"headers,omitempty"`
+	Body  string `json:"body,omitempty"`
+	Model string `json:"model,omitempty"`
 }
 
 // Decision is the structured result returned by a policy evaluation.
 type Decision struct {
-	Action      string   `json:"action"`
-	Message     string   `json:"message,omitempty"`
-	RedactPaths []string `json:"redact_paths,omitempty"`
+	Action  string `json:"action"`
+	Message string `json:"message,omitempty"`
 }
 
 // ---------------------------------------------------------------------------
@@ -62,7 +62,6 @@ type Decision struct {
 
 // Evaluator compiles .rego files at startup and evaluates them concurrently.
 type Evaluator struct {
-	mu       sync.RWMutex
 	query    rego.PreparedEvalQuery
 	decision *Decision // cached default decision (e.g. allow when no policies)
 }
@@ -121,32 +120,29 @@ func NewEvaluator(ctx context.Context, dir string) (*Evaluator, error) {
 
 // Eval evaluates the policy input and returns a decision.
 // It is safe for concurrent use.
-func (e *Evaluator) Eval(ctx context.Context, input *Input) (*Decision, error) {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-
+func (e *Evaluator) Eval(ctx context.Context, input *Input) (Decision, error) {
 	// No-op evaluator: always allow.
 	if e.decision != nil {
-		return e.decision, nil
+		return *e.decision, nil
 	}
 
 	inputBytes, err := json.Marshal(input)
 	if err != nil {
-		return nil, fmt.Errorf("guardrails: marshal input: %w", err)
+		return Decision{}, fmt.Errorf("guardrails: marshal input: %w", err)
 	}
 
 	results, err := e.query.Eval(ctx, rego.EvalInput(inputBytes))
 	if err != nil {
-		return nil, fmt.Errorf("guardrails: eval: %w", err)
+		return Decision{}, fmt.Errorf("guardrails: eval: %w", err)
 	}
 
 	if len(results) == 0 || len(results[0].Expressions) == 0 {
-		return &Decision{Action: ActionAllow}, nil
+		return Decision{Action: ActionAllow}, nil
 	}
 
 	dec, ok := results[0].Expressions[0].Value.(map[string]any)
 	if !ok {
-		return &Decision{Action: ActionAllow}, nil
+		return Decision{Action: ActionAllow}, nil
 	}
 
 	action, _ := dec["action"].(string)
@@ -156,19 +152,9 @@ func (e *Evaluator) Eval(ctx context.Context, input *Input) (*Decision, error) {
 
 	message, _ := dec["message"].(string)
 
-	var redactPaths []string
-	if rp, ok := dec["redact_paths"].([]any); ok {
-		for _, p := range rp {
-			if s, ok := p.(string); ok {
-				redactPaths = append(redactPaths, s)
-			}
-		}
-	}
-
-	return &Decision{
-		Action:      action,
-		Message:     message,
-		RedactPaths: redactPaths,
+	return Decision{
+		Action:  action,
+		Message: message,
 	}, nil
 }
 
@@ -281,9 +267,8 @@ func RedactSensitive(text string, detectors []Detector) string {
 
 // ExternalClient sends requests to an external guardrail service.
 type ExternalClient struct {
-	url     string
-	client  *http.Client
-	timeout time.Duration
+	url    string
+	client *http.Client
 }
 
 // NewExternalClient creates a new external guardrail client.
@@ -293,7 +278,6 @@ func NewExternalClient(url string, timeout time.Duration) *ExternalClient {
 		client: &http.Client{
 			Timeout: timeout,
 		},
-		timeout: timeout,
 	}
 }
 
@@ -335,4 +319,58 @@ func (e *ExternalClient) Check(ctx context.Context, input *Input) (*Decision, er
 	}
 
 	return &dec, nil
+}
+
+// ---------------------------------------------------------------------------
+// Tool call evaluation
+// ---------------------------------------------------------------------------
+
+// EvaluateToolCall evaluates a tool call against guardrails policies.
+// This is called from the MCP agent's ExecuteTools method.
+func EvaluateToolCall(
+	ctx context.Context,
+	evaluator *Evaluator,
+	telemetry otel.OpenTelemetry,
+	log logger.Logger,
+	failMode string,
+	toolName string,
+	toolArgs string,
+	toolOutput string,
+	phase string,
+) error {
+	if evaluator == nil {
+		return nil
+	}
+
+	input := &Input{
+		Method: "TOOL_CALL",
+		Path:   toolName,
+		Phase:  phase,
+		Request: &Req{
+			Body:  toolArgs,
+			Model: "",
+		},
+	}
+
+	dec, err := evaluator.Eval(ctx, input)
+	if err != nil {
+		if failMode == "closed" {
+			return fmt.Errorf("guardrails: tool call blocked: %w", err)
+		}
+		log.Warn("guardrails: tool call evaluation error, allowing in open mode", "error", err.Error())
+		return nil
+	}
+
+	if dec.Action == ActionBlock {
+		if telemetry != nil {
+			telemetry.RecordGuardrail(ctx, otel.SourceGateway, phase, "block", toolName, "")
+		}
+		return fmt.Errorf("guardrails: tool call blocked: %s", dec.Message)
+	}
+
+	if telemetry != nil {
+		telemetry.RecordGuardrail(ctx, otel.SourceGateway, phase, dec.Action, toolName, "")
+	}
+
+	return nil
 }

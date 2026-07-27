@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -75,6 +74,8 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		path := c.Request.URL.Path
 
 		// pre_call: evaluate policy on the incoming request.
+		// Wrap the body in MaxBytesReader BEFORE reading to enforce the size limit.
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(m.cfg.Server.MaxRequestBodySize))
 		bodyBytes, err := c.GetRawData()
 		if err != nil {
 			m.logger.Error("guardrails: failed to read request body", err)
@@ -83,7 +84,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 		// Re-set the body so downstream handlers can read it.
-		c.Request.Body = http.MaxBytesReader(c.Writer, io.NopCloser(bytes.NewReader(bodyBytes)), int64(m.cfg.Server.MaxRequestBodySize))
+		c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
 		model := extractModel(bodyBytes, path)
 		input := &guardrails.Input{
@@ -180,7 +181,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				m.logger.Warn("guardrails: post_call evaluation error, allowing in open mode", "error", respErr.Error())
 			}
 
-			if respDec != nil && respDec.Action == guardrails.ActionBlock {
+			if respDec.Action == guardrails.ActionBlock {
 				m.logger.Info("guardrails: response blocked", "path", path, "message", respDec.Message)
 				if m.telemetry != nil {
 					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "post_call", "block", path, model)
@@ -193,23 +194,23 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				return
 			}
 
-			if respDec != nil && respDec.Action == guardrails.ActionRedact {
+			if respDec.Action == guardrails.ActionRedact {
 				redactedBody := guardrails.RedactSensitive(customWriter.body.String(), m.detectors)
 				c.Writer = customWriter.ResponseWriter
-				c.Data(customWriter.statusCode, "application/json", []byte(redactedBody))
+				c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), []byte(redactedBody))
 				if m.telemetry != nil {
 					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "post_call", "redact", path, model)
 				}
 				return
 			}
 
-			if m.telemetry != nil && respDec != nil {
+			if m.telemetry != nil {
 				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "post_call", respDec.Action, path, model)
 			}
 
 			// Write the original response.
 			c.Writer = customWriter.ResponseWriter
-			c.Data(customWriter.statusCode, "application/json", customWriter.body.Bytes())
+			c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), customWriter.body.Bytes())
 			return
 		}
 
@@ -218,22 +219,22 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 }
 
 // evaluate runs the policy evaluator and external guardrail check.
-func (m *GuardrailsMiddlewareImpl) evaluate(ctx context.Context, input *guardrails.Input) (*guardrails.Decision, error) {
+func (m *GuardrailsMiddlewareImpl) evaluate(ctx context.Context, input *guardrails.Input) (guardrails.Decision, error) {
 	// Internal policy evaluation.
 	dec, err := m.evaluator.Eval(ctx, input)
 	if err != nil {
-		return nil, err
+		return guardrails.Decision{}, err
 	}
 
 	// External guardrail check (if configured).
 	if m.externalClient != nil {
 		extDec, extErr := m.externalClient.Check(ctx, input)
 		if extErr != nil {
-			return nil, extErr
+			return guardrails.Decision{}, extErr
 		}
 		// External decision takes precedence if it blocks.
 		if extDec.Action == guardrails.ActionBlock {
-			return extDec, nil
+			return *extDec, nil
 		}
 	}
 
@@ -242,7 +243,7 @@ func (m *GuardrailsMiddlewareImpl) evaluate(ctx context.Context, input *guardrai
 
 // extractModel attempts to extract the model name from the request body or path.
 func extractModel(body []byte, path string) string {
-	if strings.Contains(path, "/v1/chat/completions") || strings.Contains(path, "/v1/responses") {
+	if path == ChatCompletionsPath || strings.Contains(path, "/v1/responses") {
 		var req struct {
 			Model string `json:"model"`
 		}
@@ -262,63 +263,4 @@ func isStreamingRequest(body []byte) bool {
 		return true
 	}
 	return false
-}
-
-// GuardrailsToolEvalInput is the input for tool_call phase evaluation.
-type GuardrailsToolEvalInput struct {
-	ToolName      string `json:"tool_name"`
-	ToolArguments string `json:"tool_arguments"`
-	ToolOutput    string `json:"tool_output,omitempty"`
-	Phase         string `json:"phase"` // "tool_args" or "tool_output"
-}
-
-// EvaluateToolCall evaluates a tool call against guardrails policies.
-// This is called from the MCP agent's ExecuteTools method.
-func EvaluateToolCall(
-	ctx context.Context,
-	evaluator *guardrails.Evaluator,
-	externalClient *guardrails.ExternalClient,
-	telemetry otel.OpenTelemetry,
-	log logger.Logger,
-	cfg config.Config,
-	toolName string,
-	toolArgs string,
-	toolOutput string,
-	phase string,
-) error {
-	if evaluator == nil {
-		return nil
-	}
-
-	input := &guardrails.Input{
-		Method: "TOOL_CALL",
-		Path:   toolName,
-		Phase:  phase,
-		Request: &guardrails.Req{
-			Body:  toolArgs,
-			Model: "",
-		},
-	}
-
-	dec, err := evaluator.Eval(ctx, input)
-	if err != nil {
-		if cfg.Guardrails.FailMode == "closed" {
-			return fmt.Errorf("guardrails: tool call blocked: %w", err)
-		}
-		log.Warn("guardrails: tool call evaluation error, allowing in open mode", "error", err.Error())
-		return nil
-	}
-
-	if dec.Action == guardrails.ActionBlock {
-		if telemetry != nil {
-			telemetry.RecordGuardrail(ctx, otel.SourceGateway, phase, "block", toolName, "")
-		}
-		return fmt.Errorf("guardrails: tool call blocked: %s", dec.Message)
-	}
-
-	if telemetry != nil {
-		telemetry.RecordGuardrail(ctx, otel.SourceGateway, phase, dec.Action, toolName, "")
-	}
-
-	return nil
 }
