@@ -56,6 +56,13 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			PollingTimeout:         5 * time.Second,
 			DisableHealthcheckLogs: true,
 		},
+		Guardrails: &config.GuardrailsConfig{
+			Enabled:         false,
+			PolicyDir:       "",
+			FailMode:        "closed",
+			ExternalUrl:     "",
+			ExternalTimeout: 5 * time.Second,
+		},
 		Auth: &config.AuthConfig{
 			Enable:           false,
 			OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
