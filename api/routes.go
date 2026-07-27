@@ -231,9 +231,6 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 	proxy := &httputil.ReverseProxy{}
 
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		// err is typically a *url.Error wrapping the upstream URL, which for
-		// query-auth providers contains the API key; redact it and never echo
-		// the raw error to the client.
 		router.logger.Error("proxy request failed", errors.New(redactSecret(err.Error(), token)), "url", redactSecret(fullURL.String(), token))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadGateway)
