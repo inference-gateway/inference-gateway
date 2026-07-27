@@ -212,7 +212,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 // evaluate runs the policy evaluator and external guardrail check.
 func (m *GuardrailsMiddlewareImpl) evaluate(ctx context.Context, input *guardrails.Input) (guardrails.Decision, error) {
-	// Internal policy evaluation.
 	dec, err := m.evaluator.Eval(ctx, input)
 	if err != nil {
 		return guardrails.Decision{}, err
