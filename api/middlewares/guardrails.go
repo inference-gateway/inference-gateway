@@ -73,8 +73,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		// so X-MCP-Bypass is irrelevant (guardrails never check it).
 		path := c.Request.URL.Path
 
-		// pre_call: evaluate policy on the incoming request.
-		// Wrap the body in MaxBytesReader BEFORE reading to enforce the size limit.
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(m.cfg.Server.MaxRequestBodySize))
 		bodyBytes, err := c.GetRawData()
 		if err != nil {
@@ -83,7 +81,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		// Re-set the body so downstream handlers can read it.
 		c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
 		model := extractModel(bodyBytes, path)
@@ -108,7 +105,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			// open mode: log and allow.
 			m.logger.Warn("guardrails: pre_call evaluation error, allowing in open mode", "error", err.Error())
 			c.Next()
 			return
@@ -128,7 +124,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		if dec.Action == guardrails.ActionRedact {
-			// Redact sensitive content from the request body.
 			redacted := guardrails.RedactSensitive(string(bodyBytes), m.detectors)
 			c.Request.Body = http.MaxBytesReader(c.Writer, io.NopCloser(bytes.NewReader([]byte(redacted))), int64(m.cfg.Server.MaxRequestBodySize))
 			m.logger.Debug("guardrails: request body redacted", "path", path)
@@ -138,7 +133,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "pre_call", dec.Action, path, model)
 		}
 
-		// post_call: intercept the response for non-streaming chat completions.
 		if path == ChatCompletionsPath && !isStreamingRequest(bodyBytes) {
 			customWriter := &customResponseWriter{
 				ResponseWriter: c.Writer,
@@ -156,7 +150,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				return
 			}
 
-			// Evaluate the response body.
 			respInput := &guardrails.Input{
 				Method: c.Request.Method,
 				Path:   path,
@@ -208,7 +201,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "post_call", respDec.Action, path, model)
 			}
 
-			// Write the original response.
 			c.Writer = customWriter.ResponseWriter
 			c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), customWriter.body.Bytes())
 			return
@@ -226,13 +218,11 @@ func (m *GuardrailsMiddlewareImpl) evaluate(ctx context.Context, input *guardrai
 		return guardrails.Decision{}, err
 	}
 
-	// External guardrail check (if configured).
 	if m.externalClient != nil {
 		extDec, extErr := m.externalClient.Check(ctx, input)
 		if extErr != nil {
 			return guardrails.Decision{}, extErr
 		}
-		// External decision takes precedence if it blocks.
 		if extDec.Action == guardrails.ActionBlock {
 			return *extDec, nil
 		}
