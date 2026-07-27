@@ -37,6 +37,10 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
+// defaultMaxRequestBodySize is the fallback body-size limit used when
+// Server.MaxRequestBodySize is unset (e.g. a config built without env parsing).
+const defaultMaxRequestBodySize = 10 << 20 // 10 MiB
+
 //go:generate mockgen -source=routes.go -destination=../tests/mocks/routes.go -package=mocks
 type Router interface {
 	ListModelsHandler(c *gin.Context)
@@ -616,8 +620,11 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 			return
 		}
 	} else {
-		const maxBodySize = 10 << 20
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBodySize)
+		maxBodySize := router.cfg.Server.MaxRequestBodySize
+		if maxBodySize <= 0 {
+			maxBodySize = defaultMaxRequestBodySize
+		}
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(maxBodySize))
 		if err := c.ShouldBindJSON(&req); err != nil {
 			var maxBytesErr *http.MaxBytesError
 			if errors.As(err, &maxBytesErr) {
