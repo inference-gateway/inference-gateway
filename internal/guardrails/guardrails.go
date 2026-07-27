@@ -32,15 +32,14 @@ const (
 	ActionWarn   = "warn"
 )
 
-// ---------------------------------------------------------------------------
-// Phase constants - the point in the request lifecycle a policy runs.
-// ---------------------------------------------------------------------------
+// Phase is the point in the request lifecycle a policy runs.
+type Phase string
 
 const (
-	PhasePreCall    = "pre_call"
-	PhasePostCall   = "post_call"
-	PhaseToolArgs   = "tool_args"
-	PhaseToolOutput = "tool_output"
+	PhasePreCall    Phase = "pre_call"
+	PhasePostCall   Phase = "post_call"
+	PhaseToolArgs   Phase = "tool_args"
+	PhaseToolOutput Phase = "tool_output"
 )
 
 // ---------------------------------------------------------------------------
@@ -60,7 +59,7 @@ const (
 type Input struct {
 	Method  string `json:"method"`
 	Path    string `json:"path"`
-	Phase   string `json:"phase"` // PhasePreCall, PhasePostCall, PhaseToolArgs, PhaseToolOutput
+	Phase   Phase  `json:"phase"`
 	Request *Req   `json:"request,omitempty"`
 }
 
@@ -352,7 +351,7 @@ func EvaluateToolCall(
 	toolName string,
 	toolArgs string,
 	toolOutput string,
-	phase string,
+	phase Phase,
 ) error {
 	if evaluator == nil {
 		return nil
@@ -379,13 +378,13 @@ func EvaluateToolCall(
 
 	if dec.Action == ActionBlock {
 		if telemetry != nil {
-			telemetry.RecordGuardrail(ctx, otel.SourceGateway, phase, ActionBlock, toolName, "")
+			telemetry.RecordGuardrail(ctx, otel.SourceGateway, string(phase), ActionBlock, toolName, "")
 		}
 		return fmt.Errorf("guardrails: tool call blocked: %s", dec.Message)
 	}
 
 	if telemetry != nil {
-		telemetry.RecordGuardrail(ctx, otel.SourceGateway, phase, dec.Action, toolName, "")
+		telemetry.RecordGuardrail(ctx, otel.SourceGateway, string(phase), dec.Action, toolName, "")
 	}
 
 	return nil

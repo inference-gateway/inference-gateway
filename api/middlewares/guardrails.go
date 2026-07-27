@@ -113,7 +113,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		if dec.Action == guardrails.ActionBlock {
 			m.logger.Info("guardrails: request blocked", "path", path, "message", dec.Message)
 			if m.telemetry != nil {
-				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePreCall, guardrails.ActionBlock, path, model)
+				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), guardrails.ActionBlock, path, model)
 			}
 			c.JSON(http.StatusForbidden, gin.H{
 				"error":   "request blocked by guardrails",
@@ -130,7 +130,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		if m.telemetry != nil {
-			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePreCall, dec.Action, path, model)
+			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), dec.Action, path, model)
 		}
 
 		if path == ChatCompletionsPath && !isStreamingRequest(bodyBytes) {
@@ -177,7 +177,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			if respDec.Action == guardrails.ActionBlock {
 				m.logger.Info("guardrails: response blocked", "path", path, "message", respDec.Message)
 				if m.telemetry != nil {
-					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePostCall, guardrails.ActionBlock, path, model)
+					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionBlock, path, model)
 				}
 				c.Writer = customWriter.ResponseWriter
 				c.JSON(http.StatusForbidden, gin.H{
@@ -192,13 +192,13 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				c.Writer = customWriter.ResponseWriter
 				c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), []byte(redactedBody))
 				if m.telemetry != nil {
-					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePostCall, guardrails.ActionRedact, path, model)
+					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionRedact, path, model)
 				}
 				return
 			}
 
 			if m.telemetry != nil {
-				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePostCall, respDec.Action, path, model)
+				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), respDec.Action, path, model)
 			}
 
 			c.Writer = customWriter.ResponseWriter
