@@ -33,6 +33,26 @@ const (
 )
 
 // ---------------------------------------------------------------------------
+// Phase constants - the point in the request lifecycle a policy runs.
+// ---------------------------------------------------------------------------
+
+const (
+	PhasePreCall    = "pre_call"
+	PhasePostCall   = "post_call"
+	PhaseToolArgs   = "tool_args"
+	PhaseToolOutput = "tool_output"
+)
+
+// ---------------------------------------------------------------------------
+// FailMode constants - behavior when a guardrail evaluation errors.
+// ---------------------------------------------------------------------------
+
+const (
+	FailModeOpen   = "open"
+	FailModeClosed = "closed"
+)
+
+// ---------------------------------------------------------------------------
 // Versioned input / decision documents
 // ---------------------------------------------------------------------------
 
@@ -40,7 +60,7 @@ const (
 type Input struct {
 	Method  string `json:"method"`
 	Path    string `json:"path"`
-	Phase   string `json:"phase"` // "pre_call", "post_call", "tool_call"
+	Phase   string `json:"phase"` // PhasePreCall, PhasePostCall, PhaseToolArgs, PhaseToolOutput
 	Request *Req   `json:"request,omitempty"`
 }
 
@@ -354,7 +374,7 @@ func EvaluateToolCall(
 
 	dec, err := evaluator.Eval(ctx, input)
 	if err != nil {
-		if failMode == "closed" {
+		if failMode == FailModeClosed {
 			return fmt.Errorf("guardrails: tool call blocked: %w", err)
 		}
 		log.Warn("guardrails: tool call evaluation error, allowing in open mode", "error", err.Error())
@@ -363,7 +383,7 @@ func EvaluateToolCall(
 
 	if dec.Action == ActionBlock {
 		if telemetry != nil {
-			telemetry.RecordGuardrail(ctx, otel.SourceGateway, phase, "block", toolName, "")
+			telemetry.RecordGuardrail(ctx, otel.SourceGateway, phase, ActionBlock, toolName, "")
 		}
 		return fmt.Errorf("guardrails: tool call blocked: %s", dec.Message)
 	}

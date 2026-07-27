@@ -87,7 +87,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		input := &guardrails.Input{
 			Method: c.Request.Method,
 			Path:   path,
-			Phase:  "pre_call",
+			Phase:  guardrails.PhasePreCall,
 			Request: &guardrails.Req{
 				Body:  string(bodyBytes),
 				Model: model,
@@ -97,7 +97,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		dec, err := m.evaluate(c.Request.Context(), input)
 		if err != nil {
 			m.logger.Error("guardrails: pre_call evaluation error", err)
-			if m.cfg.Guardrails.FailMode == "closed" {
+			if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
 				c.JSON(http.StatusForbidden, gin.H{
 					"error":   "guardrail evaluation failed",
 					"message": "request blocked by guardrails",
@@ -113,7 +113,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		if dec.Action == guardrails.ActionBlock {
 			m.logger.Info("guardrails: request blocked", "path", path, "message", dec.Message)
 			if m.telemetry != nil {
-				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "pre_call", "block", path, model)
+				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePreCall, guardrails.ActionBlock, path, model)
 			}
 			c.JSON(http.StatusForbidden, gin.H{
 				"error":   "request blocked by guardrails",
@@ -130,7 +130,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		if m.telemetry != nil {
-			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "pre_call", dec.Action, path, model)
+			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePreCall, dec.Action, path, model)
 		}
 
 		if path == ChatCompletionsPath && !isStreamingRequest(bodyBytes) {
@@ -153,7 +153,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			respInput := &guardrails.Input{
 				Method: c.Request.Method,
 				Path:   path,
-				Phase:  "post_call",
+				Phase:  guardrails.PhasePostCall,
 				Request: &guardrails.Req{
 					Body:  customWriter.body.String(),
 					Model: model,
@@ -163,7 +163,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			respDec, respErr := m.evaluate(c.Request.Context(), respInput)
 			if respErr != nil {
 				m.logger.Error("guardrails: post_call evaluation error", respErr)
-				if m.cfg.Guardrails.FailMode == "closed" {
+				if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
 					c.Writer = customWriter.ResponseWriter
 					c.JSON(http.StatusForbidden, gin.H{
 						"error":   "guardrail evaluation failed",
@@ -177,7 +177,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			if respDec.Action == guardrails.ActionBlock {
 				m.logger.Info("guardrails: response blocked", "path", path, "message", respDec.Message)
 				if m.telemetry != nil {
-					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "post_call", "block", path, model)
+					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePostCall, guardrails.ActionBlock, path, model)
 				}
 				c.Writer = customWriter.ResponseWriter
 				c.JSON(http.StatusForbidden, gin.H{
@@ -192,13 +192,13 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				c.Writer = customWriter.ResponseWriter
 				c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), []byte(redactedBody))
 				if m.telemetry != nil {
-					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "post_call", "redact", path, model)
+					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePostCall, guardrails.ActionRedact, path, model)
 				}
 				return
 			}
 
 			if m.telemetry != nil {
-				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, "post_call", respDec.Action, path, model)
+				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, guardrails.PhasePostCall, respDec.Action, path, model)
 			}
 
 			c.Writer = customWriter.ResponseWriter
