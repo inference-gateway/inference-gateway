@@ -117,7 +117,6 @@ func TestGuardrailsMiddleware_BlockRequest(t *testing.T) {
 		},
 	}
 
-	// Create an evaluator that always blocks.
 	evaluator, err := guardrails.NewEvaluator(context.Background(), "")
 	assert.NoError(t, err)
 
@@ -138,7 +137,6 @@ func TestGuardrailsMiddleware_BlockRequest(t *testing.T) {
 
 	router.ServeHTTP(w, req)
 
-	// With no policy dir, the evaluator always allows, so the handler should be called.
 	assert.True(t, handlerCalled)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -195,19 +193,16 @@ func TestGuardrailsMiddleware_RedactSensitive(t *testing.T) {
 func TestGuardrailsMiddleware_LuhnCheck(t *testing.T) {
 	detectors := guardrails.DefaultDetectors()
 
-	// Valid Luhn number (Visa test number).
 	validCard := "4111111111111111"
 	results := guardrails.ScanDetectors(validCard, detectors)
 	assert.Len(t, results, 1, "Valid credit card should be detected")
 
-	// Invalid Luhn number.
 	invalidCard := "1234567890123456"
 	results = guardrails.ScanDetectors(invalidCard, detectors)
 	assert.Len(t, results, 0, "Invalid Luhn number should not be detected as credit card")
 }
 
 func TestGuardrailsMiddleware_ExternalClient(t *testing.T) {
-	// Test that external client returns allow when URL is empty.
 	client := guardrails.NewExternalClient("", 0)
 	dec, err := client.Check(context.Background(), &guardrails.Input{
 		Method: "POST",
@@ -219,12 +214,10 @@ func TestGuardrailsMiddleware_ExternalClient(t *testing.T) {
 }
 
 func TestGuardrailsMiddleware_PolicyCompile(t *testing.T) {
-	// Verify that the example policies compile under OPA v1 (Rego v1 with 'if' keyword).
 	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/guardrails/policies")
 	assert.NoError(t, err, "example policies should compile without error")
 	assert.NotNil(t, evaluator)
 
-	// Verify the evaluator produces an allow decision for safe input.
 	dec, err := evaluator.Eval(context.Background(), &guardrails.Input{
 		Method: "POST",
 		Path:   "/v1/chat/completions",

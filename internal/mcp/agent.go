@@ -334,7 +334,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 		var server string
 		toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
 
-		// Evaluate tool arguments against guardrails before execution.
 		if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, toolCall.Function.Arguments, "", "tool_args"); err != nil {
 			a.logger.Error("guardrails blocked tool call", err, "tool", toolName)
 			msg := types.Message{
@@ -405,7 +404,6 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 			}
 		}
 
-		// Evaluate tool output against guardrails before feeding back to the model.
 		if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, toolCall.Function.Arguments, resultStr, "tool_output"); err != nil {
 			a.logger.Error("guardrails blocked tool output", err, "tool", toolName)
 			msg := types.Message{
