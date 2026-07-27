@@ -269,6 +269,11 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 // error so misconfigured providers fail loudly instead of sending
 // unauthenticated requests upstream.
 func applyProviderAuth(req *http.Request, provider core.IProvider) error {
+	// Strip any caller-supplied Authorization before applying the provider's
+	// own credential. For bearer providers it is overwritten below; for
+	// xheader/query/none providers it would otherwise leak the caller's
+	// identity/credential to the upstream (CWE-200).
+	req.Header.Del("Authorization")
 	token := provider.GetToken()
 	switch provider.GetAuthType() {
 	case constants.AuthTypeBearer:
