@@ -65,9 +65,10 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 		Server: &config.ServerConfig{
 			Host:         "0.0.0.0",
 			Port:         "8080",
-			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 30 * time.Second,
-			IdleTimeout:  120 * time.Second,
+			ReadTimeout:        30 * time.Second,
+			WriteTimeout:       30 * time.Second,
+			IdleTimeout:        120 * time.Second,
+			MaxRequestBodySize: 10485760,
 		},
 		Routing: &config.RoutingConfig{
 			Enabled:    false,
