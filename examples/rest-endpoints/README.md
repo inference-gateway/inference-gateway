@@ -340,7 +340,7 @@ Set `"stream": true` to receive `ResponseStreamEvent` SSE frames verbatim:
 
 ```bash
 curl -N -X POST http://localhost:8080/v1/responses -d '{
-  "model": "openai/gpt-4o",
+  "model": "deepseek/deepseek-v4-flash",
   "input": "Hi",
   "stream": true
 }'
