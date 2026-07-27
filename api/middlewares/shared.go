@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	// ChatCompletionsPath is the endpoint path for chat completions
 	ChatCompletionsPath = "/v1/chat/completions"
+	ResponsesPath       = "/v1/responses"
 )
 
 // SetSSEHeaders sets the response headers required for server-sent event streaming
