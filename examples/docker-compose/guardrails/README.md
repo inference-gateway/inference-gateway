@@ -18,6 +18,30 @@ See [`Configurations.md`](../../../Configurations.md) for all `GUARDRAILS_*` set
 
 - `policies/allow_all.rego` - default allow.
 - `policies/block_pii.rego` - blocks bodies containing a sample credit-card prefix.
+- `policies/authz.rego` - authorization by caller identity (restricts a model to a group).
+
+### Authorization by identity
+
+Policies can authorize on the caller's identity via `input.identity`, which holds the
+verified OIDC claims (`sub`, `email`, `groups`, `roles`, ...). This requires
+`AUTH_ENABLE=true`; with auth off, `input.identity` is undefined and identity-based
+rules do not match (default allow).
+
+```rego
+main := {"action": "block", "message": "restricted to the ml-eng group"} if {
+    input.request.model == "openai/gpt-4o"
+    input.identity
+    not group_allowed
+}
+
+group_allowed if {
+    some g in input.identity.groups
+    g == "ml-eng"
+}
+```
+
+Identity is passed on the `pre_call`, `post_call`, and `tool_call` phases, so the same
+`input.identity` is available when guarding tool arguments and outputs.
 
 ## Quick Start
 

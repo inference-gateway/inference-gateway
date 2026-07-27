@@ -19,6 +19,7 @@ import (
 
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // ---------------------------------------------------------------------------
@@ -57,10 +58,13 @@ const (
 
 // Input is the document passed to every Rego policy query.
 type Input struct {
-	Method  string `json:"method"`
-	Path    string `json:"path"`
-	Phase   Phase  `json:"phase"`
-	Request *Req   `json:"request,omitempty"`
+	Method string `json:"method"`
+	Path   string `json:"path"`
+	Phase  Phase  `json:"phase"`
+	Request *Req  `json:"request,omitempty"`
+	// Identity holds the verified OIDC claims of the caller (sub, email, groups, ...).
+	// nil when auth is disabled or the request is unauthenticated.
+	Identity map[string]any `json:"identity,omitempty"`
 }
 
 // Req is the request portion of the guardrail input.
@@ -340,6 +344,13 @@ func (e *ExternalClient) Check(ctx context.Context, input *Input) (*Decision, er
 // Tool call evaluation
 // ---------------------------------------------------------------------------
 
+// claimsFromContext returns the verified OIDC claims stored by the auth
+// middleware, or nil when auth is disabled / the request is unauthenticated.
+func claimsFromContext(ctx context.Context) map[string]any {
+	claims, _ := ctx.Value(types.ClaimsContextKey).(map[string]any)
+	return claims
+}
+
 // EvaluateToolCall evaluates a tool call against guardrails policies.
 // This is called from the MCP agent's ExecuteTools method.
 func EvaluateToolCall(
@@ -365,6 +376,7 @@ func EvaluateToolCall(
 			Body:  toolArgs,
 			Model: "",
 		},
+		Identity: claimsFromContext(ctx),
 	}
 
 	dec, err := evaluator.Eval(ctx, input)

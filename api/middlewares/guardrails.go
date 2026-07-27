@@ -14,6 +14,7 @@ import (
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // GuardrailsMiddleware defines the interface for guardrails middleware.
@@ -82,6 +83,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
 		model := extractModel(bodyBytes, path)
+		claims, _ := c.Request.Context().Value(types.ClaimsContextKey).(map[string]any)
 		input := &guardrails.Input{
 			Method: c.Request.Method,
 			Path:   path,
@@ -90,6 +92,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				Body:  string(bodyBytes),
 				Model: model,
 			},
+			Identity: claims,
 		}
 
 		dec, err := m.evaluate(c.Request.Context(), input)
@@ -156,6 +159,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 					Body:  customWriter.body.String(),
 					Model: model,
 				},
+				Identity: claims,
 			}
 
 			respDec, respErr := m.evaluate(c.Request.Context(), respInput)

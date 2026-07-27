@@ -67,7 +67,8 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 		}
 
 		token := strings.TrimPrefix(authHeader, "Bearer ")
-		if _, err := a.verifier.Verify(c.Request.Context(), token); err != nil {
+		idToken, err := a.verifier.Verify(c.Request.Context(), token)
+		if err != nil {
 			a.logger.Error("failed to verify id token", err)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 			c.Abort()
@@ -75,6 +76,10 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 		}
 
 		ctx := context.WithValue(c.Request.Context(), types.AuthTokenContextKey, token)
+		var claims map[string]any
+		if err := idToken.Claims(&claims); err == nil {
+			ctx = context.WithValue(ctx, types.ClaimsContextKey, claims)
+		}
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
