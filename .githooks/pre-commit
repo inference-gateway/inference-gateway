@@ -36,4 +36,15 @@ if [ -n "$staged_md" ]; then
   echo "$staged_md" | xargs markdownlint --ignore '{AGENTS,CLAUDE,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md
 fi
 
+# --- Regenerate mocks and check for dirty tree ---
+if [ -n "$staged_go" ]; then
+  echo "  go generate (regenerate mocks)"
+  go generate ./otel/... ./api/... ./logger/... ./internal/mcp/... ./providers/...
+  if ! git diff --quiet -- '*.go'; then
+    echo "ERROR: Generated Go files are out of date. Run 'go generate ./...' and commit the result."
+    git diff --name-only -- '*.go'
+    exit 1
+  fi
+fi
+
 echo "=== pre-commit checks passed ==="
