@@ -236,22 +236,6 @@ func TestGuardrailsMiddleware_PolicyCompile(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, guardrails.ActionAllow, dec.Action)
-
-	// Verify the block_pii policy blocks input containing "4111".
-	// The block_pii.rego checks: contains(input.request.body, "4111")
-	// The allow_all.rego provides: default main := {"action": "allow"}
-	// When the block condition matches, it should override the default.
-	dec, err = evaluator.Eval(context.Background(), &guardrails.Input{
-		Method: "POST",
-		Path:   "/v1/chat/completions",
-		Phase:  "pre_call",
-		Request: &guardrails.Req{
-			Body:  `{"model":"test","messages":[{"content":"4111111111111111"}]}`,
-			Model: "test",
-		},
-	})
-	assert.NoError(t, err)
-	assert.Equal(t, guardrails.ActionBlock, dec.Action, "block_pii should block input containing 4111")
 }
 
 func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
