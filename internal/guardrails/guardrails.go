@@ -123,8 +123,6 @@ func NewEvaluator(ctx context.Context, dir string) (*Evaluator, error) {
 		return e, nil
 	}
 
-	// Build a prepared query from all modules.
-	// The policy package is expected to be "guardrails" with a rule "main".
 	opts := []func(*rego.Rego){rego.Query("data.guardrails.main")}
 	for name, source := range modules {
 		opts = append(opts, rego.Module(name, source))
@@ -141,7 +139,6 @@ func NewEvaluator(ctx context.Context, dir string) (*Evaluator, error) {
 // Eval evaluates the policy input and returns a decision.
 // It is safe for concurrent use.
 func (e *Evaluator) Eval(ctx context.Context, input *Input) (Decision, error) {
-	// No-op evaluator: always allow.
 	if e.decision != nil {
 		return *e.decision, nil
 	}
@@ -228,7 +225,6 @@ func ScanDetectors(text string, detectors []Detector) []DetectorResult {
 	for _, d := range detectors {
 		matches := d.Pattern.FindAllString(text, -1)
 		for _, m := range matches {
-			// Luhn check for credit-card-like patterns.
 			if d.Type == "credit_card" {
 				cleaned := strings.Map(func(r rune) rune {
 					if r >= '0' && r <= '9' {
