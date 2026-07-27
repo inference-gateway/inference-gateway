@@ -51,6 +51,7 @@ jobs:
     with:
       language: "go"
       prettier: true
+      mockgen: true
       plugins: |
         DietrichGebert/ponytail
       prompt: ${{ inputs.prompt }}
