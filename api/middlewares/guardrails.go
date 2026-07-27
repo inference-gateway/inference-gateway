@@ -69,8 +69,6 @@ func (n *NoopGuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 // Middleware returns the guardrails middleware handler.
 func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Guardrails apply to all paths - they sit before MCP in the chain,
-		// so X-MCP-Bypass is irrelevant (guardrails never check it).
 		path := c.Request.URL.Path
 
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(m.cfg.Server.MaxRequestBodySize))
