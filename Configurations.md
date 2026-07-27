@@ -46,6 +46,16 @@
 | MCP_POLLING_TIMEOUT          | `5s`          | Timeout for individual health check requests                                                                                             |
 | MCP_DISABLE_HEALTHCHECK_LOGS | `true`        | Disable health check log messages to reduce noise                                                                                        |
 
+### Guardrails
+
+| Environment Variable        | Default Value | Description                                                  |
+| --------------------------- | ------------- | ------------------------------------------------------------ |
+| GUARDRAILS_ENABLED          | `false`       | Enable gateway guardrails (OPA/Rego policy enforcement)      |
+| GUARDRAILS_POLICY_DIR       | `""`          | Directory of .rego files compiled at startup                 |
+| GUARDRAILS_FAIL_MODE        | `closed`      | closed or open: behavior on policy/external error or timeout |
+| GUARDRAILS_EXTERNAL_URL     | `""`          | Optional external HTTP guardrail service                     |
+| GUARDRAILS_EXTERNAL_TIMEOUT | `5s`          | Timeout for the external guardrail service                   |
+
 ### Authentication
 
 | Environment Variable    | Default Value                                         | Description           |

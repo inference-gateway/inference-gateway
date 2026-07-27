@@ -29,6 +29,8 @@ type Config struct {
 	Telemetry *TelemetryConfig `env:", prefix=TELEMETRY_" description:"Telemetry configuration"`
 	// MCP settings
 	MCP *MCPConfig `env:", prefix=MCP_" description:"MCP configuration"`
+	// Guardrails settings
+	Guardrails *GuardrailsConfig `env:", prefix=GUARDRAILS_" description:"Guardrails configuration"`
 	// Authentication settings
 	Auth *AuthConfig `env:", prefix=AUTH_" description:"Authentication configuration"`
 	// Server settings
@@ -73,6 +75,15 @@ type MCPConfig struct {
 	PollingInterval        time.Duration `env:"POLLING_INTERVAL, default=30s" description:"Interval between health check polling requests"`
 	PollingTimeout         time.Duration `env:"POLLING_TIMEOUT, default=5s" description:"Timeout for individual health check requests"`
 	DisableHealthcheckLogs bool          `env:"DISABLE_HEALTHCHECK_LOGS, default=true" description:"Disable health check log messages to reduce noise"`
+}
+
+// Guardrails configuration
+type GuardrailsConfig struct {
+	Enabled         bool          `env:"ENABLED, default=false" description:"Enable gateway guardrails (OPA/Rego policy enforcement)"`
+	PolicyDir       string        `env:"POLICY_DIR" description:"Directory of .rego files compiled at startup"`
+	FailMode        string        `env:"FAIL_MODE, default=closed" description:"closed or open: behavior on policy/external error or timeout"`
+	ExternalUrl     string        `env:"EXTERNAL_URL" description:"Optional external HTTP guardrail service"`
+	ExternalTimeout time.Duration `env:"EXTERNAL_TIMEOUT, default=5s" description:"Timeout for the external guardrail service"`
 }
 
 // Authentication configuration

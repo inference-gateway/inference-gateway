@@ -68,6 +68,9 @@ type Config struct {
 	{{- else if eq $name "mcp" }}
 	// MCP settings
 	MCP *MCPConfig ` + "`env:\", prefix=MCP_\" description:\"MCP configuration\"`" + `
+	{{- else if eq $name "guardrails" }}
+	// Guardrails settings
+	Guardrails *GuardrailsConfig ` + "`env:\", prefix=GUARDRAILS_\" description:\"Guardrails configuration\"`" + `
 	{{- else if eq $name "auth" }}
 	// Authentication settings
 	Auth *AuthConfig ` + "`env:\", prefix=AUTH_\" description:\"Authentication configuration\"`" + `
@@ -104,6 +107,14 @@ type TelemetryConfig struct {
 type MCPConfig struct {
 	{{- range $field := $section.Settings }}
 	{{ pascalCase (trimPrefix $field.Env "MCP_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"MCP_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
+	{{- end }}
+}
+{{- else if eq $name "guardrails" }}
+
+// Guardrails configuration
+type GuardrailsConfig struct {
+	{{- range $field := $section.Settings }}
+	{{ pascalCase (trimPrefix $field.Env "GUARDRAILS_") }} {{ $field.Type }} ` + "`env:\"{{ trimPrefix $field.Env \"GUARDRAILS_\" }}{{if $field.Default}}, default={{$field.Default}}{{end}}\" description:\"{{$field.Description}}\"`" + `
 	{{- end }}
 }
 {{- else if eq $name "auth" }}
