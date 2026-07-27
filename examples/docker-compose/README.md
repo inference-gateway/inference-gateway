@@ -19,6 +19,7 @@ This directory contains examples that demonstrate how to use the Inference Gatew
   gateway
 - [Monitoring](monitoring/README.md) - Metrics collection and visualization with
   Prometheus and Grafana
+- [Guardrails](guardrails/README.md) - OPA/Rego policy enforcement on requests
 
 ## Quick Start
 

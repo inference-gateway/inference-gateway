@@ -1,0 +1,100 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inference-gateway
+  labels:
+    inference-gateway.com/managed: 'true'
+---
+# Rego policies are shipped as a ConfigMap and mounted into the gateway at the
+# path referenced by spec.guardrails.policyDir. Every .rego file must be in
+# package guardrails and expose a main rule returning
+# {"action": "allow"} or {"action": "block", "message": "..."}.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inference-gateway-guardrails-policies
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: inference-gateway
+    app.kubernetes.io/instance: inference-gateway
+    app.kubernetes.io/component: guardrails-policies
+    app.kubernetes.io/part-of: inference-gateway
+data:
+  allow_all.rego: |
+    package guardrails
+
+    # Default allow-all policy.
+    # Override with more specific rules in additional .rego files.
+    default main := {"action": "allow"}
+  block_pii.rego: |
+    package guardrails
+
+    # Block requests containing credit card numbers in the body.
+    # This is a simple example - in production, use the built-in detectors
+    # which include Luhn validation.
+    main := {"action": "block", "message": "request contains sensitive payment information"} if {
+        contains(input.request.body, "4111")
+    }
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: Gateway
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: inference-gateway
+    app.kubernetes.io/instance: inference-gateway
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: inference-gateway
+spec:
+  environment: production
+  image: 'ghcr.io/inference-gateway/inference-gateway:latest'
+  server:
+    host: '0.0.0.0'
+    timeouts:
+      read: '60s'
+      write: '60s'
+      idle: '300s'
+  guardrails:
+    enabled: true
+    failMode: closed
+    policyDir: /etc/inference-gateway/guardrails/policies
+    policiesConfigMap: inference-gateway-guardrails-policies
+  providers:
+    - name: OpenAI
+      enabled: true
+      env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: inference-gateway-secrets
+              key: OPENAI_API_KEY
+  resources:
+    requests:
+      cpu: '100m'
+      memory: '128Mi'
+    limits:
+      cpu: '1000m'
+      memory: '512Mi'
+  routing:
+    enabled: true
+    gateway:
+      gatewayClassName: envoy
+    httpRoute:
+      hostnames:
+        - api.inference-gateway.local
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inference-gateway-secrets
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: inference-gateway
+    app.kubernetes.io/instance: inference-gateway
+    app.kubernetes.io/component: secrets
+    app.kubernetes.io/part-of: inference-gateway
+type: Opaque
+stringData:
+  OPENAI_API_KEY: ''

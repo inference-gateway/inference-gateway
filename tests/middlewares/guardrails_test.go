@@ -214,7 +214,7 @@ func TestGuardrailsMiddleware_ExternalClient(t *testing.T) {
 }
 
 func TestGuardrailsMiddleware_PolicyCompile(t *testing.T) {
-	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/guardrails/policies")
+	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/docker-compose/guardrails/policies")
 	assert.NoError(t, err, "example policies should compile without error")
 	assert.NotNil(t, evaluator)
 

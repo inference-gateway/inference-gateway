@@ -31,6 +31,7 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/authentication/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/monitoring/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/docker-compose/guardrails/.env.example
       - go run cmd/generate/main.go -type MCPWrap -output internal/mcp/mcp-schema.openapi.yaml
       - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0 --config=.oapi-codegen.mcp.yaml -o internal/mcp/generated_types.go internal/mcp/mcp-schema.openapi.yaml
       - gofmt -r 'interface{} -> any' -w internal/mcp/generated_types.go
