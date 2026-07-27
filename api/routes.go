@@ -137,16 +137,17 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 		return
 	}
 
-	// Read request body with a 10MB size limit for now, to prevent abuse
-	// Will make it configurable later perhaps as a middleware
-	const maxBodySize = 10 << 20
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, maxBodySize))
+	maxBodySize := router.cfg.Server.MaxRequestBodySize
+	if maxBodySize <= 0 {
+		maxBodySize = defaultMaxRequestBodySize
+	}
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
 	if err != nil {
 		router.logger.Error("failed to read request body", err, "maxBodySize", maxBodySize)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
 		return
 	}
-	if len(body) >= int(maxBodySize) {
+	if len(body) >= maxBodySize {
 		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
 		return
 	}
@@ -832,8 +833,11 @@ func messagesError(c *gin.Context, status int, errType, message string) {
 // (currently Anthropic); other providers receive a 400 in the Anthropic error
 // envelope, mirroring the schema's MessagesNotSupported response.
 func (router *RouterImpl) MessagesHandler(c *gin.Context) {
-	const maxBodySize = 10 << 20
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, maxBodySize))
+	maxBodySize := router.cfg.Server.MaxRequestBodySize
+	if maxBodySize <= 0 {
+		maxBodySize = defaultMaxRequestBodySize
+	}
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
 	if err != nil {
 		router.logger.Error("failed to read request body", err)
 		messagesError(c, http.StatusBadRequest, "invalid_request_error", "Failed to read request")
