@@ -308,6 +308,33 @@ func (e MessagesMessageRole) Valid() bool {
 	}
 }
 
+// Defines values for MessagesOutputConfigEffort.
+const (
+	MessagesOutputConfigEffortHigh   MessagesOutputConfigEffort = "high"
+	MessagesOutputConfigEffortLow    MessagesOutputConfigEffort = "low"
+	MessagesOutputConfigEffortMax    MessagesOutputConfigEffort = "max"
+	MessagesOutputConfigEffortMedium MessagesOutputConfigEffort = "medium"
+	MessagesOutputConfigEffortXhigh  MessagesOutputConfigEffort = "xhigh"
+)
+
+// Valid indicates whether the value is a known member of the MessagesOutputConfigEffort enum.
+func (e MessagesOutputConfigEffort) Valid() bool {
+	switch e {
+	case MessagesOutputConfigEffortHigh:
+		return true
+	case MessagesOutputConfigEffortLow:
+		return true
+	case MessagesOutputConfigEffortMax:
+		return true
+	case MessagesOutputConfigEffortMedium:
+		return true
+	case MessagesOutputConfigEffortXhigh:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MessagesRedactedThinkingBlockType.
 const (
 	RedactedThinking MessagesRedactedThinkingBlockType = "redacted_thinking"
@@ -1516,6 +1543,9 @@ type CreateMessagesRequest struct {
 	// Model The model to use for generating the message.
 	Model string `json:"model"`
 
+	// OutputConfig Output configuration for a Messages API request.
+	OutputConfig *MessagesOutputConfig `json:"output_config,omitempty"`
+
 	// StopSequences Custom text sequences that will cause the model to stop
 	// generating.
 	StopSequences *[]string `json:"stop_sequences,omitempty"`
@@ -1874,6 +1904,19 @@ type MessagesMetadata struct {
 	// UserID An external identifier for the user.
 	UserID *string `json:"user_id,omitempty"`
 }
+
+// MessagesOutputConfig Output configuration for a Messages API request.
+type MessagesOutputConfig struct {
+	// Effort Constrains how much effort the model spends on reasoning.
+	// Lower effort yields faster responses and fewer reasoning
+	// tokens.
+	Effort *MessagesOutputConfigEffort `json:"effort,omitempty"`
+}
+
+// MessagesOutputConfigEffort Constrains how much effort the model spends on reasoning.
+// Lower effort yields faster responses and fewer reasoning
+// tokens.
+type MessagesOutputConfigEffort string
 
 // MessagesRedactedThinkingBlock A redacted thinking content block in a Messages API request or
 // response. Emitted when thinking content is encrypted for safety

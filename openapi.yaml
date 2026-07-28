@@ -3178,10 +3178,35 @@ components:
           required:
             - type
             - budget_tokens
+        output_config:
+          $ref: '#/components/schemas/MessagesOutputConfig'
       required:
         - model
         - max_tokens
         - messages
+    MessagesOutputConfig:
+      type: object
+      description: |
+        Output configuration for a Messages API request.
+      properties:
+        effort:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - xhigh
+            - max
+          x-enum-varnames:
+            - MessagesOutputConfigEffortLow
+            - MessagesOutputConfigEffortMedium
+            - MessagesOutputConfigEffortHigh
+            - MessagesOutputConfigEffortXhigh
+            - MessagesOutputConfigEffortMax
+          description: |
+            Constrains how much effort the model spends on reasoning.
+            Lower effort yields faster responses and fewer reasoning
+            tokens.
     MessagesResponseContentBlock:
       type: object
       description: A content block within a Messages API response.
