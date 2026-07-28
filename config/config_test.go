@@ -40,6 +40,7 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			Enabled:                false,
 			Expose:                 false,
 			Servers:                "",
+			ToolMode:               "selector",
 			ClientTimeout:          5 * time.Second,
 			DialTimeout:            3 * time.Second,
 			TlsHandshakeTimeout:    3 * time.Second,

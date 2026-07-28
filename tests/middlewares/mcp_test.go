@@ -49,6 +49,9 @@ func createTestConfig() config.Config {
 			Host: "localhost",
 			Port: "8080",
 		},
+		MCP: &config.MCPConfig{
+			ToolMode: mcp.ToolModeDirect,
+		},
 	}
 }
 
@@ -306,6 +309,60 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			assert.Equal(t, http.StatusOK, w.Code)
 		})
 	}
+}
+
+func TestMCPMiddleware_SelectorModeInjectsMetaTools(t *testing.T) {
+	ctrl, mockRegistry, mockClient, mockMCPClient, mockLogger, mockProvider := createMockDependencies(t)
+	defer ctrl.Finish()
+
+	cfg := createTestConfig()
+	cfg.MCP.ToolMode = mcp.ToolModeSelector
+
+	mockMCPClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+	mockMCPClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{"server1": mcp.ServerStatusAvailable}).AnyTimes()
+	mockMCPClient.EXPECT().GetSelectorTools().Return(mcp.SelectorToolDefinitions()).Times(1)
+	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockRegistry.EXPECT().BuildProvider(constants.OpenaiID, mockClient).Return(mockProvider, nil).AnyTimes()
+
+	requestData := types.CreateChatCompletionRequest{
+		Model:    "openai/gpt-3.5-turbo",
+		Messages: []types.Message{types.NewTextMessage(t, types.User, "Hello")},
+	}
+	requestBody, _ := json.Marshal(requestData)
+
+	var injectedToolNames []string
+	mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
+	middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
+	assert.NoError(t, err)
+	router := gin.New()
+	router.Use(middleware.Middleware())
+	router.POST("/v1/chat/completions", func(c *gin.Context) {
+		var req types.CreateChatCompletionRequest
+		val, _ := c.Get("X-MCP-Bypass")
+		if r, ok := val.(*types.CreateChatCompletionRequest); ok && r.Tools != nil {
+			for _, tool := range *r.Tools {
+				injectedToolNames = append(injectedToolNames, tool.Function.Name)
+			}
+		}
+		_ = req
+		c.JSON(http.StatusOK, types.CreateChatCompletionResponse{
+			ID:    "test-id",
+			Model: "gpt-3.5-turbo",
+			Choices: []types.ChatCompletionChoice{
+				{Message: types.NewTextMessage(t, types.Assistant, "hi"), FinishReason: types.Stop},
+			},
+		})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.ElementsMatch(t, []string{mcp.SelectorToolGet, mcp.SelectorToolExecute}, injectedToolNames)
 }
 
 func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
@@ -609,7 +666,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 					},
 				}).AnyTimes()
 				mockLogger.EXPECT().Debug("mcp middleware invoked", "path", "/v1/chat/completions").AnyTimes()
-				mockLogger.EXPECT().Debug("added mcp tools to request", "tool_count", 1).AnyTimes()
+				mockLogger.EXPECT().Debug("added mcp tools to request", "tool_count", 1, "tool_mode", mcp.ToolModeDirect).AnyTimes()
 				mockLogger.EXPECT().Error("failed to determine provider", gomock.Any(), "model", "unsupported/model").AnyTimes()
 			},
 			expectedStatus: http.StatusBadRequest,
@@ -630,7 +687,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 					},
 				}).AnyTimes()
 				mockLogger.EXPECT().Debug("mcp middleware invoked", "path", "/v1/chat/completions").AnyTimes()
-				mockLogger.EXPECT().Debug("added mcp tools to request", "tool_count", 1).AnyTimes()
+				mockLogger.EXPECT().Debug("added mcp tools to request", "tool_count", 1, "tool_mode", mcp.ToolModeDirect).AnyTimes()
 				mockRegistry.EXPECT().BuildProvider(constants.OpenaiID, mockClient).Return(nil, fmt.Errorf("provider build failed")).AnyTimes()
 				mockLogger.EXPECT().Error("failed to get provider", gomock.Any(), "provider", constants.OpenaiID).AnyTimes()
 			},

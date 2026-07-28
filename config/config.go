@@ -58,6 +58,7 @@ type MCPConfig struct {
 	Enabled                bool          `env:"ENABLED, default=false" description:"Enable MCP"`
 	Expose                 bool          `env:"EXPOSE, default=false" description:"Expose MCP tools endpoint"`
 	Servers                string        `env:"SERVERS" description:"List of MCP servers"`
+	ToolMode               string        `env:"TOOL_MODE, default=selector" description:"How MCP tools are exposed to the model. selector injects two meta-tools for discovery and dispatch; direct injects every tool schema"`
 	IncludeTools           string        `env:"INCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS"`
 	ExcludeTools           string        `env:"EXCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to skip injecting. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS"`
 	ClientTimeout          time.Duration `env:"CLIENT_TIMEOUT, default=5s" description:"MCP client HTTP timeout"`

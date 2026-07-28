@@ -3460,6 +3460,11 @@ components:
                   env: 'MCP_SERVERS'
                   type: string
                   description: 'List of MCP servers'
+                - name: mcp_tool_mode
+                  env: 'MCP_TOOL_MODE'
+                  type: string
+                  default: 'selector'
+                  description: 'How MCP tools are exposed to the model. selector injects two meta-tools for discovery and dispatch; direct injects every tool schema'
                 - name: mcp_include_tools
                   env: 'MCP_INCLUDE_TOOLS'
                   type: string

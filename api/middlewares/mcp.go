@@ -125,12 +125,17 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		availableTools := m.mcpClient.GetAllChatCompletionTools()
+		var availableTools []types.ChatCompletionTool
+		if m.config.MCP.ToolMode == mcp.ToolModeDirect {
+			availableTools = m.mcpClient.GetAllChatCompletionTools()
+		} else {
+			availableTools = m.mcpClient.GetSelectorTools()
+		}
 		if len(availableTools) == 0 {
 			c.Next()
 			return
 		}
-		m.logger.Debug("added mcp tools to request", "tool_count", len(availableTools))
+		m.logger.Debug("added mcp tools to request", "tool_count", len(availableTools), "tool_mode", m.config.MCP.ToolMode)
 		originalRequestBody.Tools = &availableTools
 
 		c.Set(string(mcpBypassKey), &originalRequestBody)

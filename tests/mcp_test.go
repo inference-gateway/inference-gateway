@@ -137,7 +137,7 @@ func TestAgent_Run(t *testing.T) {
 				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", 1, "tool_calls", 1).Times(1)
 				mockLogger.EXPECT().Debug("executing tool calls", "count", 1).Times(1)
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=mcp_test_tool mcp_name=test_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
 				mockLogger.EXPECT().Debug("agent loop completed", "iterations", 1, "final_choices", 1).Times(1)
 
 				mockMCPClient.EXPECT().GetServerForTool("test_tool").Return("http://test-server:8080/mcp", nil).Times(1)
@@ -287,7 +287,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "successful tool execution",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=mcp_test_tool mcp_name=test_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
 
 				mockMCPClient.EXPECT().GetServerForTool("test_tool").Return("http://test-server:8080/mcp", nil).Times(1)
 				mockMCPClient.EXPECT().ExecuteTool(
@@ -328,7 +328,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
 				mockMCPClient.EXPECT().GetServerForTool("server_tool").Return("http://custom-server:8080", nil).Times(1)
 
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=mcp_server_tool mcp_name=server_tool args=map[param:value] server=http://custom-server:8080").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=server_tool args=map[param:value] server=http://custom-server:8080").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -385,8 +385,8 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "MCP execution error",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_error name=mcp_failing_tool mcp_name=failing_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
-				mockLogger.EXPECT().Error("failed to execute tool call", gomock.Any(), "tool", "mcp_failing_tool", "server", "http://test-server:8080/mcp").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_error name=failing_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
+				mockLogger.EXPECT().Error("failed to execute tool call", gomock.Any(), "tool", "failing_tool", "server", "http://test-server:8080/mcp").Times(1)
 
 				mockMCPClient.EXPECT().GetServerForTool("failing_tool").Return("http://test-server:8080/mcp", nil).Times(1)
 				mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "http://test-server:8080/mcp").Return(nil, fmt.Errorf("tool execution failed")).Times(1)
@@ -408,8 +408,8 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "multiple tool execution",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi1 name=mcp_first_tool mcp_name=first_tool args=map[param:value1] server=http://test-server:8080/mcp").Times(1)
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi2 name=mcp_second_tool mcp_name=second_tool args=map[action:execute] server=http://test-server:8080/mcp").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi1 name=first_tool args=map[param:value1] server=http://test-server:8080/mcp").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi2 name=second_tool args=map[action:execute] server=http://test-server:8080/mcp").Times(1)
 
 				mockMCPClient.EXPECT().GetServerForTool("first_tool").Return("http://test-server:8080/mcp", nil).Times(1)
 				mockMCPClient.EXPECT().GetServerForTool("second_tool").Return("http://test-server:8080/mcp", nil).Times(1)
@@ -751,8 +751,8 @@ func TestAgent_RunWithStream(t *testing.T) {
 				mockLogger.EXPECT().Debug("parsed tool calls from stream", "count", 2, "iteration", 1).Times(1)
 				mockLogger.EXPECT().Debug("final parsed tool call", "tool_call", gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug("executing tool calls", "count", 2, "iteration", 1).Times(1)
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=mcp_test_tool mcp_name=test_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=mcp_other_tool mcp_name=other_tool args=map[action:execute] server=http://test-server:8080/mcp").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=other_tool args=map[action:execute] server=http://test-server:8080/mcp").Times(1)
 				mockLogger.EXPECT().Debug("tool execution complete, continuing to next iteration", "tool_results", 2, "total_messages", gomock.Any(), "iteration", 1).Times(1)
 
 				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 2, "max_iterations", 10).Times(1)

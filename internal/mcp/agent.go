@@ -312,121 +312,162 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	return nil
 }
 
-// ExecuteTools executes tools with the provided context, tool name, and arguments
+// ExecuteTools executes tools with the provided context, tool name, and arguments.
+// The two selector meta-tools are handled gateway-side: mcp_tools_get is answered
+// locally from the tool catalog, and mcp_tools_execute is unwrapped so guardrails
+// and dispatch run against the underlying tool. All other calls dispatch directly.
 func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error) {
 	var results []types.Message
 
 	for _, toolCall := range toolCalls {
-		var args map[string]any
-		if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args); err != nil {
-			a.logger.Error("failed to parse tool arguments", err, "args", toolCall.Function.Arguments, "tool_name", toolCall.Function.Name)
-			msg := types.Message{
-				Role:       types.Tool,
-				ToolCallID: &toolCall.ID,
-			}
-			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: Failed to parse arguments: %v", err)); contentErr != nil {
-				a.logger.Error("failed to set error content", contentErr)
-			}
-			results = append(results, msg)
-			continue
-		}
-
-		var server string
-		toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
-
-		if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, toolCall.Function.Arguments, "", guardrails.PhaseToolArgs); err != nil {
-			a.logger.Error("guardrails blocked tool call", err, "tool", toolName)
-			msg := types.Message{
-				Role:       types.Tool,
-				ToolCallID: &toolCall.ID,
-			}
-			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
-				a.logger.Error("failed to set error content", contentErr)
-			}
-			results = append(results, msg)
-			continue
-		}
-
-		toolCtx, span := otelapi.Tracer("github.com/inference-gateway/inference-gateway/internal/mcp").
-			Start(ctx, "execute_tool "+toolName, trace.WithAttributes(semconv.GenAIToolName(toolName)))
-		server, err := a.mcpClient.GetServerForTool(toolName)
-		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-			span.End()
-			a.logger.Error("failed to find server for tool", err, "tool", toolCall.Function.Name, "tool_name", toolName)
-			msg := types.Message{
-				Role:       types.Tool,
-				ToolCallID: &toolCall.ID,
-			}
-			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
-				a.logger.Error("failed to set error content", contentErr)
-			}
-			results = append(results, msg)
-			continue
-		}
-		span.SetAttributes(attribute.String("mcp.server.url", server))
-
-		mcpRequest := Request{
-			Method: "tools/call",
-			Params: map[string]any{
-				"name":      toolName,
-				"arguments": args,
-			},
-		}
-
-		a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s mcp_name=%s args=%v server=%s", toolCall.ID, toolCall.Function.Name, toolName, args, server))
-		result, err := a.mcpClient.ExecuteTool(toolCtx, mcpRequest, server)
-		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
-			span.End()
-			a.logger.Error("failed to execute tool call", err, "tool", toolCall.Function.Name, "server", server)
-			msg := types.Message{
-				Role:       types.Tool,
-				ToolCallID: &toolCall.ID,
-			}
-			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
-				a.logger.Error("failed to set error content", contentErr)
-			}
-			results = append(results, msg)
-			continue
-		}
-		span.End()
-
-		var resultStr string
-		if result == nil {
-			resultStr = "null"
-		} else {
-			resultBytes, err := json.Marshal(result)
+		switch toolCall.Function.Name {
+		case SelectorToolGet:
+			results = append(results, a.handleToolsGet(toolCall))
+		case SelectorToolExecute:
+			results = append(results, a.handleToolsExecute(ctx, toolCall))
+		default:
+			args, err := parseToolArgs(toolCall.Function.Arguments)
 			if err != nil {
-				resultStr = fmt.Sprintf("Error marshaling result: %v", err)
-			} else {
-				resultStr = string(resultBytes)
+				a.logger.Error("failed to parse tool arguments", err, "args", toolCall.Function.Arguments, "tool_name", toolCall.Function.Name)
+				results = append(results, a.toolMessage(toolCall.ID, fmt.Sprintf("Error: Failed to parse arguments: %v", err)))
+				continue
 			}
+			toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
+			results = append(results, a.dispatchTool(ctx, toolCall.ID, toolName, toolCall.Function.Arguments, args))
 		}
-
-		if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, toolCall.Function.Arguments, resultStr, guardrails.PhaseToolOutput); err != nil {
-			a.logger.Error("guardrails blocked tool output", err, "tool", toolName)
-			msg := types.Message{
-				Role:       types.Tool,
-				ToolCallID: &toolCall.ID,
-			}
-			if contentErr := msg.Content.FromMessageContent0(fmt.Sprintf("Error: %v", err)); contentErr != nil {
-				a.logger.Error("failed to set error content", contentErr)
-			}
-			results = append(results, msg)
-			continue
-		}
-
-		msg := types.Message{
-			Role:       types.Tool,
-			ToolCallID: &toolCall.ID,
-		}
-		if err := msg.Content.FromMessageContent0(resultStr); err != nil {
-			a.logger.Error("failed to set tool result content", err)
-			return nil, err
-		}
-		results = append(results, msg)
 	}
 
 	return results, nil
+}
+
+// handleToolsGet answers an mcp_tools_get call locally from the tool catalog.
+func (a *agentImpl) handleToolsGet(toolCall types.ChatCompletionMessageToolCall) types.Message {
+	var params struct {
+		Query string   `json:"query"`
+		Names []string `json:"names"`
+	}
+	if toolCall.Function.Arguments != "" {
+		if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &params); err != nil {
+			a.logger.Error("failed to parse mcp_tools_get arguments", err, "args", toolCall.Function.Arguments)
+			return a.toolMessage(toolCall.ID, fmt.Sprintf("Error: Failed to parse arguments: %v", err))
+		}
+	}
+
+	catalog := a.mcpClient.GetToolsCatalog(params.Query, params.Names)
+	catalogBytes, err := json.Marshal(catalog)
+	if err != nil {
+		a.logger.Error("failed to marshal tool catalog", err)
+		return a.toolMessage(toolCall.ID, fmt.Sprintf("Error: %v", err))
+	}
+	a.logger.Debug("mcp_tools_get answered", "query", params.Query, "names", params.Names, "result_count", len(catalog))
+	return a.toolMessage(toolCall.ID, string(catalogBytes))
+}
+
+// handleToolsExecute unwraps an mcp_tools_execute call and dispatches the
+// underlying tool so guardrails see the real tool name and arguments.
+func (a *agentImpl) handleToolsExecute(ctx context.Context, toolCall types.ChatCompletionMessageToolCall) types.Message {
+	var params struct {
+		Name      string         `json:"name"`
+		Arguments map[string]any `json:"arguments"`
+	}
+	if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &params); err != nil {
+		a.logger.Error("failed to parse mcp_tools_execute arguments", err, "args", toolCall.Function.Arguments)
+		return a.toolMessage(toolCall.ID, fmt.Sprintf("Error: Failed to parse arguments: %v", err))
+	}
+	if params.Name == "" {
+		return a.toolMessage(toolCall.ID, "Error: mcp_tools_execute requires a 'name'")
+	}
+
+	toolName := strings.TrimPrefix(params.Name, "mcp_")
+	if params.Arguments == nil {
+		params.Arguments = map[string]any{}
+	}
+	argsJSON, err := json.Marshal(params.Arguments)
+	if err != nil {
+		a.logger.Error("failed to marshal unwrapped tool arguments", err, "tool", toolName)
+		return a.toolMessage(toolCall.ID, fmt.Sprintf("Error: %v", err))
+	}
+
+	return a.dispatchTool(ctx, toolCall.ID, toolName, string(argsJSON), params.Arguments)
+}
+
+// dispatchTool runs guardrails, resolves the server, executes the tool, and
+// runs output guardrails, returning the resulting tool message.
+func (a *agentImpl) dispatchTool(ctx context.Context, toolCallID, toolName, argsJSON string, args map[string]any) types.Message {
+	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, argsJSON, "", guardrails.PhaseToolArgs); err != nil {
+		a.logger.Error("guardrails blocked tool call", err, "tool", toolName)
+		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
+	}
+
+	toolCtx, span := otelapi.Tracer("github.com/inference-gateway/inference-gateway/internal/mcp").
+		Start(ctx, "execute_tool "+toolName, trace.WithAttributes(semconv.GenAIToolName(toolName)))
+	server, err := a.mcpClient.GetServerForTool(toolName)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		span.End()
+		a.logger.Error("failed to find server for tool", err, "tool_name", toolName)
+		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
+	}
+	span.SetAttributes(attribute.String("mcp.server.url", server))
+
+	mcpRequest := Request{
+		Method: "tools/call",
+		Params: map[string]any{
+			"name":      toolName,
+			"arguments": args,
+		},
+	}
+
+	a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCallID, toolName, args, server))
+	result, err := a.mcpClient.ExecuteTool(toolCtx, mcpRequest, server)
+	if err != nil {
+		span.SetStatus(codes.Error, err.Error())
+		span.End()
+		a.logger.Error("failed to execute tool call", err, "tool", toolName, "server", server)
+		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
+	}
+	span.End()
+
+	var resultStr string
+	if result == nil {
+		resultStr = "null"
+	} else {
+		resultBytes, err := json.Marshal(result)
+		if err != nil {
+			resultStr = fmt.Sprintf("Error marshaling result: %v", err)
+		} else {
+			resultStr = string(resultBytes)
+		}
+	}
+
+	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, argsJSON, resultStr, guardrails.PhaseToolOutput); err != nil {
+		a.logger.Error("guardrails blocked tool output", err, "tool", toolName)
+		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
+	}
+
+	return a.toolMessage(toolCallID, resultStr)
+}
+
+// parseToolArgs unmarshals tool-call arguments, tolerating an empty string.
+func parseToolArgs(arguments string) (map[string]any, error) {
+	args := map[string]any{}
+	if strings.TrimSpace(arguments) == "" {
+		return args, nil
+	}
+	if err := json.Unmarshal([]byte(arguments), &args); err != nil {
+		return nil, err
+	}
+	return args, nil
+}
+
+// toolMessage builds a tool-role message with the given content for a tool call.
+func (a *agentImpl) toolMessage(toolCallID, content string) types.Message {
+	msg := types.Message{
+		Role:       types.Tool,
+		ToolCallID: &toolCallID,
+	}
+	if err := msg.Content.FromMessageContent0(content); err != nil {
+		a.logger.Error("failed to set tool result content", err)
+	}
+	return msg
 }

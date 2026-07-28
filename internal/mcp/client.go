@@ -57,6 +57,12 @@ type MCPClientInterface interface {
 	// GetAllChatCompletionTools returns all pre-converted chat completion tools from all servers
 	GetAllChatCompletionTools() []types.ChatCompletionTool
 
+	// GetSelectorTools returns the two selector meta-tools, or empty when no tools are available
+	GetSelectorTools() []types.ChatCompletionTool
+
+	// GetToolsCatalog answers an mcp_tools_get call from the cached tool map
+	GetToolsCatalog(query string, names []string) []ToolCatalogEntry
+
 	// ConvertMCPToolsToChatCompletionTools converts MCP server tools to chat completion tools
 	ConvertMCPToolsToChatCompletionTools([]Tool) []types.ChatCompletionTool
 

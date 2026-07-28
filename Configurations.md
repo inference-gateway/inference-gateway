@@ -28,6 +28,7 @@
 | MCP_ENABLED                  | `false`       | Enable MCP                                                                                                                               |
 | MCP_EXPOSE                   | `false`       | Expose MCP tools endpoint                                                                                                                |
 | MCP_SERVERS                  | `""`          | List of MCP servers                                                                                                                      |
+| MCP_TOOL_MODE                | `selector`    | How MCP tools are exposed to the model. selector injects two meta-tools for discovery and dispatch; direct injects every tool schema     |
 | MCP_INCLUDE_TOOLS            | `""`          | Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS              |
 | MCP_EXCLUDE_TOOLS            | `""`          | Comma-separated list of MCP tool names to skip injecting. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS |
 | MCP_CLIENT_TIMEOUT           | `5s`          | MCP client HTTP timeout                                                                                                                  |
