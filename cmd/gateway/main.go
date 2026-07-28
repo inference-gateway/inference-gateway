@@ -68,7 +68,7 @@ func main() {
 		os.Exit(0)
 	}
 	var config config.Config
-	cfg, err := config.Load(envconfig.OsLookuper())
+	cfg, err := config.Load(config.WithDeprecatedAliases(envconfig.OsLookuper()))
 	if err != nil {
 		log.Printf("{\"error\": \"config load error: %v\"}", err)
 		return
