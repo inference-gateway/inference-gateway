@@ -24,7 +24,7 @@ See [`Configurations.md`](../../../Configurations.md) for all `GUARDRAILS_*` set
 
 Policies can authorize on the caller's identity via `input.identity`, which holds the
 verified OIDC claims (`sub`, `email`, `groups`, `roles`, ...). This requires
-`AUTH_ENABLE=true`; with auth off, `input.identity` is undefined and identity-based
+`AUTH_ENABLED=true`; with auth off, `input.identity` is undefined and identity-based
 rules do not match (default allow).
 
 ```rego

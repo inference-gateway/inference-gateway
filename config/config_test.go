@@ -32,12 +32,12 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 		DebugContentTruncateWords: 10,
 		DebugMaxMessages:          100,
 		Telemetry: &config.TelemetryConfig{
-			Enable:              false,
+			Enabled:             false,
 			MetricsPort:         "9464",
 			TracingOtlpEndpoint: "http://localhost:4318",
 		},
 		MCP: &config.MCPConfig{
-			Enable:                 false,
+			Enabled:                false,
 			Expose:                 false,
 			Servers:                "",
 			ClientTimeout:          5 * time.Second,
@@ -51,7 +51,7 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			InitialBackoff:         1 * time.Second,
 			EnableReconnect:        true,
 			ReconnectInterval:      30 * time.Second,
-			PollingEnable:          true,
+			PollingEnabled:         true,
 			PollingInterval:        30 * time.Second,
 			PollingTimeout:         5 * time.Second,
 			DisableHealthcheckLogs: true,
@@ -64,7 +64,7 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			ExternalTimeout: 5 * time.Second,
 		},
 		Auth: &config.AuthConfig{
-			Enable:           false,
+			Enabled:          false,
 			OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
 			OidcClientId:     "inference-gateway-client",
 			OidcClientSecret: "",
@@ -114,22 +114,22 @@ func TestLoad(t *testing.T) {
 		{
 			name: "Success_AllEnvVariablesSet",
 			env: map[string]string{
-				"TELEMETRY_ENABLE":              "true",
-				"TELEMETRY_METRICS_PUSH_ENABLE": "true",
-				"ENVIRONMENT":                   "development",
-				"SERVER_HOST":                   "localhost",
-				"SERVER_PORT":                   "9090",
-				"SERVER_READ_TIMEOUT":           "60s",
-				"SERVER_WRITE_TIMEOUT":          "60s",
-				"SERVER_IDLE_TIMEOUT":           "180s",
-				"OLLAMA_API_URL":                "http://custom-ollama:8080",
-				"GROQ_API_KEY":                  "groq123",
-				"OPENAI_API_KEY":                "openai123",
+				"TELEMETRY_ENABLED":              "true",
+				"TELEMETRY_METRICS_PUSH_ENABLED": "true",
+				"ENVIRONMENT":                    "development",
+				"SERVER_HOST":                    "localhost",
+				"SERVER_PORT":                    "9090",
+				"SERVER_READ_TIMEOUT":            "60s",
+				"SERVER_WRITE_TIMEOUT":           "60s",
+				"SERVER_IDLE_TIMEOUT":            "180s",
+				"OLLAMA_API_URL":                 "http://custom-ollama:8080",
+				"GROQ_API_KEY":                   "groq123",
+				"OPENAI_API_KEY":                 "openai123",
 			},
 			expectedCfg: defaultConfig(func(cfg *config.Config) {
 				cfg.Environment = "development"
-				cfg.Telemetry.Enable = true
-				cfg.Telemetry.MetricsPushEnable = true
+				cfg.Telemetry.Enabled = true
+				cfg.Telemetry.MetricsPushEnabled = true
 				cfg.Server.Host = "localhost"
 				cfg.Server.Port = "9090"
 				cfg.Server.ReadTimeout = 60 * time.Second
@@ -145,13 +145,13 @@ func TestLoad(t *testing.T) {
 		{
 			name: "PartialEnvVariables",
 			env: map[string]string{
-				"TELEMETRY_ENABLE": "true",
-				"ENVIRONMENT":      "development",
-				"OLLAMA_API_URL":   "http://custom-ollama:8080",
+				"TELEMETRY_ENABLED": "true",
+				"ENVIRONMENT":       "development",
+				"OLLAMA_API_URL":    "http://custom-ollama:8080",
 			},
 			expectedCfg: defaultConfig(func(cfg *config.Config) {
 				cfg.Environment = "development"
-				cfg.Telemetry.Enable = true
+				cfg.Telemetry.Enabled = true
 				cfg.Providers = defaultProviders(map[types.Provider]func(*registry.ProviderConfig){
 					constants.OllamaID: func(p *registry.ProviderConfig) { p.URL = "http://custom-ollama:8080" },
 				})

@@ -4,7 +4,7 @@ package guardrails
 #
 # input.identity holds the verified OIDC claims of the caller (sub, email,
 # groups, roles, ...). It is populated by the auth middleware, so this policy
-# only has teeth when AUTH_ENABLE=true. When auth is off, input.identity is
+# only has teeth when AUTH_ENABLED=true. When auth is off, input.identity is
 # undefined and every rule below simply does not match (default allow).
 #
 # NOTE: `default main` lives in allow_all.rego; each conditional `main` body

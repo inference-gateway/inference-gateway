@@ -383,7 +383,7 @@ This example includes four pre-configured servers:
 
 Environment variables you can configure:
 
-- `MCP_ENABLE`: Set to "true" to enable MCP middleware
+- `MCP_ENABLED`: Set to "true" to enable MCP middleware
 - `MCP_EXPOSE`: Set to "true" to expose MCP endpoints
 - `MCP_SERVERS`: Comma-separated list of MCP server URLs
 - `MCP_INCLUDE_TOOLS`: Comma-separated allowlist of tool names to inject. When

@@ -4,7 +4,7 @@ This example protects the Inference Gateway with OIDC authentication using
 [Keycloak](https://www.keycloak.org/) as the identity provider, entirely via
 Docker Compose.
 
-When `AUTH_ENABLE=true`, every request (except `/health`) must carry a valid
+When `AUTH_ENABLED=true`, every request (except `/health`) must carry a valid
 `Authorization: Bearer <token>` header. The gateway verifies the token against
 the OIDC issuer it discovers at startup.
 
@@ -127,7 +127,7 @@ The shape of an error tells you which layer rejected the request:
 ## How it works
 
 - Authentication is enabled through the gateway service's `environment` block in
-  `docker-compose.yml` (`AUTH_ENABLE`, `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`,
+  `docker-compose.yml` (`AUTH_ENABLED`, `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`,
   `AUTH_OIDC_CLIENT_SECRET`), so the generated `.env.example` stays untouched.
 - Keycloak starts with `--import-realm` and the realm definition in
   `keycloak/realm-export.json`. That realm adds an **audience mapper** so issued

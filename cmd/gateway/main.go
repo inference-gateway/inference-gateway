@@ -87,7 +87,7 @@ func main() {
 
 	// Initialize OpenTelemetry Prometheus exporter Server
 	var telemetryImpl otel.OpenTelemetry
-	if cfg.Telemetry.Enable {
+	if cfg.Telemetry.Enabled {
 		telemetryImpl = &otel.OpenTelemetryImpl{}
 		err := telemetryImpl.Init(cfg, logger)
 		if err != nil {
@@ -145,7 +145,7 @@ func main() {
 
 	// Initialize telemetry middleware
 	var telemetry middlewares.Telemetry
-	if cfg.Telemetry.Enable {
+	if cfg.Telemetry.Enabled {
 		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, logger)
 		if err != nil {
 			logger.Error("failed to initialize telemetry middleware", err)
@@ -179,7 +179,7 @@ func main() {
 	var mcpClient mcp.MCPClientInterface
 	var mcpAgent mcp.Agent
 	var mcpMiddleware middlewares.MCPMiddleware
-	if cfg.MCP.Enable {
+	if cfg.MCP.Enabled {
 		if cfg.MCP.Servers != "" {
 			mcpClient = mcp.NewMCPClient(strings.Split(cfg.MCP.Servers, ","), logger, cfg)
 
@@ -269,14 +269,14 @@ func main() {
 
 	api := api.NewRouter(cfg, logger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector)
 	r := gin.New()
-	if cfg.Telemetry.Enable && cfg.Telemetry.TracingEnable {
+	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
 		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {
 			return req.URL.Path != "/health" && req.URL.Path != "/v1/metrics"
 		})))
 		logger.Info("tracing middleware added to request pipeline")
 	}
 	r.Use(loggerMiddleware.Middleware())
-	if cfg.Telemetry.Enable {
+	if cfg.Telemetry.Enabled {
 		r.Use(telemetry.Middleware())
 	}
 	r.Use(oidcAuthenticator.Middleware())
@@ -286,7 +286,7 @@ func main() {
 	logger.Info("guardrails middleware added to request pipeline")
 
 	// Add MCP middleware if enabled
-	if cfg.MCP.Enable {
+	if cfg.MCP.Enabled {
 		r.Use(mcpMiddleware.Middleware())
 		logger.Info("mcp middleware added to request pipeline")
 	}
@@ -367,7 +367,7 @@ func main() {
 	<-quit
 	logger.Info("shutting down server...")
 
-	if cfg.MCP.Enable && mcpClient != nil {
+	if cfg.MCP.Enabled && mcpClient != nil {
 		mcpClient.StopStatusPolling()
 		mcpClient.StopBackgroundReconnection()
 	}

@@ -18,7 +18,7 @@ func (mc *MCPClient) GetAllServerStatuses() map[string]ServerStatus {
 
 // StartStatusPolling starts the background status polling goroutine
 func (mc *MCPClient) StartStatusPolling(ctx context.Context) {
-	if !mc.Config.MCP.PollingEnable {
+	if !mc.Config.MCP.PollingEnabled {
 		mc.Logger.Debug("mcp status polling disabled, not starting background polling")
 		return
 	}

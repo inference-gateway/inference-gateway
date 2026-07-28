@@ -25,7 +25,7 @@ type OIDCAuthenticatorNoop struct{}
 
 // NewOIDCAuthenticatorMiddleware creates a new OIDCAuthenticator instance
 func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OIDCAuthenticator, error) {
-	if !cfg.Auth.Enable {
+	if !cfg.Auth.Enabled {
 		return &OIDCAuthenticatorNoop{}, nil
 	}
 

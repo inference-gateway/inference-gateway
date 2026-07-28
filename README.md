@@ -82,7 +82,7 @@ from clients. The Inference Gateway will forward the requests to the respective
 provider and return the response to the client.
 
 **Note**: MCP middleware components can be easily toggled on/off via
-environment variables (`MCP_ENABLE`) or bypassed per-request using headers
+environment variables (`MCP_ENABLED`) or bypassed per-request using headers
 (`X-MCP-Bypass`), giving you full control over which capabilities are active.
 
 **Note**: Vision/multimodal support is disabled by default for security and
@@ -357,7 +357,7 @@ manage them:
 
 ```bash
 # Enable MCP and connect to tool servers
-export MCP_ENABLE=true
+export MCP_ENABLED=true
 export MCP_SERVERS="http://filesystem-server:3001/mcp,http://search-server:3002/mcp"
 
 # LLMs will automatically discover and use available tools
@@ -386,7 +386,7 @@ default.
 
 ```bash
 # Enable telemetry and set metrics port (default: 9464)
-export TELEMETRY_ENABLE=true
+export TELEMETRY_ENABLED=true
 export TELEMETRY_METRICS_PORT=9464
 
 # Access metrics endpoint
@@ -430,8 +430,8 @@ topk(10, sum(increase(inference_gateway_tool_calls_total[1h])) by (gen_ai_tool_n
 ### Pushing Metrics (OTLP)
 
 Clients such as the infer CLI can push their own metrics (e.g. token usage from subscription-based sessions)
-to the gateway. Enable the opt-in endpoint with `TELEMETRY_METRICS_PUSH_ENABLE=true` (alongside
-`TELEMETRY_ENABLE=true`) and POST OTLP JSON to `POST /v1/metrics`; pushed series are exposed on the same
+to the gateway. Enable the opt-in endpoint with `TELEMETRY_METRICS_PUSH_ENABLED=true` (alongside
+`TELEMETRY_ENABLED=true`) and POST OTLP JSON to `POST /v1/metrics`; pushed series are exposed on the same
 Prometheus endpoint with the client-supplied `source` label.
 See [examples/docker-compose/monitoring](examples/docker-compose/monitoring/README.md) for a full example.
 

@@ -8,9 +8,9 @@ services:
       - '8080:8080'
       - '9464:9464'
     environment:
-      - TELEMETRY_ENABLE=true
+      - TELEMETRY_ENABLED=true
       - TELEMETRY_METRICS_PORT=9464
-      - TELEMETRY_METRICS_PUSH_ENABLE=true
+      - TELEMETRY_METRICS_PUSH_ENABLED=true
     deploy:
       resources:
         limits:

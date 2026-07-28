@@ -30,8 +30,8 @@ func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, tele
 
 	cfg := config.Config{
 		Telemetry: &config.TelemetryConfig{
-			Enable:            telemetryEnabled,
-			MetricsPushEnable: pushEnabled,
+			Enabled:            telemetryEnabled,
+			MetricsPushEnabled: pushEnabled,
 		},
 	}
 

@@ -24,7 +24,7 @@ Running a single test: `go test -v -run TestName ./path/to/pkg`. The pinned tool
 
 ### Request pipeline
 
-`cmd/gateway/main.go` is the only entry point. It loads `config.Config` from env vars via `sethvargo/go-envconfig`, initializes the logger, optionally starts an OpenTelemetry Prometheus metrics server on `:9464` (`TELEMETRY_ENABLE=true`), builds the provider registry and shared HTTP client, optionally wires up the MCP client / agent / middleware, and registers Gin handlers.
+`cmd/gateway/main.go` is the only entry point. It loads `config.Config` from env vars via `sethvargo/go-envconfig`, initializes the logger, optionally starts an OpenTelemetry Prometheus metrics server on `:9464` (`TELEMETRY_ENABLED=true`), builds the provider registry and shared HTTP client, optionally wires up the MCP client / agent / middleware, and registers Gin handlers.
 
 Routes (`api/routes.go`):
 

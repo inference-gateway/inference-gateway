@@ -117,7 +117,7 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 		return err
 	}
 
-	if cfg.Telemetry.TracingEnable {
+	if cfg.Telemetry.TracingEnabled {
 		traceExporter, err := otlptracehttp.New(context.Background(),
 			otlptracehttp.WithEndpointURL(cfg.Telemetry.TracingOtlpEndpoint))
 		if err != nil {

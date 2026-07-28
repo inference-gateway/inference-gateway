@@ -53,9 +53,9 @@ The gateway is configured with telemetry enabled:
 
 ```yaml
 environment:
-  - TELEMETRY_ENABLE=true
+  - TELEMETRY_ENABLED=true
   - TELEMETRY_METRICS_PORT=9464
-  - TELEMETRY_METRICS_PUSH_ENABLE=true
+  - TELEMETRY_METRICS_PUSH_ENABLED=true
 ```
 
 ### Prometheus Configuration
@@ -143,7 +143,7 @@ Note that duration histograms are now in **seconds** (previously milliseconds), 
 ## 📤 Pushing metrics (OTLP)
 
 Subscription clients (e.g. the infer CLI driving Claude Code) can push their own metrics to the gateway.
-Enable the opt-in push endpoint with `TELEMETRY_METRICS_PUSH_ENABLE=true` (alongside `TELEMETRY_ENABLE=true`),
+Enable the opt-in push endpoint with `TELEMETRY_METRICS_PUSH_ENABLED=true` (alongside `TELEMETRY_ENABLED=true`),
 then POST OTLP JSON to `/v1/metrics`:
 
 ```bash

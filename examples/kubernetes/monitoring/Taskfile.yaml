@@ -150,7 +150,7 @@ tasks:
       - echo "🧪 Test requests completed successfully!"
 
   simulate-infer-push:
-    desc: 'Push OTLP metrics simulating a Claude Code subscription client (requires `task port-forward` running and TELEMETRY_METRICS_PUSH_ENABLE=true)'
+    desc: 'Push OTLP metrics simulating a Claude Code subscription client (requires `task port-forward` running and TELEMETRY_METRICS_PUSH_ENABLED=true)'
     cmds:
       - |
         TEAMS=("platform" "data" "ml" "infra" "security")
