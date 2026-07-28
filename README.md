@@ -59,7 +59,7 @@ use of Mixture of Experts.
 - ☸️ **Kubernetes Support**: Deploy with the
   [Inference Gateway Operator](https://github.com/inference-gateway/operator).
 - 📊 **OpenTelemetry**: Monitor and analyze performance.
-- 🛡️ **Enterprise Ready**: Built with production in mind, with configurable timeouts and TLS support.
+- 🛡️ **Enterprise Ready**: Built with production in mind, with authentication, authorization, configurable timeouts, and TLS support.
 - 🌿 **Lightweight**: Includes only essential libraries and runtime, resulting
   in smaller size binary of ~10.8MB.
 - 📉 **Minimal Resource Consumption**: Designed to consume minimal resources and have a lower footprint.
@@ -529,8 +529,8 @@ model supports vision.
     multiple tool servers
   - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers
     (cloud + local)
-  - [Authentication](examples/docker-compose/authentication/) - OIDC
-    authentication setup
+  - [Authentication & Authorization](examples/docker-compose/authentication/) - OIDC
+    authentication and guardrails authorization setup
   - [Tools](examples/docker-compose/tools/) - Tool integration examples
 - Using [Kubernetes](examples/kubernetes/)
   - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
