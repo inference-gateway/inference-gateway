@@ -89,6 +89,9 @@ func (mc *MCPClient) GetSelectorTools() []types.ChatCompletionTool {
 		return []types.ChatCompletionTool{}
 	}
 
+	// Pure existence check: we only care whether any server exposes at least one
+	// tool after filtering, so the non-deterministic map iteration order is
+	// irrelevant - the result is the same regardless of which server matches first.
 	for _, serverTools := range mc.serverTools {
 		if len(mc.filterTools(serverTools)) > 0 {
 			return SelectorToolDefinitions()
