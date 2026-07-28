@@ -1076,12 +1076,12 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/abacusai/dracarys-llama-3_1-70b-instruct": {
+  "nvidia/abacusai/dracarys-llama-3.1-70b-instruct": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-07-28T16:05:20Z"
   },
   "nvidia/baai/bge-m3": {
     "currency": "USD",
@@ -1147,6 +1147,20 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "nvidia/google/gemma-3-12b-it": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/google/gemma-3-4b-it": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
   },
   "nvidia/google/gemma-3n-e2b-it": {
     "currency": "USD",
@@ -1288,12 +1302,19 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/mistralai/mistral-7b-instruct-v03": {
+  "nvidia/mistralai/ministral-14b-instruct-2512": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/mistralai/mistral-7b-instruct-v0.3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
   },
   "nvidia/mistralai/mistral-large-3-675b-instruct-2512": {
     "currency": "USD",
@@ -1308,6 +1329,13 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "nvidia/mistralai/mistral-medium-3.5-128b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
   },
   "nvidia/mistralai/mistral-nemotron": {
     "currency": "USD",
@@ -1372,6 +1400,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "nvidia/nvidia/cosmos-reason2-8b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
   "nvidia/nvidia/cosmos-transfer1-7b": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1393,12 +1428,54 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/nvidia/llama-3_1-nemotron-safety-guard-8b-v3": {
+  "nvidia/nvidia/llama-3.1-nemotron-70b-instruct": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/nvidia/llama-3.1-nemotron-nano-8b-v1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/nvidia/llama-3.1-nemotron-safety-guard-8b-v3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/nvidia/llama-3.1-nemotron-ultra-253b-v1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/nvidia/llama-3.3-nemotron-super-49b-v1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/nvidia/llama-3.3-nemotron-super-49b-v1.5": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
   },
   "nvidia/nvidia/llama-3_2-nemoretriever-300m-embed-v1": {
     "currency": "USD",
@@ -1478,6 +1555,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "nvidia/nvidia/nemotron-nano-12b-v2-vl": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
   "nvidia/nvidia/nemotron-voicechat": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1513,12 +1597,12 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/nvidia/riva-translate-4b-instruct-v1_1": {
+  "nvidia/nvidia/riva-translate-4b-instruct-v1.1": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-07-28T16:05:20Z"
   },
   "nvidia/nvidia/sparsedrive": {
     "currency": "USD",
@@ -1582,6 +1666,13 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "nvidia/poolside/laguna-xs-2.1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
   },
   "nvidia/qwen/qwen-image": {
     "currency": "USD",
@@ -1653,12 +1744,19 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/upstage/solar-10_7b-instruct": {
+  "nvidia/thinkingmachines/inkling": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-07-28T16:05:20Z"
+  },
+  "nvidia/upstage/solar-10.7b-instruct": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-07-28T16:05:20Z"
   },
   "nvidia/z-ai/glm-5.2": {
     "currency": "USD",

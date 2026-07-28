@@ -476,7 +476,7 @@
     "context": 262144,
     "output": 262144
   },
-  "nvidia/abacusai/dracarys-llama-3_1-70b-instruct": {
+  "nvidia/abacusai/dracarys-llama-3.1-70b-instruct": {
     "context": 128000,
     "output": 8192
   },
@@ -513,6 +513,14 @@
   "nvidia/google/gemma-2-2b-it": {
     "context": 128000,
     "output": 4096
+  },
+  "nvidia/google/gemma-3-12b-it": {
+    "context": 131072,
+    "output": 16384
+  },
+  "nvidia/google/gemma-3-4b-it": {
+    "context": 131072,
+    "output": 16384
   },
   "nvidia/google/gemma-3n-e2b-it": {
     "context": 128000,
@@ -594,7 +602,11 @@
     "context": 32768,
     "output": 32768
   },
-  "nvidia/mistralai/mistral-7b-instruct-v03": {
+  "nvidia/mistralai/ministral-14b-instruct-2512": {
+    "context": 262144,
+    "output": 16384
+  },
+  "nvidia/mistralai/mistral-7b-instruct-v0.3": {
     "context": 65536,
     "output": 65536
   },
@@ -634,11 +646,23 @@
     "context": 128000,
     "output": 8192
   },
+  "nvidia/nvidia/cosmos-reason2-8b": {
+    "context": 131072,
+    "output": 16384
+  },
   "nvidia/nvidia/gliner-pii": {
     "context": 128000,
     "output": 4096
   },
-  "nvidia/nvidia/llama-3_1-nemotron-safety-guard-8b-v3": {
+  "nvidia/nvidia/llama-3.1-nemotron-nano-8b-v1": {
+    "context": 131072,
+    "output": 16384
+  },
+  "nvidia/nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
+    "context": 32768,
+    "output": 16384
+  },
+  "nvidia/nvidia/llama-3.1-nemotron-safety-guard-8b-v3": {
     "context": 128000,
     "output": 4096
   },
@@ -702,7 +726,7 @@
     "context": 128000,
     "output": 4096
   },
-  "nvidia/nvidia/riva-translate-4b-instruct-v1_1": {
+  "nvidia/nvidia/riva-translate-4b-instruct-v1.1": {
     "context": 128000,
     "output": 4096
   },
@@ -762,7 +786,7 @@
     "context": 256000,
     "output": 16384
   },
-  "nvidia/upstage/solar-10_7b-instruct": {
+  "nvidia/upstage/solar-10.7b-instruct": {
     "context": 128000,
     "output": 8192
   },
