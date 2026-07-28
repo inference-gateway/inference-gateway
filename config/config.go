@@ -29,10 +29,10 @@ type Config struct {
 	Telemetry *TelemetryConfig `env:", prefix=TELEMETRY_" description:"Telemetry configuration"`
 	// MCP settings
 	MCP *MCPConfig `env:", prefix=MCP_" description:"MCP configuration"`
-	// Guardrails settings
-	Guardrails *GuardrailsConfig `env:", prefix=GUARDRAILS_" description:"Guardrails configuration"`
 	// Authentication settings
 	Auth *AuthConfig `env:", prefix=AUTH_" description:"Authentication configuration"`
+	// Guardrails settings
+	Guardrails *GuardrailsConfig `env:", prefix=GUARDRAILS_" description:"Guardrails configuration"`
 	// Server settings
 	Server *ServerConfig `env:", prefix=SERVER_" description:"Server configuration"`
 	// Client settings
@@ -46,16 +46,16 @@ type Config struct {
 
 // Telemetry configuration
 type TelemetryConfig struct {
-	Enable              bool   `env:"ENABLE, default=false" description:"Enable telemetry"`
-	MetricsPushEnable   bool   `env:"METRICS_PUSH_ENABLE, default=false" description:"Enable the OTLP metrics push endpoint (POST /v1/metrics)"`
+	Enabled             bool   `env:"ENABLED, default=false" description:"Enable telemetry"`
+	MetricsPushEnabled  bool   `env:"METRICS_PUSH_ENABLED, default=false" description:"Enable the OTLP metrics push endpoint (POST /v1/metrics)"`
 	MetricsPort         string `env:"METRICS_PORT, default=9464" description:"Port for telemetry metrics server"`
-	TracingEnable       bool   `env:"TRACING_ENABLE, default=false" description:"Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLE)"`
+	TracingEnabled      bool   `env:"TRACING_ENABLED, default=false" description:"Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLED)"`
 	TracingOtlpEndpoint string `env:"TRACING_OTLP_ENDPOINT, default=http://localhost:4318" description:"OTLP HTTP endpoint for trace export"`
 }
 
 // MCP configuration
 type MCPConfig struct {
-	Enable                 bool          `env:"ENABLE, default=false" description:"Enable MCP"`
+	Enabled                bool          `env:"ENABLED, default=false" description:"Enable MCP"`
 	Expose                 bool          `env:"EXPOSE, default=false" description:"Expose MCP tools endpoint"`
 	Servers                string        `env:"SERVERS" description:"List of MCP servers"`
 	IncludeTools           string        `env:"INCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS"`
@@ -71,10 +71,18 @@ type MCPConfig struct {
 	InitialBackoff         time.Duration `env:"INITIAL_BACKOFF, default=1s" description:"Initial backoff duration for exponential backoff retry"`
 	EnableReconnect        bool          `env:"ENABLE_RECONNECT, default=true" description:"Enable automatic reconnection for failed servers"`
 	ReconnectInterval      time.Duration `env:"RECONNECT_INTERVAL, default=30s" description:"Interval between reconnection attempts"`
-	PollingEnable          bool          `env:"POLLING_ENABLE, default=true" description:"Enable health check polling"`
+	PollingEnabled         bool          `env:"POLLING_ENABLED, default=true" description:"Enable health check polling"`
 	PollingInterval        time.Duration `env:"POLLING_INTERVAL, default=30s" description:"Interval between health check polling requests"`
 	PollingTimeout         time.Duration `env:"POLLING_TIMEOUT, default=5s" description:"Timeout for individual health check requests"`
 	DisableHealthcheckLogs bool          `env:"DISABLE_HEALTHCHECK_LOGS, default=true" description:"Disable health check log messages to reduce noise"`
+}
+
+// Authentication configuration
+type AuthConfig struct {
+	Enabled          bool   `env:"ENABLED, default=false" description:"Enable authentication"`
+	OidcIssuer       string `env:"OIDC_ISSUER, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
+	OidcClientId     string `env:"OIDC_CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
+	OidcClientSecret string `env:"OIDC_CLIENT_SECRET" type:"secret" description:"OIDC client secret"`
 }
 
 // Guardrails configuration
@@ -84,14 +92,6 @@ type GuardrailsConfig struct {
 	FailMode        string        `env:"FAIL_MODE, default=closed" description:"closed or open: behavior on policy/external error or timeout"`
 	ExternalUrl     string        `env:"EXTERNAL_URL" description:"Optional external HTTP guardrail service"`
 	ExternalTimeout time.Duration `env:"EXTERNAL_TIMEOUT, default=5s" description:"Timeout for the external guardrail service"`
-}
-
-// Authentication configuration
-type AuthConfig struct {
-	Enable           bool   `env:"ENABLE, default=false" description:"Enable authentication"`
-	OidcIssuer       string `env:"OIDC_ISSUER, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
-	OidcClientId     string `env:"OIDC_CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
-	OidcClientSecret string `env:"OIDC_CLIENT_SECRET" type:"secret" description:"OIDC client secret"`
 }
 
 // Server configuration

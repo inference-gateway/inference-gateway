@@ -13,19 +13,19 @@
 
 ### Telemetry
 
-| Environment Variable            | Default Value           | Description                                                    |
-| ------------------------------- | ----------------------- | -------------------------------------------------------------- |
-| TELEMETRY_ENABLE                | `false`                 | Enable telemetry                                               |
-| TELEMETRY_METRICS_PUSH_ENABLE   | `false`                 | Enable the OTLP metrics push endpoint (POST /v1/metrics)       |
-| TELEMETRY_METRICS_PORT          | `9464`                  | Port for telemetry metrics server                              |
-| TELEMETRY_TRACING_ENABLE        | `false`                 | Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLE) |
-| TELEMETRY_TRACING_OTLP_ENDPOINT | `http://localhost:4318` | OTLP HTTP endpoint for trace export                            |
+| Environment Variable            | Default Value           | Description                                                     |
+| ------------------------------- | ----------------------- | --------------------------------------------------------------- |
+| TELEMETRY_ENABLED               | `false`                 | Enable telemetry                                                |
+| TELEMETRY_METRICS_PUSH_ENABLED  | `false`                 | Enable the OTLP metrics push endpoint (POST /v1/metrics)        |
+| TELEMETRY_METRICS_PORT          | `9464`                  | Port for telemetry metrics server                               |
+| TELEMETRY_TRACING_ENABLED       | `false`                 | Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLED) |
+| TELEMETRY_TRACING_OTLP_ENDPOINT | `http://localhost:4318` | OTLP HTTP endpoint for trace export                             |
 
 ### Model Context Protocol (MCP)
 
 | Environment Variable         | Default Value | Description                                                                                                                              |
 | ---------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| MCP_ENABLE                   | `false`       | Enable MCP                                                                                                                               |
+| MCP_ENABLED                  | `false`       | Enable MCP                                                                                                                               |
 | MCP_EXPOSE                   | `false`       | Expose MCP tools endpoint                                                                                                                |
 | MCP_SERVERS                  | `""`          | List of MCP servers                                                                                                                      |
 | MCP_INCLUDE_TOOLS            | `""`          | Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS              |
@@ -41,10 +41,19 @@
 | MCP_INITIAL_BACKOFF          | `1s`          | Initial backoff duration for exponential backoff retry                                                                                   |
 | MCP_ENABLE_RECONNECT         | `true`        | Enable automatic reconnection for failed servers                                                                                         |
 | MCP_RECONNECT_INTERVAL       | `30s`         | Interval between reconnection attempts                                                                                                   |
-| MCP_POLLING_ENABLE           | `true`        | Enable health check polling                                                                                                              |
+| MCP_POLLING_ENABLED          | `true`        | Enable health check polling                                                                                                              |
 | MCP_POLLING_INTERVAL         | `30s`         | Interval between health check polling requests                                                                                           |
 | MCP_POLLING_TIMEOUT          | `5s`          | Timeout for individual health check requests                                                                                             |
 | MCP_DISABLE_HEALTHCHECK_LOGS | `true`        | Disable health check log messages to reduce noise                                                                                        |
+
+### Authentication
+
+| Environment Variable    | Default Value                                         | Description           |
+| ----------------------- | ----------------------------------------------------- | --------------------- |
+| AUTH_ENABLED            | `false`                                               | Enable authentication |
+| AUTH_OIDC_ISSUER        | `http://keycloak:8080/realms/inference-gateway-realm` | OIDC issuer URL       |
+| AUTH_OIDC_CLIENT_ID     | `inference-gateway-client`                            | OIDC client ID        |
+| AUTH_OIDC_CLIENT_SECRET | `""`                                                  | OIDC client secret    |
 
 ### Guardrails
 
@@ -55,15 +64,6 @@
 | GUARDRAILS_FAIL_MODE        | `closed`      | closed or open: behavior on policy/external error or timeout |
 | GUARDRAILS_EXTERNAL_URL     | `""`          | Optional external HTTP guardrail service                     |
 | GUARDRAILS_EXTERNAL_TIMEOUT | `5s`          | Timeout for the external guardrail service                   |
-
-### Authentication
-
-| Environment Variable    | Default Value                                         | Description           |
-| ----------------------- | ----------------------------------------------------- | --------------------- |
-| AUTH_ENABLE             | `false`                                               | Enable authentication |
-| AUTH_OIDC_ISSUER        | `http://keycloak:8080/realms/inference-gateway-realm` | OIDC issuer URL       |
-| AUTH_OIDC_CLIENT_ID     | `inference-gateway-client`                            | OIDC client ID        |
-| AUTH_OIDC_CLIENT_SECRET | `""`                                                  | OIDC client secret    |
 
 ### Server settings
 
