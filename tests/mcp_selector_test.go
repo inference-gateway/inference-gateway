@@ -43,7 +43,6 @@ func TestAgent_Selector_RoundTrip(t *testing.T) {
 	agent := mcp.NewAgent(logger.NewNoopLogger(), mockMCPClient)
 	ctx := context.Background()
 
-	// 1. Discover: mcp_tools_get with no arguments -> compact catalog.
 	mockMCPClient.EXPECT().GetToolsCatalog("", []string(nil)).Return([]mcp.ToolCatalogEntry{
 		{Name: "read_file", Description: "Read a file", Server: "http://server-a"},
 	}).Times(1)
@@ -55,7 +54,6 @@ func TestAgent_Selector_RoundTrip(t *testing.T) {
 	require.Len(t, results, 1)
 	assert.Contains(t, toolResultContent(t, results[0]), "read_file")
 
-	// 2. Get schema for a specific tool.
 	mockMCPClient.EXPECT().GetToolsCatalog("", []string{"read_file"}).Return([]mcp.ToolCatalogEntry{
 		{Name: "read_file", Description: "Read a file", Server: "http://server-a", InputSchema: map[string]any{"type": "object"}},
 	}).Times(1)
@@ -67,7 +65,6 @@ func TestAgent_Selector_RoundTrip(t *testing.T) {
 	require.Len(t, results, 1)
 	assert.Contains(t, toolResultContent(t, results[0]), "input_schema")
 
-	// 3. Execute: mcp_tools_execute must dispatch the underlying tool.
 	mockMCPClient.EXPECT().GetServerForTool("read_file").Return("http://server-a", nil).Times(1)
 	mockMCPClient.EXPECT().ExecuteTool(
 		gomock.Any(),
@@ -128,7 +125,6 @@ func TestAgent_Selector_ExecuteStripsPrefix(t *testing.T) {
 	require.Len(t, results, 1)
 	assert.Contains(t, toolResultContent(t, results[0]), "ok")
 
-	// Verify JSON is produced from a real catalog entry so the marshaled shape holds.
 	_, err = json.Marshal(mcp.ToolCatalogEntry{Name: "x"})
 	require.NoError(t, err)
 }

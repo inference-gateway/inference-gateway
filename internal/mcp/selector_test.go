@@ -51,12 +51,10 @@ func TestGetToolsCatalog_Compact(t *testing.T) {
 func TestGetToolsCatalog_QueryFilter(t *testing.T) {
 	mc := newCatalogClient("", "")
 
-	// Matches the tool name.
 	byName := catalogNames(mc.GetToolsCatalog("directory", nil))
 	assert.Len(t, byName, 1)
 	assert.Contains(t, byName, "list_directory")
 
-	// Matches the description ("Search the web") but not the name.
 	byName = catalogNames(mc.GetToolsCatalog("web", nil))
 	assert.Len(t, byName, 1)
 	assert.Contains(t, byName, "search_web")
