@@ -195,82 +195,6 @@ func (c *MockMCPClientInterfaceGetAllChatCompletionToolsCall) DoAndReturn(f func
 	return c
 }
 
-// GetSelectorTools mocks base method.
-func (m *MockMCPClientInterface) GetSelectorTools() []types.ChatCompletionTool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSelectorTools")
-	ret0, _ := ret[0].([]types.ChatCompletionTool)
-	return ret0
-}
-
-// GetSelectorTools indicates an expected call of GetSelectorTools.
-func (mr *MockMCPClientInterfaceMockRecorder) GetSelectorTools() *MockMCPClientInterfaceGetSelectorToolsCall {
-	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSelectorTools", reflect.TypeOf((*MockMCPClientInterface)(nil).GetSelectorTools))
-	return &MockMCPClientInterfaceGetSelectorToolsCall{Call: call}
-}
-
-// MockMCPClientInterfaceGetSelectorToolsCall wrap *gomock.Call
-type MockMCPClientInterfaceGetSelectorToolsCall struct {
-	*gomock.Call
-}
-
-// Return rewrite *gomock.Call.Return
-func (c *MockMCPClientInterfaceGetSelectorToolsCall) Return(arg0 []types.ChatCompletionTool) *MockMCPClientInterfaceGetSelectorToolsCall {
-	c.Call = c.Call.Return(arg0)
-	return c
-}
-
-// Do rewrite *gomock.Call.Do
-func (c *MockMCPClientInterfaceGetSelectorToolsCall) Do(f func() []types.ChatCompletionTool) *MockMCPClientInterfaceGetSelectorToolsCall {
-	c.Call = c.Call.Do(f)
-	return c
-}
-
-// DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockMCPClientInterfaceGetSelectorToolsCall) DoAndReturn(f func() []types.ChatCompletionTool) *MockMCPClientInterfaceGetSelectorToolsCall {
-	c.Call = c.Call.DoAndReturn(f)
-	return c
-}
-
-// GetToolsCatalog mocks base method.
-func (m *MockMCPClientInterface) GetToolsCatalog(query string, names []string) []mcp.ToolCatalogEntry {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetToolsCatalog", query, names)
-	ret0, _ := ret[0].([]mcp.ToolCatalogEntry)
-	return ret0
-}
-
-// GetToolsCatalog indicates an expected call of GetToolsCatalog.
-func (mr *MockMCPClientInterfaceMockRecorder) GetToolsCatalog(query, names any) *MockMCPClientInterfaceGetToolsCatalogCall {
-	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToolsCatalog", reflect.TypeOf((*MockMCPClientInterface)(nil).GetToolsCatalog), query, names)
-	return &MockMCPClientInterfaceGetToolsCatalogCall{Call: call}
-}
-
-// MockMCPClientInterfaceGetToolsCatalogCall wrap *gomock.Call
-type MockMCPClientInterfaceGetToolsCatalogCall struct {
-	*gomock.Call
-}
-
-// Return rewrite *gomock.Call.Return
-func (c *MockMCPClientInterfaceGetToolsCatalogCall) Return(arg0 []mcp.ToolCatalogEntry) *MockMCPClientInterfaceGetToolsCatalogCall {
-	c.Call = c.Call.Return(arg0)
-	return c
-}
-
-// Do rewrite *gomock.Call.Do
-func (c *MockMCPClientInterfaceGetToolsCatalogCall) Do(f func(string, []string) []mcp.ToolCatalogEntry) *MockMCPClientInterfaceGetToolsCatalogCall {
-	c.Call = c.Call.Do(f)
-	return c
-}
-
-// DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockMCPClientInterfaceGetToolsCatalogCall) DoAndReturn(f func(string, []string) []mcp.ToolCatalogEntry) *MockMCPClientInterfaceGetToolsCatalogCall {
-	c.Call = c.Call.DoAndReturn(f)
-	return c
-}
-
 // GetAllServerStatuses mocks base method.
 func (m *MockMCPClientInterface) GetAllServerStatuses() map[string]mcp.ServerStatus {
 	m.ctrl.T.Helper()
@@ -305,6 +229,44 @@ func (c *MockMCPClientInterfaceGetAllServerStatusesCall) Do(f func() map[string]
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockMCPClientInterfaceGetAllServerStatusesCall) DoAndReturn(f func() map[string]mcp.ServerStatus) *MockMCPClientInterfaceGetAllServerStatusesCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// GetSelectorTools mocks base method.
+func (m *MockMCPClientInterface) GetSelectorTools() []types.ChatCompletionTool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSelectorTools")
+	ret0, _ := ret[0].([]types.ChatCompletionTool)
+	return ret0
+}
+
+// GetSelectorTools indicates an expected call of GetSelectorTools.
+func (mr *MockMCPClientInterfaceMockRecorder) GetSelectorTools() *MockMCPClientInterfaceGetSelectorToolsCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSelectorTools", reflect.TypeOf((*MockMCPClientInterface)(nil).GetSelectorTools))
+	return &MockMCPClientInterfaceGetSelectorToolsCall{Call: call}
+}
+
+// MockMCPClientInterfaceGetSelectorToolsCall wrap *gomock.Call
+type MockMCPClientInterfaceGetSelectorToolsCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockMCPClientInterfaceGetSelectorToolsCall) Return(arg0 []types.ChatCompletionTool) *MockMCPClientInterfaceGetSelectorToolsCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockMCPClientInterfaceGetSelectorToolsCall) Do(f func() []types.ChatCompletionTool) *MockMCPClientInterfaceGetSelectorToolsCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockMCPClientInterfaceGetSelectorToolsCall) DoAndReturn(f func() []types.ChatCompletionTool) *MockMCPClientInterfaceGetSelectorToolsCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
@@ -421,6 +383,44 @@ func (c *MockMCPClientInterfaceGetServersCall) Do(f func() []string) *MockMCPCli
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockMCPClientInterfaceGetServersCall) DoAndReturn(f func() []string) *MockMCPClientInterfaceGetServersCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// GetToolsCatalog mocks base method.
+func (m *MockMCPClientInterface) GetToolsCatalog(query string, names []string) []mcp.ToolCatalogEntry {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetToolsCatalog", query, names)
+	ret0, _ := ret[0].([]mcp.ToolCatalogEntry)
+	return ret0
+}
+
+// GetToolsCatalog indicates an expected call of GetToolsCatalog.
+func (mr *MockMCPClientInterfaceMockRecorder) GetToolsCatalog(query, names any) *MockMCPClientInterfaceGetToolsCatalogCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetToolsCatalog", reflect.TypeOf((*MockMCPClientInterface)(nil).GetToolsCatalog), query, names)
+	return &MockMCPClientInterfaceGetToolsCatalogCall{Call: call}
+}
+
+// MockMCPClientInterfaceGetToolsCatalogCall wrap *gomock.Call
+type MockMCPClientInterfaceGetToolsCatalogCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockMCPClientInterfaceGetToolsCatalogCall) Return(arg0 []mcp.ToolCatalogEntry) *MockMCPClientInterfaceGetToolsCatalogCall {
+	c.Call = c.Call.Return(arg0)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockMCPClientInterfaceGetToolsCatalogCall) Do(f func(string, []string) []mcp.ToolCatalogEntry) *MockMCPClientInterfaceGetToolsCatalogCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockMCPClientInterfaceGetToolsCatalogCall) DoAndReturn(f func(string, []string) []mcp.ToolCatalogEntry) *MockMCPClientInterfaceGetToolsCatalogCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

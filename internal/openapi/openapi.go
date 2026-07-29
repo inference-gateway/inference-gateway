@@ -3,71 +3,9 @@ package openapi
 import (
 	"fmt"
 	"os"
-	"reflect"
 
 	"gopkg.in/yaml.v3"
 )
-
-func GetSchemas(schema *OpenAPISchema) map[string]SchemaProperty {
-	result := make(map[string]SchemaProperty)
-
-	v := reflect.ValueOf(schema.Components.Schemas)
-	t := v.Type()
-
-	for i := 0; i < v.NumField(); i++ {
-		field := t.Field(i)
-
-		// Skip Config and Providers as they have special structures
-		if field.Name == "Config" || field.Name == "Provider" {
-			continue
-		}
-
-		yamlTag := field.Tag.Get("yaml")
-		if yamlTag == "" {
-			continue
-		}
-
-		fieldValue := v.Field(i)
-		if !fieldValue.IsValid() || fieldValue.IsZero() {
-			continue
-		}
-
-		schemaProp := fieldValue.Interface().(SchemaProperty)
-		if len(schemaProp.Properties) > 0 {
-			populatePropertyNames(schemaProp.Properties)
-		}
-
-		result[field.Name] = schemaProp
-	}
-
-	return result
-}
-
-// populatePropertyNames sets the Name field for all properties in a map
-func populatePropertyNames(properties map[string]Property) {
-	for name, prop := range properties {
-		newProp := prop
-		newProp.Name = name
-
-		if len(newProp.Properties) > 0 {
-			populatePropertyNames(newProp.Properties)
-		}
-
-		if newProp.Items != nil {
-			if newProp.Items.Name == "" {
-				itemProp := *newProp.Items
-				itemProp.Name = name + "Item"
-				newProp.Items = &itemProp
-			}
-
-			if len(newProp.Items.Properties) > 0 {
-				populatePropertyNames(newProp.Items.Properties)
-			}
-		}
-
-		properties[name] = newProp
-	}
-}
 
 // OpenAPI schema structures
 type OpenAPISchema struct {
@@ -75,40 +13,6 @@ type OpenAPISchema struct {
 		Schemas struct {
 			Config   Config   `yaml:"Config"`
 			Provider Provider `yaml:"Provider"`
-
-			ProviderAuthType                      SchemaProperty `yaml:"ProviderAuthType"`
-			MessageRole                           SchemaProperty `yaml:"MessageRole"`
-			Message                               SchemaProperty `yaml:"Message"`
-			MessageContent                        SchemaProperty `yaml:"MessageContent"`
-			ContentPart                           SchemaProperty `yaml:"ContentPart"`
-			TextContentPart                       SchemaProperty `yaml:"TextContentPart"`
-			ImageContentPart                      SchemaProperty `yaml:"ImageContentPart"`
-			ImageURL                              SchemaProperty `yaml:"ImageURL"`
-			Model                                 SchemaProperty `yaml:"Model"`
-			ListModelsResponse                    SchemaProperty `yaml:"ListModelsResponse"`
-			Endpoints                             SchemaProperty `yaml:"Endpoints"`
-			Error                                 SchemaProperty `yaml:"Error"`
-			FunctionObject                        SchemaProperty `yaml:"FunctionObject"`
-			FunctionParameters                    SchemaProperty `yaml:"FunctionParameters"`
-			FinishReason                          SchemaProperty `yaml:"FinishReason"`
-			CompletionUsage                       SchemaProperty `yaml:"CompletionUsage"`
-			ChatCompletionToolType                SchemaProperty `yaml:"ChatCompletionToolType"`
-			ChatCompletionTool                    SchemaProperty `yaml:"ChatCompletionTool"`
-			ChatCompletionChoice                  SchemaProperty `yaml:"ChatCompletionChoice"`
-			ChatCompletionStreamChoice            SchemaProperty `yaml:"ChatCompletionStreamChoice"`
-			CreateChatCompletionRequest           SchemaProperty `yaml:"CreateChatCompletionRequest"`
-			CreateCompletionRequest               SchemaProperty `yaml:"CreateCompletionRequest"`
-			CreateChatCompletionResponse          SchemaProperty `yaml:"CreateChatCompletionResponse"`
-			ChatCompletionStreamOptions           SchemaProperty `yaml:"ChatCompletionStreamOptions"`
-			CreateChatCompletionStreamResponse    SchemaProperty `yaml:"CreateChatCompletionStreamResponse"`
-			ChatCompletionStreamResponseDelta     SchemaProperty `yaml:"ChatCompletionStreamResponseDelta"`
-			ChatCompletionMessageToolCallChunk    SchemaProperty `yaml:"ChatCompletionMessageToolCallChunk"`
-			ChatCompletionMessageToolCall         SchemaProperty `yaml:"ChatCompletionMessageToolCall"`
-			ChatCompletionMessageToolCallFunction SchemaProperty `yaml:"ChatCompletionMessageToolCallFunction"`
-			ListToolsResponse                     SchemaProperty `yaml:"ListToolsResponse"`
-			MCPTool                               SchemaProperty `yaml:"MCPTool"`
-			MCPNotExposed                         SchemaProperty `yaml:"MCPNotExposed"`
-			ListAgentsResponse                    SchemaProperty `yaml:"ListAgentsResponse"`
 		}
 	}
 }
@@ -192,24 +96,6 @@ type Property struct {
 	Items                *Property           `yaml:"items,omitempty"`
 	AdditionalProperties any                 `yaml:"additionalProperties,omitempty"`
 	OneOf                []Property          `yaml:"oneOf,omitempty"`
-}
-
-type SchemaProperty struct {
-	Type                 string              `yaml:"type"`
-	Description          string              `yaml:"description"`
-	Properties           map[string]Property `yaml:"properties"`
-	Required             []string            `yaml:"required,omitempty"`
-	Items                *Property           `yaml:"items,omitempty"`
-	Enum                 []string            `yaml:"enum,omitempty"`
-	AdditionalProperties any                 `yaml:"additionalProperties,omitempty"`
-	OneOf                []Property          `yaml:"oneOf,omitempty"`
-}
-
-type SchemaField struct {
-	Type       string                 `yaml:"type"`
-	Properties map[string]SchemaField `yaml:"properties"`
-	Items      *SchemaField           `yaml:"items"`
-	Ref        string                 `yaml:"$ref"`
 }
 
 type EndpointSchema struct {
