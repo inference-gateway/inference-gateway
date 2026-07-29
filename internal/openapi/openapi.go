@@ -64,40 +64,6 @@ func (h *ExtraHeader) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
-type Transform struct {
-	Target  string       `yaml:"target"`
-	Mapping TransformMap `yaml:"mapping"`
-}
-
-type TransformMap struct {
-	Provider string   `yaml:"provider"`
-	Models   ModelMap `yaml:"models,omitempty"`
-}
-
-type ModelMap struct {
-	Source    string         `yaml:"source,omitempty"`
-	Transform []TransformRef `yaml:"transform"`
-}
-
-type TransformRef struct {
-	Source   string `yaml:"source,omitempty"`
-	Target   string `yaml:"target"`
-	Constant string `yaml:"constant,omitempty"`
-}
-
-type Property struct {
-	Name                 string              `yaml:"name,omitempty"`
-	Type                 string              `yaml:"type"`
-	Format               string              `yaml:"format,omitempty"`
-	Description          string              `yaml:"description,omitempty"`
-	Ref                  string              `yaml:"$ref,omitempty"`
-	Enum                 []string            `yaml:"enum,omitempty"`
-	Properties           map[string]Property `yaml:"properties,omitempty"`
-	Items                *Property           `yaml:"items,omitempty"`
-	AdditionalProperties any                 `yaml:"additionalProperties,omitempty"`
-	OneOf                []Property          `yaml:"oneOf,omitempty"`
-}
-
 type EndpointSchema struct {
 	Name     string `yaml:"name"`
 	Method   string `yaml:"method"`
