@@ -70,6 +70,20 @@ func (mr *MockIProviderMockRecorder) GetAuthType() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthType", reflect.TypeOf((*MockIProvider)(nil).GetAuthType))
 }
 
+// GetEndpoints mocks base method.
+func (m *MockIProvider) GetEndpoints() types.Endpoints {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEndpoints")
+	ret0, _ := ret[0].(types.Endpoints)
+	return ret0
+}
+
+// GetEndpoints indicates an expected call of GetEndpoints.
+func (mr *MockIProviderMockRecorder) GetEndpoints() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEndpoints", reflect.TypeOf((*MockIProvider)(nil).GetEndpoints))
+}
+
 // GetExtraHeaders mocks base method.
 func (m *MockIProvider) GetExtraHeaders() map[string][]string {
 	m.ctrl.T.Helper()

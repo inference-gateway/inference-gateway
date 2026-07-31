@@ -15,6 +15,7 @@ type IProvider interface {
 	GetToken() string
 	GetAuthType() string
 	GetExtraHeaders() map[string][]string
+	GetEndpoints() types.Endpoints
 
 	// Fetchers
 	ListModels(ctx context.Context) (types.ListModelsResponse, error)

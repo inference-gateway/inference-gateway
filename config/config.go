@@ -22,6 +22,7 @@ type Config struct {
 	Environment               string `env:"ENVIRONMENT, default=production" description:"The environment"`
 	AllowedModels             string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
 	DisallowedModels          string `env:"DISALLOWED_MODELS" description:"Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS"`
+	EnableImages              bool   `env:"ENABLE_IMAGES, default=false" description:"Enable the Images API (POST /v1/images/generations). When disabled, the endpoint returns a 404. Only providers with images support (currently openai) can serve this endpoint"`
 	EnableVision              bool   `env:"ENABLE_VISION, default=false" description:"Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision"`
 	DebugContentTruncateWords int    `env:"DEBUG_CONTENT_TRUNCATE_WORDS, default=10" description:"Number of words to truncate per content section in debug logs (development mode only)"`
 	DebugMaxMessages          int    `env:"DEBUG_MAX_MESSAGES, default=100" description:"Maximum number of messages to show in debug logs (development mode only)"`

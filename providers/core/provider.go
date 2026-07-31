@@ -69,6 +69,10 @@ func (p *ProviderImpl) GetExtraHeaders() map[string][]string {
 	return p.ExtraHeaders
 }
 
+func (p *ProviderImpl) GetEndpoints() types.Endpoints {
+	return p.Endpoints
+}
+
 func (p *ProviderImpl) EndpointModels() string {
 	return p.Endpoints.Models
 }
