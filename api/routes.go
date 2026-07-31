@@ -1258,14 +1258,12 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if the provider supports the Images API.
 	if provider.GetEndpoints().Images == nil || *provider.GetEndpoints().Images == "" {
 		router.logger.Error("images api not supported by provider", nil, "provider", providerID)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The Images API is not supported by this provider yet."})
 		return
 	}
 
-	// Rewrite model in the body if it was stripped of a provider prefix.
 	if model != originalModel {
 		dec := json.NewDecoder(bytes.NewReader(body))
 		dec.UseNumber()
