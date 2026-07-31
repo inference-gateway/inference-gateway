@@ -3601,16 +3601,16 @@ components:
                   type: string
                   default: ''
                   description: 'Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS'
-                - name: enable_images
-                  env: 'ENABLE_IMAGES'
-                  type: bool
-                  default: 'false'
-                  description: 'Enable the Images API (POST /v1/images/generations). When disabled, the endpoint returns a 404. Only providers with images support (currently openai) can serve this endpoint'
                 - name: enable_vision
                   env: 'ENABLE_VISION'
                   type: bool
                   default: 'false'
                   description: 'Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision'
+                - name: enable_images
+                  env: 'ENABLE_IMAGES'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable the Images API (POST /v1/images/generations). When disabled, the endpoint returns a 404. Only providers with images support (currently openai) can serve this endpoint'
                 - name: debug_content_truncate_words
                   env: 'DEBUG_CONTENT_TRUNCATE_WORDS'
                   type: int
