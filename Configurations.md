@@ -2,14 +2,15 @@
 
 ### General settings
 
-| Environment Variable         | Default Value | Description                                                                                                                                    |
-| ---------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| ENVIRONMENT                  | `production`  | The environment                                                                                                                                |
-| ALLOWED_MODELS               | `""`          | Comma-separated list of models to allow. If empty, all models will be available                                                                |
-| DISALLOWED_MODELS            | `""`          | Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS                    |
-| ENABLE_VISION                | `false`       | Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision |
-| DEBUG_CONTENT_TRUNCATE_WORDS | `10`          | Number of words to truncate per content section in debug logs (development mode only)                                                          |
-| DEBUG_MAX_MESSAGES           | `100`         | Maximum number of messages to show in debug logs (development mode only)                                                                       |
+| Environment Variable         | Default Value | Description                                                                                                                                                                   |
+| ---------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ENVIRONMENT                  | `production`  | The environment                                                                                                                                                               |
+| ALLOWED_MODELS               | `""`          | Comma-separated list of models to allow. If empty, all models will be available                                                                                               |
+| DISALLOWED_MODELS            | `""`          | Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS                                                   |
+| ENABLE_IMAGES                | `false`       | Enable the Images API (POST /v1/images/generations). When disabled, the endpoint returns a 404. Only providers with images support (currently openai) can serve this endpoint |
+| ENABLE_VISION                | `false`       | Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision                                |
+| DEBUG_CONTENT_TRUNCATE_WORDS | `10`          | Number of words to truncate per content section in debug logs (development mode only)                                                                                         |
+| DEBUG_MAX_MESSAGES           | `100`         | Maximum number of messages to show in debug logs (development mode only)                                                                                                      |
 
 ### Telemetry
 
