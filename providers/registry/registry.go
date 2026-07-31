@@ -69,6 +69,10 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID types.Provider, c client
 	}, nil
 }
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 // The registry of all providers
 var Registry = map[types.Provider]*ProviderConfig{
 	constants.AnthropicID: {
@@ -224,8 +228,10 @@ var Registry = map[types.Provider]*ProviderConfig{
 		AuthType:       constants.AuthTypeBearer,
 		SupportsVision: true,
 		Endpoints: types.Endpoints{
-			Models: constants.OpenaiModelsEndpoint,
-			Chat:   constants.OpenaiChatEndpoint,
+			Models:    constants.OpenaiModelsEndpoint,
+			Chat:      constants.OpenaiChatEndpoint,
+			Responses: ptr(constants.OpenaiResponsesEndpoint),
+			Images:    ptr(constants.OpenaiImagesEndpoint),
 		},
 	},
 	constants.ZaiID: {

@@ -279,6 +279,12 @@ const (
     {{- range $name, $config := .Providers }}
     {{pascalCase $name}}ModelsEndpoint = "{{(index $config.Endpoints "models").Endpoint}}"
     {{pascalCase $name}}ChatEndpoint   = "{{(index $config.Endpoints "chat").Endpoint}}"
+    {{- with (index $config.Endpoints "responses").Endpoint }}
+    {{pascalCase $name}}ResponsesEndpoint = "{{.}}"
+    {{- end }}
+    {{- with (index $config.Endpoints "images").Endpoint }}
+    {{pascalCase $name}}ImagesEndpoint = "{{.}}"
+    {{- end }}
     {{- end }}
 )
 
@@ -778,6 +784,10 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID types.Provider, c client
 	}, nil
 }
 
+func ptr[T any](v T) *T {
+	return &v
+}
+
 // The registry of all providers
 var Registry = map[types.Provider]*ProviderConfig{
 	{{- range $name, $config := .Providers }}
@@ -797,6 +807,12 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Endpoints: types.Endpoints{
 			Models: constants.{{pascalCase $name}}ModelsEndpoint,
 			Chat:   constants.{{pascalCase $name}}ChatEndpoint,
+			{{- if (index $config.Endpoints "responses").Endpoint }}
+			Responses: ptr(constants.{{pascalCase $name}}ResponsesEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "images").Endpoint }}
+			Images: ptr(constants.{{pascalCase $name}}ImagesEndpoint),
+			{{- end }}
 		},
 	},
 	{{- end }}

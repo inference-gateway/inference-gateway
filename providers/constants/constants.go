@@ -62,6 +62,8 @@ const (
 	OllamaCloudChatEndpoint   = "/chat/completions"
 	OpenaiModelsEndpoint      = "/models"
 	OpenaiChatEndpoint        = "/chat/completions"
+	OpenaiResponsesEndpoint   = "/responses"
+	OpenaiImagesEndpoint      = "/images/generations"
 	ZaiModelsEndpoint         = "/models"
 	ZaiChatEndpoint           = "/chat/completions"
 )
