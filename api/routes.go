@@ -1234,7 +1234,7 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 		providerPtr, model = routing.DetermineProviderAndModelName(model)
 		if providerPtr == nil {
 			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/dall-e-3)."})
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
 			return
 		}
 		providerID = *providerPtr
@@ -1242,7 +1242,7 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 
 	if providerID == "" {
 		router.logger.Error("no provider specified for images request", nil)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/dall-e-3)."})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
 		return
 	}
 
