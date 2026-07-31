@@ -14,10 +14,20 @@ on:
         required: true
         type: string
       browser:
-        description: 'Install Chromium + enable the browser MCP (mcp__playwright) for this run'
+        description: 'Enable the browser MCP (mcp__playwright) for this run'
         required: false
         type: boolean
         default: false
+      browser_engine:
+        description: 'Browser backend: chromium | firefox | webkit (installed via Playwright) or lightpanda (CDP container, faster, partial Web API coverage)'
+        required: false
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - webkit
+          - lightpanda
+        default: chromium
       effort:
         description: 'Claude effort level'
         required: false
@@ -78,6 +88,7 @@ jobs:
       plugins: |
         DietrichGebert/ponytail
       browser: ${{ inputs.browser || false }}
+      browser_engine: ${{ inputs.browser_engine || 'chromium' }}
       effort: ${{ inputs.effort || 'medium' }}
       model: ${{ inputs.model || 'claude-opus-4-8' }}
       prompt: ${{ inputs.prompt }}
