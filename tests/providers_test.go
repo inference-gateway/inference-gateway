@@ -326,7 +326,7 @@ func TestProviderChatCompletionsForwardsNewParameters(t *testing.T) {
 		User:                ptr("user-123"),
 		LogitBias:           &map[string]int{"50256": -100},
 		ParallelToolCalls:   ptr(true),
-		ReasoningEffort:     ptr(types.High),
+		ReasoningEffort:     ptr(types.CreateChatCompletionRequestReasoningEffortHigh),
 		Stop:                &stop,
 		ToolChoice:          &toolChoice,
 		ResponseFormat:      &responseFormat,
