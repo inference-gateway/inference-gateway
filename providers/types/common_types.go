@@ -85,22 +85,52 @@ func (e ContextWindowSource) Valid() bool {
 
 // Defines values for CreateChatCompletionRequestReasoningEffort.
 const (
-	High    CreateChatCompletionRequestReasoningEffort = "high"
-	Low     CreateChatCompletionRequestReasoningEffort = "low"
-	Medium  CreateChatCompletionRequestReasoningEffort = "medium"
-	Minimal CreateChatCompletionRequestReasoningEffort = "minimal"
+	CreateChatCompletionRequestReasoningEffortHigh    CreateChatCompletionRequestReasoningEffort = "high"
+	CreateChatCompletionRequestReasoningEffortLow     CreateChatCompletionRequestReasoningEffort = "low"
+	CreateChatCompletionRequestReasoningEffortMedium  CreateChatCompletionRequestReasoningEffort = "medium"
+	CreateChatCompletionRequestReasoningEffortMinimal CreateChatCompletionRequestReasoningEffort = "minimal"
 )
 
 // Valid indicates whether the value is a known member of the CreateChatCompletionRequestReasoningEffort enum.
 func (e CreateChatCompletionRequestReasoningEffort) Valid() bool {
 	switch e {
-	case High:
+	case CreateChatCompletionRequestReasoningEffortHigh:
 		return true
-	case Low:
+	case CreateChatCompletionRequestReasoningEffortLow:
 		return true
-	case Medium:
+	case CreateChatCompletionRequestReasoningEffortMedium:
 		return true
-	case Minimal:
+	case CreateChatCompletionRequestReasoningEffortMinimal:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateImageRequestQuality.
+const (
+	CreateImageRequestQualityAuto     CreateImageRequestQuality = "auto"
+	CreateImageRequestQualityHd       CreateImageRequestQuality = "hd"
+	CreateImageRequestQualityHigh     CreateImageRequestQuality = "high"
+	CreateImageRequestQualityLow      CreateImageRequestQuality = "low"
+	CreateImageRequestQualityMedium   CreateImageRequestQuality = "medium"
+	CreateImageRequestQualityStandard CreateImageRequestQuality = "standard"
+)
+
+// Valid indicates whether the value is a known member of the CreateImageRequestQuality enum.
+func (e CreateImageRequestQuality) Valid() bool {
+	switch e {
+	case CreateImageRequestQualityAuto:
+		return true
+	case CreateImageRequestQualityHd:
+		return true
+	case CreateImageRequestQualityHigh:
+		return true
+	case CreateImageRequestQualityLow:
+		return true
+	case CreateImageRequestQualityMedium:
+		return true
+	case CreateImageRequestQualityStandard:
 		return true
 	default:
 		return false
@@ -176,6 +206,42 @@ const (
 func (e ImageContentPartType) Valid() bool {
 	switch e {
 	case ImageContentPartTypeImageURL:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ImageSize.
+const (
+	ImageSize1024X1024 ImageSize = "1024x1024"
+	ImageSize1024X1536 ImageSize = "1024x1536"
+	ImageSize1024X1792 ImageSize = "1024x1792"
+	ImageSize1536X1024 ImageSize = "1536x1024"
+	ImageSize1792X1024 ImageSize = "1792x1024"
+	ImageSize256X256   ImageSize = "256x256"
+	ImageSize512X512   ImageSize = "512x512"
+	ImageSizeAuto      ImageSize = "auto"
+)
+
+// Valid indicates whether the value is a known member of the ImageSize enum.
+func (e ImageSize) Valid() bool {
+	switch e {
+	case ImageSize1024X1024:
+		return true
+	case ImageSize1024X1536:
+		return true
+	case ImageSize1024X1792:
+		return true
+	case ImageSize1536X1024:
+		return true
+	case ImageSize1792X1024:
+		return true
+	case ImageSize256X256:
+		return true
+	case ImageSize512X512:
+		return true
+	case ImageSizeAuto:
 		return true
 	default:
 		return false
@@ -1556,17 +1622,29 @@ type CreateImageRequest struct {
 	// Prompt A text description of the desired image.
 	Prompt string `json:"prompt"`
 
-	// Quality The quality of the image. Must be one of `standard` or `hd`.
-	Quality *string `json:"quality,omitempty"`
+	// Quality The quality of the image. `auto` selects the best quality for
+	// the model. The GPT image models support `low`, `medium`, and
+	// `high`; `dall-e-3` supports `standard` and `hd`; `dall-e-2`
+	// supports only `standard`.
+	Quality *CreateImageRequestQuality `json:"quality,omitempty"`
 
 	// ResponseFormat The format in which the generated images are returned. Must be
 	// one of `url` or `b64_json`.
 	ResponseFormat *CreateImageRequestResponseFormat `json:"response_format,omitempty"`
 
-	// Size The size of the generated images. Must be one of `256x256`,
-	// `512x512`, `1024x1024`, `1024x1792`, or `1792x1024`.
-	Size *string `json:"size,omitempty"`
+	// Size The size of the generated images. The GPT image models support
+	// `1024x1024`, `1536x1024`, `1024x1536`, and `auto`; `gpt-image-2`
+	// also accepts arbitrary `WIDTHxHEIGHT` values such as `1536x864`.
+	// `dall-e-2` supports `256x256`, `512x512`, and `1024x1024`;
+	// `dall-e-3` supports `1024x1024`, `1792x1024`, and `1024x1792`.
+	Size *ImageSize `json:"size,omitempty"`
 }
+
+// CreateImageRequestQuality The quality of the image. `auto` selects the best quality for
+// the model. The GPT image models support `low`, `medium`, and
+// `high`; `dall-e-3` supports `standard` and `hd`; `dall-e-2`
+// supports only `standard`.
+type CreateImageRequestQuality string
 
 // CreateImageRequestResponseFormat The format in which the generated images are returned. Must be
 // one of `url` or `b64_json`.
@@ -1768,6 +1846,13 @@ type ImageContentPart struct {
 
 // ImageContentPartType Content type identifier
 type ImageContentPartType string
+
+// ImageSize The size of the generated images. The GPT image models support
+// `1024x1024`, `1536x1024`, `1024x1536`, and `auto`; `gpt-image-2`
+// also accepts arbitrary `WIDTHxHEIGHT` values such as `1536x864`.
+// `dall-e-2` supports `256x256`, `512x512`, and `1024x1024`;
+// `dall-e-3` supports `1024x1024`, `1792x1024`, and `1024x1792`.
+type ImageSize string
 
 // ImageURL Image URL configuration
 type ImageURL struct {
