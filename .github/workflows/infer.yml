@@ -13,6 +13,21 @@ on:
         description: 'Free-text task for infer (deepseek) to work on in this repo'
         required: true
         type: string
+      browser:
+        description: 'Run the browser-agent A2A container for this run'
+        required: false
+        type: boolean
+        default: false
+      browser_engine:
+        description: 'Browser engine: chromium | firefox | webkit or lightpanda (fastest, no graphical rendering, partial Web API coverage)'
+        required: false
+        type: choice
+        options:
+          - chromium
+          - firefox
+          - webkit
+          - lightpanda
+        default: chromium
   issues:
     types:
       - opened
@@ -54,5 +69,7 @@ jobs:
       mockgen: true
       plugins: |
         DietrichGebert/ponytail
+      browser: ${{ inputs.browser || false }}
+      browser_engine: ${{ inputs.browser_engine || 'chromium' }}
       prompt: ${{ inputs.prompt }}
     secrets: inherit
