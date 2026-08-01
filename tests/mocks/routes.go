@@ -64,18 +64,6 @@ func (mr *MockRouterMockRecorder) HealthcheckHandler(c any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HealthcheckHandler", reflect.TypeOf((*MockRouter)(nil).HealthcheckHandler), c)
 }
 
-// ImagesHandler mocks base method.
-func (m *MockRouter) ImagesHandler(c *gin.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "ImagesHandler", c)
-}
-
-// ImagesHandler indicates an expected call of ImagesHandler.
-func (mr *MockRouterMockRecorder) ImagesHandler(c any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImagesHandler", reflect.TypeOf((*MockRouter)(nil).ImagesHandler), c)
-}
-
 // ImagesEditsHandler mocks base method.
 func (m *MockRouter) ImagesEditsHandler(c *gin.Context) {
 	m.ctrl.T.Helper()
@@ -86,6 +74,18 @@ func (m *MockRouter) ImagesEditsHandler(c *gin.Context) {
 func (mr *MockRouterMockRecorder) ImagesEditsHandler(c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImagesEditsHandler", reflect.TypeOf((*MockRouter)(nil).ImagesEditsHandler), c)
+}
+
+// ImagesHandler mocks base method.
+func (m *MockRouter) ImagesHandler(c *gin.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ImagesHandler", c)
+}
+
+// ImagesHandler indicates an expected call of ImagesHandler.
+func (mr *MockRouterMockRecorder) ImagesHandler(c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ImagesHandler", reflect.TypeOf((*MockRouter)(nil).ImagesHandler), c)
 }
 
 // ImagesVariationsHandler mocks base method.
