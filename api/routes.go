@@ -608,6 +608,24 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 // It returns token completions as chat in the standard OpenAI format, allowing applications
 // built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
 // architecture.
+// modelDenied reports whether model is blocked by ALLOWED_MODELS /
+// DISALLOWED_MODELS, returning the client-facing reason ("" when permitted).
+// ALLOWED_MODELS takes precedence: when it is set, DISALLOWED_MODELS is ignored.
+func (router *RouterImpl) modelDenied(model string) string {
+	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
+		if !routing.ModelMatches(allowed, model) {
+			router.logger.Error("model not in allowed list", nil, "model", model, "allowed_models", router.cfg.AllowedModels)
+			return "Model not allowed. Please check the list of allowed models."
+		}
+		return ""
+	}
+	if disallowed := routing.ParseModelSet(router.cfg.DisallowedModels); len(disallowed) > 0 && routing.ModelMatches(disallowed, model) {
+		router.logger.Error("model is disallowed", nil, "model", model, "disallowed_models", router.cfg.DisallowedModels)
+		return "Model is disallowed. Please use a different model."
+	}
+	return ""
+}
+
 func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	var req types.CreateChatCompletionRequest
 
@@ -661,18 +679,9 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 	req.Model = model
 
-	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
-		if !routing.ModelMatches(allowed, originalModel) {
-			router.logger.Error("model not in allowed list", nil, "model", originalModel, "allowed_models", router.cfg.AllowedModels)
-			c.JSON(http.StatusForbidden, ErrorResponse{Error: "Model not allowed. Please check the list of allowed models."})
-			return
-		}
-	} else if disallowed := routing.ParseModelSet(router.cfg.DisallowedModels); len(disallowed) > 0 {
-		if routing.ModelMatches(disallowed, originalModel) {
-			router.logger.Error("model is disallowed", nil, "model", originalModel, "disallowed_models", router.cfg.DisallowedModels)
-			c.JSON(http.StatusForbidden, ErrorResponse{Error: "Model is disallowed. Please use a different model."})
-			return
-		}
+	if reason := router.modelDenied(originalModel); reason != "" {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: reason})
+		return
 	}
 
 	provider, err := router.registry.BuildProvider(providerID, router.client)
@@ -871,18 +880,9 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 		semconv.GenAIRequestModel(originalModel),
 	)
 
-	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
-		if !routing.ModelMatches(allowed, originalModel) {
-			router.logger.Error("model not in allowed list", nil, "model", originalModel, "allowed_models", router.cfg.AllowedModels)
-			messagesError(c, http.StatusForbidden, "invalid_request_error", "Model not allowed. Please check the list of allowed models.")
-			return
-		}
-	} else if disallowed := routing.ParseModelSet(router.cfg.DisallowedModels); len(disallowed) > 0 {
-		if routing.ModelMatches(disallowed, originalModel) {
-			router.logger.Error("model is disallowed", nil, "model", originalModel, "disallowed_models", router.cfg.DisallowedModels)
-			messagesError(c, http.StatusForbidden, "invalid_request_error", "Model is disallowed. Please use a different model.")
-			return
-		}
+	if reason := router.modelDenied(originalModel); reason != "" {
+		messagesError(c, http.StatusForbidden, "invalid_request_error", reason)
+		return
 	}
 
 	if providerID != constants.AnthropicID {
@@ -1056,18 +1056,9 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 		semconv.GenAIRequestModel(originalModel),
 	)
 
-	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
-		if !routing.ModelMatches(allowed, originalModel) {
-			router.logger.Error("model not in allowed list", nil, "model", originalModel, "allowed_models", router.cfg.AllowedModels)
-			c.JSON(http.StatusForbidden, ErrorResponse{Error: "Model not allowed. Please check the list of allowed models."})
-			return
-		}
-	} else if disallowed := routing.ParseModelSet(router.cfg.DisallowedModels); len(disallowed) > 0 {
-		if routing.ModelMatches(disallowed, originalModel) {
-			router.logger.Error("model is disallowed", nil, "model", originalModel, "disallowed_models", router.cfg.DisallowedModels)
-			c.JSON(http.StatusForbidden, ErrorResponse{Error: "Model is disallowed. Please use a different model."})
-			return
-		}
+	if reason := router.modelDenied(originalModel); reason != "" {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: reason})
+		return
 	}
 
 	if providerID != constants.OpenaiID {
@@ -1250,6 +1241,11 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 		return
 	}
 
+	if reason := router.modelDenied(originalModel); reason != "" {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: reason})
+		return
+	}
+
 	provider, err := router.registry.BuildProvider(providerID, router.client)
 	if err != nil {
 		if strings.Contains(err.Error(), "token not configured") {
@@ -1331,18 +1327,15 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 // Multipart form field names shared by the /images/edits and
 // /images/variations endpoints.
 const (
-	imageFormFieldImage  = "image"
-	imageFormFieldMask   = "mask"
-	imageFormFieldPrompt = "prompt"
-	imageFormFieldModel  = "model"
-	imageFormFieldN      = "n"
-
-	imagesMinN = 1
-	imagesMaxN = 10
+	imageFormFieldImage = "image"
+	// imageFormFieldImageArray is the multi-image variant accepted by
+	// gpt-image-1 edits.
+	imageFormFieldImageArray = "image[]"
+	imageFormFieldPrompt     = "prompt"
+	imageFormFieldModel      = "model"
 
 	// imagesMultipartMaxMemory caps how much of a multipart upload is kept in
-	// memory; parts above it spill to temp files so large images/masks are
-	// never buffered whole.
+	// memory; parts above it spill to temp files instead.
 	imagesMultipartMaxMemory = 1 << 20
 )
 
@@ -1380,7 +1373,8 @@ func (router *RouterImpl) ImagesVariationsHandler(c *gin.Context) {
 // provider. It parses the form to validate required fields and resolve the
 // provider (via ?provider= or the model prefix), then re-encodes the parts and
 // streams them to the upstream through an io.Pipe so the binary image/mask
-// files are forwarded without buffering the whole payload in memory.
+// files are streamed to the upstream without a second full in-memory copy
+// (ParseMultipartForm has already spilled anything over 1 MiB to temp files).
 //
 // Behaviour mirrors ImagesHandler: opt-in via ENABLE_IMAGES (404 when off) and
 // only providers that natively implement the endpoint are supported (others
@@ -1412,7 +1406,7 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 
 	form := c.Request.MultipartForm
 
-	if len(form.File[imageFormFieldImage]) == 0 {
+	if len(form.File[imageFormFieldImage])+len(form.File[imageFormFieldImageArray]) == 0 {
 		router.logger.Error("images request missing image file", nil)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'image' file is required."})
 		return
@@ -1421,14 +1415,6 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		router.logger.Error("images edit request missing prompt", nil)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'prompt' field is required."})
 		return
-	}
-	if raw := imagesFormValue(form, imageFormFieldN); raw != "" {
-		n, err := strconv.Atoi(raw)
-		if err != nil || n < imagesMinN || n > imagesMaxN {
-			router.logger.Error("images request has invalid n", nil, "n", raw)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'n' field must be an integer between 1 and 10."})
-			return
-		}
 	}
 
 	providerID := types.Provider(c.Query("provider"))
@@ -1448,6 +1434,11 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 	if providerID == "" {
 		router.logger.Error("no provider specified for images request", nil)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
+		return
+	}
+
+	if reason := router.modelDenied(originalModel); reason != "" {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: reason})
 		return
 	}
 
@@ -1537,8 +1528,8 @@ func imagesFormValue(form *multipart.Form, key string) string {
 
 // writeImagesMultipartForm re-encodes a parsed multipart form onto mw, copying
 // each uploaded file straight through (preserving its Content-Type) so the
-// payload streams to the upstream without being buffered whole. It runs in its
-// own goroutine writing to the io.Pipe.
+// payload streams to the upstream without a second full in-memory copy. It
+// runs in its own goroutine writing to the io.Pipe.
 func writeImagesMultipartForm(mw *multipart.Writer, form *multipart.Form) error {
 	for field, values := range form.Value {
 		for _, v := range values {

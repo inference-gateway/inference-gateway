@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,7 +27,7 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool) api.Router {
+func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, opts ...func(*config.Config)) api.Router {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
@@ -67,6 +68,9 @@ func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool) ap
 			WriteTimeout: 5 * time.Second,
 		},
 		Providers: providerCfg,
+	}
+	for _, opt := range opts {
+		opt(&cfg)
 	}
 
 	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil)
@@ -251,6 +255,87 @@ func TestImagesEditsHandler_Disabled(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestImagesEditsHandler_ModelNotAllowed(t *testing.T) {
+	router := newImagesTestRouter(t, "http://unused", true, func(cfg *config.Config) {
+		cfg.AllowedModels = "openai/gpt-image-2"
+	})
+	r := gin.New()
+	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+
+	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
+		{name: "image", filename: "sunset.png", value: "PNG-IMAGE-BYTES"},
+		{name: "prompt", value: "Add a flock of birds"},
+		{name: "model", value: "openai/gpt-image-1"},
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/images/edits", body)
+	req.Header.Set("Content-Type", contentType)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), "Model not allowed")
+}
+
+func TestImagesEditsHandler_BodyTooLarge(t *testing.T) {
+	router := newImagesTestRouter(t, "http://unused", true, func(cfg *config.Config) {
+		cfg.Server.MaxRequestBodySize = 64
+	})
+	r := gin.New()
+	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+
+	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
+		{name: "image", filename: "sunset.png", value: strings.Repeat("A", 1024)},
+		{name: "prompt", value: "Add a flock of birds"},
+		{name: "model", value: "openai/gpt-image-1"},
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/images/edits", body)
+	req.Header.Set("Content-Type", contentType)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusRequestEntityTooLarge, w.Code)
+}
+
+// TestImagesEditsHandler_MultiImage covers gpt-image-1's `image[]` array form.
+func TestImagesEditsHandler_MultiImage(t *testing.T) {
+	var got []string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.NoError(t, r.ParseMultipartForm(1<<20))
+		for _, fh := range r.MultipartForm.File["image[]"] {
+			f, err := fh.Open()
+			require.NoError(t, err)
+			b, err := io.ReadAll(f)
+			require.NoError(t, err)
+			_ = f.Close()
+			got = append(got, string(b))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"created":1730000000,"data":[]}`))
+	}))
+	defer server.Close()
+
+	router := newImagesTestRouter(t, server.URL, true)
+	r := gin.New()
+	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+
+	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
+		{name: "image[]", filename: "a.png", value: "IMAGE-A"},
+		{name: "image[]", filename: "b.png", value: "IMAGE-B"},
+		{name: "prompt", value: "Merge these"},
+		{name: "model", value: "openai/gpt-image-1"},
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/images/edits", body)
+	req.Header.Set("Content-Type", contentType)
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Equal(t, []string{"IMAGE-A", "IMAGE-B"}, got)
 }
 
 func readUploadedFile(t *testing.T, r *http.Request, field string) string {
