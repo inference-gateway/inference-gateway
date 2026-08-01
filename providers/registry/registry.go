@@ -228,10 +228,12 @@ var Registry = map[types.Provider]*ProviderConfig{
 		AuthType:       constants.AuthTypeBearer,
 		SupportsVision: true,
 		Endpoints: types.Endpoints{
-			Models:    constants.OpenaiModelsEndpoint,
-			Chat:      constants.OpenaiChatEndpoint,
-			Responses: ptr(constants.OpenaiResponsesEndpoint),
-			Images:    ptr(constants.OpenaiImagesEndpoint),
+			Models:           constants.OpenaiModelsEndpoint,
+			Chat:             constants.OpenaiChatEndpoint,
+			Responses:        ptr(constants.OpenaiResponsesEndpoint),
+			Images:           ptr(constants.OpenaiImagesEndpoint),
+			ImagesEdits:      ptr(constants.OpenaiImagesEditsEndpoint),
+			ImagesVariations: ptr(constants.OpenaiImagesVariationsEndpoint),
 		},
 	},
 	constants.ZaiID: {

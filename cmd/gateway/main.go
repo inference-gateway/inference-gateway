@@ -301,6 +301,8 @@ func main() {
 		v1.POST("/messages", api.MessagesHandler)
 		v1.POST("/responses", api.ResponsesHandler)
 		v1.POST("/images/generations", api.ImagesHandler)
+		v1.POST("/images/edits", api.ImagesEditsHandler)
+		v1.POST("/images/variations", api.ImagesVariationsHandler)
 		v1.POST("/metrics", api.MetricsIngestionHandler)
 	}
 	r.NoRoute(api.NotFoundHandler)

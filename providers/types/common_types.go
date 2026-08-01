@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/oapi-codegen/runtime"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // Defines values for CacheControlType.
@@ -1205,6 +1206,69 @@ func (e TextContentPartType) Valid() bool {
 	}
 }
 
+// Defines values for CreateImageEditMultipartBodyQuality.
+const (
+	CreateImageEditMultipartBodyQualityAuto     CreateImageEditMultipartBodyQuality = "auto"
+	CreateImageEditMultipartBodyQualityHigh     CreateImageEditMultipartBodyQuality = "high"
+	CreateImageEditMultipartBodyQualityLow      CreateImageEditMultipartBodyQuality = "low"
+	CreateImageEditMultipartBodyQualityMedium   CreateImageEditMultipartBodyQuality = "medium"
+	CreateImageEditMultipartBodyQualityStandard CreateImageEditMultipartBodyQuality = "standard"
+)
+
+// Valid indicates whether the value is a known member of the CreateImageEditMultipartBodyQuality enum.
+func (e CreateImageEditMultipartBodyQuality) Valid() bool {
+	switch e {
+	case CreateImageEditMultipartBodyQualityAuto:
+		return true
+	case CreateImageEditMultipartBodyQualityHigh:
+		return true
+	case CreateImageEditMultipartBodyQualityLow:
+		return true
+	case CreateImageEditMultipartBodyQualityMedium:
+		return true
+	case CreateImageEditMultipartBodyQualityStandard:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateImageEditMultipartBodyResponseFormat.
+const (
+	CreateImageEditMultipartBodyResponseFormatB64Json CreateImageEditMultipartBodyResponseFormat = "b64_json"
+	CreateImageEditMultipartBodyResponseFormatURL     CreateImageEditMultipartBodyResponseFormat = "url"
+)
+
+// Valid indicates whether the value is a known member of the CreateImageEditMultipartBodyResponseFormat enum.
+func (e CreateImageEditMultipartBodyResponseFormat) Valid() bool {
+	switch e {
+	case CreateImageEditMultipartBodyResponseFormatB64Json:
+		return true
+	case CreateImageEditMultipartBodyResponseFormatURL:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateImageVariationMultipartBodyResponseFormat.
+const (
+	CreateImageVariationMultipartBodyResponseFormatB64Json CreateImageVariationMultipartBodyResponseFormat = "b64_json"
+	CreateImageVariationMultipartBodyResponseFormatURL     CreateImageVariationMultipartBodyResponseFormat = "url"
+)
+
+// Valid indicates whether the value is a known member of the CreateImageVariationMultipartBodyResponseFormat enum.
+func (e CreateImageVariationMultipartBodyResponseFormat) Valid() bool {
+	switch e {
+	case CreateImageVariationMultipartBodyResponseFormatB64Json:
+		return true
+	case CreateImageVariationMultipartBodyResponseFormatURL:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ListModelsParamsInclude.
 const (
 	ListModelsParamsIncludeContextWindow ListModelsParamsInclude = "context_window"
@@ -1783,10 +1847,12 @@ type CreateResponseRequest struct {
 
 // Endpoints defines model for Endpoints.
 type Endpoints struct {
-	Chat      string  `json:"chat"`
-	Images    *string `json:"images,omitempty"`
-	Models    string  `json:"models"`
-	Responses *string `json:"responses,omitempty"`
+	Chat             string  `json:"chat"`
+	Images           *string `json:"images,omitempty"`
+	ImagesEdits      *string `json:"images_edits,omitempty"`
+	ImagesVariations *string `json:"images_variations,omitempty"`
+	Models           string  `json:"models"`
+	Responses        *string `json:"responses,omitempty"`
 }
 
 // Error defines model for Error.
@@ -2995,11 +3061,78 @@ type CreateChatCompletionParams struct {
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
+// CreateImageEditMultipartBody defines parameters for CreateImageEdit.
+type CreateImageEditMultipartBody struct {
+	// Image The image to edit.
+	Image openapi_types.File `json:"image"`
+
+	// Mask An additional image whose fully transparent areas indicate
+	// where the source image should be edited.
+	Mask *openapi_types.File `json:"mask,omitempty"`
+
+	// Model The model to use for image editing.
+	Model *string `json:"model,omitempty"`
+
+	// N The number of images to generate.
+	N *int `json:"n,omitempty"`
+
+	// Prompt A text description of the desired image edit.
+	Prompt string `json:"prompt"`
+
+	// Quality The quality of the generated images.
+	Quality *CreateImageEditMultipartBodyQuality `json:"quality,omitempty"`
+
+	// ResponseFormat The format in which generated images are returned.
+	ResponseFormat *CreateImageEditMultipartBodyResponseFormat `json:"response_format,omitempty"`
+
+	// Size The size of the generated images.
+	Size *string `json:"size,omitempty"`
+}
+
+// CreateImageEditParams defines parameters for CreateImageEdit.
+type CreateImageEditParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// CreateImageEditMultipartBodyQuality defines parameters for CreateImageEdit.
+type CreateImageEditMultipartBodyQuality string
+
+// CreateImageEditMultipartBodyResponseFormat defines parameters for CreateImageEdit.
+type CreateImageEditMultipartBodyResponseFormat string
+
 // CreateImageParams defines parameters for CreateImage.
 type CreateImageParams struct {
 	// Provider Specific provider to use (default determined by model)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
+
+// CreateImageVariationMultipartBody defines parameters for CreateImageVariation.
+type CreateImageVariationMultipartBody struct {
+	// Image The image to use as the basis for the variation(s).
+	Image openapi_types.File `json:"image"`
+
+	// Model The model to use for image variations.
+	Model *string `json:"model,omitempty"`
+
+	// N The number of images to generate.
+	N *int `json:"n,omitempty"`
+
+	// ResponseFormat The format in which generated images are returned.
+	ResponseFormat *CreateImageVariationMultipartBodyResponseFormat `json:"response_format,omitempty"`
+
+	// Size The size of the generated images.
+	Size *string `json:"size,omitempty"`
+}
+
+// CreateImageVariationParams defines parameters for CreateImageVariation.
+type CreateImageVariationParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// CreateImageVariationMultipartBodyResponseFormat defines parameters for CreateImageVariation.
+type CreateImageVariationMultipartBodyResponseFormat string
 
 // CreateMessageParams defines parameters for CreateMessage.
 type CreateMessageParams struct {
@@ -3063,8 +3196,14 @@ type CreateResponseParams struct {
 // CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
 type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
 
+// CreateImageEditMultipartRequestBody defines body for CreateImageEdit for multipart/form-data ContentType.
+type CreateImageEditMultipartRequestBody CreateImageEditMultipartBody
+
 // CreateImageJSONRequestBody defines body for CreateImage for application/json ContentType.
 type CreateImageJSONRequestBody = CreateImageRequest
+
+// CreateImageVariationMultipartRequestBody defines body for CreateImageVariation for multipart/form-data ContentType.
+type CreateImageVariationMultipartRequestBody CreateImageVariationMultipartBody
 
 // CreateMessageJSONRequestBody defines body for CreateMessage for application/json ContentType.
 type CreateMessageJSONRequestBody = CreateMessagesRequest

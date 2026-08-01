@@ -285,6 +285,12 @@ const (
     {{- with (index $config.Endpoints "images").Endpoint }}
     {{pascalCase $name}}ImagesEndpoint = "{{.}}"
     {{- end }}
+    {{- with (index $config.Endpoints "images_edits").Endpoint }}
+    {{pascalCase $name}}ImagesEditsEndpoint = "{{.}}"
+    {{- end }}
+    {{- with (index $config.Endpoints "images_variations").Endpoint }}
+    {{pascalCase $name}}ImagesVariationsEndpoint = "{{.}}"
+    {{- end }}
     {{- end }}
 )
 
@@ -812,6 +818,12 @@ var Registry = map[types.Provider]*ProviderConfig{
 			{{- end }}
 			{{- if (index $config.Endpoints "images").Endpoint }}
 			Images: ptr(constants.{{pascalCase $name}}ImagesEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "images_edits").Endpoint }}
+			ImagesEdits: ptr(constants.{{pascalCase $name}}ImagesEditsEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "images_variations").Endpoint }}
+			ImagesVariations: ptr(constants.{{pascalCase $name}}ImagesVariationsEndpoint),
 			{{- end }}
 		},
 	},

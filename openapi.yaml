@@ -629,6 +629,83 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
+  /images/edits:
+    post:
+      operationId: createImageEdit
+      tags:
+        - Images
+      description: |
+        Creates an edited or extended image given one or more source images and
+        a prompt, using the OpenAI-compatible Images API. The request is a
+        `multipart/form-data` upload and returns one or more images as URLs or
+        base64-encoded JSON data.
+
+        Not every provider implements the Images API. Requests routed to a
+        provider that does not support it return `400 Bad Request` with an
+        explanatory error message.
+      summary: Create an image edit
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Provider'
+          description: Specific provider to use (default determined by model)
+      requestBody:
+        $ref: '#/components/requestBodies/CreateImageEditRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImagesResponse'
+        '400':
+          $ref: '#/components/responses/ImagesNotSupported'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /images/variations:
+    post:
+      operationId: createImageVariation
+      tags:
+        - Images
+      description: |
+        Creates a variation of a given image using the OpenAI-compatible Images
+        API. The request is a `multipart/form-data` upload and returns one or
+        more images as URLs or base64-encoded JSON data.
+
+        Not every provider implements the Images API. Requests routed to a
+        provider that does not support it return `400 Bad Request` with an
+        explanatory error message.
+      summary: Create an image variation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Provider'
+          description: Specific provider to use (default determined by model)
+      requestBody:
+        $ref: '#/components/requestBodies/CreateImageVariationRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImagesResponse'
+        '400':
+          $ref: '#/components/responses/ImagesNotSupported'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /health:
     get:
       operationId: healthCheck
@@ -729,6 +806,95 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/CreateImageRequest'
+    CreateImageEditRequest:
+      required: true
+      description: |
+        Multipart request payload for the image edit endpoint. Mirrors the
+        OpenAI `POST /v1/images/edits` request body.
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              image:
+                type: string
+                format: binary
+                description: The image to edit.
+              prompt:
+                type: string
+                description: A text description of the desired image edit.
+              mask:
+                type: string
+                format: binary
+                description: |
+                  An additional image whose fully transparent areas indicate
+                  where the source image should be edited.
+              model:
+                type: string
+                description: The model to use for image editing.
+              n:
+                type: integer
+                minimum: 1
+                maximum: 10
+                default: 1
+                description: The number of images to generate.
+              size:
+                type: string
+                description: The size of the generated images.
+              quality:
+                type: string
+                enum:
+                  - auto
+                  - standard
+                  - low
+                  - medium
+                  - high
+                description: The quality of the generated images.
+              response_format:
+                type: string
+                enum:
+                  - url
+                  - b64_json
+                default: url
+                description: The format in which generated images are returned.
+            required:
+              - image
+              - prompt
+    CreateImageVariationRequest:
+      required: true
+      description: |
+        Multipart request payload for the image variation endpoint. Mirrors the
+        OpenAI `POST /v1/images/variations` request body.
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            properties:
+              image:
+                type: string
+                format: binary
+                description: The image to use as the basis for the variation(s).
+              model:
+                type: string
+                description: The model to use for image variations.
+              n:
+                type: integer
+                minimum: 1
+                maximum: 10
+                default: 1
+                description: The number of images to generate.
+              size:
+                type: string
+                description: The size of the generated images.
+              response_format:
+                type: string
+                enum:
+                  - url
+                  - b64_json
+                default: url
+                description: The format in which generated images are returned.
+            required:
+              - image
   responses:
     BadRequest:
       description: Bad request
@@ -980,6 +1146,14 @@ components:
               name: 'create_image'
               method: 'POST'
               endpoint: '/images/generations'
+            images_edits:
+              name: 'create_image_edit'
+              method: 'POST'
+              endpoint: '/images/edits'
+            images_variations:
+              name: 'create_image_variation'
+              method: 'POST'
+              endpoint: '/images/variations'
         cloudflare:
           id: 'cloudflare'
           url: 'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai'
@@ -1166,6 +1340,10 @@ components:
         responses:
           type: string
         images:
+          type: string
+        images_edits:
+          type: string
+        images_variations:
           type: string
       required:
         - models
@@ -3610,7 +3788,7 @@ components:
                   env: 'ENABLE_IMAGES'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Images API (POST /v1/images/generations). When disabled, the endpoint returns a 404. Only providers with images support (currently openai) can serve this endpoint'
+                  description: 'Enable the Images API (POST /v1/images/generations, /v1/images/edits, /v1/images/variations). When disabled, the endpoints return a 404. Only providers with images support (currently openai) can serve these endpoints'
                 - name: debug_content_truncate_words
                   env: 'DEBUG_CONTENT_TRUNCATE_WORDS'
                   type: int

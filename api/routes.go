@@ -8,8 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httputil"
+	"net/textproto"
 	"net/url"
 	"slices"
 	"strconv"
@@ -44,6 +46,8 @@ type Router interface {
 	MessagesHandler(c *gin.Context)
 	ResponsesHandler(c *gin.Context)
 	ImagesHandler(c *gin.Context)
+	ImagesEditsHandler(c *gin.Context)
+	ImagesVariationsHandler(c *gin.Context)
 	ListToolsHandler(c *gin.Context)
 	MetricsIngestionHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
@@ -1322,6 +1326,255 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 	}
 
 	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+}
+
+// Multipart form field names shared by the /images/edits and
+// /images/variations endpoints.
+const (
+	imageFormFieldImage  = "image"
+	imageFormFieldMask   = "mask"
+	imageFormFieldPrompt = "prompt"
+	imageFormFieldModel  = "model"
+	imageFormFieldN      = "n"
+
+	imagesMinN = 1
+	imagesMaxN = 10
+
+	// imagesMultipartMaxMemory caps how much of a multipart upload is kept in
+	// memory; parts above it spill to temp files so large images/masks are
+	// never buffered whole.
+	imagesMultipartMaxMemory = 1 << 20
+)
+
+// imagesMultipartTarget selects which multipart Images endpoint a request is
+// forwarded to and whether a prompt is required (edits require one, variations
+// do not).
+type imagesMultipartTarget struct {
+	endpoint      func(types.Endpoints) *string
+	requirePrompt bool
+}
+
+var (
+	imagesEditsTarget = imagesMultipartTarget{
+		endpoint:      func(e types.Endpoints) *string { return e.ImagesEdits },
+		requirePrompt: true,
+	}
+	imagesVariationsTarget = imagesMultipartTarget{
+		endpoint:      func(e types.Endpoints) *string { return e.ImagesVariations },
+		requirePrompt: false,
+	}
+)
+
+// ImagesEditsHandler implements POST /v1/images/edits (multipart/form-data).
+func (router *RouterImpl) ImagesEditsHandler(c *gin.Context) {
+	router.handleImagesMultipart(c, imagesEditsTarget)
+}
+
+// ImagesVariationsHandler implements POST /v1/images/variations
+// (multipart/form-data).
+func (router *RouterImpl) ImagesVariationsHandler(c *gin.Context) {
+	router.handleImagesMultipart(c, imagesVariationsTarget)
+}
+
+// handleImagesMultipart proxies a multipart Images upload to the resolved
+// provider. It parses the form to validate required fields and resolve the
+// provider (via ?provider= or the model prefix), then re-encodes the parts and
+// streams them to the upstream through an io.Pipe so the binary image/mask
+// files are forwarded without buffering the whole payload in memory.
+//
+// Behaviour mirrors ImagesHandler: opt-in via ENABLE_IMAGES (404 when off) and
+// only providers that natively implement the endpoint are supported (others
+// receive a 400).
+func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMultipartTarget) {
+	if !router.cfg.EnableImages {
+		router.logger.Error("images api not enabled", nil)
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Images API is not enabled. Set ENABLE_IMAGES=true to enable it."})
+		return
+	}
+
+	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(maxBodySize))
+	if err := c.Request.ParseMultipartForm(imagesMultipartMaxMemory); err != nil {
+		var maxErr *http.MaxBytesError
+		if errors.As(err, &maxErr) {
+			c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+			return
+		}
+		router.logger.Error("failed to parse multipart form", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to parse multipart/form-data request"})
+		return
+	}
+	defer func() {
+		if c.Request.MultipartForm != nil {
+			_ = c.Request.MultipartForm.RemoveAll()
+		}
+	}()
+
+	form := c.Request.MultipartForm
+
+	if len(form.File[imageFormFieldImage]) == 0 {
+		router.logger.Error("images request missing image file", nil)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'image' file is required."})
+		return
+	}
+	if target.requirePrompt && strings.TrimSpace(imagesFormValue(form, imageFormFieldPrompt)) == "" {
+		router.logger.Error("images edit request missing prompt", nil)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'prompt' field is required."})
+		return
+	}
+	if raw := imagesFormValue(form, imageFormFieldN); raw != "" {
+		n, err := strconv.Atoi(raw)
+		if err != nil || n < imagesMinN || n > imagesMaxN {
+			router.logger.Error("images request has invalid n", nil, "n", raw)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'n' field must be an integer between 1 and 10."})
+			return
+		}
+	}
+
+	providerID := types.Provider(c.Query("provider"))
+	model := imagesFormValue(form, imageFormFieldModel)
+	originalModel := model
+	if providerID == "" && model != "" {
+		var providerPtr *types.Provider
+		providerPtr, model = routing.DetermineProviderAndModelName(model)
+		if providerPtr == nil {
+			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
+			return
+		}
+		providerID = *providerPtr
+	}
+
+	if providerID == "" {
+		router.logger.Error("no provider specified for images request", nil)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
+		return
+	}
+
+	provider, err := router.registry.BuildProvider(providerID, router.client)
+	if err != nil {
+		if strings.Contains(err.Error(), "token not configured") {
+			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+			return
+		}
+		router.logger.Error("provider not found or not supported", err, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		return
+	}
+
+	endpoint := target.endpoint(provider.GetEndpoints())
+	if endpoint == nil || *endpoint == "" {
+		router.logger.Error("images api not supported by provider", nil, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The Images API is not supported by this provider yet."})
+		return
+	}
+
+	if model != originalModel {
+		form.Value[imageFormFieldModel] = []string{model}
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
+	defer cancel()
+
+	pr, pw := io.Pipe()
+	mw := multipart.NewWriter(pw)
+	contentType := mw.FormDataContentType()
+	go func() {
+		pw.CloseWithError(writeImagesMultipartForm(mw, form))
+	}()
+
+	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + *endpoint
+	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, pr)
+	if err != nil {
+		_ = pr.CloseWithError(err)
+		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
+		return
+	}
+	upstreamReq.Header.Set("Content-Type", contentType)
+	upstreamReq.Header.Set("Accept", "application/json")
+
+	if err := applyProviderAuth(upstreamReq, provider); err != nil {
+		_ = pr.CloseWithError(err)
+		router.logger.Error("unsupported auth type", err, "provider", providerID)
+		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
+		return
+	}
+
+	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
+
+	resp, err := router.client.Do(upstreamReq)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			router.logger.Error("request timed out", err, "provider", providerID)
+			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
+			return
+		}
+		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
+		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		span := trace.SpanFromContext(c.Request.Context())
+		span.SetStatus(codes.Error, resp.Status)
+		span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
+	}
+
+	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+}
+
+// imagesFormValue returns the first value for key in a parsed multipart form,
+// or "" when absent.
+func imagesFormValue(form *multipart.Form, key string) string {
+	if vs := form.Value[key]; len(vs) > 0 {
+		return vs[0]
+	}
+	return ""
+}
+
+// writeImagesMultipartForm re-encodes a parsed multipart form onto mw, copying
+// each uploaded file straight through (preserving its Content-Type) so the
+// payload streams to the upstream without being buffered whole. It runs in its
+// own goroutine writing to the io.Pipe.
+func writeImagesMultipartForm(mw *multipart.Writer, form *multipart.Form) error {
+	for field, values := range form.Value {
+		for _, v := range values {
+			if err := mw.WriteField(field, v); err != nil {
+				return err
+			}
+		}
+	}
+	for field, headers := range form.File {
+		for _, fh := range headers {
+			if err := copyImagesFormFile(mw, field, fh); err != nil {
+				return err
+			}
+		}
+	}
+	return mw.Close()
+}
+
+func copyImagesFormFile(mw *multipart.Writer, field string, fh *multipart.FileHeader) error {
+	src, err := fh.Open()
+	if err != nil {
+		return err
+	}
+	defer src.Close()
+
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, field, fh.Filename))
+	if ct := fh.Header.Get("Content-Type"); ct != "" {
+		h.Set("Content-Type", ct)
+	}
+	dst, err := mw.CreatePart(h)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(dst, src)
+	return err
 }
 
 // ListToolsHandler implements an endpoint that returns available MCP tools

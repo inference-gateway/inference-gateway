@@ -23,7 +23,7 @@ type Config struct {
 	AllowedModels             string `env:"ALLOWED_MODELS" description:"Comma-separated list of models to allow. If empty, all models will be available"`
 	DisallowedModels          string `env:"DISALLOWED_MODELS" description:"Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS"`
 	EnableVision              bool   `env:"ENABLE_VISION, default=false" description:"Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision"`
-	EnableImages              bool   `env:"ENABLE_IMAGES, default=false" description:"Enable the Images API (POST /v1/images/generations). When disabled, the endpoint returns a 404. Only providers with images support (currently openai) can serve this endpoint"`
+	EnableImages              bool   `env:"ENABLE_IMAGES, default=false" description:"Enable the Images API (POST /v1/images/generations, /v1/images/edits, /v1/images/variations). When disabled, the endpoints return a 404. Only providers with images support (currently openai) can serve these endpoints"`
 	DebugContentTruncateWords int    `env:"DEBUG_CONTENT_TRUNCATE_WORDS, default=10" description:"Number of words to truncate per content section in debug logs (development mode only)"`
 	DebugMaxMessages          int    `env:"DEBUG_MAX_MESSAGES, default=100" description:"Maximum number of messages to show in debug logs (development mode only)"`
 	// Telemetry settings

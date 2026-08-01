@@ -12,10 +12,12 @@ import (
 )
 
 const (
-	endpointKeyModels    = "models"
-	endpointKeyChat      = "chat"
-	endpointKeyResponses = "responses"
-	endpointKeyImages    = "images"
+	endpointKeyModels           = "models"
+	endpointKeyChat             = "chat"
+	endpointKeyResponses        = "responses"
+	endpointKeyImages           = "images"
+	endpointKeyImagesEdits      = "images_edits"
+	endpointKeyImagesVariations = "images_variations"
 )
 
 // TestProviderEndpointsMatchSchema fails when an endpoint declared under
@@ -35,6 +37,8 @@ func TestProviderEndpointsMatchSchema(t *testing.T) {
 			assert.Equal(t, cfg.Endpoints[endpointKeyChat].Endpoint, provider.Endpoints.Chat)
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyResponses].Endpoint, provider.Endpoints.Responses, endpointKeyResponses)
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImages].Endpoint, provider.Endpoints.Images, endpointKeyImages)
+			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImagesEdits].Endpoint, provider.Endpoints.ImagesEdits, endpointKeyImagesEdits)
+			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImagesVariations].Endpoint, provider.Endpoints.ImagesVariations, endpointKeyImagesVariations)
 		})
 	}
 }
