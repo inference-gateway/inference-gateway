@@ -38,7 +38,7 @@ on:
           - high
           - xhigh
           - max
-        default: low
+        default: medium
       model:
         description: 'Claude model'
         required: false
@@ -47,8 +47,7 @@ on:
           - claude-opus-5
           - claude-fable-5
           - claude-sonnet-5
-          - claude-opus-4-8
-        default: claude-fable-5
+        default: claude-opus-5
   issue_comment:
     types:
       - created
@@ -90,6 +89,6 @@ jobs:
       browser: ${{ inputs.browser || false }}
       browser_engine: ${{ inputs.browser_engine || 'chromium' }}
       effort: ${{ inputs.effort || 'medium' }}
-      model: ${{ inputs.model || 'claude-opus-4-8' }}
+      model: ${{ inputs.model || 'claude-opus-5' }}
       prompt: ${{ inputs.prompt }}
     secrets: inherit
