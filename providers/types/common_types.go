@@ -3063,30 +3063,35 @@ type CreateChatCompletionParams struct {
 
 // CreateImageEditMultipartBody defines parameters for CreateImageEdit.
 type CreateImageEditMultipartBody struct {
-	// Image The image to edit.
+	// Image The image to edit. For the GPT image models, a `png`, `webp`, or `jpg` file up to 50MB; for `dall-e-2`, a square PNG under 4MB. If `mask` is not provided, the image must have transparency, which will be used as the mask.
 	Image openapi_types.File `json:"image"`
 
-	// Mask An additional image whose fully transparent areas indicate
-	// where the source image should be edited.
+	// Mask An additional image whose fully transparent areas (alpha = 0) indicate where the image should be edited. Must be a valid PNG file with the same dimensions as the image (under 4MB for `dall-e-2`).
 	Mask *openapi_types.File `json:"mask,omitempty"`
 
-	// Model The model to use for image editing.
+	// Model Model ID to use for image editing.
 	Model *string `json:"model,omitempty"`
 
-	// N The number of images to generate.
+	// N Number of images to generate.
 	N *int `json:"n,omitempty"`
 
-	// Prompt A text description of the desired image edit.
+	// Prompt A text description of the desired image.
 	Prompt string `json:"prompt"`
 
-	// Quality The quality of the generated images.
+	// Quality The quality of the edited image. `auto` selects the best
+	// quality for the model. The GPT image models support `low`,
+	// `medium`, and `high`; `dall-e-2` supports only `standard`.
 	Quality *CreateImageEditMultipartBodyQuality `json:"quality,omitempty"`
 
-	// ResponseFormat The format in which generated images are returned.
+	// ResponseFormat The format in which the generated images are returned.
 	ResponseFormat *CreateImageEditMultipartBodyResponseFormat `json:"response_format,omitempty"`
 
-	// Size The size of the generated images.
-	Size *string `json:"size,omitempty"`
+	// Size The size of the generated images. The GPT image models support
+	// `1024x1024`, `1536x1024`, `1024x1536`, and `auto`; `gpt-image-2`
+	// also accepts arbitrary `WIDTHxHEIGHT` values such as `1536x864`.
+	// `dall-e-2` supports `256x256`, `512x512`, and `1024x1024`;
+	// `dall-e-3` supports `1024x1024`, `1792x1024`, and `1024x1792`.
+	Size *ImageSize `json:"size,omitempty"`
 }
 
 // CreateImageEditParams defines parameters for CreateImageEdit.
@@ -3109,20 +3114,24 @@ type CreateImageParams struct {
 
 // CreateImageVariationMultipartBody defines parameters for CreateImageVariation.
 type CreateImageVariationMultipartBody struct {
-	// Image The image to use as the basis for the variation(s).
+	// Image The image to use as the basis for the variation. For the GPT image models, a `png`, `webp`, or `jpg` file up to 50MB; for `dall-e-2`, a square PNG under 4MB.
 	Image openapi_types.File `json:"image"`
 
-	// Model The model to use for image variations.
+	// Model Model ID to use for image variation.
 	Model *string `json:"model,omitempty"`
 
-	// N The number of images to generate.
+	// N Number of images to generate.
 	N *int `json:"n,omitempty"`
 
-	// ResponseFormat The format in which generated images are returned.
+	// ResponseFormat The format in which the generated images are returned.
 	ResponseFormat *CreateImageVariationMultipartBodyResponseFormat `json:"response_format,omitempty"`
 
-	// Size The size of the generated images.
-	Size *string `json:"size,omitempty"`
+	// Size The size of the generated images. The GPT image models support
+	// `1024x1024`, `1536x1024`, `1024x1536`, and `auto`; `gpt-image-2`
+	// also accepts arbitrary `WIDTHxHEIGHT` values such as `1536x864`.
+	// `dall-e-2` supports `256x256`, `512x512`, and `1024x1024`;
+	// `dall-e-3` supports `1024x1024`, `1792x1024`, and `1024x1792`.
+	Size *ImageSize `json:"size,omitempty"`
 }
 
 // CreateImageVariationParams defines parameters for CreateImageVariation.

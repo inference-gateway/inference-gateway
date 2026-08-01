@@ -635,15 +635,14 @@ paths:
       tags:
         - Images
       description: |
-        Creates an edited or extended image given one or more source images and
-        a prompt, using the OpenAI-compatible Images API. The request is a
-        `multipart/form-data` upload and returns one or more images as URLs or
-        base64-encoded JSON data.
+        Creates an edited or extended image given an original image and a prompt
+        using the OpenAI-compatible Images API. The request is sent as
+        `multipart/form-data` with the image file as a binary upload.
 
         Not every provider implements the Images API. Requests routed to a
         provider that does not support it return `400 Bad Request` with an
-        explanatory error message.
-      summary: Create an image edit
+        explanatory error message; use `/chat/completions` for those providers.
+      summary: Create an image edit or extension
       security:
         - bearerAuth: []
       parameters:
@@ -675,12 +674,12 @@ paths:
         - Images
       description: |
         Creates a variation of a given image using the OpenAI-compatible Images
-        API. The request is a `multipart/form-data` upload and returns one or
-        more images as URLs or base64-encoded JSON data.
+        API. The request is sent as `multipart/form-data` with the image file
+        as a binary upload.
 
         Not every provider implements the Images API. Requests routed to a
         provider that does not support it return `400 Bad Request` with an
-        explanatory error message.
+        explanatory error message; use `/chat/completions` for those providers.
       summary: Create an image variation
       security:
         - bearerAuth: []
@@ -809,8 +808,9 @@ components:
     CreateImageEditRequest:
       required: true
       description: |
-        Multipart request payload for the image edit endpoint. Mirrors the
-        OpenAI `POST /v1/images/edits` request body.
+        Request payload for the Images Edits API. Mirrors the OpenAI
+        `POST /v1/images/edits` request body. Sent as `multipart/form-data`
+        with the image file as a binary upload.
       content:
         multipart/form-data:
           schema:
@@ -819,28 +819,25 @@ components:
               image:
                 type: string
                 format: binary
-                description: The image to edit.
+                description: The image to edit. For the GPT image models, a `png`, `webp`, or `jpg` file up to 50MB; for `dall-e-2`, a square PNG under 4MB. If `mask` is not provided, the image must have transparency, which will be used as the mask.
               prompt:
                 type: string
-                description: A text description of the desired image edit.
+                description: A text description of the desired image.
               mask:
                 type: string
                 format: binary
-                description: |
-                  An additional image whose fully transparent areas indicate
-                  where the source image should be edited.
+                description: An additional image whose fully transparent areas (alpha = 0) indicate where the image should be edited. Must be a valid PNG file with the same dimensions as the image (under 4MB for `dall-e-2`).
               model:
                 type: string
-                description: The model to use for image editing.
+                description: Model ID to use for image editing.
               n:
                 type: integer
                 minimum: 1
                 maximum: 10
                 default: 1
-                description: The number of images to generate.
+                description: Number of images to generate.
               size:
-                type: string
-                description: The size of the generated images.
+                $ref: '#/components/schemas/ImageSize'
               quality:
                 type: string
                 enum:
@@ -849,22 +846,26 @@ components:
                   - low
                   - medium
                   - high
-                description: The quality of the generated images.
+                description: |
+                  The quality of the edited image. `auto` selects the best
+                  quality for the model. The GPT image models support `low`,
+                  `medium`, and `high`; `dall-e-2` supports only `standard`.
               response_format:
                 type: string
                 enum:
                   - url
                   - b64_json
                 default: url
-                description: The format in which generated images are returned.
+                description: The format in which the generated images are returned.
             required:
               - image
               - prompt
     CreateImageVariationRequest:
       required: true
       description: |
-        Multipart request payload for the image variation endpoint. Mirrors the
-        OpenAI `POST /v1/images/variations` request body.
+        Request payload for the Images Variations API. Mirrors the OpenAI
+        `POST /v1/images/variations` request body. Sent as `multipart/form-data`
+        with the image file as a binary upload.
       content:
         multipart/form-data:
           schema:
@@ -873,26 +874,25 @@ components:
               image:
                 type: string
                 format: binary
-                description: The image to use as the basis for the variation(s).
+                description: The image to use as the basis for the variation. For the GPT image models, a `png`, `webp`, or `jpg` file up to 50MB; for `dall-e-2`, a square PNG under 4MB.
               model:
                 type: string
-                description: The model to use for image variations.
+                description: Model ID to use for image variation.
               n:
                 type: integer
                 minimum: 1
                 maximum: 10
                 default: 1
-                description: The number of images to generate.
+                description: Number of images to generate.
               size:
-                type: string
-                description: The size of the generated images.
+                $ref: '#/components/schemas/ImageSize'
               response_format:
                 type: string
                 enum:
                   - url
                   - b64_json
                 default: url
-                description: The format in which generated images are returned.
+                description: The format in which the generated images are returned.
             required:
               - image
   responses:
