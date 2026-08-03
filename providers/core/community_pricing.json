@@ -736,11 +736,13 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "minimax/MiniMax-M2.1": {
+    "cache_read_per_token": "0.00000003",
+    "cache_write_per_token": "0.000000375",
     "currency": "USD",
     "input_per_token": "0.0000003",
     "output_per_token": "0.0000012",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-03T09:35:28Z"
   },
   "minimax/MiniMax-M2.5": {
     "cache_read_per_token": "0.00000003",
@@ -995,6 +997,13 @@
     "output_per_token": "0.000006",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "mistral/voxtral-small-latest": {
+    "currency": "USD",
+    "input_per_token": "0.0000001",
+    "output_per_token": "0.0000003",
+    "source": "community",
+    "updated_at": "2026-08-03T09:35:28Z"
   },
   "moonshot/kimi-k2-0711-preview": {
     "cache_read_per_token": "0.00000015",
@@ -2007,13 +2016,13 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "openai/gpt-5.6-luna": {
-    "cache_read_per_token": "0.0000001",
-    "cache_write_per_token": "0.00000125",
+    "cache_read_per_token": "0.00000002",
+    "cache_write_per_token": "0.00000025",
     "currency": "USD",
-    "input_per_token": "0.000001",
-    "output_per_token": "0.000006",
+    "input_per_token": "0.0000002",
+    "output_per_token": "0.0000012",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-03T09:35:28Z"
   },
   "openai/gpt-5.6-sol": {
     "cache_read_per_token": "0.0000005",
@@ -2025,13 +2034,13 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "openai/gpt-5.6-terra": {
-    "cache_read_per_token": "0.00000025",
-    "cache_write_per_token": "0.000003125",
+    "cache_read_per_token": "0.0000002",
+    "cache_write_per_token": "0.0000025",
     "currency": "USD",
-    "input_per_token": "0.0000025",
-    "output_per_token": "0.000015",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.000012",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-03T09:35:28Z"
   },
   "openai/gpt-image-2": {
     "cache_read_per_token": "0.00000125",
