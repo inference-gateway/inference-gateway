@@ -188,6 +188,72 @@ func TestGenerate_PreservesTimestampsForUnchangedRates(t *testing.T) {
 	}
 }
 
+// TestGenerate_Overrides checks the hand-maintained companion file: entries
+// models.dev does not carry are added, and entries it carries differently are
+// replaced.
+func TestGenerate_Overrides(t *testing.T) {
+	tarball := writeTarball(t, map[string]string{
+		"sst-models.dev-abc/providers/openai/models/gpt-paid.toml":      "[cost]\ninput = 3.0\noutput = 15.0\n[limit]\ncontext = 128000\n",
+		"sst-models.dev-abc/providers/anthropic/models/claude-ctx.toml": "[cost]\ninput = 5.0\noutput = 25.0\n[limit]\ncontext = 200000\n",
+	})
+	dir := t.TempDir()
+
+	pricingOut := filepath.Join(dir, "pricing.json")
+	pricingOverrides := `{
+		"anthropic/claude-opus-5": {"currency":"USD","input_per_token":"0.000005","output_per_token":"0.000025","source":"community","updated_at":"2026-07-27T09:42:20Z"},
+		"openai/gpt-paid": {"currency":"USD","input_per_token":"0.000009","output_per_token":"0.000015","source":"community","updated_at":"2026-07-27T09:42:20Z"}
+	}`
+	if err := os.WriteFile(filepath.Join(dir, "pricing"+overridesSuffix), []byte(pricingOverrides), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := Generate(pricingOut, tarball); err != nil {
+		t.Fatalf("Generate() = %v", err)
+	}
+	var pricing map[string]types.Pricing
+	readJSON(t, pricingOut, &pricing)
+
+	if _, ok := pricing["anthropic/claude-opus-5"]; !ok {
+		t.Error("override-only model missing from pricing table")
+	}
+	if got := pricing["openai/gpt-paid"].InputPerToken; got != "0.000009" {
+		t.Errorf("overridden rate = %q, want the override to win", got)
+	}
+	if _, ok := pricing["anthropic/claude-ctx"]; !ok {
+		t.Error("synced model dropped by the override merge")
+	}
+
+	ctxOut := filepath.Join(dir, "context_windows.json")
+	ctxOverrides := `{"deepseek/deepseek-v4-flash": {"context": 1000000, "output": 384000}}`
+	if err := os.WriteFile(filepath.Join(dir, "context_windows"+overridesSuffix), []byte(ctxOverrides), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := GenerateContextWindows(ctxOut, tarball); err != nil {
+		t.Fatalf("GenerateContextWindows() = %v", err)
+	}
+	var windows map[string]contextWindowEntry
+	readJSON(t, ctxOut, &windows)
+
+	if got := windows["deepseek/deepseek-v4-flash"]; got.Context != 1000000 || got.Output != 384000 {
+		t.Errorf("override-only context window = %+v, want context 1000000 output 384000", got)
+	}
+	if got := windows["openai/gpt-paid"]; got.Context != 128000 {
+		t.Errorf("synced context window = %+v, want context 128000", got)
+	}
+}
+
+// readJSON decodes a generated table file into v.
+func readJSON(t *testing.T, path string, v any) {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(data, v); err != nil {
+		t.Fatal(err)
+	}
+}
+
 // TestGenerateContextWindows covers the limit states in models.dev files: a
 // published context limit emits an entry (with output tokens when present),
 // an absent limit section emits no entry, and unsupported providers are

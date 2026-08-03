@@ -1,0 +1,10 @@
+{
+  "anthropic/claude-opus-5": {
+    "context": 1000000,
+    "output": 128000
+  },
+  "deepseek/deepseek-v4-flash": {
+    "context": 1000000,
+    "output": 384000
+  }
+}

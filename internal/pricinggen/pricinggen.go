@@ -4,14 +4,21 @@
 // emits the JSON tables embedded by providers/core: model pricing (USD
 // per-million-token rates converted to the gateway's per-token decimal-string
 // format, `task pricing:sync`) and context windows (`task contextwindow:sync`).
+//
+// Each table has a hand-maintained companion, "<table>.overrides.json", for
+// models models.dev does not carry (or carries wrong). Those entries are
+// merged last, so they win over the synced values and survive every re-sync.
 package pricinggen
 
 import (
 	"archive/tar"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
+	"maps"
 	"os"
 	"strconv"
 	"strings"
@@ -21,6 +28,10 @@ import (
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
+
+// overridesSuffix names the hand-maintained companion file of a community
+// table: "community_pricing.json" -> "community_pricing.overrides.json".
+const overridesSuffix = ".overrides.json"
 
 // providerDirs maps a models.dev provider directory to the gateway provider
 // ID. Local providers (ollama, llamacpp) are intentionally absent: their
@@ -168,17 +179,43 @@ func forEachModel(tarballPath string, visit func(key string, model modelTOML)) e
 	return nil
 }
 
-// writeTable writes a community table as indented JSON, refusing to emit an
-// empty table (that means the tarball was not a models.dev checkout).
+// writeTable merges the hand-maintained overrides over the synced table and
+// writes it as indented JSON, refusing to emit an empty table (that means the
+// tarball was not a models.dev checkout).
 func writeTable[V any](output, tarballPath string, table map[string]V) error {
 	if len(table) == 0 {
 		return fmt.Errorf("no supported provider models found in %s", tarballPath)
 	}
+	overrides, err := readOverrides[V](output)
+	if err != nil {
+		return err
+	}
+	maps.Copy(table, overrides)
 	data, err := json.MarshalIndent(table, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encoding community table: %w", err)
 	}
 	return os.WriteFile(output, append(data, '\n'), 0o644)
+}
+
+// readOverrides reads the hand-maintained companion of a community table
+// ("<table>.overrides.json"), which holds entries models.dev does not carry or
+// gets wrong. Its entries win over the synced ones and survive every re-sync;
+// an absent file means no overrides.
+func readOverrides[V any](output string) (map[string]V, error) {
+	path := strings.TrimSuffix(output, ".json") + overridesSuffix
+	data, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("reading %s: %w", path, err)
+	}
+	table := make(map[string]V)
+	if err := json.Unmarshal(data, &table); err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", path, err)
+	}
+	return table, nil
 }
 
 // tableKey maps a tarball entry like

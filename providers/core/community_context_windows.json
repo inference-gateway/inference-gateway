@@ -27,6 +27,10 @@
     "context": 1000000,
     "output": 128000
   },
+  "anthropic/claude-opus-5": {
+    "context": 1000000,
+    "output": 128000
+  },
   "anthropic/claude-sonnet-4-5": {
     "context": 1000000
   },
@@ -126,6 +130,10 @@
     "output": 384000
   },
   "deepseek/deepseek-reasoner": {
+    "context": 1000000,
+    "output": 384000
+  },
+  "deepseek/deepseek-v4-flash": {
     "context": 1000000,
     "output": 384000
   },
