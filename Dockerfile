@@ -16,5 +16,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o inference-gateway ./cm
 FROM gcr.io/distroless/static-debian13
 WORKDIR /app
 COPY --from=builder /app/inference-gateway .
+ENV SERVER_HOST=0.0.0.0
 EXPOSE 8080
 CMD ["./inference-gateway"]

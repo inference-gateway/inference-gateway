@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -33,6 +34,14 @@ import (
 var (
 	version = "dev"
 )
+
+func isLoopbackHost(host string) bool {
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
 
 func main() {
 	versionFlag := flag.Bool("version", false, "Print version information")
@@ -84,6 +93,13 @@ func main() {
 
 	// Log config in debug mode
 	logger.Debug("loaded config", "config", cfg.String())
+
+	if !cfg.Auth.Enabled && !isLoopbackHost(cfg.Server.Host) {
+		logger.Warn("gateway bound to a non-loopback address with authentication disabled; "+
+			"any client that can reach this port can consume your configured provider API keys - "+
+			"set AUTH_ENABLED=true or bind SERVER_HOST to loopback",
+			"host", cfg.Server.Host)
+	}
 
 	// Initialize OpenTelemetry Prometheus exporter Server
 	var telemetryImpl otel.OpenTelemetry

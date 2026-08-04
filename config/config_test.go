@@ -71,7 +71,7 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			OidcClientSecret: "",
 		},
 		Server: &config.ServerConfig{
-			Host:               "0.0.0.0",
+			Host:               "127.0.0.1",
 			Port:               "8080",
 			ReadTimeout:        30 * time.Second,
 			WriteTimeout:       30 * time.Second,
