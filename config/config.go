@@ -91,7 +91,7 @@ type GuardrailsConfig struct {
 
 // Server configuration
 type ServerConfig struct {
-	Host               string        `env:"HOST, default=0.0.0.0" description:"Server host"`
+	Host               string        `env:"HOST, default=127.0.0.1" description:"Server host"`
 	Port               string        `env:"PORT, default=8080" description:"Server port"`
 	ReadTimeout        time.Duration `env:"READ_TIMEOUT, default=30s" description:"Read timeout"`
 	WriteTimeout       time.Duration `env:"WRITE_TIMEOUT, default=30s" description:"Write timeout"`

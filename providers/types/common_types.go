@@ -624,6 +624,30 @@ func (e MessagesToolUseBlockType) Valid() bool {
 	}
 }
 
+// Defines values for ModelModalities.
+const (
+	ModelModalitiesAudio ModelModalities = "audio"
+	ModelModalitiesImage ModelModalities = "image"
+	ModelModalitiesText  ModelModalities = "text"
+	ModelModalitiesVideo ModelModalities = "video"
+)
+
+// Valid indicates whether the value is a known member of the ModelModalities enum.
+func (e ModelModalities) Valid() bool {
+	switch e {
+	case ModelModalitiesAudio:
+		return true
+	case ModelModalitiesImage:
+		return true
+	case ModelModalitiesText:
+		return true
+	case ModelModalitiesVideo:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for PricingSource.
 const (
 	PricingSourceCommunity PricingSource = "community"
@@ -1272,6 +1296,7 @@ func (e CreateImageVariationMultipartBodyResponseFormat) Valid() bool {
 // Defines values for ListModelsParamsInclude.
 const (
 	ListModelsParamsIncludeContextWindow ListModelsParamsInclude = "context_window"
+	ListModelsParamsIncludeModalities    ListModelsParamsInclude = "modalities"
 	ListModelsParamsIncludePricing       ListModelsParamsInclude = "pricing"
 )
 
@@ -1279,6 +1304,8 @@ const (
 func (e ListModelsParamsInclude) Valid() bool {
 	switch e {
 	case ListModelsParamsIncludeContextWindow:
+		return true
+	case ListModelsParamsIncludeModalities:
 		return true
 	case ListModelsParamsIncludePricing:
 		return true
@@ -2423,13 +2450,19 @@ type Model struct {
 	ContextWindow *ContextWindow `json:"context_window,omitempty"`
 	Created       int64          `json:"created"`
 	ID            string         `json:"id"`
-	Object        string         `json:"object"`
-	OwnedBy       string         `json:"owned_by"`
+
+	// Modalities The modalities the model supports natively (included when `include=modalities`)
+	Modalities *[]ModelModalities `json:"modalities,omitempty"`
+	Object     string             `json:"object"`
+	OwnedBy    string             `json:"owned_by"`
 
 	// Pricing Pricing information for the model (included when `include=pricing`)
 	Pricing  *Pricing `json:"pricing,omitempty"`
 	ServedBy Provider `json:"served_by"`
 }
+
+// ModelModalities defines model for Model.Modalities.
+type ModelModalities string
 
 // Pricing Pricing information for a model
 type Pricing struct {
@@ -3158,7 +3191,7 @@ type ListModelsParams struct {
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 
 	// Include Comma-separated list of metadata keys to include in the response.
-	// Supported values: `pricing`, `context_window`.
+	// Supported values: `pricing`, `context_window`, `modalities`.
 	// When omitted, the response remains unchanged (backward compatible).
 	Include *[]ListModelsParamsInclude `form:"include,omitempty" json:"include,omitempty"`
 }

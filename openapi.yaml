@@ -86,10 +86,11 @@ paths:
               type: string
               enum:
                 - context_window
+                - modalities
                 - pricing
           description: |
             Comma-separated list of metadata keys to include in the response.
-            Supported values: `pricing`, `context_window`.
+            Supported values: `pricing`, `context_window`, `modalities`.
             When omitted, the response remains unchanged (backward compatible).
       responses:
         '200':
@@ -244,6 +245,27 @@ paths:
                         context_window:
                           tokens: 128000
                           source: 'provider'
+                includeModalities:
+                  summary: Models with modalities metadata
+                  value:
+                    object: 'list'
+                    data:
+                      - id: 'openai/gpt-4o'
+                        object: 'model'
+                        created: 1686935002
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                        modalities:
+                          - text
+                          - image
+                      - id: 'openai/gpt-4-turbo'
+                        object: 'model'
+                        created: 1687882410
+                        owned_by: 'openai'
+                        served_by: 'openai'
+                        modalities:
+                          - text
+                          - image
         '400':
           description: Bad request - unsupported include value
           content:
@@ -251,7 +273,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Unsupported include value: 'unsupported'. Supported values: pricing, context_window"
+                error: "Unsupported include value: 'unsupported'. Supported values: pricing, context_window, modalities"
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -1042,7 +1064,6 @@ components:
           id: 'ollama'
           url: 'http://ollama:8080/v1'
           auth_type: 'none'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1056,7 +1077,6 @@ components:
           id: 'ollama_cloud'
           url: 'https://ollama.com/v1'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1070,7 +1090,6 @@ components:
           id: 'anthropic'
           url: 'https://api.anthropic.com/v1'
           auth_type: 'xheader'
-          supports_vision: true
           extra_headers:
             anthropic-version: '2023-06-01'
           endpoints:
@@ -1086,7 +1105,6 @@ components:
           id: 'cohere'
           url: 'https://api.cohere.ai'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1100,7 +1118,6 @@ components:
           id: 'groq'
           url: 'https://api.groq.com/openai/v1'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1114,7 +1131,6 @@ components:
           id: 'llamacpp'
           url: 'http://llamacpp:8080/v1'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1128,7 +1144,6 @@ components:
           id: 'openai'
           url: 'https://api.openai.com/v1'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1158,7 +1173,6 @@ components:
           id: 'cloudflare'
           url: 'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai'
           auth_type: 'bearer'
-          supports_vision: false
           endpoints:
             models:
               name: 'list_models'
@@ -1172,7 +1186,6 @@ components:
           id: 'deepseek'
           url: 'https://api.deepseek.com'
           auth_type: 'bearer'
-          supports_vision: false
           endpoints:
             models:
               name: 'list_models'
@@ -1186,7 +1199,6 @@ components:
           id: 'google'
           url: 'https://generativelanguage.googleapis.com/v1beta/openai'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1200,7 +1212,6 @@ components:
           id: 'mistral'
           url: 'https://api.mistral.ai/v1'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1214,7 +1225,6 @@ components:
           id: 'minimax'
           url: 'https://api.minimax.io/v1'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1228,7 +1238,6 @@ components:
           id: 'moonshot'
           url: 'https://api.moonshot.ai/v1'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1242,7 +1251,6 @@ components:
           id: 'nvidia'
           url: 'https://integrate.api.nvidia.com/v1'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1256,7 +1264,6 @@ components:
           id: 'zai'
           url: 'https://api.z.ai/api/paas/v4'
           auth_type: 'bearer'
-          supports_vision: true
           endpoints:
             models:
               name: 'list_models'
@@ -1621,6 +1628,18 @@ components:
           type: string
         served_by:
           $ref: '#/components/schemas/Provider'
+        modalities:
+          oneOf:
+            - type: array
+              items:
+                type: string
+                enum:
+                  - text
+                  - image
+                  - audio
+                  - video
+            - type: 'null'
+          description: The modalities the model supports natively (included when `include=modalities`)
         context_window:
           oneOf:
             - $ref: '#/components/schemas/ContextWindow'
@@ -3988,7 +4007,7 @@ components:
                 - name: host
                   env: 'SERVER_HOST'
                   type: string
-                  default: '0.0.0.0'
+                  default: '127.0.0.1'
                   description: 'Server host'
                 - name: port
                   env: 'SERVER_PORT'

@@ -13,7 +13,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.AnthropicDisplayName,
 		URL:            constants.AnthropicDefaultBaseURL,
 		AuthType:       constants.AuthTypeXheader,
-		SupportsVision: true,
+		SupportsVision: false,
 		ExtraHeaders: map[string][]string{
 			"anthropic-version": {"2023-06-01"},
 		},
@@ -38,7 +38,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.CohereDisplayName,
 		URL:            constants.CohereDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.CohereModelsEndpoint,
 			Chat:   constants.CohereChatEndpoint,
@@ -60,7 +60,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.GoogleDisplayName,
 		URL:            constants.GoogleDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.GoogleModelsEndpoint,
 			Chat:   constants.GoogleChatEndpoint,
@@ -71,7 +71,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.GroqDisplayName,
 		URL:            constants.GroqDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.GroqModelsEndpoint,
 			Chat:   constants.GroqChatEndpoint,
@@ -82,7 +82,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.LlamacppDisplayName,
 		URL:            constants.LlamacppDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.LlamacppModelsEndpoint,
 			Chat:   constants.LlamacppChatEndpoint,
@@ -93,7 +93,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.MinimaxDisplayName,
 		URL:            constants.MinimaxDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.MinimaxModelsEndpoint,
 			Chat:   constants.MinimaxChatEndpoint,
@@ -104,7 +104,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.MistralDisplayName,
 		URL:            constants.MistralDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.MistralModelsEndpoint,
 			Chat:   constants.MistralChatEndpoint,
@@ -115,7 +115,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.MoonshotDisplayName,
 		URL:            constants.MoonshotDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.MoonshotModelsEndpoint,
 			Chat:   constants.MoonshotChatEndpoint,
@@ -126,7 +126,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.NvidiaDisplayName,
 		URL:            constants.NvidiaDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.NvidiaModelsEndpoint,
 			Chat:   constants.NvidiaChatEndpoint,
@@ -137,7 +137,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.OllamaDisplayName,
 		URL:            constants.OllamaDefaultBaseURL,
 		AuthType:       constants.AuthTypeNone,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.OllamaModelsEndpoint,
 			Chat:   constants.OllamaChatEndpoint,
@@ -148,7 +148,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.OllamaCloudDisplayName,
 		URL:            constants.OllamaCloudDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.OllamaCloudModelsEndpoint,
 			Chat:   constants.OllamaCloudChatEndpoint,
@@ -159,7 +159,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.OpenaiDisplayName,
 		URL:            constants.OpenaiDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models:           constants.OpenaiModelsEndpoint,
 			Chat:             constants.OpenaiChatEndpoint,
@@ -174,7 +174,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.ZaiDisplayName,
 		URL:            constants.ZaiDefaultBaseURL,
 		AuthType:       constants.AuthTypeBearer,
-		SupportsVision: true,
+		SupportsVision: false,
 		Endpoints: types.Endpoints{
 			Models: constants.ZaiModelsEndpoint,
 			Chat:   constants.ZaiChatEndpoint,

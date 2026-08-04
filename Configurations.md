@@ -71,7 +71,7 @@
 
 | Environment Variable         | Default Value | Description                                 |
 | ---------------------------- | ------------- | ------------------------------------------- |
-| SERVER_HOST                  | `0.0.0.0`     | Server host                                 |
+| SERVER_HOST                  | `127.0.0.1`   | Server host                                 |
 | SERVER_PORT                  | `8080`        | Server port                                 |
 | SERVER_READ_TIMEOUT          | `30s`         | Read timeout                                |
 | SERVER_WRITE_TIMEOUT         | `30s`         | Write timeout                               |
