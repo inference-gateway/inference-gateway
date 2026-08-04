@@ -231,7 +231,7 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		return
 	}
 	proxy := &httputil.ReverseProxy{
-		Transport: otelhttp.NewTransport(http.DefaultTransport),
+		Transport: proxyTransport,
 	}
 
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
@@ -1349,6 +1349,10 @@ type imagesMultipartTarget struct {
 	endpoint      func(types.Endpoints) *string
 	requirePrompt bool
 }
+
+// proxyTransport wraps http.DefaultTransport with OpenTelemetry instrumentation
+// so that every non-streaming reverse proxy call emits a distinct client span.
+var proxyTransport = otelhttp.NewTransport(http.DefaultTransport)
 
 var (
 	imagesEditsTarget = imagesMultipartTarget{
