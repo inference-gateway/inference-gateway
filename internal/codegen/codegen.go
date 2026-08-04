@@ -382,7 +382,7 @@ import (
     "strings"
     "time"
 
-    "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+    otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
