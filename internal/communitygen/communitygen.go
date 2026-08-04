@@ -1,14 +1,15 @@
-// Package pricinggen syncs the community fallback tables from the models.dev
+// Package communitygen syncs the community fallback tables from the models.dev
 // dataset (https://github.com/sst/models.dev). It reads a GitHub tarball of
 // that repository, filters it to the gateway's supported cloud providers, and
 // emits the JSON tables embedded by providers/core: model pricing (USD
 // per-million-token rates converted to the gateway's per-token decimal-string
-// format, `task pricing:sync`) and context windows (`task contextwindow:sync`).
+// format, `task pricing:sync`), context windows (`task contextwindow:sync`),
+// and input modalities (`task modalities:sync`).
 //
 // Each table has a hand-maintained companion, "<table>.overrides.json", for
 // models models.dev does not carry (or carries wrong). Those entries are
 // merged last, so they win over the synced values and survive every re-sync.
-package pricinggen
+package communitygen
 
 import (
 	"archive/tar"
@@ -78,6 +79,10 @@ type modelTOML struct {
 		Context int64 `toml:"context"`
 		Output  int64 `toml:"output"`
 	} `toml:"limit"`
+	Modalities struct {
+		Input  []string `toml:"input"`
+		Output []string `toml:"output"`
+	} `toml:"modalities"`
 }
 
 // contextWindowEntry is one row of the community context-window table: the
@@ -133,6 +138,42 @@ func GenerateContextWindows(output, tarballPath string) error {
 		return err
 	}
 	return writeTable(output, tarballPath, table)
+}
+
+// GenerateModalities reads a models.dev repository tarball and writes the
+// community modalities table keyed by "<provider>/<model>" to output. It maps
+// each model's input modalities to the gateway's ModelModalities enum, dropping
+// values the enum does not carry (e.g. models.dev's "pdf"). Models with no
+// recognized input modality get no entry and render as explicit nulls.
+func GenerateModalities(output, tarballPath string) error {
+	table := make(map[string][]types.ModelModalities)
+	err := forEachModel(tarballPath, func(key string, model modelTOML) {
+		mods := enumModalities(model.Modalities.Input)
+		if len(mods) == 0 {
+			return
+		}
+		table[key] = mods
+	})
+	if err != nil {
+		return err
+	}
+	return writeTable(output, tarballPath, table)
+}
+
+// enumModalities keeps only the values that are members of the gateway's
+// ModelModalities enum, in first-seen order without duplicates.
+func enumModalities(values []string) []types.ModelModalities {
+	var out []types.ModelModalities
+	seen := make(map[types.ModelModalities]bool)
+	for _, v := range values {
+		m := types.ModelModalities(v)
+		if !m.Valid() || seen[m] {
+			continue
+		}
+		seen[m] = true
+		out = append(out, m)
+	}
+	return out
 }
 
 // forEachModel walks a models.dev repository tarball and calls visit for every

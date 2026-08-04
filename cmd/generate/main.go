@@ -6,9 +6,9 @@ import (
 	"os"
 
 	codegen "github.com/inference-gateway/inference-gateway/internal/codegen"
+	communitygen "github.com/inference-gateway/inference-gateway/internal/communitygen"
 	dockergen "github.com/inference-gateway/inference-gateway/internal/dockergen"
 	mdgen "github.com/inference-gateway/inference-gateway/internal/mdgen"
-	pricinggen "github.com/inference-gateway/inference-gateway/internal/pricinggen"
 )
 
 var (
@@ -19,8 +19,8 @@ var (
 
 func init() {
 	flag.StringVar(&output, "output", "", "Path to the output file")
-	flag.StringVar(&input, "input", "", "Path to the input file (CommunityPricing, CommunityContextWindows: a models.dev repository tarball)")
-	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, MCPWrap, CommunityPricing, or CommunityContextWindows)")
+	flag.StringVar(&input, "input", "", "Path to the input file (CommunityPricing, CommunityContextWindows, CommunityModalities: a models.dev repository tarball)")
+	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, MCPWrap, CommunityPricing, CommunityContextWindows, or CommunityModalities)")
 }
 
 func main() {
@@ -80,7 +80,7 @@ func main() {
 			fmt.Println("-input must point to a models.dev repository tarball")
 			os.Exit(1)
 		}
-		err := pricinggen.Generate(output, input)
+		err := communitygen.Generate(output, input)
 		if err != nil {
 			fmt.Printf("Error generating community pricing table: %v\n", err)
 			os.Exit(1)
@@ -91,9 +91,20 @@ func main() {
 			fmt.Println("-input must point to a models.dev repository tarball")
 			os.Exit(1)
 		}
-		err := pricinggen.GenerateContextWindows(output, input)
+		err := communitygen.GenerateContextWindows(output, input)
 		if err != nil {
 			fmt.Printf("Error generating community context-window table: %v\n", err)
+			os.Exit(1)
+		}
+	case "CommunityModalities":
+		fmt.Printf("Generating community modalities table to %s\n", output)
+		if input == "" {
+			fmt.Println("-input must point to a models.dev repository tarball")
+			os.Exit(1)
+		}
+		err := communitygen.GenerateModalities(output, input)
+		if err != nil {
+			fmt.Printf("Error generating community modalities table: %v\n", err)
 			os.Exit(1)
 		}
 	case "MCPWrap":

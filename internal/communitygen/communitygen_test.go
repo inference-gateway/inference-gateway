@@ -1,4 +1,4 @@
-package pricinggen
+package communitygen
 
 import (
 	"archive/tar"
@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -291,5 +292,23 @@ func TestGenerateContextWindows(t *testing.T) {
 	}
 	if _, ok := table["ollama_cloud/no-limit"]; ok {
 		t.Error("model without a limit section must not get an entry")
+	}
+}
+
+// TestEnumModalities keeps only known ModelModalities members, in first-seen
+// order without duplicates, dropping values the enum does not carry (e.g.
+// models.dev's "pdf").
+func TestEnumModalities(t *testing.T) {
+	got := enumModalities([]string{"text", "pdf", "image", "text", "bogus", "audio"})
+	want := []types.ModelModalities{
+		types.ModelModalitiesText,
+		types.ModelModalitiesImage,
+		types.ModelModalitiesAudio,
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("enumModalities() = %v, want %v", got, want)
+	}
+	if got := enumModalities([]string{"pdf", "bogus"}); got != nil {
+		t.Errorf("enumModalities(all-unknown) = %v, want nil", got)
 	}
 }

@@ -11,7 +11,7 @@ import (
 
 // communityContextWindowsJSON is the fallback context-window table synced from
 // the community-maintained models.dev dataset via `task contextwindow:sync`
-// (internal/pricinggen), keyed by "<provider>/<model>".
+// (internal/communitygen), keyed by "<provider>/<model>".
 //
 //go:embed community_context_windows.json
 var communityContextWindowsJSON []byte

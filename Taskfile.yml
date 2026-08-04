@@ -54,6 +54,13 @@ tasks:
       - go run cmd/generate/main.go -type CommunityContextWindows -input /tmp/models.dev.tar.gz -output providers/core/community_context_windows.json
       - rm -f /tmp/models.dev.tar.gz
 
+  modalities:sync:
+    desc: 'Sync the community modalities fallback table from models.dev (needs network + gh); commit the regenerated JSON'
+    cmds:
+      - gh api repos/sst/models.dev/tarball > /tmp/models.dev.tar.gz
+      - go run cmd/generate/main.go -type CommunityModalities -input /tmp/models.dev.tar.gz -output providers/core/community_modalities.json
+      - rm -f /tmp/models.dev.tar.gz
+
   tidy:
     desc: 'Tidy the gateway'
     cmds:

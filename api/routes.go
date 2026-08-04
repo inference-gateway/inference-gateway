@@ -381,6 +381,11 @@ func (router *RouterImpl) renderModelsResponse(c *gin.Context, resp types.ListMo
 			resp.Data[i].Pricing = nil
 		}
 	}
+	if !slices.Contains(includeKeys, string(types.ListModelsParamsIncludeModalities)) {
+		for i := range resp.Data {
+			resp.Data[i].Modalities = nil
+		}
+	}
 
 	if len(includeKeys) == 0 {
 		c.JSON(http.StatusOK, resp)

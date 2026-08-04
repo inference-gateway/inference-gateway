@@ -44,6 +44,7 @@ jobs:
           gh api repos/sst/models.dev/tarball > /tmp/models.dev.tar.gz
           go run cmd/generate/main.go -type CommunityPricing -input /tmp/models.dev.tar.gz -output providers/core/community_pricing.json
           go run cmd/generate/main.go -type CommunityContextWindows -input /tmp/models.dev.tar.gz -output providers/core/community_context_windows.json
+          go run cmd/generate/main.go -type CommunityModalities -input /tmp/models.dev.tar.gz -output providers/core/community_modalities.json
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
 
@@ -52,14 +53,14 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: chore/sync-community-tables
-          add-paths: providers/core/community_pricing.json,providers/core/community_context_windows.json
+          add-paths: providers/core/community_pricing.json,providers/core/community_context_windows.json,providers/core/community_modalities.json
           committer: '${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>'
           author: '${{ steps.app-token.outputs.app-slug }}[bot] <${{ steps.get-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com>'
-          commit-message: 'chore: sync community pricing and context-window tables from models.dev'
-          title: 'chore: sync community pricing and context-window tables from models.dev'
+          commit-message: 'chore: sync community pricing, context-window, and modalities tables from models.dev'
+          title: 'chore: sync community pricing, context-window, and modalities tables from models.dev'
           body: >-
-            Automated weekly sync of `community_pricing.json` and
-            `community_context_windows.json` from the
-            [models.dev](https://github.com/sst/models.dev) dataset. Only
-            entries whose values changed carry a new `updated_at`.
+            Automated weekly sync of `community_pricing.json`,
+            `community_context_windows.json`, and `community_modalities.json`
+            from the [models.dev](https://github.com/sst/models.dev) dataset.
+            Only entries whose values changed carry a new `updated_at`.
           delete-branch: true

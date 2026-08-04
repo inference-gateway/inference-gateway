@@ -11,7 +11,7 @@ import (
 
 // communityPricingJSON is the fallback pricing table synced from the
 // community-maintained models.dev dataset via `task pricing:sync`
-// (internal/pricinggen), keyed by "<provider>/<model>".
+// (internal/communitygen), keyed by "<provider>/<model>".
 //
 //go:embed community_pricing.json
 var communityPricingJSON []byte
