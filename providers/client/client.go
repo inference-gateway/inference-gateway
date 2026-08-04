@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
@@ -40,19 +42,21 @@ func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
 		tlsMinVersion = tls.VersionTLS13
 	}
 
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			MaxIdleConns:        cfg.ClientMaxIdleConns,
-			MaxIdleConnsPerHost: cfg.ClientMaxIdleConnsPerHost,
-			IdleConnTimeout:     cfg.ClientIdleConnTimeout,
-			TLSClientConfig: &tls.Config{
-				MinVersion: tlsMinVersion,
-			},
-			ForceAttemptHTTP2:     true,
-			DisableCompression:    cfg.ClientDisableCompression,
-			ResponseHeaderTimeout: cfg.ClientResponseHeaderTimeout,
-			ExpectContinueTimeout: cfg.ClientExpectContinueTimeout,
+	httpTransport := &http.Transport{
+		MaxIdleConns:        cfg.ClientMaxIdleConns,
+		MaxIdleConnsPerHost: cfg.ClientMaxIdleConnsPerHost,
+		IdleConnTimeout:     cfg.ClientIdleConnTimeout,
+		TLSClientConfig: &tls.Config{
+			MinVersion: tlsMinVersion,
 		},
+		ForceAttemptHTTP2:     true,
+		DisableCompression:    cfg.ClientDisableCompression,
+		ResponseHeaderTimeout: cfg.ClientResponseHeaderTimeout,
+		ExpectContinueTimeout: cfg.ClientExpectContinueTimeout,
+	}
+
+	httpClient := &http.Client{
+		Transport: otelhttp.NewTransport(httpTransport),
 	}
 
 	return &ClientImpl{
