@@ -139,6 +139,58 @@ The parameter combines with `provider`, e.g.
 Without `include=pricing` the payload is unchanged and stays byte-for-byte
 OpenAI-compatible.
 
+### Modalities
+
+Pass `include=modalities` to enrich each model with the input modalities it
+supports natively, one or more of `text`, `image`, `audio`, and `video`. The
+values are sourced from the community-maintained
+[models.dev](https://github.com/sst/models.dev) dataset; models the gateway
+cannot resolve (local runtimes, or models absent from the dataset) carry an
+explicit `null`.
+
+```bash
+curl -X GET 'http://localhost:8080/v1/models?include=modalities' | jq .
+```
+
+Response:
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "openai/gpt-4o",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "openai",
+      "served_by": "openai",
+      "modalities": ["text", "image"]
+    },
+    {
+      "id": "deepseek/deepseek-chat",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "deepseek",
+      "served_by": "deepseek",
+      "modalities": ["text"]
+    },
+    {
+      "id": "ollama/deepseek-r1:1.5b",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "ollama",
+      "served_by": "ollama",
+      "modalities": null
+    }
+  ]
+}
+```
+
+The parameter combines with `provider`, e.g.
+`curl -X GET 'http://localhost:8080/v1/models?provider=openai&include=modalities'`.
+Without `include=modalities` the payload is unchanged and stays byte-for-byte
+OpenAI-compatible.
+
 ## POST Endpoints
 
 | Domain                            | Curl Command                                                                                                                                                                                                               |
