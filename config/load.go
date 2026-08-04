@@ -23,12 +23,10 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 		return Config{}, err
 	}
 
-	// Initialize Providers map if nil
 	if cfg.Providers == nil {
 		cfg.Providers = make(map[types.Provider]*registry.ProviderConfig)
 	}
 
-	// Set defaults for each provider
 	for id, defaults := range registry.Registry {
 		if _, exists := cfg.Providers[id]; !exists {
 			cp := *defaults
