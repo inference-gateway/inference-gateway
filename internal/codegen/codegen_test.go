@@ -54,8 +54,8 @@ func TestGenerateConfigFromFixture(t *testing.T) {
 	content := string(out)
 
 	assert.Contains(t, content, "Client *client.ClientConfig")
-	assert.Contains(t, content, "defaults.AuthType != constants.AuthTypeNone")
-	assert.Contains(t, content, "cp := *defaults")
+	assert.Contains(t, content, "Providers map[types.Provider]*registry.ProviderConfig")
+	assert.NotContains(t, content, "func (cfg *Config) Load")
 	assert.NotContains(t, content, "acme")
 	assert.NotContains(t, content, "ollama")
 }

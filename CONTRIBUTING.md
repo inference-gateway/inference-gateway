@@ -210,7 +210,7 @@ This command will:
 - Generate a new transformer file (`providers/transformers/newai.go`) with
   OpenAI-compatible structure, and add the provider to the generated
   transformer factory (`providers/transformers/transformers.go`)
-- Update the provider registry (`providers/registry/registry.go`) to include
+- Update the provider registry data (`providers/registry/registry_data.go`) to include
   your provider
 - Update configuration files (`config/config.go`, `Configurations.md`, the
   docker-compose `.env.example` files) to support the new provider
@@ -261,7 +261,7 @@ The code generation process creates:
 - **Provider transformer** (`providers/transformers/{provider}.go`): Contains
   the `ListModelsResponse` struct and `Transform()` method, plus the shared
   factory in `providers/transformers/transformers.go`
-- **Provider registry updates** (`providers/registry/registry.go`): Adds your
+- **Provider registry updates** (`providers/registry/registry_data.go`): Adds your
   provider to the central registry
 - **Configuration updates** (`config/config.go`): Includes environment variable
   support

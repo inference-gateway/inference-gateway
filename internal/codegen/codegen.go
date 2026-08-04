@@ -39,16 +39,9 @@ func GenerateConfig(destination string, oas string) error {
 package config
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"strings"
 	"time"
 
-	envconfig "github.com/sethvargo/go-envconfig"
-
 	client "github.com/inference-gateway/inference-gateway/providers/client"
-	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
@@ -144,63 +137,6 @@ type RoutingConfig struct {
 {{- end }}
 {{- end }}
 {{- end }}
-
-// Load configuration
-func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
-	if err := envconfig.ProcessWith(context.Background(), &envconfig.Config{
-		Target:   cfg,
-		Lookuper: lookuper,
-	}); err != nil {
-		return Config{}, err
-	}
-
-	// Initialize Providers map if nil
-	if cfg.Providers == nil {
-		cfg.Providers = make(map[types.Provider]*registry.ProviderConfig)
-	}
-
-	// Set defaults for each provider
-	for id, defaults := range registry.Registry {
-		if _, exists := cfg.Providers[id]; !exists {
-			cp := *defaults
-			providerCfg := &cp
-			url, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_URL")
-			if ok {
-				providerCfg.URL = url
-			}
-
-			token, ok := lookuper.Lookup(strings.ToUpper(string(id)) + "_API_KEY")
-			if (!ok || token == "") && defaults.AuthType != constants.AuthTypeNone {
-				t := time.Now().UTC().Format(time.RFC3339)
-				log.SetFlags(0)
-				log.Printf("{\"level\":\"notice\",\"timestamp\":\"%s\",\"caller\":\"config/config.go:103\",\"msg\":\"provider is not configured\",\"provider\":\"%s\"}", t, string(id))
-			}
-			providerCfg.Token = token
-			cfg.Providers[id] = providerCfg
-		}
-	}
-
-	return *cfg, nil
-}
-
-// The string representation of Config
-func (cfg *Config) String() string {
-    return fmt.Sprintf(
-        "Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, "+
-            "MCP:%+v, Auth:%+v, Server:%+v, Routing:%+v, Client:%+v, Providers:%+v}",
-        APPLICATION_NAME,
-        VERSION,
-        cfg.Environment,
-        cfg.Telemetry,
-        cfg.MCP,
-        cfg.Auth,
-        cfg.Server,
-        cfg.Routing,
-        cfg.Client,
-        cfg.Providers,
-    )
-}
-
 `))
 
 	data := struct {
@@ -259,14 +195,6 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// The authentication type of the specific provider
-const (
-    AuthTypeBearer  = "bearer"
-    AuthTypeXheader = "xheader"
-    AuthTypeQuery   = "query"
-    AuthTypeNone    = "none"
-)
-
 // The default base URLs of each provider
 const (
     {{- range $name, $config := .Providers }}
@@ -307,11 +235,6 @@ const (
     {{pascalCase $name}}DisplayName = "{{pascalCase $name}}"
     {{- end }}
 )
-
-// ListModelsTransformer interface for transforming provider-specific responses
-type ListModelsTransformer interface {
-    Transform() types.ListModelsResponse
-}
 `))
 
 	data := struct {
@@ -374,104 +297,39 @@ func GenerateProvidersClientConfig(destination, oas string) error {
 
 	const clientTemplate = `// Code generated from OpenAPI schema. DO NOT EDIT.
 package client
+{{- if .NeedsTime }}
 
 import (
-    "crypto/tls"
-    "io"
-    "net/http"
-    "strings"
     "time"
-
-    otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
-
-//go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
-type Client interface {
-    Do(req *http.Request) (*http.Response, error)
-    Get(url string) (*http.Response, error)
-    Post(url string, bodyType string, body string) (*http.Response, error)
-}
-
-type ClientImpl struct {
-    scheme   string
-    hostname string
-    port     string
-    client   *http.Client
-}
+{{- end }}
 
 type ClientConfig struct {
     {{- range $setting := .ClientSettings }}
     {{ pascalCase $setting.Env }} {{ $setting.Type }} ` + "`" + `env:"{{ $setting.Env }}, default={{ $setting.Default }}" description:"{{ $setting.Description }}"` + "`" + `
     {{- end }}
 }
-
-func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
-    var tlsMinVersion uint16 = tls.VersionTLS12
-    if cfg.ClientTlsMinVersion == "TLS13" {
-        tlsMinVersion = tls.VersionTLS13
-    }
-
-    httpTransport := &http.Transport{
-        MaxIdleConns:        cfg.ClientMaxIdleConns,
-        MaxIdleConnsPerHost: cfg.ClientMaxIdleConnsPerHost,
-        IdleConnTimeout:     cfg.ClientIdleConnTimeout,
-        TLSClientConfig: &tls.Config{
-            MinVersion: tlsMinVersion,
-        },
-        ForceAttemptHTTP2:     true,
-        DisableCompression:    cfg.ClientDisableCompression,
-        ResponseHeaderTimeout: cfg.ClientResponseHeaderTimeout,
-        ExpectContinueTimeout: cfg.ClientExpectContinueTimeout,
-    }
-
-    httpClient := &http.Client{
-        Transport: otelhttp.NewTransport(httpTransport),
-    }
-
-    return &ClientImpl{
-        scheme:   scheme,
-        hostname: hostname,
-        port:     port,
-        client:   httpClient,
-    }
-}
-
-func (c *ClientImpl) Do(req *http.Request) (*http.Response, error) {
-	if req.URL.Scheme == "" {
-		req.URL.Scheme = c.scheme
-	}
-	if req.URL.Host == "" {
-		req.URL.Host = c.hostname + ":" + c.port
-	}
-
-    return c.client.Do(req)
-}
-
-func (c *ClientImpl) Get(url string) (*http.Response, error) {
-    fullURL := c.scheme + "://" + c.hostname + ":" + c.port + "/" + strings.TrimPrefix(url, "/")
-    return c.client.Get(fullURL)
-}
-
-func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Response, error) {
-    fullURL := c.scheme + "://" + c.hostname + ":" + c.port + "/" + strings.TrimPrefix(url, "/")
-    req, err := http.NewRequest("POST", fullURL, nil)
-    if err != nil {
-        return nil, err
-    }
-    req.Header.Set("Content-Type", bodyType)
-    req.Body = io.NopCloser(strings.NewReader(body))
-    return c.client.Do(req)
-}`
+`
 
 	tmpl, err := template.New("client").Funcs(funcMap).Parse(clientTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
+	needsTime := false
+	for _, setting := range clientSection.Settings {
+		if strings.Contains(setting.Type, "time.") {
+			needsTime = true
+			break
+		}
+	}
+
 	data := struct {
 		ClientSettings []openapi.Setting
+		NeedsTime      bool
 	}{
 		ClientSettings: clientSection.Settings,
+		NeedsTime:      needsTime,
 	}
 
 	f, err := os.Create(destination)
@@ -727,76 +585,9 @@ func GenerateProviderRegistry(destination string, oas string) error {
 package registry
 
 import (
-	"fmt"
-
-	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
-	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
-	logger "github.com/inference-gateway/inference-gateway/logger"
 )
-
-// Base provider configuration
-type ProviderConfig struct {
-	ID             types.Provider
-	Name           string
-	URL            string
-	Token          string
-	AuthType       string
-	SupportsVision bool
-	ExtraHeaders   map[string][]string
-	Endpoints      types.Endpoints
-}
-
-//go:generate mockgen -source=registry.go -destination=../../tests/mocks/providers/registry.go -package=providersmocks
-type ProviderRegistry interface {
-	GetProviders() map[types.Provider]*ProviderConfig
-	BuildProvider(providerID types.Provider, c client.Client) (core.IProvider, error)
-}
-
-type ProviderRegistryImpl struct {
-	cfg    map[types.Provider]*ProviderConfig
-	logger logger.Logger
-}
-
-func NewProviderRegistry(cfg map[types.Provider]*ProviderConfig, logger logger.Logger) ProviderRegistry {
-	return &ProviderRegistryImpl{
-		cfg:    cfg,
-		logger: logger,
-	}
-}
-
-func (p *ProviderRegistryImpl) GetProviders() map[types.Provider]*ProviderConfig {
-	return p.cfg
-}
-
-func (p *ProviderRegistryImpl) BuildProvider(providerID types.Provider, c client.Client) (core.IProvider, error) {
-	provider, ok := p.cfg[providerID]
-	if !ok {
-		return nil, fmt.Errorf("provider %s not found", providerID)
-	}
-
-	if provider.AuthType != constants.AuthTypeNone && provider.Token == "" {
-		return nil, fmt.Errorf("provider %s token not configured", providerID)
-	}
-
-	return &core.ProviderImpl{
-		ID:                 &provider.ID,
-		Name:               provider.Name,
-		URL:                provider.URL,
-		Token:              provider.Token,
-		AuthType:           provider.AuthType,
-		SupportsVisionFlag: provider.SupportsVision,
-		ExtraHeaders:       provider.ExtraHeaders,
-		Endpoints:          provider.Endpoints,
-		Logger:             p.logger,
-		Client:             c,
-	}, nil
-}
-
-func ptr[T any](v T) *T {
-	return &v
-}
 
 // The registry of all providers
 var Registry = map[types.Provider]*ProviderConfig{

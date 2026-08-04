@@ -4,12 +4,15 @@ install.sh linguist-vendored=true
 
 config/config.go linguist-generated=true
 
-providers/common_types.go linguist-generated=true
-providers/registry.go linguist-generated=true
+providers/types/common_types.go linguist-generated=true
+providers/client/config.go linguist-generated=true
+providers/constants/constants.go linguist-generated=true
+providers/registry/registry_data.go linguist-generated=true
+providers/transformers/*.go linguist-generated=true
 
-mcp/generated_types.go linguist-generated=true
+internal/mcp/generated_types.go linguist-generated=true
 
-tests/mocks/* linguist-generated=true
+tests/mocks/** linguist-generated=true
 
 Configurations.md linguist-generated=true
 examples/docker-compose/**/.env.example linguist-generated=true

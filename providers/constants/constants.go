@@ -5,14 +5,6 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// The authentication type of the specific provider
-const (
-	AuthTypeBearer  = "bearer"
-	AuthTypeXheader = "xheader"
-	AuthTypeQuery   = "query"
-	AuthTypeNone    = "none"
-)
-
 // The default base URLs of each provider
 const (
 	AnthropicDefaultBaseURL   = "https://api.anthropic.com/v1"
@@ -107,8 +99,3 @@ const (
 	OpenaiDisplayName      = "Openai"
 	ZaiDisplayName         = "Zai"
 )
-
-// ListModelsTransformer interface for transforming provider-specific responses
-type ListModelsTransformer interface {
-	Transform() types.ListModelsResponse
-}

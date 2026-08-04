@@ -17,12 +17,12 @@ tasks:
   generate:
     desc: 'Generate the gateway from OpenAPI Spec'
     cmds:
-      - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client/client.go
+      - go run cmd/generate/main.go -type ProvidersClientConfig -output providers/client/config.go
       - go run cmd/generate/main.go -type ProvidersConstants -output providers/constants/constants.go
       - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0 --config=.oapi-codegen.yaml -o providers/types/common_types.go openapi.yaml
       - gofmt -r 'interface{} -> any' -w providers/types/common_types.go
       - go run cmd/generate/main.go -type Providers -output providers/transformers
-      - go run cmd/generate/main.go -type ProviderRegistry -output providers/registry/registry.go
+      - go run cmd/generate/main.go -type ProviderRegistry -output providers/registry/registry_data.go
       - go run cmd/generate/main.go -type Config -output config/config.go
       - go run cmd/generate/main.go -type MD -output Configurations.md
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/basic/.env.example
