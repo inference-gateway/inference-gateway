@@ -199,8 +199,6 @@ func forEachModel(tarballPath string, visit func(key string, model modelTOML)) e
 	}
 	defer gz.Close()
 
-	// One streaming pass buffers both file kinds — tar order is not guaranteed —
-	// then base_model inheritance is resolved before visiting.
 	type entry struct {
 		key   string
 		model modelTOML
