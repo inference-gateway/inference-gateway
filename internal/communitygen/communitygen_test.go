@@ -295,15 +295,15 @@ func TestGenerateContextWindows(t *testing.T) {
 	}
 }
 
-// TestEnumModalities keeps only known ModelModalities members, in first-seen
+// TestEnumModalities keeps only known Modality members, in first-seen
 // order without duplicates, dropping values the enum does not carry (e.g.
 // models.dev's "pdf").
 func TestEnumModalities(t *testing.T) {
 	got := enumModalities([]string{"text", "pdf", "image", "text", "bogus", "audio"})
-	want := []types.ModelModalities{
-		types.ModelModalitiesText,
-		types.ModelModalitiesImage,
-		types.ModelModalitiesAudio,
+	want := []types.Modality{
+		types.ModalityText,
+		types.ModalityImage,
+		types.ModalityAudio,
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("enumModalities() = %v, want %v", got, want)

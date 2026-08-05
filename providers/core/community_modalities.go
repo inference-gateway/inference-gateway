@@ -19,8 +19,8 @@ var communityModalitiesJSON []byte
 // communityModalities lazily parses the embedded table once. The file is
 // generated and committed, so a parse failure is a build defect, not a runtime
 // condition; it degrades to an empty table (modalities stay null).
-var communityModalities = sync.OnceValue(func() map[string][]types.ModelModalities {
-	table := make(map[string][]types.ModelModalities)
+var communityModalities = sync.OnceValue(func() map[string]types.ModelModalities {
+	table := make(map[string]types.ModelModalities)
 	_ = json.Unmarshal(communityModalitiesJSON, &table)
 	return table
 })
@@ -28,7 +28,7 @@ var communityModalities = sync.OnceValue(func() map[string][]types.ModelModaliti
 // applyCommunityModalities fills Modalities from the community table for models
 // the provider listing did not resolve, so provider-published modalities always
 // win. Models absent from the table keep a nil Modalities and render as explicit
-// nulls when requested. The stored slice is cloned so a caller mutating one
+// nulls when requested. The stored slices are cloned so a caller mutating one
 // model's modalities can never corrupt the shared embedded table.
 func applyCommunityModalities(models []types.Model) {
 	table := communityModalities()
@@ -37,8 +37,11 @@ func applyCommunityModalities(models []types.Model) {
 			continue
 		}
 		for _, key := range communityLookupKeys(models[i].ID) {
-			if mods, ok := table[key]; ok && len(mods) > 0 {
-				clone := slices.Clone(mods)
+			if mods, ok := table[key]; ok {
+				clone := types.ModelModalities{
+					Input:  slices.Clone(mods.Input),
+					Output: slices.Clone(mods.Output),
+				}
 				models[i].Modalities = &clone
 				break
 			}

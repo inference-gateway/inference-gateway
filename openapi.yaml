@@ -256,16 +256,22 @@ paths:
                         owned_by: 'openai'
                         served_by: 'openai'
                         modalities:
-                          - text
-                          - image
-                      - id: 'openai/gpt-4-turbo'
+                          input:
+                            - text
+                            - image
+                          output:
+                            - text
+                      - id: 'openai/gpt-image-2'
                         object: 'model'
                         created: 1687882410
                         owned_by: 'openai'
                         served_by: 'openai'
                         modalities:
-                          - text
-                          - image
+                          input:
+                            - text
+                            - image
+                          output:
+                            - image
         '400':
           description: Bad request - unsupported include value
           content:
@@ -1630,16 +1636,9 @@ components:
           $ref: '#/components/schemas/Provider'
         modalities:
           oneOf:
-            - type: array
-              items:
-                type: string
-                enum:
-                  - text
-                  - image
-                  - audio
-                  - video
+            - $ref: '#/components/schemas/ModelModalities'
             - type: 'null'
-          description: The modalities the model supports natively (included when `include=modalities`)
+          description: The input and output modalities of the model (included when `include=modalities`)
         context_window:
           oneOf:
             - $ref: '#/components/schemas/ContextWindow'
@@ -1656,6 +1655,33 @@ components:
         - created
         - owned_by
         - served_by
+    Modality:
+      type: string
+      description: A single input or output modality
+      enum:
+        - text
+        - image
+        - audio
+        - video
+    ModelModalities:
+      type: object
+      description: >-
+        The input and output modalities of a model, mirroring the models.dev dataset shape.
+        Vision models accept `image` in `input`; image-generation models list `image` in
+        `output` — when `output` carries `image` but not `text`, the model only generates
+        images and cannot chat.
+      properties:
+        input:
+          type: array
+          items:
+            $ref: '#/components/schemas/Modality'
+        output:
+          type: array
+          items:
+            $ref: '#/components/schemas/Modality'
+      required:
+        - input
+        - output
     ListModelsResponse:
       type: object
       description: Response structure for listing models

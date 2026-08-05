@@ -83,6 +83,10 @@ type modelTOML struct {
 		Input  []string `toml:"input"`
 		Output []string `toml:"output"`
 	} `toml:"modalities"`
+	// BaseModel references a canonical "models/<lab>/<model>.toml" definition
+	// ("<lab>/<model>") whose sections fill in anything this provider file
+	// omits (models.dev's base_model inheritance).
+	BaseModel string `toml:"base_model"`
 }
 
 // contextWindowEntry is one row of the community context-window table: the
@@ -142,17 +146,21 @@ func GenerateContextWindows(output, tarballPath string) error {
 
 // GenerateModalities reads a models.dev repository tarball and writes the
 // community modalities table keyed by "<provider>/<model>" to output. It maps
-// each model's input modalities to the gateway's ModelModalities enum, dropping
-// values the enum does not carry (e.g. models.dev's "pdf"). Models with no
-// recognized input modality get no entry and render as explicit nulls.
+// each model's input and output modalities to the gateway's Modality enum,
+// dropping values the enum does not carry (e.g. models.dev's "pdf"). Models
+// with no recognized input or output modality get no entry and render as
+// explicit nulls.
 func GenerateModalities(output, tarballPath string) error {
-	table := make(map[string][]types.ModelModalities)
+	table := make(map[string]types.ModelModalities)
 	err := forEachModel(tarballPath, func(key string, model modelTOML) {
-		mods := enumModalities(model.Modalities.Input)
-		if len(mods) == 0 {
+		entry := types.ModelModalities{
+			Input:  enumModalities(model.Modalities.Input),
+			Output: enumModalities(model.Modalities.Output),
+		}
+		if len(entry.Input) == 0 || len(entry.Output) == 0 {
 			return
 		}
-		table[key] = mods
+		table[key] = entry
 	})
 	if err != nil {
 		return err
@@ -161,12 +169,12 @@ func GenerateModalities(output, tarballPath string) error {
 }
 
 // enumModalities keeps only the values that are members of the gateway's
-// ModelModalities enum, in first-seen order without duplicates.
-func enumModalities(values []string) []types.ModelModalities {
-	var out []types.ModelModalities
-	seen := make(map[types.ModelModalities]bool)
+// Modality enum, in first-seen order without duplicates.
+func enumModalities(values []string) []types.Modality {
+	var out []types.Modality
+	seen := make(map[types.Modality]bool)
 	for _, v := range values {
-		m := types.ModelModalities(v)
+		m := types.Modality(v)
 		if !m.Valid() || seen[m] {
 			continue
 		}
@@ -191,6 +199,15 @@ func forEachModel(tarballPath string, visit func(key string, model modelTOML)) e
 	}
 	defer gz.Close()
 
+	// One streaming pass buffers both file kinds — tar order is not guaranteed —
+	// then base_model inheritance is resolved before visiting.
+	type entry struct {
+		key   string
+		model modelTOML
+	}
+	bases := make(map[string]modelTOML)
+	var entries []entry
+
 	tr := tar.NewReader(gz)
 	for {
 		hdr, err := tr.Next()
@@ -204,7 +221,8 @@ func forEachModel(tarballPath string, visit func(key string, model modelTOML)) e
 			continue
 		}
 		key, ok := tableKey(hdr.Name)
-		if !ok {
+		baseKey, isBase := canonicalModelKey(hdr.Name)
+		if !ok && !isBase {
 			continue
 		}
 		data, err := io.ReadAll(tr)
@@ -215,9 +233,54 @@ func forEachModel(tarballPath string, visit func(key string, model modelTOML)) e
 		if err := toml.Unmarshal(data, &model); err != nil {
 			return fmt.Errorf("parsing %s: %w", hdr.Name, err)
 		}
-		visit(key, model)
+		if isBase {
+			bases[baseKey] = model
+			continue
+		}
+		entries = append(entries, entry{key, model})
+	}
+
+	for _, e := range entries {
+		if base, ok := bases[e.model.BaseModel]; ok {
+			e.model = mergeBase(e.model, base)
+		}
+		visit(e.key, e.model)
 	}
 	return nil
+}
+
+// canonicalModelKey maps a tarball entry like
+// "sst-models.dev-abc123/models/openai/gpt-image-2.toml" to its base-model key
+// "openai/gpt-image-2". These canonical files are the inheritance targets of
+// provider files' base_model references, not table entries themselves.
+func canonicalModelKey(name string) (string, bool) {
+	if strings.Contains(name, "/providers/") {
+		return "", false
+	}
+	_, rest, ok := strings.Cut(name, "/models/")
+	if !ok {
+		return "", false
+	}
+	key, ok := strings.CutSuffix(rest, ".toml")
+	if !ok || key == "" {
+		return "", false
+	}
+	return key, true
+}
+
+// mergeBase fills the sections a provider model file omits from its canonical
+// base model: provider-published values always win, section by section.
+func mergeBase(m, base modelTOML) modelTOML {
+	if m.Cost == nil {
+		m.Cost = base.Cost
+	}
+	if m.Limit.Context == 0 && m.Limit.Output == 0 {
+		m.Limit = base.Limit
+	}
+	if len(m.Modalities.Input) == 0 && len(m.Modalities.Output) == 0 {
+		m.Modalities = base.Modalities
+	}
+	return m
 }
 
 // writeTable merges the hand-maintained overrides over the synced table and

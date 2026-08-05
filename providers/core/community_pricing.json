@@ -663,6 +663,13 @@
     "source": "community",
     "updated_at": "2026-07-27T09:42:20Z"
   },
+  "groq/allam-2-7b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-08-05T16:53:50Z"
+  },
   "groq/llama-3.1-8b-instant": {
     "currency": "USD",
     "input_per_token": "0.00000005",
@@ -674,13 +681,6 @@
     "currency": "USD",
     "input_per_token": "0.00000059",
     "output_per_token": "0.00000079",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "groq/meta-llama/llama-4-scout-17b-16e-instruct": {
-    "currency": "USD",
-    "input_per_token": "0.00000011",
-    "output_per_token": "0.00000034",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
@@ -721,12 +721,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "groq/qwen/qwen3-32b": {
+  "groq/qwen/qwen3.6-27b": {
+    "cache_read_per_token": "0.0000003",
     "currency": "USD",
-    "input_per_token": "0.00000029",
-    "output_per_token": "0.00000059",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0.000003",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-05T16:53:50Z"
   },
   "minimax/MiniMax-M2": {
     "currency": "USD",

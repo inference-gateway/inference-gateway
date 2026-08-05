@@ -624,24 +624,24 @@ func (e MessagesToolUseBlockType) Valid() bool {
 	}
 }
 
-// Defines values for ModelModalities.
+// Defines values for Modality.
 const (
-	ModelModalitiesAudio ModelModalities = "audio"
-	ModelModalitiesImage ModelModalities = "image"
-	ModelModalitiesText  ModelModalities = "text"
-	ModelModalitiesVideo ModelModalities = "video"
+	ModalityAudio Modality = "audio"
+	ModalityImage Modality = "image"
+	ModalityText  Modality = "text"
+	ModalityVideo Modality = "video"
 )
 
-// Valid indicates whether the value is a known member of the ModelModalities enum.
-func (e ModelModalities) Valid() bool {
+// Valid indicates whether the value is a known member of the Modality enum.
+func (e Modality) Valid() bool {
 	switch e {
-	case ModelModalitiesAudio:
+	case ModalityAudio:
 		return true
-	case ModelModalitiesImage:
+	case ModalityImage:
 		return true
-	case ModelModalitiesText:
+	case ModalityText:
 		return true
-	case ModelModalitiesVideo:
+	case ModalityVideo:
 		return true
 	default:
 		return false
@@ -2444,6 +2444,9 @@ type MessagesUsage struct {
 	OutputTokens int64 `json:"output_tokens"`
 }
 
+// Modality A single input or output modality
+type Modality string
+
 // Model Common model information
 type Model struct {
 	// ContextWindow Context window information for the model (included when `include=context_window`)
@@ -2451,18 +2454,21 @@ type Model struct {
 	Created       int64          `json:"created"`
 	ID            string         `json:"id"`
 
-	// Modalities The modalities the model supports natively (included when `include=modalities`)
-	Modalities *[]ModelModalities `json:"modalities,omitempty"`
-	Object     string             `json:"object"`
-	OwnedBy    string             `json:"owned_by"`
+	// Modalities The input and output modalities of the model (included when `include=modalities`)
+	Modalities *ModelModalities `json:"modalities,omitempty"`
+	Object     string           `json:"object"`
+	OwnedBy    string           `json:"owned_by"`
 
 	// Pricing Pricing information for the model (included when `include=pricing`)
 	Pricing  *Pricing `json:"pricing,omitempty"`
 	ServedBy Provider `json:"served_by"`
 }
 
-// ModelModalities defines model for Model.Modalities.
-type ModelModalities string
+// ModelModalities The input and output modalities of a model, mirroring the models.dev dataset shape. Vision models accept `image` in `input`; image-generation models list `image` in `output` — when `output` carries `image` but not `text`, the model only generates images and cannot chat.
+type ModelModalities struct {
+	Input  []Modality `json:"input"`
+	Output []Modality `json:"output"`
+}
 
 // Pricing Pricing information for a model
 type Pricing struct {
