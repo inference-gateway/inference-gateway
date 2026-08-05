@@ -22,7 +22,7 @@ func TestGenerateProviderRegistryFromFixture(t *testing.T) {
 	assert.Contains(t, content, "constants.AcmeID: {")
 	assert.Contains(t, content, "constants.LocalID: {")
 	assert.Contains(t, content, `"x-acme-version": {"v1"}`)
-	assert.Contains(t, content, "AuthType:       constants.AuthTypeNone")
+	assert.Contains(t, content, "AuthType: constants.AuthTypeNone")
 	assert.NotContains(t, content, "anthropic")
 }
 

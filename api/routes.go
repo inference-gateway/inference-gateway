@@ -718,13 +718,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		}
 
 		if hasImageContent {
-			supportsVision, err := provider.SupportsVision(ctx, req.Model)
-			if err != nil {
-				router.logger.Error("failed to check vision support", err, "provider", providerID, "model", req.Model)
-				c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to check model capabilities"})
-				return
-			}
-			if !supportsVision {
+			if !core.ModelAcceptsImages(providerID, req.Model) {
 				router.logger.Info("filtering images from non-vision model request",
 					"provider", providerID,
 					"model", req.Model,

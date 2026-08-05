@@ -597,7 +597,6 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.{{pascalCase $name}}DisplayName,
 		URL:            constants.{{pascalCase $name}}DefaultBaseURL,
 		AuthType:       constants.{{getAuthType $config.AuthType}},
-		SupportsVision: {{if $config.SupportsVision}}true{{else}}false{{end}},
 		{{- if $config.ExtraHeaders }}
 		ExtraHeaders: map[string][]string{
 			{{- range $header, $value := $config.ExtraHeaders }}

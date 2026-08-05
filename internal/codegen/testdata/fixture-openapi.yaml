@@ -14,7 +14,6 @@ components:
           id: 'acme'
           url: 'https://api.acme.test/v1'
           auth_type: 'bearer'
-          supports_vision: true
           extra_headers:
             x-acme-version: 'v1'
           endpoints:
@@ -30,7 +29,6 @@ components:
           id: 'local'
           url: 'http://localhost:9999/v1'
           auth_type: 'none'
-          supports_vision: false
           endpoints:
             models:
               name: 'list_models'

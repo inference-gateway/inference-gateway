@@ -25,6 +25,20 @@ var communityModalities = sync.OnceValue(func() map[string]types.ModelModalities
 	return table
 })
 
+// ModelAcceptsImages reports whether the model takes image input per the
+// community modalities table. Unknown models return true: stripping images
+// from a request we can't classify silently corrupts it, while a genuinely
+// text-only provider rejects the image itself.
+func ModelAcceptsImages(provider types.Provider, model string) bool {
+	table := communityModalities()
+	for _, key := range communityLookupKeys(string(provider) + "/" + model) {
+		if mods, ok := table[key]; ok {
+			return slices.Contains(mods.Input, types.ModalityImage)
+		}
+	}
+	return true
+}
+
 // applyCommunityModalities fills Modalities from the community table for models
 // the provider listing did not resolve, so provider-published modalities always
 // win. Models absent from the table keep a nil Modalities and render as explicit

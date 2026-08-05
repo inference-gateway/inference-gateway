@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	otelapi "go.opentelemetry.io/otel"
 	propagation "go.opentelemetry.io/otel/propagation"
@@ -33,16 +32,15 @@ func (e *HTTPError) Error() string {
 }
 
 type ProviderImpl struct {
-	ID                 *types.Provider
-	Name               string
-	URL                string
-	Token              string
-	AuthType           string
-	SupportsVisionFlag bool
-	ExtraHeaders       map[string][]string
-	Endpoints          types.Endpoints
-	Client             client.Client
-	Logger             l.Logger
+	ID           *types.Provider
+	Name         string
+	URL          string
+	Token        string
+	AuthType     string
+	ExtraHeaders map[string][]string
+	Endpoints    types.Endpoints
+	Client       client.Client
+	Logger       l.Logger
 }
 
 func (p *ProviderImpl) GetID() *types.Provider {
@@ -298,44 +296,4 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq type
 	}()
 
 	return stream, nil
-}
-
-// SupportsVision checks if the provider and model support vision/image processing
-func (p *ProviderImpl) SupportsVision(ctx context.Context, model string) (bool, error) {
-	if !p.SupportsVisionFlag {
-		return false, nil
-	}
-
-	modelLower := strings.ToLower(model)
-
-	switch *p.ID {
-	case constants.OpenaiID:
-		if strings.Contains(modelLower, "gpt-5") {
-			return true, nil
-		}
-
-		if strings.Contains(modelLower, "gpt-4.1") {
-			return true, nil
-		}
-
-		if strings.Contains(modelLower, "gpt-4") &&
-			(strings.Contains(modelLower, "vision") ||
-				strings.Contains(modelLower, "turbo") ||
-				strings.Contains(modelLower, "gpt-4o")) {
-			return true, nil
-		}
-		return false, nil
-	case constants.AnthropicID:
-		return strings.Contains(modelLower, "claude-3") ||
-			strings.Contains(modelLower, "opus-4") ||
-			strings.Contains(modelLower, "sonnet-4") ||
-			strings.Contains(modelLower, "haiku-4"), nil
-	case constants.ZaiID:
-		return true, nil
-	default:
-		return strings.Contains(modelLower, "vision") ||
-			strings.Contains(modelLower, "multimodal") ||
-			strings.Contains(modelLower, "-vl") ||
-			strings.Contains(modelLower, "qwen") && strings.Contains(modelLower, "vl"), nil
-	}
 }

@@ -62,3 +62,27 @@ func TestCommunityModalitiesTableDistinguishesImageGen(t *testing.T) {
 		t.Errorf("gpt-4o must output text, got %+v", chat)
 	}
 }
+
+// TestModelAcceptsImages verifies the per-model vision gate: table-confirmed
+// vision models pass (including date-pinned IDs), table-confirmed text-only
+// models fail, and unknown models pass so requests are never silently stripped.
+func TestModelAcceptsImages(t *testing.T) {
+	tests := []struct {
+		name     string
+		provider types.Provider
+		model    string
+		want     bool
+	}{
+		{"vision model with date pin", "anthropic", "claude-haiku-4-5-20251001", true},
+		{"vision model", "anthropic", "claude-haiku-4-5", true},
+		{"text-only model", "deepseek", "deepseek-chat", false},
+		{"unknown model is permissive", "openai", "gpt-nonexistent", true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ModelAcceptsImages(tt.provider, tt.model); got != tt.want {
+				t.Errorf("ModelAcceptsImages(%s, %s) = %v, want %v", tt.provider, tt.model, got, tt.want)
+			}
+		})
+	}
+}

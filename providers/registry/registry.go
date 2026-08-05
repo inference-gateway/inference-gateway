@@ -12,14 +12,13 @@ import (
 
 // Base provider configuration
 type ProviderConfig struct {
-	ID             types.Provider
-	Name           string
-	URL            string
-	Token          string
-	AuthType       string
-	SupportsVision bool
-	ExtraHeaders   map[string][]string
-	Endpoints      types.Endpoints
+	ID           types.Provider
+	Name         string
+	URL          string
+	Token        string
+	AuthType     string
+	ExtraHeaders map[string][]string
+	Endpoints    types.Endpoints
 }
 
 //go:generate mockgen -source=registry.go -destination=../../tests/mocks/providers/registry.go -package=providersmocks
@@ -55,16 +54,15 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID types.Provider, c client
 	}
 
 	return &core.ProviderImpl{
-		ID:                 &provider.ID,
-		Name:               provider.Name,
-		URL:                provider.URL,
-		Token:              provider.Token,
-		AuthType:           provider.AuthType,
-		SupportsVisionFlag: provider.SupportsVision,
-		ExtraHeaders:       provider.ExtraHeaders,
-		Endpoints:          provider.Endpoints,
-		Logger:             p.logger,
-		Client:             c,
+		ID:           &provider.ID,
+		Name:         provider.Name,
+		URL:          provider.URL,
+		Token:        provider.Token,
+		AuthType:     provider.AuthType,
+		ExtraHeaders: provider.ExtraHeaders,
+		Endpoints:    provider.Endpoints,
+		Logger:       p.logger,
+		Client:       c,
 	}, nil
 }
 

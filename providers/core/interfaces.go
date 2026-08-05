@@ -21,5 +21,4 @@ type IProvider interface {
 	ListModels(ctx context.Context) (types.ListModelsResponse, error)
 	ChatCompletions(ctx context.Context, clientReq types.CreateChatCompletionRequest) (types.CreateChatCompletionResponse, error)
 	StreamChatCompletions(ctx context.Context, clientReq types.CreateChatCompletionRequest) (<-chan []byte, error)
-	SupportsVision(ctx context.Context, model string) (bool, error)
 }
