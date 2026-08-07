@@ -28,6 +28,11 @@ on:
           - webkit
           - lightpanda
         default: chromium
+      review_inline:
+        description: 'Post review-mode findings as inline PR review comments instead of one conversation comment'
+        required: false
+        type: boolean
+        default: false
   issues:
     types:
       - opened
@@ -71,5 +76,6 @@ jobs:
         DietrichGebert/ponytail
       browser: ${{ inputs.browser || false }}
       browser_engine: ${{ inputs.browser_engine || 'chromium' }}
+      review_inline: ${{ inputs.review_inline || false }}
       prompt: ${{ inputs.prompt }}
     secrets: inherit
