@@ -11,14 +11,6 @@
     "context": 200000,
     "output": 64000
   },
-  "anthropic/claude-opus-4-1": {
-    "context": 200000,
-    "output": 32000
-  },
-  "anthropic/claude-opus-4-1-20250805": {
-    "context": 200000,
-    "output": 32000
-  },
   "anthropic/claude-opus-4-5": {
     "context": 200000,
     "output": 64000

@@ -26,24 +26,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "anthropic/claude-opus-4-1": {
-    "cache_read_per_token": "0.0000015",
-    "cache_write_per_token": "0.00001875",
-    "currency": "USD",
-    "input_per_token": "0.000015",
-    "output_per_token": "0.000075",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "anthropic/claude-opus-4-1-20250805": {
-    "cache_read_per_token": "0.0000015",
-    "cache_write_per_token": "0.00001875",
-    "currency": "USD",
-    "input_per_token": "0.000015",
-    "output_per_token": "0.000075",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "anthropic/claude-opus-4-5": {
     "cache_read_per_token": "0.0000005",
     "cache_write_per_token": "0.00000625",

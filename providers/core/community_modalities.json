@@ -26,24 +26,6 @@
       "text"
     ]
   },
-  "anthropic/claude-opus-4-1": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "anthropic/claude-opus-4-1-20250805": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "anthropic/claude-opus-4-5": {
     "input": [
       "text",
