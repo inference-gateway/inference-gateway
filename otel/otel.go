@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"net/url"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -78,6 +79,22 @@ type OpenTelemetryImpl struct {
 	guardrailCounter        metric.Int64Counter     // inference_gateway.guardrails
 }
 
+// TracesEndpointURL appends the OTLP traces path to a path-less endpoint URL.
+// otel-go 1.45.0 stopped appending the default /v1/traces in WithEndpointURL,
+// so a bare TELEMETRY_TRACING_OTLP_ENDPOINT like http://localhost:4318 would
+// silently export to "/" instead.
+func TracesEndpointURL(endpoint string) string {
+	u, err := url.Parse(endpoint)
+	if err != nil || (u.Path != "" && u.Path != "/") {
+		return endpoint
+	}
+	joined, err := url.JoinPath(endpoint, "v1/traces")
+	if err != nil {
+		return endpoint
+	}
+	return joined
+}
+
 // Semconv-recommended bucket boundaries: durations in seconds, token counts in powers of 4.
 var (
 	durationBoundaries = []float64{0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92}
@@ -119,7 +136,7 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 
 	if cfg.Telemetry.TracingEnabled {
 		traceExporter, err := otlptracehttp.New(context.Background(),
-			otlptracehttp.WithEndpointURL(cfg.Telemetry.TracingOtlpEndpoint))
+			otlptracehttp.WithEndpointURL(TracesEndpointURL(cfg.Telemetry.TracingOtlpEndpoint)))
 		if err != nil {
 			o.logger.Error("failed to create otlp trace exporter", err)
 			return err

@@ -28,6 +28,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
+	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
@@ -306,4 +307,16 @@ func TestTracingProxyPropagation(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.NotEmpty(t, upstreamTraceparent, "proxied request must carry traceparent")
+}
+
+func TestTracingTracesEndpointURL(t *testing.T) {
+	cases := map[string]string{
+		"http://localhost:4318":           "http://localhost:4318/v1/traces",
+		"http://localhost:4318/":          "http://localhost:4318/v1/traces",
+		"http://collector:4318/v1/traces": "http://collector:4318/v1/traces",
+		"https://otlp.example.com/custom": "https://otlp.example.com/custom",
+	}
+	for in, want := range cases {
+		assert.Equal(t, want, otel.TracesEndpointURL(in))
+	}
 }
