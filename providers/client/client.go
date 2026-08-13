@@ -16,6 +16,19 @@ type Client interface {
 	Post(url string, bodyType string, body string) (*http.Response, error)
 }
 
+// SpanNameFormatter names outbound client spans "<METHOD> <path>" (e.g.
+// "GET /v1/models") instead of otelhttp's default bare method, matching how
+// otelgin names inbound server spans. Provider API paths are a fixed, small
+// set, so using the path as a span name is cardinality-safe.
+func SpanNameFormatter() otelhttp.Option {
+	return otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
+		if r == nil || r.URL == nil || r.URL.Path == "" {
+			return r.Method
+		}
+		return r.Method + " " + r.URL.Path
+	})
+}
+
 type ClientImpl struct {
 	scheme   string
 	hostname string
@@ -43,7 +56,7 @@ func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
 	}
 
 	httpClient := &http.Client{
-		Transport: otelhttp.NewTransport(httpTransport),
+		Transport: otelhttp.NewTransport(httpTransport, SpanNameFormatter()),
 	}
 
 	return &ClientImpl{

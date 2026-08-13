@@ -28,6 +28,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
+	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -220,6 +221,42 @@ func TestTracingProviderCorePropagation(t *testing.T) {
 	require.Len(t, capturedHeaders, 2)
 	assert.NotEmpty(t, capturedHeaders[0].Get("traceparent"), "chat completions request must carry traceparent")
 	assert.NotEmpty(t, capturedHeaders[1].Get("traceparent"), "list models request must carry traceparent")
+}
+
+func TestTracingOutboundClientSpanNames(t *testing.T) {
+	tests := []struct {
+		name     string
+		method   string
+		path     string
+		wantSpan string
+	}{
+		{"list models", http.MethodGet, "/v1/models", "GET /v1/models"},
+		{"chat completions", http.MethodPost, "/v1/chat/completions", "POST /v1/chat/completions"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sr := setupTracing(t)
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{}`))
+			}))
+			defer server.Close()
+
+			httpClient := client.NewHTTPClient(&client.ClientConfig{}, "http", "", "")
+			req, err := http.NewRequest(tt.method, server.URL+tt.path, nil)
+			require.NoError(t, err)
+
+			resp, err := httpClient.Do(req)
+			require.NoError(t, err)
+			_, _ = io.Copy(io.Discard, resp.Body)
+			require.NoError(t, resp.Body.Close())
+
+			spans := sr.Ended()
+			require.Len(t, spans, 1)
+			assert.Equal(t, tt.wantSpan, spans[0].Name())
+		})
+	}
 }
 
 func TestTracingProxyPropagation(t *testing.T) {

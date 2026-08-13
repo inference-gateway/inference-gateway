@@ -1351,7 +1351,7 @@ type imagesMultipartTarget struct {
 
 // proxyTransport wraps http.DefaultTransport with OpenTelemetry instrumentation
 // so that every non-streaming reverse proxy call emits a distinct client span.
-var proxyTransport = otelhttp.NewTransport(http.DefaultTransport)
+var proxyTransport = otelhttp.NewTransport(http.DefaultTransport, client.SpanNameFormatter())
 
 var (
 	imagesEditsTarget = imagesMultipartTarget{
