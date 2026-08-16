@@ -1,8 +1,12 @@
 package core
 
 import (
+	"encoding/json"
+	"os"
 	"reflect"
 	"testing"
+
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 func TestCommunityLookupKeys(t *testing.T) {
@@ -25,5 +29,23 @@ func TestCommunityLookupKeys(t *testing.T) {
 				t.Fatalf("communityLookupKeys(%q) = %v, want %v", tt.id, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestCommunityPricingOverridesMatchGeneratedTable(t *testing.T) {
+	data, err := os.ReadFile("community_pricing.overrides.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var overrides map[string]types.Pricing
+	if err := json.Unmarshal(data, &overrides); err != nil {
+		t.Fatal(err)
+	}
+
+	table := communityPricing()
+	for model, override := range overrides {
+		if got, ok := table[model]; !ok || !reflect.DeepEqual(got, override) {
+			t.Errorf("generated pricing for %q does not match its override", model)
+		}
 	}
 }

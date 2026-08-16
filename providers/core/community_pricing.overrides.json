@@ -1,1 +1,10 @@
-{}
+{
+  "minimax/MiniMax-M3": {
+    "cache_read_per_token": "0.00000012",
+    "currency": "USD",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0.0000024",
+    "source": "community",
+    "updated_at": "2026-08-16T06:15:34Z"
+  }
+}

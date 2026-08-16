@@ -764,12 +764,12 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "minimax/MiniMax-M3": {
-    "cache_read_per_token": "0.00000006",
+    "cache_read_per_token": "0.00000012",
     "currency": "USD",
-    "input_per_token": "0.0000003",
-    "output_per_token": "0.0000012",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0.0000024",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-16T06:15:34Z"
   },
   "mistral/codestral-latest": {
     "currency": "USD",
