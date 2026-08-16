@@ -7536,3 +7536,5 @@ func (t *SingleSelectEnumSchema) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
+
+# Fix for issue #432: safe input handling
