@@ -38,6 +38,7 @@ use of Mixture of Experts.
 
 - [Key Features](#key-features)
 - [Overview](#overview)
+- [API Endpoints](#api-endpoints)
 - [Installation](#installation)
 - [Middleware Control and Bypass Mechanisms](#middleware-control-and-bypass-mechanisms)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
@@ -145,6 +146,48 @@ Finally client receives:
 ```
 
 For streaming the tokens simply add to the request body `stream: true`.
+
+## API Endpoints
+
+| Endpoint | Description |
+| --- | --- |
+| `GET /health` | Liveness probe, no authentication required |
+| `GET /v1/models` | List models from every configured provider |
+| `GET /v1/mcp/tools` | List the tools discovered from the configured MCP servers |
+| `POST /v1/chat/completions` | OpenAI-compatible chat completions, streaming and tools included - works with every provider |
+| `POST /v1/messages` | [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) compatibility - the body is relayed byte-for-byte, so `cache_control` and the Anthropic SSE event envelope pass through untouched (Anthropic provider only) |
+| `POST /v1/responses` | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) compatibility, relayed byte-for-byte (OpenAI provider only) |
+| `POST /v1/images/generations` | [OpenAI Images API](https://platform.openai.com/docs/api-reference/images/create) - generate images. Opt-in via `ENABLE_IMAGES=true` (OpenAI provider only) |
+| `POST /v1/images/edits` | Edit an image with an optional mask, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true` |
+| `POST /v1/images/variations` | Create variations of an image, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true` |
+| `POST /v1/metrics` | OTLP metrics push from clients. Opt-in via `METRICS_PUSH_ENABLED=true` |
+| `ANY /proxy/:provider/*path` | Passthrough to a provider's native API with the API key injected |
+
+All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
+from an explicit `?provider=` query parameter.
+
+Anthropic Messages API:
+
+```bash
+curl -X POST http://localhost:8080/v1/messages \
+  -d '{
+    "model": "anthropic/claude-sonnet-4-5",
+    "max_tokens": 1024,
+    "messages": [{"role": "user", "content": "Hello, world!"}]
+  }'
+```
+
+Image generation (requires `ENABLE_IMAGES=true`):
+
+```bash
+curl -X POST http://localhost:8080/v1/images/generations \
+  -d '{
+    "model": "openai/gpt-image-1",
+    "prompt": "A pirate ship sailing into a neon sunset",
+    "n": 1,
+    "size": "1024x1024"
+  }'
+```
 
 ## Installation
 
