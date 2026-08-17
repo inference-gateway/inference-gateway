@@ -58,6 +58,14 @@
     "context": 80000,
     "output": 80000
   },
+  "cloudflare/@cf/deepseek-ai/deepseek-v4-flash-0731": {
+    "context": 1310720,
+    "output": 1048576
+  },
+  "cloudflare/@cf/deepseek-ai/deepseek-v4-pro-0813": {
+    "context": 1048576,
+    "output": 1048576
+  },
   "cloudflare/@cf/google/gemma-4-26b-a4b-it": {
     "context": 256000,
     "output": 16384
@@ -69,10 +77,6 @@
   "cloudflare/@cf/meta/llama-3.1-8b-instruct-fp8": {
     "context": 32000,
     "output": 32000
-  },
-  "cloudflare/@cf/meta/llama-3.2-11b-vision-instruct": {
-    "context": 128000,
-    "output": 128000
   },
   "cloudflare/@cf/meta/llama-3.2-1b-instruct": {
     "context": 60000,
@@ -131,7 +135,7 @@
   },
   "cloudflare/@cf/zai-org/glm-5.2": {
     "context": 262144,
-    "output": 262144
+    "output": 256000
   },
   "cohere/c4ai-aya-expanse-32b": {
     "context": 128000,
@@ -211,14 +215,6 @@
   "google/deep-research-preview-04-2026": {
     "context": 131072
   },
-  "google/gemini-2.0-flash": {
-    "context": 1048576,
-    "output": 8192
-  },
-  "google/gemini-2.0-flash-lite": {
-    "context": 1048576,
-    "output": 8192
-  },
   "google/gemini-2.5-computer-use-preview-10-2025": {
     "context": 131072,
     "output": 65536
@@ -256,10 +252,6 @@
   },
   "google/gemini-3-pro-image-preview": {
     "context": 131072
-  },
-  "google/gemini-3-pro-preview": {
-    "context": 1048576,
-    "output": 65536
   },
   "google/gemini-3.1-flash-image": {
     "context": 65536,
@@ -306,6 +298,10 @@
     "output": 32768
   },
   "google/gemini-3.6-flash": {
+    "context": 1048576,
+    "output": 65536
+  },
+  "google/gemini-3.7-flash": {
     "context": 1048576,
     "output": 65536
   },
@@ -702,6 +698,10 @@
     "context": 128000,
     "output": 16384
   },
+  "nvidia/meta/muse-glimmer-30b": {
+    "context": 131072,
+    "output": 131072
+  },
   "nvidia/microsoft/phi-4-mini-instruct": {
     "context": 131072,
     "output": 8192
@@ -821,6 +821,10 @@
   "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
     "context": 1000000,
     "output": 65536
+  },
+  "nvidia/nvidia/nemotron-3.5-lightning-30b-a3b": {
+    "context": 262144,
+    "output": 262144
   },
   "nvidia/nvidia/nemotron-content-safety-reasoning-4b": {
     "context": 128000,
