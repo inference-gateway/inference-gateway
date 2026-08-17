@@ -1,26 +1,24 @@
-<h1 align="center">Inference Gateway</h1>
+<div align="center">
 
-<p align="center">
-  <!-- CI Status Badge -->
-  <a href="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml?query=branch%3Amain">
-    <img
-      src="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml/badge.svg?branch=main"
-      alt="CI Status"/>
-  </a>
-  <!-- Version Badge -->
-  <a href="https://github.com/inference-gateway/inference-gateway/releases">
-    <img src="https://img.shields.io/github/v/release/inference-gateway/inference-gateway?color=blue&style=flat-square"
-         alt="Version"/>
-  </a>
-  <!-- License Badge -->
-  <a href="https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/inference-gateway/inference-gateway?color=blue&style=flat-square" alt="License"/>
-  </a>
-  <!-- Go Version Badge -->
-  <a href="https://github.com/inference-gateway/inference-gateway/blob/main/go.mod">
-    <img src="https://img.shields.io/github/go-mod/go-version/inference-gateway/inference-gateway?color=blue&style=flat-square&logo=go" alt="Go Version"/>
-  </a>
-</p>
+<img src="https://avatars.githubusercontent.com/u/195813097?s=200&v=4" width="96" alt="Inference Gateway Logo" />
+
+# Inference Gateway
+
+**An open-source, cloud-native, high-performance gateway unifying multiple LLM providers behind one OpenAI-compatible API**
+
+<a href="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status"/></a>
+<a href="https://github.com/inference-gateway/inference-gateway/releases"><img src="https://img.shields.io/github/v/release/inference-gateway/inference-gateway?color=7C3AED&style=flat-square" alt="Version"/></a>
+<a href="https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE"><img src="https://img.shields.io/github/license/inference-gateway/inference-gateway?color=blue&style=flat-square" alt="License"/></a>
+<a href="https://github.com/inference-gateway/inference-gateway/blob/main/go.mod"><img src="https://img.shields.io/github/go-mod/go-version/inference-gateway/inference-gateway?color=00ADD8&style=flat-square&logo=go" alt="Go Version"/></a>
+<a href="https://docs.inference-gateway.com"><img src="https://img.shields.io/badge/docs-inference--gateway.com-7C3AED?style=flat-square" alt="Docs"/></a>
+
+[📖 Documentation](https://docs.inference-gateway.com) · [🚀 Getting Started](https://docs.inference-gateway.com/getting-started) · [💬 Discussions](https://github.com/orgs/inference-gateway/discussions) · [🐛 Issues](https://github.com/inference-gateway/inference-gateway/issues)
+
+<br/>
+
+<img src="./assets/terminal-hero.svg" width="760" alt="Run the gateway with Docker, then call one OpenAI-compatible endpoint for every LLM provider" />
+
+</div>
 
 The Inference Gateway is a proxy server designed to facilitate access to various
 language model APIs. It allows users to interact with different language models
@@ -44,36 +42,23 @@ use of Mixture of Experts.
 
 ## Key Features
 
-- 📜 **Open Source**: Available under the Apache 2.0 License.
-- 🚀 **Unified API Access**: Proxy requests to multiple language model APIs,
-  including OpenAI, Ollama, Ollama Cloud, Groq, Cohere etc.
-- ⚙️ **Environment Configuration**: Easily configure API keys and URLs through environment variables.
-- 🔧 **Tool-use Support**: Enable function calling capabilities across supported
-  providers with a unified API.
-- 🌐 **MCP Support**: Full Model Context Protocol integration - automatically
-  discover and expose tools from MCP servers to LLMs without client-side tool
-  management.
-- 🌊 **Streaming Responses**: Stream tokens in real-time as they're generated from language models.
-- 🖼️ **Vision/Multimodal Support**: Process images alongside text with vision-capable models.
-- 🐳 **Docker Support**: Use Docker and Docker Compose for easy setup and deployment.
-- ☸️ **Kubernetes Support**: Deploy with the
-  [Inference Gateway Operator](https://github.com/inference-gateway/operator).
-- 📊 **OpenTelemetry**: Monitor and analyze performance.
-- 🛡️ **Enterprise Ready**: Built with production in mind, with authentication, authorization, configurable timeouts, and TLS support.
-- 🌿 **Lightweight**: Includes only essential libraries and runtime, resulting
-  in smaller size binary of ~10.8MB.
-- 📉 **Minimal Resource Consumption**: Designed to consume minimal resources and have a lower footprint.
-- 📚 **Documentation**: Well documented with examples and guides.
-- 🧪 **Tested**: Extensively tested with unit tests and integration tests.
-- 🛠️ **Maintained**: Actively maintained and developed.
-- 📈 **Scalable**: Easily scalable and can be used in a distributed environment
-  with <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/" target="_blank">HPA</a>
-  in Kubernetes.
-- 🔒 **Compliance** and Data Privacy: This project does not collect data or
-  analytics, ensuring compliance and data privacy.
-- 🏠 **Self-Hosted**: Can be self-hosted for complete control over the deployment environment.
-- ⌨️ **CLI Tool**: Improved command-line interface for managing and
-  interacting with the Inference Gateway
+| Feature | Description |
+|---|---|
+| 🔀 **Unified API** | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, Cloudflare, DeepSeek, Google, Mistral, Moonshot, and Nvidia |
+| 🔧 **Tool-use Support** | Function calling capabilities across supported providers with a unified API |
+| 🌐 **MCP Support** | Full Model Context Protocol integration - tools from MCP servers are discovered and exposed to LLMs automatically |
+| 🌊 **Streaming** | Real-time token streaming from all supported providers |
+| 🖼️ **Vision / Multimodal** | Process images alongside text with vision-capable models |
+| ⚙️ **Environment Configuration** | Configure API keys and URLs entirely through environment variables |
+| 🐳 **Docker & Compose** | First-class container support for easy setup and deployment |
+| ☸️ **Kubernetes Ready** | Deploy with the [Inference Gateway Operator](https://github.com/inference-gateway/operator) and scale horizontally with [HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) |
+| 📊 **OpenTelemetry** | Prometheus metrics following the GenAI semantic conventions, plus an OTLP push endpoint |
+| 🛡️ **Enterprise Ready** | OIDC authentication, authorization, configurable timeouts, and TLS support |
+| 🌿 **Lightweight** | Essential libraries and runtime only - a ~10.8MB binary with minimal resource footprint |
+| 🔒 **Privacy First** | Self-hosted, zero data collection, Apache 2.0 licensed |
+| ⌨️ **CLI Tool** | An [agentic command-line interface](https://github.com/inference-gateway/cli) for managing and interacting with the gateway |
+
+Well documented, extensively tested, and actively maintained.
 
 ## Overview
 
@@ -93,61 +78,33 @@ configuration.
 The following diagram illustrates the flow:
 
 ```mermaid
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#326CE5', 'primaryTextColor': '#fff', 'lineColor': '#5D8AA8', 'secondaryColor': '#006100' }, 'fontFamily': 'Arial', 'flowchart': {'nodeSpacing': 50, 'rankSpacing': 70, 'padding': 15}}}%%
+flowchart TD
+    Clients(["👥 Clients · 🤖 Agents · 📦 SDKs"])
+    Clients -->|"POST /v1/chat/completions"| Auth
 
+    subgraph Gateway["🖥️ Inference Gateway · scales horizontally"]
+        direction TB
+        Auth["🔒 OIDC Auth<br/><i>optional</i>"] --> MCP["🔌 MCP Middleware<br/><i>optional · bypass with X-MCP-Bypass</i>"]
+        MCP --> Router["🔀 Provider Router"]
+    end
 
-graph TD
-    %% Client nodes
-    A["👥 Clients / 🤖 Agents"] --> |POST /v1/chat/completions| Auth
+    MCP <-.->|"tool discovery & execution"| Tools[("🧰 MCP Servers")]
 
-    %% Auth node
-    Auth["🔒 Optional OIDC"] --> |Auth?| IG1
-    Auth --> |Auth?| IG2
-    Auth --> |Auth?| IG3
+    Router --> OpenAI["☁️ OpenAI"]
+    Router --> Anthropic["🧠 Anthropic"]
+    Router --> Groq["🚀 Groq"]
+    Router --> Ollama["🦙 Ollama<br/><i>local</i>"]
+    Router --> Others["⚡ Cloudflare · 💬 Cohere · 🐋 DeepSeek<br/>🔮 Google · 🌬️ Mistral · 🌙 Moonshot · 🟩 Nvidia"]
 
-    %% Gateway nodes
-    IG1["🖥️ Inference Gateway"] --> P
-    IG2["🖥️ Inference Gateway"] --> P
-    IG3["🖥️ Inference Gateway"] --> P
+    classDef client fill:#9370DB,stroke:#6A4FB6,stroke-width:1px,color:#fff;
+    classDef gw fill:#326CE5,stroke:#1E4FB0,stroke-width:1px,color:#fff;
+    classDef provider fill:#2EA043,stroke:#1F7A32,stroke-width:1px,color:#fff;
+    classDef mcp fill:#DB61A2,stroke:#B04A82,stroke-width:1px,color:#fff;
 
-    %% Middleware Processing and Direct Routing
-    P["🔌 Proxy Gateway"] --> MCP["🌐 MCP Middleware"]
-    P --> |"Direct routing bypassing middleware"| Direct["🔌 Direct Providers"]
-    MCP --> |"Middleware chain complete"| Providers["🤖 LLM Providers"]
-
-    %% MCP Tool Servers
-    MCP --> MCP1["📁 File System Server"]
-    MCP --> MCP2["🔍 Search Server"]
-    MCP --> MCP3["🌐 Web Server"]
-
-    %% LLM Providers (Middleware Enhanced)
-    Providers --> C1["🦙 Ollama"]
-    Providers --> D1["🚀 Groq"]
-    Providers --> E1["☁️ OpenAI"]
-
-    %% Direct Providers (Bypass Middleware)
-    Direct --> C["🦙 Ollama"]
-    Direct --> D["🚀 Groq"]
-    Direct --> E["☁️ OpenAI"]
-    Direct --> G["⚡ Cloudflare"]
-    Direct --> H1["💬 Cohere"]
-    Direct --> H2["🧠 Anthropic"]
-    Direct --> H3["🐋 DeepSeek"]
-
-    %% Define styles
-    classDef client fill:#9370DB,stroke:#333,stroke-width:1px,color:white;
-    classDef auth fill:#F5A800,stroke:#333,stroke-width:1px,color:black;
-    classDef gateway fill:#326CE5,stroke:#fff,stroke-width:1px,color:white;
-    classDef provider fill:#32CD32,stroke:#333,stroke-width:1px,color:white;
-    classDef mcp fill:#FF69B4,stroke:#333,stroke-width:1px,color:white;
-
-    %% Apply styles
-    class A client;
-    class Auth auth;
-    class IG1,IG2,IG3,P gateway;
-    class C,D,E,G,H1,H2,H3,C1,D1,E1,Providers provider;
-    class MCP,MCP1,MCP2,MCP3 mcp;
-    class Direct direct;
+    class Clients client;
+    class Auth,MCP,Router gw;
+    class OpenAI,Anthropic,Groq,Ollama,Others provider;
+    class Tools mcp;
 ```
 
 Client is sending:
