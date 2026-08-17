@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="430" viewBox="0 0 950 430" font-family="ui-sans-serif,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.30"/>
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0.12"/>
+    </linearGradient>
+    <linearGradient id="gw" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0.16"/>
+    </linearGradient>
+
+    <path id="w1" d="M182 215 H248"/>
+    <path id="w2" d="M388 215 H408"/>
+    <path id="w3" d="M548 215 H568"/>
+    <path id="w4" d="M478 245 V344"/>
+    <path id="p1" d="M708 215 C748 215 748 62 788 62"/>
+    <path id="p2" d="M708 215 C748 215 748 133 788 133"/>
+    <path id="p3" d="M708 215 H788"/>
+    <path id="p4" d="M708 215 C748 215 748 297 788 297"/>
+    <path id="p5" d="M708 215 C748 215 748 368 788 368"/>
+
+    <g id="req"><circle r="4.5" fill="#a5b4fc"/></g>
+    <g id="res"><circle r="4" fill="#7ee787"/></g>
+  </defs>
+
+  <rect x="2" y="2" width="946" height="426" rx="16" fill="url(#bg)"/>
+  <rect x="6" y="6" width="938" height="418" rx="14" fill="#0d1117" stroke="#30363d"/>
+
+  <!-- clients -->
+  <rect x="30" y="182" width="152" height="66" rx="12" fill="#3B1F7A" stroke="#7C3AED"/>
+  <text x="106" y="208" text-anchor="middle" fill="#e6edf3" font-size="14">Clients · Agents</text>
+  <text x="106" y="230" text-anchor="middle" fill="#c9a7ff" font-size="12">SDKs · CLI</text>
+
+  <!-- gateway panel -->
+  <rect x="228" y="120" width="480" height="190" rx="14" fill="url(#gw)" stroke="#7C3AED" stroke-dasharray="5 4"/>
+  <text x="468" y="148" text-anchor="middle" fill="#c9a7ff" font-size="13">Inference Gateway · scales horizontally</text>
+
+  <rect x="248" y="188" width="140" height="54" rx="10" fill="#161b22" stroke="#326CE5"/>
+  <text x="318" y="210" text-anchor="middle" fill="#e6edf3" font-size="13">OIDC Auth</text>
+  <text x="318" y="228" text-anchor="middle" fill="#8b949e" font-size="11">optional</text>
+
+  <rect x="408" y="188" width="140" height="54" rx="10" fill="#161b22" stroke="#DB61A2"/>
+  <text x="478" y="210" text-anchor="middle" fill="#e6edf3" font-size="13">MCP Middleware</text>
+  <text x="478" y="228" text-anchor="middle" fill="#8b949e" font-size="11">X-MCP-Bypass</text>
+
+  <rect x="568" y="188" width="140" height="54" rx="10" fill="#161b22" stroke="#326CE5"/>
+  <text x="638" y="210" text-anchor="middle" fill="#e6edf3" font-size="13">Provider Router</text>
+  <text x="638" y="228" text-anchor="middle" fill="#8b949e" font-size="11">model prefix</text>
+
+  <!-- mcp servers -->
+  <rect x="398" y="344" width="160" height="54" rx="10" fill="#4A1F3A" stroke="#DB61A2"/>
+  <text x="478" y="366" text-anchor="middle" fill="#e6edf3" font-size="13">MCP Servers</text>
+  <text x="478" y="384" text-anchor="middle" fill="#f0a8cd" font-size="11">tool discovery &amp; execution</text>
+
+  <!-- providers -->
+  <g fill="#161b22" stroke="#2EA043">
+    <rect x="788" y="39" width="132" height="46" rx="10"/>
+    <rect x="788" y="110" width="132" height="46" rx="10"/>
+    <rect x="788" y="192" width="132" height="46" rx="10"/>
+    <rect x="788" y="274" width="132" height="46" rx="10"/>
+    <rect x="788" y="345" width="132" height="46" rx="10"/>
+  </g>
+  <g text-anchor="middle" fill="#e6edf3" font-size="13">
+    <text x="854" y="67">OpenAI</text>
+    <text x="854" y="138">Anthropic</text>
+    <text x="854" y="220">Groq</text>
+    <text x="854" y="302">Ollama</text>
+    <text x="854" y="362">+ 7 more</text>
+  </g>
+  <text x="854" y="380" text-anchor="middle" fill="#7ee787" font-size="10">Google · Mistral · Cohere ...</text>
+
+  <!-- wires -->
+  <g fill="none" stroke="#30363d" stroke-width="2">
+    <use href="#w1"/><use href="#w2"/><use href="#w3"/>
+    <use href="#p1"/><use href="#p2"/><use href="#p3"/><use href="#p4"/><use href="#p5"/>
+  </g>
+  <use href="#w4" fill="none" stroke="#DB61A2" stroke-width="2" stroke-dasharray="6 5" opacity="0.7"/>
+
+  <text x="215" y="203" text-anchor="end" fill="#8b949e" font-size="11">POST /v1/chat/completions</text>
+
+  <!-- animated request packets: client -> gateway -> provider -->
+  <g>
+    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="0s"><mpath href="#w1"/></animateMotion></use>
+    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="0.35s"><mpath href="#w2"/></animateMotion></use>
+    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="0.7s"><mpath href="#w3"/></animateMotion></use>
+    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="1.05s"><mpath href="#p1"/></animateMotion></use>
+    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="1.4s"><mpath href="#p3"/></animateMotion></use>
+    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="1.75s"><mpath href="#p5"/></animateMotion></use>
+  </g>
+
+  <!-- streamed tokens coming back -->
+  <g>
+    <use href="#res"><animateMotion dur="3s" repeatCount="indefinite" begin="2s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#p2"/></animateMotion></use>
+    <use href="#res"><animateMotion dur="3s" repeatCount="indefinite" begin="2.3s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#p4"/></animateMotion></use>
+    <use href="#res"><animateMotion dur="3s" repeatCount="indefinite" begin="2.6s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#w1"/></animateMotion></use>
+  </g>
+
+  <!-- mcp tool call round trip -->
+  <use href="#res" fill="#DB61A2">
+    <animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="0;1;0" keyTimes="0;0.5;1" calcMode="linear"><mpath href="#w4"/></animateMotion>
+  </use>
+
+  <!-- gateway pulse -->
+  <rect x="228" y="120" width="480" height="190" rx="14" fill="none" stroke="#7C3AED" opacity="0.5">
+    <animate attributeName="opacity" values="0.15;0.55;0.15" dur="3s" repeatCount="indefinite"/>
+  </rect>
+</svg>

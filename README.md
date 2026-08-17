@@ -4,19 +4,29 @@
 
 # Inference Gateway
 
-**An open-source, cloud-native, high-performance gateway unifying multiple LLM providers behind one OpenAI-compatible API**
+<p><strong>An open-source, cloud-native, high-performance gateway unifying multiple LLM providers behind one OpenAI-compatible API</strong></p>
 
-<a href="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml?query=branch%3Amain"><img src="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status"/></a>
-<a href="https://github.com/inference-gateway/inference-gateway/releases"><img src="https://img.shields.io/github/v/release/inference-gateway/inference-gateway?color=7C3AED&style=flat-square" alt="Version"/></a>
-<a href="https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE"><img src="https://img.shields.io/github/license/inference-gateway/inference-gateway?color=blue&style=flat-square" alt="License"/></a>
-<a href="https://github.com/inference-gateway/inference-gateway/blob/main/go.mod"><img src="https://img.shields.io/github/go-mod/go-version/inference-gateway/inference-gateway?color=00ADD8&style=flat-square&logo=go" alt="Go Version"/></a>
-<a href="https://docs.inference-gateway.com"><img src="https://img.shields.io/badge/docs-inference--gateway.com-7C3AED?style=flat-square" alt="Docs"/></a>
+<a href="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml?query=branch%3Amain">
+<img src="https://github.com/inference-gateway/inference-gateway/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status"/></a>
+<a href="https://github.com/inference-gateway/inference-gateway/releases">
+<img src="https://img.shields.io/github/v/release/inference-gateway/inference-gateway?color=7C3AED&style=flat-square" alt="Version"/></a>
+<a href="https://github.com/inference-gateway/inference-gateway/blob/main/LICENSE">
+<img src="https://img.shields.io/github/license/inference-gateway/inference-gateway?color=blue&style=flat-square" alt="License"/></a>
+<a href="https://github.com/inference-gateway/inference-gateway/blob/main/go.mod">
+<img alt="Go Version"
+src="https://img.shields.io/github/go-mod/go-version/inference-gateway/inference-gateway?color=00ADD8&style=flat-square&logo=go"/></a>
+<a href="https://docs.inference-gateway.com">
+<img src="https://img.shields.io/badge/docs-inference--gateway.com-7C3AED?style=flat-square" alt="Docs"/></a>
 
-[📖 Documentation](https://docs.inference-gateway.com) · [🚀 Getting Started](https://docs.inference-gateway.com/getting-started) · [💬 Discussions](https://github.com/orgs/inference-gateway/discussions) · [🐛 Issues](https://github.com/inference-gateway/inference-gateway/issues)
+[📖 Documentation](https://docs.inference-gateway.com) ·
+[🚀 Getting Started](https://docs.inference-gateway.com/getting-started) ·
+[💬 Discussions](https://github.com/orgs/inference-gateway/discussions) ·
+[🐛 Issues](https://github.com/inference-gateway/inference-gateway/issues)
 
 <br/>
 
-<img src="./assets/terminal-hero.svg" width="760" alt="Run the gateway with Docker, then call one OpenAI-compatible endpoint for every LLM provider" />
+<img src="./assets/terminal-hero.svg" width="760"
+alt="Run the gateway with Docker, then call one OpenAI-compatible endpoint for every LLM provider" />
 
 </div>
 
@@ -43,7 +53,7 @@ use of Mixture of Experts.
 ## Key Features
 
 | Feature | Description |
-|---|---|
+| --- | --- |
 | 🔀 **Unified API** | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, Cloudflare, DeepSeek, Google, Mistral, Moonshot, and Nvidia |
 | 🔧 **Tool-use Support** | Function calling capabilities across supported providers with a unified API |
 | 🌐 **MCP Support** | Full Model Context Protocol integration - tools from MCP servers are discovered and exposed to LLMs automatically |
@@ -77,36 +87,13 @@ configuration.
 
 The following diagram illustrates the flow:
 
-```mermaid
-flowchart TD
-    Clients(["👥 Clients · 🤖 Agents · 📦 SDKs"])
-    Clients -->|"POST /v1/chat/completions"| Auth
+<div align="center">
 
-    subgraph Gateway["🖥️ Inference Gateway · scales horizontally"]
-        direction TB
-        Auth["🔒 OIDC Auth<br/><i>optional</i>"] --> MCP["🔌 MCP Middleware<br/><i>optional · bypass with X-MCP-Bypass</i>"]
-        MCP --> Router["🔀 Provider Router"]
-    end
+<img src="./assets/architecture.svg" width="950"
+alt="Requests flow from clients through OIDC auth, MCP middleware and the
+provider router to the LLM providers, with tokens streaming back" />
 
-    MCP <-.->|"tool discovery & execution"| Tools[("🧰 MCP Servers")]
-
-    Router --> OpenAI["☁️ OpenAI"]
-    Router --> Anthropic["🧠 Anthropic"]
-    Router --> Groq["🚀 Groq"]
-    Router --> Ollama["🦙 Ollama<br/><i>local</i>"]
-    Router --> Others["➕ Cloudflare · Cohere · DeepSeek · Google<br/>Mistral · Moonshot · Nvidia · Ollama Cloud"]
-
-    style Gateway fill:#EEF2FF,stroke:#326CE5,stroke-width:1px,color:#1F2A44;
-    classDef client fill:#9370DB,stroke:#6A4FB6,stroke-width:1px,color:#fff;
-    classDef gw fill:#326CE5,stroke:#1E4FB0,stroke-width:1px,color:#fff;
-    classDef provider fill:#2EA043,stroke:#1F7A32,stroke-width:1px,color:#fff;
-    classDef mcp fill:#DB61A2,stroke:#B04A82,stroke-width:1px,color:#fff;
-
-    class Clients client;
-    class Auth,MCP,Router gw;
-    class OpenAI,Anthropic,Groq,Ollama,Others provider;
-    class Tools mcp;
-```
+</div>
 
 Client is sending:
 
