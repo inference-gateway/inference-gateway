@@ -94,8 +94,9 @@ flowchart TD
     Router --> Anthropic["🧠 Anthropic"]
     Router --> Groq["🚀 Groq"]
     Router --> Ollama["🦙 Ollama<br/><i>local</i>"]
-    Router --> Others["⚡ Cloudflare · 💬 Cohere · 🐋 DeepSeek<br/>🔮 Google · 🌬️ Mistral · 🌙 Moonshot · 🟩 Nvidia"]
+    Router --> Others["➕ Cloudflare · Cohere · DeepSeek · Google<br/>Mistral · Moonshot · Nvidia · Ollama Cloud"]
 
+    style Gateway fill:#EEF2FF,stroke:#326CE5,stroke-width:1px,color:#1F2A44;
     classDef client fill:#9370DB,stroke:#6A4FB6,stroke-width:1px,color:#fff;
     classDef gw fill:#326CE5,stroke:#1E4FB0,stroke-width:1px,color:#fff;
     classDef provider fill:#2EA043,stroke:#1F7A32,stroke-width:1px,color:#fff;
