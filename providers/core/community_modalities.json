@@ -435,6 +435,15 @@
       "text"
     ]
   },
+  "deepseek/deepseek-v4-flash-vision-exp": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "deepseek/deepseek-v4-pro": {
     "input": [
       "text"
@@ -1454,6 +1463,14 @@
       "text"
     ]
   },
+  "nvidia/deepseek-ai/deepseek-v4-flash-0731": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "nvidia/deepseek-ai/deepseek-v4-pro": {
     "input": [
       "text"
@@ -1754,6 +1771,16 @@
     ]
   },
   "nvidia/moonshotai/kimi-k2.6": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "nvidia/moonshotai/kimi-k3": {
     "input": [
       "text",
       "image",

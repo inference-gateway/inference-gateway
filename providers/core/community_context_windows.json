@@ -205,6 +205,10 @@
     "context": 1000000,
     "output": 384000
   },
+  "deepseek/deepseek-v4-flash-vision-exp": {
+    "context": 1000000,
+    "output": 384000
+  },
   "deepseek/deepseek-v4-pro": {
     "context": 1000000,
     "output": 384000
@@ -622,6 +626,10 @@
     "context": 1048576,
     "output": 393216
   },
+  "nvidia/deepseek-ai/deepseek-v4-flash-0731": {
+    "context": 1000000,
+    "output": 384000
+  },
   "nvidia/deepseek-ai/deepseek-v4-pro": {
     "context": 1048576,
     "output": 393216
@@ -761,6 +769,10 @@
   "nvidia/moonshotai/kimi-k2.6": {
     "context": 262144,
     "output": 262144
+  },
+  "nvidia/moonshotai/kimi-k3": {
+    "context": 1048576,
+    "output": 131072
   },
   "nvidia/nvidia/bevformer": {
     "context": 128000,

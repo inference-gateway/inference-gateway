@@ -267,6 +267,14 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "cloudflare/@cf/qwen/qwen3.8-27b": {
+    "cache_read_per_token": "0.00000005",
+    "currency": "USD",
+    "input_per_token": "0.00000045",
+    "output_per_token": "0.0000032",
+    "source": "community",
+    "updated_at": "2026-08-24T06:47:59Z"
+  },
   "cloudflare/@cf/qwen/qwq-32b": {
     "currency": "USD",
     "input_per_token": "0.00000066",
@@ -382,6 +390,14 @@
     "output_per_token": "0.00000028",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "deepseek/deepseek-v4-flash-vision-exp": {
+    "cache_read_per_token": "0.0000000028",
+    "currency": "USD",
+    "input_per_token": "0.00000014",
+    "output_per_token": "0.00000028",
+    "source": "community",
+    "updated_at": "2026-08-24T06:47:59Z"
   },
   "deepseek/deepseek-v4-pro": {
     "cache_read_per_token": "0.000000003625",
@@ -573,12 +589,12 @@
     "updated_at": "2026-07-27T09:42:20Z"
   },
   "google/gemini-3.6-flash": {
-    "cache_read_per_token": "0.00000015",
+    "cache_read_per_token": "0.000000075",
     "currency": "USD",
-    "input_per_token": "0.0000015",
-    "output_per_token": "0.0000075",
+    "input_per_token": "0.00000075",
+    "output_per_token": "0.00000375",
     "source": "community",
-    "updated_at": "2026-07-27T09:42:20Z"
+    "updated_at": "2026-08-24T06:47:59Z"
   },
   "google/gemini-3.7-flash": {
     "cache_read_per_token": "0.000000075",
@@ -603,20 +619,20 @@
     "updated_at": "2026-07-27T09:42:20Z"
   },
   "google/gemini-flash-latest": {
-    "cache_read_per_token": "0.00000015",
+    "cache_read_per_token": "0.000000075",
     "currency": "USD",
-    "input_per_token": "0.0000015",
-    "output_per_token": "0.000009",
+    "input_per_token": "0.00000075",
+    "output_per_token": "0.00000375",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-24T06:47:59Z"
   },
   "google/gemini-flash-lite-latest": {
-    "cache_read_per_token": "0.000000025",
+    "cache_read_per_token": "0.00000003",
     "currency": "USD",
-    "input_per_token": "0.00000025",
-    "output_per_token": "0.0000015",
+    "input_per_token": "0.0000003",
+    "output_per_token": "0.0000025",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-24T06:47:59Z"
   },
   "google/gemini-omni-flash-preview": {
     "currency": "USD",
@@ -1126,6 +1142,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "nvidia/deepseek-ai/deepseek-v4-flash-0731": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-08-24T06:47:59Z"
+  },
   "nvidia/deepseek-ai/deepseek-v4-pro": {
     "cache_read_per_token": "0.000000003625",
     "currency": "USD",
@@ -1378,6 +1401,13 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "nvidia/moonshotai/kimi-k3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-08-24T06:47:59Z"
   },
   "nvidia/nvidia/active-speaker-detection": {
     "currency": "USD",
