@@ -57,6 +57,7 @@ infer.flake = "github:inference-gateway/cli/v0.164.0"
 claude-code.pkg-path = "claude-code"
 claude-code.version = "^2.1.201"
 claude-code.pkg-group = "claude-code"
+claude-code.systems = ["aarch64-darwin", "aarch64-linux", "x86_64-linux"]
 codex.pkg-path = "codex"
 codex.version = "^0.142.3"
 codex.pkg-group = "codex"
