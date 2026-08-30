@@ -49,6 +49,7 @@ type Router interface {
 	ImagesHandler(c *gin.Context)
 	ImagesEditsHandler(c *gin.Context)
 	ImagesVariationsHandler(c *gin.Context)
+	SpeechHandler(c *gin.Context)
 	ListToolsHandler(c *gin.Context)
 	MetricsIngestionHandler(c *gin.Context)
 	ProxyHandler(c *gin.Context)
@@ -1295,6 +1296,146 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 	}
 	upstreamReq.Header.Set("Content-Type", "application/json")
 	upstreamReq.Header.Set("Accept", "application/json")
+
+	if err := applyProviderAuth(upstreamReq, provider); err != nil {
+		router.logger.Error("unsupported auth type", err, "provider", providerID)
+		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
+		return
+	}
+
+	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
+
+	resp, err := router.client.Do(upstreamReq)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			router.logger.Error("request timed out", err, "provider", providerID)
+			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
+			return
+		}
+		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
+		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		span := trace.SpanFromContext(c.Request.Context())
+		span.SetStatus(codes.Error, resp.Status)
+		span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
+	}
+
+	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+}
+
+// SpeechHandler implements an OpenAI-compatible POST /v1/audio/speech
+// endpoint: https://platform.openai.com/docs/api-reference/audio/createSpeech
+//
+// The request body is forwarded to the upstream provider byte-for-byte (only
+// the `model` field is rewritten when the provider prefix is stripped), so
+// all Audio API fields pass through untouched. The synthesized audio comes
+// back as raw binary and is streamed to the caller with the upstream's
+// Content-Type (e.g. audio/mpeg for response_format mp3).
+//
+// Only providers that natively implement the Audio API are supported
+// (currently openai); other providers receive a 400, mirroring the schema's
+// SpeechNotSupported response.
+func (router *RouterImpl) SpeechHandler(c *gin.Context) {
+	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
+	if err != nil {
+		router.logger.Error("failed to read request body", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
+		return
+	}
+	if len(body) >= maxBodySize {
+		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+		return
+	}
+
+	var req struct {
+		Model *string `json:"model,omitempty"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		router.logger.Error("failed to decode request", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+		return
+	}
+
+	providerID := types.Provider(c.Query("provider"))
+	model := ""
+	if req.Model != nil {
+		model = *req.Model
+	}
+	originalModel := model
+
+	if providerID == "" && model != "" {
+		var providerPtr *types.Provider
+		providerPtr, model = routing.DetermineProviderAndModelName(model)
+		if providerPtr == nil {
+			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/tts-1)."})
+			return
+		}
+		providerID = *providerPtr
+	}
+
+	if providerID == "" {
+		router.logger.Error("no provider specified for speech request", nil)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/tts-1)."})
+		return
+	}
+
+	if reason := router.modelDenied(originalModel); reason != "" {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: reason})
+		return
+	}
+
+	provider, err := router.registry.BuildProvider(providerID, router.client)
+	if err != nil {
+		if strings.Contains(err.Error(), "token not configured") {
+			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
+			return
+		}
+		router.logger.Error("provider not found or not supported", err, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		return
+	}
+
+	if provider.GetEndpoints().Speech == nil || *provider.GetEndpoints().Speech == "" {
+		router.logger.Error("speech api not supported by provider", nil, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The Audio API is not supported by this provider yet."})
+		return
+	}
+
+	if model != originalModel {
+		dec := json.NewDecoder(bytes.NewReader(body))
+		dec.UseNumber()
+		var payload map[string]any
+		if err := dec.Decode(&payload); err != nil {
+			router.logger.Error("failed to decode request", err)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+			return
+		}
+		payload["model"] = model
+		if body, err = json.Marshal(payload); err != nil {
+			router.logger.Error("failed to encode request", err)
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode request"})
+			return
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
+	defer cancel()
+
+	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + *provider.GetEndpoints().Speech
+	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
+	if err != nil {
+		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
+		return
+	}
+	upstreamReq.Header.Set("Content-Type", "application/json")
 
 	if err := applyProviderAuth(upstreamReq, provider); err != nil {
 		router.logger.Error("unsupported auth type", err, "provider", providerID)

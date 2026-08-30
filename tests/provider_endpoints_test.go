@@ -18,6 +18,7 @@ const (
 	endpointKeyImages           = "images"
 	endpointKeyImagesEdits      = "images_edits"
 	endpointKeyImagesVariations = "images_variations"
+	endpointKeySpeech           = "speech"
 )
 
 // TestProviderEndpointsMatchSchema fails when an endpoint declared under
@@ -39,6 +40,7 @@ func TestProviderEndpointsMatchSchema(t *testing.T) {
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImages].Endpoint, provider.Endpoints.Images, endpointKeyImages)
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImagesEdits].Endpoint, provider.Endpoints.ImagesEdits, endpointKeyImagesEdits)
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImagesVariations].Endpoint, provider.Endpoints.ImagesVariations, endpointKeyImagesVariations)
+			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeySpeech].Endpoint, provider.Endpoints.Speech, endpointKeySpeech)
 		})
 	}
 }

@@ -183,3 +183,15 @@ func (mr *MockRouterMockRecorder) ResponsesHandler(c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResponsesHandler", reflect.TypeOf((*MockRouter)(nil).ResponsesHandler), c)
 }
+
+// SpeechHandler mocks base method.
+func (m *MockRouter) SpeechHandler(c *gin.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SpeechHandler", c)
+}
+
+// SpeechHandler indicates an expected call of SpeechHandler.
+func (mr *MockRouterMockRecorder) SpeechHandler(c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SpeechHandler", reflect.TypeOf((*MockRouter)(nil).SpeechHandler), c)
+}
