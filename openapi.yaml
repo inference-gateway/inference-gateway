@@ -1429,6 +1429,8 @@ components:
           type: string
         images_variations:
           type: string
+        speech:
+          type: string
       required:
         - models
         - chat

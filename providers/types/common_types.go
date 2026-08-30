@@ -1938,6 +1938,7 @@ type Endpoints struct {
 	ImagesVariations *string `json:"images_variations,omitempty"`
 	Models           string  `json:"models"`
 	Responses        *string `json:"responses,omitempty"`
+	Speech           *string `json:"speech,omitempty"`
 }
 
 // Error defines model for Error.

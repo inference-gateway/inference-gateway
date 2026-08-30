@@ -58,6 +58,7 @@ const (
 	OpenaiImagesEndpoint           = "/images/generations"
 	OpenaiImagesEditsEndpoint      = "/images/edits"
 	OpenaiImagesVariationsEndpoint = "/images/variations"
+	OpenaiSpeechEndpoint           = "/audio/speech"
 	ZaiModelsEndpoint              = "/models"
 	ZaiChatEndpoint                = "/chat/completions"
 )

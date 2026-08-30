@@ -153,6 +153,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Images:           ptr(constants.OpenaiImagesEndpoint),
 			ImagesEdits:      ptr(constants.OpenaiImagesEditsEndpoint),
 			ImagesVariations: ptr(constants.OpenaiImagesVariationsEndpoint),
+			Speech:           ptr(constants.OpenaiSpeechEndpoint),
 		},
 	},
 	constants.ZaiID: {
