@@ -171,6 +171,36 @@ func (e CreateMessagesRequestThinkingType) Valid() bool {
 	}
 }
 
+// Defines values for CreateSpeechRequestResponseFormat.
+const (
+	Aac  CreateSpeechRequestResponseFormat = "aac"
+	Flac CreateSpeechRequestResponseFormat = "flac"
+	Mp3  CreateSpeechRequestResponseFormat = "mp3"
+	Opus CreateSpeechRequestResponseFormat = "opus"
+	Pcm  CreateSpeechRequestResponseFormat = "pcm"
+	Wav  CreateSpeechRequestResponseFormat = "wav"
+)
+
+// Valid indicates whether the value is a known member of the CreateSpeechRequestResponseFormat enum.
+func (e CreateSpeechRequestResponseFormat) Valid() bool {
+	switch e {
+	case Aac:
+		return true
+	case Flac:
+		return true
+	case Mp3:
+		return true
+	case Opus:
+		return true
+	case Pcm:
+		return true
+	case Wav:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FinishReason.
 const (
 	ContentFilter FinishReason = "content_filter"
@@ -1872,6 +1902,34 @@ type CreateResponseRequest struct {
 	User *string `json:"user,omitempty"`
 }
 
+// CreateSpeechRequest Request body for generating speech audio via the OpenAI-compatible
+// Audio API.
+type CreateSpeechRequest struct {
+	// Input The text to synthesize into audio (4096 characters maximum).
+	Input string `json:"input"`
+
+	// Instructions Control the voice of your generated audio with additional instructions. Does not work with `tts-1` or `tts-1-hd`.
+	Instructions *string `json:"instructions,omitempty"`
+
+	// Model Model ID to use for speech synthesis (e.g. `gpt-4o-mini-tts` or `tts-1`).
+	Model string `json:"model"`
+
+	// ResponseFormat The audio format of the response.
+	ResponseFormat *CreateSpeechRequestResponseFormat `json:"response_format,omitempty"`
+
+	// Speed The speed of the generated audio.
+	Speed *float32 `json:"speed,omitempty"`
+
+	// Voice The voice to use when generating the audio. OpenAI built-in voices
+	// are `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `onyx`,
+	// `nova`, `sage`, `shimmer`, `verse`, `marin`, and `cedar`. Other
+	// providers accept their own voice identifiers.
+	Voice string `json:"voice"`
+}
+
+// CreateSpeechRequestResponseFormat The audio format of the response.
+type CreateSpeechRequestResponseFormat string
+
 // Endpoints defines model for Endpoints.
 type Endpoints struct {
 	Chat             string  `json:"chat"`
@@ -3081,6 +3139,9 @@ type ProviderResponse = ProviderSpecificResponse
 // ResponsesNotSupported defines model for ResponsesNotSupported.
 type ResponsesNotSupported = Error
 
+// SpeechNotSupported defines model for SpeechNotSupported.
+type SpeechNotSupported = Error
+
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
 
@@ -3092,6 +3153,12 @@ type ProviderRequest struct {
 	} `json:"messages,omitempty"`
 	Model       *string  `json:"model,omitempty"`
 	Temperature *float32 `json:"temperature,omitempty"`
+}
+
+// CreateSpeechParams defines parameters for CreateSpeech.
+type CreateSpeechParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
 // CreateChatCompletionParams defines parameters for CreateChatCompletion.
@@ -3240,6 +3307,9 @@ type CreateResponseParams struct {
 	// Provider Specific provider to use (default determined by model)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
+
+// CreateSpeechJSONRequestBody defines body for CreateSpeech for application/json ContentType.
+type CreateSpeechJSONRequestBody = CreateSpeechRequest
 
 // CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
 type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest

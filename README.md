@@ -53,21 +53,21 @@ use of Mixture of Experts.
 
 ## Key Features
 
-| Feature | Description |
-| --- | --- |
-| 🔀 **Unified API** | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, Cloudflare, DeepSeek, Google, Mistral, Moonshot, and Nvidia |
-| 🔧 **Tool-use Support** | Function calling capabilities across supported providers with a unified API |
-| 🌐 **MCP Support** | Full Model Context Protocol integration - tools from MCP servers are discovered and exposed to LLMs automatically |
-| 🌊 **Streaming** | Real-time token streaming from all supported providers |
-| 🖼️ **Vision / Multimodal** | Process images alongside text with vision-capable models |
-| ⚙️ **Environment Configuration** | Configure API keys and URLs entirely through environment variables |
-| 🐳 **Docker & Compose** | First-class container support for easy setup and deployment |
-| ☸️ **Kubernetes Ready** | Deploy with the [Inference Gateway Operator](https://github.com/inference-gateway/operator) and scale horizontally with [HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) |
-| 📊 **OpenTelemetry** | Prometheus metrics following the GenAI semantic conventions, plus an OTLP push endpoint |
-| 🛡️ **Enterprise Ready** | OIDC authentication, authorization, configurable timeouts, and TLS support |
-| 🌿 **Lightweight** | Essential libraries and runtime only - a ~10.8MB binary with minimal resource footprint |
-| 🔒 **Privacy First** | Self-hosted, zero data collection, Apache 2.0 licensed |
-| ⌨️ **CLI Tool** | An [agentic command-line interface](https://github.com/inference-gateway/cli) for managing and interacting with the gateway |
+| Feature                          | Description                                                                                                                                                                                               |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔀 **Unified API**               | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, Cloudflare, DeepSeek, Google, Mistral, Moonshot, and Nvidia                                                     |
+| 🔧 **Tool-use Support**          | Function calling capabilities across supported providers with a unified API                                                                                                                               |
+| 🌐 **MCP Support**               | Full Model Context Protocol integration - tools from MCP servers are discovered and exposed to LLMs automatically                                                                                         |
+| 🌊 **Streaming**                 | Real-time token streaming from all supported providers                                                                                                                                                    |
+| 🖼️ **Vision / Multimodal**       | Process images alongside text with vision-capable models                                                                                                                                                  |
+| ⚙️ **Environment Configuration** | Configure API keys and URLs entirely through environment variables                                                                                                                                        |
+| 🐳 **Docker & Compose**          | First-class container support for easy setup and deployment                                                                                                                                               |
+| ☸️ **Kubernetes Ready**          | Deploy with the [Inference Gateway Operator](https://github.com/inference-gateway/operator) and scale horizontally with [HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) |
+| 📊 **OpenTelemetry**             | Prometheus metrics following the GenAI semantic conventions, plus an OTLP push endpoint                                                                                                                   |
+| 🛡️ **Enterprise Ready**          | OIDC authentication, authorization, configurable timeouts, and TLS support                                                                                                                                |
+| 🌿 **Lightweight**               | Essential libraries and runtime only - a ~10.8MB binary with minimal resource footprint                                                                                                                   |
+| 🔒 **Privacy First**             | Self-hosted, zero data collection, Apache 2.0 licensed                                                                                                                                                    |
+| ⌨️ **CLI Tool**                  | An [agentic command-line interface](https://github.com/inference-gateway/cli) for managing and interacting with the gateway                                                                               |
 
 Well documented, extensively tested, and actively maintained.
 
@@ -149,19 +149,19 @@ For streaming the tokens simply add to the request body `stream: true`.
 
 ## API Endpoints
 
-| Endpoint | Description |
-| --- | --- |
-| `GET /health` | Liveness probe, no authentication required |
-| `GET /v1/models` | List models from every configured provider |
-| `GET /v1/mcp/tools` | List the tools discovered from the configured MCP servers |
-| `POST /v1/chat/completions` | OpenAI-compatible chat completions, streaming and tools included - works with every provider |
-| `POST /v1/messages` | [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) compatibility - the body is relayed byte-for-byte, so `cache_control` and the Anthropic SSE event envelope pass through untouched (Anthropic provider only) |
-| `POST /v1/responses` | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) compatibility, relayed byte-for-byte (OpenAI provider only) |
-| `POST /v1/images/generations` | [OpenAI Images API](https://platform.openai.com/docs/api-reference/images/create) - generate images. Opt-in via `ENABLE_IMAGES=true` (OpenAI provider only) |
-| `POST /v1/images/edits` | Edit an image with an optional mask, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true` |
-| `POST /v1/images/variations` | Create variations of an image, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true` |
-| `POST /v1/metrics` | OTLP metrics push from clients. Opt-in via `METRICS_PUSH_ENABLED=true` |
-| `ANY /proxy/:provider/*path` | Passthrough to a provider's native API with the API key injected |
+| Endpoint                      | Description                                                                                                                                                                                                                      |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /health`                 | Liveness probe, no authentication required                                                                                                                                                                                       |
+| `GET /v1/models`              | List models from every configured provider                                                                                                                                                                                       |
+| `GET /v1/mcp/tools`           | List the tools discovered from the configured MCP servers                                                                                                                                                                        |
+| `POST /v1/chat/completions`   | OpenAI-compatible chat completions, streaming and tools included - works with every provider                                                                                                                                     |
+| `POST /v1/messages`           | [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) compatibility - the body is relayed byte-for-byte, so `cache_control` and the Anthropic SSE event envelope pass through untouched (Anthropic provider only) |
+| `POST /v1/responses`          | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) compatibility, relayed byte-for-byte (OpenAI provider only)                                                                                     |
+| `POST /v1/images/generations` | [OpenAI Images API](https://platform.openai.com/docs/api-reference/images/create) - generate images. Opt-in via `ENABLE_IMAGES=true` (OpenAI provider only)                                                                      |
+| `POST /v1/images/edits`       | Edit an image with an optional mask, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true`                                                                                                                                      |
+| `POST /v1/images/variations`  | Create variations of an image, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true`                                                                                                                                            |
+| `POST /v1/metrics`            | OTLP metrics push from clients. Opt-in via `METRICS_PUSH_ENABLED=true`                                                                                                                                                           |
+| `ANY /proxy/:provider/*path`  | Passthrough to a provider's native API with the API key injected                                                                                                                                                                 |
 
 All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
 from an explicit `?provider=` query parameter.

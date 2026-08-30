@@ -28,6 +28,7 @@ servers:
       - Responses
       - Messages
       - Images
+      - Audio
   - url: https://api.inference-gateway.local/v1
     description: Local server with version prefix for listing models and chat completions
     x-server-tags:
@@ -35,6 +36,7 @@ servers:
       - Completions
       - Responses
       - Images
+      - Audio
 tags:
   - name: Models
     description: List and describe the various models available in the API.
@@ -46,6 +48,8 @@ tags:
     description: Generate messages using the Anthropic-compatible Messages API.
   - name: Images
     description: Generate images using the OpenAI-compatible Images API.
+  - name: Audio
+    description: Generate speech audio from text using the OpenAI-compatible Speech API.
   - name: MCP
     description: List and manage MCP tools.
   - name: Proxy
@@ -733,6 +737,49 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
+  /audio/speech:
+    post:
+      operationId: createSpeech
+      tags:
+        - Audio
+      description: |
+        Generates audio from the provided text using the OpenAI-compatible
+        Audio API. Mirrors the OpenAI `POST /v1/audio/speech` request body.
+        The response is the synthesized audio as raw binary bytes; the actual
+        `Content-Type` header of the response reflects the requested
+        `response_format` (e.g. `audio/mpeg` for `mp3`).
+
+        Not every provider implements the Audio API. Requests routed to a
+        provider that does not support it return `400 Bad Request` with an
+        explanatory error message; use `/chat/completions` for those providers.
+      summary: Generate speech audio from text
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Provider'
+          description: Specific provider to use (default determined by model)
+      requestBody:
+        $ref: '#/components/requestBodies/CreateSpeechRequest'
+      responses:
+        '200':
+          description: |
+            The synthesized audio as raw binary bytes. The actual `Content-Type`
+            header of the response reflects the requested `response_format`.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/SpeechNotSupported'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /health:
     get:
       operationId: healthCheck
@@ -923,6 +970,15 @@ components:
                 description: The format in which the generated images are returned.
             required:
               - image
+    CreateSpeechRequest:
+      required: true
+      description: |
+        Request payload for the Audio API. Mirrors the OpenAI
+        `POST /v1/audio/speech` request body.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateSpeechRequest'
   responses:
     BadRequest:
       description: Bad request
@@ -986,6 +1042,17 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: 'The Images API is not supported by this provider yet.'
+    SpeechNotSupported:
+      description: |
+        The selected provider does not implement the Audio API. The
+        gateway returns this when a request is routed to a provider without
+        speech synthesis support.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'The Audio API is not supported by this provider yet.'
     ProviderResponse:
       description: |
         ProviderResponse depends on the specific provider and endpoint being called
@@ -1175,6 +1242,10 @@ components:
               name: 'create_image_variation'
               method: 'POST'
               endpoint: '/images/variations'
+            speech:
+              name: 'create_speech'
+              method: 'POST'
+              endpoint: '/audio/speech'
         cloudflare:
           id: 'cloudflare'
           url: 'https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai'
@@ -2535,6 +2606,53 @@ components:
             one of `url` or `b64_json`.
       required:
         - prompt
+    CreateSpeechRequest:
+      type: object
+      description: |
+        Request body for generating speech audio via the OpenAI-compatible
+        Audio API.
+      properties:
+        model:
+          type: string
+          description: Model ID to use for speech synthesis (e.g. `gpt-4o-mini-tts` or `tts-1`).
+        input:
+          type: string
+          maxLength: 4096
+          description: The text to synthesize into audio (4096 characters maximum).
+        instructions:
+          type: string
+          maxLength: 4096
+          description: >
+            Control the voice of your generated audio with additional
+            instructions. Does not work with `tts-1` or `tts-1-hd`.
+        voice:
+          type: string
+          description: |-
+            The voice to use when generating the audio. OpenAI built-in voices
+            are `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `onyx`,
+            `nova`, `sage`, `shimmer`, `verse`, `marin`, and `cedar`. Other
+            providers accept their own voice identifiers.
+        response_format:
+          type: string
+          enum:
+            - mp3
+            - opus
+            - aac
+            - flac
+            - wav
+            - pcm
+          default: mp3
+          description: The audio format of the response.
+        speed:
+          type: number
+          minimum: 0.25
+          maximum: 4
+          default: 1
+          description: The speed of the generated audio.
+      required:
+        - model
+        - input
+        - voice
     CreateResponseRequest:
       type: object
       description: |
