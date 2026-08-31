@@ -297,6 +297,22 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "cloudflare/@cf/zai-org/glm-5.3": {
+    "cache_read_per_token": "0.00000026",
+    "currency": "USD",
+    "input_per_token": "0.0000014",
+    "output_per_token": "0.0000044",
+    "source": "community",
+    "updated_at": "2026-08-31T12:31:56Z"
+  },
+  "cloudflare/@cf/zai-org/glm-5.3-flash": {
+    "cache_read_per_token": "0.00000003",
+    "currency": "USD",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000005",
+    "source": "community",
+    "updated_at": "2026-08-31T12:31:56Z"
+  },
   "cohere/command-a-03-2025": {
     "currency": "USD",
     "input_per_token": "0.0000025",
@@ -364,22 +380,6 @@
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "deepseek/deepseek-chat": {
-    "cache_read_per_token": "0.0000000028",
-    "currency": "USD",
-    "input_per_token": "0.00000014",
-    "output_per_token": "0.00000028",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "deepseek/deepseek-reasoner": {
-    "cache_read_per_token": "0.0000000028",
-    "currency": "USD",
-    "input_per_token": "0.00000014",
-    "output_per_token": "0.00000028",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
@@ -1005,6 +1005,14 @@
     "source": "community",
     "updated_at": "2026-08-03T09:35:28Z"
   },
+  "mistral/zai-glm-5-2": {
+    "cache_read_per_token": "0.00000014",
+    "currency": "USD",
+    "input_per_token": "0.0000014",
+    "output_per_token": "0.0000044",
+    "source": "community",
+    "updated_at": "2026-08-31T12:31:56Z"
+  },
   "moonshot/kimi-k2-0711-preview": {
     "cache_read_per_token": "0.00000015",
     "currency": "USD",
@@ -1156,6 +1164,13 @@
     "output_per_token": "0.00000087",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "nvidia/deepseek-ai/deepseek-v4-pro-0813": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-08-31T12:31:56Z"
   },
   "nvidia/google/gemma-2-2b-it": {
     "currency": "USD",
@@ -2035,13 +2050,13 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "openai/gpt-5.6": {
-    "cache_read_per_token": "0.0000005",
-    "cache_write_per_token": "0.00000625",
+    "cache_read_per_token": "0.0000004",
+    "cache_write_per_token": "0.000005",
     "currency": "USD",
-    "input_per_token": "0.000005",
-    "output_per_token": "0.00003",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.00002",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-31T12:31:56Z"
   },
   "openai/gpt-5.6-luna": {
     "cache_read_per_token": "0.00000002",
@@ -2053,13 +2068,13 @@
     "updated_at": "2026-08-03T09:35:28Z"
   },
   "openai/gpt-5.6-sol": {
-    "cache_read_per_token": "0.0000005",
-    "cache_write_per_token": "0.00000625",
+    "cache_read_per_token": "0.0000004",
+    "cache_write_per_token": "0.000005",
     "currency": "USD",
-    "input_per_token": "0.000005",
-    "output_per_token": "0.00003",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.00002",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-08-31T12:31:56Z"
   },
   "openai/gpt-5.6-terra": {
     "cache_read_per_token": "0.0000002",
@@ -2252,6 +2267,22 @@
     "output_per_token": "0.0000044",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "zai/glm-5.3": {
+    "cache_read_per_token": "0.00000026",
+    "currency": "USD",
+    "input_per_token": "0.0000014",
+    "output_per_token": "0.0000044",
+    "source": "community",
+    "updated_at": "2026-08-31T12:31:56Z"
+  },
+  "zai/glm-5.3-flash": {
+    "cache_read_per_token": "0.000000015",
+    "currency": "USD",
+    "input_per_token": "0.000000075",
+    "output_per_token": "0.00000025",
+    "source": "community",
+    "updated_at": "2026-08-31T12:31:56Z"
   },
   "zai/glm-5v-turbo": {
     "cache_read_per_token": "0.00000024",

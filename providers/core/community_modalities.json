@@ -295,6 +295,23 @@
       "text"
     ]
   },
+  "cloudflare/@cf/zai-org/glm-5.3": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cloudflare/@cf/zai-org/glm-5.3-flash": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "cohere/c4ai-aya-expanse-32b": {
     "input": [
       "text"
@@ -404,22 +421,6 @@
     ]
   },
   "cohere/north-mini-code-1-0": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "deepseek/deepseek-chat": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "deepseek/deepseek-reasoner": {
     "input": [
       "text"
     ],
@@ -1307,6 +1308,14 @@
       "text"
     ]
   },
+  "mistral/zai-glm-5-2": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "moonshot/kimi-k2-0711-preview": {
     "input": [
       "text"
@@ -1472,6 +1481,14 @@
     ]
   },
   "nvidia/deepseek-ai/deepseek-v4-pro": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "nvidia/deepseek-ai/deepseek-v4-pro-0813": {
     "input": [
       "text"
     ],
@@ -2314,6 +2331,24 @@
       "text"
     ]
   },
+  "ollama_cloud/glm-5.3": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "ollama_cloud/glm-5.3-flash": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "ollama_cloud/gpt-oss:120b": {
     "input": [
       "text"
@@ -2950,6 +2985,24 @@
   "zai/glm-5.2": {
     "input": [
       "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "zai/glm-5.3": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "zai/glm-5.3-flash": {
+    "input": [
+      "text",
+      "image",
+      "video"
     ],
     "output": [
       "text"
