@@ -63,6 +63,31 @@ func TestCommunityModalitiesTableDistinguishesImageGen(t *testing.T) {
 	}
 }
 
+// TestCommunityModalitiesOverridesCoverSpeechModels verifies the hand-curated
+// overlay survives a re-sync into the embedded table: speech models absent
+// from models.dev must resolve with the correct audio side.
+func TestCommunityModalitiesOverridesCoverSpeechModels(t *testing.T) {
+	models := []types.Model{
+		{ID: "openai/tts-1"},
+		{ID: "openai/whisper-1"},
+		{ID: "groq/playai-tts"},
+	}
+
+	applyCommunityModalities(models)
+
+	tts := models[0].Modalities
+	if tts == nil || !slices.Contains(tts.Output, types.ModalityAudio) || slices.Contains(tts.Output, types.ModalityText) {
+		t.Errorf("tts-1 must be audio-out without text-out, got %+v", tts)
+	}
+	stt := models[1].Modalities
+	if stt == nil || !slices.Contains(stt.Input, types.ModalityAudio) {
+		t.Errorf("whisper-1 must be audio-in, got %+v", stt)
+	}
+	if models[2].Modalities == nil {
+		t.Error("playai-tts missing from community table")
+	}
+}
+
 // TestModelAcceptsImages verifies the per-model vision gate: table-confirmed
 // vision models pass (including date-pinned IDs), table-confirmed text-only
 // models fail, and unknown models pass so requests are never silently stripped.
@@ -75,7 +100,7 @@ func TestModelAcceptsImages(t *testing.T) {
 	}{
 		{"vision model with date pin", "anthropic", "claude-haiku-4-5-20251001", true},
 		{"vision model", "anthropic", "claude-haiku-4-5", true},
-		{"text-only model", "deepseek", "deepseek-chat", false},
+		{"text-only model", "deepseek", "deepseek-v4-flash", false},
 		{"unknown model is permissive", "openai", "gpt-nonexistent", true},
 	}
 	for _, tt := range tests {

@@ -45,8 +45,9 @@ func applyCommunityPricing(models []types.Model) {
 }
 
 // communityLookupKeys returns candidate table keys for a gateway model ID in
-// preference order: exact, without Google's "models/" path prefix, without a
-// "-latest" alias suffix, and without a trailing "-YYYYMMDD" date pin, so
+// preference order: exact, without Ollama's ":tag" suffix, without Google's
+// "models/" path prefix, without a "-latest" alias suffix, and without a
+// trailing "-YYYYMMDD" (Anthropic) or "-YYYY-MM-DD" (OpenAI) date pin, so
 // upstream listing IDs still match the dataset's canonical names. Each
 // candidate containing dots also gets an underscored variant, because
 // models.dev file names replace dots in model ids (e.g. NIM's
@@ -56,6 +57,10 @@ func communityLookupKeys(id string) []string {
 	provider, model, ok := strings.Cut(id, "/")
 	if !ok {
 		return keys
+	}
+	if rest, _, found := strings.Cut(model, ":"); found {
+		model = rest
+		keys = append(keys, provider+"/"+model)
 	}
 	if rest, found := strings.CutPrefix(model, "models/"); found {
 		model = rest
@@ -67,12 +72,21 @@ func communityLookupKeys(id string) []string {
 	if len(model) > 9 && model[len(model)-9] == '-' && isDigits(model[len(model)-8:]) {
 		keys = append(keys, provider+"/"+model[:len(model)-9])
 	}
+	if len(model) > 11 && isDashedDate(model[len(model)-11:]) {
+		keys = append(keys, provider+"/"+model[:len(model)-11])
+	}
 	for _, key := range keys {
 		if strings.Contains(key, ".") {
 			keys = append(keys, strings.ReplaceAll(key, ".", "_"))
 		}
 	}
 	return keys
+}
+
+// isDashedDate reports whether s is a "-YYYY-MM-DD" date-pin suffix.
+func isDashedDate(s string) bool {
+	return len(s) == 11 && s[0] == '-' && s[5] == '-' && s[8] == '-' &&
+		isDigits(s[1:5]) && isDigits(s[6:8]) && isDigits(s[9:11])
 }
 
 func isDigits(s string) bool {

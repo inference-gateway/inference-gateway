@@ -1,1 +1,306 @@
-{}
+{
+  "google/antigravity-preview-05-2026": {
+    "input": ["text", "image"],
+    "output": ["text"]
+  },
+  "google/aqa": { "input": ["text"], "output": ["text"] },
+  "google/deep-research-pro-preview-12-2025": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "google/gemini-2.5-flash-native-audio": {
+    "input": ["text", "audio", "video"],
+    "output": ["text", "audio"]
+  },
+  "google/gemini-2.5-flash-native-audio-preview-09-2025": {
+    "input": ["text", "audio", "video"],
+    "output": ["text", "audio"]
+  },
+  "google/gemini-2.5-flash-native-audio-preview-12-2025": {
+    "input": ["text", "audio", "video"],
+    "output": ["text", "audio"]
+  },
+  "google/gemini-3.5-transcribe": { "input": ["audio"], "output": ["text"] },
+  "google/gemini-3.5-transcribe-live": {
+    "input": ["audio"],
+    "output": ["text"]
+  },
+  "google/gemini-embedding-2-preview": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "google/gemini-omni-1.1-flash": {
+    "input": ["text", "image", "audio", "video"],
+    "output": ["text"]
+  },
+  "google/gemini-pro": {
+    "input": ["text", "image", "audio", "video"],
+    "output": ["text"]
+  },
+  "google/gemini-robotics-er-2-preview": {
+    "input": ["text", "image", "video"],
+    "output": ["text"]
+  },
+  "google/gemini-robotics-er-2-streaming-preview": {
+    "input": ["text", "image", "video"],
+    "output": ["text"]
+  },
+  "google/lyria-realtime-exp": { "input": ["text"], "output": ["audio"] },
+  "google/nano-banana-pro-preview": {
+    "input": ["text", "image"],
+    "output": ["text", "image"]
+  },
+  "groq/playai-tts": { "input": ["text"], "output": ["audio"] },
+  "groq/playai-tts-arabic": { "input": ["text"], "output": ["audio"] },
+  "nvidia/01-ai/yi-large": { "input": ["text"], "output": ["text"] },
+  "nvidia/adept/fuyu-8b": { "input": ["text", "image"], "output": ["text"] },
+  "nvidia/ai21labs/jamba-1.5-large-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/aisingapore/sea-lion-7b-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/bigcode/starcoder2-15b": { "input": ["text"], "output": ["text"] },
+  "nvidia/databricks/dbrx-instruct": { "input": ["text"], "output": ["text"] },
+  "nvidia/deepseek-ai/deepseek-coder-6.7b-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/google/codegemma-1.1-7b": { "input": ["text"], "output": ["text"] },
+  "nvidia/google/codegemma-7b": { "input": ["text"], "output": ["text"] },
+  "nvidia/google/deplot": { "input": ["text", "image"], "output": ["text"] },
+  "nvidia/google/diffusiongemma-26b-a4b-it": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/google/gemma-2b": { "input": ["text"], "output": ["text"] },
+  "nvidia/google/recurrentgemma-2b": { "input": ["text"], "output": ["text"] },
+  "nvidia/ibm/granite-3.0-3b-a800m-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/ibm/granite-3.0-8b-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/ibm/granite-34b-code-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/ibm/granite-8b-code-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/meta/codellama-70b": { "input": ["text"], "output": ["text"] },
+  "nvidia/meta/llama2-70b": { "input": ["text"], "output": ["text"] },
+  "nvidia/microsoft/kosmos-2": {
+    "input": ["text", "image"],
+    "output": ["text"]
+  },
+  "nvidia/microsoft/phi-3-vision-128k-instruct": {
+    "input": ["text", "image"],
+    "output": ["text"]
+  },
+  "nvidia/microsoft/phi-3.5-moe-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/mistralai/codestral-22b-instruct-v0.1": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/mistralai/mistral-large": { "input": ["text"], "output": ["text"] },
+  "nvidia/mistralai/mistral-large-2-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/mistralai/mixtral-8x22b-v0.1": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nv-mistralai/mistral-nemo-12b-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/ai-synthetic-video-detector": {
+    "input": ["video"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/embed-qa-4": { "input": ["text"], "output": ["text"] },
+  "nvidia/nvidia/llama-3.1-nemoguard-8b-content-safety": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/llama-3.1-nemoguard-8b-topic-control": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/llama-3.1-nemotron-51b-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1": {
+    "input": ["text", "image"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/llama-3.2-nv-embedqa-1b-v1": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/llama3-chatqa-1.5-70b": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/mistral-nemo-minitron-8b-8k-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/nemotron-3-embed-1b": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/nemotron-3.5-content-safety": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/nemotron-4-340b-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/nemotron-4-340b-reward": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/nemotron-nano-3-30b-a3b": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/nemotron-parse": { "input": ["image"], "output": ["text"] },
+  "nvidia/nvidia/neva-22b": { "input": ["text", "image"], "output": ["text"] },
+  "nvidia/nvidia/nv-embedqa-mistral-7b-v2": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/nvclip": { "input": ["text", "image"], "output": ["text"] },
+  "nvidia/nvidia/riva-translate-4b-instruct": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/riva-translate-4b-instruct-v2": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/nvidia/vila": {
+    "input": ["text", "image", "video"],
+    "output": ["text"]
+  },
+  "nvidia/snowflake/arctic-embed-l": { "input": ["text"], "output": ["text"] },
+  "nvidia/writer/palmyra-creative-122b": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/writer/palmyra-fin-70b-32k": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/writer/palmyra-med-70b": { "input": ["text"], "output": ["text"] },
+  "nvidia/writer/palmyra-med-70b-32k": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "nvidia/zyphra/zamba2-7b-instruct": { "input": ["text"], "output": ["text"] },
+  "ollama_cloud/kimi-k3": { "input": ["text"], "output": ["text"] },
+  "openai/babbage-002": { "input": ["text"], "output": ["text"] },
+  "openai/chat-latest": { "input": ["text", "image"], "output": ["text"] },
+  "openai/davinci-002": { "input": ["text"], "output": ["text"] },
+  "openai/gpt-3.5-turbo-0125": { "input": ["text"], "output": ["text"] },
+  "openai/gpt-3.5-turbo-1106": { "input": ["text"], "output": ["text"] },
+  "openai/gpt-3.5-turbo-16k": { "input": ["text"], "output": ["text"] },
+  "openai/gpt-3.5-turbo-instruct": { "input": ["text"], "output": ["text"] },
+  "openai/gpt-3.5-turbo-instruct-0914": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "openai/gpt-4-0613": { "input": ["text"], "output": ["text"] },
+  "openai/gpt-4o-mini-search-preview": {
+    "input": ["text"],
+    "output": ["text"]
+  },
+  "openai/gpt-4o-mini-transcribe": { "input": ["audio"], "output": ["text"] },
+  "openai/gpt-4o-mini-tts": { "input": ["text"], "output": ["audio"] },
+  "openai/gpt-4o-search-preview": { "input": ["text"], "output": ["text"] },
+  "openai/gpt-4o-transcribe": { "input": ["audio"], "output": ["text"] },
+  "openai/gpt-4o-transcribe-diarize": {
+    "input": ["audio"],
+    "output": ["text"]
+  },
+  "openai/gpt-5-chat-latest": {
+    "input": ["text", "image"],
+    "output": ["text"]
+  },
+  "openai/gpt-5-codex": { "input": ["text", "image"], "output": ["text"] },
+  "openai/gpt-5-search-api": { "input": ["text"], "output": ["text"] },
+  "openai/gpt-5.1-chat-latest": {
+    "input": ["text", "image"],
+    "output": ["text"]
+  },
+  "openai/gpt-5.1-codex": { "input": ["text", "image"], "output": ["text"] },
+  "openai/gpt-5.1-codex-max": {
+    "input": ["text", "image"],
+    "output": ["text"]
+  },
+  "openai/gpt-5.1-codex-mini": {
+    "input": ["text", "image"],
+    "output": ["text"]
+  },
+  "openai/gpt-5.2-codex": { "input": ["text", "image"], "output": ["text"] },
+  "openai/gpt-audio": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-audio-1.5": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-audio-mini": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-live-transcribe": { "input": ["audio"], "output": ["text"] },
+  "openai/gpt-realtime": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-realtime-1.5": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-realtime-2": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-realtime-2.1-mini": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-realtime-mini": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-realtime-translate": {
+    "input": ["text", "audio"],
+    "output": ["text", "audio"]
+  },
+  "openai/gpt-realtime-whisper": { "input": ["audio"], "output": ["text"] },
+  "openai/gpt-transcribe": { "input": ["audio"], "output": ["text"] },
+  "openai/omni-moderation": { "input": ["text", "image"], "output": ["text"] },
+  "openai/sora-2": { "input": ["text", "image"], "output": ["video"] },
+  "openai/sora-2-pro": { "input": ["text", "image"], "output": ["video"] },
+  "openai/tts-1": { "input": ["text"], "output": ["audio"] },
+  "openai/tts-1-1106": { "input": ["text"], "output": ["audio"] },
+  "openai/tts-1-hd": { "input": ["text"], "output": ["audio"] },
+  "openai/tts-1-hd-1106": { "input": ["text"], "output": ["audio"] },
+  "openai/whisper-1": { "input": ["audio"], "output": ["text"] }
+}
