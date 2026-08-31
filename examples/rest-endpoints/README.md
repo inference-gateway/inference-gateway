@@ -569,6 +569,22 @@ curl -X POST http://localhost:8080/v1/audio/speech -d "{
 }" -o cloned.wav
 ```
 
+### Local engine
+
+The reserved `local/qwen3-tts` model is served by the gateway itself via
+llama.cpp's `llama-tts` instead of a provider. Output is always WAV (omit
+`response_format` or set it to `wav`); `reference_audio` cloning works the
+same way. Assets download in the background at startup (see
+`AUDIO_LOCAL_AUTO_DOWNLOAD`); until they are ready the endpoint returns `503`
+with a `Retry-After` header.
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech -d '{
+  "model": "local/qwen3-tts",
+  "input": "No provider needed for this one."
+}' -o local.wav
+```
+
 Errors use the standard envelope, e.g. when the Audio API is not enabled:
 
 ```json

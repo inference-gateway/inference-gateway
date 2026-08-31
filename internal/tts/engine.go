@@ -79,8 +79,16 @@ var (
 // lines up - keep the two in lockstep.
 const (
 	BackboneGGUF = "Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf"
-	MmprojGGUF   = "mmproj-Qwen3-TTS-12Hz-1.7B-Base-f16.gguf"
+	MmprojGGUF   = "mmproj-Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf"
 )
+
+// modelSHA256 pins each GGUF's sha256 (the HF LFS oid), so model downloads
+// are verified and tamper-evident without a runtime HF API call. A package
+// var (not const) only so tests can aim it at dummy payloads.
+var modelSHA256 = map[string]string{
+	BackboneGGUF: "ac7931aeb2e7aad1a6ed6602d353a5679c9d096b18ce8204ac730a8408d572e1",
+	MmprojGGUF:   "6fd65188839bcd6ecc91b277ad471e22a0edfada4699a0fe82f1165c18cfcce2",
+}
 
 // NotReadyError means the local speech assets are not usable yet (still
 // downloading, the last download failed, or auto-download is disabled and
@@ -291,7 +299,7 @@ func (e *Engine) ensure(ctx context.Context) error {
 		if _, err := os.Stat(dest); err == nil {
 			continue // an existing file is treated as done, whoever wrote it (CLI or gateway)
 		}
-		if err := e.download(ctx, modelRepoBase+"/"+gguf, dest, "", 0o644); err != nil {
+		if err := e.download(ctx, modelRepoBase+"/"+gguf, dest, modelSHA256[gguf], 0o644); err != nil {
 			return fmt.Errorf("downloading %s: %w", gguf, err)
 		}
 	}

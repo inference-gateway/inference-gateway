@@ -126,6 +126,45 @@ printf 'done' > "$out"
 	}
 }
 
+func sha256Hex(s string) string {
+	sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sum[:])
+}
+
+// overrideModelSums points the pinned GGUF checksums at test payloads.
+func overrideModelSums(t *testing.T, sums map[string]string) {
+	t.Helper()
+	old := modelSHA256
+	modelSHA256 = sums
+	t.Cleanup(func() { modelSHA256 = old })
+}
+
+func TestWarmupTamperedModelDownloadFails(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte("tampered payload"))
+	}))
+	defer server.Close()
+
+	oldModel := modelRepoBase
+	modelRepoBase = server.URL
+	t.Cleanup(func() { modelRepoBase = oldModel })
+	overrideModelSums(t, map[string]string{
+		BackboneGGUF: sha256Hex("the real backbone"),
+		MmprojGGUF:   sha256Hex("the real mmproj"),
+	})
+	installFakeBinary(t, "exit 0\n") // binary present so only models download
+
+	e := testEngine(t, Config{AutoDownload: true, MaxConcurrency: 1, Timeout: 30 * time.Second, Home: t.TempDir()})
+	e.Warmup(context.Background())
+
+	ok, detail := e.readiness()
+	require.False(t, ok, "tampered download must not make the engine ready")
+	require.Contains(t, detail, "sha256 mismatch")
+	entries, err := filepath.Glob(filepath.Join(e.modelDir(), "*"))
+	require.NoError(t, err)
+	require.Empty(t, entries, "no gguf or temp file may survive a failed verification")
+}
+
 func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 	content := "#!/bin/sh\necho hi\n"
 	sum := sha256.Sum256([]byte(content))
@@ -151,6 +190,13 @@ func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 	oldBinary, oldModel := binaryRepoBase, modelRepoBase
 	binaryRepoBase, modelRepoBase = server.URL, server.URL
 	t.Cleanup(func() { binaryRepoBase, modelRepoBase = oldBinary, oldModel })
+	overrideModelSums(t, map[string]string{
+		BackboneGGUF: sha256Hex("backbone"),
+		MmprojGGUF:   sha256Hex("mmproj"),
+	})
+	// A llama-tts on the developer's real PATH would satisfy resolveBinary and
+	// skip the download this test asserts on — hide it.
+	t.Setenv("PATH", t.TempDir())
 
 	home := t.TempDir()
 	e := testEngine(t, Config{AutoDownload: true, MaxConcurrency: 1, Timeout: 30 * time.Second, Home: home})

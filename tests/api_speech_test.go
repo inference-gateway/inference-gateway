@@ -138,7 +138,7 @@ func TestSpeechHandler_NoProvider(t *testing.T) {
 // newLocalSpeechRouter builds a router wired to an in-memory tts.Engine with
 // placeholder model files so the local speech path works without the proxy
 // stack (registry/client stay nil: local/ requests never touch providers).
-func newLocalSpeechRouter(t *testing.T, home string) api.Router {
+func newLocalSpeechRouter(t *testing.T, home string, opts ...func(*config.Config)) api.Router {
 	t.Helper()
 	log, err := logger.NewLogger("test")
 	require.NoError(t, err)
@@ -146,6 +146,9 @@ func newLocalSpeechRouter(t *testing.T, home string) api.Router {
 	cfg := config.Config{
 		AudioEnabled: true,
 		Server:       &config.ServerConfig{ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second},
+	}
+	for _, opt := range opts {
+		opt(&cfg)
 	}
 	return api.NewRouter(cfg, log, nil, nil, nil, nil, nil, engine)
 }
@@ -208,4 +211,58 @@ func TestSpeechHandler_LocalModelNotReadyReturns503(t *testing.T) {
 	require.Equal(t, http.StatusServiceUnavailable, w.Code)
 	assert.Equal(t, "10", w.Header().Get("Retry-After"))
 	assert.Contains(t, w.Body.String(), "not ready")
+}
+
+func postLocalSpeech(router api.Router, body string) *httptest.ResponseRecorder {
+	r := gin.New()
+	r.POST("/v1/audio/speech", router.SpeechHandler)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+	return w
+}
+
+func TestSpeechHandler_LocalUnknownModelRejected(t *testing.T) {
+	home := t.TempDir()
+	seedLocalSpeechModels(t, home)
+	router := newLocalSpeechRouter(t, home)
+
+	w := postLocalSpeech(router, `{"model":"local/other-tts","input":"Hello"}`)
+
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), tts.ReservedModelID)
+}
+
+func TestSpeechHandler_LocalNonWavFormatRejected(t *testing.T) {
+	home := t.TempDir()
+	seedLocalSpeechModels(t, home)
+	router := newLocalSpeechRouter(t, home)
+
+	w := postLocalSpeech(router, `{"model":"local/qwen3-tts","input":"Hello","response_format":"mp3"}`)
+
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "only supports response_format")
+}
+
+func TestSpeechHandler_LocalEmptyInputRejected(t *testing.T) {
+	home := t.TempDir()
+	seedLocalSpeechModels(t, home)
+	router := newLocalSpeechRouter(t, home)
+
+	w := postLocalSpeech(router, `{"model":"local/qwen3-tts"}`)
+
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "input")
+}
+
+func TestSpeechHandler_LocalModelDenied(t *testing.T) {
+	home := t.TempDir()
+	seedLocalSpeechModels(t, home)
+	router := newLocalSpeechRouter(t, home, func(c *config.Config) { c.DisallowedModels = tts.ReservedModelID })
+
+	w := postLocalSpeech(router, `{"model":"local/qwen3-tts","input":"Hello"}`)
+
+	require.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), "disallowed")
 }

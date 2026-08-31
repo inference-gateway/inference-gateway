@@ -201,6 +201,22 @@ curl -X POST http://localhost:8080/v1/audio/speech \
   }' -o speech.mp3
 ```
 
+Local text to speech without any provider — the reserved `local/qwen3-tts`
+model is synthesized by the gateway itself via llama.cpp's `llama-tts`
+(one-shot, WAV output, supports `reference_audio` voice cloning). With
+`AUDIO_LOCAL_AUTO_DOWNLOAD=true` (default) the binary and GGUF models are
+fetched in the background at startup into the shared `~/.infer` cache
+(`~/.infer/models/tts`, `~/.infer/bin`); requests answer `503` with
+`Retry-After` until assets are ready:
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech \
+  -d '{
+    "model": "local/qwen3-tts",
+    "input": "Ahoy! Welcome aboard the Inference Gateway."
+  }' -o speech.wav
+```
+
 ## Installation
 
 > **Recommended**: For production deployments, running the Inference Gateway as
@@ -628,4 +644,3 @@ My motivation is to build AI Agents without being tied to a single vendor. By
 avoiding vendor lock-in and supporting self-hosted LLMs from a single interface,
 organizations gain both portability and data privacy. You can choose to consume
 LLMs from a cloud provider or run them entirely offline with Ollama.
-ma.
