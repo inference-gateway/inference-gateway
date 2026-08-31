@@ -190,7 +190,7 @@ curl -X POST http://localhost:8080/v1/images/generations \
   }'
 ```
 
-Text to speech (requires `ENABLE_AUDIO=true`):
+Text to speech (requires `AUDIO_ENABLED=true`):
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech \
@@ -628,3 +628,4 @@ My motivation is to build AI Agents without being tied to a single vendor. By
 avoiding vendor lock-in and supporting self-hosted LLMs from a single interface,
 organizations gain both portability and data privacy. You can choose to consume
 LLMs from a cloud provider or run them entirely offline with Ollama.
+ma.

@@ -17,7 +17,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 )
 
-func enableAudio(c *config.Config) { c.EnableAudio = true }
+func enableAudio(c *config.Config) { c.AudioEnabled = true }
 
 func TestSpeechHandler_HappyPath(t *testing.T) {
 	var gotPath, gotAuth, gotRequestContentType string
@@ -97,7 +97,7 @@ func TestSpeechHandler_DisabledByDefault(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusNotFound, w.Code)
-	assert.Equal(t, `{"error":"The Audio API is not enabled. Set ENABLE_AUDIO=true to enable it."}`, w.Body.String())
+	assert.Equal(t, `{"error":"The Audio API is not enabled. Set AUDIO_ENABLED=true to enable it."}`, w.Body.String())
 }
 
 func TestSpeechHandler_UnsupportedProvider(t *testing.T) {

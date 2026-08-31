@@ -29,6 +29,10 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 	cfg := config.Config{
 		Environment:               "production",
 		AllowedModels:             "",
+		AudioEnabled:              false,
+		AudioLocalAutoDownload:    true,
+		AudioLocalMaxConcurrency:  2,
+		AudioLocalTimeout:         300,
 		DebugContentTruncateWords: 10,
 		DebugMaxMessages:          100,
 		Telemetry: &config.TelemetryConfig{

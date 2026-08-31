@@ -537,7 +537,7 @@ provider byte-for-byte (only the `model` prefix is stripped), and the response
 is the raw binary audio with the upstream's `Content-Type` (e.g. `audio/wav`
 for `"response_format": "wav"`).
 
-The endpoint is opt-in via `ENABLE_AUDIO=true` (default off). When disabled,
+The endpoint is opt-in via `AUDIO_ENABLED=true` (default off). When disabled,  
 the handler returns `404`. Providers without a native speech API return `400`.
 
 ```bash
@@ -573,7 +573,7 @@ Errors use the standard envelope, e.g. when the Audio API is not enabled:
 
 ```json
 {
-  "error": "The Audio API is not enabled. Set ENABLE_AUDIO=true to enable it."
+  "error": "The Audio API is not enabled. Set AUDIO_ENABLED=true to enable it."
 }
 ```
 

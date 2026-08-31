@@ -1363,12 +1363,12 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 // (currently openai); other providers receive a 400, mirroring the schema's
 // SpeechNotSupported response.
 //
-// The endpoint is opt-in via ENABLE_AUDIO (default off). When disabled, the
+// The endpoint is opt-in via AUDIO_ENABLED (default off). When disabled, the
 // handler returns 404.
 func (router *RouterImpl) SpeechHandler(c *gin.Context) {
-	if !router.cfg.EnableAudio {
+	if !router.cfg.AudioEnabled {
 		router.logger.Error("audio api not enabled", nil)
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Audio API is not enabled. Set ENABLE_AUDIO=true to enable it."})
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Audio API is not enabled. Set AUDIO_ENABLED=true to enable it."})
 		return
 	}
 
