@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -52,6 +53,37 @@ func TestSpeechHandler_HappyPath(t *testing.T) {
 	assert.Equal(t, "application/json", gotRequestContentType)
 	assert.Equal(t, "audio/mpeg", w.Header().Get("Content-Type"), "audio should be streamed with the upstream content type")
 	assert.Equal(t, "FAKE-AUDIO-BYTES", w.Body.String())
+}
+
+// TestSpeechHandler_VoiceCloningPassthrough proves the optional
+// reference_audio cloning field reaches a speech-capable provider (llamacpp)
+// byte-for-byte alongside the model-prefix rewrite.
+func TestSpeechHandler_VoiceCloningPassthrough(t *testing.T) {
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.NoError(t, json.Unmarshal(body, &gotBody))
+		w.Header().Set("Content-Type", "audio/wav")
+		_, _ = w.Write([]byte("FAKE-CLONED-AUDIO"))
+	}))
+	defer server.Close()
+
+	router := newImagesTestRouter(t, server.URL, false, enableAudio)
+	r := gin.New()
+	r.POST("/v1/audio/speech", router.SpeechHandler)
+
+	sample := base64.StdEncoding.EncodeToString([]byte("RIFF-fake-wav-sample"))
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(
+		`{"model":"llamacpp/qwen3-tts","input":"Hello","voice":"custom","response_format":"wav","reference_audio":"`+sample+`"}`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Equal(t, "qwen3-tts", gotBody["model"], "provider prefix should be stripped")
+	assert.Equal(t, sample, gotBody["reference_audio"], "reference audio should be forwarded untouched")
+	assert.Equal(t, "FAKE-CLONED-AUDIO", w.Body.String())
 }
 
 func TestSpeechHandler_DisabledByDefault(t *testing.T) {

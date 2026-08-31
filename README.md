@@ -190,6 +190,17 @@ curl -X POST http://localhost:8080/v1/images/generations \
   }'
 ```
 
+Text to speech (requires `ENABLE_AUDIO=true`):
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech \
+  -d '{
+    "model": "openai/gpt-4o-mini-tts",
+    "input": "Ahoy! Welcome aboard the Inference Gateway.",
+    "voice": "alloy"
+  }' -o speech.mp3
+```
+
 ## Installation
 
 > **Recommended**: For production deployments, running the Inference Gateway as

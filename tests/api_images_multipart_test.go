@@ -59,6 +59,14 @@ func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, op
 			Token:    "test-cohere-key",
 			AuthType: constants.AuthTypeBearer,
 		},
+		constants.LlamacppID: {
+			ID:        constants.LlamacppID,
+			Name:      constants.LlamacppDisplayName,
+			URL:       upstreamURL,
+			Token:     "test-llamacpp-key",
+			AuthType:  constants.AuthTypeBearer,
+			Endpoints: registry.Registry[constants.LlamacppID].Endpoints,
+		},
 	}
 
 	cfg := config.Config{

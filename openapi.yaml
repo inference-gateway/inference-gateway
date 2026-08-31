@@ -1213,6 +1213,10 @@ components:
               name: 'chat_completions'
               method: 'POST'
               endpoint: '/chat/completions'
+            speech:
+              name: 'create_speech'
+              method: 'POST'
+              endpoint: '/audio/speech'
         openai:
           id: 'openai'
           url: 'https://api.openai.com/v1'
@@ -2651,6 +2655,16 @@ components:
           maximum: 4
           default: 1
           description: The speed of the generated audio.
+        reference_audio:
+          type: string
+          format: byte
+          description: |-
+            Base64-encoded audio sample for zero-shot voice cloning. The
+            generated speech mimics the voice in the sample. Best results with
+            a clean mono recording between 1 and 30 seconds; WAV is the safest
+            container. Forwarded to the provider as-is - only providers with
+            voice-cloning support honor it (e.g. Qwen3-TTS-compatible
+            backends); others ignore or reject it. Not supported by OpenAI.
       required:
         - model
         - input

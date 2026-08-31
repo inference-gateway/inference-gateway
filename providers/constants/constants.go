@@ -40,6 +40,7 @@ const (
 	GroqChatEndpoint               = "/chat/completions"
 	LlamacppModelsEndpoint         = "/models"
 	LlamacppChatEndpoint           = "/chat/completions"
+	LlamacppSpeechEndpoint         = "/audio/speech"
 	MinimaxModelsEndpoint          = "/models"
 	MinimaxChatEndpoint            = "/chat/completions"
 	MistralModelsEndpoint          = "/models"

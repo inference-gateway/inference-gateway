@@ -79,6 +79,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Endpoints: types.Endpoints{
 			Models: constants.LlamacppModelsEndpoint,
 			Chat:   constants.LlamacppChatEndpoint,
+			Speech: ptr(constants.LlamacppSpeechEndpoint),
 		},
 	},
 	constants.MinimaxID: {

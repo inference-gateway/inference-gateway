@@ -529,6 +529,54 @@ Or for a provider without native Images API support:
 }
 ```
 
+## Text to Speech
+
+The gateway exposes an OpenAI-compatible `POST /v1/audio/speech` endpoint for
+synthesizing speech from text. The request body is forwarded to the upstream
+provider byte-for-byte (only the `model` prefix is stripped), and the response
+is the raw binary audio with the upstream's `Content-Type` (e.g. `audio/wav`
+for `"response_format": "wav"`).
+
+The endpoint is opt-in via `ENABLE_AUDIO=true` (default off). When disabled,
+the handler returns `404`. Providers without a native speech API return `400`.
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech -d '{
+  "model": "openai/gpt-4o-mini-tts",
+  "input": "Ahoy! Welcome aboard the Inference Gateway.",
+  "voice": "alloy",
+  "response_format": "wav"
+}' -o speech.wav
+```
+
+### Voice Cloning
+
+The optional `reference_audio` field carries a base64-encoded voice sample for
+zero-shot cloning; the generated speech mimics the voice in the sample. Use a
+clean mono recording between 1 and 30 seconds (WAV is the safest container).
+The field is forwarded as-is, so it works with providers whose speech backend
+supports audio-conditioned cloning, such as a self-hosted Qwen3-TTS-compatible
+server configured as the `llamacpp` provider via `LLAMACPP_API_URL`. OpenAI's
+Speech API does not support cloning and only accepts its built-in voices.
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech -d "{
+  \"model\": \"llamacpp/qwen3-tts\",
+  \"input\": \"This is my cloned voice speaking.\",
+  \"voice\": \"custom\",
+  \"response_format\": \"wav\",
+  \"reference_audio\": \"$(base64 < my-voice-sample.wav)\"
+}" -o cloned.wav
+```
+
+Errors use the standard envelope, e.g. when the Audio API is not enabled:
+
+```json
+{
+  "error": "The Audio API is not enabled. Set ENABLE_AUDIO=true to enable it."
+}
+```
+
 ## Tool Calls
 
 You can provide tools that the LLM can use to perform specific functions. Here

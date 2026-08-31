@@ -1914,6 +1914,14 @@ type CreateSpeechRequest struct {
 	// Model Model ID to use for speech synthesis (e.g. `gpt-4o-mini-tts` or `tts-1`).
 	Model string `json:"model"`
 
+	// ReferenceAudio Base64-encoded audio sample for zero-shot voice cloning. The
+	// generated speech mimics the voice in the sample. Best results with
+	// a clean mono recording between 1 and 30 seconds; WAV is the safest
+	// container. Forwarded to the provider as-is - only providers with
+	// voice-cloning support honor it (e.g. Qwen3-TTS-compatible
+	// backends); others ignore or reject it. Not supported by OpenAI.
+	ReferenceAudio *[]byte `json:"reference_audio,omitempty"`
+
 	// ResponseFormat The audio format of the response.
 	ResponseFormat *CreateSpeechRequestResponseFormat `json:"response_format,omitempty"`
 
