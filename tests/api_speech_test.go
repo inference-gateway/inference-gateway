@@ -6,15 +6,22 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
 	gin "github.com/gin-gonic/gin"
 
+	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
+	tts "github.com/inference-gateway/inference-gateway/internal/tts"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 )
 
 func enableAudio(c *config.Config) { c.AudioEnabled = true }
@@ -126,4 +133,79 @@ func TestSpeechHandler_NoProvider(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "No provider specified")
+}
+
+// newLocalSpeechRouter builds a router wired to an in-memory tts.Engine with
+// placeholder model files so the local speech path works without the proxy
+// stack (registry/client stay nil: local/ requests never touch providers).
+func newLocalSpeechRouter(t *testing.T, home string) api.Router {
+	t.Helper()
+	log, err := logger.NewLogger("test")
+	require.NoError(t, err)
+	engine := tts.NewEngine(log, tts.Config{AutoDownload: false, Home: home})
+	cfg := config.Config{
+		AudioEnabled: true,
+		Server:       &config.ServerConfig{ReadTimeout: 5 * time.Second, WriteTimeout: 5 * time.Second},
+	}
+	return api.NewRouter(cfg, log, nil, nil, nil, nil, nil, engine)
+}
+
+// seedLocalSpeechModels plants placeholder GGUF weights in the engine's cache.
+func seedLocalSpeechModels(t *testing.T, home string) {
+	t.Helper()
+	dir := filepath.Join(home, tts.CacheModelsDir)
+	require.NoError(t, os.MkdirAll(dir, 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, tts.BackboneGGUF), []byte("backbone"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, tts.MmprojGGUF), []byte("mmproj"), 0o644))
+}
+
+// installFakeLlamaTTS puts a sh script first on PATH that accepts the
+// llama-tts CLI shape and "synthesizes" the caller-chosen body into --output.
+func installFakeLlamaTTS(t *testing.T, body string) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("the fake llama-tts binary is a sh script")
+	}
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "llama-tts"), []byte("#!/bin/sh\n"+body), 0o755))
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
+func TestSpeechHandler_LocalModelReady(t *testing.T) {
+	home := t.TempDir()
+	seedLocalSpeechModels(t, home)
+	installFakeLlamaTTS(t, `out=""; prev=""
+for a in "$@"; do
+  [ "$prev" = "--output" ] && out="$a"
+  prev="$a"
+done
+printf 'FAKE-LOCAL-WAV' > "$out"
+`)
+	router := newLocalSpeechRouter(t, home)
+	r := gin.New()
+	r.POST("/v1/audio/speech", router.SpeechHandler)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(`{"model":"local/qwen3-tts","input":"Hello there"}`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Equal(t, "audio/wav", w.Header().Get("Content-Type"))
+	assert.Equal(t, "FAKE-LOCAL-WAV", w.Body.String())
+}
+
+func TestSpeechHandler_LocalModelNotReadyReturns503(t *testing.T) {
+	router := newLocalSpeechRouter(t, t.TempDir())
+	r := gin.New()
+	r.POST("/v1/audio/speech", router.SpeechHandler)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(`{"model":"local/qwen3-tts","input":"Hello"}`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusServiceUnavailable, w.Code)
+	assert.Equal(t, "10", w.Header().Get("Retry-After"))
+	assert.Contains(t, w.Body.String(), "not ready")
 }
