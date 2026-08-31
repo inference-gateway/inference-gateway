@@ -137,6 +137,14 @@
     "context": 262144,
     "output": 256000
   },
+  "cloudflare/@cf/zai-org/glm-5.3": {
+    "context": 1310720,
+    "output": 1310720
+  },
+  "cloudflare/@cf/zai-org/glm-5.3-flash": {
+    "context": 1310720,
+    "output": 1048576
+  },
   "cohere/c4ai-aya-expanse-32b": {
     "context": 128000,
     "output": 4000
@@ -192,14 +200,6 @@
   "cohere/north-mini-code-1-0": {
     "context": 256000,
     "output": 64000
-  },
-  "deepseek/deepseek-chat": {
-    "context": 1000000,
-    "output": 384000
-  },
-  "deepseek/deepseek-reasoner": {
-    "context": 1000000,
-    "output": 384000
   },
   "deepseek/deepseek-v4-flash": {
     "context": 1000000,
@@ -405,8 +405,8 @@
     "output": 16384
   },
   "minimax/MiniMax-M2": {
-    "context": 196608,
-    "output": 128000
+    "context": 204800,
+    "output": 131072
   },
   "minimax/MiniMax-M2.1": {
     "context": 204800,
@@ -429,8 +429,8 @@
     "output": 131072
   },
   "minimax/MiniMax-M3": {
-    "context": 1000000,
-    "output": 128000
+    "context": 1048576,
+    "output": 512000
   },
   "mistral/codestral-latest": {
     "context": 256000,
@@ -556,6 +556,10 @@
     "context": 32000,
     "output": 32000
   },
+  "mistral/zai-glm-5-2": {
+    "context": 1000000,
+    "output": 131072
+  },
   "moonshot/kimi-k2-0711-preview": {
     "context": 131072,
     "output": 16384
@@ -633,6 +637,10 @@
   "nvidia/deepseek-ai/deepseek-v4-pro": {
     "context": 1048576,
     "output": 393216
+  },
+  "nvidia/deepseek-ai/deepseek-v4-pro-0813": {
+    "context": 1000000,
+    "output": 384000
   },
   "nvidia/google/gemma-2-2b-it": {
     "context": 128000,
@@ -961,6 +969,13 @@
   "ollama_cloud/glm-5.2": {
     "context": 976000
   },
+  "ollama_cloud/glm-5.3": {
+    "context": 1048576
+  },
+  "ollama_cloud/glm-5.3-flash": {
+    "context": 1000000,
+    "output": 131072
+  },
   "ollama_cloud/gpt-oss:120b": {
     "context": 131072,
     "output": 32768
@@ -1233,6 +1248,14 @@
     "output": 131072
   },
   "zai/glm-5.2": {
+    "context": 1000000,
+    "output": 131072
+  },
+  "zai/glm-5.3": {
+    "context": 1000000,
+    "output": 131072
+  },
+  "zai/glm-5.3-flash": {
     "context": 1000000,
     "output": 131072
   },
