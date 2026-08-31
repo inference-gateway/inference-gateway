@@ -141,14 +141,13 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 		return
 	}
 
-	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
+	body, tooLarge, err := router.readBoundedBody(c)
 	if err != nil {
-		router.logger.Error("failed to read request body", err, "maxBodySize", maxBodySize)
+		router.logger.Error("failed to read request body", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
 		return
 	}
-	if len(body) >= maxBodySize {
+	if tooLarge {
 		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
 		return
 	}
@@ -620,6 +619,18 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 // modelDenied reports whether model is blocked by ALLOWED_MODELS /
 // DISALLOWED_MODELS, returning the client-facing reason ("" when permitted).
 // ALLOWED_MODELS takes precedence: when it is set, DISALLOWED_MODELS is ignored.
+// readBoundedBody reads the request body up to the configured max request
+// body size, reporting tooLarge when the body exceeds the limit. A body of
+// exactly the limit is accepted.
+func (router *RouterImpl) readBoundedBody(c *gin.Context) (body []byte, tooLarge bool, err error) {
+	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
+	body, err = io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)+1))
+	if err != nil {
+		return nil, false, err
+	}
+	return body, len(body) > maxBodySize, nil
+}
+
 func (router *RouterImpl) modelDenied(model string) string {
 	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
 		if !routing.ModelMatches(allowed, model) {
@@ -841,14 +852,13 @@ func messagesError(c *gin.Context, status int, errType, message string) {
 // (currently Anthropic); other providers receive a 400 in the Anthropic error
 // envelope, mirroring the schema's MessagesNotSupported response.
 func (router *RouterImpl) MessagesHandler(c *gin.Context) {
-	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
+	body, tooLarge, err := router.readBoundedBody(c)
 	if err != nil {
 		router.logger.Error("failed to read request body", err)
 		messagesError(c, http.StatusBadRequest, "invalid_request_error", "Failed to read request")
 		return
 	}
-	if len(body) >= maxBodySize {
+	if tooLarge {
 		messagesError(c, http.StatusRequestEntityTooLarge, "invalid_request_error", "Request body too large")
 		return
 	}
@@ -1017,14 +1027,13 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 // (currently OpenAI); other providers receive a 400, mirroring the schema's
 // ResponsesNotSupported response.
 func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
-	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
+	body, tooLarge, err := router.readBoundedBody(c)
 	if err != nil {
 		router.logger.Error("failed to read request body", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
 		return
 	}
-	if len(body) >= maxBodySize {
+	if tooLarge {
 		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
 		return
 	}
@@ -1199,14 +1208,24 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 		return
 	}
 
-	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
+	router.proxyJSONBody(c, "Images API", "openai/gpt-image-2", "application/json",
+		func(e types.Endpoints) *string { return e.Images })
+}
+
+// proxyJSONBody forwards an OpenAI-style JSON request byte-for-byte to the
+// provider endpoint selected by endpointOf (only the `model` field is
+// rewritten when the provider prefix is stripped) and relays the upstream
+// response with its Content-Type. apiName appears in client-facing errors,
+// exampleModel in routing hints, and accept sets the Accept header when
+// non-empty.
+func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, accept string, endpointOf func(types.Endpoints) *string) {
+	body, tooLarge, err := router.readBoundedBody(c)
 	if err != nil {
 		router.logger.Error("failed to read request body", err)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
 		return
 	}
-	if len(body) >= maxBodySize {
+	if tooLarge {
 		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
 		return
 	}
@@ -1227,20 +1246,21 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 	}
 	originalModel := model
 
+	providerHint := "Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., " + exampleModel + ")."
 	if providerID == "" && model != "" {
 		var providerPtr *types.Provider
 		providerPtr, model = routing.DetermineProviderAndModelName(model)
 		if providerPtr == nil {
 			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. " + providerHint})
 			return
 		}
 		providerID = *providerPtr
 	}
 
 	if providerID == "" {
-		router.logger.Error("no provider specified for images request", nil)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
+		router.logger.Error("no provider specified", nil, "api", apiName)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. " + providerHint})
 		return
 	}
 
@@ -1261,9 +1281,10 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 		return
 	}
 
-	if provider.GetEndpoints().Images == nil || *provider.GetEndpoints().Images == "" {
-		router.logger.Error("images api not supported by provider", nil, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The Images API is not supported by this provider yet."})
+	endpoint := endpointOf(provider.GetEndpoints())
+	if endpoint == nil || *endpoint == "" {
+		router.logger.Error("api not supported by provider", nil, "api", apiName, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The " + apiName + " is not supported by this provider yet."})
 		return
 	}
 
@@ -1287,7 +1308,7 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
 	defer cancel()
 
-	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + *provider.GetEndpoints().Images
+	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + *endpoint
 	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
 	if err != nil {
 		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
@@ -1295,7 +1316,9 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 		return
 	}
 	upstreamReq.Header.Set("Content-Type", "application/json")
-	upstreamReq.Header.Set("Accept", "application/json")
+	if accept != "" {
+		upstreamReq.Header.Set("Accept", accept)
+	}
 
 	if err := applyProviderAuth(upstreamReq, provider); err != nil {
 		router.logger.Error("unsupported auth type", err, "provider", providerID)
@@ -1339,132 +1362,18 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 // Only providers that natively implement the Audio API are supported
 // (currently openai); other providers receive a 400, mirroring the schema's
 // SpeechNotSupported response.
+//
+// The endpoint is opt-in via ENABLE_AUDIO (default off). When disabled, the
+// handler returns 404.
 func (router *RouterImpl) SpeechHandler(c *gin.Context) {
-	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)))
-	if err != nil {
-		router.logger.Error("failed to read request body", err)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
-		return
-	}
-	if len(body) >= maxBodySize {
-		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+	if !router.cfg.EnableAudio {
+		router.logger.Error("audio api not enabled", nil)
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Audio API is not enabled. Set ENABLE_AUDIO=true to enable it."})
 		return
 	}
 
-	var req struct {
-		Model *string `json:"model,omitempty"`
-	}
-	if err := json.Unmarshal(body, &req); err != nil {
-		router.logger.Error("failed to decode request", err)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
-		return
-	}
-
-	providerID := types.Provider(c.Query("provider"))
-	model := ""
-	if req.Model != nil {
-		model = *req.Model
-	}
-	originalModel := model
-
-	if providerID == "" && model != "" {
-		var providerPtr *types.Provider
-		providerPtr, model = routing.DetermineProviderAndModelName(model)
-		if providerPtr == nil {
-			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/tts-1)."})
-			return
-		}
-		providerID = *providerPtr
-	}
-
-	if providerID == "" {
-		router.logger.Error("no provider specified for speech request", nil)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/tts-1)."})
-		return
-	}
-
-	if reason := router.modelDenied(originalModel); reason != "" {
-		c.JSON(http.StatusForbidden, ErrorResponse{Error: reason})
-		return
-	}
-
-	provider, err := router.registry.BuildProvider(providerID, router.client)
-	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
-			return
-		}
-		router.logger.Error("provider not found or not supported", err, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
-		return
-	}
-
-	if provider.GetEndpoints().Speech == nil || *provider.GetEndpoints().Speech == "" {
-		router.logger.Error("speech api not supported by provider", nil, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The Audio API is not supported by this provider yet."})
-		return
-	}
-
-	if model != originalModel {
-		dec := json.NewDecoder(bytes.NewReader(body))
-		dec.UseNumber()
-		var payload map[string]any
-		if err := dec.Decode(&payload); err != nil {
-			router.logger.Error("failed to decode request", err)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
-			return
-		}
-		payload["model"] = model
-		if body, err = json.Marshal(payload); err != nil {
-			router.logger.Error("failed to encode request", err)
-			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode request"})
-			return
-		}
-	}
-
-	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
-	defer cancel()
-
-	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + *provider.GetEndpoints().Speech
-	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
-	if err != nil {
-		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
-		return
-	}
-	upstreamReq.Header.Set("Content-Type", "application/json")
-
-	if err := applyProviderAuth(upstreamReq, provider); err != nil {
-		router.logger.Error("unsupported auth type", err, "provider", providerID)
-		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
-		return
-	}
-
-	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
-
-	resp, err := router.client.Do(upstreamReq)
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "provider", providerID)
-			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
-			return
-		}
-		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
-		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		span := trace.SpanFromContext(c.Request.Context())
-		span.SetStatus(codes.Error, resp.Status)
-		span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
-	}
-
-	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+	router.proxyJSONBody(c, "Audio API", "openai/tts-1", "",
+		func(e types.Endpoints) *string { return e.Speech })
 }
 
 // Multipart form field names shared by the /images/edits and

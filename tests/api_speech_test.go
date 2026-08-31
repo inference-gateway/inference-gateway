@@ -12,7 +12,11 @@ import (
 	require "github.com/stretchr/testify/require"
 
 	gin "github.com/gin-gonic/gin"
+
+	config "github.com/inference-gateway/inference-gateway/config"
 )
+
+func enableAudio(c *config.Config) { c.EnableAudio = true }
 
 func TestSpeechHandler_HappyPath(t *testing.T) {
 	var gotPath, gotAuth, gotRequestContentType string
@@ -29,7 +33,7 @@ func TestSpeechHandler_HappyPath(t *testing.T) {
 	}))
 	defer server.Close()
 
-	router := newImagesTestRouter(t, server.URL, false)
+	router := newImagesTestRouter(t, server.URL, false, enableAudio)
 	r := gin.New()
 	r.POST("/v1/audio/speech", router.SpeechHandler)
 
@@ -50,8 +54,22 @@ func TestSpeechHandler_HappyPath(t *testing.T) {
 	assert.Equal(t, "FAKE-AUDIO-BYTES", w.Body.String())
 }
 
-func TestSpeechHandler_UnsupportedProvider(t *testing.T) {
+func TestSpeechHandler_DisabledByDefault(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", false)
+	r := gin.New()
+	r.POST("/v1/audio/speech", router.SpeechHandler)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(`{"model":"openai/tts-1","input":"Hello","voice":"alloy"}`))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusNotFound, w.Code)
+	assert.Equal(t, `{"error":"The Audio API is not enabled. Set ENABLE_AUDIO=true to enable it."}`, w.Body.String())
+}
+
+func TestSpeechHandler_UnsupportedProvider(t *testing.T) {
+	router := newImagesTestRouter(t, "http://unused", false, enableAudio)
 	r := gin.New()
 	r.POST("/v1/audio/speech", router.SpeechHandler)
 
@@ -65,7 +83,7 @@ func TestSpeechHandler_UnsupportedProvider(t *testing.T) {
 }
 
 func TestSpeechHandler_NoProvider(t *testing.T) {
-	router := newImagesTestRouter(t, "http://unused", false)
+	router := newImagesTestRouter(t, "http://unused", false, enableAudio)
 	r := gin.New()
 	r.POST("/v1/audio/speech", router.SpeechHandler)
 
