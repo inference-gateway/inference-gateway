@@ -219,7 +219,6 @@ func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 		require.Empty(t, leftovers, "no .part temp files may survive the atomic rename")
 	}
 
-	// A second warmup must treat existing files as done and fetch nothing.
 	e.Warmup(context.Background())
 	mu.Lock()
 	defer mu.Unlock()
