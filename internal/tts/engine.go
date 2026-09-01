@@ -67,7 +67,7 @@ const (
 var (
 	// Package vars (not consts) so tests can aim them at an httptest server
 	// instead of the real release / model hosts.
-	binaryRepoBase = "https://github.com/inference-gateway/stt-binaries/releases/latest/download"
+	binaryRepoBase = "https://github.com/inference-gateway/binaries/releases/latest/download"
 	modelRepoBase  = "https://huggingface.co/ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF/resolve/main"
 )
 
@@ -306,7 +306,7 @@ func (e *Engine) ensure(ctx context.Context) error {
 	return nil
 }
 
-// downloadBinary fetches the static binary from stt-binaries, sha256-verified
+// downloadBinary fetches the static binary from the binaries repo, sha256-verified
 // against the release's checksums.txt.
 func (e *Engine) downloadBinary(ctx context.Context) error {
 	asset := binaryAsset()
@@ -444,7 +444,7 @@ func (e *Engine) mmprojPath() string {
 	return filepath.Join(e.cfg.Home, CacheModelsDir, MmprojGGUF)
 }
 
-// binaryAsset is the per-platform asset name on stt-binaries releases,
+// binaryAsset is the per-platform asset name on binaries releases,
 // following the whisper-cli and ffmpeg naming.
 func binaryAsset() string {
 	name := fmt.Sprintf("%s-%s-%s", BinaryName, runtime.GOOS, runtime.GOARCH)
