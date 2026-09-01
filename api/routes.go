@@ -131,9 +131,13 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	handleProxyRequest(c, provider, router)
 }
 
+// handleStreamingRequest serves the /proxy streaming path (selected by an
+// Accept: text/event-stream request) by relaying the upstream response line by
+// line. Only a real event stream gets the SSE headers: anything else the
+// upstream answers, an error envelope or a JSON reply from an endpoint that
+// never streams, is relayed verbatim with its own status code and
+// Content-Type, mirroring the Messages and Responses handlers.
 func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *RouterImpl) {
-	middlewares.SetSSEHeaders(c)
-
 	fullURL, err := constructProviderURL(provider, c.Param("path"), c.Request.URL.RawQuery)
 	if err != nil {
 		router.logger.Error("failed to construct provider url", err, "provider", provider.GetName())
@@ -171,12 +175,54 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 	}
 	defer resp.Body.Close()
 
+	contentType := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "text/event-stream") {
+		c.DataFromReader(resp.StatusCode, resp.ContentLength, contentType, resp.Body, nil)
+		return
+	}
+
+	middlewares.SetSSEHeaders(c)
+	c.Status(resp.StatusCode)
+
 	reader := bufio.NewReaderSize(resp.Body, 4096)
 
 	c.Stream(func(w io.Writer) bool {
 		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
 
+		// A final line without a trailing newline arrives together with
+		// io.EOF, so it must be written before the error is inspected.
 		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			if router.cfg.Environment == "development" {
+				shouldLog := len(line) > 512 ||
+					(c.Param("provider") != "" && (len(line)%10 == 0))
+
+				if shouldLog {
+					router.logger.Debug("stream chunk",
+						"provider", c.Param("provider"),
+						"bytes", len(line),
+						"data_preview", func() string {
+							preview := string(bytes.TrimSpace(line))
+							if len(preview) > 200 {
+								return preview[:200] + "... (truncated)"
+							}
+							return preview
+						}(),
+					)
+				}
+			}
+
+			if _, werr := w.Write(line); werr != nil {
+				router.logger.Error("failed to write response", werr,
+					"bytes", len(line))
+				return false
+			}
+
+			if flusher, ok := w.(http.Flusher); ok {
+				flusher.Flush()
+			}
+		}
+
 		if err != nil {
 			if err != io.EOF {
 				router.logger.Error("failed to read stream", err,
@@ -184,39 +230,6 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 					"method", c.Request.Method)
 			}
 			return false
-		}
-
-		if len(line) == 0 {
-			return true
-		}
-
-		if router.cfg.Environment == "development" {
-			shouldLog := len(line) > 512 ||
-				(c.Param("provider") != "" && len(line) > 0 && (len(line)%10 == 0))
-
-			if shouldLog {
-				router.logger.Debug("stream chunk",
-					"provider", c.Param("provider"),
-					"bytes", len(line),
-					"data_preview", func() string {
-						preview := string(bytes.TrimSpace(line))
-						if len(preview) > 200 {
-							return preview[:200] + "... (truncated)"
-						}
-						return preview
-					}(),
-				)
-			}
-		}
-
-		if _, err := w.Write(line); err != nil {
-			router.logger.Error("failed to write response", err,
-				"bytes", len(line))
-			return false
-		}
-
-		if flusher, ok := w.(http.Flusher); ok {
-			flusher.Flush()
 		}
 
 		return true
