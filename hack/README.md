@@ -29,9 +29,9 @@ task deploy-infrastructure
 
 Creates local k3d cluster with:
 
-- ingress-nginx (v4.12.1)
-- cert-manager (v1.17.1)
-- kube-prometheus-stack (70.4.2)
+- ingress-nginx (v4.14.0)
+- cert-manager (v1.17.2)
+- kube-prometheus-stack (72.6.1)
 - grafana-operator (v5.17.0)
 - Keycloak with PostgreSQL
 

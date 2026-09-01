@@ -161,7 +161,7 @@ For streaming the tokens simply add to the request body `stream: true`.
 | `POST /v1/images/edits`       | Edit an image with an optional mask, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true`                                                                                                                                      |
 | `POST /v1/images/variations`  | Create variations of an image, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true`                                                                                                                                            |
 | `POST /v1/audio/speech`       | [OpenAI Audio Speech API](https://platform.openai.com/docs/api-reference/audio/createSpeech) - generate speech audio from text. Opt-in via `ENABLE_AUDIO=true` (OpenAI provider only)                                            |
-| `POST /v1/metrics`            | OTLP metrics push from clients. Opt-in via `METRICS_PUSH_ENABLED=true`                                                                                                                                                           |
+| `POST /v1/metrics`            | OTLP metrics push from clients. Opt-in via `TELEMETRY_METRICS_PUSH_ENABLED=true`                                                                                                                                                 |
 | `ANY /proxy/:provider/*path`  | Passthrough to a provider's native API with the API key injected                                                                                                                                                                 |
 
 All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
