@@ -1433,6 +1433,7 @@ func (router *RouterImpl) serveLocalSpeech(c *gin.Context) bool {
 		Input          string `json:"input"`
 		ResponseFormat string `json:"response_format"`
 		ReferenceAudio []byte `json:"reference_audio"`
+		Language       string `json:"language"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
 		router.logger.Error("failed to decode request", err)
@@ -1449,10 +1450,16 @@ func (router *RouterImpl) serveLocalSpeech(c *gin.Context) bool {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: `The local speech engine only supports response_format "wav".`})
 		return true
 	}
+	if req.Language != "" && !slices.Contains(tts.SupportedLanguages, req.Language) {
+		router.logger.Error("unsupported language for local engine", nil, "language", req.Language)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("The local speech engine does not support language %q. Supported languages: %s.", req.Language, strings.Join(tts.SupportedLanguages, ", "))})
+		return true
+	}
 
 	audio, err := router.tts.Synthesize(c.Request.Context(), tts.Request{
 		Input:          req.Input,
 		ReferenceAudio: req.ReferenceAudio,
+		Language:       req.Language,
 	})
 	if err != nil {
 		var notReady *tts.NotReadyError

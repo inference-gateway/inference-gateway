@@ -13,6 +13,7 @@
 package tts
 
 import (
+	"cmp"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -50,7 +51,8 @@ const (
 	referenceName  = "reference.wav"
 	outputName     = "speech.wav"
 
-	// ttsLanguage is the utterance language hint passed to llama-tts.
+	// ttsLanguage is the default utterance language hint passed to
+	// llama-tts (--tts-lang) when the request names no language.
 	ttsLanguage = "en"
 
 	// RetryAfterSeconds is advised on the 503 returned while speech assets
@@ -63,6 +65,11 @@ const (
 	downloadBufSize = 256 << 10
 	stderrTailBytes = 500
 )
+
+// SupportedLanguages are the ISO 639-1 codes llama-tts's --tts-lang accepts
+// for Qwen3-TTS; upstream has no auto-detection, so the request must name one
+// of these (see llama.cpp tools/tts/README.md).
+var SupportedLanguages = []string{"zh", "en", "de", "it", "pt", "es", "ja", "ko", "fr", "ru"}
 
 var (
 	// Package vars (not consts) so tests can aim them at an httptest server
@@ -104,6 +111,9 @@ type Request struct {
 	// ReferenceAudio is the base64-decoded wav/mp3 voice sample for
 	// zero-shot cloning; empty uses the model's stock voice.
 	ReferenceAudio []byte
+	// Language is the ISO 639-1 utterance language hint passed as
+	// --tts-lang; empty means the default (en).
+	Language string
 }
 
 // Config wires the AUDIO_LOCAL_* settings plus the cache root.
@@ -229,7 +239,7 @@ func (e *Engine) Synthesize(ctx context.Context, req Request) ([]byte, error) {
 		"-m", e.backbonePath(),
 		"-mm", e.mmprojPath(),
 		"-p", req.Input,
-		"--tts-lang", ttsLanguage,
+		"--tts-lang", cmp.Or(req.Language, ttsLanguage),
 	}
 	if len(req.ReferenceAudio) > 0 {
 		ref := filepath.Join(dir, referenceName)

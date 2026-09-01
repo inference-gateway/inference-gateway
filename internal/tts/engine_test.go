@@ -67,6 +67,10 @@ printf '%s' "$*" > "$out"
 		require.Contains(t, wavStr, "-p Hello world", "input must reach -p")
 		require.Contains(t, wavStr, "--tts-lang en")
 		require.NotContains(t, wavStr, "--tts-speaker-file", "no reference audio, no speaker flag")
+
+		wav, err = e.Synthesize(context.Background(), Request{Input: "Hallo Welt", Language: "de"})
+		require.NoError(t, err)
+		require.Contains(t, string(wav), "--tts-lang de", "the requested language must override the default")
 	})
 
 	t.Run("hands decoded reference audio to --tts-speaker-file", func(t *testing.T) {

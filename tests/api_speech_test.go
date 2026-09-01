@@ -83,13 +83,14 @@ func TestSpeechHandler_VoiceCloningPassthrough(t *testing.T) {
 	sample := base64.StdEncoding.EncodeToString([]byte("RIFF-fake-wav-sample"))
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(
-		`{"model":"llamacpp/qwen3-tts","input":"Hello","voice":"custom","response_format":"wav","reference_audio":"`+sample+`"}`))
+		`{"model":"llamacpp/qwen3-tts","input":"Hello","voice":"custom","response_format":"wav","language":"de","reference_audio":"`+sample+`"}`))
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 	assert.Equal(t, "qwen3-tts", gotBody["model"], "provider prefix should be stripped")
 	assert.Equal(t, sample, gotBody["reference_audio"], "reference audio should be forwarded untouched")
+	assert.Equal(t, "de", gotBody["language"], "language should be forwarded untouched")
 	assert.Equal(t, "FAKE-CLONED-AUDIO", w.Body.String())
 }
 
@@ -243,6 +244,42 @@ func TestSpeechHandler_LocalNonWavFormatRejected(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "only supports response_format")
+}
+
+// TestSpeechHandler_LocalLanguagePassthrough proves the optional language
+// extension field reaches llama-tts as --tts-lang (upstream Qwen3-TTS has no
+// auto-detection).
+func TestSpeechHandler_LocalLanguagePassthrough(t *testing.T) {
+	home := t.TempDir()
+	seedLocalSpeechModels(t, home)
+	installFakeLlamaTTS(t, `out=""; prev=""
+for a in "$@"; do
+  [ "$prev" = "--output" ] && out="$a"
+  prev="$a"
+done
+printf '%s' "$*" > "$out"
+`)
+	router := newLocalSpeechRouter(t, home)
+
+	w := postLocalSpeech(router, `{"model":"local/qwen3-tts","input":"Hallo Welt","language":"de"}`)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Equal(t, "audio/wav", w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Body.String(), "--tts-lang de", "the requested language must reach --tts-lang")
+}
+
+func TestSpeechHandler_LocalUnsupportedLanguageRejected(t *testing.T) {
+	home := t.TempDir()
+	seedLocalSpeechModels(t, home)
+	router := newLocalSpeechRouter(t, home)
+
+	w := postLocalSpeech(router, `{"model":"local/qwen3-tts","input":"Hello","language":"xx"}`)
+
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), `does not support language \"xx\"`)
+	for _, lang := range tts.SupportedLanguages {
+		assert.Contains(t, w.Body.String(), lang, "the 400 must name the supported set")
+	}
 }
 
 func TestSpeechHandler_LocalEmptyInputRejected(t *testing.T) {
