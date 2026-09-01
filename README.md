@@ -55,7 +55,7 @@ use of Mixture of Experts.
 
 | Feature                          | Description                                                                                                                                                                                               |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 🔀 **Unified API**               | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, Cloudflare, DeepSeek, Google, Mistral, Moonshot, and Nvidia                                                     |
+| 🔀 **Unified API**               | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, llama.cpp, Cloudflare, DeepSeek, Google, Mistral, MiniMax, Moonshot, Nvidia, and Z.ai                           |
 | 🔧 **Tool-use Support**          | Function calling capabilities across supported providers with a unified API                                                                                                                               |
 | 🌐 **MCP Support**               | Full Model Context Protocol integration - tools from MCP servers are discovered and exposed to LLMs automatically                                                                                         |
 | 🌊 **Streaming**                 | Real-time token streaming from all supported providers                                                                                                                                                    |
@@ -190,7 +190,7 @@ curl -X POST http://localhost:8080/v1/images/generations \
   }'
 ```
 
-Text to speech (requires `ENABLE_AUDIO=true`):
+Text to speech (requires `AUDIO_ENABLED=true`):
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech \
@@ -199,6 +199,22 @@ curl -X POST http://localhost:8080/v1/audio/speech \
     "input": "Ahoy! Welcome aboard the Inference Gateway.",
     "voice": "alloy"
   }' -o speech.mp3
+```
+
+Local text to speech without any provider — the reserved `local/qwen3-tts`
+model is synthesized by the gateway itself via llama.cpp's `llama-tts`
+(one-shot, WAV output, supports `reference_audio` voice cloning). With
+`AUDIO_LOCAL_AUTO_DOWNLOAD=true` (default) the binary and GGUF models are
+fetched in the background at startup into the shared `~/.infer` cache
+(`~/.infer/models/tts`, `~/.infer/bin`); requests answer `503` with
+`Retry-After` until assets are ready:
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech \
+  -d '{
+    "model": "local/qwen3-tts",
+    "input": "Ahoy! Welcome aboard the Inference Gateway."
+  }' -o speech.wav
 ```
 
 ## Installation
@@ -483,6 +499,7 @@ The included Grafana dashboard provides:
 - [OpenAI](https://platform.openai.com/)
 - [Ollama](https://ollama.com/)
 - [Ollama Cloud](https://ollama.com/cloud) (Preview)
+- [llama.cpp](https://github.com/ggml-org/llama.cpp)
 - [Groq](https://console.groq.com/)
 - [Cloudflare](https://www.cloudflare.com/)
 - [Cohere](https://docs.cohere.com/docs/the-cohere-platform)
@@ -490,8 +507,10 @@ The included Grafana dashboard provides:
 - [DeepSeek](https://api-docs.deepseek.com/)
 - [Google](https://aistudio.google.com/)
 - [Mistral](https://mistral.ai/)
+- [MiniMax](https://platform.minimax.io/docs)
 - [Moonshot](https://platform.moonshot.ai/)
 - [Nvidia](https://build.nvidia.com/)
+- [Z.ai](https://docs.z.ai/)
 
 ## Configuration
 
@@ -532,6 +551,10 @@ model supports vision.
   - [Authentication & Authorization](examples/docker-compose/authentication/) - OIDC
     authentication and guardrails authorization setup
   - [Tools](examples/docker-compose/tools/) - Tool integration examples
+  - [Guardrails](examples/docker-compose/guardrails/) - OPA/Rego request
+    guardrails
+  - [Monitoring](examples/docker-compose/monitoring/) - Prometheus and
+    Grafana metrics stack
 - Using [Kubernetes](examples/kubernetes/)
   - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
   - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in
@@ -541,6 +564,8 @@ model supports vision.
     Kubernetes
   - [Authentication](examples/kubernetes/authentication/) - OIDC authentication
     in Kubernetes
+  - [Guardrails](examples/kubernetes/guardrails/) - OPA/Rego guardrails via
+    the operator
   - [Monitoring](examples/kubernetes/monitoring/) - Observability and monitoring
     setup
   - [TLS setup](examples/kubernetes/tls/) - TLS/SSL configuration

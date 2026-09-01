@@ -537,12 +537,12 @@ provider byte-for-byte (only the `model` prefix is stripped), and the response
 is the raw binary audio with the upstream's `Content-Type` (e.g. `audio/wav`
 for `"response_format": "wav"`).
 
-The endpoint is opt-in via `ENABLE_AUDIO=true` (default off). When disabled,
+The endpoint is opt-in via `AUDIO_ENABLED=true` (default off). When disabled,  
 the handler returns `404`. Providers without a native speech API return `400`.
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech -d '{
-  "model": "openai/gpt-4o-mini-tts",
+  "model": "local/qwen3-tts",
   "input": "Ahoy! Welcome aboard the Inference Gateway.",
   "voice": "alloy",
   "response_format": "wav"
@@ -569,11 +569,27 @@ curl -X POST http://localhost:8080/v1/audio/speech -d "{
 }" -o cloned.wav
 ```
 
+### Local engine
+
+The reserved `local/qwen3-tts` model is served by the gateway itself via
+llama.cpp's `llama-tts` instead of a provider. Output is always WAV (omit
+`response_format` or set it to `wav`); `reference_audio` cloning works the
+same way. Assets download in the background at startup (see
+`AUDIO_LOCAL_AUTO_DOWNLOAD`); until they are ready the endpoint returns `503`
+with a `Retry-After` header.
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech -d '{
+  "model": "local/qwen3-tts",
+  "input": "No provider needed for this one."
+}' -o local.wav
+```
+
 Errors use the standard envelope, e.g. when the Audio API is not enabled:
 
 ```json
 {
-  "error": "The Audio API is not enabled. Set ENABLE_AUDIO=true to enable it."
+  "error": "The Audio API is not enabled. Set AUDIO_ENABLED=true to enable it."
 }
 ```
 

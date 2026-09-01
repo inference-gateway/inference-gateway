@@ -30,6 +30,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
+	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	l "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
@@ -65,6 +66,7 @@ type RouterImpl struct {
 	mcpClient mcp.MCPClientInterface
 	telemetry otel.OpenTelemetry
 	selector  *routing.Selector
+	tts       *tts.Engine
 }
 
 type ErrorResponse struct {
@@ -83,7 +85,12 @@ func NewRouter(
 	mcpClient mcp.MCPClientInterface,
 	telemetry otel.OpenTelemetry,
 	selector *routing.Selector,
+	localTTS ...*tts.Engine,
 ) Router {
+	var ttsEngine *tts.Engine
+	if len(localTTS) > 0 {
+		ttsEngine = localTTS[0]
+	}
 	return &RouterImpl{
 		cfg,
 		logger,
@@ -92,6 +99,7 @@ func NewRouter(
 		mcpClient,
 		telemetry,
 		selector,
+		ttsEngine,
 	}
 }
 
@@ -1363,17 +1371,108 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 // (currently openai); other providers receive a 400, mirroring the schema's
 // SpeechNotSupported response.
 //
-// The endpoint is opt-in via ENABLE_AUDIO (default off). When disabled, the
+// The endpoint is opt-in via AUDIO_ENABLED (default off). When disabled, the
 // handler returns 404.
 func (router *RouterImpl) SpeechHandler(c *gin.Context) {
-	if !router.cfg.EnableAudio {
+	if !router.cfg.AudioEnabled {
 		router.logger.Error("audio api not enabled", nil)
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Audio API is not enabled. Set ENABLE_AUDIO=true to enable it."})
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Audio API is not enabled. Set AUDIO_ENABLED=true to enable it."})
+		return
+	}
+
+	// The reserved local/ prefix is served by the built-in llama-tts engine
+	// instead of a provider; everything else is proxied byte-for-byte as before.
+	if c.Query("provider") == "" && router.serveLocalSpeech(c) {
 		return
 	}
 
 	router.proxyJSONBody(c, "Audio API", "openai/tts-1", "",
 		func(e types.Endpoints) *string { return e.Speech })
+}
+
+// serveLocalSpeech handles the reserved local/ model prefix with the built-in
+// llama-tts engine and reports whether the request was handled. The body is
+// read once and rewound so the provider proxy path proceeds unchanged.
+func (router *RouterImpl) serveLocalSpeech(c *gin.Context) bool {
+	if router.tts == nil {
+		return false
+	}
+	body, tooLarge, err := router.readBoundedBody(c)
+	if err != nil {
+		router.logger.Error("failed to read request body", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
+		return true
+	}
+	if tooLarge {
+		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+		return true
+	}
+
+	var probe struct {
+		Model string `json:"model"`
+	}
+	if err := json.Unmarshal(body, &probe); err != nil {
+		c.Request.Body = io.NopCloser(bytes.NewReader(body))
+		return false // let the provider path report the malformed body
+	}
+	if !strings.HasPrefix(probe.Model, tts.ModelPrefix) {
+		c.Request.Body = io.NopCloser(bytes.NewReader(body))
+		return false
+	}
+	if probe.Model != tts.ReservedModelID {
+		router.logger.Error("unknown local speech model", nil, "model", probe.Model)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Unknown local speech model %q. %q is the only local speech model.", probe.Model, tts.ReservedModelID)})
+		return true
+	}
+	if reason := router.modelDenied(probe.Model); reason != "" {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: reason})
+		return true
+	}
+
+	var req struct {
+		Input          string `json:"input"`
+		ResponseFormat string `json:"response_format"`
+		ReferenceAudio []byte `json:"reference_audio"`
+	}
+	if err := json.Unmarshal(body, &req); err != nil {
+		router.logger.Error("failed to decode request", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+		return true
+	}
+	if strings.TrimSpace(req.Input) == "" {
+		router.logger.Error("local speech request missing input", nil)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'input' field is required."})
+		return true
+	}
+	if req.ResponseFormat != "" && req.ResponseFormat != "wav" {
+		router.logger.Error("unsupported response_format for local engine", nil, "response_format", req.ResponseFormat)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: `The local speech engine only supports response_format "wav".`})
+		return true
+	}
+
+	audio, err := router.tts.Synthesize(c.Request.Context(), tts.Request{
+		Input:          req.Input,
+		ReferenceAudio: req.ReferenceAudio,
+	})
+	if err != nil {
+		var notReady *tts.NotReadyError
+		switch {
+		case errors.As(err, &notReady):
+			router.logger.Warn("local speech assets not ready", nil, "detail", notReady.Error())
+			c.Header("Retry-After", strconv.Itoa(tts.RetryAfterSeconds))
+			c.JSON(http.StatusServiceUnavailable, ErrorResponse{Error: notReady.Error()})
+		case errors.Is(err, context.DeadlineExceeded):
+			router.logger.Error("local speech synthesis timed out", err)
+			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Local speech synthesis timed out"})
+		default:
+			router.logger.Error("local speech synthesis failed", err)
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to synthesize local speech"})
+		}
+		return true
+	}
+
+	c.Data(http.StatusOK, "audio/wav", audio)
+	return true
 }
 
 // Multipart form field names shared by the /images/edits and

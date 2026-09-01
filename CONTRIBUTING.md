@@ -84,7 +84,7 @@ The Flox environment provides all necessary development tools with pinned versio
 - kubectl, Helm (for Kubernetes examples)
 - And many more utilities
 
-For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+For detailed development information, see [AGENTS.md](./AGENTS.md).
 
 **Git Hooks:** The installed hook from `.githooks/` runs automatically on
 `git commit`:
@@ -117,7 +117,7 @@ task generate                  # Generate code from OpenAPI spec
 task pre-commit:install        # Install git hooks (recommended)
 ```
 
-For detailed development information, see [DEVELOPMENT.md](./DEVELOPMENT.md) and [CLAUDE.md](./CLAUDE.md).
+For detailed development information, see [AGENTS.md](./AGENTS.md).
 
 ### Code Style
 

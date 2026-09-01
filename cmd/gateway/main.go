@@ -15,20 +15,20 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
-	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
-	envconfig "github.com/sethvargo/go-envconfig"
-	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
+	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	l "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
+	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
+	envconfig "github.com/sethvargo/go-envconfig"
+	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 var (
@@ -283,7 +283,22 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector)
+	var localTTS *tts.Engine
+	if cfg.AudioEnabled {
+		home, homeErr := os.UserHomeDir()
+		if homeErr != nil {
+			logger.Warn("audio: cannot resolve home dir; local speech cache paths resolve relative to the working directory (.infer/bin, .infer/models/tts)", "error", homeErr.Error())
+		}
+		localTTS = tts.NewEngine(logger, tts.Config{
+			AutoDownload:   cfg.AudioLocalAutoDownload,
+			MaxConcurrency: cfg.AudioLocalMaxConcurrency,
+			Timeout:        time.Duration(cfg.AudioLocalTimeout) * time.Second,
+			Home:           home,
+		})
+		go localTTS.Warmup(context.Background())
+	}
+
+	api := api.NewRouter(cfg, logger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector, localTTS)
 	r := gin.New()
 	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
 		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {
