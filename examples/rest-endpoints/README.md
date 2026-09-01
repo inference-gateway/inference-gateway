@@ -569,6 +569,32 @@ curl -X POST http://localhost:8080/v1/audio/speech -d "{
 }" -o cloned.wav
 ```
 
+### Language
+
+The optional `language` field is an ISO 639-1 code (default `en`) hinting at  
+the utterance language. The local engine accepts `zh`, `en`, `de`, `it`, `pt`,  
+`es`, `ja`, `ko`, `fr`, and `ru`; any other code is rejected with `400`. For  
+proxied providers the field is forwarded as-is. It combines with  
+`reference_audio`, so a single request can clone a voice and have it speak  
+another language:
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech -d "{
+  \"model\": \"local/qwen3-tts\",
+  \"input\": \"Guten Tag! Willkommen an Bord der Inference Gateway.\",
+  \"language\": \"de\",
+  \"reference_audio\": \"$(base64 < my-voice-sample.wav)\"
+}" -o german-cloned.wav
+```
+
+An unsupported code for the local engine returns `400`:
+
+```json
+{
+  "error": "The local speech engine does not support language \"xx\". Supported languages: zh, en, de, it, pt, es, ja, ko, fr, ru."
+}
+```
+
 ### Local engine
 
 The reserved `local/qwen3-tts` model is served by the gateway itself via
