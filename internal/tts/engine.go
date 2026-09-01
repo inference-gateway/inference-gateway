@@ -78,7 +78,7 @@ var (
 // internal/audio/ttsmodel.go selects the same files so the shared cache
 // lines up - keep the two in lockstep.
 const (
-	BackboneGGUF = "Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf"
+	BackboneGGUF = "Qwen3-TTS-12Hz-1.7B-Base-Q4_K_M.gguf"
 	MmprojGGUF   = "mmproj-Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf"
 )
 
@@ -86,7 +86,7 @@ const (
 // are verified and tamper-evident without a runtime HF API call. A package
 // var (not const) only so tests can aim it at dummy payloads.
 var modelSHA256 = map[string]string{
-	BackboneGGUF: "ac7931aeb2e7aad1a6ed6602d353a5679c9d096b18ce8204ac730a8408d572e1",
+	BackboneGGUF: "8d18c94acb2addd042f97da63c98be144eafa76d0d9495177eab65130cf85129",
 	MmprojGGUF:   "6fd65188839bcd6ecc91b277ad471e22a0edfada4699a0fe82f1165c18cfcce2",
 }
 
