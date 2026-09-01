@@ -283,10 +283,6 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// Local speech engine for the reserved local/qwen3-tts model (opt-in via
-	// AUDIO_ENABLED). Warmup runs in the background so asset downloads never
-	// block boot or chat traffic; while they run, /v1/audio/speech answers 503
-	// with Retry-After and progress instead of holding the request open.
 	var localTTS *tts.Engine
 	if cfg.AudioEnabled {
 		home, homeErr := os.UserHomeDir()
