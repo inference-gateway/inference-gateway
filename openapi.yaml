@@ -2655,6 +2655,17 @@ components:
           maximum: 4
           default: 1
           description: The speed of the generated audio.
+        language:
+          type: string
+          pattern: '^[a-z]{2}$'
+          default: en
+          description: |-
+            ISO 639-1 code for the language of the generated speech.
+            Non-standard extension: OpenAI's speech API has no language field
+            (the name matches its transcription API). Forwarded to the
+            provider as-is; the gateway's built-in local engine
+            (`local/qwen3-tts`) supports `zh`, `en`, `de`, `it`, `pt`, `es`,
+            `ja`, `ko`, `fr` and `ru`, and rejects other codes.
         reference_audio:
           type: string
           format: byte
