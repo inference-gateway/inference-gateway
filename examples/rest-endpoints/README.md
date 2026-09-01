@@ -542,7 +542,7 @@ the handler returns `404`. Providers without a native speech API return `400`.
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech -d '{
-  "model": "openai/gpt-4o-mini-tts",
+  "model": "local/qwen3-tts",
   "input": "Ahoy! Welcome aboard the Inference Gateway.",
   "voice": "alloy",
   "response_format": "wav"
