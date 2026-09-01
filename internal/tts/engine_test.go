@@ -194,8 +194,6 @@ func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 		BackboneGGUF: sha256Hex("backbone"),
 		MmprojGGUF:   sha256Hex("mmproj"),
 	})
-	// A llama-tts on the developer's real PATH would satisfy resolveBinary and
-	// skip the download this test asserts on — hide it.
 	t.Setenv("PATH", t.TempDir())
 
 	home := t.TempDir()
