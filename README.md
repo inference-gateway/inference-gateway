@@ -81,10 +81,11 @@ provider and return the response to the client.
 environment variables (`MCP_ENABLED`) or bypassed per-request using headers
 (`X-MCP-Bypass`), giving you full control over which capabilities are active.
 
-**Note**: Vision/multimodal support is disabled by default for security and
-performance. To enable image processing with vision-capable models (GPT-4o,
-Claude 4.5, Gemini 2.5, etc.), set `ENABLE_VISION=true` in your environment
-configuration.
+**Note**: Vision/multimodal handling is disabled by default. With
+`ENABLE_VISION=true` the gateway strips image content from requests targeting
+models it does not recognize as vision-capable, and passes images through for
+models that are (GPT-4o, Claude 4.5, Gemini 2.5, etc.). With it disabled,
+image content is forwarded to the provider untouched.
 
 The following diagram illustrates the flow:
 
@@ -519,7 +520,7 @@ following [environment variables](./Configurations.md) are supported.
 
 ### Vision/Multimodal Support
 
-To enable vision capabilities for processing images alongside text:
+To enable vision handling for requests carrying images alongside text:
 
 ```bash
 ENABLE_VISION=true
@@ -535,9 +536,13 @@ ENABLE_VISION=true
 - Groq (vision models)
 - Mistral (Pixtral)
 
-**Note**: Vision support is disabled by default for performance and security
-reasons. When disabled, requests with image content will be rejected even if the
-model supports vision.
+**Note**: Vision handling is disabled by default. When `ENABLE_VISION=true`,
+the gateway checks the target model against its list of vision-capable models:
+image content parts are stripped from the request (leaving text only) for
+models it does not recognize as vision-capable, and passed through unchanged
+for models that are. When disabled, the gateway does not inspect image content
+at all - requests with images are forwarded to the provider untouched, and the
+provider decides how to handle them.
 
 ## Examples
 
