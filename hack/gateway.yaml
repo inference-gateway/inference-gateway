@@ -18,7 +18,6 @@ data:
   AUTH_ENABLED: 'true'
   AUTH_OIDC_ISSUER: 'https://keycloak.inference-gateway.local:8543/realms/inference-gateway-realm'
   AUTH_OIDC_CLIENT_ID: inference-gateway-client
-  # Trust Keycloak's self-signed CA (mounted from the keycloak-ca ConfigMap).
   SSL_CERT_FILE: /etc/ssl/keycloak/ca.crt
   OLLAMA_API_URL: 'http://ollama.ollama:8080/v1'
 ---
