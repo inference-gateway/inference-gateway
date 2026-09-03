@@ -36,6 +36,9 @@ jobs:
       - name: Install Mockgen
         run: go install go.uber.org/mock/mockgen@v0.6.0
 
+      - name: Install Task
+        run: go install github.com/go-task/task/v3/cmd/task@v3.52.0
+
       - name: Setup Node.js
         uses: actions/setup-node@v7.0.0
         with:
@@ -69,4 +72,4 @@ jobs:
         run: go test -race -v ./...
 
       - name: Benchmark
-        run: go test -bench=. -run=^$ -benchmem -benchtime=100x -count=20 ./tests/...
+        run: task benchmark:check
