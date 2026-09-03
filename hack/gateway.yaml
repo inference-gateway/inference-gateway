@@ -29,7 +29,6 @@ metadata:
   namespace: inference-gateway
 type: Opaque
 stringData:
-  # Must match the client secret in examples/kubernetes/authentication/keycloak/job-import-realm.yaml.
   AUTH_OIDC_CLIENT_SECRET: very-secret
   OPENAI_API_KEY: ''
   ANTHROPIC_API_KEY: ''
