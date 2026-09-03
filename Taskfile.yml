@@ -144,7 +144,6 @@ tasks:
         awk -F, -v t_time={{.TIME_TOLERANCE_PCT}} -v t_allocs={{.ALLOCS_TOLERANCE_PCT}} '
           # Unit header row of each table: ",sec/op,CI,sec/op,CI,vs base,P".
           $3 == "CI" { unit = $2; limit = (unit == "sec/op") ? t_time : (unit == "allocs/op") ? t_allocs : 0; next }
-          # Data row: name,base,CI,new,CI,delta,P.
           limit && $1 != "geomean" && $6 ~ /^\+/ && substr($6, 2) + 0 > limit {
             printf "REGRESSION: %s %s %s vs baseline (limit +%d%%)\n", $1, unit, $6, limit
             failed = 1
