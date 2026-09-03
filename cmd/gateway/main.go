@@ -24,6 +24,7 @@ import (
 	l "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
 	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
@@ -33,6 +34,15 @@ import (
 
 var (
 	version = "dev"
+)
+
+const (
+	metricsServerReadTimeout  = 10 * time.Second
+	metricsServerWriteTimeout = 10 * time.Second
+	metricsServerIdleTimeout  = 30 * time.Second
+	shutdownGracePeriod       = 5 * time.Second
+	providerProbeStartDelay   = 2 * time.Second
+	providerProbeTimeout      = 10 * time.Second
 )
 
 func isLoopbackHost(host string) bool {
@@ -119,9 +129,9 @@ func main() {
 		metricsServer := &http.Server{
 			Addr:         ":" + cfg.Telemetry.MetricsPort,
 			Handler:      metricsMux,
-			ReadTimeout:  10 * time.Second,
-			WriteTimeout: 10 * time.Second,
-			IdleTimeout:  30 * time.Second,
+			ReadTimeout:  metricsServerReadTimeout,
+			WriteTimeout: metricsServerWriteTimeout,
+			IdleTimeout:  metricsServerIdleTimeout,
 		}
 
 		go func() {
@@ -133,7 +143,7 @@ func main() {
 
 		defer func() {
 			logger.Info("shutting down metrics server...")
-			ctxMetrics, cancelMetrics := context.WithTimeout(context.Background(), 5*time.Second)
+			ctxMetrics, cancelMetrics := context.WithTimeout(context.Background(), shutdownGracePeriod)
 			defer cancelMetrics()
 
 			if err := metricsServer.Shutdown(ctxMetrics); err != nil {
@@ -144,7 +154,7 @@ func main() {
 		}()
 
 		defer func() {
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), shutdownGracePeriod)
 			defer cancel()
 			if err := telemetryImpl.ShutDown(ctx); err != nil {
 				logger.Error("error shutting down telemetry", err)
@@ -279,7 +289,7 @@ func main() {
 	}
 
 	// Set GIN mode based on environment
-	if cfg.Environment != "development" {
+	if cfg.Environment != constants.EnvironmentDevelopment {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
@@ -368,7 +378,7 @@ func main() {
 	// Validate provider connectivity after server starts
 	go func() {
 		// Wait a moment for the server to be ready
-		time.Sleep(2 * time.Second)
+		time.Sleep(providerProbeStartDelay)
 
 		totalModels := 0
 		availableProviders := 0
@@ -380,7 +390,7 @@ func main() {
 				continue
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), providerProbeTimeout)
 			response, err := provider.ListModels(ctx)
 			cancel()
 
@@ -407,7 +417,7 @@ func main() {
 		mcpClient.StopBackgroundReconnection()
 	}
 
-	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctxShutdown, cancel := context.WithTimeout(context.Background(), shutdownGracePeriod)
 	defer cancel()
 
 	if err := server.Shutdown(ctxShutdown); err != nil {

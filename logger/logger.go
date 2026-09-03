@@ -6,6 +6,8 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )
 
 //go:generate mockgen -source=logger.go -destination=../tests/mocks/logger.go -package=mocks
@@ -52,7 +54,7 @@ func NewLogger(env string) (Logger, error) {
 	}
 
 	var cfg zap.Config
-	if env == "development" {
+	if env == constants.EnvironmentDevelopment {
 		cfg = zap.NewDevelopmentConfig()
 	} else {
 		cfg = zap.NewProductionConfig()
@@ -75,7 +77,7 @@ func (l *LoggerZapImpl) Info(message string, fields ...any) {
 }
 
 func (l *LoggerZapImpl) Debug(message string, fields ...any) {
-	if l.env == "development" {
+	if l.env == constants.EnvironmentDevelopment {
 		l.logger.Debug(message, parseFields(fields...)...)
 	}
 }

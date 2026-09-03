@@ -27,7 +27,7 @@ func defaultProviders(overrides map[types.Provider]func(*registry.ProviderConfig
 
 func defaultConfig(mutate func(*config.Config)) config.Config {
 	cfg := config.Config{
-		Environment:               "production",
+		Environment:               constants.EnvironmentProduction,
 		AllowedModels:             "",
 		AudioEnabled:              false,
 		AudioLocalAutoDownload:    true,
@@ -121,7 +121,7 @@ func TestLoad(t *testing.T) {
 			env: map[string]string{
 				"TELEMETRY_ENABLED":              "true",
 				"TELEMETRY_METRICS_PUSH_ENABLED": "true",
-				"ENVIRONMENT":                    "development",
+				"ENVIRONMENT":                    constants.EnvironmentDevelopment,
 				"SERVER_HOST":                    "localhost",
 				"SERVER_PORT":                    "9090",
 				"SERVER_READ_TIMEOUT":            "60s",
@@ -132,7 +132,7 @@ func TestLoad(t *testing.T) {
 				"OPENAI_API_KEY":                 "openai123",
 			},
 			expectedCfg: defaultConfig(func(cfg *config.Config) {
-				cfg.Environment = "development"
+				cfg.Environment = constants.EnvironmentDevelopment
 				cfg.Telemetry.Enabled = true
 				cfg.Telemetry.MetricsPushEnabled = true
 				cfg.Server.Host = "localhost"
@@ -151,11 +151,11 @@ func TestLoad(t *testing.T) {
 			name: "PartialEnvVariables",
 			env: map[string]string{
 				"TELEMETRY_ENABLED": "true",
-				"ENVIRONMENT":       "development",
+				"ENVIRONMENT":       constants.EnvironmentDevelopment,
 				"OLLAMA_API_URL":    "http://custom-ollama:8080",
 			},
 			expectedCfg: defaultConfig(func(cfg *config.Config) {
-				cfg.Environment = "development"
+				cfg.Environment = constants.EnvironmentDevelopment
 				cfg.Telemetry.Enabled = true
 				cfg.Providers = defaultProviders(map[types.Provider]func(*registry.ProviderConfig){
 					constants.OllamaID: func(p *registry.ProviderConfig) { p.URL = "http://custom-ollama:8080" },

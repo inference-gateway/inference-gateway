@@ -198,7 +198,7 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 			return true
 		}
 
-		if router.cfg.Environment == "development" {
+		if router.cfg.Environment == constants.EnvironmentDevelopment {
 			shouldLog := len(line) > 512 ||
 				(c.Param("provider") != "" && len(line) > 0 && (len(line)%10 == 0))
 
@@ -263,7 +263,7 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		pr.Out.Header.Set("Accept", "application/json")
 		otelapi.GetTextMapPropagator().Inject(pr.Out.Context(), propagation.HeaderCarrier(pr.Out.Header))
 
-		if router.cfg.Environment == "development" {
+		if router.cfg.Environment == constants.EnvironmentDevelopment {
 			reqModifier := proxymodifier.NewDevRequestModifier(router.logger, &router.cfg)
 			if err := reqModifier.Modify(pr.Out); err != nil {
 				router.logger.Error("failed to modify request", err)
@@ -272,7 +272,7 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		}
 	}
 
-	if router.cfg.Environment == "development" {
+	if router.cfg.Environment == constants.EnvironmentDevelopment {
 		devModifier := proxymodifier.NewDevResponseModifier(router.logger)
 		proxy.ModifyResponse = devModifier.Modify
 	}
