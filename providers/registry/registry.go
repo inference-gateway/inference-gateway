@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"errors"
 	"fmt"
 
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -8,6 +9,13 @@ import (
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+)
+
+// Sentinel errors returned (wrapped) by BuildProvider so callers can branch
+// with errors.Is instead of matching message text.
+var (
+	ErrProviderNotFound   = errors.New("not found")
+	ErrTokenNotConfigured = errors.New("token not configured")
 )
 
 // Base provider configuration
@@ -46,11 +54,11 @@ func (p *ProviderRegistryImpl) GetProviders() map[types.Provider]*ProviderConfig
 func (p *ProviderRegistryImpl) BuildProvider(providerID types.Provider, c client.Client) (core.IProvider, error) {
 	provider, ok := p.cfg[providerID]
 	if !ok {
-		return nil, fmt.Errorf("provider %s not found", providerID)
+		return nil, fmt.Errorf("provider %s %w", providerID, ErrProviderNotFound)
 	}
 
 	if provider.AuthType != constants.AuthTypeNone && provider.Token == "" {
-		return nil, fmt.Errorf("provider %s token not configured", providerID)
+		return nil, fmt.Errorf("provider %s %w", providerID, ErrTokenNotConfigured)
 	}
 
 	return &core.ProviderImpl{

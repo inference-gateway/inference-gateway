@@ -108,17 +108,32 @@ func (router *RouterImpl) NotFoundHandler(c *gin.Context) {
 	c.JSON(http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
 }
 
+// Client-facing messages for provider resolution failures.
+const (
+	errMsgProviderNeedsAPIKey = "Provider requires an API key. Please configure the provider's API key."
+	errMsgProviderNotFound    = "Provider not found. Please check the list of supported providers."
+)
+
+// buildProvider resolves a provider and, on failure, logs it and returns the
+// client-facing message to send back. Callers pick the response envelope.
+func (router *RouterImpl) buildProvider(providerID types.Provider) (core.IProvider, string, error) {
+	provider, err := router.registry.BuildProvider(providerID, router.client)
+	switch {
+	case err == nil:
+		return provider, "", nil
+	case errors.Is(err, registry.ErrTokenNotConfigured):
+		router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
+		return nil, errMsgProviderNeedsAPIKey, err
+	default:
+		router.logger.Error("provider not found or not supported", err, "provider", providerID)
+		return nil, errMsgProviderNotFound, err
+	}
+}
+
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
-	p := types.Provider(c.Param("provider"))
-	provider, err := router.registry.BuildProvider(p, router.client)
+	provider, msg, err := router.buildProvider(types.Provider(c.Param("provider")))
 	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider authentication required but api key not configured", err, "provider", p)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
-			return
-		}
-		router.logger.Error("provider not found or not supported", err, "provider", p)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 
@@ -473,15 +488,9 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 
 	providerID := types.Provider(c.Query("provider"))
 	if providerID != "" {
-		provider, err := router.registry.BuildProvider(providerID, router.client)
+		provider, msg, err := router.buildProvider(providerID)
 		if err != nil {
-			if strings.Contains(err.Error(), "token not configured") {
-				router.logger.Error("provider authentication required but api key not configured", err, "provider", providerID)
-				c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
-				return
-			}
-			router.logger.Error("provider not found or not supported", err, "provider", providerID)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 			return
 		}
 
@@ -712,15 +721,9 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	provider, err := router.registry.BuildProvider(providerID, router.client)
+	provider, msg, err := router.buildProvider(providerID)
 	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
-			return
-		}
-		router.logger.Error("provider not found or not supported", err, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 
@@ -774,12 +777,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		if err != nil {
 			router.logger.Error("failed to start streaming", err, "provider", providerID)
 
-			statusCode := http.StatusBadRequest
-			if httpErr, ok := err.(*core.HTTPError); ok {
-				statusCode = httpErr.StatusCode
-			}
-
-			c.JSON(statusCode, ErrorResponse{Error: err.Error()})
+			c.JSON(httpErrorStatus(err), ErrorResponse{Error: err.Error()})
 			return
 		}
 
@@ -824,16 +822,21 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		}
 		router.logger.Error("failed to generate tokens", err, "provider", providerID)
 
-		statusCode := http.StatusBadRequest
-		if httpErr, ok := err.(*core.HTTPError); ok {
-			statusCode = httpErr.StatusCode
-		}
-
-		c.JSON(statusCode, ErrorResponse{Error: err.Error()})
+		c.JSON(httpErrorStatus(err), ErrorResponse{Error: err.Error()})
 		return
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// httpErrorStatus returns the upstream status carried by a *core.HTTPError
+// anywhere in err's chain, or 400 otherwise.
+func httpErrorStatus(err error) int {
+	var httpErr *core.HTTPError
+	if errors.As(err, &httpErr) {
+		return httpErr.StatusCode
+	}
+	return http.StatusBadRequest
 }
 
 // messagesError writes a gateway-generated error in the Anthropic error
@@ -912,15 +915,9 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 		return
 	}
 
-	provider, err := router.registry.BuildProvider(providerID, router.client)
+	provider, msg, err := router.buildProvider(providerID)
 	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
-			messagesError(c, http.StatusBadRequest, "invalid_request_error", "Provider requires an API key. Please configure the provider's API key.")
-			return
-		}
-		router.logger.Error("provider not found or not supported", err, "provider", providerID)
-		messagesError(c, http.StatusBadRequest, "invalid_request_error", "Provider not found. Please check the list of supported providers.")
+		messagesError(c, http.StatusBadRequest, "invalid_request_error", msg)
 		return
 	}
 
@@ -1087,15 +1084,9 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 		return
 	}
 
-	provider, err := router.registry.BuildProvider(providerID, router.client)
+	provider, msg, err := router.buildProvider(providerID)
 	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
-			return
-		}
-		router.logger.Error("provider not found or not supported", err, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 
@@ -1277,15 +1268,9 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 		return
 	}
 
-	provider, err := router.registry.BuildProvider(providerID, router.client)
+	provider, msg, err := router.buildProvider(providerID)
 	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
-			return
-		}
-		router.logger.Error("provider not found or not supported", err, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 
@@ -1605,15 +1590,9 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		return
 	}
 
-	provider, err := router.registry.BuildProvider(providerID, router.client)
+	provider, msg, err := router.buildProvider(providerID)
 	if err != nil {
-		if strings.Contains(err.Error(), "token not configured") {
-			router.logger.Error("provider requires authentication but no api key was configured", err, "provider", providerID)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider requires an API key. Please configure the provider's API key."})
-			return
-		}
-		router.logger.Error("provider not found or not supported", err, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Provider not found. Please check the list of supported providers."})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 
@@ -1781,13 +1760,7 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 			}
 
 			for _, tool := range tools {
-				mcpTool := types.MCPTool{
-					Name:        "mcp_" + tool.Name,
-					Description: *tool.Description,
-					Server:      serverURL,
-					InputSchema: &tool.InputSchema,
-				}
-				allTools = append(allTools, mcpTool)
+				allTools = append(allTools, toMCPTool(tool, serverURL))
 			}
 		}
 
@@ -1802,4 +1775,19 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// toMCPTool converts a server tool to the gateway's list entry. Description is
+// optional in the MCP schema, so a nil one becomes an empty string.
+func toMCPTool(tool mcp.Tool, serverURL string) types.MCPTool {
+	var description string
+	if tool.Description != nil {
+		description = *tool.Description
+	}
+	return types.MCPTool{
+		Name:        "mcp_" + tool.Name,
+		Description: description,
+		Server:      serverURL,
+		InputSchema: &tool.InputSchema,
+	}
 }
