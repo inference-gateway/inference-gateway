@@ -16,7 +16,7 @@ Everyday tasks go through `Taskfile.yml`:
 - `task lint` — `golangci-lint run` + `markdownlint`
 - `task openapi:lint` — Spectral lint of `openapi.yaml`
 - `task benchmark` — benchmarks under `./tests/...`
-- `task benchmark:check` — benchmarks + `benchstat` gate against `tests/benchmarks/baseline.txt` (tolerances in `scripts/benchcheck.sh`)
+- `task benchmark:check` — benchmarks + `benchstat` gate against `tests/benchmarks/baseline.txt` (tolerances are vars on the task)
 - `task benchmark:baseline` — refresh the baseline; run it on a GitHub-hosted runner (numbers are machine-specific) and commit the file in the same PR as an intentional perf change or a new benchmark
 
 Single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 1.26.7, golangci-lint, mockgen, Spectral) is declared in `.flox/env/manifest.toml`; `flox activate` brings it in.
