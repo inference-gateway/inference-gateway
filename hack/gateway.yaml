@@ -1,7 +1,4 @@
 ---
-# Vanilla (operator-less) deployment of the Inference Gateway for local hacking.
-# Mirrors examples/kubernetes/authentication but with a plain Deployment so a
-# locally built image can be swapped in.
 apiVersion: v1
 kind: Namespace
 metadata:
