@@ -1,4 +1,4 @@
-FROM golang:1.26-alpine
+FROM golang:1.26.7-alpine
 WORKDIR /app
 COPY . /app
 RUN apk add --no-cache curl

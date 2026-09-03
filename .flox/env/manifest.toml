@@ -12,7 +12,7 @@ PROJECT_DESCRIPTION = "An open-source, high-performance gateway unifying multipl
 
 [install]
 go.pkg-path = "go"
-go.version = "^1.26.4"
+go.version = "1.26.7"
 go.pkg-group = "language"
 nodejs_24.pkg-path = "nodejs_24"
 nodejs_24.version = "^24.19.0"

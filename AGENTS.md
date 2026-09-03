@@ -17,7 +17,7 @@ Everyday tasks go through `Taskfile.yml`:
 - `task openapi:lint` — Spectral lint of `openapi.yaml`
 - `task benchmark` — benchmarks under `./tests/...`
 
-Single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 1.26.4, golangci-lint, mockgen, Spectral) is declared in `.flox/env/manifest.toml`; `flox activate` brings it in.
+Single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 1.26.7, golangci-lint, mockgen, Spectral) is declared in `.flox/env/manifest.toml`; `flox activate` brings it in.
 
 ## Code generation
 
