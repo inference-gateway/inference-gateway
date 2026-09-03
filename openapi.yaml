@@ -3974,8 +3974,8 @@ components:
                   type: bool
                   default: 'false'
                   description: 'Enable vision/multimodal support for all providers. When disabled, image inputs will be rejected even if the provider and model support vision'
-                - name: enable_images
-                  env: 'ENABLE_IMAGES'
+                - name: images_enabled
+                  env: 'IMAGES_ENABLED'
                   type: bool
                   default: 'false'
                   description: 'Enable the Images API (POST /v1/images/generations, /v1/images/edits, /v1/images/variations). When disabled, the endpoints return a 404. Only providers with images support (currently openai) can serve these endpoints'
