@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http/httptest"
 	"testing"
@@ -46,6 +47,28 @@ func TestBuildProvider_MapsRegistryErrors(t *testing.T) {
 	_, msg, err = router.buildProvider("nope")
 	require.Error(t, err)
 	assert.Equal(t, errMsgProviderNotFound, msg)
+}
+
+// TestRewriteModelField pins the pass-through contract: only "model" changes,
+// large/float numbers keep their original formatting, unknown fields survive,
+// and a malformed body is a plain (non-encode) error.
+func TestRewriteModelField(t *testing.T) {
+	body := []byte(`{"model":"openai/gpt-4o","max_tokens":12345678901234567890,"temperature":0.10,"metadata":{"nested":[1,2.50]},"extra":null}`)
+
+	got, err := rewriteModelField(body, "gpt-4o")
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"model":"gpt-4o","max_tokens":12345678901234567890,"temperature":0.10,"metadata":{"nested":[1,2.50]},"extra":null}`, string(got))
+	assert.Contains(t, string(got), `12345678901234567890`, "big integers must not be re-encoded as floats")
+	assert.Contains(t, string(got), `0.10`, "float formatting must be preserved")
+
+	_, err = rewriteModelField([]byte(`{not json`), "gpt-4o")
+	require.Error(t, err)
+	assert.False(t, errors.Is(err, errEncodeRequest), "decode failures must map to 400, not 500")
+}
+
+func TestAcceptHeaderFor(t *testing.T) {
+	assert.Equal(t, "text/event-stream", acceptHeaderFor(true))
+	assert.Equal(t, "application/json", acceptHeaderFor(false))
 }
 
 // TestApplyProviderAuth_StripsCallerAuthorization verifies the caller's inbound

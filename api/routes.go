@@ -194,56 +194,126 @@ func handleStreamingRequest(c *gin.Context, provider core.IProvider, router *Rou
 	}
 	defer resp.Body.Close()
 
-	reader := bufio.NewReaderSize(resp.Body, 4096)
+	router.relaySSE(c, resp.Body, fullURL.String())
+}
 
+const (
+	// sseReaderBufferSize is the bufio buffer used when relaying upstream SSE lines.
+	sseReaderBufferSize = 4096
+	// sseChunkLogMinBytes is the line size above which development mode logs a chunk preview.
+	sseChunkLogMinBytes = 512
+	// sseChunkPreviewBytes caps the logged preview length.
+	sseChunkPreviewBytes = 200
+	// sseChunkSampleEvery samples smaller /proxy chunks for the development preview.
+	sseChunkSampleEvery = 10
+)
+
+// relaySSE streams upstream SSE lines to the client, resetting the write
+// deadline per line. A partial trailing line is written before the read error
+// is inspected so nothing buffered is dropped. The upstream request carries
+// the client's context, so cancellation surfaces here as a read error - no
+// separate ctx.Done() check is needed.
+func (router *RouterImpl) relaySSE(c *gin.Context, upstream io.Reader, logURL string) {
+	reader := bufio.NewReaderSize(upstream, sseReaderBufferSize)
 	c.Stream(func(w io.Writer) bool {
 		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
 
 		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			router.logStreamChunk(c, line)
+			if _, werr := w.Write(line); werr != nil {
+				router.logger.Error("failed to write chunk", werr, "bytes", len(line))
+				return false
+			}
+			if flusher, ok := w.(http.Flusher); ok {
+				flusher.Flush()
+			}
+		}
 		if err != nil {
 			if err != io.EOF {
-				router.logger.Error("failed to read stream", err,
-					"url", fullURL.String(),
-					"method", c.Request.Method)
+				router.logger.Error("failed to read stream", err, "url", logURL, "method", c.Request.Method)
 			}
 			return false
 		}
-
-		if len(line) == 0 {
-			return true
-		}
-
-		if router.cfg.Environment == constants.EnvironmentDevelopment {
-			shouldLog := len(line) > 512 ||
-				(c.Param("provider") != "" && len(line) > 0 && (len(line)%10 == 0))
-
-			if shouldLog {
-				router.logger.Debug("stream chunk",
-					"provider", c.Param("provider"),
-					"bytes", len(line),
-					"data_preview", func() string {
-						preview := string(bytes.TrimSpace(line))
-						if len(preview) > 200 {
-							return preview[:200] + "... (truncated)"
-						}
-						return preview
-					}(),
-				)
-			}
-		}
-
-		if _, err := w.Write(line); err != nil {
-			router.logger.Error("failed to write response", err,
-				"bytes", len(line))
-			return false
-		}
-
-		if flusher, ok := w.(http.Flusher); ok {
-			flusher.Flush()
-		}
-
 		return true
 	})
+}
+
+// logStreamChunk emits a development-only preview of large (or sampled
+// /proxy) SSE lines.
+func (router *RouterImpl) logStreamChunk(c *gin.Context, line []byte) {
+	if router.cfg.Environment != constants.EnvironmentDevelopment {
+		return
+	}
+	providerParam := c.Param("provider")
+	if len(line) <= sseChunkLogMinBytes && (providerParam == "" || len(line)%sseChunkSampleEvery != 0) {
+		return
+	}
+	preview := string(bytes.TrimSpace(line))
+	if len(preview) > sseChunkPreviewBytes {
+		preview = preview[:sseChunkPreviewBytes] + "... (truncated)"
+	}
+	router.logger.Debug("stream chunk", "provider", providerParam, "bytes", len(line), "data_preview", preview)
+}
+
+// errEncodeRequest marks a rewriteModelField failure that happened while
+// re-encoding (an internal error) rather than while decoding the client body.
+var errEncodeRequest = errors.New("encode request")
+
+// rewriteModelField returns body with its top-level "model" field replaced,
+// preserving number formatting and leaving every other field untouched. A
+// decode failure is returned as-is; an encode failure wraps errEncodeRequest.
+func rewriteModelField(body []byte, model string) ([]byte, error) {
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.UseNumber()
+	var payload map[string]any
+	if err := dec.Decode(&payload); err != nil {
+		return nil, err
+	}
+	payload["model"] = model
+	out, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", errEncodeRequest, err)
+	}
+	return out, nil
+}
+
+// rewriteModelOrRespond wraps rewriteModelField for handlers using the plain
+// ErrorResponse envelope: on failure it logs, writes the 400/500 response and
+// returns the error so the caller can simply return.
+func (router *RouterImpl) rewriteModelOrRespond(c *gin.Context, body []byte, model string) ([]byte, error) {
+	out, err := rewriteModelField(body, model)
+	switch {
+	case err == nil:
+		return out, nil
+	case errors.Is(err, errEncodeRequest):
+		router.logger.Error("failed to encode request", err)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode request"})
+	default:
+		router.logger.Error("failed to decode request", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+	}
+	return nil, err
+}
+
+// markUpstreamError flags the current span when the upstream answered with an
+// error status.
+func markUpstreamError(c *gin.Context, resp *http.Response) {
+	if resp.StatusCode < http.StatusBadRequest {
+		return
+	}
+	span := trace.SpanFromContext(c.Request.Context())
+	span.SetStatus(codes.Error, resp.Status)
+	span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
+}
+
+// acceptHeaderFor returns the upstream Accept header for a streaming or
+// non-streaming pass-through request.
+func acceptHeaderFor(streaming bool) string {
+	if streaming {
+		return "text/event-stream"
+	}
+	return "application/json"
 }
 
 func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterImpl) {
@@ -922,18 +992,14 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 	}
 
 	if model != originalModel {
-		dec := json.NewDecoder(bytes.NewReader(body))
-		dec.UseNumber()
-		var payload map[string]any
-		if err := dec.Decode(&payload); err != nil {
+		if body, err = rewriteModelField(body, model); err != nil {
+			if errors.Is(err, errEncodeRequest) {
+				router.logger.Error("failed to encode request", err)
+				messagesError(c, http.StatusInternalServerError, "api_error", "Failed to encode request")
+				return
+			}
 			router.logger.Error("failed to decode request", err)
 			messagesError(c, http.StatusBadRequest, "invalid_request_error", "Failed to decode request")
-			return
-		}
-		payload["model"] = model
-		if body, err = json.Marshal(payload); err != nil {
-			router.logger.Error("failed to encode request", err)
-			messagesError(c, http.StatusInternalServerError, "api_error", "Failed to encode request")
 			return
 		}
 	}
@@ -955,11 +1021,7 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 		return
 	}
 	upstreamReq.Header.Set("Content-Type", "application/json")
-	if isStreaming {
-		upstreamReq.Header.Set("Accept", "text/event-stream")
-	} else {
-		upstreamReq.Header.Set("Accept", "application/json")
-	}
+	upstreamReq.Header.Set("Accept", acceptHeaderFor(isStreaming))
 
 	if err := applyProviderAuth(upstreamReq, provider); err != nil {
 		router.logger.Error("unsupported auth type", err, "provider", providerID)
@@ -982,10 +1044,7 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		span.SetStatus(codes.Error, resp.Status)
-		span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
-	}
+	markUpstreamError(c, resp)
 
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "text/event-stream") {
@@ -994,30 +1053,7 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 	}
 
 	middlewares.SetSSEHeaders(c)
-	reader := bufio.NewReaderSize(resp.Body, 4096)
-	c.Stream(func(w io.Writer) bool {
-		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
-
-		// The upstream request carries the client's context, so cancellation
-		// surfaces here as a read error - no separate ctx.Done() check needed.
-		line, err := reader.ReadBytes('\n')
-		if len(line) > 0 {
-			if _, werr := w.Write(line); werr != nil {
-				router.logger.Error("failed to write chunk", werr)
-				return false
-			}
-			if flusher, ok := w.(http.Flusher); ok {
-				flusher.Flush()
-			}
-		}
-		if err != nil {
-			if err != io.EOF {
-				router.logger.Error("failed to read stream", err, "url", upstreamURL)
-			}
-			return false
-		}
-		return true
-	})
+	router.relaySSE(c, resp.Body, upstreamURL)
 }
 
 // ResponsesHandler implements an OpenAI-compatible POST /v1/responses
@@ -1091,18 +1127,7 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 	}
 
 	if model != originalModel {
-		dec := json.NewDecoder(bytes.NewReader(body))
-		dec.UseNumber()
-		var payload map[string]any
-		if err := dec.Decode(&payload); err != nil {
-			router.logger.Error("failed to decode request", err)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
-			return
-		}
-		payload["model"] = model
-		if body, err = json.Marshal(payload); err != nil {
-			router.logger.Error("failed to encode request", err)
-			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode request"})
+		if body, err = router.rewriteModelOrRespond(c, body, model); err != nil {
 			return
 		}
 	}
@@ -1124,11 +1149,7 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 		return
 	}
 	upstreamReq.Header.Set("Content-Type", "application/json")
-	if isStreaming {
-		upstreamReq.Header.Set("Accept", "text/event-stream")
-	} else {
-		upstreamReq.Header.Set("Accept", "application/json")
-	}
+	upstreamReq.Header.Set("Accept", acceptHeaderFor(isStreaming))
 
 	if err := applyProviderAuth(upstreamReq, provider); err != nil {
 		router.logger.Error("unsupported auth type", err, "provider", providerID)
@@ -1151,10 +1172,7 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		span.SetStatus(codes.Error, resp.Status)
-		span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
-	}
+	markUpstreamError(c, resp)
 
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, "text/event-stream") {
@@ -1163,28 +1181,7 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 	}
 
 	middlewares.SetSSEHeaders(c)
-	reader := bufio.NewReaderSize(resp.Body, 4096)
-	c.Stream(func(w io.Writer) bool {
-		middlewares.ResetWriteDeadline(c, router.cfg.Server.WriteTimeout)
-
-		line, err := reader.ReadBytes('\n')
-		if len(line) > 0 {
-			if _, werr := w.Write(line); werr != nil {
-				router.logger.Error("failed to write chunk", werr)
-				return false
-			}
-			if flusher, ok := w.(http.Flusher); ok {
-				flusher.Flush()
-			}
-		}
-		if err != nil {
-			if err != io.EOF {
-				router.logger.Error("failed to read stream", err, "url", upstreamURL)
-			}
-			return false
-		}
-		return true
-	})
+	router.relaySSE(c, resp.Body, upstreamURL)
 }
 
 // ImagesHandler implements an OpenAI-compatible POST /v1/images/generations
@@ -1282,18 +1279,7 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 	}
 
 	if model != originalModel {
-		dec := json.NewDecoder(bytes.NewReader(body))
-		dec.UseNumber()
-		var payload map[string]any
-		if err := dec.Decode(&payload); err != nil {
-			router.logger.Error("failed to decode request", err)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
-			return
-		}
-		payload["model"] = model
-		if body, err = json.Marshal(payload); err != nil {
-			router.logger.Error("failed to encode request", err)
-			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode request"})
+		if body, err = router.rewriteModelOrRespond(c, body, model); err != nil {
 			return
 		}
 	}
@@ -1334,11 +1320,7 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		span := trace.SpanFromContext(c.Request.Context())
-		span.SetStatus(codes.Error, resp.Status)
-		span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
-	}
+	markUpstreamError(c, resp)
 
 	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
 }
@@ -1650,11 +1632,7 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 400 {
-		span := trace.SpanFromContext(c.Request.Context())
-		span.SetStatus(codes.Error, resp.Status)
-		span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
-	}
+	markUpstreamError(c, resp)
 
 	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
 }
