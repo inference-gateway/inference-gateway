@@ -99,9 +99,9 @@ func writeTarball(t *testing.T, files map[string]string) string {
 // TestGenerate_FreeVsUnpublished distinguishes the cost states in
 // models.dev files: an explicit zero cost is a free tier and must emit "0"
 // rates, an absent cost section means no per-token price and must emit no
-// entry unless the model is in the curated subscription set (then it emits a
-// zero-rate entry with subscription=true), and a priced model converts as
-// usual.
+// entry unless the model belongs to a subscription-gated provider (then it
+// emits a zero-rate entry with subscription=true), and a priced model
+// converts as usual.
 func TestGenerate_FreeVsUnpublished(t *testing.T) {
 	tarball := writeTarball(t, map[string]string{
 		"sst-models.dev-abc/providers/nvidia/models/meta/llama-free.toml":       "[cost]\ninput = 0.0\noutput = 0.0\n",
@@ -131,18 +131,17 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 	if free.InputPerToken != "0" || free.OutputPerToken != "0" {
 		t.Errorf("free-tier rates = %v/%v, want \"0\"/\"0\"", free.InputPerToken, free.OutputPerToken)
 	}
-	if _, ok := table["ollama_cloud/kimi-sub"]; ok {
-		t.Error("model without a cost section must not get an entry")
-	}
-	sub, ok := table["ollama_cloud/deepseek-v4-pro"]
-	if !ok {
-		t.Fatal("curated subscription-gated model missing from table")
-	}
-	if sub.InputPerToken != "0" || sub.OutputPerToken != "0" {
-		t.Errorf("subscription rates = %v/%v, want \"0\"/\"0\"", sub.InputPerToken, sub.OutputPerToken)
-	}
-	if sub.Subscription == nil || !*sub.Subscription {
-		t.Error("curated subscription-gated model must have subscription=true")
+	for _, key := range []string{"ollama_cloud/kimi-sub", "ollama_cloud/deepseek-v4-pro"} {
+		sub, ok := table[key]
+		if !ok {
+			t.Fatalf("subscription-gated provider model %q missing from table", key)
+		}
+		if sub.InputPerToken != "0" || sub.OutputPerToken != "0" {
+			t.Errorf("%s subscription rates = %v/%v, want \"0\"/\"0\"", key, sub.InputPerToken, sub.OutputPerToken)
+		}
+		if sub.Subscription == nil || !*sub.Subscription {
+			t.Errorf("%s must have subscription=true", key)
+		}
 	}
 	paid, ok := table["openai/gpt-paid"]
 	if !ok || paid.InputPerToken != "0.000003" {

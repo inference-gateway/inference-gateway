@@ -8,6 +8,15 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "anthropic/claude-fable-5-1": {
+    "cache_read_per_token": "0.00000025",
+    "cache_write_per_token": "0.0000125",
+    "currency": "USD",
+    "input_per_token": "0.00001",
+    "output_per_token": "0.00005",
+    "source": "community",
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
   "anthropic/claude-haiku-4-5": {
     "cache_read_per_token": "0.0000001",
     "cache_write_per_token": "0.00000125",
@@ -604,6 +613,14 @@
     "source": "community",
     "updated_at": "2026-08-17T06:44:00Z"
   },
+  "google/gemini-3.8-flash": {
+    "cache_read_per_token": "0.000000075",
+    "currency": "USD",
+    "input_per_token": "0.00000075",
+    "output_per_token": "0.00000375",
+    "source": "community",
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
   "google/gemini-embedding-001": {
     "currency": "USD",
     "input_per_token": "0.00000015",
@@ -640,13 +657,6 @@
     "output_per_token": "0.0000175",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "google/gemini-robotics-er-1.6-preview": {
-    "currency": "USD",
-    "input_per_token": "0.000001",
-    "output_per_token": "0.000005",
-    "source": "community",
-    "updated_at": "2026-07-27T09:42:20Z"
   },
   "google/lyria-3-clip-preview": {
     "currency": "USD",
@@ -727,6 +737,13 @@
     "output_per_token": "0.000003",
     "source": "community",
     "updated_at": "2026-08-05T16:53:50Z"
+  },
+  "groq/qwen/qwen3.8-27b": {
+    "currency": "USD",
+    "input_per_token": "0.0000008",
+    "output_per_token": "0.000004",
+    "source": "community",
+    "updated_at": "2026-09-03T01:27:55Z"
   },
   "minimax/MiniMax-M2": {
     "currency": "USD",
@@ -1825,6 +1842,14 @@
     "subscription": true,
     "updated_at": "2026-07-21T10:29:38Z"
   },
+  "ollama_cloud/deepseek-v4-flash:0731": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
   "ollama_cloud/deepseek-v4-pro": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1832,6 +1857,158 @@
     "source": "community",
     "subscription": true,
     "updated_at": "2026-07-21T10:29:38Z"
+  },
+  "ollama_cloud/gemma4:31b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/glm-5.1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/glm-5.2": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/glm-5.3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/glm-5.3-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/gpt-oss:120b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/gpt-oss:20b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/kimi-k2.5": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/kimi-k2.6": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/kimi-k2.7-code": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/kimi-k3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/minimax-m2.5": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/minimax-m2.7": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/minimax-m3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/mistral-large-3:675b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/nemotron-3-nano:30b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/nemotron-3-super": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/nemotron-3-ultra": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "ollama_cloud/qwen3.5:397b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-03T01:27:55Z"
   },
   "openai/gpt-3.5-turbo": {
     "currency": "USD",

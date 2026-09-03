@@ -53,14 +53,13 @@ var providerDirs = map[string]string{
 	"zai":                   "zai",
 }
 
-// subscriptionModels is the curated set of "<provider>/<model>" keys for
-// models with no per-token price that are gated behind a paid subscription
-// (e.g. Ollama Cloud Pro). models.dev carries no subscription marker in its
-// model files, so the set is maintained here and emitted into the community
-// table as zero-rate entries with subscription=true.
-var subscriptionModels = map[string]bool{
-	"ollama_cloud/deepseek-v4-pro":   true,
-	"ollama_cloud/deepseek-v4-flash": true,
+// subscriptionProviders are the gateway providers whose models are wholly
+// gated behind a paid subscription (e.g. Ollama Cloud Pro): models.dev
+// publishes no cost table for any of their models and carries no subscription
+// marker, so every "<provider>/<model>" key from these providers without a
+// cost section emits a zero-rate community entry with subscription=true.
+var subscriptionProviders = map[string]bool{
+	"ollama_cloud": true,
 }
 
 // modelTOML is the subset of a models.dev model file the sync needs. Cost
@@ -345,12 +344,13 @@ func tableKey(name string) (string, bool) {
 }
 
 // pricingEntry maps one models.dev model file to a community pricing entry.
-// Models with a published cost section convert as usual; curated
-// subscription-gated models (no cost section) become zero-rate entries with
+// Models with a published cost section convert as usual; models of
+// subscription-gated providers (no cost section) become zero-rate entries with
 // subscription=true; everything else gets no entry.
 func pricingEntry(key string, model modelTOML, syncedAt time.Time) (types.Pricing, bool) {
 	if model.Cost == nil {
-		if !subscriptionModels[key] {
+		provider, _, _ := strings.Cut(key, "/")
+		if !subscriptionProviders[provider] {
 			return types.Pricing{}, false
 		}
 		subscription := true
