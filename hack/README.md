@@ -1,11 +1,15 @@
-# Taskfile Usage Guide
+# Hack
 
-This document explains how to use the Taskfile.yml in the hack directory to manage local Kubernetes development.
+Local Kubernetes environment for developing the gateway itself. Unlike the
+[operator examples](../examples/kubernetes), the gateway here is a plain Deployment
+(`gateway.yaml`) so you can swap in a locally built image. Keycloak and cert-manager
+manifests are reused from `examples/kubernetes/authentication`.
 
-- [Taskfile Usage Guide](#taskfile-usage-guide)
+- [Hack](#hack)
   - [Prerequisites](#prerequisites)
   - [Available Tasks](#available-tasks)
     - [Cluster Management](#cluster-management)
+    - [Gateway](#gateway)
     - [Keycloak Operations](#keycloak-operations)
     - [LLM Operations](#llm-operations)
   - [Typical Workflow](#typical-workflow)
@@ -17,7 +21,7 @@ This document explains how to use the Taskfile.yml in the hack directory to mana
 - kubectl
 - helm
 - ctlptl (for cluster management)
-- jq (for JSON processing)
+- curl and jq
 
 ## Available Tasks
 
@@ -27,54 +31,52 @@ This document explains how to use the Taskfile.yml in the hack directory to mana
 task deploy-infrastructure
 ```
 
-Creates local k3d cluster with:
+Creates a local k3d cluster (k3s v1.36) with:
 
-- ingress-nginx (v4.14.0)
-- cert-manager (v1.17.2)
-- kube-prometheus-stack (72.6.1)
-- grafana-operator (v5.17.0)
-- Keycloak with PostgreSQL
+- Kubernetes Gateway API CRDs + Envoy Gateway (`envoy` GatewayClass)
+- cert-manager with a self-signed ClusterIssuer
+- Prometheus operator and Grafana operator (`observability` namespace)
+- Keycloak (operator) with PostgreSQL and the `inference-gateway-realm` realm
+- A CoreDNS rewrite so the gateway resolves `keycloak.inference-gateway.local` in-cluster
+
+### Gateway
 
 ```bash
-task clean
+task deploy-inference-gateway
 ```
 
-Deletes the entire k3d cluster
+Publishes Keycloak's CA to the `inference-gateway` namespace and applies `gateway.yaml`
+(Namespace, ConfigMap, Secret, Deployment, Service, Gateway and HTTPRoute). The gateway is
+reachable through Envoy on `http://localhost` with the `Host: api.inference-gateway.local`
+header.
+
+To test a local build, push your image somewhere the cluster can pull from and change
+`spec.template.spec.containers[0].image` in `gateway.yaml`.
 
 ### Keycloak Operations
 
 ```bash
-task import-realm
+task port-forward-keycloak      # keep running in another terminal
+task fetch-access-token         # access token for the test user (user/password)
+task print-access-token-payload
+task keycloak-admin-password
 ```
-
-Imports inference-gateway-realm with test user
-
-```bash
-task fetch-access-token
-```
-
-Gets access token for test user
 
 ### LLM Operations
 
 ```bash
-task generate-completions
+task deploy-ollama              # Ollama with deepseek-r1:1.5b
+task fetch-models
+task generate-completions       # interactive prompt
 ```
-
-Interactive prompt for Ollama completions
-
-```bash
-task deploy-ollama-deepseek-r1
-```
-
-Deploys Ollama with deepseek-r1 model
 
 ## Typical Workflow
 
-1. Start cluster: `task deploy-infrastructure`
-2. Deploy the gateway with the [operator](https://github.com/inference-gateway/operator)
-3. Test auth: `task fetch-access-token`
-4. Test LLM: `task generate-completions`
+1. Start the infrastructure: `task deploy-infrastructure`
+2. Deploy the gateway: `task deploy-inference-gateway`
+3. In another terminal: `task port-forward-keycloak`
+4. Deploy a provider: `task deploy-ollama`
+5. Test: `task fetch-models`, `task generate-completions`
 
 ## Cleanup
 

@@ -1,0 +1,133 @@
+---
+# Vanilla (operator-less) deployment of the Inference Gateway for local hacking.
+# Mirrors examples/kubernetes/authentication but with a plain Deployment so a
+# locally built image can be swapped in.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inference-gateway
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+data:
+  ENVIRONMENT: development
+  SERVER_HOST: '0.0.0.0'
+  SERVER_PORT: '8080'
+  TELEMETRY_ENABLED: 'true'
+  TELEMETRY_METRICS_PORT: '9464'
+  AUTH_ENABLED: 'true'
+  AUTH_OIDC_ISSUER: 'https://keycloak.inference-gateway.local:8543/realms/inference-gateway-realm'
+  AUTH_OIDC_CLIENT_ID: inference-gateway-client
+  # Trust Keycloak's self-signed CA (mounted from the keycloak-ca ConfigMap).
+  SSL_CERT_FILE: /etc/ssl/keycloak/ca.crt
+  OLLAMA_API_URL: 'http://ollama.ollama:8080/v1'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+type: Opaque
+stringData:
+  # Must match the client secret in examples/kubernetes/authentication/keycloak/job-import-realm.yaml.
+  AUTH_OIDC_CLIENT_SECRET: very-secret
+  OPENAI_API_KEY: ''
+  ANTHROPIC_API_KEY: ''
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app: inference-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inference-gateway
+  template:
+    metadata:
+      labels:
+        app: inference-gateway
+    spec:
+      containers:
+        - name: inference-gateway
+          image: ghcr.io/inference-gateway/inference-gateway:latest
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: metrics
+              containerPort: 9464
+          envFrom:
+            - configMapRef:
+                name: inference-gateway
+            - secretRef:
+                name: inference-gateway
+          volumeMounts:
+            - name: keycloak-ca
+              mountPath: /etc/ssl/keycloak
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '1000m'
+              memory: '512Mi'
+      volumes:
+        - name: keycloak-ca
+          configMap:
+            name: keycloak-ca
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app: inference-gateway
+spec:
+  selector:
+    app: inference-gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+    - name: metrics
+      port: 9464
+      targetPort: metrics
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+spec:
+  gatewayClassName: envoy
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+spec:
+  parentRefs:
+    - name: inference-gateway
+  hostnames:
+    - api.inference-gateway.local
+  rules:
+    - backendRefs:
+        - name: inference-gateway
+          port: 8080
