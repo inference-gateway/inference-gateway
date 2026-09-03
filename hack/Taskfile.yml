@@ -135,9 +135,6 @@ tasks:
       - echo "🔑 Keycloak deployed successfully!"
 
   configure-coredns:
-    # Resolve the external Keycloak hostname to the in-cluster Service so the
-    # gateway can reach the OIDC issuer (https://keycloak.inference-gateway.local:8543)
-    # for discovery. Keycloak issues tokens with that same hostname (strict).
     desc: 'Point keycloak.inference-gateway.local at the in-cluster Keycloak Service'
     cmds:
       - |
