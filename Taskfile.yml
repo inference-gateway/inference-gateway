@@ -138,13 +138,7 @@ tasks:
     cmds:
       - mkdir -p bin
       - 'set -o pipefail; {{.BENCH_CMD}} | tee bin/benchmark.txt'
-      # -row .name drops the GOMAXPROCS suffix so a baseline recorded on a
-      # 4-core runner still lines up with a run on a different core count.
-      # ponytail: it also pools sub-benchmarks (ProviderTransformations/*) into
-      # one row; switch to .fullname if per-sub-benchmark detail is ever needed.
       - '{{.BENCHSTAT}} tests/benchmarks/baseline.txt bin/benchmark.txt'
-      # Rows benchstat marks "~" (p >= 0.05) have no "+" delta, so runner noise
-      # never fails the gate.
       - |
         {{.BENCHSTAT}} -format csv tests/benchmarks/baseline.txt bin/benchmark.txt 2>/dev/null |
         awk -F, -v t_time={{.TIME_TOLERANCE_PCT}} -v t_allocs={{.ALLOCS_TOLERANCE_PCT}} '
