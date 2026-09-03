@@ -375,9 +375,7 @@ func main() {
 		}()
 	}
 
-	// Validate provider connectivity after server starts
 	go func() {
-		// Wait a moment for the server to be ready
 		time.Sleep(providerProbeStartDelay)
 
 		totalModels := 0
