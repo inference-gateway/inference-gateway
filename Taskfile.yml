@@ -1,6 +1,9 @@
 ---
 version: '3'
 
+vars:
+  BENCH_CMD: go test -bench=. -run=^$ -benchmem -benchtime=100x -count=20 ./tests/...
+
 tasks:
   default:
     desc: 'Show available tasks'
@@ -122,7 +125,19 @@ tasks:
   benchmark:
     desc: 'Run benchmarks'
     cmds:
-      - go test -bench=. -run=^$ -benchmem -benchtime=100x -count=20 ./tests/...
+      - '{{.BENCH_CMD}}'
+
+  benchmark:check:
+    desc: 'Run benchmarks and fail on regression vs tests/benchmarks/baseline.txt'
+    cmds:
+      - mkdir -p bin
+      - 'set -o pipefail; {{.BENCH_CMD}} | tee bin/benchmark.txt'
+      - bash scripts/benchcheck.sh bin/benchmark.txt
+
+  benchmark:baseline:
+    desc: 'Refresh tests/benchmarks/baseline.txt (run on a GitHub-hosted runner, commit the result)'
+    cmds:
+      - '{{.BENCH_CMD}} > tests/benchmarks/baseline.txt'
 
   pre-commit:install:
     desc: 'Install git hooks from .githooks/'
