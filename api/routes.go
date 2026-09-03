@@ -1369,7 +1369,8 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 //
 // Only providers that natively implement the Audio API are supported
 // (currently openai); other providers receive a 400, mirroring the schema's
-// SpeechNotSupported response.
+// SpeechNotSupported response. The llamacpp registry entry also carries a
+// Speech endpoint, but that path is a work in progress and not supported yet.
 //
 // The endpoint is opt-in via AUDIO_ENABLED (default off). When disabled, the
 // handler returns 404.

@@ -3983,7 +3983,7 @@ components:
                   env: 'AUDIO_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Audio API (POST /v1/audio/speech). When disabled, the endpoint returns a 404. Served by providers with speech support (currently openai) or by the local llama-tts engine'
+                  description: 'Enable the Audio API (POST /v1/audio/speech). When disabled, the endpoint returns a 404. Supported by the openai provider and by the local llama-tts engine (local/qwen3-tts); llamacpp speech is a work in progress and not supported yet'
                 - name: audio_local_auto_download
                   env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
                   type: bool

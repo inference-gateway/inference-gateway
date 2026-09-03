@@ -540,6 +540,11 @@ for `"response_format": "wav"`).
 The endpoint is opt-in via `AUDIO_ENABLED=true` (default off). When disabled,  
 the handler returns `404`. Providers without a native speech API return `400`.
 
+The supported backends today are the built-in `local/qwen3-tts` engine and the
+`openai` provider. Speech through the `llamacpp` provider is a work in progress
+and not supported yet - the examples below that use `llamacpp/...` describe the
+intended behaviour and are not expected to work.
+
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech -d '{
   "model": "local/qwen3-tts",
