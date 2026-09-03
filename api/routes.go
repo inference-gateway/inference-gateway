@@ -1207,12 +1207,12 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 // (currently OpenAI); other providers receive a 400, mirroring the schema's
 // ImagesNotSupported response.
 //
-// The endpoint is opt-in via ENABLE_IMAGES (default off). When disabled, the
+// The endpoint is opt-in via IMAGES_ENABLED (default off). When disabled, the
 // handler returns 404.
 func (router *RouterImpl) ImagesHandler(c *gin.Context) {
-	if !router.cfg.EnableImages {
+	if !router.cfg.ImagesEnabled {
 		router.logger.Error("images api not enabled", nil)
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Images API is not enabled. Set ENABLE_IMAGES=true to enable it."})
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Images API is not enabled. Set IMAGES_ENABLED=true to enable it."})
 		return
 	}
 
@@ -1538,13 +1538,13 @@ func (router *RouterImpl) ImagesVariationsHandler(c *gin.Context) {
 // files are streamed to the upstream without a second full in-memory copy
 // (ParseMultipartForm has already spilled anything over 1 MiB to temp files).
 //
-// Behaviour mirrors ImagesHandler: opt-in via ENABLE_IMAGES (404 when off) and
+// Behaviour mirrors ImagesHandler: opt-in via IMAGES_ENABLED (404 when off) and
 // only providers that natively implement the endpoint are supported (others
 // receive a 400).
 func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMultipartTarget) {
-	if !router.cfg.EnableImages {
+	if !router.cfg.ImagesEnabled {
 		router.logger.Error("images api not enabled", nil)
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Images API is not enabled. Set ENABLE_IMAGES=true to enable it."})
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Images API is not enabled. Set IMAGES_ENABLED=true to enable it."})
 		return
 	}
 

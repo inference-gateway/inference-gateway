@@ -70,7 +70,7 @@ func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, op
 	}
 
 	cfg := config.Config{
-		EnableImages: enableImages,
+		ImagesEnabled: enableImages,
 		Server: &config.ServerConfig{
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 5 * time.Second,

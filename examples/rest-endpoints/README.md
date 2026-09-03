@@ -417,7 +417,7 @@ upstream provider byte-for-byte (only the `model` prefix is stripped), so all
 Images API fields like `prompt`, `n`, `size`, `quality`, and `response_format`
 pass through untouched.
 
-The endpoint is opt-in via `ENABLE_IMAGES=true` (default off). When disabled,
+The endpoint is opt-in via `IMAGES_ENABLED=true` (default off). When disabled,
 the handler returns `404`.
 
 Only providers that natively implement the Images API are supported (currently
@@ -469,7 +469,7 @@ field and `response_format` does not apply. Response (image data elided):
 ### Image Edits and Variations
 
 Two additional Images endpoints accept `multipart/form-data` uploads and reuse
-the same `ImagesResponse` shape, toggle (`ENABLE_IMAGES`), and provider support
+the same `ImagesResponse` shape, toggle (`IMAGES_ENABLED`), and provider support
 rules as `/images/generations`:
 
 - `POST /v1/images/edits` - edit or extend a source image. Requires the `image`
@@ -517,7 +517,7 @@ Images API is not enabled:
 
 ```json
 {
-  "error": "The Images API is not enabled. Set ENABLE_IMAGES=true to enable it."
+  "error": "The Images API is not enabled. Set IMAGES_ENABLED=true to enable it."
 }
 ```
 

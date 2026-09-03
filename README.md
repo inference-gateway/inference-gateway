@@ -157,9 +157,9 @@ For streaming the tokens simply add to the request body `stream: true`.
 | `POST /v1/chat/completions`   | OpenAI-compatible chat completions, streaming and tools included - works with every provider                                                                                                                                     |
 | `POST /v1/messages`           | [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) compatibility - the body is relayed byte-for-byte, so `cache_control` and the Anthropic SSE event envelope pass through untouched (Anthropic provider only) |
 | `POST /v1/responses`          | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) compatibility, relayed byte-for-byte (OpenAI provider only)                                                                                     |
-| `POST /v1/images/generations` | [OpenAI Images API](https://platform.openai.com/docs/api-reference/images/create) - generate images. Opt-in via `ENABLE_IMAGES=true` (OpenAI provider only)                                                                      |
-| `POST /v1/images/edits`       | Edit an image with an optional mask, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true`                                                                                                                                      |
-| `POST /v1/images/variations`  | Create variations of an image, `multipart/form-data`. Opt-in via `ENABLE_IMAGES=true`                                                                                                                                            |
+| `POST /v1/images/generations` | [OpenAI Images API](https://platform.openai.com/docs/api-reference/images/create) - generate images. Opt-in via `IMAGES_ENABLED=true` (OpenAI provider only)                                                                      |
+| `POST /v1/images/edits`       | Edit an image with an optional mask, `multipart/form-data`. Opt-in via `IMAGES_ENABLED=true`                                                                                                                                      |
+| `POST /v1/images/variations`  | Create variations of an image, `multipart/form-data`. Opt-in via `IMAGES_ENABLED=true`                                                                                                                                            |
 | `POST /v1/audio/speech`       | [OpenAI Audio Speech API](https://platform.openai.com/docs/api-reference/audio/createSpeech) - generate speech audio from text. Opt-in via `AUDIO_ENABLED=true` (OpenAI provider, or the built-in `local/qwen3-tts` engine)      |
 | `POST /v1/metrics`            | OTLP metrics push from clients. Opt-in via `TELEMETRY_METRICS_PUSH_ENABLED=true`                                                                                                                                                 |
 | `ANY /proxy/:provider/*path`  | Passthrough to a provider's native API with the API key injected                                                                                                                                                                 |
@@ -178,7 +178,7 @@ curl -X POST http://localhost:8080/v1/messages \
   }'
 ```
 
-Image generation (requires `ENABLE_IMAGES=true`):
+Image generation (requires `IMAGES_ENABLED=true`):
 
 ```bash
 curl -X POST http://localhost:8080/v1/images/generations \

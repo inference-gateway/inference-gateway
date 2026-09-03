@@ -273,6 +273,43 @@ func TestLoad(t *testing.T) {
 	}
 }
 
+func TestLoadImagesEnabledDeprecatedAlias(t *testing.T) {
+	tests := []struct {
+		name     string
+		env      map[string]string
+		expected bool
+	}{
+		{
+			name:     "deprecated alias honoured when current name unset",
+			env:      map[string]string{config.EnvImagesEnabledDeprecated: "true"},
+			expected: true,
+		},
+		{
+			name: "current name wins over deprecated alias",
+			env: map[string]string{
+				config.EnvImagesEnabled:           "false",
+				config.EnvImagesEnabledDeprecated: "true",
+			},
+			expected: false,
+		},
+		{
+			name:     "current name still works on its own",
+			env:      map[string]string{config.EnvImagesEnabled: "true"},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{}
+			result, err := cfg.Load(envconfig.MapLookuper(tt.env))
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, result.ImagesEnabled)
+		})
+	}
+}
+
 func TestLoadDoesNotMutateRegistryDefaults(t *testing.T) {
 	originalURL := registry.Registry[constants.OllamaID].URL
 	originalToken := registry.Registry[constants.GroqID].Token

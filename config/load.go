@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,14 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
+const (
+	// EnvImagesEnabled is the current environment variable for the Images API toggle.
+	EnvImagesEnabled = "IMAGES_ENABLED"
+	// EnvImagesEnabledDeprecated is the retired name for EnvImagesEnabled. It is
+	// still honoured when EnvImagesEnabled is unset; remove in the next major release.
+	EnvImagesEnabledDeprecated = "ENABLE_IMAGES"
+)
+
 // Load configuration
 func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 	if err := envconfig.ProcessWith(context.Background(), &envconfig.Config{
@@ -21,6 +30,19 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 		Lookuper: lookuper,
 	}); err != nil {
 		return Config{}, err
+	}
+
+	if _, set := lookuper.Lookup(EnvImagesEnabled); !set {
+		if legacy, ok := lookuper.Lookup(EnvImagesEnabledDeprecated); ok {
+			enabled, err := strconv.ParseBool(legacy)
+			if err != nil {
+				return Config{}, fmt.Errorf("parsing %s: %w", EnvImagesEnabledDeprecated, err)
+			}
+			cfg.ImagesEnabled = enabled
+			t := time.Now().UTC().Format(time.RFC3339)
+			log.SetFlags(0)
+			log.Printf("{\"level\":\"warn\",\"timestamp\":\"%s\",\"caller\":\"config/load.go\",\"msg\":\"%s is deprecated, use %s instead\"}", t, EnvImagesEnabledDeprecated, EnvImagesEnabled)
+		}
 	}
 
 	if cfg.Providers == nil {
