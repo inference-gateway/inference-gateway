@@ -131,8 +131,6 @@ tasks:
   benchmark:check:
     desc: 'Run benchmarks and fail on regression vs tests/benchmarks/baseline.txt'
     vars:
-      # Maximum allowed slowdown vs baseline, in percent. sec/op is loose
-      # because shared CI runners are noisy; allocs/op is near-deterministic.
       TIME_TOLERANCE_PCT: 15
       ALLOCS_TOLERANCE_PCT: 5
     cmds:
