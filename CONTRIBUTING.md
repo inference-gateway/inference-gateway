@@ -89,10 +89,13 @@ For detailed development information, see [AGENTS.md](./AGENTS.md).
 **Git Hooks:** The installed hook from `.githooks/` runs automatically on
 `git commit`:
 
-- **pre-commit**:
+- **pre-commit** (checks trigger based on staged files):
   - `go fmt ./...` - format Go source files
   - `go vet ./...` - static analysis on Go code
   - `markdownlint` - lint Markdown files
+  - `go generate` - regenerate mocks; fails if generated Go files are stale
+  - `task generate` - runs when `openapi.yaml` or `internal/codegen/` changed;
+    fails if generated files are not committed
 
 The hook provides fast local feedback before CI runs. To skip it in an
 emergency, use `git commit --no-verify`.
