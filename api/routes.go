@@ -800,7 +800,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
 	defer cancel()
 
-	if router.cfg.EnableVision {
+	if router.cfg.VisionEnabled {
 		hasImageContent := false
 		imageCount := 0
 		for _, message := range req.Messages {
