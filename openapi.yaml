@@ -3969,8 +3969,8 @@ components:
                   type: string
                   default: ''
                   description: 'Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS'
-                - name: enable_vision
-                  env: 'ENABLE_VISION'
+                - name: vision_enabled
+                  env: 'VISION_ENABLED'
                   type: bool
                   default: 'false'
                   description: 'Enable vision/multimodal handling for all providers. When enabled, image content is stripped from requests to models not known to accept images and passed through to vision-capable models. When disabled, image content is forwarded to the provider untouched'
@@ -3983,7 +3983,7 @@ components:
                   env: 'AUDIO_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Audio API (POST /v1/audio/speech). When disabled, the endpoint returns a 404. Supported by the openai provider and by the local llama-tts engine (local/qwen3-tts); llamacpp speech is a work in progress and not supported yet'
+                  description: 'Enable the Audio API (POST /v1/audio/speech). When disabled, the endpoint returns a 404. Served by providers with speech support (currently openai) or by the local llama-tts engine'
                 - name: audio_local_auto_download
                   env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
                   type: bool
