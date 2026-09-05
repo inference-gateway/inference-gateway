@@ -3,7 +3,7 @@ module github.com/inference-gateway/inference-gateway
 go 1.26.7
 
 require (
-	github.com/coreos/go-oidc/v3 v3.20.0
+	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/gin-gonic/gin v1.12.0
 	github.com/metoro-io/mcp-golang v0.16.1
 	github.com/oapi-codegen/runtime v1.7.0
