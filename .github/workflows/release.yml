@@ -159,6 +159,11 @@ jobs:
         run: |
           sed -i 's/const VERSION = ".*"/const VERSION = "v${{ needs.version.outputs.new_release_version }}"/' config/meta.go
 
+          # semantic-release creates the real tag later in the release job;
+          # goreleaser >= v2.18.1 refuses to run when GORELEASER_CURRENT_TAG
+          # does not exist locally, so create a throwaway lightweight tag.
+          git tag "$GORELEASER_CURRENT_TAG"
+
           goreleaser release --clean --skip=validate
 
       - name: Upload release artifacts
