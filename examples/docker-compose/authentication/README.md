@@ -152,13 +152,17 @@ Connect discovery document works. Signature, issuer and expiry checks come from
 that document. The only per-provider detail is what its access tokens carry in
 `aud`, which must match one of the `AUTH_OIDC_AUDIENCE` values:
 
-| Provider           | `AUTH_OIDC_ISSUER`                                          | `AUTH_OIDC_AUDIENCE`                                                                          |
-| ------------------ | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Keycloak           | `https://<host>/realms/<realm>`                             | the client ID, added to access tokens by an audience mapper (this example)                    |
-| Auth0              | `https://<tenant>.auth0.com/` (trailing slash)              | the API identifier; a token requested without an `audience` is opaque and cannot be verified  |
-| Okta               | `https://<org>.okta.com/oauth2/<authorization-server-id>`   | the custom authorization server's audience (the org server issues opaque tokens)              |
-| Microsoft Entra ID | `https://login.microsoftonline.com/<tenant-id>/v2.0`        | `api://<app-id>` for v1 tokens, the app's client ID for v2 tokens, or both as a list          |
-| Amazon Cognito     | `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>` | the resource server bound to the app client; without one the access token has no `aud` at all |
+| Provider                                         | `AUTH_OIDC_ISSUER`                                          | `AUTH_OIDC_AUDIENCE`                                                                                  |
+| ------------------------------------------------ | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Keycloak                                         | `https://<host>/realms/<realm>`                             | the client ID, added to access tokens by an audience mapper (this example)                            |
+| [Microsoft Entra ID](../auth-entra/README.md)    | `https://login.microsoftonline.com/<tenant-id>/v2.0`        | the API registration's client ID (v2 tokens) or `api://<app-id>` (v1 tokens)                          |
+| [Google service accounts](../auth-gcp/README.md) | `https://accounts.google.com`                               | any URL you choose; the issuer is shared by every Google account, so pair it with a guardrails policy |
+| [Amazon Cognito](../auth-cognito/README.md)      | `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>` | the app client ID; machine tokens carry no `aud`, so the gateway checks `client_id` instead           |
+| Auth0                                            | `https://<tenant>.auth0.com/` (trailing slash)              | the API identifier; a token requested without an `audience` is opaque and cannot be verified          |
+| Okta                                             | `https://<org>.okta.com/oauth2/<authorization-server-id>`   | the custom authorization server's audience (the org server issues opaque tokens)                      |
+
+Tokens with no `aud` claim at all are accepted when their `client_id` claim
+matches one of the configured values, which is how Cognito machine tokens work.
 
 ## Keycloak admin console
 

@@ -1,0 +1,18 @@
+---
+# The gateway alone: an Amazon Cognito user pool is the identity provider. The
+# IDs come from .env (see .env.example); everything else works exactly as in
+# the Keycloak example in ../authentication.
+services:
+  inference-gateway:
+    image: ghcr.io/inference-gateway/inference-gateway:latest
+    env_file:
+      - .env
+    environment:
+      AUTH_ENABLED: 'true'
+      AUTH_OIDC_ISSUER: https://cognito-idp.${AWS_REGION}.amazonaws.com/${COGNITO_USER_POOL_ID}
+      # Cognito machine tokens carry no aud; the gateway checks client_id instead.
+      AUTH_OIDC_AUDIENCE: ${COGNITO_CLIENT_ID}
+    ports:
+      - '8080:8080'
+    pull_policy: always
+    restart: unless-stopped

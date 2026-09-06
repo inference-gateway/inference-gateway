@@ -16,7 +16,10 @@ This directory contains examples that demonstrate how to use the Inference Gatew
   (cloud and local)
 - [Tools](tools/README.md) - Function calling and tool usage examples
 - [Authentication](authentication/README.md) - Adding authentication to your
-  gateway
+  gateway with Keycloak
+- [Entra ID](auth-entra/README.md), [Google Cloud](auth-gcp/README.md) and
+  [Amazon Cognito](auth-cognito/README.md) - the same authentication setup
+  against cloud identity providers
 - [Monitoring](monitoring/README.md) - Metrics collection and visualization with
   Prometheus and Grafana
 - [Guardrails](guardrails/README.md) - OPA/Rego policy enforcement on requests

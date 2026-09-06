@@ -364,3 +364,32 @@ func TestGuardrailsMiddleware_ExamplePolicyBlocks(t *testing.T) {
 		})
 	}
 }
+
+func TestGuardrailsMiddleware_GCPIdentityPolicy(t *testing.T) {
+	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/docker-compose/auth-gcp/policies")
+	assert.NoError(t, err, "example policy should compile without error")
+
+	tests := []struct {
+		name     string
+		identity map[string]any
+		want     string
+	}{
+		{name: "Allowed service account", identity: map[string]any{"email": "inference-gateway-client@YOUR_PROJECT_ID.iam.gserviceaccount.com"}, want: guardrails.ActionAllow},
+		{name: "Other Google identity", identity: map[string]any{"email": "someone@example.com"}, want: guardrails.ActionBlock},
+		{name: "Unauthenticated request", identity: nil, want: guardrails.ActionAllow},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dec, err := evaluator.Eval(context.Background(), &guardrails.Input{
+				Method:   "POST",
+				Path:     "/v1/chat/completions",
+				Phase:    guardrails.PhasePreCall,
+				Request:  &guardrails.Req{Body: `{"model":"test","messages":[]}`, Model: "test"},
+				Identity: tt.identity,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, dec.Action)
+		})
+	}
+}

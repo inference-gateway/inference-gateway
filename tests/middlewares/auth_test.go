@@ -72,8 +72,8 @@ func newFakeIdP(t *testing.T) *fakeIdP {
 }
 
 // mint signs a valid token for this issuer; override lets a case tamper with
-// the claims before signing.
-func (p *fakeIdP) mint(t *testing.T, override func(*jwt.Claims)) string {
+// the registered claims before signing and private adds non-standard ones.
+func (p *fakeIdP) mint(t *testing.T, override func(*jwt.Claims), private ...map[string]any) string {
 	t.Helper()
 	now := time.Now()
 	claims := jwt.Claims{
@@ -86,7 +86,11 @@ func (p *fakeIdP) mint(t *testing.T, override func(*jwt.Claims)) string {
 	if override != nil {
 		override(&claims)
 	}
-	raw, err := jwt.Signed(p.signer).Claims(claims).Serialize()
+	builder := jwt.Signed(p.signer).Claims(claims)
+	for _, extra := range private {
+		builder = builder.Claims(extra)
+	}
+	raw, err := builder.Serialize()
 	require.NoError(t, err)
 	return raw
 }
@@ -192,6 +196,21 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 			name: "Second audience accepted from list", engine: withAudienceList, path: testRoute,
 			header:     "Bearer " + idp.mint(t, func(c *jwt.Claims) { c.Audience = jwt.Audience{"second-api"} }),
 			wantStatus: http.StatusOK,
+		},
+		{
+			name: "No aud falls back to client_id claim", engine: withClientID, path: testRoute,
+			header:     "Bearer " + idp.mint(t, func(c *jwt.Claims) { c.Audience = nil }, map[string]any{"client_id": testClientID}),
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "No aud and unknown client_id rejected", engine: withClientID, path: testRoute,
+			header:     "Bearer " + idp.mint(t, func(c *jwt.Claims) { c.Audience = nil }, map[string]any{"client_id": "someone-else"}),
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeInvalid,
+		},
+		{
+			name: "No aud and no client_id rejected", engine: withClientID, path: testRoute,
+			header:     "Bearer " + idp.mint(t, func(c *jwt.Claims) { c.Audience = nil }),
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeInvalid,
 		},
 		{name: "Valid token", engine: withClientID, path: testRoute, header: "Bearer " + valid, wantStatus: http.StatusOK, wantToken: valid},
 		{name: "Lowercase scheme accepted", engine: withClientID, path: testRoute, header: "bearer " + valid, wantStatus: http.StatusOK, wantToken: valid},

@@ -26,6 +26,9 @@ const (
 
 	bearerScheme = "Bearer"
 
+	// clientIDClaim is checked in place of aud when a token has no aud.
+	clientIDClaim = "client_id"
+
 	// RFC 6750 §3 challenges: no error code when the request carried no bearer
 	// credentials, invalid_token when it carried one that failed verification.
 	wwwAuthenticateHeader  = "WWW-Authenticate"
@@ -104,16 +107,25 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 			unauthorized(c, wwwAuthenticateInvalid)
 			return
 		}
-		if !slices.ContainsFunc(idToken.Audience, func(aud string) bool { return slices.Contains(a.audiences, aud) }) {
-			a.logger.Error("failed to verify bearer token",
-				fmt.Errorf("oidc: expected one of audiences %q got %q", a.audiences, idToken.Audience))
-			unauthorized(c, wwwAuthenticateInvalid)
-			return
-		}
 
 		var claims map[string]any
 		if err := idToken.Claims(&claims); err != nil {
 			a.logger.Error("failed to decode bearer token claims", err)
+			unauthorized(c, wwwAuthenticateInvalid)
+			return
+		}
+
+		audiences := idToken.Audience
+		if len(audiences) == 0 {
+			// Cognito machine tokens carry no aud at all; AWS documents the
+			// client_id claim as the value a resource server verifies instead.
+			if clientID, _ := claims[clientIDClaim].(string); clientID != "" {
+				audiences = []string{clientID}
+			}
+		}
+		if !slices.ContainsFunc(audiences, func(aud string) bool { return slices.Contains(a.audiences, aud) }) {
+			a.logger.Error("failed to verify bearer token",
+				fmt.Errorf("oidc: expected one of audiences %q got %q", a.audiences, audiences))
 			unauthorized(c, wwwAuthenticateInvalid)
 			return
 		}

@@ -559,6 +559,8 @@ provider decides how to handle them.
     (cloud + local)
   - [Authentication & Authorization](examples/docker-compose/authentication/) - OIDC
     authentication and guardrails authorization setup
+  - [Entra ID](examples/docker-compose/auth-entra/), [Google Cloud](examples/docker-compose/auth-gcp/)
+    and [Amazon Cognito](examples/docker-compose/auth-cognito/) - the same setup against cloud identity providers
   - [Tools](examples/docker-compose/tools/) - Tool integration examples
   - [Guardrails](examples/docker-compose/guardrails/) - OPA/Rego request
     guardrails
