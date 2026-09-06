@@ -334,14 +334,14 @@ func main() {
 
 	r.GET(middlewares.HealthPath, api.HealthcheckHandler)
 	r.POST(middlewares.MetricsIngestPath, api.MetricsIngestionHandler)
+	r.POST(middlewares.ChatCompletionsPath, api.ChatCompletionsHandler)
+	r.POST(middlewares.ResponsesPath, api.ResponsesHandler)
 	r.Any("/proxy/:provider/*path", api.ProxyHandler)
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/models", api.ListModelsHandler)
 		v1.GET("/mcp/tools", api.ListToolsHandler)
-		v1.POST("/chat/completions", api.ChatCompletionsHandler)
 		v1.POST("/messages", api.MessagesHandler)
-		v1.POST("/responses", api.ResponsesHandler)
 		v1.POST("/images/generations", api.ImagesHandler)
 		v1.POST("/images/edits", api.ImagesEditsHandler)
 		v1.POST("/images/variations", api.ImagesVariationsHandler)

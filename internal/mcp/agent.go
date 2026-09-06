@@ -375,7 +375,7 @@ func (a *agentImpl) handleToolsExecute(ctx context.Context, toolCall types.ChatC
 		return a.toolMessage(toolCall.ID, fmt.Sprintf("Error: Failed to parse arguments: %v", err))
 	}
 	if params.Name == "" {
-		return a.toolMessage(toolCall.ID, "Error: mcp_tools_execute requires a 'name'")
+		return a.toolMessage(toolCall.ID, "Error: "+SelectorToolExecute+" requires a 'name'")
 	}
 
 	toolName := strings.TrimPrefix(params.Name, ToolNamePrefix)
