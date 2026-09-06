@@ -1577,7 +1577,6 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		contentType:  mw.FormDataContentType(),
 		accept:       contentTypeJSON,
 	}); f != nil {
-		// Unblock the multipart writer goroutine; nothing will read the pipe now.
 		_ = pr.CloseWithError(errors.New(f.message))
 		c.JSON(f.status, ErrorResponse{Error: f.message})
 		return
