@@ -24,22 +24,18 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-type Telemetry interface {
-	Middleware() gin.HandlerFunc
-}
-
-type TelemetryImpl struct {
+type TelemetryMiddleware struct {
 	cfg       config.Config
 	telemetry otel.OpenTelemetry
 	logger    logger.Logger
 }
 
-func NewTelemetryMiddleware(cfg config.Config, telemetry otel.OpenTelemetry, logger logger.Logger) (Telemetry, error) {
-	return &TelemetryImpl{
+func NewTelemetryMiddleware(cfg config.Config, telemetry otel.OpenTelemetry, logger logger.Logger) *TelemetryMiddleware {
+	return &TelemetryMiddleware{
 		cfg:       cfg,
 		telemetry: telemetry,
 		logger:    logger,
-	}, nil
+	}
 }
 
 const (
@@ -75,7 +71,7 @@ func (w *responseBodyWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
 }
 
-func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
+func (t *TelemetryMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTime := time.Now()
 
@@ -179,7 +175,7 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 }
 
 // parseResponseData extracts all needed information from response in a single pass
-func (t *TelemetryImpl) parseResponseData(responseBytes []byte, isStreaming bool, provider, model string) *responseData {
+func (t *TelemetryMiddleware) parseResponseData(responseBytes []byte, isStreaming bool, provider, model string) *responseData {
 	if isStreaming {
 		return t.parseStreamingResponse(responseBytes, provider, model)
 	}
@@ -187,7 +183,7 @@ func (t *TelemetryImpl) parseResponseData(responseBytes []byte, isStreaming bool
 }
 
 // parseStreamingResponse handles streaming response parsing for both tokens and tool calls
-func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, provider, model string) *responseData {
+func (t *TelemetryMiddleware) parseStreamingResponse(responseBytes []byte, provider, model string) *responseData {
 	data := &responseData{}
 	responseStr := string(responseBytes)
 	chunks := strings.Split(responseStr, "\n\n")
@@ -224,7 +220,7 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, provider, m
 }
 
 // parseNonStreamingResponse handles non-streaming response parsing for both tokens and tool calls
-func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, provider, model string) *responseData {
+func (t *TelemetryMiddleware) parseNonStreamingResponse(responseBytes []byte, provider, model string) *responseData {
 	data := &responseData{}
 	var chatCompletionResponse types.CreateChatCompletionResponse
 	if err := json.Unmarshal(responseBytes, &chatCompletionResponse); err != nil {
@@ -254,7 +250,7 @@ func (d *responseData) setUsage(usage *types.CompletionUsage) {
 }
 
 // recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
-func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, team, provider, model string, request *types.CreateChatCompletionRequest, respData *responseData) {
+func (t *TelemetryMiddleware) recordToolCallMetrics(ctx context.Context, team, provider, model string, request *types.CreateChatCompletionRequest, respData *responseData) {
 	availableTools := make(map[string]string)
 	if request.Tools != nil {
 		for _, tool := range *request.Tools {

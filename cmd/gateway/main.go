@@ -163,20 +163,12 @@ func main() {
 	}
 
 	// Initialize logger middleware
-	loggerMiddleware, err := middlewares.NewLoggerMiddleware(&logger)
-	if err != nil {
-		logger.Error("failed to initialize logger middleware", err)
-		return
-	}
+	loggerMiddleware := middlewares.NewLoggerMiddleware(&logger)
 
 	// Initialize telemetry middleware
-	var telemetry middlewares.Telemetry
+	var telemetry *middlewares.TelemetryMiddleware
 	if cfg.Telemetry.Enabled {
-		telemetry, err = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, logger)
-		if err != nil {
-			logger.Error("failed to initialize telemetry middleware", err)
-			return
-		}
+		telemetry = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, logger)
 	}
 
 	// Initialize OIDC authenticator middleware

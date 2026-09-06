@@ -14,16 +14,6 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// RequestModifier defines interface for modifying proxy requests
-type RequestModifier interface {
-	Modify(req *http.Request) error
-}
-
-// ResponseModifier defines interface for modifying proxy responses
-type ResponseModifier interface {
-	Modify(resp *http.Response) error
-}
-
 // DevRequestModifier implements request modification for development
 type DevRequestModifier struct {
 	logger logger.Logger
@@ -36,7 +26,7 @@ type DevResponseModifier struct {
 }
 
 // NewDevRequestModifier creates a new DevRequestModifier
-func NewDevRequestModifier(l logger.Logger, cfg *config.Config) RequestModifier {
+func NewDevRequestModifier(l logger.Logger, cfg *config.Config) *DevRequestModifier {
 	return &DevRequestModifier{
 		logger: l,
 		cfg:    cfg,
@@ -44,7 +34,7 @@ func NewDevRequestModifier(l logger.Logger, cfg *config.Config) RequestModifier 
 }
 
 // NewDevResponseModifier creates a new DevResponseModifier
-func NewDevResponseModifier(l logger.Logger) ResponseModifier {
+func NewDevResponseModifier(l logger.Logger) *DevResponseModifier {
 	return &DevResponseModifier{
 		logger: l,
 	}

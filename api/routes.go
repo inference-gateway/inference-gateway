@@ -440,6 +440,12 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		}
 	}
 
+	var reqModifier *proxymodifier.DevRequestModifier
+	if router.cfg.Environment == constants.EnvironmentDevelopment {
+		reqModifier = proxymodifier.NewDevRequestModifier(router.logger, &router.cfg)
+		proxy.ModifyResponse = proxymodifier.NewDevResponseModifier(router.logger).Modify
+	}
+
 	proxy.Rewrite = func(pr *httputil.ProxyRequest) {
 		pr.SetURL(fullURL)
 		pr.Out.URL.Path = fullURL.Path
@@ -449,18 +455,12 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		pr.Out.Header.Set("Accept", contentTypeJSON)
 		otelapi.GetTextMapPropagator().Inject(pr.Out.Context(), propagation.HeaderCarrier(pr.Out.Header))
 
-		if router.cfg.Environment == constants.EnvironmentDevelopment {
-			reqModifier := proxymodifier.NewDevRequestModifier(router.logger, &router.cfg)
+		if reqModifier != nil {
 			if err := reqModifier.Modify(pr.Out); err != nil {
 				router.logger.Error("failed to modify request", err)
 				return
 			}
 		}
-	}
-
-	if router.cfg.Environment == constants.EnvironmentDevelopment {
-		devModifier := proxymodifier.NewDevResponseModifier(router.logger)
-		proxy.ModifyResponse = devModifier.Modify
 	}
 
 	proxy.ServeHTTP(&middlewares.DeadlineResetWriter{ResponseWriter: c.Writer, Timeout: router.cfg.Server.WriteTimeout}, c.Request)

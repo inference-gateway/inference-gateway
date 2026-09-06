@@ -114,8 +114,7 @@ func TestTracingTelemetryMiddlewareEnrichment(t *testing.T) {
 
 			log, err := logger.NewLogger("test")
 			require.NoError(t, err)
-			telemetry, err := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, log)
-			require.NoError(t, err)
+			telemetry := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, log)
 
 			r := gin.New()
 			r.Use(otelgin.Middleware("inference-gateway"))

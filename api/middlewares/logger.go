@@ -8,18 +8,14 @@ import (
 	"github.com/inference-gateway/inference-gateway/logger"
 )
 
-type Logger interface {
-	Middleware() gin.HandlerFunc
-}
-
-type LoggerImpl struct {
+type LoggerMiddleware struct {
 	logger logger.Logger
 }
 
-func NewLoggerMiddleware(logger *logger.Logger) (Logger, error) {
-	return &LoggerImpl{
+func NewLoggerMiddleware(logger *logger.Logger) *LoggerMiddleware {
+	return &LoggerMiddleware{
 		logger: *logger,
-	}, nil
+	}
 }
 
 func isSensitiveKey(key string) bool {
@@ -58,7 +54,7 @@ func sanitizeQuery(rawQuery string) map[string][]string {
 	return sanitized
 }
 
-func (l LoggerImpl) Middleware() gin.HandlerFunc {
+func (l *LoggerMiddleware) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		l.logger.Info("request received", "method", c.Request.Method, "host", c.Request.Host, "path", c.Request.URL.Path)
 		l.logger.Debug("request details", "query", sanitizeQuery(c.Request.URL.RawQuery), "headers", sanitizeHeaders(c.Request.Header))

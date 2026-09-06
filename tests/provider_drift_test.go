@@ -73,8 +73,7 @@ func TestTelemetryMatchesChatPathExactly(t *testing.T) {
 	mockOtel.EXPECT().RecordTokenUsage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 	mockOtel.EXPECT().RecordToolCall(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
-	telemetry, err := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, logger.NewNoopLogger())
-	require.NoError(t, err)
+	telemetry := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, logger.NewNoopLogger())
 
 	router := gin.New()
 	router.Use(telemetry.Middleware())
@@ -107,8 +106,7 @@ func assertTelemetryDetects(t *testing.T, expectedProvider, requestBody, url str
 		RecordToolCall(gomock.Any(), gomock.Any(), gomock.Any(), expectedProvider, gomock.Any(), gomock.Any(), gomock.Any()).
 		AnyTimes()
 
-	telemetry, err := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, logger.NewNoopLogger())
-	require.NoError(t, err)
+	telemetry := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, logger.NewNoopLogger())
 
 	router := gin.New()
 	router.Use(telemetry.Middleware())
