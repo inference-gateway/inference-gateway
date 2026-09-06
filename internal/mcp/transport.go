@@ -87,7 +87,7 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 	}
 
 	var bodyBytes []byte
-	if req.Method == "POST" && req.Body != nil {
+	if req.Method == http.MethodPost && req.Body != nil {
 		var err error
 		bodyBytes, err = io.ReadAll(req.Body)
 		if err != nil {

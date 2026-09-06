@@ -85,7 +85,7 @@ func (c *ClientImpl) Get(url string) (*http.Response, error) {
 
 func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Response, error) {
 	fullURL := c.scheme + "://" + c.hostname + ":" + c.port + "/" + strings.TrimPrefix(url, "/")
-	req, err := http.NewRequest("POST", fullURL, nil)
+	req, err := http.NewRequest(http.MethodPost, fullURL, nil)
 	if err != nil {
 		return nil, err
 	}

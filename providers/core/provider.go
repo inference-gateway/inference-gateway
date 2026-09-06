@@ -79,9 +79,16 @@ func (p *ProviderImpl) EndpointChat() string {
 	return p.Endpoints.Chat
 }
 
+const (
+	// streamChannelBuffer is the number of SSE lines buffered before the reader blocks
+	streamChannelBuffer = 100
+	// streamReaderBufferSize is the read buffer size for the upstream SSE body
+	streamReaderBufferSize = 4096
+)
+
 // Helper functions for common operations
-func (p *ProviderImpl) buildProviderURL() string {
-	return "/proxy/" + string(*p.GetID()) + p.EndpointChat()
+func (p *ProviderImpl) buildProviderURL(endpoint string) string {
+	return "/proxy/" + string(*p.GetID()) + endpoint
 }
 
 func (p *ProviderImpl) prepareStreamingRequest(clientReq types.CreateChatCompletionRequest) types.CreateChatCompletionRequest {
@@ -97,22 +104,33 @@ func (p *ProviderImpl) prepareStreamingRequest(clientReq types.CreateChatComplet
 	return clientReq
 }
 
-func (p *ProviderImpl) createHTTPRequest(ctx context.Context, url string, body []byte) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(body))
+// newProviderRequest targets the gateway's own /proxy/<provider> route, forwards the
+// caller's gateway token and injects the trace context. Content headers are the caller's job.
+func (p *ProviderImpl) newProviderRequest(ctx context.Context, method string, endpoint string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, p.buildProviderURL(endpoint), body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "text/event-stream, application/json")
-	req.Header.Set("Cache-Control", "no-cache")
-	req.Header.Set("Connection", "keep-alive")
 
 	if authToken, ok := ctx.Value(types.AuthTokenContextKey).(string); ok && authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
 
 	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+
+	return req, nil
+}
+
+func (p *ProviderImpl) createHTTPRequest(ctx context.Context, body []byte) (*http.Request, error) {
+	req, err := p.newProviderRequest(ctx, http.MethodPost, p.EndpointChat(), bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream, application/json")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Connection", "keep-alive")
 
 	return req, nil
 }
@@ -142,19 +160,13 @@ func (p *ProviderImpl) handleHTTPError(response *http.Response, operation string
 
 // ListModels fetches the list of models available from the provider and returns them in OpenAI compatible format
 func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse, error) {
-	url := "/proxy/" + string(*p.GetID()) + p.EndpointModels()
+	url := p.buildProviderURL(p.EndpointModels())
 
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := p.newProviderRequest(ctx, http.MethodGet, p.EndpointModels(), nil)
 	if err != nil {
 		p.Logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
 		return types.ListModelsResponse{}, err
 	}
-
-	if authToken, ok := ctx.Value(types.AuthTokenContextKey).(string); ok && authToken != "" {
-		req.Header.Set("Authorization", "Bearer "+authToken)
-	}
-
-	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 
 	response, err := p.Client.Do(req)
 	if err != nil {
@@ -194,7 +206,7 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 
 // ChatCompletions generates chat completions from the provider
 func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq types.CreateChatCompletionRequest) (types.CreateChatCompletionResponse, error) {
-	url := p.buildProviderURL()
+	url := p.buildProviderURL(p.EndpointChat())
 
 	reqBody, err := json.Marshal(clientReq)
 	if err != nil {
@@ -202,7 +214,7 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq types.Crea
 		return types.CreateChatCompletionResponse{}, err
 	}
 
-	req, err := p.createHTTPRequest(ctx, url, reqBody)
+	req, err := p.createHTTPRequest(ctx, reqBody)
 	if err != nil {
 		p.Logger.Error("Failed to create request", err, "provider", p.GetName(), "url", url)
 		return types.CreateChatCompletionResponse{}, err
@@ -230,7 +242,7 @@ func (p *ProviderImpl) ChatCompletions(ctx context.Context, clientReq types.Crea
 
 // StreamChatCompletions generates chat completions from the provider using streaming
 func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq types.CreateChatCompletionRequest) (<-chan []byte, error) {
-	url := p.buildProviderURL()
+	url := p.buildProviderURL(p.EndpointChat())
 
 	streamReq := p.prepareStreamingRequest(clientReq)
 
@@ -242,7 +254,7 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq type
 		return nil, err
 	}
 
-	req, err := p.createHTTPRequest(ctx, url, reqBody)
+	req, err := p.createHTTPRequest(ctx, reqBody)
 	if err != nil {
 		p.Logger.Error("failed to create request", err, "provider", p.GetName(), "url", url)
 		return nil, err
@@ -259,12 +271,12 @@ func (p *ProviderImpl) StreamChatCompletions(ctx context.Context, clientReq type
 		return nil, err
 	}
 
-	stream := make(chan []byte, 100)
+	stream := make(chan []byte, streamChannelBuffer)
 	go func() {
 		defer response.Body.Close()
 		defer close(stream)
 
-		reader := bufio.NewReaderSize(response.Body, 4096)
+		reader := bufio.NewReaderSize(response.Body, streamReaderBufferSize)
 
 		for {
 			select {
