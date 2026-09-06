@@ -332,7 +332,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 				results = append(results, a.toolMessage(toolCall.ID, fmt.Sprintf("Error: Failed to parse arguments: %v", err)))
 				continue
 			}
-			toolName := strings.TrimPrefix(toolCall.Function.Name, "mcp_")
+			toolName := strings.TrimPrefix(toolCall.Function.Name, ToolNamePrefix)
 			results = append(results, a.dispatchTool(ctx, toolCall.ID, toolName, toolCall.Function.Arguments, args))
 		}
 	}
@@ -378,7 +378,7 @@ func (a *agentImpl) handleToolsExecute(ctx context.Context, toolCall types.ChatC
 		return a.toolMessage(toolCall.ID, "Error: mcp_tools_execute requires a 'name'")
 	}
 
-	toolName := strings.TrimPrefix(params.Name, "mcp_")
+	toolName := strings.TrimPrefix(params.Name, ToolNamePrefix)
 	if params.Arguments == nil {
 		params.Arguments = map[string]any{}
 	}

@@ -2,12 +2,12 @@ package mcp
 
 import "strings"
 
-// normalizeToolName lowercases the name and strips the "mcp_" prefix so that
+// normalizeToolName lowercases the name and strips the mcp_ prefix so that
 // include/exclude matching is forgiving about the prefix and letter case.
-// Lowercasing happens before the prefix is stripped so an uppercase "MCP_"
+// Lowercasing happens before the prefix is stripped so an uppercase MCP_
 // prefix is also removed.
 func normalizeToolName(name string) string {
-	return strings.TrimPrefix(strings.ToLower(strings.TrimSpace(name)), "mcp_")
+	return strings.TrimPrefix(strings.ToLower(strings.TrimSpace(name)), ToolNamePrefix)
 }
 
 // parseToolList parses a comma-separated list of tool names into a set of

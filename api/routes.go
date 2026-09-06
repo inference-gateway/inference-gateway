@@ -143,7 +143,7 @@ func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	}
 
 	// Check if streaming is requested
-	isStreaming := c.Request.Header.Get("Accept") == "text/event-stream" || c.Request.Header.Get("Content-Type") == "text/event-stream"
+	isStreaming := c.Request.Header.Get("Accept") == contentTypeEventStream || c.Request.Header.Get("Content-Type") == contentTypeEventStream
 
 	if isStreaming {
 		handleStreamingRequest(c, provider, router)
@@ -329,7 +329,7 @@ func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvide
 		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
 		return &upstreamFailure{http.StatusInternalServerError, "Failed to create upstream request"}
 	}
-	upstreamReq.Header.Set("Content-Type", "application/json")
+	upstreamReq.Header.Set("Content-Type", contentTypeJSON)
 	upstreamReq.Header.Set("Accept", acceptHeaderFor(streaming))
 
 	if err := applyProviderAuth(upstreamReq, provider); err != nil {
@@ -353,7 +353,7 @@ func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvide
 	markUpstreamError(c, resp)
 
 	contentType := resp.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "text/event-stream") {
+	if !strings.HasPrefix(contentType, contentTypeEventStream) {
 		c.DataFromReader(resp.StatusCode, resp.ContentLength, contentType, resp.Body, nil)
 		return nil
 	}
@@ -378,9 +378,9 @@ func markUpstreamError(c *gin.Context, resp *http.Response) {
 // non-streaming pass-through request.
 func acceptHeaderFor(streaming bool) string {
 	if streaming {
-		return "text/event-stream"
+		return contentTypeEventStream
 	}
-	return "application/json"
+	return contentTypeJSON
 }
 
 func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterImpl) {
@@ -396,7 +396,7 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 
 	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		router.logger.Error("proxy request failed", err, "url", fullURL.String())
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", contentTypeJSON)
 		w.WriteHeader(http.StatusBadGateway)
 		err = json.NewEncoder(w).Encode(ErrorResponse{
 			Error: fmt.Sprintf("Failed to reach upstream server: %v", err),
@@ -411,8 +411,8 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		pr.Out.URL.Path = fullURL.Path
 		pr.Out.URL.RawQuery = fullURL.RawQuery
 		pr.Out.Header = pr.In.Header.Clone()
-		pr.Out.Header.Set("Content-Type", "application/json")
-		pr.Out.Header.Set("Accept", "application/json")
+		pr.Out.Header.Set("Content-Type", contentTypeJSON)
+		pr.Out.Header.Set("Accept", contentTypeJSON)
 		otelapi.GetTextMapPropagator().Inject(pr.Out.Context(), propagation.HeaderCarrier(pr.Out.Header))
 
 		if router.cfg.Environment == constants.EnvironmentDevelopment {
@@ -949,7 +949,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Type", "application/json")
+	c.Header("Content-Type", contentTypeJSON)
 	response, err := provider.ChatCompletions(ctx, req)
 	if err != nil {
 		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
@@ -1185,7 +1185,7 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 		return
 	}
 
-	router.proxyJSONBody(c, "Images API", "openai/gpt-image-2", "application/json",
+	router.proxyJSONBody(c, "Images API", "openai/gpt-image-2", contentTypeJSON,
 		func(e types.Endpoints) *string { return e.Images })
 }
 
@@ -1275,7 +1275,7 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
 		return
 	}
-	upstreamReq.Header.Set("Content-Type", "application/json")
+	upstreamReq.Header.Set("Content-Type", contentTypeJSON)
 	if accept != "" {
 		upstreamReq.Header.Set("Accept", accept)
 	}
@@ -1589,7 +1589,7 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		return
 	}
 	upstreamReq.Header.Set("Content-Type", contentType)
-	upstreamReq.Header.Set("Accept", "application/json")
+	upstreamReq.Header.Set("Accept", contentTypeJSON)
 
 	if err := applyProviderAuth(upstreamReq, provider); err != nil {
 		_ = pr.CloseWithError(err)
@@ -1744,7 +1744,7 @@ func toMCPTool(tool mcp.Tool, serverURL string) types.MCPTool {
 		description = *tool.Description
 	}
 	return types.MCPTool{
-		Name:        "mcp_" + tool.Name,
+		Name:        mcp.ToolNamePrefix + tool.Name,
 		Description: description,
 		Server:      serverURL,
 		InputSchema: &tool.InputSchema,

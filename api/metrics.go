@@ -15,8 +15,9 @@ import (
 const maxMetricsBodyBytes = 4 << 20
 
 const (
-	contentTypeProtobuf = "application/x-protobuf"
-	contentTypeJSON     = "application/json"
+	contentTypeProtobuf    = "application/x-protobuf"
+	contentTypeJSON        = "application/json"
+	contentTypeEventStream = "text/event-stream"
 )
 
 // MetricsIngestionHandler is the OTLP/HTTP metrics receiver (POST /v1/metrics).

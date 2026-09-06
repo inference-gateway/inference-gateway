@@ -103,7 +103,7 @@ func (mc *MCPClient) ConvertMCPToolsToChatCompletionTools(serverTools []Tool) []
 		tools = append(tools, types.ChatCompletionTool{
 			Type: "function",
 			Function: types.FunctionObject{
-				Name:        "mcp_" + tool.Name,
+				Name:        ToolNamePrefix + tool.Name,
 				Description: description,
 				Parameters:  (*types.FunctionParameters)(&inputSchema),
 			},

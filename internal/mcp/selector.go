@@ -15,11 +15,14 @@ const (
 	ToolModeDirect = "direct"
 )
 
+// ToolNamePrefix namespaces every MCP tool exposed to models as mcp_<name>.
+const ToolNamePrefix = "mcp_"
+
 // Selector meta-tool names. These are gateway-defined and handled inside the
 // agent loop, never dispatched to an upstream MCP server.
 const (
-	SelectorToolGet     = "mcp_tools_get"
-	SelectorToolExecute = "mcp_tools_execute"
+	SelectorToolGet     = ToolNamePrefix + "tools_get"
+	SelectorToolExecute = ToolNamePrefix + "tools_execute"
 )
 
 // ToolCatalogEntry describes a single MCP tool in the selector catalog. The

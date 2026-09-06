@@ -312,7 +312,7 @@ func main() {
 	r := gin.New()
 	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
 		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {
-			return req.URL.Path != "/health" && req.URL.Path != "/v1/metrics"
+			return req.URL.Path != middlewares.HealthPath && req.URL.Path != middlewares.MetricsIngestPath
 		})))
 		logger.Info("tracing middleware added to request pipeline")
 	}
@@ -332,7 +332,8 @@ func main() {
 		logger.Info("mcp middleware added to request pipeline")
 	}
 
-	r.GET("/health", api.HealthcheckHandler)
+	r.GET(middlewares.HealthPath, api.HealthcheckHandler)
+	r.POST(middlewares.MetricsIngestPath, api.MetricsIngestionHandler)
 	r.Any("/proxy/:provider/*path", api.ProxyHandler)
 	v1 := r.Group("/v1")
 	{
@@ -345,7 +346,6 @@ func main() {
 		v1.POST("/images/edits", api.ImagesEditsHandler)
 		v1.POST("/images/variations", api.ImagesVariationsHandler)
 		v1.POST("/audio/speech", api.SpeechHandler)
-		v1.POST("/metrics", api.MetricsIngestionHandler)
 	}
 	r.NoRoute(api.NotFoundHandler)
 

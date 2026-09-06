@@ -162,9 +162,9 @@ func (router *RouterImpl) runtimeAPICall(ctx context.Context, providerID types.P
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", contentTypeJSON)
 	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Type", contentTypeJSON)
 	}
 	if err := applyProviderAuth(req, provider); err != nil {
 		return err

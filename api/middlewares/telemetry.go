@@ -16,6 +16,7 @@ import (
 	trace "go.opentelemetry.io/otel/trace"
 
 	config "github.com/inference-gateway/inference-gateway/config"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
@@ -77,7 +78,7 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		startTime := time.Now()
 
-		if !strings.Contains(c.Request.URL.Path, "/v1/chat/completions") {
+		if c.Request.URL.Path != ChatCompletionsPath {
 			c.Next()
 			return
 		}
@@ -276,7 +277,7 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, team, provide
 
 // classifyToolType determines the tool type based on the tool name
 func (t *TelemetryImpl) classifyToolType(toolName string) string {
-	if strings.HasPrefix(toolName, "mcp_") {
+	if strings.HasPrefix(toolName, mcp.ToolNamePrefix) {
 		return "mcp"
 	}
 

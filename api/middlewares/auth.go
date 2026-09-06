@@ -54,7 +54,7 @@ func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
 // Middleware implementation of the OIDCAuthenticator interface
 func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.URL.Path == "/health" {
+		if c.Request.URL.Path == HealthPath {
 			c.Next()
 			return
 		}
