@@ -148,9 +148,6 @@ func (e *Evaluator) Eval(ctx context.Context, input *Input) (Decision, error) {
 	if err != nil {
 		return Decision{}, fmt.Errorf("guardrails: marshal input: %w", err)
 	}
-	// OPA round-trips unknown Go types through JSON, so raw bytes would reach
-	// the policy as one base64 string and leave every input.* reference
-	// undefined. Hand it the decoded document instead.
 	var inputValue any
 	if err := json.Unmarshal(inputBytes, &inputValue); err != nil {
 		return Decision{}, fmt.Errorf("guardrails: decode input: %w", err)
