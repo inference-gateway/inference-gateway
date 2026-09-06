@@ -105,9 +105,6 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "no tool calls",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
-				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
-				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop completed", "iterations", 0, "final_choices", 1).Times(1)
 			},
 			request: &types.CreateChatCompletionRequest{
@@ -132,9 +129,6 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "with tool calls",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
-				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
-				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", 1, "tool_calls", 1).Times(1)
 				mockLogger.EXPECT().Debug("executing tool calls", "count", 1).Times(1)
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=http://test-server:8080/mcp").Times(1)
@@ -195,9 +189,6 @@ func TestAgent_Run(t *testing.T) {
 		{
 			name: "max iterations reached",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
-				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
-				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", gomock.Any(), "tool_calls", 1).Times(10)
 				mockLogger.EXPECT().Debug("executing tool calls", "count", 1).Times(10)
 				mockLogger.EXPECT().Info("executing tool call", "tool_call", gomock.Any()).Times(10)
@@ -257,10 +248,8 @@ func TestAgent_Run(t *testing.T) {
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
 			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
-			agentInstance.SetProvider(mockProvider)
-			agentInstance.SetModel(&tt.request.Model)
 
-			err := agentInstance.Run(context.Background(), tt.request, tt.response)
+			err := agentInstance.Run(context.Background(), mockProvider, tt.request.Model, tt.request, tt.response)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -527,9 +516,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 		{
 			name: "no tool calls streaming",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
-				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
-				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				streamCh := make(chan []byte, 10)
 				go func() {
 					streamCh <- []byte(`data: {"id":"test","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}`)
@@ -605,9 +591,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 		{
 			name: "provider error",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
-				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
-				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				mockLogger.EXPECT().Debug("starting agent streaming", "model", "test-model", "max_iterations", 10).Times(1)
 				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 1, "max_iterations", 10).Times(1)
 				mockLogger.EXPECT().Error("failed to start streaming", gomock.Any(), "iteration", 1, "model", "test-model").Times(1)
@@ -634,9 +617,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 		{
 			name: "context cancellation",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
-				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
-				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				streamCh := make(chan []byte)
 
 				mockLogger.EXPECT().Debug("starting agent streaming", "model", "test-model", "max_iterations", 10).Times(1)
@@ -670,9 +650,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 		{
 			name: "executing multiple mcp tools",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providersmocks.MockIProvider) {
-				mockProvider.EXPECT().GetName().Return("test-provider").Times(1)
-				mockLogger.EXPECT().Debug("provider set for agent", "provider", "test-provider").Times(1)
-				mockLogger.EXPECT().Debug("model set for agent", "model", "test-model").Times(1)
 				firstStreamCh := make(chan []byte, 15)
 				go func() {
 					time.Sleep(10 * time.Millisecond)
@@ -879,8 +856,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 			tt.setupMocks(mockLogger, mockMCPClient, mockProvider)
 
 			agentInstance := mcp.NewAgent(mockLogger, mockMCPClient)
-			agentInstance.SetProvider(mockProvider)
-			agentInstance.SetModel(&tt.request.Model)
 
 			middlewareStreamCh := make(chan []byte, 10)
 
@@ -891,7 +866,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 
 			errCh := make(chan error, 1)
 			go func() {
-				err := agentInstance.RunWithStream(ctx, middlewareStreamCh, tt.request)
+				err := agentInstance.RunWithStream(ctx, mockProvider, tt.request.Model, middlewareStreamCh, tt.request)
 				errCh <- err
 			}()
 

@@ -220,15 +220,12 @@ func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*
 
 // handleMCPStreamingRequest handles streaming requests with MCP agent
 func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *types.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
-	m.mcpAgent.SetProvider(result.Provider)
-	m.mcpAgent.SetModel(&result.ProviderModel)
-
 	processedChunk := make(chan []byte, 100)
 	errCh := make(chan error, 1)
 
 	go func() {
 		defer close(processedChunk)
-		err := m.mcpAgent.RunWithStream(c.Request.Context(), processedChunk, request)
+		err := m.mcpAgent.RunWithStream(c.Request.Context(), result.Provider, result.ProviderModel, processedChunk, request)
 		if err != nil {
 			m.logger.Error("mcp agent streaming failed", err)
 			errCh <- err
@@ -289,10 +286,7 @@ func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *t
 
 // handleMCPToolCalls executes MCP tool calls using the injected agent
 func (m *MCPMiddlewareImpl) handleMCPToolCalls(c *gin.Context, response *types.CreateChatCompletionResponse, originalRequest *types.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
-	m.mcpAgent.SetProvider(result.Provider)
-	m.mcpAgent.SetModel(&result.ProviderModel)
-
-	if err := m.mcpAgent.Run(c.Request.Context(), originalRequest, response); err != nil {
+	if err := m.mcpAgent.Run(c.Request.Context(), result.Provider, result.ProviderModel, originalRequest, response); err != nil {
 		return fmt.Errorf("mcp agent processing failed: %w", err)
 	}
 

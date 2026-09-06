@@ -184,9 +184,7 @@ func TestRunWithStreamReturnsWhenConsumerAbandons(t *testing.T) {
 
 	model := "openai/gpt-4o"
 	agent := &agentImpl{
-		logger:   logger.NewNoopLogger(),
-		provider: provider,
-		model:    &model,
+		logger: logger.NewNoopLogger(),
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -194,7 +192,7 @@ func TestRunWithStreamReturnsWhenConsumerAbandons(t *testing.T) {
 
 	errCh := make(chan error, 1)
 	go func() {
-		errCh <- agent.RunWithStream(ctx, middlewareCh, &types.CreateChatCompletionRequest{})
+		errCh <- agent.RunWithStream(ctx, provider, model, middlewareCh, &types.CreateChatCompletionRequest{})
 	}()
 
 	time.Sleep(100 * time.Millisecond)
@@ -206,4 +204,50 @@ func TestRunWithStreamReturnsWhenConsumerAbandons(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("RunWithStream did not return after the consumer stopped draining")
 	}
+}
+
+// TestRunWithStreamConcurrentTargets runs two streams through one agent and
+// asserts each keeps its own provider and model - these used to be shared
+// mutable fields set through SetProvider/SetModel before every call.
+func TestRunWithStreamConcurrentTargets(t *testing.T) {
+	ctrl := gomock.NewController(t)
+
+	newProvider := func(model string, seen chan<- string) *providersmocks.MockIProvider {
+		provider := providersmocks.NewMockIProvider(ctrl)
+		provider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).DoAndReturn(
+			func(_ context.Context, req types.CreateChatCompletionRequest) (<-chan []byte, error) {
+				seen <- req.Model
+				ch := make(chan []byte, 1)
+				ch <- []byte("data: " + `{"choices":[{"delta":{"content":"hi"},"finish_reason":"stop"}]}` + "\n")
+				close(ch)
+				return ch, nil
+			}).AnyTimes()
+		return provider
+	}
+
+	agent := &agentImpl{logger: logger.NewNoopLogger()}
+
+	var wg sync.WaitGroup
+	for _, model := range []string{"openai/gpt-4o", "groq/llama-3"} {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			seen := make(chan string, 1)
+			middlewareCh := make(chan []byte, 16)
+			drained := make(chan struct{})
+			go func() {
+				defer close(drained)
+				for range middlewareCh {
+				}
+			}()
+
+			err := agent.RunWithStream(context.Background(), newProvider(model, seen), model, middlewareCh, &types.CreateChatCompletionRequest{})
+			close(middlewareCh)
+			<-drained
+
+			assert.NoError(t, err)
+			assert.Equal(t, model, <-seen)
+		}()
+	}
+	wg.Wait()
 }

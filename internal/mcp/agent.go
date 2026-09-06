@@ -3,7 +3,6 @@ package mcp
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -27,11 +26,9 @@ const MaxAgentIterations = 10
 //
 //go:generate mockgen -source=agent.go -destination=../../tests/mocks/mcp/agent.go -package=mcpmocks -typed
 type Agent interface {
-	Run(ctx context.Context, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error
-	RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error
+	Run(ctx context.Context, provider core.IProvider, model string, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error
+	RunWithStream(ctx context.Context, provider core.IProvider, model string, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error
 	ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error)
-	SetProvider(provider core.IProvider)
-	SetModel(model *string)
 	SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string)
 }
 
@@ -42,8 +39,6 @@ var _ Agent = (*agentImpl)(nil)
 type agentImpl struct {
 	logger              logger.Logger
 	mcpClient           MCPClientInterface
-	provider            core.IProvider
-	model               *string
 	guardrailsEvaluator *guardrails.Evaluator
 	guardrailsTelemetry otel.OpenTelemetry
 	guardrailsFailMode  string
@@ -54,27 +49,7 @@ func NewAgent(logger logger.Logger, mcpClient MCPClientInterface) Agent {
 	return &agentImpl{
 		mcpClient: mcpClient,
 		logger:    logger,
-		provider:  nil,
-		model:     nil,
 	}
-}
-
-func (a *agentImpl) SetProvider(provider core.IProvider) {
-	if provider == nil {
-		a.logger.Error("attempted to set nil provider", errors.New("provider is nil"))
-		return
-	}
-	a.provider = provider
-	a.logger.Debug("provider set for agent", "provider", provider.GetName())
-}
-
-func (a *agentImpl) SetModel(model *string) {
-	if model == nil {
-		a.logger.Error("attempted to set nil model", errors.New("model is nil"))
-		return
-	}
-	a.model = model
-	a.logger.Debug("model set for agent", "model", *model)
 }
 
 // SetGuardrails configures the guardrails evaluator for tool call evaluation.
@@ -87,14 +62,7 @@ func (a *agentImpl) SetGuardrails(evaluator *guardrails.Evaluator, telemetry ote
 	}
 }
 
-func (a *agentImpl) Run(ctx context.Context, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error {
-	if a.provider == nil {
-		return errors.New("provider is not set for agent")
-	}
-	if a.model == nil {
-		return errors.New("model is not set for agent")
-	}
-
+func (a *agentImpl) Run(ctx context.Context, provider core.IProvider, model string, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error {
 	currentRequest := *request
 	currentResponse := *response
 	iteration := 0
@@ -116,10 +84,10 @@ func (a *agentImpl) Run(ctx context.Context, request *types.CreateChatCompletion
 		currentRequest.Messages = append(currentRequest.Messages, currentResponse.Choices[0].Message)
 		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
 
-		currentRequest.Model = *a.model
-		nextResponse, err := a.provider.ChatCompletions(ctx, currentRequest)
+		currentRequest.Model = model
+		nextResponse, err := provider.ChatCompletions(ctx, currentRequest)
 		if err != nil {
-			a.logger.Error("failed to get response in agent loop", err, "iteration", iteration+1, "model", a.model)
+			a.logger.Error("failed to get response in agent loop", err, "iteration", iteration+1, "model", model)
 			return err
 		}
 
@@ -148,17 +116,10 @@ func send(ctx context.Context, ch chan<- []byte, b []byte) bool {
 }
 
 // RunWithStream executes the agent with the provided streaming response channel
-func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error {
-	if a.provider == nil {
-		return errors.New("provider is not set for agent")
-	}
-	if a.model == nil {
-		return errors.New("model is not set for agent")
-	}
-
+func (a *agentImpl) RunWithStream(ctx context.Context, provider core.IProvider, model string, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error {
 	currentRequest := *body
 
-	currentRequest.Model = *a.model
+	currentRequest.Model = model
 	a.logger.Debug("starting agent streaming", "model", currentRequest.Model, "max_iterations", MaxAgentIterations)
 
 	defer func() {
@@ -169,9 +130,9 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 	for iteration := range MaxAgentIterations {
 		a.logger.Debug("streaming iteration", "iteration", iteration+1, "max_iterations", MaxAgentIterations)
 
-		streamCh, err := a.provider.StreamChatCompletions(ctx, currentRequest)
+		streamCh, err := provider.StreamChatCompletions(ctx, currentRequest)
 		if err != nil {
-			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", *a.model)
+			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", model)
 			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to start streaming: %s\"}\n\n", err.Error()))
 			send(ctx, middlewareStreamCh, errorData)
 			return err
@@ -302,7 +263,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, middlewareStreamCh chan [
 
 		currentRequest.Messages = append(currentRequest.Messages, assistantMessage)
 		currentRequest.Messages = append(currentRequest.Messages, toolResults...)
-		currentRequest.Model = *a.model
+		currentRequest.Model = model
 
 		a.logger.Debug("tool execution complete, continuing to next iteration",
 			"tool_results", len(toolResults), "total_messages", len(currentRequest.Messages), "iteration", iteration+1)
