@@ -71,7 +71,8 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
 
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(m.cfg.Server.MaxRequestBodySize))
+		maxBodySize := int64(m.cfg.Server.ResolveMaxRequestBodySize())
+		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBodySize)
 		bodyBytes, err := c.GetRawData()
 		if err != nil {
 			m.logger.Error("guardrails: failed to read request body", err)
@@ -125,7 +126,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		if dec.Action == guardrails.ActionRedact {
 			redacted := guardrails.RedactSensitive(string(bodyBytes), m.detectors)
-			c.Request.Body = http.MaxBytesReader(c.Writer, io.NopCloser(bytes.NewReader([]byte(redacted))), int64(m.cfg.Server.MaxRequestBodySize))
+			c.Request.Body = http.MaxBytesReader(c.Writer, io.NopCloser(bytes.NewReader([]byte(redacted))), maxBodySize)
 			m.logger.Debug("guardrails: request body redacted", "path", path)
 		}
 
@@ -134,19 +135,12 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		}
 
 		if path == ChatCompletionsPath && !isStreamingRequest(bodyBytes) {
-			customWriter := &customResponseWriter{
-				ResponseWriter: c.Writer,
-				body:           &bytes.Buffer{},
-				statusCode:     http.StatusOK,
-				writeToClient:  false,
-			}
-			c.Writer = customWriter
+			customWriter := captureResponse(c)
 
 			c.Next()
 
 			if customWriter.statusCode >= http.StatusBadRequest {
-				c.Writer = customWriter.ResponseWriter
-				c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), customWriter.body.Bytes())
+				customWriter.replay(c)
 				return
 			}
 
@@ -202,8 +196,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), respDec.Action, path, model)
 			}
 
-			c.Writer = customWriter.ResponseWriter
-			c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), customWriter.body.Bytes())
+			customWriter.replay(c)
 			return
 		}
 

@@ -171,19 +171,12 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		customWriter := &customResponseWriter{
-			ResponseWriter: c.Writer,
-			body:           &bytes.Buffer{},
-			statusCode:     http.StatusOK,
-			writeToClient:  false,
-		}
-		c.Writer = customWriter
+		customWriter := captureResponse(c)
 
 		c.Next()
 
 		if customWriter.statusCode >= http.StatusBadRequest {
-			c.Writer = customWriter.ResponseWriter
-			c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), customWriter.body.Bytes())
+			customWriter.replay(c)
 			return
 		}
 

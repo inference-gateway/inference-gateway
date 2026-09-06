@@ -141,6 +141,44 @@ func TestGuardrailsMiddleware_BlockRequest(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+func TestGuardrailsMiddleware_ZeroMaxRequestBodySizeUsesDefault(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLogger := mocks.NewMockLogger(ctrl)
+	mockLogger.EXPECT().Info(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+	mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	cfg := config.Config{
+		Guardrails: &config.GuardrailsConfig{Enabled: true, FailMode: "closed"},
+		Server:     &config.ServerConfig{MaxRequestBodySize: 0},
+	}
+
+	evaluator, err := guardrails.NewEvaluator(context.Background(), "")
+	assert.NoError(t, err)
+
+	mw := middlewares.NewGuardrailsMiddleware(evaluator, nil, nil, mockLogger, nil, cfg)
+
+	router := gin.New()
+	router.Use(mw.Middleware())
+
+	handlerCalled := false
+	router.POST("/v1/chat/completions", func(c *gin.Context) {
+		handlerCalled = true
+		c.JSON(http.StatusOK, gin.H{"message": "success"})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
+	req.Header.Set("Content-Type", "application/json")
+
+	router.ServeHTTP(w, req)
+
+	assert.True(t, handlerCalled)
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
 func TestGuardrailsMiddleware_Detectors(t *testing.T) {
 	detectors := guardrails.DefaultDetectors()
 

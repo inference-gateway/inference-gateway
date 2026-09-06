@@ -45,6 +45,10 @@ func NewTelemetryMiddleware(cfg config.Config, telemetry otel.OpenTelemetry, log
 const (
 	maxCapturedResponseBytes = 1 << 20
 	maxTelemetryRequestBytes = 32 << 20
+	// usageTrailingChunks is how many trailing SSE frames are scanned for a
+	// usage object: providers emit it in the final content chunk, which is
+	// followed by at most "data: [DONE]" and a trailing empty frame.
+	usageTrailingChunks = 4
 )
 
 // responseBodyWriter is a wrapper for the response writer that captures the body
@@ -130,7 +134,7 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		duration := time.Since(startTime).Seconds()
 
 		errorType := ""
-		if statusCode >= 400 {
+		if statusCode >= http.StatusBadRequest {
 			errorType = strconv.Itoa(statusCode)
 		}
 
@@ -181,25 +185,21 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 
 // parseResponseData extracts all needed information from response in a single pass
 func (t *TelemetryImpl) parseResponseData(responseBytes []byte, isStreaming bool, provider, model string) *responseData {
-	data := &responseData{}
-
 	if isStreaming {
-		data.ToolCalls = t.parseStreamingResponse(responseBytes, &data.PromptTokens, &data.CompletionTokens, &data.TotalTokens, provider, model)
-	} else {
-		data.ToolCalls = t.parseNonStreamingResponse(responseBytes, &data.PromptTokens, &data.CompletionTokens, &data.TotalTokens, provider, model)
+		return t.parseStreamingResponse(responseBytes, provider, model)
 	}
-
-	return data
+	return t.parseNonStreamingResponse(responseBytes, provider, model)
 }
 
 // parseStreamingResponse handles streaming response parsing for both tokens and tool calls
-func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []types.ChatCompletionMessageToolCall {
+func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, provider, model string) *responseData {
+	data := &responseData{}
 	responseStr := string(responseBytes)
 	chunks := strings.Split(responseStr, "\n\n")
 
 	usageChunks := chunks
-	if len(chunks) > 4 {
-		usageChunks = chunks[len(chunks)-4:]
+	if len(chunks) > usageTrailingChunks {
+		usageChunks = chunks[len(chunks)-usageTrailingChunks:]
 	}
 
 	for _, chunk := range usageChunks {
@@ -221,38 +221,41 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, promptToken
 			continue
 		}
 
-		if streamResponse.Usage != nil {
-			*promptTokens = streamResponse.Usage.PromptTokens
-			*completionTokens = streamResponse.Usage.CompletionTokens
-			*totalTokens = streamResponse.Usage.TotalTokens
-		}
+		data.setUsage(streamResponse.Usage)
 	}
 
-	return types.AccumulateStreamingToolCalls(responseStr)
+	data.ToolCalls = types.AccumulateStreamingToolCalls(responseStr)
+	return data
 }
 
 // parseNonStreamingResponse handles non-streaming response parsing for both tokens and tool calls
-func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, promptTokens, completionTokens, totalTokens *int64, provider, model string) []types.ChatCompletionMessageToolCall {
+func (t *TelemetryImpl) parseNonStreamingResponse(responseBytes []byte, provider, model string) *responseData {
+	data := &responseData{}
 	var chatCompletionResponse types.CreateChatCompletionResponse
 	if err := json.Unmarshal(responseBytes, &chatCompletionResponse); err != nil {
 		t.logger.Error("failed to unmarshal non-streaming response", err,
 			"provider", provider,
 			"model", model,
 			"response_length", len(responseBytes))
-		return nil
+		return data
 	}
 
-	if chatCompletionResponse.Usage != nil {
-		*promptTokens = chatCompletionResponse.Usage.PromptTokens
-		*completionTokens = chatCompletionResponse.Usage.CompletionTokens
-		*totalTokens = chatCompletionResponse.Usage.TotalTokens
-	}
+	data.setUsage(chatCompletionResponse.Usage)
 
-	if len(chatCompletionResponse.Choices) == 0 || chatCompletionResponse.Choices[0].Message.ToolCalls == nil {
-		return nil
+	if len(chatCompletionResponse.Choices) > 0 && chatCompletionResponse.Choices[0].Message.ToolCalls != nil {
+		data.ToolCalls = *chatCompletionResponse.Choices[0].Message.ToolCalls
 	}
+	return data
+}
 
-	return *chatCompletionResponse.Choices[0].Message.ToolCalls
+// setUsage copies token counts from usage when present.
+func (d *responseData) setUsage(usage *types.CompletionUsage) {
+	if usage == nil {
+		return
+	}
+	d.PromptTokens = usage.PromptTokens
+	d.CompletionTokens = usage.CompletionTokens
+	d.TotalTokens = usage.TotalTokens
 }
 
 // recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
@@ -260,7 +263,7 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, team, provide
 	availableTools := make(map[string]string) // tool_name -> tool_type
 	if request.Tools != nil {
 		for _, tool := range *request.Tools {
-			toolType := t.classifyToolType(tool.Function.Name)
+			toolType := classifyToolType(tool.Function.Name)
 			availableTools[tool.Function.Name] = toolType
 		}
 	}
@@ -268,7 +271,7 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, team, provide
 	for _, toolCall := range respData.ToolCalls {
 		toolType, exists := availableTools[toolCall.Function.Name]
 		if !exists {
-			toolType = t.classifyToolType(toolCall.Function.Name)
+			toolType = classifyToolType(toolCall.Function.Name)
 		}
 
 		t.telemetry.RecordToolCall(ctx, otel.SourceGateway, team, provider, model, toolType, toolCall.Function.Name)
@@ -276,7 +279,7 @@ func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, team, provide
 }
 
 // classifyToolType determines the tool type based on the tool name
-func (t *TelemetryImpl) classifyToolType(toolName string) string {
+func classifyToolType(toolName string) string {
 	if strings.HasPrefix(toolName, mcp.ToolNamePrefix) {
 		return "mcp"
 	}

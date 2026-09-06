@@ -64,6 +64,25 @@ type customResponseWriter struct {
 	writeToClient bool
 }
 
+// captureResponse swaps a buffering writer into c.Writer so the downstream
+// handler's response can be inspected before anything reaches the client.
+func captureResponse(c *gin.Context) *customResponseWriter {
+	w := &customResponseWriter{
+		ResponseWriter: c.Writer,
+		body:           &bytes.Buffer{},
+		statusCode:     http.StatusOK,
+		writeToClient:  false,
+	}
+	c.Writer = w
+	return w
+}
+
+// replay restores the original writer and sends the captured response verbatim.
+func (w *customResponseWriter) replay(c *gin.Context) {
+	c.Writer = w.ResponseWriter
+	c.Data(w.statusCode, w.Header().Get("Content-Type"), w.body.Bytes())
+}
+
 // WriteHeader captures the status code but doesn't write it to the client
 // unless writeToClient is true
 func (w *customResponseWriter) WriteHeader(code int) {
