@@ -45,7 +45,7 @@ func NewTelemetryMiddleware(cfg config.Config, telemetry otel.OpenTelemetry, log
 const (
 	maxCapturedResponseBytes = 1 << 20
 	maxTelemetryRequestBytes = 32 << 20
-	usageTrailingChunks = 4
+	usageTrailingChunks      = 4
 )
 
 // responseBodyWriter is a wrapper for the response writer that captures the body
