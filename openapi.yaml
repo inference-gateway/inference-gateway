@@ -4161,11 +4161,6 @@ components:
                   default: 'inference-gateway-client'
                   description: 'OIDC client ID'
                   secret: true
-                - name: auth_oidc_client_secret
-                  env: 'AUTH_OIDC_CLIENT_SECRET'
-                  type: string
-                  description: 'OIDC client secret'
-                  secret: true
           - guardrails:
               title: 'Guardrails'
               settings:

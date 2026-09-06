@@ -25,7 +25,7 @@ The stack runs three services:
 | ------------------------ | ----------------------------------------------------- |
 | Realm                    | `inference-gateway-realm`                             |
 | Client ID                | `inference-gateway-client`                            |
-| Client secret            | `very-secret`                                         |
+| Keycloak client secret   | `very-secret` (used only by `get-token.sh`)           |
 | Test user / password     | `user` / `password`                                   |
 | OIDC issuer (in-network) | `http://keycloak:8080/realms/inference-gateway-realm` |
 | Gateway                  | `http://localhost:8080`                               |
@@ -127,8 +127,9 @@ The shape of an error tells you which layer rejected the request:
 ## How it works
 
 - Authentication is enabled through the gateway service's `environment` block in
-  `docker-compose.yml` (`AUTH_ENABLED`, `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`,
-  `AUTH_OIDC_CLIENT_SECRET`), so the generated `.env.example` stays untouched.
+  `docker-compose.yml` (`AUTH_ENABLED`, `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`),
+  so the generated `.env.example` stays untouched. The gateway only verifies
+  tokens against the issuer's public keys, so it never needs the client secret.
 - Keycloak starts with `--import-realm` and the realm definition in
   `keycloak/realm-export.json`. That realm adds an **audience mapper** so issued
   tokens include `inference-gateway-client` in their `aud` claim - the gateway

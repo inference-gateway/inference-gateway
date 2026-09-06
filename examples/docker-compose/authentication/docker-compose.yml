@@ -49,7 +49,6 @@ services:
       AUTH_ENABLED: 'true'
       AUTH_OIDC_ISSUER: http://keycloak:8080/realms/inference-gateway-realm
       AUTH_OIDC_CLIENT_ID: inference-gateway-client
-      AUTH_OIDC_CLIENT_SECRET: very-secret
     ports:
       - '8080:8080'
     depends_on:

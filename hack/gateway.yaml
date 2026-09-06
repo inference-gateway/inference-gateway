@@ -28,7 +28,6 @@ metadata:
   namespace: inference-gateway
 type: Opaque
 stringData:
-  AUTH_OIDC_CLIENT_SECRET: very-secret
   OPENAI_API_KEY: ''
   ANTHROPIC_API_KEY: ''
 ---

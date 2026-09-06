@@ -69,10 +69,9 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			ExternalTimeout: 5 * time.Second,
 		},
 		Auth: &config.AuthConfig{
-			Enabled:          false,
-			OidcIssuer:       "http://keycloak:8080/realms/inference-gateway-realm",
-			OidcClientId:     "inference-gateway-client",
-			OidcClientSecret: "",
+			Enabled:      false,
+			OidcIssuer:   "http://keycloak:8080/realms/inference-gateway-realm",
+			OidcClientId: "inference-gateway-client",
 		},
 		Server: &config.ServerConfig{
 			Host:               "127.0.0.1",
