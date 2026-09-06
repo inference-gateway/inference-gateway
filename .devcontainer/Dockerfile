@@ -1,17 +1,17 @@
 # Multi-stage build for better caching and smaller final image
 FROM mcr.microsoft.com/devcontainers/go:2-1.26-bookworm AS base
 
-ENV TASK_VERSION=v3.48.0 \
-    CTLPTL_VERSION=0.9.3 \
-    K3D_VERSION=v5.8.3 \
-    KUBECTL_VERSION=v1.36.1 \
-    HELM_VERSION=v3.20.2 \
-    GORELEASER_VERSION=v2.16.0 \
-    GOLANGCI_LINT_VERSION=v2.12.2 \
-    GITHUB_CLI_VERSION=2.92.0 \
+ENV TASK_VERSION=v3.53.1 \
+    CTLPTL_VERSION=0.9.5 \
+    K3D_VERSION=v5.9.0 \
+    KUBECTL_VERSION=v1.37.0 \
+    HELM_VERSION=v4.2.4 \
+    GORELEASER_VERSION=v2.18.1 \
+    GOLANGCI_LINT_VERSION=v2.13.2 \
+    GITHUB_CLI_VERSION=2.100.0 \
     NODE_VERSION=lts \
-    SEMANTIC_RELEASE_VERSION=v25.0.2 \
-    INFERENCE_GATEWAY_CLI=v0.112.1
+    SEMANTIC_RELEASE_VERSION=v25.0.9 \
+    INFERENCE_GATEWAY_CLI=v0.189.2
 
 # Determine architecture once and store as build arg
 RUN architecture=$(uname -m) && \
@@ -51,7 +51,7 @@ RUN architecture_pretty=$(cat /tmp/arch) && \
     chmod +x /usr/local/bin/kubectl
 
 # Install helm
-RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | HELM_INSTALL_DIR=/usr/local/bin HELM_VERSION=${HELM_VERSION} bash
+RUN curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4 | HELM_INSTALL_DIR=/usr/local/bin DESIRED_VERSION=${HELM_VERSION} bash
 
 # Install goreleaser
 RUN architecture_pretty=$(cat /tmp/arch) && \
@@ -83,7 +83,7 @@ RUN npm install -g \
     conventional-changelog-cli \
     conventional-changelog-conventionalcommits
 
-RUN npm install -g prettier@3.6.2
+RUN npm install -g prettier@3.9.6
 
 # Development stage with all tools
 FROM base AS development
