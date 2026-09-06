@@ -79,8 +79,9 @@ type MCPConfig struct {
 // Authentication configuration
 type AuthConfig struct {
 	Enabled      bool   `env:"ENABLED, default=false" description:"Enable authentication"`
-	OidcIssuer   string `env:"OIDC_ISSUER, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
-	OidcClientId string `env:"OIDC_CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
+	OidcIssuer   string `env:"OIDC_ISSUER" description:"OIDC issuer URL. Discovery runs once at startup against {issuer}/.well-known/openid-configuration"`
+	OidcClientId string `env:"OIDC_CLIENT_ID" description:"OIDC client ID. Used as the expected token audience when AUTH_OIDC_AUDIENCE is empty"`
+	OidcAudience string `env:"OIDC_AUDIENCE" description:"Comma-separated list of accepted aud values, for example an API identifier. Defaults to AUTH_OIDC_CLIENT_ID"`
 }
 
 // Guardrails configuration

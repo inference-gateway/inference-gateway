@@ -54,11 +54,12 @@
 
 ### Authentication
 
-| Environment Variable | Default Value                                         | Description           |
-| -------------------- | ----------------------------------------------------- | --------------------- |
-| AUTH_ENABLED         | `false`                                               | Enable authentication |
-| AUTH_OIDC_ISSUER     | `http://keycloak:8080/realms/inference-gateway-realm` | OIDC issuer URL       |
-| AUTH_OIDC_CLIENT_ID  | `inference-gateway-client`                            | OIDC client ID        |
+| Environment Variable | Default Value | Description                                                                                                 |
+| -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| AUTH_ENABLED         | `false`       | Enable authentication                                                                                       |
+| AUTH_OIDC_ISSUER     | `""`          | OIDC issuer URL. Discovery runs once at startup against {issuer}/.well-known/openid-configuration           |
+| AUTH_OIDC_CLIENT_ID  | `""`          | OIDC client ID. Used as the expected token audience when AUTH_OIDC_AUDIENCE is empty                        |
+| AUTH_OIDC_AUDIENCE   | `""`          | Comma-separated list of accepted aud values, for example an API identifier. Defaults to AUTH_OIDC_CLIENT_ID |
 
 ### Guardrails
 

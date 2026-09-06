@@ -57,7 +57,7 @@ To test a local build, push your image somewhere the cluster can pull from and c
 
 ```bash
 task port-forward-keycloak      # keep running in another terminal
-task fetch-access-token         # access token for the test user (user/password)
+task fetch-access-token         # access token for the demo client (client credentials grant)
 task print-access-token-payload
 task keycloak-admin-password
 ```

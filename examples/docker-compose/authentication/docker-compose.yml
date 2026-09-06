@@ -1,8 +1,8 @@
 ---
 services:
   # Identity provider. Started in dev mode with the demo realm imported from
-  # ./keycloak/realm-export.json (realm, confidential client, audience mapper,
-  # and a test user). KC_HOSTNAME pins the public base URL to http://keycloak:8080
+  # ./keycloak/realm-export.json (realm, confidential client with a service
+  # account, and an access-token audience mapper). KC_HOSTNAME pins the public base URL to http://keycloak:8080
   # so every issued token carries the same issuer the gateway discovers on the
   # compose network - even when you request the token from the host on port 8081.
   keycloak:
@@ -49,6 +49,9 @@ services:
       AUTH_ENABLED: 'true'
       AUTH_OIDC_ISSUER: http://keycloak:8080/realms/inference-gateway-realm
       AUTH_OIDC_CLIENT_ID: inference-gateway-client
+      # Optional: comma-separated aud values to accept instead of the client ID,
+      # for example an API identifier.
+      # AUTH_OIDC_AUDIENCE: https://api.example.com
     ports:
       - '8080:8080'
     depends_on:

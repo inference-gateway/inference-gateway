@@ -162,18 +162,16 @@ tasks:
         kubectl -n envoy-gateway-system port-forward "svc/${ENVOY_SVC}" 8443:443
 
   fetch-access-token:
-    desc: 'Fetch an access token (requires `task port-forward-keycloak` running)'
+    desc: 'Fetch an access token with the client credentials grant (requires `task port-forward-keycloak` running)'
     cmds:
       - |
         curl -k -s -X POST \
           --resolve keycloak.inference-gateway.local:8543:127.0.0.1 \
           -H "Content-Type: application/x-www-form-urlencoded" \
           "https://keycloak.inference-gateway.local:8543/realms/inference-gateway-realm/protocol/openid-connect/token" \
-          -d "grant_type=password" \
+          -d "grant_type=client_credentials" \
           -d "client_id=inference-gateway-client" \
-          -d "client_secret=very-secret" \
-          -d "username=user" \
-          -d "password=password" | jq -r .access_token
+          -d "client_secret=very-secret" | jq -r .access_token
 
   clean:
     desc: 'Clean up the cluster'

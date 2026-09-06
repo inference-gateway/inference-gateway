@@ -1112,7 +1112,10 @@ components:
       description: |
         Authentication is optional by default.
         To enable authentication, set AUTH_ENABLED to true.
-        When enabled, requests must include a valid JWT token in the Authorization header.
+        When enabled, requests must carry an OAuth 2.0 access token (JWT) issued by
+        AUTH_OIDC_ISSUER whose aud claim contains one of the AUTH_OIDC_AUDIENCE values
+        (AUTH_OIDC_CLIENT_ID when unset) in the Authorization header. Rejected requests
+        answer 401 with a WWW-Authenticate Bearer challenge as defined by RFC 6750.
   schemas:
     Provider:
       type: string
@@ -4153,14 +4156,15 @@ components:
                 - name: auth_oidc_issuer
                   env: 'AUTH_OIDC_ISSUER'
                   type: string
-                  default: 'http://keycloak:8080/realms/inference-gateway-realm'
-                  description: 'OIDC issuer URL'
+                  description: 'OIDC issuer URL. Discovery runs once at startup against {issuer}/.well-known/openid-configuration'
                 - name: auth_oidc_client_id
                   env: 'AUTH_OIDC_CLIENT_ID'
                   type: string
-                  default: 'inference-gateway-client'
-                  description: 'OIDC client ID'
-                  secret: true
+                  description: 'OIDC client ID. Used as the expected token audience when AUTH_OIDC_AUDIENCE is empty'
+                - name: auth_oidc_audience
+                  env: 'AUTH_OIDC_AUDIENCE'
+                  type: string
+                  description: 'Comma-separated list of accepted aud values, for example an API identifier. Defaults to AUTH_OIDC_CLIENT_ID'
           - guardrails:
               title: 'Guardrails'
               settings:

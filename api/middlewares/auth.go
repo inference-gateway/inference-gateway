@@ -1,9 +1,15 @@
 package middlewares
 
 import (
+	"cmp"
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
+	"slices"
 	"strings"
+	"time"
+	"unicode"
 
 	oidcV3 "github.com/coreos/go-oidc/v3/oidc"
 	gin "github.com/gin-gonic/gin"
@@ -12,13 +18,29 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
+const (
+	// oidcHTTPTimeout bounds OIDC discovery at startup and every JWKS refresh
+	// go-oidc performs when it meets an unknown key ID, so a stalled issuer
+	// cannot hang boot or pin request goroutines.
+	oidcHTTPTimeout = 10 * time.Second
+
+	bearerScheme = "Bearer"
+
+	// RFC 6750 §3 challenges: no error code when the request carried no bearer
+	// credentials, invalid_token when it carried one that failed verification.
+	wwwAuthenticateHeader  = "WWW-Authenticate"
+	wwwAuthenticateMissing = `Bearer realm="inference-gateway"`
+	wwwAuthenticateInvalid = `Bearer realm="inference-gateway", error="invalid_token"`
+)
+
 type OIDCAuthenticator interface {
 	Middleware() gin.HandlerFunc
 }
 
 type OIDCAuthenticatorImpl struct {
-	logger   logger.Logger
-	verifier *oidcV3.IDTokenVerifier
+	logger    logger.Logger
+	verifier  *oidcV3.IDTokenVerifier
+	audiences []string
 }
 
 type OIDCAuthenticatorNoop struct{}
@@ -28,21 +50,31 @@ func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OI
 	if !cfg.Auth.Enabled {
 		return &OIDCAuthenticatorNoop{}, nil
 	}
+	if cfg.Auth.OidcIssuer == "" {
+		return nil, errors.New("AUTH_OIDC_ISSUER is required when AUTH_ENABLED=true")
+	}
+	audiences := strings.FieldsFunc(cmp.Or(cfg.Auth.OidcAudience, cfg.Auth.OidcClientId), isListSeparator)
+	if len(audiences) == 0 {
+		return nil, errors.New("AUTH_OIDC_AUDIENCE or AUTH_OIDC_CLIENT_ID is required when AUTH_ENABLED=true")
+	}
 
-	provider, err := oidcV3.NewProvider(context.Background(), cfg.Auth.OidcIssuer)
+	ctx := oidcV3.ClientContext(context.Background(), &http.Client{Timeout: oidcHTTPTimeout})
+	provider, err := oidcV3.NewProvider(ctx, cfg.Auth.OidcIssuer)
 	if err != nil {
 		return nil, err
 	}
 
-	oidcConfig := &oidcV3.Config{
-		ClientID: cfg.Auth.OidcClientId,
-	}
-
+	// The audience check happens in Middleware against the configured list, so
+	// the gateway accepts API identifiers (Auth0, Okta, Entra, Cognito) and not
+	// only its own client ID; go-oidc's ClientID check allows a single value.
 	return &OIDCAuthenticatorImpl{
-		logger:   logger,
-		verifier: provider.Verifier(oidcConfig),
+		logger:    logger,
+		verifier:  provider.Verifier(&oidcV3.Config{SkipClientIDCheck: true}),
+		audiences: audiences,
 	}, nil
 }
+
+func isListSeparator(r rune) bool { return r == ',' || unicode.IsSpace(r) }
 
 // Noop implementation of the OIDCAuthenticator interface
 func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
@@ -59,29 +91,43 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 			return
 		}
 
-		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-			c.Abort()
+		scheme, token, _ := strings.Cut(c.GetHeader("Authorization"), " ")
+		token = strings.TrimSpace(token)
+		if !strings.EqualFold(scheme, bearerScheme) || token == "" {
+			unauthorized(c, wwwAuthenticateMissing)
 			return
 		}
 
-		token := strings.TrimPrefix(authHeader, "Bearer ")
 		idToken, err := a.verifier.Verify(c.Request.Context(), token)
 		if err != nil {
-			a.logger.Error("failed to verify id token", err)
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-			c.Abort()
+			a.logger.Error("failed to verify bearer token", err)
+			unauthorized(c, wwwAuthenticateInvalid)
+			return
+		}
+		if !slices.ContainsFunc(idToken.Audience, func(aud string) bool { return slices.Contains(a.audiences, aud) }) {
+			a.logger.Error("failed to verify bearer token",
+				fmt.Errorf("oidc: expected one of audiences %q got %q", a.audiences, idToken.Audience))
+			unauthorized(c, wwwAuthenticateInvalid)
+			return
+		}
+
+		var claims map[string]any
+		if err := idToken.Claims(&claims); err != nil {
+			a.logger.Error("failed to decode bearer token claims", err)
+			unauthorized(c, wwwAuthenticateInvalid)
 			return
 		}
 
 		ctx := context.WithValue(c.Request.Context(), types.AuthTokenContextKey, token)
-		var claims map[string]any
-		if err := idToken.Claims(&claims); err == nil {
-			ctx = context.WithValue(ctx, types.ClaimsContextKey, claims)
-		}
+		ctx = context.WithValue(ctx, types.ClaimsContextKey, claims)
 		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
 	}
+}
+
+func unauthorized(c *gin.Context, challenge string) {
+	c.Header(wwwAuthenticateHeader, challenge)
+	c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+	c.Abort()
 }

@@ -64,7 +64,8 @@ This example demonstrates Keycloak (OIDC) authentication with the Inference Gate
    The `inference-gateway-realm` realm and `inference-gateway-client` are imported automatically (see
    `keycloak/job-import-realm.yaml`).
 
-4. Fetch an access token (keep `task port-forward-keycloak` running in another terminal):
+4. Fetch an access token with the client credentials grant (keep `task port-forward-keycloak` running in
+   another terminal):
 
    ```bash
    TOKEN=$(task fetch-access-token)
@@ -78,14 +79,16 @@ This example demonstrates Keycloak (OIDC) authentication with the Inference Gate
      https://api.inference-gateway.local:8443/v1/models
    ```
 
-   Without a valid token the gateway responds `401 Unauthorized`.
+   Without a valid token the gateway responds `401 Unauthorized` with a `WWW-Authenticate: Bearer` challenge.
 
 ## Configuration
 
 - **Keycloak**: edit the YAMLs in `keycloak/` (instance, realm import, DB secret) and the issuer in cert
   settings.
 - **Gateway auth**: configured in `gateway.yaml` under `spec.auth.oidc` (issuer URL, client ID, and the CA
-  certificate reference).
+  certificate reference). The gateway checks that the token's `aud` contains the client ID, which the realm's
+  audience mapper adds to access tokens. `AUTH_OIDC_AUDIENCE` accepts a comma-separated list instead (for
+  example an API identifier); the operator does not expose it yet.
 
 ## Cleanup
 

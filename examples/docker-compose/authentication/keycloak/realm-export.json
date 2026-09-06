@@ -3,7 +3,6 @@
   "enabled": true,
   "sslRequired": "none",
   "registrationAllowed": false,
-  "loginWithEmailAllowed": true,
   "displayName": "Inference Gateway",
   "accessTokenLifespan": 3600,
   "clients": [
@@ -12,14 +11,12 @@
       "enabled": true,
       "protocol": "openid-connect",
       "publicClient": false,
-      "standardFlowEnabled": true,
+      "standardFlowEnabled": false,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "very-secret",
-      "redirectUris": ["*"],
-      "webOrigins": ["*"],
       "fullScopeAllowed": true,
       "protocolMappers": [
         {
@@ -28,27 +25,10 @@
           "protocolMapper": "oidc-audience-mapper",
           "config": {
             "included.client.audience": "inference-gateway-client",
-            "id.token.claim": "true",
+            "id.token.claim": "false",
             "access.token.claim": "true",
             "introspection.token.claim": "true"
           }
-        }
-      ]
-    }
-  ],
-  "users": [
-    {
-      "username": "user",
-      "enabled": true,
-      "emailVerified": true,
-      "firstName": "Example",
-      "lastName": "User",
-      "email": "user@example.com",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "password",
-          "temporary": false
         }
       ]
     }
