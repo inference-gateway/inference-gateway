@@ -22,21 +22,9 @@ import (
 // MaxAgentIterations limits the number of agent loop iterations
 const MaxAgentIterations = 10
 
-// Agent defines the interface for running agent operations
-//
-//go:generate mockgen -source=agent.go -destination=../../tests/mocks/mcp/agent.go -package=mcpmocks -typed
-type Agent interface {
-	Run(ctx context.Context, provider core.IProvider, model string, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error
-	RunWithStream(ctx context.Context, provider core.IProvider, model string, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error
-	ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error)
-	SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string)
-}
-
-// Ensure agentImpl implements Agent interface at compile time
-var _ Agent = (*agentImpl)(nil)
-
-// agentImpl is the concrete implementation of the Agent interface
-type agentImpl struct {
+// Agent runs the MCP tool-call loop against a provider, dispatching tool
+// calls through the MCP client and feeding results back to the model.
+type Agent struct {
 	logger              logger.Logger
 	mcpClient           MCPClientInterface
 	guardrailsEvaluator *guardrails.Evaluator
@@ -45,15 +33,15 @@ type agentImpl struct {
 }
 
 // NewAgent creates a new Agent instance
-func NewAgent(logger logger.Logger, mcpClient MCPClientInterface) Agent {
-	return &agentImpl{
+func NewAgent(logger logger.Logger, mcpClient MCPClientInterface) *Agent {
+	return &Agent{
 		mcpClient: mcpClient,
 		logger:    logger,
 	}
 }
 
 // SetGuardrails configures the guardrails evaluator for tool call evaluation.
-func (a *agentImpl) SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string) {
+func (a *Agent) SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string) {
 	a.guardrailsEvaluator = evaluator
 	a.guardrailsTelemetry = telemetry
 	a.guardrailsFailMode = failMode
@@ -62,7 +50,7 @@ func (a *agentImpl) SetGuardrails(evaluator *guardrails.Evaluator, telemetry ote
 	}
 }
 
-func (a *agentImpl) Run(ctx context.Context, provider core.IProvider, model string, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error {
+func (a *Agent) Run(ctx context.Context, provider core.IProvider, model string, request *types.CreateChatCompletionRequest, response *types.CreateChatCompletionResponse) error {
 	currentRequest := *request
 	currentResponse := *response
 	iteration := 0
@@ -116,7 +104,7 @@ func send(ctx context.Context, ch chan<- []byte, b []byte) bool {
 }
 
 // RunWithStream executes the agent with the provided streaming response channel
-func (a *agentImpl) RunWithStream(ctx context.Context, provider core.IProvider, model string, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error {
+func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, model string, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error {
 	currentRequest := *body
 
 	currentRequest.Model = model
@@ -273,7 +261,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, provider core.IProvider, 
 // The two selector meta-tools are handled gateway-side: mcp_tools_get is answered
 // locally from the tool catalog, and mcp_tools_execute is unwrapped so guardrails
 // and dispatch run against the underlying tool. All other calls dispatch directly.
-func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error) {
+func (a *Agent) ExecuteTools(ctx context.Context, toolCalls []types.ChatCompletionMessageToolCall) ([]types.Message, error) {
 	var results []types.Message
 
 	for _, toolCall := range toolCalls {
@@ -298,7 +286,7 @@ func (a *agentImpl) ExecuteTools(ctx context.Context, toolCalls []types.ChatComp
 }
 
 // handleToolsGet answers an mcp_tools_get call locally from the tool catalog.
-func (a *agentImpl) handleToolsGet(toolCall types.ChatCompletionMessageToolCall) types.Message {
+func (a *Agent) handleToolsGet(toolCall types.ChatCompletionMessageToolCall) types.Message {
 	var params struct {
 		Query string   `json:"query"`
 		Names []string `json:"names"`
@@ -322,7 +310,7 @@ func (a *agentImpl) handleToolsGet(toolCall types.ChatCompletionMessageToolCall)
 
 // handleToolsExecute unwraps an mcp_tools_execute call and dispatches the
 // underlying tool so guardrails see the real tool name and arguments.
-func (a *agentImpl) handleToolsExecute(ctx context.Context, toolCall types.ChatCompletionMessageToolCall) types.Message {
+func (a *Agent) handleToolsExecute(ctx context.Context, toolCall types.ChatCompletionMessageToolCall) types.Message {
 	var params struct {
 		Name      string         `json:"name"`
 		Arguments map[string]any `json:"arguments"`
@@ -350,7 +338,7 @@ func (a *agentImpl) handleToolsExecute(ctx context.Context, toolCall types.ChatC
 
 // dispatchTool runs guardrails, resolves the server, executes the tool, and
 // runs output guardrails, returning the resulting tool message.
-func (a *agentImpl) dispatchTool(ctx context.Context, toolCallID, toolName, argsJSON string, args map[string]any) types.Message {
+func (a *Agent) dispatchTool(ctx context.Context, toolCallID, toolName, argsJSON string, args map[string]any) types.Message {
 	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, argsJSON, "", guardrails.PhaseToolArgs); err != nil {
 		a.logger.Error("guardrails blocked tool call", err, "tool", toolName)
 		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
@@ -418,7 +406,7 @@ func parseToolArgs(arguments string) (map[string]any, error) {
 }
 
 // toolMessage builds a tool-role message with the given content for a tool call.
-func (a *agentImpl) toolMessage(toolCallID, content string) types.Message {
+func (a *Agent) toolMessage(toolCallID, content string) types.Message {
 	msg := types.Message{
 		Role:       types.Tool,
 		ToolCallID: &toolCallID,

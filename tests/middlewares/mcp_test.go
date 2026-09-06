@@ -808,7 +808,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 			},
 		}, nil).AnyTimes()
 
-		agentImpl := mcp.NewAgent(mockLogger, mockMCPClient)
+		agent := mcp.NewAgent(mockLogger, mockMCPClient)
 
 		model := "groq/meta-llama/llama-4-scout-17b-instruct"
 
@@ -890,7 +890,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 
 		go func() {
 			defer close(middlewareStreamCh)
-			err := agentImpl.RunWithStream(ctx, mockProvider, model, middlewareStreamCh, &requestData)
+			err := agent.RunWithStream(ctx, mockProvider, model, middlewareStreamCh, &requestData)
 			if err != nil {
 				t.Errorf("Agent streaming failed: %v", err)
 			}

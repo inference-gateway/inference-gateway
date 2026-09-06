@@ -183,7 +183,7 @@ func TestRunWithStreamReturnsWhenConsumerAbandons(t *testing.T) {
 	provider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return((<-chan []byte)(streamCh), nil).AnyTimes()
 
 	model := "openai/gpt-4o"
-	agent := &agentImpl{
+	agent := &Agent{
 		logger: logger.NewNoopLogger(),
 	}
 
@@ -225,7 +225,7 @@ func TestRunWithStreamConcurrentTargets(t *testing.T) {
 		return provider
 	}
 
-	agent := &agentImpl{logger: logger.NewNoopLogger()}
+	agent := &Agent{logger: logger.NewNoopLogger()}
 
 	var wg sync.WaitGroup
 	for _, model := range []string{"openai/gpt-4o", "groq/llama-3"} {

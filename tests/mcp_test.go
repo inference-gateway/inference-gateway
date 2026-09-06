@@ -60,7 +60,6 @@ func TestNewAgent(t *testing.T) {
 
 			if tt.expectAgent {
 				assert.NotNil(t, agentInstance)
-				assert.Implements(t, (*mcp.Agent)(nil), agentInstance)
 			} else {
 				assert.Nil(t, agentInstance)
 			}

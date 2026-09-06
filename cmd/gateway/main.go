@@ -195,7 +195,7 @@ func main() {
 
 	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
-	var mcpAgent mcp.Agent
+	var mcpAgent *mcp.Agent
 	var mcpMiddleware middlewares.MCPMiddleware
 	if cfg.MCP.Enabled {
 		if cfg.MCP.Servers != "" {

@@ -49,7 +49,7 @@ type MCPMiddlewareImpl struct {
 	registry               registry.ProviderRegistry
 	inferenceGatewayClient client.Client
 	mcpClient              mcp.MCPClientInterface
-	mcpAgent               mcp.Agent
+	mcpAgent               *mcp.Agent
 	logger                 logger.Logger
 	config                 config.Config
 }
@@ -58,7 +58,7 @@ type MCPMiddlewareImpl struct {
 type NoopMCPMiddlewareImpl struct{}
 
 // NewMCPMiddleware creates a new MCP middleware instance
-func NewMCPMiddleware(providerRegistry registry.ProviderRegistry, inferenceGatewayClient client.Client, mcpClient mcp.MCPClientInterface, mcpAgent mcp.Agent, log logger.Logger, cfg config.Config) (MCPMiddleware, error) {
+func NewMCPMiddleware(providerRegistry registry.ProviderRegistry, inferenceGatewayClient client.Client, mcpClient mcp.MCPClientInterface, mcpAgent *mcp.Agent, log logger.Logger, cfg config.Config) (MCPMiddleware, error) {
 	if mcpClient == nil {
 		log.Info("mcp client is nil, using no-op middleware")
 		return &NoopMCPMiddlewareImpl{}, nil
