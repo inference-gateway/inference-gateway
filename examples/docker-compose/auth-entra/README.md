@@ -1,6 +1,6 @@
 # Authentication with Microsoft Entra ID
 
-The same OIDC setup as the [Keycloak example](../authentication/README.md), with
+The same OIDC setup as the [Keycloak example](../auth-keycloak/README.md), with
 Microsoft Entra ID as the issuer. Read that example first: it explains how the
 gateway verifies tokens, the `AUTH_*` settings and the troubleshooting steps,
 none of which change here.

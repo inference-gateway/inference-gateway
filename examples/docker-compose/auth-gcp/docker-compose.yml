@@ -2,7 +2,7 @@
 # The gateway alone: Google is the identity provider. Google's issuer is shared
 # by every Google account, so a guardrails policy (policies/identity.rego)
 # restricts callers to the service account named in .env. Everything else works
-# exactly as in the Keycloak example in ../authentication.
+# exactly as in the Keycloak example in ../auth-keycloak.
 services:
   inference-gateway:
     image: ghcr.io/inference-gateway/inference-gateway:latest

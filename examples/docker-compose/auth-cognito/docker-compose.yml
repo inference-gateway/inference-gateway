@@ -1,7 +1,7 @@
 ---
 # The gateway alone: an Amazon Cognito user pool is the identity provider. The
 # IDs come from .env (see .env.example); everything else works exactly as in
-# the Keycloak example in ../authentication.
+# the Keycloak example in ../auth-keycloak.
 services:
   inference-gateway:
     image: ghcr.io/inference-gateway/inference-gateway:latest

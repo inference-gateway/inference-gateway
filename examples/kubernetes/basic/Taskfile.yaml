@@ -4,7 +4,8 @@ version: '3'
 vars:
   GATEWAY_API_VERSION: v1.5.1
   ENVOY_GATEWAY_VERSION: v1.2.0
-  OPERATOR_VERSION: v0.16.3
+  # Overridable so examples that include this Taskfile can pin a newer release.
+  OPERATOR_VERSION: '{{.OPERATOR_VERSION | default "v0.16.3"}}'
 
 tasks:
   deploy-infrastructure:
@@ -63,6 +64,16 @@ tasks:
     cmds:
       - kubectl apply -f gateway.yaml
       - echo "🚪 Inference Gateway deployed successfully!"
+
+  port-forward-gateway:
+    desc: 'Forward the Envoy data plane to http://localhost:8080 (send Host: api.inference-gateway.local)'
+    cmds:
+      - |
+        ENVOY_SVC=$(kubectl get svc -n envoy-gateway-system \
+          -l gateway.envoyproxy.io/owning-gateway-name=inference-gateway \
+          -o jsonpath='{.items[0].metadata.name}')
+        echo "Gateway: http://localhost:8080 (Ctrl+C to stop)"
+        kubectl -n envoy-gateway-system port-forward "svc/${ENVOY_SVC}" 8080:80
 
   clean:
     desc: 'Clean up the cluster'

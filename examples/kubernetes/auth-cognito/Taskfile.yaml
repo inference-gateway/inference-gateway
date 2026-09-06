@@ -1,0 +1,41 @@
+---
+version: '3'
+
+# The user pool and app client are created by the docker-compose example of the
+# same name; this Taskfile reads its .env and reuses its token script.
+dotenv: ['../../docker-compose/auth-cognito/.env']
+
+includes:
+  base:
+    taskfile: ../basic/Taskfile.yaml
+    dir: ../basic
+    vars:
+      # Needs an operator release that wires the OIDC issuer and client ID.
+      OPERATOR_VERSION: v0.17.0
+
+tasks:
+  deploy-infrastructure:
+    desc: 'Provision the cluster, Gateway API, Envoy Gateway and the operator'
+    cmds:
+      - task: base:deploy-infrastructure
+
+  deploy-inference-gateway:
+    desc: 'Deploy the gateway with Cognito authentication (renders gateway.yaml with envsubst)'
+    cmds:
+      - envsubst < gateway.yaml | kubectl apply -f -
+      - echo "🔒 Inference Gateway with Cognito authentication deployed successfully!"
+
+  fetch-access-token:
+    desc: 'Fetch a machine-to-machine access token for the app client'
+    cmds:
+      - ../../docker-compose/auth-cognito/get-token.sh
+
+  port-forward-gateway:
+    desc: 'Forward the gateway to http://localhost:8080'
+    cmds:
+      - task: base:port-forward-gateway
+
+  clean:
+    desc: 'Clean up the cluster'
+    cmds:
+      - task: base:clean

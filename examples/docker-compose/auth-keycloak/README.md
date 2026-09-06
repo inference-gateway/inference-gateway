@@ -182,6 +182,6 @@ docker compose down -v
 ## Additional Resources
 
 - [Configuration Guide](../../../Configurations.md) - all `AUTH_*` settings
-- [Kubernetes Authentication Example](../../kubernetes/authentication/README.md) -
+- [Kubernetes Authentication Example](../../kubernetes/auth-keycloak/README.md) -
   the same idea on Kubernetes with the operator
 - [Main Documentation](../../../README.md)
