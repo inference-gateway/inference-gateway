@@ -257,7 +257,7 @@ func (d *responseData) setUsage(usage *types.CompletionUsage) {
 
 // recordToolCallMetrics analyzes the request and response to record comprehensive tool call metrics
 func (t *TelemetryImpl) recordToolCallMetrics(ctx context.Context, team, provider, model string, request *types.CreateChatCompletionRequest, respData *responseData) {
-	availableTools := make(map[string]string) // tool_name -> tool_type
+	availableTools := make(map[string]string)
 	if request.Tools != nil {
 		for _, tool := range *request.Tools {
 			toolType := classifyToolType(tool.Function.Name)
