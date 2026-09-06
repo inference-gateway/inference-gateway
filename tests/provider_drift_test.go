@@ -51,14 +51,43 @@ func TestProviderWiringDrift(t *testing.T) {
 			})
 
 			t.Run("telemetry detects provider from model prefix", func(t *testing.T) {
-				assertTelemetryDetects(t, string(id), fmt.Sprintf(`{"model":%q}`, string(id)+"/some-model"), "/v1/chat/completions")
+				assertTelemetryDetects(t, string(id), fmt.Sprintf(`{"model":%q}`, string(id)+"/some-model"), middlewares.ChatCompletionsPath)
 			})
 
 			t.Run("telemetry detects provider from query parameter", func(t *testing.T) {
-				assertTelemetryDetects(t, string(id), `{"model":"some-model"}`, "/v1/chat/completions?provider="+string(id))
+				assertTelemetryDetects(t, string(id), `{"model":"some-model"}`, middlewares.ChatCompletionsPath+"?provider="+string(id))
 			})
 		})
 	}
+}
+
+// TestTelemetryMatchesChatPathExactly pins the exact path match in the
+// telemetry middleware: chat completions sent through the pass-through proxy
+// route are not instrumented, even when the body carries a provider prefix.
+func TestTelemetryMatchesChatPathExactly(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockOtel := mocks.NewMockOpenTelemetry(ctrl)
+	mockOtel.EXPECT().RecordRequestDuration(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	mockOtel.EXPECT().RecordTokenUsage(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+	mockOtel.EXPECT().RecordToolCall(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	telemetry, err := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, logger.NewNoopLogger())
+	require.NoError(t, err)
+
+	router := gin.New()
+	router.Use(telemetry.Middleware())
+	router.Any("/proxy/:provider/*path", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{})
+	})
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/proxy/openai"+middlewares.ChatCompletionsPath, bytes.NewReader([]byte(`{"model":"openai/gpt-4o"}`)))
+	req.Header.Set("Content-Type", "application/json")
+
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func assertTelemetryDetects(t *testing.T, expectedProvider, requestBody, url string) {
@@ -83,7 +112,7 @@ func assertTelemetryDetects(t *testing.T, expectedProvider, requestBody, url str
 
 	router := gin.New()
 	router.Use(telemetry.Middleware())
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
+	router.POST(middlewares.ChatCompletionsPath, func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{})
 	})
 

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 
 	gin "github.com/gin-gonic/gin"
 
@@ -234,7 +233,7 @@ func (m *GuardrailsMiddlewareImpl) evaluate(ctx context.Context, input *guardrai
 
 // extractModel attempts to extract the model name from the request body or path.
 func extractModel(body []byte, path string) string {
-	if path == ChatCompletionsPath || strings.Contains(path, ResponsesPath) {
+	if path == ChatCompletionsPath || path == ResponsesPath {
 		var req struct {
 			Model string `json:"model"`
 		}

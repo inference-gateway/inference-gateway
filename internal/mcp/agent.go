@@ -359,7 +359,7 @@ func (a *agentImpl) handleToolsGet(toolCall types.ChatCompletionMessageToolCall)
 		a.logger.Error("failed to marshal tool catalog", err)
 		return a.toolMessage(toolCall.ID, fmt.Sprintf("Error: %v", err))
 	}
-	a.logger.Debug("mcp_tools_get answered", "query", params.Query, "names", params.Names, "result_count", len(catalog))
+	a.logger.Debug(SelectorToolGet+" answered", "query", params.Query, "names", params.Names, "result_count", len(catalog))
 	return a.toolMessage(toolCall.ID, string(catalogBytes))
 }
 
