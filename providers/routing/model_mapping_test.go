@@ -11,6 +11,51 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
+func TestResolveProvider(t *testing.T) {
+	tests := []struct {
+		name             string
+		queryParam       string
+		model            string
+		expectedProvider types.Provider
+		expectedModel    string
+		expectedOK       bool
+	}{
+		{
+			name:             "Query parameter wins over model prefix",
+			queryParam:       "groq",
+			model:            "openai/gpt-4",
+			expectedProvider: types.Provider("groq"),
+			expectedModel:    "openai/gpt-4",
+			expectedOK:       true,
+		},
+		{
+			name:             "Model prefix is used when no query parameter",
+			model:            "openai/gpt-4",
+			expectedProvider: types.Provider("openai"),
+			expectedModel:    "gpt-4",
+			expectedOK:       true,
+		},
+		{
+			name:          "Neither query parameter nor prefix",
+			model:         "gpt-4",
+			expectedModel: "gpt-4",
+		},
+		{
+			name: "Empty model without query parameter",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			provider, model, ok := ResolveProvider(tc.queryParam, tc.model)
+
+			assert.Equal(t, tc.expectedOK, ok, "ok should match expected value")
+			assert.Equal(t, tc.expectedProvider, provider, "provider should match expected value")
+			assert.Equal(t, tc.expectedModel, model, "model should match expected value")
+		})
+	}
+}
+
 func TestDetermineProviderAndModelNameForEveryRegisteredProvider(t *testing.T) {
 	for id := range registry.Registry {
 		t.Run(string(id), func(t *testing.T) {

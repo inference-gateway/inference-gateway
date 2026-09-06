@@ -130,6 +130,26 @@ func (router *RouterImpl) buildProvider(providerID types.Provider) (core.IProvid
 	}
 }
 
+// resolveProvider picks the provider from ?provider= or from the model's
+// "provider/" prefix. It returns the provider, the model with the prefix
+// stripped, and the client-facing message when neither is present ("" on
+// success). Callers render the message in their own envelope.
+func (router *RouterImpl) resolveProvider(c *gin.Context, model, exampleModel string) (types.Provider, string, string) {
+	providerID, resolved, ok := routing.ResolveProvider(c.Query("provider"), model)
+	if ok {
+		return providerID, resolved, ""
+	}
+
+	hint := fmt.Sprintf(routing.ProviderHintFormat, exampleModel)
+	if model == "" {
+		router.logger.Error("no provider specified", nil)
+		return "", model, "No provider specified. " + hint
+	}
+
+	router.logger.Error("unable to determine provider for model", nil, "model", model)
+	return "", model, "Unable to determine provider for model. " + hint
+}
+
 func (router *RouterImpl) ProxyHandler(c *gin.Context) {
 	provider, msg, err := router.buildProvider(types.Provider(c.Param("provider")))
 	if err != nil {
@@ -856,14 +876,12 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	}
 
 	if providerID == "" {
-		var providerPtr *types.Provider
-		providerPtr, model = routing.DetermineProviderAndModelName(model)
-		if providerPtr == nil {
-			router.logger.Error("unable to determine provider for model", nil, "model", req.Model)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-4)."})
+		var msg string
+		providerID, model, msg = router.resolveProvider(c, model, "openai/gpt-4")
+		if msg != "" {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 			return
 		}
-		providerID = *providerPtr
 	}
 	req.Model = model
 
@@ -1037,16 +1055,10 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 
 	originalModel := req.Model
 	model := req.Model
-	providerID := types.Provider(c.Query("provider"))
-	if providerID == "" {
-		var providerPtr *types.Provider
-		providerPtr, model = routing.DetermineProviderAndModelName(model)
-		if providerPtr == nil {
-			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
-			messagesError(c, http.StatusBadRequest, "invalid_request_error", "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., anthropic/claude-sonnet-4-5).")
-			return
-		}
-		providerID = *providerPtr
+	providerID, model, msg := router.resolveProvider(c, model, "anthropic/claude-sonnet-4-5")
+	if msg != "" {
+		messagesError(c, http.StatusBadRequest, "invalid_request_error", msg)
+		return
 	}
 
 	span := trace.SpanFromContext(c.Request.Context())
@@ -1131,16 +1143,10 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 
 	originalModel := req.Model
 	model := req.Model
-	providerID := types.Provider(c.Query("provider"))
-	if providerID == "" {
-		var providerPtr *types.Provider
-		providerPtr, model = routing.DetermineProviderAndModelName(model)
-		if providerPtr == nil {
-			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-4o)."})
-			return
-		}
-		providerID = *providerPtr
+	providerID, model, msg := router.resolveProvider(c, model, "openai/gpt-4o")
+	if msg != "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
 	}
 
 	span := trace.SpanFromContext(c.Request.Context())
@@ -1242,28 +1248,15 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 		return
 	}
 
-	providerID := types.Provider(c.Query("provider"))
 	model := ""
 	if req.Model != nil {
 		model = *req.Model
 	}
 	originalModel := model
 
-	providerHint := "Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., " + exampleModel + ")."
-	if providerID == "" && model != "" {
-		var providerPtr *types.Provider
-		providerPtr, model = routing.DetermineProviderAndModelName(model)
-		if providerPtr == nil {
-			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. " + providerHint})
-			return
-		}
-		providerID = *providerPtr
-	}
-
-	if providerID == "" {
-		router.logger.Error("no provider specified", nil, "api", apiName)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. " + providerHint})
+	providerID, model, msg := router.resolveProvider(c, model, exampleModel)
+	if msg != "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 
@@ -1523,23 +1516,12 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		return
 	}
 
-	providerID := types.Provider(c.Query("provider"))
 	model := imagesFormValue(form, imageFormFieldModel)
 	originalModel := model
-	if providerID == "" && model != "" {
-		var providerPtr *types.Provider
-		providerPtr, model = routing.DetermineProviderAndModelName(model)
-		if providerPtr == nil {
-			router.logger.Error("unable to determine provider for model", nil, "model", originalModel)
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Unable to determine provider for model. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
-			return
-		}
-		providerID = *providerPtr
-	}
 
-	if providerID == "" {
-		router.logger.Error("no provider specified for images request", nil)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "No provider specified. Please specify a provider using the ?provider= query parameter or use the provider/model format (e.g., openai/gpt-image-2)."})
+	providerID, model, msg := router.resolveProvider(c, model, "openai/gpt-image-2")
+	if msg != "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 

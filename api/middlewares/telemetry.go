@@ -101,12 +101,12 @@ func (t *TelemetryImpl) Middleware() gin.HandlerFunc {
 		_ = json.Unmarshal(bodyBytes, &requestBody)
 		model := requestBody.Model
 
+		// Same precedence as the handlers, so the label names the provider the
+		// request actually routes to.
 		provider := "unknown"
-		if detected, _ := routing.DetermineProviderAndModelName(model); detected != nil {
-			provider = string(*detected)
-		} else if queried := types.Provider(c.Query("provider")); queried != "" {
-			if _, exists := registry.Registry[queried]; exists {
-				provider = string(queried)
+		if detected, _, ok := routing.ResolveProvider(c.Query("provider"), model); ok {
+			if _, exists := registry.Registry[detected]; exists {
+				provider = string(detected)
 			}
 		}
 

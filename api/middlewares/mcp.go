@@ -201,33 +201,20 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 // getProviderAndModel determines the provider and model from the request model string or query parameter
 func (m *MCPMiddlewareImpl) getProviderAndModel(c *gin.Context, model string) (*MCPProviderModelResult, error) {
-	if providerID := types.Provider(c.Query("provider")); providerID != "" {
-		provider, err := m.registry.BuildProvider(providerID, m.inferenceGatewayClient)
-		if err != nil {
-			return &MCPProviderModelResult{ProviderID: &providerID}, fmt.Errorf("failed to build provider: %w", err)
-		}
-
-		return &MCPProviderModelResult{
-			Provider:      provider,
-			ProviderModel: model,
-			ProviderID:    &providerID,
-		}, nil
-	}
-
-	providerPtr, providerModel := routing.DetermineProviderAndModelName(model)
-	if providerPtr == nil {
+	providerID, providerModel, ok := routing.ResolveProvider(c.Query("provider"), model)
+	if !ok {
 		return &MCPProviderModelResult{ProviderID: nil}, fmt.Errorf("unable to determine provider for model: %s. Please specify a provider using the ?provider= query parameter or use the provider/model format", model)
 	}
 
-	provider, err := m.registry.BuildProvider(*providerPtr, m.inferenceGatewayClient)
+	provider, err := m.registry.BuildProvider(providerID, m.inferenceGatewayClient)
 	if err != nil {
-		return &MCPProviderModelResult{ProviderID: providerPtr}, fmt.Errorf("failed to build provider: %w", err)
+		return &MCPProviderModelResult{ProviderID: &providerID}, fmt.Errorf("failed to build provider: %w", err)
 	}
 
 	return &MCPProviderModelResult{
 		Provider:      provider,
 		ProviderModel: providerModel,
-		ProviderID:    providerPtr,
+		ProviderID:    &providerID,
 	}, nil
 }
 
