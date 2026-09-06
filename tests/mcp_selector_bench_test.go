@@ -51,7 +51,7 @@ func requestBytes(tools []types.ChatCompletionTool) int {
 // reports bytes/op per mode plus the reduction factor for a 50-tool setup.
 func BenchmarkMCPToolInjection(b *testing.B) {
 	client := mcp.NewMCPClient(nil, logger.NewNoopLogger(), config.Config{MCP: &config.MCPConfig{}})
-	directTools := client.ConvertMCPToolsToChatCompletionTools(buildMCPTools(50))
+	directTools := client.(*mcp.MCPClient).ConvertMCPToolsToChatCompletionTools(buildMCPTools(50))
 	selectorTools := mcp.SelectorToolDefinitions()
 
 	directSize := requestBytes(directTools)

@@ -63,14 +63,8 @@ type MCPClientInterface interface {
 	// GetToolsCatalog answers an mcp_tools_get call from the cached tool map
 	GetToolsCatalog(query string, names []string) []ToolCatalogEntry
 
-	// ConvertMCPToolsToChatCompletionTools converts MCP server tools to chat completion tools
-	ConvertMCPToolsToChatCompletionTools([]Tool) []types.ChatCompletionTool
-
 	// GetServerForTool returns the server URL that provides the specified tool
 	GetServerForTool(toolName string) (string, error)
-
-	// BuildSSEFallbackURL creates an SSE fallback URL from the main server URL (exposed for testing)
-	BuildSSEFallbackURL(serverURL string) string
 
 	// GetAllServerStatuses returns the status of all servers
 	GetAllServerStatuses() map[string]ServerStatus

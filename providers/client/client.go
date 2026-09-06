@@ -2,9 +2,7 @@ package client
 
 import (
 	"crypto/tls"
-	"io"
 	"net/http"
-	"strings"
 
 	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -12,8 +10,6 @@ import (
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
 type Client interface {
 	Do(req *http.Request) (*http.Response, error)
-	Get(url string) (*http.Response, error)
-	Post(url string, bodyType string, body string) (*http.Response, error)
 }
 
 // SpanNameFormatter names outbound client spans "<METHOD> <path>" (e.g.
@@ -75,21 +71,5 @@ func (c *ClientImpl) Do(req *http.Request) (*http.Response, error) {
 		req.URL.Host = c.hostname + ":" + c.port
 	}
 
-	return c.client.Do(req)
-}
-
-func (c *ClientImpl) Get(url string) (*http.Response, error) {
-	fullURL := c.scheme + "://" + c.hostname + ":" + c.port + "/" + strings.TrimPrefix(url, "/")
-	return c.client.Get(fullURL)
-}
-
-func (c *ClientImpl) Post(url string, bodyType string, body string) (*http.Response, error) {
-	fullURL := c.scheme + "://" + c.hostname + ":" + c.port + "/" + strings.TrimPrefix(url, "/")
-	req, err := http.NewRequest(http.MethodPost, fullURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", bodyType)
-	req.Body = io.NopCloser(strings.NewReader(body))
 	return c.client.Do(req)
 }
