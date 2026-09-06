@@ -310,27 +310,41 @@ type upstreamFailure struct {
 	message string
 }
 
-// forwardUpstream posts body to the provider endpoint and relays the upstream
-// response verbatim - JSON with its Content-Type, or SSE via relaySSE when the
-// upstream answers with text/event-stream. Non-streaming requests are bounded
-// by the server read timeout. A nil return means the response was already
-// written; otherwise the caller renders the failure in its own envelope.
-func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvider, endpointPath string, body []byte, streaming bool) *upstreamFailure {
+// upstreamRequest describes a raw pass-through POST to a provider endpoint.
+// An empty accept leaves the upstream Accept header unset; streaming skips the
+// server read timeout so an open-ended (SSE) response is not cut short.
+type upstreamRequest struct {
+	endpointPath string
+	body         io.Reader
+	contentType  string
+	accept       string
+	streaming    bool
+}
+
+// forwardUpstream posts req.body to the provider endpoint and relays the
+// upstream response verbatim - JSON with its Content-Type, or SSE via relaySSE
+// when the upstream answers with text/event-stream. Non-streaming requests are
+// bounded by the server read timeout. A nil return means the response was
+// already written; otherwise the caller renders the failure in its own
+// envelope.
+func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvider, req upstreamRequest) *upstreamFailure {
 	ctx := c.Request.Context()
-	if !streaming {
+	if !req.streaming {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, router.cfg.Server.ReadTimeout)
 		defer cancel()
 	}
 
-	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + endpointPath
-	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
+	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + req.endpointPath
+	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, req.body)
 	if err != nil {
 		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
 		return &upstreamFailure{http.StatusInternalServerError, "Failed to create upstream request"}
 	}
-	upstreamReq.Header.Set("Content-Type", contentTypeJSON)
-	upstreamReq.Header.Set("Accept", acceptHeaderFor(streaming))
+	upstreamReq.Header.Set("Content-Type", req.contentType)
+	if req.accept != "" {
+		upstreamReq.Header.Set("Accept", req.accept)
+	}
 
 	if err := applyProviderAuth(upstreamReq, provider); err != nil {
 		router.logger.Error("unsupported auth type", err, "provider", provider.GetName())
@@ -342,10 +356,10 @@ func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvide
 	resp, err := router.client.Do(upstreamReq)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "url", upstreamURL)
+			router.logger.Error("request timed out", err, "url", upstreamURL, "provider", provider.GetName())
 			return &upstreamFailure{http.StatusGatewayTimeout, "Request timed out"}
 		}
-		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
+		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL, "provider", provider.GetName())
 		return &upstreamFailure{http.StatusBadGateway, "Failed to reach upstream server"}
 	}
 	defer resp.Body.Close()
@@ -374,8 +388,8 @@ func markUpstreamError(c *gin.Context, resp *http.Response) {
 	span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
 }
 
-// acceptHeaderFor returns the upstream Accept header for a streaming or
-// non-streaming pass-through request.
+// acceptHeaderFor returns the upstream Accept header for the streaming-aware
+// Messages and Responses pass-through requests.
 func acceptHeaderFor(streaming bool) string {
 	if streaming {
 		return contentTypeEventStream
@@ -1071,7 +1085,13 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 	}
 
 	isStreaming := req.Stream != nil && *req.Stream
-	if f := router.forwardUpstream(c, provider, "/messages", body, isStreaming); f != nil {
+	if f := router.forwardUpstream(c, provider, upstreamRequest{
+		endpointPath: "/messages",
+		body:         bytes.NewReader(body),
+		contentType:  contentTypeJSON,
+		accept:       acceptHeaderFor(isStreaming),
+		streaming:    isStreaming,
+	}); f != nil {
 		messagesError(c, f.status, "api_error", f.message)
 	}
 }
@@ -1160,7 +1180,13 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 	}
 
 	isStreaming := req.Stream != nil && *req.Stream
-	if f := router.forwardUpstream(c, provider, *endpoint, body, isStreaming); f != nil {
+	if f := router.forwardUpstream(c, provider, upstreamRequest{
+		endpointPath: *endpoint,
+		body:         bytes.NewReader(body),
+		contentType:  contentTypeJSON,
+		accept:       acceptHeaderFor(isStreaming),
+		streaming:    isStreaming,
+	}); f != nil {
 		c.JSON(f.status, ErrorResponse{Error: f.message})
 	}
 }
@@ -1265,45 +1291,14 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
-	defer cancel()
-
-	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + *endpoint
-	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
-	if err != nil {
-		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
-		return
+	if f := router.forwardUpstream(c, provider, upstreamRequest{
+		endpointPath: *endpoint,
+		body:         bytes.NewReader(body),
+		contentType:  contentTypeJSON,
+		accept:       accept,
+	}); f != nil {
+		c.JSON(f.status, ErrorResponse{Error: f.message})
 	}
-	upstreamReq.Header.Set("Content-Type", contentTypeJSON)
-	if accept != "" {
-		upstreamReq.Header.Set("Accept", accept)
-	}
-
-	if err := applyProviderAuth(upstreamReq, provider); err != nil {
-		router.logger.Error("unsupported auth type", err, "provider", providerID)
-		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
-		return
-	}
-
-	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
-
-	resp, err := router.client.Do(upstreamReq)
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "provider", providerID)
-			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
-			return
-		}
-		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
-		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
-		return
-	}
-	defer resp.Body.Close()
-
-	markUpstreamError(c, resp)
-
-	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
 }
 
 // SpeechHandler implements an OpenAI-compatible POST /v1/audio/speech
@@ -1570,52 +1565,22 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		form.Value[imageFormFieldModel] = []string{model}
 	}
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
-	defer cancel()
-
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
-	contentType := mw.FormDataContentType()
 	go func() {
 		pw.CloseWithError(writeImagesMultipartForm(mw, form))
 	}()
 
-	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + *endpoint
-	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, pr)
-	if err != nil {
-		_ = pr.CloseWithError(err)
-		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
+	if f := router.forwardUpstream(c, provider, upstreamRequest{
+		endpointPath: *endpoint,
+		body:         pr,
+		contentType:  mw.FormDataContentType(),
+		accept:       contentTypeJSON,
+	}); f != nil {
+		_ = pr.CloseWithError(io.ErrClosedPipe)
+		c.JSON(f.status, ErrorResponse{Error: f.message})
 		return
 	}
-	upstreamReq.Header.Set("Content-Type", contentType)
-	upstreamReq.Header.Set("Accept", contentTypeJSON)
-
-	if err := applyProviderAuth(upstreamReq, provider); err != nil {
-		_ = pr.CloseWithError(err)
-		router.logger.Error("unsupported auth type", err, "provider", providerID)
-		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
-		return
-	}
-
-	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
-
-	resp, err := router.client.Do(upstreamReq)
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "provider", providerID)
-			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
-			return
-		}
-		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
-		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
-		return
-	}
-	defer resp.Body.Close()
-
-	markUpstreamError(c, resp)
-
-	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
 }
 
 // imagesFormValue returns the first value for key in a parsed multipart form,
