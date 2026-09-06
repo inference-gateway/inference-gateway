@@ -278,22 +278,89 @@ func rewriteModelField(body []byte, model string) ([]byte, error) {
 	return out, nil
 }
 
+// rewriteFailure logs a rewriteModelField error and maps it to the
+// client-facing status and message: 500 for the internal re-encode failure,
+// 400 for a client body that failed to decode. Callers pick the envelope.
+func (router *RouterImpl) rewriteFailure(err error) (int, string) {
+	if errors.Is(err, errEncodeRequest) {
+		router.logger.Error("failed to encode request", err)
+		return http.StatusInternalServerError, "Failed to encode request"
+	}
+	router.logger.Error("failed to decode request", err)
+	return http.StatusBadRequest, "Failed to decode request"
+}
+
 // rewriteModelOrRespond wraps rewriteModelField for handlers using the plain
 // ErrorResponse envelope: on failure it logs, writes the 400/500 response and
 // returns the error so the caller can simply return.
 func (router *RouterImpl) rewriteModelOrRespond(c *gin.Context, body []byte, model string) ([]byte, error) {
 	out, err := rewriteModelField(body, model)
-	switch {
-	case err == nil:
-		return out, nil
-	case errors.Is(err, errEncodeRequest):
-		router.logger.Error("failed to encode request", err)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode request"})
-	default:
-		router.logger.Error("failed to decode request", err)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+	if err != nil {
+		status, msg := router.rewriteFailure(err)
+		c.JSON(status, ErrorResponse{Error: msg})
+		return nil, err
 	}
-	return nil, err
+	return out, nil
+}
+
+// upstreamFailure describes a forwardUpstream error the calling handler still
+// has to render in its own error envelope.
+type upstreamFailure struct {
+	status  int
+	message string
+}
+
+// forwardUpstream posts body to the provider endpoint and relays the upstream
+// response verbatim - JSON with its Content-Type, or SSE via relaySSE when the
+// upstream answers with text/event-stream. Non-streaming requests are bounded
+// by the server read timeout. A nil return means the response was already
+// written; otherwise the caller renders the failure in its own envelope.
+func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvider, endpointPath string, body []byte, streaming bool) *upstreamFailure {
+	ctx := c.Request.Context()
+	if !streaming {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, router.cfg.Server.ReadTimeout)
+		defer cancel()
+	}
+
+	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + endpointPath
+	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
+	if err != nil {
+		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
+		return &upstreamFailure{http.StatusInternalServerError, "Failed to create upstream request"}
+	}
+	upstreamReq.Header.Set("Content-Type", "application/json")
+	upstreamReq.Header.Set("Accept", acceptHeaderFor(streaming))
+
+	if err := applyProviderAuth(upstreamReq, provider); err != nil {
+		router.logger.Error("unsupported auth type", err, "provider", provider.GetName())
+		return &upstreamFailure{http.StatusUnprocessableEntity, "Unsupported auth type"}
+	}
+
+	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
+
+	resp, err := router.client.Do(upstreamReq)
+	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			router.logger.Error("request timed out", err, "url", upstreamURL)
+			return &upstreamFailure{http.StatusGatewayTimeout, "Request timed out"}
+		}
+		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
+		return &upstreamFailure{http.StatusBadGateway, "Failed to reach upstream server"}
+	}
+	defer resp.Body.Close()
+
+	markUpstreamError(c, resp)
+
+	contentType := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "text/event-stream") {
+		c.DataFromReader(resp.StatusCode, resp.ContentLength, contentType, resp.Body, nil)
+		return nil
+	}
+
+	middlewares.SetSSEHeaders(c)
+	router.relaySSE(c, resp.Body, upstreamURL)
+	return nil
 }
 
 // markUpstreamError flags the current span when the upstream answered with an
@@ -650,6 +717,36 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 	}
 }
 
+// readBoundedBody reads the request body up to the configured max request
+// body size, reporting tooLarge when the body exceeds the limit. A body of
+// exactly the limit is accepted.
+func (router *RouterImpl) readBoundedBody(c *gin.Context) (body []byte, tooLarge bool, err error) {
+	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
+	body, err = io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)+1))
+	if err != nil {
+		return nil, false, err
+	}
+	return body, len(body) > maxBodySize, nil
+}
+
+// modelDenied reports whether model is blocked by ALLOWED_MODELS /
+// DISALLOWED_MODELS, returning the client-facing reason ("" when permitted).
+// ALLOWED_MODELS takes precedence: when it is set, DISALLOWED_MODELS is ignored.
+func (router *RouterImpl) modelDenied(model string) string {
+	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
+		if !routing.ModelMatches(allowed, model) {
+			router.logger.Error("model not in allowed list", nil, "model", model, "allowed_models", router.cfg.AllowedModels)
+			return "Model not allowed. Please check the list of allowed models."
+		}
+		return ""
+	}
+	if disallowed := routing.ParseModelSet(router.cfg.DisallowedModels); len(disallowed) > 0 && routing.ModelMatches(disallowed, model) {
+		router.logger.Error("model is disallowed", nil, "model", model, "disallowed_models", router.cfg.DisallowedModels)
+		return "Model is disallowed. Please use a different model."
+	}
+	return ""
+}
+
 // ChatCompletionsHandler implements an OpenAI-compatible API endpoint
 // that generates text completions in the standard OpenAI format.
 //
@@ -703,36 +800,6 @@ func (router *RouterImpl) ListModelsHandler(c *gin.Context) {
 // It returns token completions as chat in the standard OpenAI format, allowing applications
 // built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
 // architecture.
-// modelDenied reports whether model is blocked by ALLOWED_MODELS /
-// DISALLOWED_MODELS, returning the client-facing reason ("" when permitted).
-// ALLOWED_MODELS takes precedence: when it is set, DISALLOWED_MODELS is ignored.
-// readBoundedBody reads the request body up to the configured max request
-// body size, reporting tooLarge when the body exceeds the limit. A body of
-// exactly the limit is accepted.
-func (router *RouterImpl) readBoundedBody(c *gin.Context) (body []byte, tooLarge bool, err error) {
-	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
-	body, err = io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)+1))
-	if err != nil {
-		return nil, false, err
-	}
-	return body, len(body) > maxBodySize, nil
-}
-
-func (router *RouterImpl) modelDenied(model string) string {
-	if allowed := routing.ParseModelSet(router.cfg.AllowedModels); len(allowed) > 0 {
-		if !routing.ModelMatches(allowed, model) {
-			router.logger.Error("model not in allowed list", nil, "model", model, "allowed_models", router.cfg.AllowedModels)
-			return "Model not allowed. Please check the list of allowed models."
-		}
-		return ""
-	}
-	if disallowed := routing.ParseModelSet(router.cfg.DisallowedModels); len(disallowed) > 0 && routing.ModelMatches(disallowed, model) {
-		router.logger.Error("model is disallowed", nil, "model", model, "disallowed_models", router.cfg.DisallowedModels)
-		return "Model is disallowed. Please use a different model."
-	}
-	return ""
-}
-
 func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 	var req types.CreateChatCompletionRequest
 
@@ -993,67 +1060,20 @@ func (router *RouterImpl) MessagesHandler(c *gin.Context) {
 
 	if model != originalModel {
 		if body, err = rewriteModelField(body, model); err != nil {
-			if errors.Is(err, errEncodeRequest) {
-				router.logger.Error("failed to encode request", err)
-				messagesError(c, http.StatusInternalServerError, "api_error", "Failed to encode request")
-				return
+			status, msg := router.rewriteFailure(err)
+			errType := "invalid_request_error"
+			if status == http.StatusInternalServerError {
+				errType = "api_error"
 			}
-			router.logger.Error("failed to decode request", err)
-			messagesError(c, http.StatusBadRequest, "invalid_request_error", "Failed to decode request")
+			messagesError(c, status, errType, msg)
 			return
 		}
 	}
 
 	isStreaming := req.Stream != nil && *req.Stream
-
-	ctx := c.Request.Context()
-	if !isStreaming {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, router.cfg.Server.ReadTimeout)
-		defer cancel()
+	if f := router.forwardUpstream(c, provider, "/messages", body, isStreaming); f != nil {
+		messagesError(c, f.status, "api_error", f.message)
 	}
-
-	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + "/messages"
-	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
-	if err != nil {
-		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
-		messagesError(c, http.StatusInternalServerError, "api_error", "Failed to create upstream request")
-		return
-	}
-	upstreamReq.Header.Set("Content-Type", "application/json")
-	upstreamReq.Header.Set("Accept", acceptHeaderFor(isStreaming))
-
-	if err := applyProviderAuth(upstreamReq, provider); err != nil {
-		router.logger.Error("unsupported auth type", err, "provider", providerID)
-		messagesError(c, http.StatusUnprocessableEntity, "api_error", "Unsupported auth type")
-		return
-	}
-
-	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
-
-	resp, err := router.client.Do(upstreamReq)
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "provider", providerID)
-			messagesError(c, http.StatusGatewayTimeout, "api_error", "Request timed out")
-			return
-		}
-		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
-		messagesError(c, http.StatusBadGateway, "api_error", "Failed to reach upstream server")
-		return
-	}
-	defer resp.Body.Close()
-
-	markUpstreamError(c, resp)
-
-	contentType := resp.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "text/event-stream") {
-		c.DataFromReader(resp.StatusCode, resp.ContentLength, contentType, resp.Body, nil)
-		return
-	}
-
-	middlewares.SetSSEHeaders(c)
-	router.relaySSE(c, resp.Body, upstreamURL)
 }
 
 // ResponsesHandler implements an OpenAI-compatible POST /v1/responses
@@ -1126,6 +1146,13 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 		return
 	}
 
+	endpoint := provider.GetEndpoints().Responses
+	if endpoint == nil || *endpoint == "" {
+		router.logger.Error("responses api not supported by provider", nil, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The Responses API is not supported by this provider yet. Use /v1/chat/completions instead."})
+		return
+	}
+
 	if model != originalModel {
 		if body, err = router.rewriteModelOrRespond(c, body, model); err != nil {
 			return
@@ -1133,55 +1160,9 @@ func (router *RouterImpl) ResponsesHandler(c *gin.Context) {
 	}
 
 	isStreaming := req.Stream != nil && *req.Stream
-
-	ctx := c.Request.Context()
-	if !isStreaming {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, router.cfg.Server.ReadTimeout)
-		defer cancel()
+	if f := router.forwardUpstream(c, provider, *endpoint, body, isStreaming); f != nil {
+		c.JSON(f.status, ErrorResponse{Error: f.message})
 	}
-
-	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + "/responses"
-	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, bytes.NewReader(body))
-	if err != nil {
-		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
-		return
-	}
-	upstreamReq.Header.Set("Content-Type", "application/json")
-	upstreamReq.Header.Set("Accept", acceptHeaderFor(isStreaming))
-
-	if err := applyProviderAuth(upstreamReq, provider); err != nil {
-		router.logger.Error("unsupported auth type", err, "provider", providerID)
-		c.JSON(http.StatusUnprocessableEntity, ErrorResponse{Error: "Unsupported auth type"})
-		return
-	}
-
-	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
-
-	resp, err := router.client.Do(upstreamReq)
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "provider", providerID)
-			c.JSON(http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
-			return
-		}
-		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
-		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to reach upstream server"})
-		return
-	}
-	defer resp.Body.Close()
-
-	markUpstreamError(c, resp)
-
-	contentType := resp.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "text/event-stream") {
-		c.DataFromReader(resp.StatusCode, resp.ContentLength, contentType, resp.Body, nil)
-		return
-	}
-
-	middlewares.SetSSEHeaders(c)
-	router.relaySSE(c, resp.Body, upstreamURL)
 }
 
 // ImagesHandler implements an OpenAI-compatible POST /v1/images/generations
