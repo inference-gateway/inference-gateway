@@ -85,6 +85,7 @@ jobs:
       prettier: true
       node: true
       extra-tools: "Bash(helm:*)"
+      debug: true
       plugins: |
         DietrichGebert/ponytail
       browser: ${{ inputs.browser || false }}

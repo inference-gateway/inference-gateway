@@ -6,7 +6,7 @@
       "claude-code": {
         "pkg-path": "claude-code",
         "pkg-group": "claude-code",
-        "version": "^2.1.245"
+        "version": "^2.1.260"
       },
       "codex": {
         "pkg-path": "codex",
@@ -42,7 +42,7 @@
       "go": {
         "pkg-path": "go",
         "pkg-group": "language",
-        "version": "^1.26.4"
+        "version": "1.26.7"
       },
       "go-task": {
         "pkg-path": "go-task",
@@ -57,7 +57,7 @@
         "version": "^2.17.1"
       },
       "infer": {
-        "flake": "github:inference-gateway/cli/v0.183.0"
+        "flake": "github:inference-gateway/cli/v0.188.0"
       },
       "jq": {
         "pkg-path": "jq",
@@ -200,184 +200,6 @@
       },
       "system": "x86_64-linux",
       "group": "codex",
-      "priority": 5
-    },
-    {
-      "attr_path": "go",
-      "broken": false,
-      "derivation": "/nix/store/l4h5brja9krijg49rjgqqwl41gallzyk-go-1.26.5.drv",
-      "description": "Go Programming language",
-      "install_id": "go",
-      "license": "BSD-3-Clause",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "name": "go-1.26.5",
-      "pname": "go",
-      "rev": "56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "rev_count": 1060451,
-      "rev_date": "2026-08-23T15:22:48Z",
-      "scrape_date": "2026-08-25T04:56:37.939227Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "1.26.5",
-      "outputs_to_install": [
-        "out",
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/4im44k446822ixjai0mdaizqskc90qxr-go-1.26.5"
-      },
-      "system": "aarch64-darwin",
-      "group": "language",
-      "priority": 5
-    },
-    {
-      "attr_path": "go",
-      "broken": false,
-      "derivation": "/nix/store/0gbv4dwd20dvc1ld7v7vmbym3wh5lvkp-go-1.26.5.drv",
-      "description": "Go Programming language",
-      "install_id": "go",
-      "license": "BSD-3-Clause",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "name": "go-1.26.5",
-      "pname": "go",
-      "rev": "56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "rev_count": 1060451,
-      "rev_date": "2026-08-23T15:22:48Z",
-      "scrape_date": "2026-08-25T05:27:24.256396Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "1.26.5",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/yjifjy7qjzm9jli8xhzwy3y6fzw84405-go-1.26.5"
-      },
-      "system": "aarch64-linux",
-      "group": "language",
-      "priority": 5
-    },
-    {
-      "attr_path": "go",
-      "broken": false,
-      "derivation": "/nix/store/11w7bm3ywzxmqw9cczv44gxcfiws472f-go-1.26.5.drv",
-      "description": "Go Programming language",
-      "install_id": "go",
-      "license": "BSD-3-Clause",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "name": "go-1.26.5",
-      "pname": "go",
-      "rev": "56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "rev_count": 1060451,
-      "rev_date": "2026-08-23T15:22:48Z",
-      "scrape_date": "2026-08-25T06:00:38.715007Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "1.26.5",
-      "outputs_to_install": [
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/xrgn6m0c5vbz06467q06zdwnk6qqdl7z-go-1.26.5"
-      },
-      "system": "x86_64-linux",
-      "group": "language",
-      "priority": 5
-    },
-    {
-      "attr_path": "nodejs_24",
-      "broken": false,
-      "derivation": "/nix/store/qfiblm3mivfpj9ip34lp74hii5vga2cs-nodejs-24.19.0.drv",
-      "description": "Event-driven I/O framework for the V8 JavaScript engine",
-      "install_id": "nodejs_24",
-      "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "name": "nodejs-24.19.0",
-      "pname": "nodejs_24",
-      "rev": "56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "rev_count": 1060451,
-      "rev_date": "2026-08-23T15:22:48Z",
-      "scrape_date": "2026-08-25T04:57:01.623175Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "24.19.0",
-      "outputs_to_install": [
-        "out",
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/7cvylnf8wf3r89hb983binvjb142sgkd-nodejs-24.19.0"
-      },
-      "system": "aarch64-darwin",
-      "group": "language",
-      "priority": 5
-    },
-    {
-      "attr_path": "nodejs_24",
-      "broken": false,
-      "derivation": "/nix/store/w6c4ky2sn4v19hss0kn9snkq5wkvp2jb-nodejs-24.19.0.drv",
-      "description": "Event-driven I/O framework for the V8 JavaScript engine",
-      "install_id": "nodejs_24",
-      "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "name": "nodejs-24.19.0",
-      "pname": "nodejs_24",
-      "rev": "56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "rev_count": 1060451,
-      "rev_date": "2026-08-23T15:22:48Z",
-      "scrape_date": "2026-08-25T05:28:00.248829Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "24.19.0",
-      "outputs_to_install": [
-        "out",
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/d76wsd4rm85sdv1xawqp404l2bm2k4l1-nodejs-24.19.0"
-      },
-      "system": "aarch64-linux",
-      "group": "language",
-      "priority": 5
-    },
-    {
-      "attr_path": "nodejs_24",
-      "broken": false,
-      "derivation": "/nix/store/px8hj7awj6ffpcamsaf95ywrmnn8n6aq-nodejs-24.19.0.drv",
-      "description": "Event-driven I/O framework for the V8 JavaScript engine",
-      "install_id": "nodejs_24",
-      "license": "MIT",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "name": "nodejs-24.19.0",
-      "pname": "nodejs_24",
-      "rev": "56c02bc00adcf003215cc4bd996d6efaf4cff188",
-      "rev_count": 1060451,
-      "rev_date": "2026-08-23T15:22:48Z",
-      "scrape_date": "2026-08-25T06:01:18.032405Z",
-      "stabilities": [
-        "unstable"
-      ],
-      "unfree": false,
-      "version": "24.19.0",
-      "outputs_to_install": [
-        "out",
-        "out"
-      ],
-      "outputs": {
-        "out": "/nix/store/glcp73hgagq2b24i80jlgbvj28vdb6kk-nodejs-24.19.0"
-      },
-      "system": "x86_64-linux",
-      "group": "language",
       "priority": 5
     },
     {
@@ -1827,27 +1649,27 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/n1lgqcdgazzb39wknhn4l88v3skjww77-claude-code-2.1.245.drv",
+      "derivation": "/nix/store/x6phs7v0f8j4903i4xhlix7iiz2mhfn7-claude-code-2.1.260.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
-      "name": "claude-code-2.1.245",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "claude-code-2.1.260",
       "pname": "claude-code",
-      "rev": "34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
-      "rev_count": 1064949,
-      "rev_date": "2026-08-31T12:23:27Z",
-      "scrape_date": "2026-09-01T04:57:40.238535Z",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T04:57:29.056451Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.245",
+      "version": "2.1.260",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/bx59a90qzpvyapbyz4hwks81xsfw025s-claude-code-2.1.245"
+        "out": "/nix/store/zykbj0hkd5snn9qwjcvqi6bxmgxqmh65-claude-code-2.1.260"
       },
       "system": "aarch64-darwin",
       "group": "claude-code",
@@ -1856,27 +1678,27 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/jk2cbws779imgjzjmhci5fnmq3bqa7zr-claude-code-2.1.245.drv",
+      "derivation": "/nix/store/ii74p1sffck86a92kyjs3qq8qj8xmnx4-claude-code-2.1.260.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
-      "name": "claude-code-2.1.245",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "claude-code-2.1.260",
       "pname": "claude-code",
-      "rev": "34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
-      "rev_count": 1064949,
-      "rev_date": "2026-08-31T12:23:27Z",
-      "scrape_date": "2026-09-01T05:29:15.601663Z",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T05:28:37.386744Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.245",
+      "version": "2.1.260",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/z9ispy7d612d2kpp7nrhj3v7pddzp3np-claude-code-2.1.245"
+        "out": "/nix/store/q2c3ih72p872a6vmsg1b21icl77jskhb-claude-code-2.1.260"
       },
       "system": "aarch64-linux",
       "group": "claude-code",
@@ -1885,40 +1707,215 @@
     {
       "attr_path": "claude-code",
       "broken": false,
-      "derivation": "/nix/store/cwgj6qx0pr1ag13i1l2n4ml1qakxc3qq-claude-code-2.1.245.drv",
+      "derivation": "/nix/store/4a6nqscqaq8l36p76q2fjwa9nzgbc155-claude-code-2.1.260.drv",
       "description": "Agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster",
       "install_id": "claude-code",
       "license": "Unfree",
-      "locked_url": "https://github.com/flox/nixpkgs?rev=34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
-      "name": "claude-code-2.1.245",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "claude-code-2.1.260",
       "pname": "claude-code",
-      "rev": "34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
-      "rev_count": 1064949,
-      "rev_date": "2026-08-31T12:23:27Z",
-      "scrape_date": "2026-09-01T06:06:01.474851Z",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T06:05:11.859395Z",
       "stabilities": [
         "unstable"
       ],
       "unfree": true,
-      "version": "2.1.245",
+      "version": "2.1.260",
       "outputs_to_install": [
         "out"
       ],
       "outputs": {
-        "out": "/nix/store/k4z7dn65na1gngrpcs8l79vr2pv504dx-claude-code-2.1.245"
+        "out": "/nix/store/83jq1m7f3v52f1xrpy4nbq6jwk58f3ap-claude-code-2.1.260"
       },
       "system": "x86_64-linux",
       "group": "claude-code",
       "priority": 5
     },
     {
+      "attr_path": "go",
+      "broken": false,
+      "derivation": "/nix/store/w6w7pzbrnk1j01afyzxjhiwirql5lq6m-go-1.26.7.drv",
+      "description": "Go Programming language",
+      "install_id": "go",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "go-1.26.7",
+      "pname": "go",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T04:57:30.275343Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.26.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/jdgrfinlrf89z3wdfa6ipr1chpny5v11-go-1.26.7"
+      },
+      "system": "aarch64-darwin",
+      "group": "language",
+      "priority": 5
+    },
+    {
+      "attr_path": "go",
+      "broken": false,
+      "derivation": "/nix/store/0ki6ha0r6iqi6wkzqxjam67pbdzpsfr4-go-1.26.7.drv",
+      "description": "Go Programming language",
+      "install_id": "go",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "go-1.26.7",
+      "pname": "go",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T05:28:39.602675Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.26.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/zbm0p3qbd92i7gj78rxajka9yvdrin7p-go-1.26.7"
+      },
+      "system": "aarch64-linux",
+      "group": "language",
+      "priority": 5
+    },
+    {
+      "attr_path": "go",
+      "broken": false,
+      "derivation": "/nix/store/ra2z8ff739aawml2iirfz76g7gxv9i8g-go-1.26.7.drv",
+      "description": "Go Programming language",
+      "install_id": "go",
+      "license": "BSD-3-Clause",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "go-1.26.7",
+      "pname": "go",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T06:05:14.327490Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "1.26.7",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/i77g9dmcd399rmxk8688qfr4g2wzgk37-go-1.26.7"
+      },
+      "system": "x86_64-linux",
+      "group": "language",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_24",
+      "broken": false,
+      "derivation": "/nix/store/6nas5hpjqib23qbkzmzjbsj1iyc0z750-nodejs-24.19.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_24",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "nodejs-24.19.0",
+      "pname": "nodejs_24",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T04:57:54.156595Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "24.19.0",
+      "outputs_to_install": [
+        "out",
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/0n6wnabi4grafrkvnla0ip529rqp6yxp-nodejs-24.19.0"
+      },
+      "system": "aarch64-darwin",
+      "group": "language",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_24",
+      "broken": false,
+      "derivation": "/nix/store/im10wm681x2d2clzpbmw9y52mv928672-nodejs-24.19.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_24",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "nodejs-24.19.0",
+      "pname": "nodejs_24",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T05:29:15.353478Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "24.19.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/41xl9pj3ka0wa63fp759wjs9idlksac5-nodejs-24.19.0"
+      },
+      "system": "aarch64-linux",
+      "group": "language",
+      "priority": 5
+    },
+    {
+      "attr_path": "nodejs_24",
+      "broken": false,
+      "derivation": "/nix/store/azflkcvc103gq1ddlc5if1r8qpd1xk6c-nodejs-24.19.0.drv",
+      "description": "Event-driven I/O framework for the V8 JavaScript engine",
+      "install_id": "nodejs_24",
+      "license": "MIT",
+      "locked_url": "https://github.com/flox/nixpkgs?rev=c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "name": "nodejs-24.19.0",
+      "pname": "nodejs_24",
+      "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+      "rev_count": 1068089,
+      "rev_date": "2026-09-05T13:27:54Z",
+      "scrape_date": "2026-09-06T06:05:53.821825Z",
+      "stabilities": [
+        "unstable"
+      ],
+      "unfree": false,
+      "version": "24.19.0",
+      "outputs_to_install": [
+        "out"
+      ],
+      "outputs": {
+        "out": "/nix/store/lfaydgacdyngci7p60s8wwvgdm74fjkx-nodejs-24.19.0"
+      },
+      "system": "x86_64-linux",
+      "group": "language",
+      "priority": 5
+    },
+    {
       "install_id": "infer",
-      "locked-url": "github:inference-gateway/cli/ef3889df30a9a08b1c0c0d75972dacec9cc12105?narHash=sha256-JsEkRxqGW6iUw/LdH8dvU56VOkH%2Biz1rIeHpt49qQk8%3D",
+      "locked-url": "github:inference-gateway/cli/538470bdbf97fa98f1ba262933ca9b657bd39e34?narHash=sha256-LpkNnvM%2Bn3JK2lwzKYpxIOhzwt5FYiI6Wf6Sm3vrGkM%3D",
       "flake-description": "Inference Gateway CLI - infer",
       "locked-flake-attr-path": "packages.aarch64-darwin.default",
-      "derivation": "/nix/store/gkhwx1ywwh65ayvcr0pinqrm5i4b7cmi-infer-0.183.0.drv",
+      "derivation": "/nix/store/0mjcf0xdf5vq9qk62dlbkfg07i0zpazi-infer-0.188.0.drv",
       "outputs": {
-        "out": "/nix/store/7sv3nii4hkafzmbxcd4rxars1rd441b6-infer-0.183.0"
+        "out": "/nix/store/724kk2x6csvsixd3wzkvr5x5a06plv6n-infer-0.188.0"
       },
       "output-names": [
         "out"
@@ -1929,9 +1926,9 @@
       "requested-outputs-to-install": [],
       "package-system": "aarch64-darwin",
       "system": "aarch64-darwin",
-      "name": "infer-0.183.0",
+      "name": "infer-0.188.0",
       "pname": "infer",
-      "version": "0.183.0",
+      "version": "0.188.0",
       "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
       "licenses": [
         "MIT"
@@ -1942,12 +1939,12 @@
     },
     {
       "install_id": "infer",
-      "locked-url": "github:inference-gateway/cli/ef3889df30a9a08b1c0c0d75972dacec9cc12105?narHash=sha256-JsEkRxqGW6iUw/LdH8dvU56VOkH%2Biz1rIeHpt49qQk8%3D",
+      "locked-url": "github:inference-gateway/cli/538470bdbf97fa98f1ba262933ca9b657bd39e34?narHash=sha256-LpkNnvM%2Bn3JK2lwzKYpxIOhzwt5FYiI6Wf6Sm3vrGkM%3D",
       "flake-description": "Inference Gateway CLI - infer",
       "locked-flake-attr-path": "packages.aarch64-linux.default",
-      "derivation": "/nix/store/ggjr0c9lziv2yz323x6kq550jgwsf2gx-infer-0.183.0.drv",
+      "derivation": "/nix/store/2n656pdfyjgvvncjh5vgmhwqj0rwjp97-infer-0.188.0.drv",
       "outputs": {
-        "out": "/nix/store/nnzvchn58bz95cc4nk36a4568l04hqcj-infer-0.183.0"
+        "out": "/nix/store/k9dbkbx8npizza9bblmyfmqyds14w274-infer-0.188.0"
       },
       "output-names": [
         "out"
@@ -1958,9 +1955,9 @@
       "requested-outputs-to-install": [],
       "package-system": "aarch64-linux",
       "system": "aarch64-linux",
-      "name": "infer-0.183.0",
+      "name": "infer-0.188.0",
       "pname": "infer",
-      "version": "0.183.0",
+      "version": "0.188.0",
       "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
       "licenses": [
         "MIT"
@@ -1971,12 +1968,12 @@
     },
     {
       "install_id": "infer",
-      "locked-url": "github:inference-gateway/cli/ef3889df30a9a08b1c0c0d75972dacec9cc12105?narHash=sha256-JsEkRxqGW6iUw/LdH8dvU56VOkH%2Biz1rIeHpt49qQk8%3D",
+      "locked-url": "github:inference-gateway/cli/538470bdbf97fa98f1ba262933ca9b657bd39e34?narHash=sha256-LpkNnvM%2Bn3JK2lwzKYpxIOhzwt5FYiI6Wf6Sm3vrGkM%3D",
       "flake-description": "Inference Gateway CLI - infer",
       "locked-flake-attr-path": "packages.x86_64-linux.default",
-      "derivation": "/nix/store/7bpbyz3p1mmi78zfd49pl63v756z173i-infer-0.183.0.drv",
+      "derivation": "/nix/store/lpzkqk6vkrf3dgr0vswc564cjkadml9p-infer-0.188.0.drv",
       "outputs": {
-        "out": "/nix/store/zcn3lk108bcsb1h6x3adbqia9fygzn2h-infer-0.183.0"
+        "out": "/nix/store/j9pxldmf5nflc5q8qqv3jnjdqdzp62h4-infer-0.188.0"
       },
       "output-names": [
         "out"
@@ -1987,9 +1984,9 @@
       "requested-outputs-to-install": [],
       "package-system": "x86_64-linux",
       "system": "x86_64-linux",
-      "name": "infer-0.183.0",
+      "name": "infer-0.188.0",
       "pname": "infer",
-      "version": "0.183.0",
+      "version": "0.188.0",
       "description": "Command-line interface for the Inference Gateway - AI model interaction manager",
       "licenses": [
         "MIT"
