@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 	m "github.com/metoro-io/mcp-golang"
 	transport "github.com/metoro-io/mcp-golang/transport/http"
 	otelapi "go.opentelemetry.io/otel"
@@ -42,9 +43,9 @@ func parseSSEResponse(responseBody string) (string, error) {
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "data: ") {
-			jsonData := strings.TrimPrefix(line, "data: ")
-			if jsonData != "" && jsonData != "[DONE]" {
+		if strings.HasPrefix(line, types.SSEDataPrefix) {
+			jsonData := strings.TrimPrefix(line, types.SSEDataPrefix)
+			if jsonData != "" && jsonData != types.SSEDoneData {
 				return jsonData, nil
 			}
 		}
@@ -139,7 +140,7 @@ func (c *customRoundTripper) RoundTrip(req *http.Request) (*http.Response, error
 		resp.Body.Close()
 
 		bodyStr := string(body)
-		if strings.Contains(bodyStr, "data: ") {
+		if strings.Contains(bodyStr, types.SSEDataPrefix) {
 			jsonData, err := parseSSEResponse(bodyStr)
 			if err != nil {
 				return resp, fmt.Errorf("failed to parse SSE response: %v", err)

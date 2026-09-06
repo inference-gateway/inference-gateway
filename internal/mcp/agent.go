@@ -124,7 +124,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, provider core.IProvider, 
 
 	defer func() {
 		a.logger.Debug("sending agent completion signal")
-		send(ctx, middlewareStreamCh, []byte("data: [DONE]\n\n"))
+		send(ctx, middlewareStreamCh, []byte(types.SSEDoneEvent))
 	}()
 
 	for iteration := range MaxAgentIterations {
@@ -133,7 +133,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, provider core.IProvider, 
 		streamCh, err := provider.StreamChatCompletions(ctx, currentRequest)
 		if err != nil {
 			a.logger.Error("failed to start streaming", err, "iteration", iteration+1, "model", model)
-			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to start streaming: %s\"}\n\n", err.Error()))
+			errorData := types.SSEErrorEvent("Failed to start streaming: " + err.Error())
 			send(ctx, middlewareStreamCh, errorData)
 			return err
 		}
@@ -163,21 +163,17 @@ func (a *agentImpl) RunWithStream(ctx context.Context, provider core.IProvider, 
 				lineStr := string(line)
 				trimmedLine := strings.TrimSpace(lineStr)
 
-				if strings.Contains(trimmedLine, "[DONE]") {
+				if strings.Contains(trimmedLine, types.SSEDoneData) {
 					responseBodyBuilder.Write(line)
 					continue
 				}
 
-				if !strings.HasPrefix(trimmedLine, "data: ") {
+				chunkData, found := strings.CutPrefix(trimmedLine, types.SSEDataPrefix)
+				if !found || chunkData == "" {
 					continue
 				}
 
-				chunkData := strings.TrimPrefix(trimmedLine, "data: ")
-				if chunkData == "" {
-					continue
-				}
-
-				formattedData := []byte(fmt.Sprintf("data: %s\n\n", chunkData))
+				formattedData := []byte(types.SSEDataPrefix + chunkData + "\n\n")
 				if !send(ctx, middlewareStreamCh, formattedData) {
 					a.logger.Debug("context cancelled while sending stream chunk", "iteration", iteration+1)
 					return ctx.Err()
@@ -256,7 +252,7 @@ func (a *agentImpl) RunWithStream(ctx context.Context, provider core.IProvider, 
 		toolResults, err := a.ExecuteTools(ctx, toolCalls)
 		if err != nil {
 			a.logger.Error("failed to execute tool calls", err, "iteration", iteration+1, "tool_count", len(toolCalls))
-			errorData := []byte(fmt.Sprintf("data: {\"error\": \"Failed to execute tools: %s\"}\n\n", err.Error()))
+			errorData := types.SSEErrorEvent("Failed to execute tools: " + err.Error())
 			send(ctx, middlewareStreamCh, errorData)
 			return err
 		}

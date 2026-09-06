@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	gin "github.com/gin-gonic/gin"
 
@@ -242,7 +241,7 @@ func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *t
 
 			ResetWriteDeadline(c, m.config.Server.WriteTimeout)
 
-			if bytes.Equal(line, []byte("data: [DONE]\n\n")) {
+			if bytes.Equal(line, []byte(types.SSEDoneEvent)) {
 				m.logger.Debug("mcp agent completed all iterations, sending [DONE]")
 				_, err := w.Write(line)
 				if err != nil {
@@ -253,11 +252,12 @@ func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *t
 
 			m.logger.Debug("processed chunk", "line", string(line))
 
-			if strings.HasPrefix(string(line), "data: {") && strings.Contains(string(line), "\"error\"") {
+			data, hasData := bytes.CutPrefix(line, []byte(types.SSEDataPrefix))
+			if hasData && bytes.HasPrefix(data, []byte("{")) && bytes.Contains(data, []byte("\"error\"")) {
 				var errMsg struct {
 					Error string `json:"error"`
 				}
-				if err := json.Unmarshal(line[6:], &errMsg); err == nil {
+				if err := json.Unmarshal(data, &errMsg); err == nil {
 					m.logger.Error("upstream provider error", fmt.Errorf("%s", errMsg.Error))
 					c.Writer.WriteHeader(http.StatusServiceUnavailable)
 				}
@@ -272,7 +272,7 @@ func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(c *gin.Context, request *t
 		case err := <-errCh:
 			m.logger.Error("mcp agent streaming error", err)
 			c.Writer.WriteHeader(http.StatusServiceUnavailable)
-			if _, writeErr := fmt.Fprintf(w, "data: {\"error\": \"%s\"}\n\n", err.Error()); writeErr != nil {
+			if _, writeErr := w.Write(types.SSEErrorEvent(err.Error())); writeErr != nil {
 				m.logger.Error("failed to write error to stream", writeErr)
 			}
 			return false

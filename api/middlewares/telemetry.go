@@ -198,12 +198,12 @@ func (t *TelemetryImpl) parseStreamingResponse(responseBytes []byte, provider, m
 	}
 
 	for _, chunk := range usageChunks {
-		if chunk == "" || !strings.HasPrefix(chunk, "data: ") {
+		if chunk == "" || !strings.HasPrefix(chunk, types.SSEDataPrefix) {
 			continue
 		}
 
-		chunk = strings.TrimPrefix(chunk, "data: ")
-		if chunk == "[DONE]" {
+		chunk = strings.TrimPrefix(chunk, types.SSEDataPrefix)
+		if chunk == types.SSEDoneData {
 			continue
 		}
 

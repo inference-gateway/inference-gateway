@@ -13,11 +13,11 @@ func AccumulateStreamingToolCalls(body string) []ChatCompletionMessageToolCall {
 
 	for line := range strings.SplitSeq(body, "\n") {
 		line = strings.TrimSpace(line)
-		data, found := strings.CutPrefix(line, "data: ")
+		data, found := strings.CutPrefix(line, SSEDataPrefix)
 		if !found {
 			data = line
 		}
-		if data == "" || data == "[DONE]" {
+		if data == "" || data == SSEDoneData {
 			continue
 		}
 
