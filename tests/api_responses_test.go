@@ -29,7 +29,7 @@ import (
 // above every valid request body used in these tests.
 const responsesTestBodyLimit = 512
 
-func newResponsesTestRouter(t *testing.T, upstreamURL string) api.Router {
+func newResponsesTestRouter(t *testing.T, upstreamURL string) *api.RouterImpl {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
@@ -73,7 +73,7 @@ func newResponsesTestRouter(t *testing.T, upstreamURL string) api.Router {
 		Providers: providerCfg,
 	}
 
-	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil)
+	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil, nil)
 }
 
 func TestResponsesHandler_NonStreamingPassthrough(t *testing.T) {

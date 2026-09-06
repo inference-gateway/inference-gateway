@@ -41,23 +41,6 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-//go:generate mockgen -source=routes.go -destination=../tests/mocks/routes.go -package=mocks
-type Router interface {
-	ListModelsHandler(c *gin.Context)
-	ChatCompletionsHandler(c *gin.Context)
-	MessagesHandler(c *gin.Context)
-	ResponsesHandler(c *gin.Context)
-	ImagesHandler(c *gin.Context)
-	ImagesEditsHandler(c *gin.Context)
-	ImagesVariationsHandler(c *gin.Context)
-	SpeechHandler(c *gin.Context)
-	ListToolsHandler(c *gin.Context)
-	MetricsIngestionHandler(c *gin.Context)
-	ProxyHandler(c *gin.Context)
-	HealthcheckHandler(c *gin.Context)
-	NotFoundHandler(c *gin.Context)
-}
-
 type RouterImpl struct {
 	cfg       config.Config
 	logger    l.Logger
@@ -85,12 +68,8 @@ func NewRouter(
 	mcpClient mcp.MCPClientInterface,
 	telemetry otel.OpenTelemetry,
 	selector *routing.Selector,
-	localTTS ...*tts.Engine,
-) Router {
-	var ttsEngine *tts.Engine
-	if len(localTTS) > 0 {
-		ttsEngine = localTTS[0]
-	}
+	localTTS *tts.Engine,
+) *RouterImpl {
 	return &RouterImpl{
 		cfg,
 		logger,
@@ -99,7 +78,7 @@ func NewRouter(
 		mcpClient,
 		telemetry,
 		selector,
-		ttsEngine,
+		localTTS,
 	}
 }
 

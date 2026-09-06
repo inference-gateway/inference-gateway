@@ -35,7 +35,7 @@ func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, tele
 		},
 	}
 
-	router := api.NewRouter(cfg, log, nil, nil, nil, telemetry, nil)
+	router := api.NewRouter(cfg, log, nil, nil, nil, telemetry, nil, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()

@@ -27,7 +27,7 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, opts ...func(*config.Config)) api.Router {
+func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, opts ...func(*config.Config)) *api.RouterImpl {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
@@ -81,7 +81,7 @@ func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, op
 		opt(&cfg)
 	}
 
-	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil)
+	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil, nil)
 }
 
 // imagesMultipartField is one part of a multipart image request; a non-empty

@@ -25,7 +25,7 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-func newMessagesTestRouter(t *testing.T, upstreamURL string) api.Router {
+func newMessagesTestRouter(t *testing.T, upstreamURL string) *api.RouterImpl {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
@@ -69,7 +69,7 @@ func newMessagesTestRouter(t *testing.T, upstreamURL string) api.Router {
 		Providers: providerCfg,
 	}
 
-	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil)
+	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil, nil)
 }
 
 func TestMessagesHandler_NonStreamingPassthrough(t *testing.T) {

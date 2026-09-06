@@ -141,7 +141,7 @@ func TestSpeechHandler_NoProvider(t *testing.T) {
 // newLocalSpeechRouter builds a router wired to an in-memory tts.Engine with
 // placeholder model files so the local speech path works without the proxy
 // stack (registry/client stay nil: local/ requests never touch providers).
-func newLocalSpeechRouter(t *testing.T, home string, opts ...func(*config.Config)) api.Router {
+func newLocalSpeechRouter(t *testing.T, home string, opts ...func(*config.Config)) *api.RouterImpl {
 	t.Helper()
 	log, err := logger.NewLogger("test")
 	require.NoError(t, err)
@@ -216,7 +216,7 @@ func TestSpeechHandler_LocalModelNotReadyReturns503(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "not ready")
 }
 
-func postLocalSpeech(router api.Router, body string) *httptest.ResponseRecorder {
+func postLocalSpeech(router *api.RouterImpl, body string) *httptest.ResponseRecorder {
 	r := gin.New()
 	r.POST("/v1/audio/speech", router.SpeechHandler)
 	w := httptest.NewRecorder()
