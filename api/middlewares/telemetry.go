@@ -45,9 +45,6 @@ func NewTelemetryMiddleware(cfg config.Config, telemetry otel.OpenTelemetry, log
 const (
 	maxCapturedResponseBytes = 1 << 20
 	maxTelemetryRequestBytes = 32 << 20
-	// usageTrailingChunks is how many trailing SSE frames are scanned for a
-	// usage object: providers emit it in the final content chunk, which is
-	// followed by at most "data: [DONE]" and a trailing empty frame.
 	usageTrailingChunks = 4
 )
 
