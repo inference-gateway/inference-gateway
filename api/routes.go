@@ -356,10 +356,10 @@ func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvide
 	resp, err := router.client.Do(upstreamReq)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
-			router.logger.Error("request timed out", err, "url", upstreamURL)
+			router.logger.Error("request timed out", err, "url", upstreamURL, "provider", provider.GetName())
 			return &upstreamFailure{http.StatusGatewayTimeout, "Request timed out"}
 		}
-		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL)
+		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL, "provider", provider.GetName())
 		return &upstreamFailure{http.StatusBadGateway, "Failed to reach upstream server"}
 	}
 	defer resp.Body.Close()
@@ -1577,7 +1577,7 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		contentType:  mw.FormDataContentType(),
 		accept:       contentTypeJSON,
 	}); f != nil {
-		_ = pr.CloseWithError(errors.New(f.message))
+		_ = pr.CloseWithError(io.ErrClosedPipe)
 		c.JSON(f.status, ErrorResponse{Error: f.message})
 		return
 	}

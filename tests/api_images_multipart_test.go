@@ -113,10 +113,11 @@ func buildImagesMultipart(t *testing.T, fields []imagesMultipartField) (*bytes.B
 func TestImagesEditsHandler_HappyPath(t *testing.T) {
 	var gotPath string
 	var gotModel, gotPrompt, gotImage, gotMask string
-	var gotAuth string
+	var gotAuth, gotAccept string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		gotAuth = r.Header.Get("Authorization")
+		gotAccept = r.Header.Get("Accept")
 		require.NoError(t, r.ParseMultipartForm(1<<20))
 		gotModel = r.FormValue("model")
 		gotPrompt = r.FormValue("prompt")
@@ -151,6 +152,7 @@ func TestImagesEditsHandler_HappyPath(t *testing.T) {
 	assert.Equal(t, "PNG-IMAGE-BYTES", gotImage, "image file should be forwarded")
 	assert.Equal(t, "PNG-MASK-BYTES", gotMask, "mask file should be forwarded")
 	assert.Equal(t, "Bearer test-openai-key", gotAuth, "provider token should be applied")
+	assert.Equal(t, "application/json", gotAccept, "the multipart Images pass-through must request JSON upstream")
 
 	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))

@@ -27,12 +27,13 @@ import (
 func enableAudio(c *config.Config) { c.AudioEnabled = true }
 
 func TestSpeechHandler_HappyPath(t *testing.T) {
-	var gotPath, gotAuth, gotRequestContentType string
+	var gotPath, gotAuth, gotRequestContentType, gotAccept string
 	var gotBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		gotAuth = r.Header.Get("Authorization")
 		gotRequestContentType = r.Header.Get("Content-Type")
+		gotAccept = r.Header.Get("Accept")
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		require.NoError(t, json.Unmarshal(body, &gotBody))
@@ -58,6 +59,7 @@ func TestSpeechHandler_HappyPath(t *testing.T) {
 	assert.Equal(t, float64(1.25), gotBody["speed"])
 	assert.Equal(t, "Bearer test-openai-key", gotAuth, "provider token should be applied")
 	assert.Equal(t, "application/json", gotRequestContentType)
+	assert.Empty(t, gotAccept, "SpeechHandler passes an empty accept so the upstream Accept header must stay unset")
 	assert.Equal(t, "audio/mpeg", w.Header().Get("Content-Type"), "audio should be streamed with the upstream content type")
 	assert.Equal(t, "FAKE-AUDIO-BYTES", w.Body.String())
 }
