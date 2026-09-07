@@ -1030,54 +1030,6 @@
     "source": "community",
     "updated_at": "2026-08-31T12:36:08Z"
   },
-  "moonshot/kimi-k2-0711-preview": {
-    "cache_read_per_token": "0.00000015",
-    "currency": "USD",
-    "input_per_token": "0.0000006",
-    "output_per_token": "0.0000025",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "moonshot/kimi-k2-0905-preview": {
-    "cache_read_per_token": "0.00000015",
-    "currency": "USD",
-    "input_per_token": "0.0000006",
-    "output_per_token": "0.0000025",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "moonshot/kimi-k2-thinking": {
-    "cache_read_per_token": "0.00000015",
-    "currency": "USD",
-    "input_per_token": "0.0000006",
-    "output_per_token": "0.0000025",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "moonshot/kimi-k2-thinking-turbo": {
-    "cache_read_per_token": "0.00000015",
-    "currency": "USD",
-    "input_per_token": "0.00000115",
-    "output_per_token": "0.000008",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "moonshot/kimi-k2-turbo-preview": {
-    "cache_read_per_token": "0.0000006",
-    "currency": "USD",
-    "input_per_token": "0.0000024",
-    "output_per_token": "0.00001",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "moonshot/kimi-k2.5": {
-    "cache_read_per_token": "0.0000001",
-    "currency": "USD",
-    "input_per_token": "0.0000006",
-    "output_per_token": "0.000003",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "moonshot/kimi-k2.6": {
     "cache_read_per_token": "0.00000016",
     "currency": "USD",
@@ -2261,6 +2213,15 @@
     "output_per_token": "0.000012",
     "source": "community",
     "updated_at": "2026-08-03T09:35:28Z"
+  },
+  "openai/gpt-6-astra": {
+    "cache_read_per_token": "0.000001",
+    "cache_write_per_token": "0.0000125",
+    "currency": "USD",
+    "input_per_token": "0.00001",
+    "output_per_token": "0.00005",
+    "source": "community",
+    "updated_at": "2026-09-07T11:26:11Z"
   },
   "openai/gpt-image-2": {
     "cache_read_per_token": "0.00000125",

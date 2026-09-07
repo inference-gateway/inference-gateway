@@ -8,6 +8,15 @@
       "text"
     ]
   },
+  "anthropic/claude-fable-5-1": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "anthropic/claude-haiku-4-5": {
     "input": [
       "text",
@@ -798,6 +807,17 @@
       "text"
     ]
   },
+  "google/gemini-3.8-flash": {
+    "input": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "google/gemini-embedding-001": {
     "input": [
       "text"
@@ -874,17 +894,6 @@
       "image",
       "audio",
       "video"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "google/gemini-robotics-er-1.6-preview": {
-    "input": [
-      "text",
-      "image",
-      "video",
-      "audio"
     ],
     "output": [
       "text"
@@ -1107,6 +1116,15 @@
     ]
   },
   "groq/qwen/qwen3.6-27b": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "groq/qwen/qwen3.8-27b": {
     "input": [
       "text",
       "image"
@@ -1469,56 +1487,6 @@
   "mistral/zai-glm-5-2": {
     "input": [
       "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "moonshot/kimi-k2-0711-preview": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "moonshot/kimi-k2-0905-preview": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "moonshot/kimi-k2-thinking": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "moonshot/kimi-k2-thinking-turbo": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "moonshot/kimi-k2-turbo-preview": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "moonshot/kimi-k2.5": {
-    "input": [
-      "text",
-      "image",
-      "video"
     ],
     "output": [
       "text"
@@ -3547,6 +3515,15 @@
     ]
   },
   "openai/gpt-5.6-terra": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "openai/gpt-6-astra": {
     "input": [
       "text",
       "image"
