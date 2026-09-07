@@ -3,6 +3,10 @@
     "context": 1000000,
     "output": 128000
   },
+  "anthropic/claude-fable-5-1": {
+    "context": 1000000,
+    "output": 128000
+  },
   "anthropic/claude-haiku-4-5": {
     "context": 200000,
     "output": 64000
@@ -309,6 +313,10 @@
     "context": 1048576,
     "output": 65536
   },
+  "google/gemini-3.8-flash": {
+    "context": 1048576,
+    "output": 65536
+  },
   "google/gemini-embedding-001": {
     "context": 2048,
     "output": 1
@@ -322,10 +330,6 @@
     "output": 65536
   },
   "google/gemini-omni-flash-preview": {
-    "context": 131072,
-    "output": 65536
-  },
-  "google/gemini-robotics-er-1.6-preview": {
     "context": 131072,
     "output": 65536
   },
@@ -402,6 +406,10 @@
   },
   "groq/qwen/qwen3.6-27b": {
     "context": 131072,
+    "output": 16384
+  },
+  "groq/qwen/qwen3.8-27b": {
+    "context": 131042,
     "output": 16384
   },
   "minimax/MiniMax-M2": {
@@ -559,30 +567,6 @@
   "mistral/zai-glm-5-2": {
     "context": 1000000,
     "output": 131072
-  },
-  "moonshot/kimi-k2-0711-preview": {
-    "context": 131072,
-    "output": 16384
-  },
-  "moonshot/kimi-k2-0905-preview": {
-    "context": 262144,
-    "output": 262144
-  },
-  "moonshot/kimi-k2-thinking": {
-    "context": 262144,
-    "output": 262144
-  },
-  "moonshot/kimi-k2-thinking-turbo": {
-    "context": 262144,
-    "output": 262144
-  },
-  "moonshot/kimi-k2-turbo-preview": {
-    "context": 262144,
-    "output": 262144
-  },
-  "moonshot/kimi-k2.5": {
-    "context": 262144,
-    "output": 262144
   },
   "moonshot/kimi-k2.6": {
     "context": 262144,
@@ -1156,6 +1140,10 @@
     "output": 128000
   },
   "openai/gpt-5.6-terra": {
+    "context": 1050000,
+    "output": 128000
+  },
+  "openai/gpt-6-astra": {
     "context": 1050000,
     "output": 128000
   },
