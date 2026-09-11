@@ -1112,10 +1112,7 @@ components:
       description: |
         Authentication is optional by default.
         To enable authentication, set AUTH_ENABLED to true.
-        When enabled, requests must carry an OAuth 2.0 access token (JWT) issued by
-        AUTH_OIDC_ISSUER whose aud claim contains one of the AUTH_OIDC_AUDIENCE values
-        (AUTH_OIDC_CLIENT_ID when unset) in the Authorization header. Rejected requests
-        answer 401 with a WWW-Authenticate Bearer challenge as defined by RFC 6750.
+        When enabled, requests must include a valid JWT token in the Authorization header.
   schemas:
     Provider:
       type: string
