@@ -1,0 +1,20 @@
+---
+# The gateway alone: Microsoft Entra ID is the identity provider. The IDs come
+# from .env (see .env.example); everything else works exactly as in the
+# Keycloak example in ../auth-keycloak.
+services:
+  inference-gateway:
+    image: ghcr.io/inference-gateway/inference-gateway:latest
+    env_file:
+      - .env
+    environment:
+      AUTH_ENABLED: 'true'
+      # Tenant-specific v2.0 issuer. Tokens from the v1.0 endpoint carry a
+      # sts.windows.net issuer and are rejected, see the README.
+      AUTH_OIDC_ISSUER: https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0
+      # v2 access tokens put the API registration's client ID in aud.
+      AUTH_OIDC_AUDIENCE: ${AZURE_API_APP_ID}
+    ports:
+      - '8080:8080'
+    pull_policy: always
+    restart: unless-stopped

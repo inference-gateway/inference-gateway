@@ -1,0 +1,49 @@
+---
+version: '3'
+
+# The service account is created by the docker-compose example of the same
+# name; this Taskfile reads its .env, reuses its token script and ships its
+# guardrails policy as a ConfigMap.
+dotenv: ['../../docker-compose/auth-gcp/.env']
+
+includes:
+  base:
+    taskfile: ../basic/Taskfile.yaml
+    dir: ../basic
+    vars:
+      # Needs an operator release that wires the OIDC issuer and client ID.
+      OPERATOR_VERSION: v0.24.3
+
+tasks:
+  deploy-infrastructure:
+    desc: 'Provision the cluster, Gateway API, Envoy Gateway and the operator'
+    cmds:
+      - task: base:deploy-infrastructure
+
+  deploy-inference-gateway:
+    desc: 'Deploy the gateway with Google authentication and the identity policy'
+    cmds:
+      - kubectl create namespace inference-gateway --dry-run=client -o yaml | kubectl apply -f -
+      - |
+        # The compose example's policy with the allowed service account filled in.
+        sed "s/inference-gateway-client@YOUR_PROJECT_ID.iam.gserviceaccount.com/${GCP_SERVICE_ACCOUNT}/" \
+          ../../docker-compose/auth-gcp/policies/identity.rego |
+          kubectl create configmap inference-gateway-guardrails-policies -n inference-gateway \
+            --from-file=identity.rego=/dev/stdin --dry-run=client -o yaml | kubectl apply -f -
+      - envsubst < gateway.yaml | kubectl apply -f -
+      - echo "🔒 Inference Gateway with Google authentication deployed successfully!"
+
+  fetch-access-token:
+    desc: 'Mint an ID token for the service account, bound to the gateway audience'
+    cmds:
+      - ../../docker-compose/auth-gcp/get-token.sh
+
+  port-forward-gateway:
+    desc: 'Forward the gateway to http://localhost:8080'
+    cmds:
+      - task: base:port-forward-gateway
+
+  clean:
+    desc: 'Clean up the cluster'
+    cmds:
+      - task: base:clean

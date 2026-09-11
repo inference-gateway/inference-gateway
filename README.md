@@ -557,8 +557,10 @@ provider decides how to handle them.
     multiple tool servers
   - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers
     (cloud + local)
-  - [Authentication & Authorization](examples/docker-compose/authentication/) - OIDC
-    authentication and guardrails authorization setup
+  - [Keycloak](examples/docker-compose/auth-keycloak/) - OIDC authentication and
+    guardrails authorization setup
+  - [Entra ID](examples/docker-compose/auth-entra/), [Google Cloud](examples/docker-compose/auth-gcp/)
+    and [Amazon Cognito](examples/docker-compose/auth-cognito/) - the same setup against cloud identity providers
   - [Tools](examples/docker-compose/tools/) - Tool integration examples
   - [Guardrails](examples/docker-compose/guardrails/) - OPA/Rego request
     guardrails
@@ -571,7 +573,9 @@ provider decides how to handle them.
   - [Agent deployment](examples/kubernetes/agent/) - Standalone agent deployment
   - [Hybrid deployment](examples/kubernetes/hybrid/) - Multiple providers in
     Kubernetes
-  - [Authentication](examples/kubernetes/authentication/) - OIDC authentication
+  - [Keycloak](examples/kubernetes/auth-keycloak/) - OIDC authentication
+  - [Entra ID](examples/kubernetes/auth-entra/), [Google Cloud](examples/kubernetes/auth-gcp/)
+    and [Amazon Cognito](examples/kubernetes/auth-cognito/) - OIDC authentication with cloud identity providers
     in Kubernetes
   - [Guardrails](examples/kubernetes/guardrails/) - OPA/Rego guardrails via
     the operator

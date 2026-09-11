@@ -1,0 +1,41 @@
+---
+version: '3'
+
+# The app registrations are created by the docker-compose example of the same
+# name; this Taskfile reads its .env and reuses its token script.
+dotenv: ['../../docker-compose/auth-entra/.env']
+
+includes:
+  base:
+    taskfile: ../basic/Taskfile.yaml
+    dir: ../basic
+    vars:
+      # Needs an operator release that wires the OIDC issuer and client ID.
+      OPERATOR_VERSION: v0.24.3
+
+tasks:
+  deploy-infrastructure:
+    desc: 'Provision the cluster, Gateway API, Envoy Gateway and the operator'
+    cmds:
+      - task: base:deploy-infrastructure
+
+  deploy-inference-gateway:
+    desc: 'Deploy the gateway with Entra ID authentication (renders gateway.yaml with envsubst)'
+    cmds:
+      - envsubst < gateway.yaml | kubectl apply -f -
+      - echo "🔒 Inference Gateway with Entra ID authentication deployed successfully!"
+
+  fetch-access-token:
+    desc: 'Fetch an access token with the client credentials grant'
+    cmds:
+      - ../../docker-compose/auth-entra/get-token.sh
+
+  port-forward-gateway:
+    desc: 'Forward the gateway to http://localhost:8080'
+    cmds:
+      - task: base:port-forward-gateway
+
+  clean:
+    desc: 'Clean up the cluster'
+    cmds:
+      - task: base:clean

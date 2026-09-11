@@ -1,0 +1,23 @@
+---
+# The gateway alone: Google is the identity provider. Google's issuer is shared
+# by every Google account, so a guardrails policy (policies/identity.rego)
+# restricts callers to the service account named in .env. Everything else works
+# exactly as in the Keycloak example in ../auth-keycloak.
+services:
+  inference-gateway:
+    image: ghcr.io/inference-gateway/inference-gateway:latest
+    env_file:
+      - .env
+    environment:
+      AUTH_ENABLED: 'true'
+      AUTH_OIDC_ISSUER: https://accounts.google.com
+      # Any URL you choose; tokens must be minted for exactly this audience.
+      AUTH_OIDC_AUDIENCE: ${GATEWAY_AUDIENCE}
+      GUARDRAILS_ENABLED: 'true'
+      GUARDRAILS_POLICY_DIR: /etc/inference-gateway/guardrails/policies
+    volumes:
+      - ./policies:/etc/inference-gateway/guardrails/policies:ro
+    ports:
+      - '8080:8080'
+    pull_policy: always
+    restart: unless-stopped

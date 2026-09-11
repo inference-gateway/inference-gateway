@@ -70,8 +70,9 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 		},
 		Auth: &config.AuthConfig{
 			Enabled:      false,
-			OidcIssuer:   "http://keycloak:8080/realms/inference-gateway-realm",
-			OidcClientId: "inference-gateway-client",
+			OidcIssuer:   "",
+			OidcClientId: "",
+			OidcAudience: "",
 		},
 		Server: &config.ServerConfig{
 			Host:               "127.0.0.1",

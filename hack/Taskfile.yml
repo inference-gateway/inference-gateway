@@ -9,7 +9,7 @@ vars:
   GRAFANA_OPERATOR_VERSION: 5.18.0
   POSTGRES_VERSION: 16.6.2
   KEYCLOAK_VERSION: 26.2.4
-  AUTH_EXAMPLE: ../examples/kubernetes/authentication
+  AUTH_EXAMPLE: ../examples/kubernetes/auth-keycloak
 
 tasks:
   deploy-infrastructure:
@@ -179,18 +179,16 @@ tasks:
       - kubectl -n idp port-forward svc/keycloak-service 8543:8543
 
   fetch-access-token:
-    desc: 'Fetch an access token (requires `task port-forward-keycloak` running)'
+    desc: 'Fetch an access token with the client credentials grant (requires `task port-forward-keycloak` running)'
     cmds:
       - |
         curl -k -s -X POST \
           --resolve keycloak.inference-gateway.local:8543:127.0.0.1 \
           -H "Content-Type: application/x-www-form-urlencoded" \
           "https://keycloak.inference-gateway.local:8543/realms/inference-gateway-realm/protocol/openid-connect/token" \
-          -d "grant_type=password" \
+          -d "grant_type=client_credentials" \
           -d "client_id=inference-gateway-client" \
-          -d "client_secret=very-secret" \
-          -d "username=user" \
-          -d "password=password" | jq -r .access_token
+          -d "client_secret=very-secret" | jq -r .access_token
 
   print-access-token-payload:
     desc: 'Print the decoded access token payload'

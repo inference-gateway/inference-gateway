@@ -1,0 +1,70 @@
+---
+# Rendered with envsubst from ../../docker-compose/auth-entra/.env, see Taskfile.yaml.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inference-gateway
+  labels:
+    inference-gateway.com/managed: 'true'
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: Gateway
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: inference-gateway
+    app.kubernetes.io/instance: inference-gateway
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: inference-gateway
+spec:
+  environment: production
+  image: 'ghcr.io/inference-gateway/inference-gateway:latest'
+  server:
+    host: '0.0.0.0'
+    timeouts:
+      read: '60s'
+      write: '60s'
+      idle: '300s'
+  # Entra ID is a public HTTPS issuer, so unlike the Keycloak example no CA
+  # bundle or DNS rewrite is needed. The operator maps clientId to
+  # AUTH_OIDC_CLIENT_ID, which the gateway uses as the expected token audience:
+  # the API registration's client ID for v2 tokens.
+  auth:
+    enabled: true
+    provider: oidc
+    oidc:
+      issuerUrl: 'https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0'
+      clientId: '${AZURE_API_APP_ID}'
+  providers:
+    - name: OpenAI
+      enabled: true
+      env:
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: inference-gateway-secrets
+              key: OPENAI_API_KEY
+  resources:
+    requests:
+      cpu: '100m'
+      memory: '128Mi'
+    limits:
+      cpu: '1000m'
+      memory: '512Mi'
+  gatewayAPI:
+    enabled: true
+    gateway:
+      gatewayClassName: envoy
+    httpRoute:
+      hostnames:
+        - api.inference-gateway.local
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: inference-gateway-secrets
+  namespace: inference-gateway
+type: Opaque
+stringData:
+  OPENAI_API_KEY: ''

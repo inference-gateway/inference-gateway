@@ -3,7 +3,7 @@
 Local Kubernetes environment for developing the gateway itself. Unlike the
 [operator examples](../examples/kubernetes), the gateway here is a plain Deployment
 (`gateway.yaml`) so you can swap in a locally built image. Keycloak and cert-manager
-manifests are reused from `examples/kubernetes/authentication`.
+manifests are reused from `examples/kubernetes/auth-keycloak`.
 
 - [Hack](#hack)
   - [Prerequisites](#prerequisites)
@@ -57,7 +57,7 @@ To test a local build, push your image somewhere the cluster can pull from and c
 
 ```bash
 task port-forward-keycloak      # keep running in another terminal
-task fetch-access-token         # access token for the test user (user/password)
+task fetch-access-token         # access token for the demo client (client credentials grant)
 task print-access-token-payload
 task keycloak-admin-password
 ```
