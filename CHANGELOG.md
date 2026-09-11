@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.52.0](https://github.com/inference-gateway/inference-gateway/compare/v0.51.3...v0.52.0) (2026-09-11)
+
+### ✨ Features
+
+* **auth:** configurable audience, RFC 6750 challenges, and Entra, Google and Cognito support ([#646](https://github.com/inference-gateway/inference-gateway/issues/646)) ([828bd83](https://github.com/inference-gateway/inference-gateway/commit/828bd8357a30953a8564775590a8c6a25af6a180)), closes [#640](https://github.com/inference-gateway/inference-gateway/issues/640), references [#645](https://github.com/inference-gateway/inference-gateway/issues/645)
+
+### ♻️ Improvements
+
+* **auth:** drop unused AUTH_OIDC_CLIENT_SECRET setting ([#645](https://github.com/inference-gateway/inference-gateway/issues/645)) ([e6fa8bf](https://github.com/inference-gateway/inference-gateway/commit/e6fa8bf81dec3dcb21d4cea96dbe5b83eeed87a2)), closes [#640](https://github.com/inference-gateway/inference-gateway/issues/640)
+
+### 🐛 Bug Fixes
+
+* **guardrails:** pass decoded input to OPA so policies see input fields ([#647](https://github.com/inference-gateway/inference-gateway/issues/647)) ([21fd8c5](https://github.com/inference-gateway/inference-gateway/commit/21fd8c5185f854ab028c2388589cbb51234a48f9)), closes [#640](https://github.com/inference-gateway/inference-gateway/issues/640), references [#645](https://github.com/inference-gateway/inference-gateway/issues/645)
+
+### 📚 Documentation
+
+* correct mcp bypass header loop-prevention claims ([#658](https://github.com/inference-gateway/inference-gateway/issues/658)) ([d5afd3e](https://github.com/inference-gateway/inference-gateway/commit/d5afd3eec24f8c707407180fd6625499b4286d1c))
+* correct vision default-allow behavior in docs ([#656](https://github.com/inference-gateway/inference-gateway/issues/656)) ([6949f0d](https://github.com/inference-gateway/inference-gateway/commit/6949f0de4354cab9f0a7fbfeea53b35301bd05e9))
+* **examples:** use spec.auth.oidc.audiences in kubernetes auth examples ([#652](https://github.com/inference-gateway/inference-gateway/issues/652)) ([46571be](https://github.com/inference-gateway/inference-gateway/commit/46571be750ddedb70403afd0efd372f88326b662)), references [inference-gateway/operator#217](https://github.com/inference-gateway/operator/issues/217)
+* sync agents.md routes and middleware chain ([#659](https://github.com/inference-gateway/inference-gateway/issues/659)) ([00882c0](https://github.com/inference-gateway/inference-gateway/commit/00882c048c42303ae9549a8f12680b64ab6baa05))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump google.golang.org/grpc from 1.83.1 to 1.83.2 ([#650](https://github.com/inference-gateway/inference-gateway/issues/650)) ([482414d](https://github.com/inference-gateway/inference-gateway/commit/482414da67e3a2e4d6ac56075e280270aa01fd75))
+* **deps:** bump hono in /examples/docker-compose/mcp/pizza-server ([#651](https://github.com/inference-gateway/inference-gateway/issues/651)) ([60e5e1a](https://github.com/inference-gateway/inference-gateway/commit/60e5e1a45be2b7164883b71158f5517a89a8f33f))
+* sync community pricing, context-window, and modalities tables from models.dev ([#649](https://github.com/inference-gateway/inference-gateway/issues/649)) ([3bd8f5d](https://github.com/inference-gateway/inference-gateway/commit/3bd8f5d6f783d87aeb4e031d650ef699d095ae26))
+
 ## [0.51.3](https://github.com/inference-gateway/inference-gateway/compare/v0.51.2...v0.51.3) (2026-09-06)
 
 ### ♻️ Improvements
