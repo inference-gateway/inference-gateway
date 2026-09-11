@@ -333,3 +333,34 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "Hello! How can I help you?", content)
 }
+
+// The shipped authz.rego restricts openai/gpt-4o to the ml-eng group. It only
+// works if OPA sees the decoded input document, so this pins that path.
+func TestGuardrailsMiddleware_ExamplePolicyBlocks(t *testing.T) {
+	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/docker-compose/guardrails/policies")
+	assert.NoError(t, err)
+
+	tests := []struct {
+		name     string
+		identity map[string]any
+		want     string
+	}{
+		{name: "Member of ml-eng", identity: map[string]any{"groups": []any{"ml-eng"}}, want: guardrails.ActionAllow},
+		{name: "Authenticated outside ml-eng", identity: map[string]any{"groups": []any{"sales"}}, want: guardrails.ActionBlock},
+		{name: "Unauthenticated", identity: nil, want: guardrails.ActionAllow},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dec, err := evaluator.Eval(context.Background(), &guardrails.Input{
+				Method:   "POST",
+				Path:     "/v1/chat/completions",
+				Phase:    guardrails.PhasePreCall,
+				Request:  &guardrails.Req{Body: `{"model":"openai/gpt-4o","messages":[]}`, Model: "openai/gpt-4o"},
+				Identity: tt.identity,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, dec.Action)
+		})
+	}
+}
