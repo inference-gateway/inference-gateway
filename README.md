@@ -356,15 +356,19 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 ### How It Works Internally
 
-The middlewares use these same headers to prevent infinite loops during their operation:
+`X-MCP-Bypass` is purely a client-facing opt-out: the MCP middleware
+(`api/middlewares/mcp.go`) skips processing whenever the inbound request carries
+the header with any non-empty value. No gateway code sets it.
 
 **MCP Processing:**
 
-- When tools are detected in a response, the MCP agent makes up to 10 follow-up requests
-- Each follow-up request includes `X-MCP-Bypass: true` to skip middleware re-processing
-- This allows the agent to iterate without creating circular calls
+- When tools are detected in a response, the MCP agent makes up to 10 follow-up
+  requests (`MaxAgentIterations` in `internal/mcp/agent.go`)
+- Those follow-ups are in-process calls on the provider
+  (`provider.ChatCompletions` / `provider.StreamChatCompletions`), not HTTP
+  requests back through the gateway, so the middleware chain is never re-entered
 
-> **Note**: These bypass headers only affect middleware processing. The core
+> **Note**: This bypass header only affects middleware processing. The core
 > chat completions functionality remains available regardless of header values.
 
 ## Model Context Protocol (MCP) Integration

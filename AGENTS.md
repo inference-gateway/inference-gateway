@@ -29,7 +29,7 @@ Adding a provider: edit `openapi.yaml` (`Provider` enum + `x-provider-configs`, 
 
 ## Architecture
 
-`cmd/gateway/main.go` is the only entry point. Routes (`api/routes.go`): `/health`, `/v1/models`, `/v1/mcp/tools`, `/v1/chat/completions`, and `ANY /proxy/:provider/*path`. Middleware chain: `logger` → `telemetry` → `OIDC auth` → `MCP` (each opt-in). The MCP middleware re-invokes the provider for tool calls, setting `X-MCP-Bypass: true` to prevent loops.
+`cmd/gateway/main.go` is the only entry point. Routes (`api/routes.go`): `/health`, `/v1/models`, `/v1/mcp/tools`, `/v1/chat/completions`, and `ANY /proxy/:provider/*path`. Middleware chain: `logger` → `telemetry` → `OIDC auth` → `MCP` (each opt-in). For tool calls the MCP middleware hands off to the in-process agent loop in `internal/mcp/agent.go`, which calls `provider.ChatCompletions` / `provider.StreamChatCompletions` directly for up to `MaxAgentIterations` rounds - no HTTP request re-enters the gateway. `X-MCP-Bypass` is only honoured as an inbound client header in `api/middlewares/mcp.go` (any non-empty value skips the middleware); nothing sets it.
 
 A "provider" is one upstream LLM API. `providers/core/` holds the `IProvider` interface; `providers/registry/` builds providers on demand; `providers/routing/model_mapping.go` maps a `provider/model` prefix (or `?provider=` query param) to a provider.
 
