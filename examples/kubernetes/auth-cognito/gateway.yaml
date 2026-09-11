@@ -27,15 +27,15 @@ spec:
       write: '60s'
       idle: '300s'
   # Cognito is a public HTTPS issuer, so no CA bundle or DNS rewrite is needed.
-  # The operator maps clientId to AUTH_OIDC_CLIENT_ID, which the gateway uses
-  # as the expected audience; Cognito machine tokens carry no aud, so the
-  # gateway checks their client_id claim against it.
+  # audiences is rendered to AUTH_OIDC_AUDIENCE; Cognito machine tokens carry
+  # no aud, so the gateway checks their client_id claim against it.
   auth:
     enabled: true
     provider: oidc
     oidc:
       issuerUrl: 'https://cognito-idp.${AWS_REGION}.amazonaws.com/${COGNITO_USER_POOL_ID}'
-      clientId: '${COGNITO_CLIENT_ID}'
+      audiences:
+        - '${COGNITO_CLIENT_ID}'
   providers:
     - name: OpenAI
       enabled: true

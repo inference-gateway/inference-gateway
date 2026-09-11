@@ -10,8 +10,8 @@ includes:
     taskfile: ../basic/Taskfile.yaml
     dir: ../basic
     vars:
-      # Needs an operator release that wires the OIDC issuer and client ID.
-      OPERATOR_VERSION: v0.24.3
+      # Needs an operator release that supports spec.auth.oidc.audiences.
+      OPERATOR_VERSION: v0.25.0
 
 tasks:
   deploy-infrastructure:

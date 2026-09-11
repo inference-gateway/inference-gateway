@@ -19,16 +19,17 @@ spec:
       read: '60s'
       write: '60s'
       idle: '300s'
-  # Google's issuer is shared by every Google account. The operator maps
-  # clientId to AUTH_OIDC_CLIENT_ID, which the gateway uses as the expected
-  # token audience: the URL tokens are minted for. The guardrails policy below
-  # then restricts callers to the allowed service account.
+  # Google's issuer is shared by every Google account. audiences is rendered
+  # to AUTH_OIDC_AUDIENCE: any URL you choose, tokens must be minted for
+  # exactly this audience. The guardrails policy below then restricts callers
+  # to the allowed service account.
   auth:
     enabled: true
     provider: oidc
     oidc:
       issuerUrl: 'https://accounts.google.com'
-      clientId: '${GATEWAY_AUDIENCE}'
+      audiences:
+        - '${GATEWAY_AUDIENCE}'
   guardrails:
     enabled: true
     failMode: closed
