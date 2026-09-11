@@ -7,8 +7,8 @@ This example demonstrates Keycloak (OIDC) authentication with the Inference Gate
 > in `gateway.yaml`, including `caCertRef` to trust Keycloak's self-signed CA.
 >
 > **Operator version:** This example requires an operator release that wires the OIDC issuer/clientId env
-> vars and supports `spec.auth.oidc.caCertRef` (pinned as `OPERATOR_VERSION` in `Taskfile.yaml`). Earlier
-> releases only set `AUTH_ENABLED`, so OIDC will not function.
+> vars and supports `spec.auth.oidc.caCertRef` and `audiences` (pinned as `OPERATOR_VERSION` in
+> `Taskfile.yaml`). Earlier releases only set `AUTH_ENABLED`, so OIDC will not function.
 
 ## Table of Contents
 
@@ -87,8 +87,9 @@ This example demonstrates Keycloak (OIDC) authentication with the Inference Gate
   settings.
 - **Gateway auth**: configured in `gateway.yaml` under `spec.auth.oidc` (issuer URL, client ID, and the CA
   certificate reference). The gateway checks that the token's `aud` contains the client ID, which the realm's
-  audience mapper adds to access tokens. `AUTH_OIDC_AUDIENCE` accepts a comma-separated list instead (for
-  example an API identifier); the operator does not expose it yet.
+  audience mapper adds to access tokens. For other `aud` values (for example an API identifier) set
+  `spec.auth.oidc.audiences`, which the operator renders to `AUTH_OIDC_AUDIENCE`; see the Entra ID, GCP and
+  Cognito examples next door.
 
 ## Cleanup
 

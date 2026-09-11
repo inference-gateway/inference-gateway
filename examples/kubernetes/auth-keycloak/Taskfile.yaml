@@ -8,8 +8,8 @@ vars:
   POSTGRES_VERSION: 16.6.2
   KEYCLOAK_VERSION: 26.2.4
   # Requires an operator release that wires the OIDC issuer/clientId env vars and
-  # supports spec.auth.oidc.caCertRef (see the operator repo).
-  OPERATOR_VERSION: v0.24.3
+  # supports spec.auth.oidc.caCertRef and audiences (see the operator repo).
+  OPERATOR_VERSION: v0.25.0
 
 tasks:
   deploy-infrastructure:

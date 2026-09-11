@@ -27,15 +27,16 @@ spec:
       write: '60s'
       idle: '300s'
   # Entra ID is a public HTTPS issuer, so unlike the Keycloak example no CA
-  # bundle or DNS rewrite is needed. The operator maps clientId to
-  # AUTH_OIDC_CLIENT_ID, which the gateway uses as the expected token audience:
-  # the API registration's client ID for v2 tokens.
+  # bundle or DNS rewrite is needed. audiences is rendered to
+  # AUTH_OIDC_AUDIENCE; v2 access tokens put the API registration's client ID
+  # in aud.
   auth:
     enabled: true
     provider: oidc
     oidc:
       issuerUrl: 'https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0'
-      clientId: '${AZURE_API_APP_ID}'
+      audiences:
+        - '${AZURE_API_APP_ID}'
   providers:
     - name: OpenAI
       enabled: true
