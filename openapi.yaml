@@ -3976,7 +3976,7 @@ components:
                   env: 'VISION_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable vision/multimodal handling for all providers. When enabled, image content is stripped from requests to models not known to accept images and passed through to vision-capable models. When disabled, image content is forwarded to the provider untouched'
+                  description: 'Enable vision/multimodal handling for all providers. When enabled, image content is stripped from requests to models known to accept only non-image input; unknown models are passed through. When disabled, image content is forwarded to the provider untouched'
                 - name: images_enabled
                   env: 'IMAGES_ENABLED'
                   type: bool
