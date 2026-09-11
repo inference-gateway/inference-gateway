@@ -31,18 +31,16 @@ spec:
       write: '60s'
       idle: '300s'
   # OIDC authentication against Keycloak. The operator emits AUTH_ENABLED,
-  # AUTH_OIDC_ISSUER, AUTH_OIDC_CLIENT_ID and AUTH_OIDC_CLIENT_SECRET, and - via
-  # caCertRef - mounts Keycloak's self-signed CA and points SSL_CERT_FILE at it so
-  # OIDC discovery over HTTPS is trusted.
+  # AUTH_OIDC_ISSUER and AUTH_OIDC_CLIENT_ID, and - via caCertRef - mounts
+  # Keycloak's self-signed CA and points SSL_CERT_FILE at it so OIDC discovery
+  # over HTTPS is trusted. No client secret is needed: the gateway only verifies
+  # tokens against the issuer's public keys.
   auth:
     enabled: true
     provider: oidc
     oidc:
       issuerUrl: 'https://keycloak.inference-gateway.local:8543/realms/inference-gateway-realm'
       clientId: inference-gateway-client
-      clientSecretRef:
-        name: inference-gateway-auth
-        key: AUTH_OIDC_CLIENT_SECRET
       caCertRef:
         name: keycloak-ca
         key: ca.crt
@@ -81,17 +79,6 @@ spec:
     httpRoute:
       hostnames:
         - api.inference-gateway.local
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: inference-gateway-auth
-  namespace: inference-gateway
-type: Opaque
-stringData:
-  # Must match the client secret of the inference-gateway-client in the realm
-  # (see keycloak/job-import-realm.yaml).
-  AUTH_OIDC_CLIENT_SECRET: very-secret
 ---
 apiVersion: v1
 kind: Secret

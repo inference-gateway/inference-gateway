@@ -54,12 +54,11 @@
 
 ### Authentication
 
-| Environment Variable    | Default Value                                         | Description           |
-| ----------------------- | ----------------------------------------------------- | --------------------- |
-| AUTH_ENABLED            | `false`                                               | Enable authentication |
-| AUTH_OIDC_ISSUER        | `http://keycloak:8080/realms/inference-gateway-realm` | OIDC issuer URL       |
-| AUTH_OIDC_CLIENT_ID     | `inference-gateway-client`                            | OIDC client ID        |
-| AUTH_OIDC_CLIENT_SECRET | `""`                                                  | OIDC client secret    |
+| Environment Variable | Default Value                                         | Description           |
+| -------------------- | ----------------------------------------------------- | --------------------- |
+| AUTH_ENABLED         | `false`                                               | Enable authentication |
+| AUTH_OIDC_ISSUER     | `http://keycloak:8080/realms/inference-gateway-realm` | OIDC issuer URL       |
+| AUTH_OIDC_CLIENT_ID  | `inference-gateway-client`                            | OIDC client ID        |
 
 ### Guardrails
 

@@ -25,8 +25,9 @@ This example demonstrates Keycloak (OIDC) authentication with the Inference Gate
 - **Identity Provider**: Keycloak (with a PostgreSQL backend) handles user authentication. It keeps its own
   TLS (self-signed via cert-manager) and is reached at `https://keycloak.inference-gateway.local:8543`.
 - **Gateway**: An `inference-gateway` `Gateway` custom resource with `spec.auth.oidc` enabled. The operator
-  emits `AUTH_ENABLED`, `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`, `AUTH_OIDC_CLIENT_SECRET`, and - via
-  `caCertRef` - mounts Keycloak's CA and sets `SSL_CERT_FILE` so OIDC discovery over HTTPS is trusted.
+  emits `AUTH_ENABLED`, `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`, and - via `caCertRef` - mounts Keycloak's
+  CA and sets `SSL_CERT_FILE` so OIDC discovery over HTTPS is trusted. The gateway never needs the client
+  secret; it only verifies tokens against the issuer's public keys.
 - **In-cluster issuer resolution**: A CoreDNS rewrite points `keycloak.inference-gateway.local` at the
   in-cluster Keycloak Service, so the gateway reaches the same issuer hostname Keycloak stamps into tokens.
 - **Routing**: The gateway is exposed over HTTPS via the Kubernetes Gateway API (Envoy Gateway), with the
@@ -83,8 +84,8 @@ This example demonstrates Keycloak (OIDC) authentication with the Inference Gate
 
 - **Keycloak**: edit the YAMLs in `keycloak/` (instance, realm import, DB secret) and the issuer in cert
   settings.
-- **Gateway auth**: configured in `gateway.yaml` under `spec.auth.oidc` (issuer URL, client ID, client
-  secret reference, and the CA certificate reference).
+- **Gateway auth**: configured in `gateway.yaml` under `spec.auth.oidc` (issuer URL, client ID, and the CA
+  certificate reference).
 
 ## Cleanup
 

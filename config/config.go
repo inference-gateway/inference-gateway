@@ -78,10 +78,9 @@ type MCPConfig struct {
 
 // Authentication configuration
 type AuthConfig struct {
-	Enabled          bool   `env:"ENABLED, default=false" description:"Enable authentication"`
-	OidcIssuer       string `env:"OIDC_ISSUER, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
-	OidcClientId     string `env:"OIDC_CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
-	OidcClientSecret string `env:"OIDC_CLIENT_SECRET" type:"secret" description:"OIDC client secret"`
+	Enabled      bool   `env:"ENABLED, default=false" description:"Enable authentication"`
+	OidcIssuer   string `env:"OIDC_ISSUER, default=http://keycloak:8080/realms/inference-gateway-realm" description:"OIDC issuer URL"`
+	OidcClientId string `env:"OIDC_CLIENT_ID, default=inference-gateway-client" type:"secret" description:"OIDC client ID"`
 }
 
 // Guardrails configuration
