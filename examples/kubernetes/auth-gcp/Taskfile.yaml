@@ -12,7 +12,7 @@ includes:
     dir: ../basic
     vars:
       # Needs an operator release that wires the OIDC issuer and client ID.
-      OPERATOR_VERSION: v0.17.0
+      OPERATOR_VERSION: v0.24.3
 
 tasks:
   deploy-infrastructure:

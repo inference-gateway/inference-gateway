@@ -52,7 +52,7 @@ spec:
     limits:
       cpu: '1000m'
       memory: '512Mi'
-  routing:
+  gatewayAPI:
     enabled: true
     gateway:
       gatewayClassName: envoy

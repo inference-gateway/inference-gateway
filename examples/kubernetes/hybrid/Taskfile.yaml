@@ -77,7 +77,7 @@ tasks:
     cmds:
       - kubectl apply -f llamacpp/
       - echo "🦙 llama.cpp server deploying - the model downloads on first start."
-      - echo "   Watch it with: kubectl -n llamacpp logs -f deploy/llamacpp"
+      - 'echo "   Watch it with: kubectl -n llamacpp logs -f deploy/llamacpp"'
 
   deploy-inference-gateway:
     desc: 'Deploy the Inference Gateway with hybrid providers via the operator'

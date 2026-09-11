@@ -9,7 +9,7 @@ vars:
   KEYCLOAK_VERSION: 26.2.4
   # Requires an operator release that wires the OIDC issuer/clientId env vars and
   # supports spec.auth.oidc.caCertRef (see the operator repo).
-  OPERATOR_VERSION: v0.17.0
+  OPERATOR_VERSION: v0.24.3
 
 tasks:
   deploy-infrastructure:
@@ -42,6 +42,9 @@ tasks:
           --namespace cert-manager \
           --version {{.CERT_MANAGER_VERSION}} \
           --set crds.enabled=true \
+          --set config.apiVersion=controller.config.cert-manager.io/v1alpha1 \
+          --set config.kind=ControllerConfiguration \
+          --set config.enableGatewayAPI=true \
           --wait
       - kubectl apply -f cert-manager/
       - echo "🔐 Cert-manager deployed successfully!"
@@ -79,6 +82,8 @@ tasks:
           --create-namespace \
           --namespace idp \
           --version {{.POSTGRES_VERSION}} \
+          --set image.repository=bitnamilegacy/postgresql \
+          --set global.security.allowInsecureImages=true \
           --set global.postgresql.auth.username=dbusername \
           --set global.postgresql.auth.password=dbpassword \
           --set global.postgresql.auth.database=keycloak \
@@ -148,7 +153,7 @@ tasks:
   port-forward-keycloak:
     desc: 'Forward Keycloak to https://localhost:8543'
     cmds:
-      - echo "Keycloak: https://localhost:8543 (Ctrl+C to stop)"
+      - 'echo "Keycloak: https://localhost:8543 (Ctrl+C to stop)"'
       - kubectl -n idp port-forward svc/keycloak-service 8543:8543
 
   port-forward-gateway:
