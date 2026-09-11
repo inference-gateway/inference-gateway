@@ -334,8 +334,6 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 	assert.Equal(t, "Hello! How can I help you?", content)
 }
 
-// The shipped authz.rego restricts openai/gpt-4o to the ml-eng group. It only
-// works if OPA sees the decoded input document, so this pins that path.
 func TestGuardrailsMiddleware_ExamplePolicyBlocks(t *testing.T) {
 	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/docker-compose/guardrails/policies")
 	assert.NoError(t, err)
