@@ -82,10 +82,10 @@ environment variables (`MCP_ENABLED`) or bypassed per-request using headers
 (`X-MCP-Bypass`), giving you full control over which capabilities are active.
 
 **Note**: Vision/multimodal handling is disabled by default. With
-`VISION_ENABLED=true` the gateway strips image content from requests targeting
-models it does not recognize as vision-capable, and passes images through for
-models that are (GPT-4o, Claude 4.5, Gemini 2.5, etc.). With it disabled,
-image content is forwarded to the provider untouched.
+`VISION_ENABLED=true` the gateway strips image content only from requests
+targeting models its community modalities table lists as text-only input;
+models the table does not cover pass images through untouched. With it
+disabled, image content is forwarded to the provider untouched.
 
 The following diagram illustrates the flow:
 
@@ -530,23 +530,20 @@ To enable vision handling for requests carrying images alongside text:
 VISION_ENABLED=true
 ```
 
-**Supported Providers with Vision:**
-
-- OpenAI (GPT-4o, GPT-5, GPT-4.1, GPT-4 Turbo)
-- Anthropic (Claude 3, Claude 4, Claude 4.5 Sonnet, Claude 4.5 Haiku)
-- Google (Gemini 2.5)
-- Cohere (Command A Vision, Aya Vision)
-- Ollama (LLaVA, Llama 4, Llama 3.2 Vision)
-- Groq (vision models)
-- Mistral (Pixtral)
-
 **Note**: Vision handling is disabled by default. When `VISION_ENABLED=true`,
-the gateway checks the target model against its list of vision-capable models:
-image content parts are stripped from the request (leaving text only) for
-models it does not recognize as vision-capable, and passed through unchanged
-for models that are. When disabled, the gateway does not inspect image content
-at all - requests with images are forwarded to the provider untouched, and the
-provider decides how to handle them.
+the gateway looks the target model up in its community modalities table
+(`providers/core/community_modalities.json`, synced from models.dev): image
+content parts are stripped from the request (leaving text only) only when the
+table says the model accepts text-only input. Everything else - vision models
+in the table and any model the table does not cover - is passed through
+unchanged, so an unrecognized model is never silently stripped. When disabled,
+the gateway does not inspect image content at all and the provider decides how
+to handle it.
+
+The table is not an allow-list of providers: it covers whichever models
+models.dev publishes. Ollama models, for example, have no entries at all, so
+LLaVA and Llama 3.2 Vision work through the permissive default rather than
+through recognition.
 
 ## Examples
 
