@@ -67,9 +67,6 @@ func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OI
 		return nil, err
 	}
 
-	// The audience check happens in Middleware against the configured list, so
-	// the gateway accepts API identifiers (Auth0, Okta, Entra, Cognito) and not
-	// only its own client ID; go-oidc's ClientID check allows a single value.
 	return &OIDCAuthenticatorImpl{
 		logger:    logger,
 		verifier:  provider.Verifier(&oidcV3.Config{SkipClientIDCheck: true}),
@@ -117,8 +114,6 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 
 		audiences := idToken.Audience
 		if len(audiences) == 0 {
-			// Cognito machine tokens carry no aud at all; AWS documents the
-			// client_id claim as the value a resource server verifies instead.
 			if clientID, _ := claims[clientIDClaim].(string); clientID != "" {
 				audiences = []string{clientID}
 			}
