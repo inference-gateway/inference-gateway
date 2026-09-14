@@ -437,9 +437,19 @@
       "text"
     ]
   },
+  "deepseek/deepseek-flash": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "deepseek/deepseek-v4-flash": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -2841,6 +2851,16 @@
       "text"
     ]
   },
+  "nvidia/z-ai/glm-5.3-flash": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "nvidia/zyphra/zamba2-7b-instruct": {
     "input": [
       "text"
@@ -2868,6 +2888,23 @@
   "ollama_cloud/deepseek-v4-pro": {
     "input": [
       "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "ollama_cloud/deepseek-v4-pro:0813": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "ollama_cloud/deepseek-v4.1-flash": {
+    "input": [
+      "text",
+      "image"
     ],
     "output": [
       "text"

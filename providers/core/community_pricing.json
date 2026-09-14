@@ -392,21 +392,29 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "deepseek/deepseek-v4-flash": {
-    "cache_read_per_token": "0.0000000028",
+  "deepseek/deepseek-flash": {
+    "cache_read_per_token": "0.000000003",
     "currency": "USD",
-    "input_per_token": "0.00000014",
-    "output_per_token": "0.00000028",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000006",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-09-14T11:37:00Z"
+  },
+  "deepseek/deepseek-v4-flash": {
+    "cache_read_per_token": "0.000000003",
+    "currency": "USD",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000006",
+    "source": "community",
+    "updated_at": "2026-09-14T11:37:00Z"
   },
   "deepseek/deepseek-v4-flash-vision-exp": {
-    "cache_read_per_token": "0.0000000028",
+    "cache_read_per_token": "0.000000003",
     "currency": "USD",
-    "input_per_token": "0.00000014",
-    "output_per_token": "0.00000028",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000006",
     "source": "community",
-    "updated_at": "2026-08-24T06:47:59Z"
+    "updated_at": "2026-09-14T11:37:00Z"
   },
   "deepseek/deepseek-v4-pro": {
     "cache_read_per_token": "0.000000003625",
@@ -1786,6 +1794,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "nvidia/z-ai/glm-5.3-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-09-14T11:37:00Z"
+  },
   "ollama_cloud/deepseek-v4-flash": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1809,6 +1824,22 @@
     "source": "community",
     "subscription": true,
     "updated_at": "2026-07-21T10:29:38Z"
+  },
+  "ollama_cloud/deepseek-v4-pro:0813": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-14T11:37:00Z"
+  },
+  "ollama_cloud/deepseek-v4.1-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-09-14T11:37:00Z"
   },
   "ollama_cloud/gemma4:31b": {
     "currency": "USD",

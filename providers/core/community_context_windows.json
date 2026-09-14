@@ -205,6 +205,10 @@
     "context": 256000,
     "output": 64000
   },
+  "deepseek/deepseek-flash": {
+    "context": 1000000,
+    "output": 384000
+  },
   "deepseek/deepseek-v4-flash": {
     "context": 1000000,
     "output": 384000
@@ -930,6 +934,10 @@
     "context": 1000000,
     "output": 131072
   },
+  "nvidia/z-ai/glm-5.3-flash": {
+    "context": 1000000,
+    "output": 131072
+  },
   "ollama_cloud/deepseek-v4-flash": {
     "context": 1048576,
     "output": 1048576
@@ -941,6 +949,13 @@
   "ollama_cloud/deepseek-v4-pro": {
     "context": 1048576,
     "output": 1048576
+  },
+  "ollama_cloud/deepseek-v4-pro:0813": {
+    "context": 1048576,
+    "output": 1048576
+  },
+  "ollama_cloud/deepseek-v4.1-flash": {
+    "context": 1048576
   },
   "ollama_cloud/gemma4:31b": {
     "context": 262144,
