@@ -33,6 +33,11 @@ on:
         required: false
         type: boolean
         default: false
+      model:
+        description: 'Model as provider/model (empty = this repo default from repos.yaml)'
+        required: false
+        type: string
+        default: ''
   issues:
     types:
       - opened
@@ -77,5 +82,6 @@ jobs:
       browser: ${{ inputs.browser || false }}
       browser_engine: ${{ inputs.browser_engine || 'chromium' }}
       review_inline: ${{ inputs.review_inline || false }}
+      model: ${{ inputs.model || 'ollama_cloud/glm-5.3-flash' }}
       prompt: ${{ inputs.prompt }}
     secrets: inherit
