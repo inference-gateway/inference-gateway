@@ -100,7 +100,10 @@ func TestModelAcceptsImages(t *testing.T) {
 	}{
 		{"vision model with date pin", "anthropic", "claude-haiku-4-5-20251001", true},
 		{"vision model", "anthropic", "claude-haiku-4-5", true},
-		{"text-only model", "deepseek", "deepseek-v4-flash", false},
+		// gpt-4-0613 is pinned in community_modalities.overrides.json, so this fixture
+		// survives weekly re-syncs that flip synced models (e.g. deepseek-v4-flash
+		// gained vision in the 2026-09-14 sync).
+		{"text-only model", "openai", "gpt-4-0613", false},
 		{"unknown model is permissive", "openai", "gpt-nonexistent", true},
 	}
 	for _, tt := range tests {
