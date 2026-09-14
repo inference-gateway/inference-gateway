@@ -1,4 +1,4 @@
-schema-version = "1.15.0"
+schema-version = "1.16.0"
 
 [vars]
 GOPATH = "$HOME/go"
@@ -55,7 +55,7 @@ git.version = "^2.55.0"
 git.outputs = "all"
 infer.flake = "github:inference-gateway/cli/v0.189.2"
 claude-code.pkg-path = "claude-code"
-claude-code.version = "^2.1.260"
+claude-code.version = "^2.1.266"
 claude-code.pkg-group = "claude-code"
 codex.pkg-path = "codex"
 codex.version = "^0.149.0"
