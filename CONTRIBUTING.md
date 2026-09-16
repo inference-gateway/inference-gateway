@@ -127,6 +127,12 @@ For detailed development information, see [AGENTS.md](./AGENTS.md).
 Please follow the coding style used in the project. We use `gofmt` to format
 our Go code.
 
+Go imports are grouped and ordered by the `gci` formatter (configured in
+`.golangci.yml`): standard library, `github.com/stretchr/testify`,
+`tests/mocks`, other third-party packages, `github.com/inference-gateway/*`,
+and finally this module. Run `golangci-lint fmt` locally to fix the import
+blocks; `task lint` checks them.
+
 Also semantic-release is being used for automated releases, so please ensure
 your commits are following
 [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/#specification).
