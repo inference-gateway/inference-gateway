@@ -5,9 +5,6 @@ linters:
     - importas
   settings:
     importas:
-      # Every non-standard-library import must be explicitly named. The
-      # catch-all rule derives the alias from the last path element; list a
-      # package above it to pin a different alias.
       no-unaliased: true
       alias:
         - pkg: github.com/coreos/go-oidc/v3/oidc
