@@ -7,9 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	gin "github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
+
+	gin "github.com/gin-gonic/gin"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -19,7 +22,6 @@ import (
 	"github.com/inference-gateway/inference-gateway/config"
 	"github.com/inference-gateway/inference-gateway/logger"
 	"github.com/inference-gateway/inference-gateway/otel"
-	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 )
 
 func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, telemetry otel.OpenTelemetry) *gin.Engine {

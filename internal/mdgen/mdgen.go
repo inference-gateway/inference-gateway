@@ -6,9 +6,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/inference-gateway/inference-gateway/internal/openapi"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+
+	"github.com/inference-gateway/inference-gateway/internal/openapi"
 )
 
 func GenerateConfigurationsMD(filePath string, oas string) error {

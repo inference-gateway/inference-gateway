@@ -7,8 +7,6 @@ import (
 	"errors"
 	"net/url"
 
-	config "github.com/inference-gateway/inference-gateway/config"
-	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "go.opentelemetry.io/otel"
 	attribute "go.opentelemetry.io/otel/attribute"
 	otlptracehttp "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -20,6 +18,9 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
+
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 )
 
 // SourceGateway is the source attribute value for metrics recorded by the

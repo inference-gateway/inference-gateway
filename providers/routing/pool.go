@@ -7,9 +7,10 @@ import (
 	"slices"
 	"sync/atomic"
 
+	yaml "gopkg.in/yaml.v3"
+
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
-	yaml "gopkg.in/yaml.v3"
 )
 
 // StrategyRoundRobin is the only selection strategy supported in Phase 1. An

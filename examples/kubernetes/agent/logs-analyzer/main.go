@@ -6,19 +6,19 @@ import (
 	"fmt"
 	"io"
 	"log"
+	filepath "path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
-	filepath "path/filepath"
-
-	sdk "github.com/inference-gateway/sdk"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	homedir "k8s.io/client-go/util/homedir"
+
+	sdk "github.com/inference-gateway/sdk"
 )
 
 const systemPrompt = `You are a Kubernetes reliability engineer. Analyze this error log and:

@@ -495,7 +495,6 @@ func main() {
 	// Add the traditional MCP endpoint
 	r.POST("/mcp", transport.Handler())
 
-
 	// Add capabilities endpoint
 	r.GET("/capabilities", func(c *gin.Context) {
 		c.JSON(200, gin.H{

@@ -4,11 +4,14 @@ import (
 	"errors"
 	"testing"
 
+	assert "github.com/stretchr/testify/assert"
+
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
+
+	gomock "go.uber.org/mock/gomock"
+
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
-	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
-	assert "github.com/stretchr/testify/assert"
-	gomock "go.uber.org/mock/gomock"
 )
 
 func TestNewLogger(t *testing.T) {

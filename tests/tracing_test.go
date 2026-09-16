@@ -11,7 +11,10 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
-	gomock "go.uber.org/mock/gomock"
+
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
+	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
 	gin "github.com/gin-gonic/gin"
 	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -22,6 +25,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	tracetest "go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+	gomock "go.uber.org/mock/gomock"
 
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
@@ -33,9 +37,6 @@ import (
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
-	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
-	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 // setupTracing installs an in-memory span recorder as the global tracer

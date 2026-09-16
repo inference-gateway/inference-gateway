@@ -17,6 +17,17 @@ formatters:
   enable:
     - gofmt
     - goimports
+    - gci
+  settings:
+    gci:
+      custom-order: true
+      sections:
+        - standard
+        - prefix(github.com/stretchr/testify)
+        - prefix(github.com/inference-gateway/inference-gateway/tests/mocks)
+        - default
+        - prefix(github.com/inference-gateway/)
+        - prefix(github.com/inference-gateway/inference-gateway)
   exclusions:
     generated: lax
     paths:

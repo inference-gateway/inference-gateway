@@ -15,6 +15,10 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
+	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
+	envconfig "github.com/sethvargo/go-envconfig"
+	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -27,9 +31,6 @@ import (
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
-	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
-	envconfig "github.com/sethvargo/go-envconfig"
-	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
 var (

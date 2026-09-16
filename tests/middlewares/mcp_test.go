@@ -10,8 +10,13 @@ import (
 	"strings"
 	"testing"
 
-	gin "github.com/gin-gonic/gin"
 	assert "github.com/stretchr/testify/assert"
+
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
+	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
+
+	gin "github.com/gin-gonic/gin"
 	gomock "go.uber.org/mock/gomock"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
@@ -19,10 +24,6 @@ import (
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
-
-	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
-	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 func init() {

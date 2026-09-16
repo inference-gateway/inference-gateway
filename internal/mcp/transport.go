@@ -12,11 +12,12 @@ import (
 	"sync"
 	"time"
 
-	types "github.com/inference-gateway/inference-gateway/providers/types"
 	m "github.com/metoro-io/mcp-golang"
 	transport "github.com/metoro-io/mcp-golang/transport/http"
 	otelapi "go.opentelemetry.io/otel"
 	propagation "go.opentelemetry.io/otel/propagation"
+
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // TransportMode represents the type of transport being used

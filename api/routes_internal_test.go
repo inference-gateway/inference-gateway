@@ -8,6 +8,9 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
+
 	gomock "go.uber.org/mock/gomock"
 
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
@@ -15,7 +18,6 @@ import (
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 // TestToMCPTool_NilDescription verifies a server tool published without a

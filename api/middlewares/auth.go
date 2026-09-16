@@ -13,6 +13,7 @@ import (
 
 	oidcV3 "github.com/coreos/go-oidc/v3/oidc"
 	gin "github.com/gin-gonic/gin"
+
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	types "github.com/inference-gateway/inference-gateway/providers/types"

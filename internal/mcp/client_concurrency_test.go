@@ -13,12 +13,14 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
+
 	gomock "go.uber.org/mock/gomock"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 )
 
 func newMCPStubServer(t *testing.T, initDelay time.Duration, initCount *atomic.Int32) *httptest.Server {

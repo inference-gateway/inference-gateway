@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
+	assert "github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
+
 	gin "github.com/gin-gonic/gin"
 	jose "github.com/go-jose/go-jose/v4"
 	jwt "github.com/go-jose/go-jose/v4/jwt"
-	assert "github.com/stretchr/testify/assert"
-	require "github.com/stretchr/testify/require"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"

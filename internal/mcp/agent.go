@@ -6,17 +6,17 @@ import (
 	"fmt"
 	"strings"
 
-	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
-	logger "github.com/inference-gateway/inference-gateway/logger"
-	core "github.com/inference-gateway/inference-gateway/providers/core"
-	types "github.com/inference-gateway/inference-gateway/providers/types"
 	otelapi "go.opentelemetry.io/otel"
 	attribute "go.opentelemetry.io/otel/attribute"
 	codes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	trace "go.opentelemetry.io/otel/trace"
 
+	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
+	core "github.com/inference-gateway/inference-gateway/providers/core"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // MaxAgentIterations limits the number of agent loop iterations

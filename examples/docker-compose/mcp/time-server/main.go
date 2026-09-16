@@ -81,8 +81,8 @@ func setupSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		c.Header("Access-Control-Allow-Headers", "Cache-Control")
 
 		var request struct {
-			Method string      `json:"method"`
-			Params any `json:"params"`
+			Method string `json:"method"`
+			Params any    `json:"params"`
 		}
 
 		if err := c.ShouldBindJSON(&request); err != nil {
@@ -215,7 +215,6 @@ func main() {
 
 	// Add the traditional MCP endpoint
 	r.POST("/mcp", transport.Handler())
-
 
 	// Add SSE capability info endpoint
 	r.GET("/capabilities", func(c *gin.Context) {
