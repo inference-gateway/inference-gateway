@@ -12,16 +12,17 @@ type Client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// SpanNameFormatter names outbound client spans "<METHOD> <path>" (e.g.
-// "GET /v1/models") instead of otelhttp's default bare method, matching how
-// otelgin names inbound server spans. Provider API paths are a fixed, small
-// set, so using the path as a span name is cardinality-safe.
+// SpanNameFormatter names outbound client spans "<METHOD> <host><path>" (e.g.
+// "GET api.openai.com/v1/models") instead of otelhttp's default bare method.
+// The host keeps a gateway -> provider call distinguishable from the gateway's
+// own inbound "<METHOD> <path>" server span for the same path. Provider hosts
+// and API paths are a fixed, small set, so the name is cardinality-safe.
 func SpanNameFormatter() otelhttp.Option {
 	return otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
 		if r == nil || r.URL == nil || r.URL.Path == "" {
 			return r.Method
 		}
-		return r.Method + " " + r.URL.Path
+		return r.Method + " " + r.URL.Host + r.URL.Path
 	})
 }
 

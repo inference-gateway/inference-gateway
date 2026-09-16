@@ -225,13 +225,12 @@ func TestTracingProviderCorePropagation(t *testing.T) {
 
 func TestTracingOutboundClientSpanNames(t *testing.T) {
 	tests := []struct {
-		name     string
-		method   string
-		path     string
-		wantSpan string
+		name   string
+		method string
+		path   string
 	}{
-		{"list models", http.MethodGet, "/v1/models", "GET /v1/models"},
-		{"chat completions", http.MethodPost, "/v1/chat/completions", "POST /v1/chat/completions"},
+		{"list models", http.MethodGet, "/v1/models"},
+		{"chat completions", http.MethodPost, "/v1/chat/completions"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -254,7 +253,7 @@ func TestTracingOutboundClientSpanNames(t *testing.T) {
 
 			spans := sr.Ended()
 			require.Len(t, spans, 1)
-			assert.Equal(t, tt.wantSpan, spans[0].Name())
+			assert.Equal(t, tt.method+" "+strings.TrimPrefix(server.URL, "http://")+tt.path, spans[0].Name())
 		})
 	}
 }
