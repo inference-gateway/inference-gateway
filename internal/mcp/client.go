@@ -5,7 +5,7 @@ import (
 	"errors"
 	"sync"
 
-	m "github.com/metoro-io/mcp-golang"
+	golang "github.com/metoro-io/mcp-golang"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -88,7 +88,7 @@ type MCPClient struct {
 	Logger              logger.Logger
 	Config              config.Config
 	mu                  sync.RWMutex
-	clients             map[string]*m.Client
+	clients             map[string]*golang.Client
 	serverTools         map[string][]Tool
 	chatCompletionTools []types.ChatCompletionTool
 	initialized         bool

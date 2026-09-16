@@ -15,7 +15,7 @@ import (
 	propagation "go.opentelemetry.io/otel/propagation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	resource "go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	trace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 
@@ -66,7 +66,7 @@ type OpenTelemetry interface {
 type OpenTelemetryImpl struct {
 	logger         logger.Logger
 	meterProvider  *sdkmetric.MeterProvider
-	tracerProvider *sdktrace.TracerProvider
+	tracerProvider *trace.TracerProvider
 	meter          metric.Meter
 
 	// GenAI semantic-convention instruments
@@ -143,9 +143,9 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 			return err
 		}
 
-		o.tracerProvider = sdktrace.NewTracerProvider(
-			sdktrace.WithResource(res),
-			sdktrace.WithBatcher(traceExporter),
+		o.tracerProvider = trace.NewTracerProvider(
+			trace.WithResource(res),
+			trace.WithBatcher(traceExporter),
 		)
 		otelapi.SetTracerProvider(o.tracerProvider)
 		otelapi.SetTextMapPropagator(propagation.TraceContext{})

@@ -7,10 +7,9 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
-
-	gomock "go.uber.org/mock/gomock"
 
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"

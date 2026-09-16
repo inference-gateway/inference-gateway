@@ -11,11 +11,11 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
+	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
 	gin "github.com/gin-gonic/gin"
-	gomock "go.uber.org/mock/gomock"
 
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
@@ -78,7 +78,7 @@ func TestProviderRegistry(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 
 	openaiProvider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 	require.NoError(t, err)
@@ -122,7 +122,7 @@ func TestProviderChatCompletions(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -207,7 +207,7 @@ func TestProviderChatCompletionsForwardsAuthToken(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -274,7 +274,7 @@ func TestProviderChatCompletionsForwardsNewParameters(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -408,7 +408,7 @@ func TestProviderListModels(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -503,7 +503,7 @@ func TestDifferentAuthTypes(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			mockClient := providersmocks.NewMockClient(ctrl)
+			mockClient := providers.NewMockClient(ctrl)
 
 			provider, err := providerRegistry.BuildProvider(tc.providerId, mockClient)
 			require.NoError(t, err)
@@ -542,7 +542,7 @@ func BenchmarkChatCompletions(b *testing.B) {
 
 	ctrl := gomock.NewController(b)
 	defer ctrl.Finish()
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -611,7 +611,7 @@ func BenchmarkListModels(b *testing.B) {
 
 	ctrl := gomock.NewController(b)
 	defer ctrl.Finish()
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 
 	mockClient.EXPECT().
 		Do(gomock.Any()).
@@ -700,7 +700,7 @@ func (r *recordingReadCloser) Close() error {
 func TestProviderListModelsClosesResponseBody(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 
 	body := &recordingReadCloser{Reader: strings.NewReader(`{"object":"list","data":[]}`)}
 	mockClient.EXPECT().

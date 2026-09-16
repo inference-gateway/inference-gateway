@@ -13,10 +13,9 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
-
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
-
 	gomock "go.uber.org/mock/gomock"
+
+	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -165,7 +164,7 @@ func TestAttemptServerReconnectionSingleFlight(t *testing.T) {
 
 func TestRunWithStreamReturnsWhenConsumerAbandons(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	provider := providersmocks.NewMockIProvider(ctrl)
+	provider := providers.NewMockIProvider(ctrl)
 
 	streamCh := make(chan []byte)
 	done := make(chan struct{})
@@ -214,8 +213,8 @@ func TestRunWithStreamReturnsWhenConsumerAbandons(t *testing.T) {
 func TestRunWithStreamConcurrentTargets(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	newProvider := func(model string, seen chan<- string) *providersmocks.MockIProvider {
-		provider := providersmocks.NewMockIProvider(ctrl)
+	newProvider := func(model string, seen chan<- string) *providers.MockIProvider {
+		provider := providers.NewMockIProvider(ctrl)
 		provider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).DoAndReturn(
 			func(_ context.Context, req types.CreateChatCompletionRequest) (<-chan []byte, error) {
 				seen <- req.Model

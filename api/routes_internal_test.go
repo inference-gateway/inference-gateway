@@ -8,10 +8,9 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
-
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
-
 	gomock "go.uber.org/mock/gomock"
+
+	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -37,7 +36,7 @@ func TestToMCPTool_NilDescription(t *testing.T) {
 // registry sentinel rather than to error message text.
 func TestBuildProvider_MapsRegistryErrors(t *testing.T) {
 	ctrl := gomock.NewController(t)
-	reg := providersmocks.NewMockProviderRegistry(ctrl)
+	reg := providers.NewMockProviderRegistry(ctrl)
 	router := &RouterImpl{logger: logger.NewNoopLogger(), registry: reg}
 
 	reg.EXPECT().BuildProvider(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("wrapped: %w", registry.ErrTokenNotConfigured))

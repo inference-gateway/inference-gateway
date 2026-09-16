@@ -9,12 +9,12 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
 	gin "github.com/gin-gonic/gin"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
-	gomock "go.uber.org/mock/gomock"
 	protojson "google.golang.org/protobuf/encoding/protojson"
 	proto "google.golang.org/protobuf/proto"
 

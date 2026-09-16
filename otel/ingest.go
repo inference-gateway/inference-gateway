@@ -9,8 +9,8 @@ import (
 	attribute "go.opentelemetry.io/otel/attribute"
 	metric "go.opentelemetry.io/otel/metric"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
-	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
-	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
+	common "go.opentelemetry.io/proto/otlp/common/v1"
+	metrics "go.opentelemetry.io/proto/otlp/metrics/v1"
 )
 
 // maxReplayObservations bounds the number of synthetic observations replayed
@@ -83,10 +83,10 @@ func (o *OpenTelemetryImpl) IngestMetrics(ctx context.Context, req *colmetricspb
 
 // ingestTokenUsage accepts either a delta sum (recorded as one observation,
 // matching semconv's one-observation-per-operation usage) or a delta histogram.
-func (o *OpenTelemetryImpl) ingestTokenUsage(ctx context.Context, m *metricspb.Metric, serviceName string, reject func(int, string), result *IngestResult) {
+func (o *OpenTelemetryImpl) ingestTokenUsage(ctx context.Context, m *metrics.Metric, serviceName string, reject func(int, string), result *IngestResult) {
 	switch data := m.GetData().(type) {
-	case *metricspb.Metric_Sum:
-		if data.Sum.GetAggregationTemporality() != metricspb.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA {
+	case *metrics.Metric_Sum:
+		if data.Sum.GetAggregationTemporality() != metrics.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA {
 			reject(len(data.Sum.GetDataPoints()), fmt.Sprintf("metric %q: only delta temporality is supported", m.GetName()))
 			return
 		}
@@ -95,7 +95,7 @@ func (o *OpenTelemetryImpl) ingestTokenUsage(ctx context.Context, m *metricspb.M
 			o.tokenUsageHistogram.Record(ctx, numberValueInt(dp), metric.WithAttributes(attrs...))
 			result.AcceptedDataPoints++
 		}
-	case *metricspb.Metric_Histogram:
+	case *metrics.Metric_Histogram:
 		o.replayHistogram(ctx, m.GetName(), data.Histogram, serviceName, reject, result, func(value float64, opts metric.MeasurementOption) {
 			o.tokenUsageHistogram.Record(ctx, int64(value), opts)
 		})
@@ -104,8 +104,8 @@ func (o *OpenTelemetryImpl) ingestTokenUsage(ctx context.Context, m *metricspb.M
 	}
 }
 
-func (o *OpenTelemetryImpl) ingestDurationHistogram(ctx context.Context, m *metricspb.Metric, target metric.Float64Histogram, serviceName string, reject func(int, string), result *IngestResult) {
-	data, ok := m.GetData().(*metricspb.Metric_Histogram)
+func (o *OpenTelemetryImpl) ingestDurationHistogram(ctx context.Context, m *metrics.Metric, target metric.Float64Histogram, serviceName string, reject func(int, string), result *IngestResult) {
+	data, ok := m.GetData().(*metrics.Metric_Histogram)
 	if !ok {
 		reject(countDataPoints(m), fmt.Sprintf("metric %q: only histogram data is supported", m.GetName()))
 		return
@@ -115,13 +115,13 @@ func (o *OpenTelemetryImpl) ingestDurationHistogram(ctx context.Context, m *metr
 	})
 }
 
-func (o *OpenTelemetryImpl) ingestToolCalls(ctx context.Context, m *metricspb.Metric, serviceName string, reject func(int, string), result *IngestResult) {
-	data, ok := m.GetData().(*metricspb.Metric_Sum)
+func (o *OpenTelemetryImpl) ingestToolCalls(ctx context.Context, m *metrics.Metric, serviceName string, reject func(int, string), result *IngestResult) {
+	data, ok := m.GetData().(*metrics.Metric_Sum)
 	if !ok {
 		reject(countDataPoints(m), fmt.Sprintf("metric %q: only sum data is supported", m.GetName()))
 		return
 	}
-	if data.Sum.GetAggregationTemporality() != metricspb.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA || !data.Sum.GetIsMonotonic() {
+	if data.Sum.GetAggregationTemporality() != metrics.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA || !data.Sum.GetIsMonotonic() {
 		reject(len(data.Sum.GetDataPoints()), fmt.Sprintf("metric %q: only delta monotonic sums are supported", m.GetName()))
 		return
 	}
@@ -137,8 +137,8 @@ func (o *OpenTelemetryImpl) ingestToolCalls(ctx context.Context, m *metricspb.Me
 // midpoints (first bucket at its upper bound, overflow bucket at its lower
 // bound). This preserves _count exactly and _sum approximately; percentile
 // distortion is a documented v1 limitation.
-func (o *OpenTelemetryImpl) replayHistogram(ctx context.Context, name string, h *metricspb.Histogram, serviceName string, reject func(int, string), result *IngestResult, record func(float64, metric.MeasurementOption)) {
-	if h.GetAggregationTemporality() != metricspb.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA {
+func (o *OpenTelemetryImpl) replayHistogram(ctx context.Context, name string, h *metrics.Histogram, serviceName string, reject func(int, string), result *IngestResult, record func(float64, metric.MeasurementOption)) {
+	if h.GetAggregationTemporality() != metrics.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA {
 		reject(len(h.GetDataPoints()), fmt.Sprintf("metric %q: only delta temporality is supported", name))
 		return
 	}
@@ -187,7 +187,7 @@ func bucketValue(bounds []float64, bucket int) float64 {
 // it impersonates the gateway), then the resource's service.name, then
 // "unknown". Team: an explicit team attribute is carried through, defaulting to
 // TeamUnknown so the label stays present on every series.
-func (o *OpenTelemetryImpl) pushAttributes(kvs []*commonpb.KeyValue, serviceName string) []attribute.KeyValue {
+func (o *OpenTelemetryImpl) pushAttributes(kvs []*common.KeyValue, serviceName string) []attribute.KeyValue {
 	source := ""
 	team := ""
 	attrs := make([]attribute.KeyValue, 0, len(kvs)+2)
@@ -217,7 +217,7 @@ func (o *OpenTelemetryImpl) pushAttributes(kvs []*commonpb.KeyValue, serviceName
 	return append(attrs, sourceKey.String(source), teamKey.String(cmp.Or(team, TeamUnknown)))
 }
 
-func resourceServiceName(rm *metricspb.ResourceMetrics) string {
+func resourceServiceName(rm *metrics.ResourceMetrics) string {
 	for _, kv := range rm.GetResource().GetAttributes() {
 		if kv.GetKey() == "service.name" {
 			return kv.GetValue().GetStringValue()
@@ -226,24 +226,24 @@ func resourceServiceName(rm *metricspb.ResourceMetrics) string {
 	return ""
 }
 
-func numberValueInt(dp *metricspb.NumberDataPoint) int64 {
-	if v, ok := dp.GetValue().(*metricspb.NumberDataPoint_AsDouble); ok {
+func numberValueInt(dp *metrics.NumberDataPoint) int64 {
+	if v, ok := dp.GetValue().(*metrics.NumberDataPoint_AsDouble); ok {
 		return int64(v.AsDouble)
 	}
 	return dp.GetAsInt()
 }
 
-func countDataPoints(m *metricspb.Metric) int {
+func countDataPoints(m *metrics.Metric) int {
 	switch data := m.GetData().(type) {
-	case *metricspb.Metric_Sum:
+	case *metrics.Metric_Sum:
 		return len(data.Sum.GetDataPoints())
-	case *metricspb.Metric_Gauge:
+	case *metrics.Metric_Gauge:
 		return len(data.Gauge.GetDataPoints())
-	case *metricspb.Metric_Histogram:
+	case *metrics.Metric_Histogram:
 		return len(data.Histogram.GetDataPoints())
-	case *metricspb.Metric_ExponentialHistogram:
+	case *metrics.Metric_ExponentialHistogram:
 		return len(data.ExponentialHistogram.GetDataPoints())
-	case *metricspb.Metric_Summary:
+	case *metrics.Metric_Summary:
 		return len(data.Summary.GetDataPoints())
 	default:
 		return 0

@@ -21,7 +21,7 @@ import (
 	gin "github.com/gin-gonic/gin"
 	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	otelapi "go.opentelemetry.io/otel"
-	otelcodes "go.opentelemetry.io/otel/codes"
+	codes "go.opentelemetry.io/otel/codes"
 	propagation "go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	trace "go.opentelemetry.io/otel/trace"
@@ -29,7 +29,7 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
-	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
+	proxy "github.com/inference-gateway/inference-gateway/internal/proxy"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
@@ -383,7 +383,7 @@ func markUpstreamError(c *gin.Context, resp *http.Response) {
 		return
 	}
 	span := trace.SpanFromContext(c.Request.Context())
-	span.SetStatus(otelcodes.Error, resp.Status)
+	span.SetStatus(codes.Error, resp.Status)
 	span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
 }
 
@@ -403,11 +403,11 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to construct URL"})
 		return
 	}
-	proxy := &httputil.ReverseProxy{
+	reverseProxy := &httputil.ReverseProxy{
 		Transport: proxyTransport,
 	}
 
-	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+	reverseProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		router.logger.Error("proxy request failed", err, "url", fullURL.String())
 		w.Header().Set("Content-Type", contentTypeJSON)
 		w.WriteHeader(http.StatusBadGateway)
@@ -419,13 +419,13 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		}
 	}
 
-	var reqModifier *proxymodifier.DevRequestModifier
+	var reqModifier *proxy.DevRequestModifier
 	if router.cfg.Environment == constants.EnvironmentDevelopment {
-		reqModifier = proxymodifier.NewDevRequestModifier(router.logger, &router.cfg)
-		proxy.ModifyResponse = proxymodifier.NewDevResponseModifier(router.logger).Modify
+		reqModifier = proxy.NewDevRequestModifier(router.logger, &router.cfg)
+		reverseProxy.ModifyResponse = proxy.NewDevResponseModifier(router.logger).Modify
 	}
 
-	proxy.Rewrite = func(pr *httputil.ProxyRequest) {
+	reverseProxy.Rewrite = func(pr *httputil.ProxyRequest) {
 		pr.SetURL(fullURL)
 		pr.Out.URL.Path = fullURL.Path
 		pr.Out.URL.RawQuery = fullURL.RawQuery
@@ -442,7 +442,7 @@ func handleProxyRequest(c *gin.Context, provider core.IProvider, router *RouterI
 		}
 	}
 
-	proxy.ServeHTTP(&middlewares.DeadlineResetWriter{ResponseWriter: c.Writer, Timeout: router.cfg.Server.WriteTimeout}, c.Request)
+	reverseProxy.ServeHTTP(&middlewares.DeadlineResetWriter{ResponseWriter: c.Writer, Timeout: router.cfg.Server.WriteTimeout}, c.Request)
 }
 
 // applyProviderAuth sets the provider's auth credential (header or query

@@ -10,11 +10,11 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
 	gin "github.com/gin-gonic/gin"
-	gomock "go.uber.org/mock/gomock"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"

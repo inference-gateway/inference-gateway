@@ -11,21 +11,21 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
-	providersmocks "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
+	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
 	gin "github.com/gin-gonic/gin"
 	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	otelapi "go.opentelemetry.io/otel"
 	attribute "go.opentelemetry.io/otel/attribute"
-	otelcodes "go.opentelemetry.io/otel/codes"
+	codes "go.opentelemetry.io/otel/codes"
 	propagation "go.opentelemetry.io/otel/propagation"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	trace "go.opentelemetry.io/otel/sdk/trace"
 	tracetest "go.opentelemetry.io/otel/sdk/trace/tracetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
-	gomock "go.uber.org/mock/gomock"
 
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
@@ -45,7 +45,7 @@ import (
 func setupTracing(t *testing.T) *tracetest.SpanRecorder {
 	t.Helper()
 	sr := tracetest.NewSpanRecorder()
-	otelapi.SetTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(sr)))
+	otelapi.SetTracerProvider(trace.NewTracerProvider(trace.WithSpanProcessor(sr)))
 	otelapi.SetTextMapPropagator(propagation.TraceContext{})
 	return sr
 }
@@ -97,10 +97,10 @@ func TestTracingTelemetryMiddlewareEnrichment(t *testing.T) {
 	tests := []struct {
 		name       string
 		statusCode int
-		wantStatus otelcodes.Code
+		wantStatus codes.Code
 	}{
-		{"success", http.StatusOK, otelcodes.Unset},
-		{"upstream error", http.StatusInternalServerError, otelcodes.Error},
+		{"success", http.StatusOK, codes.Unset},
+		{"upstream error", http.StatusInternalServerError, codes.Error},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -173,10 +173,10 @@ func TestTracingExecuteToolsSpans(t *testing.T) {
 	serverURL, ok := findAttr(spans[0].Attributes(), attribute.Key("mcp.server.url"))
 	require.True(t, ok)
 	assert.Equal(t, "http://mcp.local", serverURL)
-	assert.Equal(t, otelcodes.Unset, spans[0].Status().Code)
+	assert.Equal(t, codes.Unset, spans[0].Status().Code)
 
 	assert.Equal(t, "execute_tool missing", spans[1].Name())
-	assert.Equal(t, otelcodes.Error, spans[1].Status().Code)
+	assert.Equal(t, codes.Error, spans[1].Status().Code)
 }
 
 func TestTracingProviderCorePropagation(t *testing.T) {
@@ -188,7 +188,7 @@ func TestTracingProviderCorePropagation(t *testing.T) {
 	require.NoError(t, err)
 
 	var capturedHeaders []http.Header
-	mockClient := providersmocks.NewMockClient(ctrl)
+	mockClient := providers.NewMockClient(ctrl)
 	mockClient.EXPECT().
 		Do(gomock.Any()).
 		DoAndReturn(func(req *http.Request) (*http.Response, error) {
@@ -291,7 +291,7 @@ func TestTracingProxyPropagation(t *testing.T) {
 		},
 		Providers: providerCfg,
 	}
-	router := api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), providersmocks.NewMockClient(ctrl), nil, nil, nil, nil)
+	router := api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), providers.NewMockClient(ctrl), nil, nil, nil, nil)
 
 	r := gin.New()
 	r.Use(otelgin.Middleware("inference-gateway"))

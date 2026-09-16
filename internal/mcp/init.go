@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	m "github.com/metoro-io/mcp-golang"
+	golang "github.com/metoro-io/mcp-golang"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -20,7 +20,7 @@ func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) 
 		ServerURLs:          serverURLs,
 		Logger:              logger,
 		Config:              cfg,
-		clients:             make(map[string]*m.Client),
+		clients:             make(map[string]*golang.Client),
 		serverTools:         make(map[string][]Tool),
 		chatCompletionTools: make([]types.ChatCompletionTool, 0),
 		serverStatuses:      make(map[string]ServerStatus),
@@ -228,7 +228,7 @@ func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) err
 }
 
 // initializeClientWithTransport attempts to initialize a client with a specific transport
-func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverURL string, mode TransportMode) (*m.Client, error) {
+func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverURL string, mode TransportMode) (*golang.Client, error) {
 	client := mc.NewClientWithTransport(serverURL, mode)
 
 	mc.Logger.Debug("attempting client initialization", "server", serverURL, "transport", string(mode), "timeout", mc.Config.MCP.RequestTimeout.String())
@@ -272,7 +272,7 @@ func (mc *MCPClient) rebuildChatCompletionToolsLocked() {
 }
 
 // discoverServerTools fetches and converts the server's tool list
-func (mc *MCPClient) discoverServerTools(ctx context.Context, client *m.Client, serverURL string) ([]Tool, error) {
+func (mc *MCPClient) discoverServerTools(ctx context.Context, client *golang.Client, serverURL string) ([]Tool, error) {
 	mc.Logger.Debug("fetching available tools", "server", serverURL)
 
 	toolsCtx, toolsCancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)

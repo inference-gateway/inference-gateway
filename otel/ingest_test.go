@@ -11,9 +11,9 @@ import (
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	metricdata "go.opentelemetry.io/otel/sdk/metric/metricdata"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
-	commonpb "go.opentelemetry.io/proto/otlp/common/v1"
-	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
-	resourcepb "go.opentelemetry.io/proto/otlp/resource/v1"
+	common "go.opentelemetry.io/proto/otlp/common/v1"
+	metrics "go.opentelemetry.io/proto/otlp/metrics/v1"
+	resource "go.opentelemetry.io/proto/otlp/resource/v1"
 )
 
 func newTestTelemetry(t *testing.T) (*OpenTelemetryImpl, *sdkmetric.ManualReader) {
@@ -46,32 +46,32 @@ func findMetric(rm metricdata.ResourceMetrics, name string) (metricdata.Metrics,
 	return metricdata.Metrics{}, false
 }
 
-func strAttr(key, value string) *commonpb.KeyValue {
-	return &commonpb.KeyValue{
+func strAttr(key, value string) *common.KeyValue {
+	return &common.KeyValue{
 		Key:   key,
-		Value: &commonpb.AnyValue{Value: &commonpb.AnyValue_StringValue{StringValue: value}},
+		Value: &common.AnyValue{Value: &common.AnyValue_StringValue{StringValue: value}},
 	}
 }
 
-func requestWith(serviceName string, metrics ...*metricspb.Metric) *colmetricspb.ExportMetricsServiceRequest {
-	rm := &metricspb.ResourceMetrics{
-		ScopeMetrics: []*metricspb.ScopeMetrics{{Metrics: metrics}},
+func requestWith(serviceName string, ms ...*metrics.Metric) *colmetricspb.ExportMetricsServiceRequest {
+	rm := &metrics.ResourceMetrics{
+		ScopeMetrics: []*metrics.ScopeMetrics{{Metrics: ms}},
 	}
 	if serviceName != "" {
-		rm.Resource = &resourcepb.Resource{Attributes: []*commonpb.KeyValue{strAttr("service.name", serviceName)}}
+		rm.Resource = &resource.Resource{Attributes: []*common.KeyValue{strAttr("service.name", serviceName)}}
 	}
-	return &colmetricspb.ExportMetricsServiceRequest{ResourceMetrics: []*metricspb.ResourceMetrics{rm}}
+	return &colmetricspb.ExportMetricsServiceRequest{ResourceMetrics: []*metrics.ResourceMetrics{rm}}
 }
 
-func deltaSum(name string, value int64, monotonic bool, attrs ...*commonpb.KeyValue) *metricspb.Metric {
-	return &metricspb.Metric{
+func deltaSum(name string, value int64, monotonic bool, attrs ...*common.KeyValue) *metrics.Metric {
+	return &metrics.Metric{
 		Name: name,
-		Data: &metricspb.Metric_Sum{Sum: &metricspb.Sum{
-			AggregationTemporality: metricspb.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA,
+		Data: &metrics.Metric_Sum{Sum: &metrics.Sum{
+			AggregationTemporality: metrics.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA,
 			IsMonotonic:            monotonic,
-			DataPoints: []*metricspb.NumberDataPoint{{
+			DataPoints: []*metrics.NumberDataPoint{{
 				Attributes: attrs,
-				Value:      &metricspb.NumberDataPoint_AsInt{AsInt: value},
+				Value:      &metrics.NumberDataPoint_AsInt{AsInt: value},
 			}},
 		}},
 	}
@@ -149,11 +149,11 @@ func TestIngestMetrics(t *testing.T) {
 	t.Run("histogram replay preserves count", func(t *testing.T) {
 		o, reader := newTestTelemetry(t)
 
-		result := o.IngestMetrics(ctx, requestWith("infer-cli", &metricspb.Metric{
+		result := o.IngestMetrics(ctx, requestWith("infer-cli", &metrics.Metric{
 			Name: "gen_ai.execute_tool.duration",
-			Data: &metricspb.Metric_Histogram{Histogram: &metricspb.Histogram{
-				AggregationTemporality: metricspb.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA,
-				DataPoints: []*metricspb.HistogramDataPoint{{
+			Data: &metrics.Metric_Histogram{Histogram: &metrics.Histogram{
+				AggregationTemporality: metrics.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA,
+				DataPoints: []*metrics.HistogramDataPoint{{
 					Count:          5,
 					Sum:            floatPtr(2.5),
 					ExplicitBounds: []float64{0.1, 1.0},
@@ -174,11 +174,11 @@ func TestIngestMetrics(t *testing.T) {
 	t.Run("cumulative temporality is rejected", func(t *testing.T) {
 		o, _ := newTestTelemetry(t)
 
-		result := o.IngestMetrics(ctx, requestWith("infer-cli", &metricspb.Metric{
+		result := o.IngestMetrics(ctx, requestWith("infer-cli", &metrics.Metric{
 			Name: "gen_ai.client.token.usage",
-			Data: &metricspb.Metric_Sum{Sum: &metricspb.Sum{
-				AggregationTemporality: metricspb.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
-				DataPoints:             []*metricspb.NumberDataPoint{{Value: &metricspb.NumberDataPoint_AsInt{AsInt: 10}}},
+			Data: &metrics.Metric_Sum{Sum: &metrics.Sum{
+				AggregationTemporality: metrics.AggregationTemporality_AGGREGATION_TEMPORALITY_CUMULATIVE,
+				DataPoints:             []*metrics.NumberDataPoint{{Value: &metrics.NumberDataPoint_AsInt{AsInt: 10}}},
 			}},
 		}))
 
@@ -240,11 +240,11 @@ func TestIngestMetrics(t *testing.T) {
 	t.Run("replay is capped per data point", func(t *testing.T) {
 		o, reader := newTestTelemetry(t)
 
-		result := o.IngestMetrics(ctx, requestWith("infer-cli", &metricspb.Metric{
+		result := o.IngestMetrics(ctx, requestWith("infer-cli", &metrics.Metric{
 			Name: "gen_ai.server.request.duration",
-			Data: &metricspb.Metric_Histogram{Histogram: &metricspb.Histogram{
-				AggregationTemporality: metricspb.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA,
-				DataPoints: []*metricspb.HistogramDataPoint{{
+			Data: &metrics.Metric_Histogram{Histogram: &metrics.Histogram{
+				AggregationTemporality: metrics.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA,
+				DataPoints: []*metrics.HistogramDataPoint{{
 					Count:          1000000,
 					ExplicitBounds: []float64{1},
 					BucketCounts:   []uint64{1000000, 0},

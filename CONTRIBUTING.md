@@ -132,8 +132,8 @@ Go imports are grouped and ordered by the `gci` formatter (configured in
 `tests/mocks`, other third-party packages, `github.com/inference-gateway/*`,
 and finally this module. Run `golangci-lint fmt` locally to fix the import
 blocks; `task lint` checks them. Every non-standard-library import must also be
-explicitly named (`gin "github.com/gin-gonic/gin"`); `importas` enforces it and
-`golangci-lint run --fix` adds the missing names.
+named after its last path element (`gin "github.com/gin-gonic/gin"`); `importas`
+enforces it and `golangci-lint run --fix` adds the missing names.
 
 Also semantic-release is being used for automated releases, so please ensure
 your commits are following

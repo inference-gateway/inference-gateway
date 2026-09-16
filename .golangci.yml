@@ -7,34 +7,16 @@ linters:
     importas:
       no-unaliased: true
       alias:
-        - pkg: github.com/coreos/go-oidc/v3/oidc
-          alias: oidcV3
-        - pkg: github.com/metoro-io/mcp-golang
-          alias: m
-        - pkg: github.com/metoro-io/mcp-golang/transport/http
-          alias: transport
-        - pkg: github.com/inference-gateway/inference-gateway/internal/proxy
-          alias: proxymodifier
         - pkg: github.com/inference-gateway/inference-gateway/tests/mocks/mcp
           alias: mcpmocks
-        - pkg: github.com/inference-gateway/inference-gateway/tests/mocks/providers
-          alias: providersmocks
         - pkg: go.opentelemetry.io/otel
           alias: otelapi
-        - pkg: go.opentelemetry.io/otel/codes
-          alias: otelcodes
-        - pkg: go.opentelemetry.io/otel/sdk/trace
-          alias: sdktrace
+        - pkg: github.com/metoro-io/mcp-golang/transport/http
+          alias: transport
         - pkg: go.opentelemetry.io/otel/sdk/metric
           alias: sdkmetric
         - pkg: go.opentelemetry.io/proto/otlp/collector/metrics/v1
           alias: colmetricspb
-        - pkg: go.opentelemetry.io/proto/otlp/metrics/v1
-          alias: metricspb
-        - pkg: go.opentelemetry.io/proto/otlp/common/v1
-          alias: commonpb
-        - pkg: go.opentelemetry.io/proto/otlp/resource/v1
-          alias: resourcepb
         - pkg: '^[^/]+\.[^/]+/.*?([a-z][a-z0-9]*)(?:\.v[0-9]+)?(?:/v[0-9][0-9.]*)?$'
           alias: '$1'
   exclusions:
@@ -58,7 +40,7 @@ formatters:
       custom-order: true
       sections:
         - standard
-        - prefix(github.com/stretchr/testify)
+        - prefix(github.com/stretchr/testify,go.uber.org/mock)
         - prefix(github.com/inference-gateway/inference-gateway/tests/mocks)
         - default
         - prefix(github.com/inference-gateway/)

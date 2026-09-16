@@ -12,7 +12,7 @@ import (
 
 	otelapi "go.opentelemetry.io/otel"
 	propagation "go.opentelemetry.io/otel/propagation"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	trace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -20,7 +20,7 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) { return f(req) }
 
 func TestCustomRoundTripperInjectsTraceContext(t *testing.T) {
-	otelapi.SetTracerProvider(sdktrace.NewTracerProvider())
+	otelapi.SetTracerProvider(trace.NewTracerProvider())
 	otelapi.SetTextMapPropagator(propagation.TraceContext{})
 
 	var traceparent string
