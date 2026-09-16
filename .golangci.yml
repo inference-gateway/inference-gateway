@@ -10,8 +10,6 @@ linters:
       # package above it to pin a different alias.
       no-unaliased: true
       alias:
-        - pkg: gopkg.in/yaml.v3
-          alias: yaml
         - pkg: github.com/coreos/go-oidc/v3/oidc
           alias: oidcV3
         - pkg: github.com/metoro-io/mcp-golang
@@ -40,7 +38,7 @@ linters:
           alias: commonpb
         - pkg: go.opentelemetry.io/proto/otlp/resource/v1
           alias: resourcepb
-        - pkg: '^[^/]+\.[^/]+/.*?([a-z][a-z0-9]*)(?:/v[0-9]+)?$'
+        - pkg: '^[^/]+\.[^/]+/.*?([a-z][a-z0-9]*)(?:\.v[0-9]+)?(?:/v[0-9][0-9.]*)?$'
           alias: '$1'
   exclusions:
     generated: lax

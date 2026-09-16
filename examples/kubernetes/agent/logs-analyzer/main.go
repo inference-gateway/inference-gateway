@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	filepath "path/filepath"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
