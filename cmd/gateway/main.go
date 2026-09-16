@@ -25,7 +25,7 @@ import (
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
-	l "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
@@ -95,18 +95,18 @@ func main() {
 	}
 
 	// Initialize logger
-	var logger l.Logger
-	logger, err = l.NewLogger(cfg.Environment)
+	var appLogger logger.Logger
+	appLogger, err = logger.NewLogger(cfg.Environment)
 	if err != nil {
 		log.Printf("{\"error\": \"logger init error: %v\"}", err)
 		return
 	}
 
 	// Log config in debug mode
-	logger.Debug("loaded config", "config", cfg.String())
+	appLogger.Debug("loaded config", "config", cfg.String())
 
 	if !cfg.Auth.Enabled && !isLoopbackHost(cfg.Server.Host) {
-		logger.Warn("gateway bound to a non-loopback address with authentication disabled; "+
+		appLogger.Warn("gateway bound to a non-loopback address with authentication disabled; "+
 			"any client that can reach this port can consume your configured provider API keys - "+
 			"set AUTH_ENABLED=true or bind SERVER_HOST to loopback",
 			"host", cfg.Server.Host)
@@ -116,16 +116,16 @@ func main() {
 	var telemetryImpl otel.OpenTelemetry
 	if cfg.Telemetry.Enabled {
 		telemetryImpl = &otel.OpenTelemetryImpl{}
-		err := telemetryImpl.Init(cfg, logger)
+		err := telemetryImpl.Init(cfg, appLogger)
 		if err != nil {
-			logger.Error("opentelemetry initialization failed", err)
+			appLogger.Error("opentelemetry initialization failed", err)
 			return
 		}
 
 		metricsMux := http.NewServeMux()
 		metricsMux.Handle("/metrics", promhttp.Handler())
 
-		logger.Info("telemetry initialized successfully")
+		appLogger.Info("telemetry initialized successfully")
 
 		metricsServer := &http.Server{
 			Addr:         ":" + cfg.Telemetry.MetricsPort,
@@ -136,21 +136,21 @@ func main() {
 		}
 
 		go func() {
-			logger.Info("starting metrics server", "port", cfg.Telemetry.MetricsPort)
+			appLogger.Info("starting metrics server", "port", cfg.Telemetry.MetricsPort)
 			if err := metricsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				logger.Error("metrics server failed", err)
+				appLogger.Error("metrics server failed", err)
 			}
 		}()
 
 		defer func() {
-			logger.Info("shutting down metrics server...")
+			appLogger.Info("shutting down metrics server...")
 			ctxMetrics, cancelMetrics := context.WithTimeout(context.Background(), shutdownGracePeriod)
 			defer cancelMetrics()
 
 			if err := metricsServer.Shutdown(ctxMetrics); err != nil {
-				logger.Error("metrics server shutdown error", err)
+				appLogger.Error("metrics server shutdown error", err)
 			} else {
-				logger.Info("metrics server gracefully stopped")
+				appLogger.Info("metrics server gracefully stopped")
 			}
 		}()
 
@@ -158,24 +158,24 @@ func main() {
 			ctx, cancel := context.WithTimeout(context.Background(), shutdownGracePeriod)
 			defer cancel()
 			if err := telemetryImpl.ShutDown(ctx); err != nil {
-				logger.Error("error shutting down telemetry", err)
+				appLogger.Error("error shutting down telemetry", err)
 			}
 		}()
 	}
 
 	// Initialize logger middleware
-	loggerMiddleware := middlewares.NewLoggerMiddleware(&logger)
+	loggerMiddleware := middlewares.NewLoggerMiddleware(&appLogger)
 
 	// Initialize telemetry middleware
 	var telemetry *middlewares.TelemetryMiddleware
 	if cfg.Telemetry.Enabled {
-		telemetry = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, logger)
+		telemetry = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, appLogger)
 	}
 
 	// Initialize OIDC authenticator middleware
-	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(logger, cfg)
+	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(appLogger, cfg)
 	if err != nil {
-		logger.Error("failed to initialize oidc authenticator", err)
+		appLogger.Error("failed to initialize oidc authenticator", err)
 		return
 	}
 
@@ -185,14 +185,14 @@ func main() {
 	}
 
 	httpClient := client.NewHTTPClient(cfg.Client, scheme, cfg.Server.Host, cfg.Server.Port)
-	providerRegistry := registry.NewProviderRegistry(cfg.Providers, logger)
+	providerRegistry := registry.NewProviderRegistry(cfg.Providers, appLogger)
 
 	// Log registered providers
 	var providerNames []string
 	for providerID := range cfg.Providers {
 		providerNames = append(providerNames, string(providerID))
 	}
-	logger.Info("provider registry initialized", "count", len(providerNames), "providers", strings.Join(providerNames, ", "))
+	appLogger.Info("provider registry initialized", "count", len(providerNames), "providers", strings.Join(providerNames, ", "))
 
 	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
@@ -200,34 +200,34 @@ func main() {
 	var mcpMiddleware middlewares.MCPMiddleware
 	if cfg.MCP.Enabled {
 		if cfg.MCP.Servers != "" {
-			mcpClient = mcp.NewMCPClient(strings.Split(cfg.MCP.Servers, ","), logger, cfg)
+			mcpClient = mcp.NewMCPClient(strings.Split(cfg.MCP.Servers, ","), appLogger, cfg)
 
 			initCtx, cancel := context.WithTimeout(context.Background(), cfg.MCP.RequestTimeout)
 			defer cancel()
 
-			logger.Info("starting mcp client initialization", "timeout", cfg.MCP.RequestTimeout.String())
+			appLogger.Info("starting mcp client initialization", "timeout", cfg.MCP.RequestTimeout.String())
 			initErr := mcpClient.InitializeAll(initCtx)
 			switch {
 			case initErr == nil:
-				logger.Info("mcp client initialized successfully")
+				appLogger.Info("mcp client initialized successfully")
 			case errors.Is(initErr, mcp.ErrNoClientsInitialized) && cfg.MCP.EnableReconnect:
-				logger.Warn("no mcp servers initialized at startup; continuing with background reconnection enabled",
+				appLogger.Warn("no mcp servers initialized at startup; continuing with background reconnection enabled",
 					"error", initErr.Error())
 			default:
-				logger.Error("failed to initialize mcp client", initErr)
+				appLogger.Error("failed to initialize mcp client", initErr)
 				return
 			}
 
 			mcpClient.StartStatusPolling(context.Background())
-			mcpAgent = mcp.NewAgent(logger, mcpClient)
-			logger.Info("mcp agent created successfully")
+			mcpAgent = mcp.NewAgent(appLogger, mcpClient)
+			appLogger.Info("mcp agent created successfully")
 		} else {
-			logger.Info("mcp is enabled but no servers configured, using no-op middleware")
-			mcpAgent = mcp.NewAgent(logger, mcpClient)
+			appLogger.Info("mcp is enabled but no servers configured, using no-op middleware")
+			mcpAgent = mcp.NewAgent(appLogger, mcpClient)
 		}
-		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, httpClient, mcpClient, mcpAgent, logger, cfg)
+		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, httpClient, mcpClient, mcpAgent, appLogger, cfg)
 		if err != nil {
-			logger.Error("failed to initialize mcp middleware", err)
+			appLogger.Error("failed to initialize mcp middleware", err)
 			return
 		}
 	}
@@ -238,7 +238,7 @@ func main() {
 		ctx := context.Background()
 		evaluator, err := guardrails.NewEvaluator(ctx, cfg.Guardrails.PolicyDir)
 		if err != nil {
-			logger.Error("failed to initialize guardrails evaluator", err)
+			appLogger.Error("failed to initialize guardrails evaluator", err)
 			return
 		}
 
@@ -252,17 +252,17 @@ func main() {
 			evaluator,
 			externalClient,
 			detectors,
-			logger,
+			appLogger,
 			telemetryImpl,
 			cfg,
 		)
-		logger.Info("guardrails middleware initialized", "policy_dir", cfg.Guardrails.PolicyDir)
+		appLogger.Info("guardrails middleware initialized", "policy_dir", cfg.Guardrails.PolicyDir)
 
 		if mcpAgent != nil {
 			mcpAgent.SetGuardrails(evaluator, telemetryImpl, cfg.Guardrails.FailMode)
 		}
 	} else {
-		guardrailsMiddleware = middlewares.NewGuardrailsMiddleware(nil, nil, nil, logger, telemetryImpl, cfg)
+		guardrailsMiddleware = middlewares.NewGuardrailsMiddleware(nil, nil, nil, appLogger, telemetryImpl, cfg)
 	}
 
 	// Build the model routing selector if enabled (opt-in, default off).
@@ -270,15 +270,15 @@ func main() {
 	if cfg.Routing != nil && cfg.Routing.Enabled {
 		poolsCfg, err := routing.LoadPoolsConfig(cfg.Routing.ConfigPath)
 		if err != nil {
-			logger.Error("failed to load routing config", err, "path", cfg.Routing.ConfigPath)
+			appLogger.Error("failed to load routing config", err, "path", cfg.Routing.ConfigPath)
 			return
 		}
 		selector, err = routing.NewSelector(poolsCfg)
 		if err != nil {
-			logger.Error("invalid routing config", err, "path", cfg.Routing.ConfigPath)
+			appLogger.Error("invalid routing config", err, "path", cfg.Routing.ConfigPath)
 			return
 		}
-		logger.Info("model routing enabled", "aliases", selector.Aliases())
+		appLogger.Info("model routing enabled", "aliases", selector.Aliases())
 	}
 
 	// Set GIN mode based on environment
@@ -290,9 +290,9 @@ func main() {
 	if cfg.AudioEnabled {
 		home, homeErr := os.UserHomeDir()
 		if homeErr != nil {
-			logger.Warn("audio: cannot resolve home dir; local speech cache paths resolve relative to the working directory (.infer/bin, .infer/models/tts)", "error", homeErr.Error())
+			appLogger.Warn("audio: cannot resolve home dir; local speech cache paths resolve relative to the working directory (.infer/bin, .infer/models/tts)", "error", homeErr.Error())
 		}
-		localTTS = tts.NewEngine(logger, tts.Config{
+		localTTS = tts.NewEngine(appLogger, tts.Config{
 			AutoDownload:   cfg.AudioLocalAutoDownload,
 			MaxConcurrency: cfg.AudioLocalMaxConcurrency,
 			Timeout:        time.Duration(cfg.AudioLocalTimeout) * time.Second,
@@ -301,13 +301,13 @@ func main() {
 		go localTTS.Warmup(context.Background())
 	}
 
-	api := api.NewRouter(cfg, logger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector, localTTS)
+	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector, localTTS)
 	r := gin.New()
 	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
 		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {
 			return req.URL.Path != middlewares.HealthPath && req.URL.Path != middlewares.MetricsIngestPath
 		})))
-		logger.Info("tracing middleware added to request pipeline")
+		appLogger.Info("tracing middleware added to request pipeline")
 	}
 	r.Use(loggerMiddleware.Middleware())
 	if cfg.Telemetry.Enabled {
@@ -317,12 +317,12 @@ func main() {
 
 	// Add guardrails middleware (before MCP so it wraps MCP's writer for post_call).
 	r.Use(guardrailsMiddleware.Middleware())
-	logger.Info("guardrails middleware added to request pipeline")
+	appLogger.Info("guardrails middleware added to request pipeline")
 
 	// Add MCP middleware if enabled
 	if cfg.MCP.Enabled {
 		r.Use(mcpMiddleware.Middleware())
-		logger.Info("mcp middleware added to request pipeline")
+		appLogger.Info("mcp middleware added to request pipeline")
 	}
 
 	r.GET(middlewares.HealthPath, api.HealthcheckHandler)
@@ -352,18 +352,18 @@ func main() {
 
 	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
 		go func() {
-			logger.Info("starting inference gateway with tls", "port", cfg.Server.Port)
+			appLogger.Info("starting inference gateway with tls", "port", cfg.Server.Port)
 
 			if err := server.ListenAndServeTLS(cfg.Server.TlsCertPath, cfg.Server.TlsKeyPath); err != nil && err != http.ErrServerClosed {
-				logger.Error("listen and serve tls error", err)
+				appLogger.Error("listen and serve tls error", err)
 			}
 		}()
 	} else {
 		go func() {
-			logger.Info("starting inference gateway", "port", cfg.Server.Port)
+			appLogger.Info("starting inference gateway", "port", cfg.Server.Port)
 
 			if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-				logger.Error("listen and serve error", err)
+				appLogger.Error("listen and serve error", err)
 			}
 		}()
 	}
@@ -377,7 +377,7 @@ func main() {
 		for providerID := range cfg.Providers {
 			provider, err := providerRegistry.BuildProvider(providerID, httpClient)
 			if err != nil {
-				logger.Warn("failed to build provider", "provider", providerID, "error", err.Error())
+				appLogger.Warn("failed to build provider", "provider", providerID, "error", err.Error())
 				continue
 			}
 
@@ -386,22 +386,22 @@ func main() {
 			cancel()
 
 			if err != nil {
-				logger.Warn("provider unavailable or authentication failed", "provider", providerID, "error", err.Error())
+				appLogger.Warn("provider unavailable or authentication failed", "provider", providerID, "error", err.Error())
 			} else {
 				modelCount := len(response.Data)
 				totalModels += modelCount
 				availableProviders++
-				logger.Info("provider ready", "provider", providerID, "models", modelCount)
+				appLogger.Info("provider ready", "provider", providerID, "models", modelCount)
 			}
 		}
 
-		logger.Info("provider validation complete", "total_providers", len(cfg.Providers), "available_providers", availableProviders, "total_models", totalModels)
+		appLogger.Info("provider validation complete", "total_providers", len(cfg.Providers), "available_providers", availableProviders, "total_models", totalModels)
 	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
-	logger.Info("shutting down server...")
+	appLogger.Info("shutting down server...")
 
 	if cfg.MCP.Enabled && mcpClient != nil {
 		mcpClient.StopStatusPolling()
@@ -412,8 +412,8 @@ func main() {
 	defer cancel()
 
 	if err := server.Shutdown(ctxShutdown); err != nil {
-		logger.Error("server shutdown error", err)
+		appLogger.Error("server shutdown error", err)
 	} else {
-		logger.Info("server gracefully stopped")
+		appLogger.Info("server gracefully stopped")
 	}
 }

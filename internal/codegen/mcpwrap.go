@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // GenerateMCPWrap reads the raw MCP JSON Schema (draft 2020-12, top-level

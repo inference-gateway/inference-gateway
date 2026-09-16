@@ -11,7 +11,7 @@ import (
 	"time"
 
 	gin "github.com/gin-gonic/gin"
-	codes "go.opentelemetry.io/otel/codes"
+	otelcodes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	trace "go.opentelemetry.io/otel/trace"
 
@@ -135,7 +135,7 @@ func (t *TelemetryMiddleware) Middleware() gin.HandlerFunc {
 			semconv.GenAIRequestModel(model),
 		)
 		if errorType != "" {
-			span.SetStatus(codes.Error, errorType)
+			span.SetStatus(otelcodes.Error, errorType)
 			span.SetAttributes(semconv.ErrorTypeKey.String(errorType))
 		}
 

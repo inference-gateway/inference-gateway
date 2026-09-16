@@ -2,6 +2,46 @@ version: '2'
 linters:
   enable:
     - gocritic
+    - importas
+  settings:
+    importas:
+      # Every non-standard-library import must be explicitly named. The
+      # catch-all rule derives the alias from the last path element; list a
+      # package above it to pin a different alias.
+      no-unaliased: true
+      alias:
+        - pkg: gopkg.in/yaml.v3
+          alias: yaml
+        - pkg: github.com/coreos/go-oidc/v3/oidc
+          alias: oidcV3
+        - pkg: github.com/metoro-io/mcp-golang
+          alias: m
+        - pkg: github.com/metoro-io/mcp-golang/transport/http
+          alias: transport
+        - pkg: github.com/inference-gateway/inference-gateway/internal/proxy
+          alias: proxymodifier
+        - pkg: github.com/inference-gateway/inference-gateway/tests/mocks/mcp
+          alias: mcpmocks
+        - pkg: github.com/inference-gateway/inference-gateway/tests/mocks/providers
+          alias: providersmocks
+        - pkg: go.opentelemetry.io/otel
+          alias: otelapi
+        - pkg: go.opentelemetry.io/otel/codes
+          alias: otelcodes
+        - pkg: go.opentelemetry.io/otel/sdk/trace
+          alias: sdktrace
+        - pkg: go.opentelemetry.io/otel/sdk/metric
+          alias: sdkmetric
+        - pkg: go.opentelemetry.io/proto/otlp/collector/metrics/v1
+          alias: colmetricspb
+        - pkg: go.opentelemetry.io/proto/otlp/metrics/v1
+          alias: metricspb
+        - pkg: go.opentelemetry.io/proto/otlp/common/v1
+          alias: commonpb
+        - pkg: go.opentelemetry.io/proto/otlp/resource/v1
+          alias: resourcepb
+        - pkg: '^[^/]+\.[^/]+/.*?([a-z][a-z0-9]*)(?:/v[0-9]+)?$'
+          alias: '$1'
   exclusions:
     generated: lax
     presets:

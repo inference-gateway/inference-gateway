@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	zap "go.uber.org/zap"
+	zapcore "go.uber.org/zap/zapcore"
 
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )

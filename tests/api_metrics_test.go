@@ -7,21 +7,21 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	assert "github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
 	gin "github.com/gin-gonic/gin"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
-	"go.uber.org/mock/gomock"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
+	gomock "go.uber.org/mock/gomock"
+	protojson "google.golang.org/protobuf/encoding/protojson"
+	proto "google.golang.org/protobuf/proto"
 
-	"github.com/inference-gateway/inference-gateway/api"
-	"github.com/inference-gateway/inference-gateway/config"
-	"github.com/inference-gateway/inference-gateway/logger"
-	"github.com/inference-gateway/inference-gateway/otel"
+	api "github.com/inference-gateway/inference-gateway/api"
+	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+	otel "github.com/inference-gateway/inference-gateway/otel"
 )
 
 func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, telemetry otel.OpenTelemetry) *gin.Engine {

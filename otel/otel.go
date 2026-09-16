@@ -7,7 +7,7 @@ import (
 	"errors"
 	"net/url"
 
-	otel "go.opentelemetry.io/otel"
+	otelapi "go.opentelemetry.io/otel"
 	attribute "go.opentelemetry.io/otel/attribute"
 	otlptracehttp "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	prometheus "go.opentelemetry.io/otel/exporters/prometheus"
@@ -129,7 +129,7 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 		sdkmetric.WithView(metricViews()...),
 	)
 
-	otel.SetMeterProvider(o.meterProvider)
+	otelapi.SetMeterProvider(o.meterProvider)
 
 	if err := o.initInstruments(o.meterProvider); err != nil {
 		return err
@@ -147,8 +147,8 @@ func (o *OpenTelemetryImpl) Init(cfg config.Config, log logger.Logger) error {
 			sdktrace.WithResource(res),
 			sdktrace.WithBatcher(traceExporter),
 		)
-		otel.SetTracerProvider(o.tracerProvider)
-		otel.SetTextMapPropagator(propagation.TraceContext{})
+		otelapi.SetTracerProvider(o.tracerProvider)
+		otelapi.SetTextMapPropagator(propagation.TraceContext{})
 
 		o.logger.Info("opentelemetry tracing enabled",
 			"otlp_endpoint", cfg.Telemetry.TracingOtlpEndpoint)

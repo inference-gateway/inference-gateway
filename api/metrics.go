@@ -7,8 +7,8 @@ import (
 
 	gin "github.com/gin-gonic/gin"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
+	protojson "google.golang.org/protobuf/encoding/protojson"
+	proto "google.golang.org/protobuf/proto"
 )
 
 // maxMetricsBodyBytes caps the decoded OTLP push payload size.

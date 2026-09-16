@@ -6,7 +6,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/inference-gateway/inference-gateway/internal/openapi"
+	openapi "github.com/inference-gateway/inference-gateway/internal/openapi"
 )
 
 func GenerateEnvExample(output string, oas string) error {

@@ -16,12 +16,12 @@ import (
 
 	require "github.com/stretchr/testify/require"
 
-	l "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 )
 
 func testEngine(t *testing.T, cfg Config) *Engine {
 	t.Helper()
-	log, err := l.NewLogger("test")
+	log, err := logger.NewLogger("test")
 	require.NoError(t, err)
 	return NewEngine(log, cfg)
 }

@@ -4,9 +4,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gin-gonic/gin"
+	gin "github.com/gin-gonic/gin"
 
-	"github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 )
 
 type LoggerMiddleware struct {

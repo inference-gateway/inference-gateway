@@ -29,7 +29,7 @@ import (
 	"sync"
 	"time"
 
-	l "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 )
 
 const (
@@ -134,7 +134,7 @@ type Config struct {
 // construct with NewEngine.
 type Engine struct {
 	cfg    Config
-	logger l.Logger
+	logger logger.Logger
 	http   *http.Client
 	sem    chan struct{}
 
@@ -145,7 +145,7 @@ type Engine struct {
 }
 
 // NewEngine builds the local speech engine.
-func NewEngine(logger l.Logger, cfg Config) *Engine {
+func NewEngine(logger logger.Logger, cfg Config) *Engine {
 	cfg.MaxConcurrency = max(cfg.MaxConcurrency, 1)
 	if cfg.Timeout <= 0 {
 		cfg.Timeout = defaultTimeout

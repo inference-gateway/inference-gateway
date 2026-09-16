@@ -21,7 +21,7 @@ import (
 	gin "github.com/gin-gonic/gin"
 	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	otelapi "go.opentelemetry.io/otel"
-	codes "go.opentelemetry.io/otel/codes"
+	otelcodes "go.opentelemetry.io/otel/codes"
 	propagation "go.opentelemetry.io/otel/propagation"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	trace "go.opentelemetry.io/otel/trace"
@@ -31,7 +31,7 @@ import (
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	proxymodifier "github.com/inference-gateway/inference-gateway/internal/proxy"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
-	l "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 	otel "github.com/inference-gateway/inference-gateway/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
@@ -43,7 +43,7 @@ import (
 
 type RouterImpl struct {
 	cfg       config.Config
-	logger    l.Logger
+	logger    logger.Logger
 	registry  registry.ProviderRegistry
 	client    client.Client
 	mcpClient mcp.MCPClientInterface
@@ -62,7 +62,7 @@ type ResponseJSON struct {
 
 func NewRouter(
 	cfg config.Config,
-	logger l.Logger,
+	logger logger.Logger,
 	providerRegistry registry.ProviderRegistry,
 	httpClient client.Client,
 	mcpClient mcp.MCPClientInterface,
@@ -383,7 +383,7 @@ func markUpstreamError(c *gin.Context, resp *http.Response) {
 		return
 	}
 	span := trace.SpanFromContext(c.Request.Context())
-	span.SetStatus(codes.Error, resp.Status)
+	span.SetStatus(otelcodes.Error, resp.Status)
 	span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
 }
 

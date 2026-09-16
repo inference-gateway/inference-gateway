@@ -8,7 +8,7 @@ import (
 
 	otelapi "go.opentelemetry.io/otel"
 	attribute "go.opentelemetry.io/otel/attribute"
-	codes "go.opentelemetry.io/otel/codes"
+	otelcodes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	trace "go.opentelemetry.io/otel/trace"
 
@@ -348,7 +348,7 @@ func (a *Agent) dispatchTool(ctx context.Context, toolCallID, toolName, argsJSON
 		Start(ctx, "execute_tool "+toolName, trace.WithAttributes(semconv.GenAIToolName(toolName)))
 	server, err := a.mcpClient.GetServerForTool(toolName)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
+		span.SetStatus(otelcodes.Error, err.Error())
 		span.End()
 		a.logger.Error("failed to find server for tool", err, "tool_name", toolName)
 		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
@@ -366,7 +366,7 @@ func (a *Agent) dispatchTool(ctx context.Context, toolCallID, toolName, argsJSON
 	a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCallID, toolName, args, server))
 	result, err := a.mcpClient.ExecuteTool(toolCtx, mcpRequest, server)
 	if err != nil {
-		span.SetStatus(codes.Error, err.Error())
+		span.SetStatus(otelcodes.Error, err.Error())
 		span.End()
 		a.logger.Error("failed to execute tool call", err, "tool", toolName, "server", server)
 		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))

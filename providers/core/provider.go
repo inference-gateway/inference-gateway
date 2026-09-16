@@ -14,7 +14,7 @@ import (
 	otelapi "go.opentelemetry.io/otel"
 	propagation "go.opentelemetry.io/otel/propagation"
 
-	l "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/logger"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	transformers "github.com/inference-gateway/inference-gateway/providers/transformers"
@@ -40,7 +40,7 @@ type ProviderImpl struct {
 	ExtraHeaders map[string][]string
 	Endpoints    types.Endpoints
 	Client       client.Client
-	Logger       l.Logger
+	Logger       logger.Logger
 }
 
 func (p *ProviderImpl) GetID() *types.Provider {
