@@ -23,9 +23,11 @@ Single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 
 
 ## Code generation
 
-`openapi.yaml` is the source of truth. `task generate` emits `providers/transformers/*.go`, `providers/registry/registry_data.go`, `providers/types/common_types.go`, `config/config.go`, `Configurations.md`, and the `.env.example` files. Anything with a `// Code generated ... DO NOT EDIT.` header will be clobbered — edit the spec or the hand-written siblings (`providers/client/client.go`, `providers/registry/registry.go`, `config/load.go`, `providers/constants/static.go`) instead. CI runs `task generate` and fails on a dirty tree, so commit regenerated files.
+`openapi.yaml` is the source of truth. `task generate` emits `providers/transformers/*.go`, `providers/registry/registry_data.go`, `providers/types/common_types.go`, `config/config.go`, `Configurations.md`, and the `.env.example` files. Anything with a `// Code generated ... DO NOT EDIT.` header will be clobbered — edit the spec or the hand-written siblings (`providers/client/client.go`, `providers/registry/registry.go`, `config/load.go`, `providers/constants/static.go`) instead. CI runs `task generate` and fails on a dirty tree, so commit regenerated files. The spec files themselves — `openapi.yaml` and `internal/mcp/mcp-schema.{json,yaml}` — are vendored from the [inference-gateway/schemas](https://github.com/inference-gateway/schemas) repo (`task oas-download` / `task mcp:schema:download`, pinned with `SCHEMAS_REF`); land spec changes there too, or the next download reverts them.
 
-Adding a provider: edit `openapi.yaml` (`Provider` enum + `x-provider-configs`, and the `Config` schema's `x-config` section) then `task generate`; `tests/provider_drift_test.go` fails if wiring is incomplete. Provider IDs must be lowercase Go-identifier-safe.
+`providers/core/community_*.json` (pricing, context windows, modalities) are synced from models.dev via `task pricing:sync` / `contextwindow:sync` / `modalities:sync`; hand-maintained entries go in the `*.overrides.json` companions, not the synced tables.
+
+Adding a provider: edit `openapi.yaml` (`Provider` enum + `x-provider-configs`, and the `Config` schema's `x-config` section) then `task generate`; `tests/provider_drift_test.go` fails if wiring is incomplete. Provider IDs must be lowercase Go-identifier-safe. Transformers listed in `.openapi-ignore` are exempt from regeneration — hand-edit and list a transformer there when a provider's models endpoint isn't OpenAI-compatible.
 
 ## Architecture
 
