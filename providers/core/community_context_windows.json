@@ -572,6 +572,10 @@
     "context": 1000000,
     "output": 131072
   },
+  "mistral/zai-glm-5-3": {
+    "context": 1000000,
+    "output": 131072
+  },
   "moonshot/kimi-k2.6": {
     "context": 262144,
     "output": 262144
@@ -934,6 +938,10 @@
     "context": 1000000,
     "output": 131072
   },
+  "nvidia/z-ai/glm-5.3": {
+    "context": 1000000,
+    "output": 131072
+  },
   "nvidia/z-ai/glm-5.3-flash": {
     "context": 1000000,
     "output": 131072
@@ -1259,6 +1267,10 @@
     "output": 131072
   },
   "zai/glm-5.3-flash": {
+    "context": 1000000,
+    "output": 131072
+  },
+  "zai/glm-5.3-flashx": {
     "context": 1000000,
     "output": 131072
   },

@@ -1038,6 +1038,14 @@
     "source": "community",
     "updated_at": "2026-08-31T12:36:08Z"
   },
+  "mistral/zai-glm-5-3": {
+    "cache_read_per_token": "0.00000014",
+    "currency": "USD",
+    "input_per_token": "0.0000014",
+    "output_per_token": "0.0000044",
+    "source": "community",
+    "updated_at": "2026-09-21T11:50:17Z"
+  },
   "moonshot/kimi-k2.6": {
     "cache_read_per_token": "0.00000016",
     "currency": "USD",
@@ -1794,6 +1802,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "nvidia/z-ai/glm-5.3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-09-21T11:50:17Z"
+  },
   "nvidia/z-ai/glm-5.3-flash": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1802,100 +1817,100 @@
     "updated_at": "2026-09-14T11:37:00Z"
   },
   "ollama_cloud/deepseek-v4-flash": {
+    "cache_read_per_token": "0.000000007",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000022",
+    "output_per_token": "0.00000066",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-07-21T10:29:38Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/deepseek-v4-flash:0731": {
+    "cache_read_per_token": "0.000000007",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000022",
+    "output_per_token": "0.00000066",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/deepseek-v4-pro": {
+    "cache_read_per_token": "0.000000022",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000066",
+    "output_per_token": "0.00000198",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-07-21T10:29:38Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/deepseek-v4-pro:0813": {
+    "cache_read_per_token": "0.000000022",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000066",
+    "output_per_token": "0.00000198",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-14T11:37:00Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/deepseek-v4.1-flash": {
+    "cache_read_per_token": "0.000000003",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000006",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-14T11:37:00Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/gemma4:31b": {
+    "cache_read_per_token": "0.00000005",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000014",
+    "output_per_token": "0.0000004",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/glm-5.1": {
+    "cache_read_per_token": "0.0000002",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000001",
+    "output_per_token": "0.0000032",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/glm-5.2": {
+    "cache_read_per_token": "0.00000026",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.0000014",
+    "output_per_token": "0.0000044",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/glm-5.3": {
+    "cache_read_per_token": "0.00000026",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.0000014",
+    "output_per_token": "0.0000044",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/glm-5.3-flash": {
+    "cache_read_per_token": "0.00000003",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000005",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/gpt-oss:120b": {
+    "cache_read_per_token": "0.000000014",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000006",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/gpt-oss:20b": {
+    "cache_read_per_token": "0.000000035",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000007",
+    "output_per_token": "0.0000003",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/kimi-k2.5": {
     "currency": "USD",
@@ -1906,28 +1921,28 @@
     "updated_at": "2026-09-03T01:27:55Z"
   },
   "ollama_cloud/kimi-k2.6": {
+    "cache_read_per_token": "0.00000016",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000095",
+    "output_per_token": "0.000004",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/kimi-k2.7-code": {
+    "cache_read_per_token": "0.00000019",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000095",
+    "output_per_token": "0.000004",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/kimi-k3": {
+    "cache_read_per_token": "0.0000003",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000003",
+    "output_per_token": "0.000015",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/minimax-m2.5": {
     "currency": "USD",
@@ -1938,60 +1953,57 @@
     "updated_at": "2026-09-03T01:27:55Z"
   },
   "ollama_cloud/minimax-m2.7": {
+    "cache_read_per_token": "0.00000006",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.0000003",
+    "output_per_token": "0.0000012",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/minimax-m3": {
+    "cache_read_per_token": "0.00000012",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0.0000024",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/mistral-large-3:675b": {
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.0000005",
+    "output_per_token": "0.0000015",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/nemotron-3-nano:30b": {
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00000006",
+    "output_per_token": "0.00000024",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/nemotron-3-super": {
+    "cache_read_per_token": "0.000000015",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000000015",
+    "output_per_token": "0.0000006",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/nemotron-3-ultra": {
+    "cache_read_per_token": "0.0000001",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.0000001",
+    "output_per_token": "0.000003",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "ollama_cloud/qwen3.5:397b": {
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0.0000036",
     "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "openai/gpt-3.5-turbo": {
     "currency": "USD",
@@ -2446,12 +2458,20 @@
     "updated_at": "2026-08-31T12:36:08Z"
   },
   "zai/glm-5.3-flash": {
-    "cache_read_per_token": "0.000000015",
+    "cache_read_per_token": "0.00000003",
     "currency": "USD",
-    "input_per_token": "0.000000075",
-    "output_per_token": "0.00000025",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000005",
     "source": "community",
-    "updated_at": "2026-08-31T12:36:08Z"
+    "updated_at": "2026-09-21T11:50:17Z"
+  },
+  "zai/glm-5.3-flashx": {
+    "cache_read_per_token": "0.000000075",
+    "currency": "USD",
+    "input_per_token": "0.00000037",
+    "output_per_token": "0.00000125",
+    "source": "community",
+    "updated_at": "2026-09-21T11:50:17Z"
   },
   "zai/glm-5v-turbo": {
     "cache_read_per_token": "0.00000024",

@@ -1502,6 +1502,14 @@
       "text"
     ]
   },
+  "mistral/zai-glm-5-3": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "moonshot/kimi-k2.6": {
     "input": [
       "text",
@@ -2851,6 +2859,14 @@
       "text"
     ]
   },
+  "nvidia/z-ai/glm-5.3": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "nvidia/z-ai/glm-5.3-flash": {
     "input": [
       "text",
@@ -3993,6 +4009,16 @@
     ]
   },
   "zai/glm-5.3-flash": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "zai/glm-5.3-flashx": {
     "input": [
       "text",
       "image",
