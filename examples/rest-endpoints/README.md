@@ -23,6 +23,7 @@ interact with the Inference Gateway using curl commands.
 | List Moonshot models     | `curl -X GET http://localhost:8080/v1/models?provider=moonshot`     |
 | List Nvidia models       | `curl -X GET http://localhost:8080/v1/models?provider=nvidia`       |
 | List llama.cpp models    | `curl -X GET http://localhost:8080/v1/models?provider=llamacpp`     |
+| List ElevenLabs models   | `curl -X GET http://localhost:8080/v1/models?provider=elevenlabs`   |
 
 ### Context Windows
 
@@ -541,9 +542,9 @@ The endpoint is opt-in via `AUDIO_ENABLED=true` (default off). When disabled,
 the handler returns `404`. Providers without a native speech API return `400`.
 
 The supported backends today are the built-in `local/qwen3-tts` engine and the
-`openai` provider. Speech through the `llamacpp` provider is a work in progress
-and not supported yet - the examples below that use `llamacpp/...` describe the
-intended behaviour and are not expected to work.
+`openai` and `elevenlabs` providers. Speech through the `llamacpp` provider is a
+work in progress and not supported yet - the examples below that use
+`llamacpp/...` describe the intended behaviour and are not expected to work.
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech -d '{
@@ -552,6 +553,30 @@ curl -X POST http://localhost:8080/v1/audio/speech -d '{
   "voice": "alloy",
   "response_format": "wav"
 }' -o speech.wav
+```
+
+### ElevenLabs
+
+ElevenLabs' speech API is not OpenAI-compatible, so the gateway rewrites the
+request instead of proxying it. `voice` is required and must be an ElevenLabs
+voice id (not a name like `alloy`), and `response_format` is limited to `mp3`
+(default), `opus`, or `pcm`. `speed` and `language` are forwarded.
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/speech -d '{
+  "model": "elevenlabs/eleven_multilingual_v2",
+  "input": "Ahoy! Welcome aboard the Inference Gateway.",
+  "voice": "JBFqnCBsd6RMkjVDRZzb",
+  "response_format": "mp3"
+}' -o speech.mp3
+```
+
+An unsupported format returns `400`:
+
+```json
+{
+  "error": "elevenlabs does not support response_format \"wav\", supported formats: mp3, opus, pcm"
+}
 ```
 
 ### Voice Cloning
@@ -621,6 +646,117 @@ Errors use the standard envelope, e.g. when the Audio API is not enabled:
 ```json
 {
   "error": "The Audio API is not enabled. Set AUDIO_ENABLED=true to enable it."
+}
+```
+
+## Sound Effects
+
+`POST /v1/audio/sfx` is a gateway extension with no OpenAI counterpart: it
+generates a non-speech clip - a sound effect or ambience - from a text prompt.
+JSON in, raw audio out, same as `/audio/speech`. It shares the `AUDIO_ENABLED`
+toggle and is currently served by the `elevenlabs` provider only; other
+providers return `400`.
+
+`prompt` is required. Optional fields: `duration_seconds`, `prompt_influence`
+(0-1, how closely to follow the prompt), `loop` (seamless loop), and
+`response_format` (`mp3` default, `opus`, or `pcm`).
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/sfx -d '{
+  "model": "elevenlabs/eleven_text_to_sound_v2",
+  "prompt": "distant thunder rolling over a valley",
+  "duration_seconds": 5,
+  "loop": true
+}' -o thunder.mp3
+```
+
+For a provider without sound-effect support:
+
+```json
+{
+  "error": "Sound effect generation is not supported by this provider yet."
+}
+```
+
+## Video Generation
+
+The gateway exposes an OpenAI-compatible Videos API for asynchronous video
+generation. `POST /v1/videos` takes `multipart/form-data` and returns a job
+immediately; poll `GET /v1/videos/{video_id}` until `status` is `completed`,
+then download the bytes from `GET /v1/videos/{video_id}/content`.
+
+The endpoint is opt-in via `VIDEOS_ENABLED=true` (default off). When disabled,
+the handlers return `404`. Only the `elevenlabs` provider supports it today;
+other providers return `400`.
+
+The job `id` carries the provider (`elevenlabs:gen_abc123`) because the gateway
+keeps no job state. Send it back verbatim; `?provider=` still overrides it.
+
+Form fields: `model` (required), `prompt`, `input_reference` (image used as the
+first frame, or the portrait for avatar models), `seconds`, `size`
+(`widthxheight`), and the non-standard `audio` (a WAV or MP3 clip the avatar
+lip-syncs to; when present `seconds` is ignored).
+
+```bash
+# Create a job: animate a portrait to speak the given audio
+curl -X POST http://localhost:8080/v1/videos \
+  -F model="elevenlabs/creatify-aurora" \
+  -F prompt="Medium shot, presenter facing the camera" \
+  -F input_reference="@portrait.png" \
+  -F audio="@speech.mp3" \
+  -F size="720x1280" | jq .
+```
+
+Response:
+
+```json
+{
+  "id": "elevenlabs:gen_abc123",
+  "object": "video",
+  "model": "creatify-aurora",
+  "status": "queued",
+  "created_at": 1758500000
+}
+```
+
+Poll the job:
+
+```bash
+curl -X GET http://localhost:8080/v1/videos/elevenlabs:gen_abc123 | jq .
+```
+
+```json
+{
+  "id": "elevenlabs:gen_abc123",
+  "object": "video",
+  "model": "creatify-aurora",
+  "status": "completed",
+  "progress": 100,
+  "created_at": 1758500000,
+  "completed_at": 1758500090
+}
+```
+
+Download the render once completed:
+
+```bash
+curl -X GET http://localhost:8080/v1/videos/elevenlabs:gen_abc123/content -o video.mp4
+```
+
+A job that is still `queued`, `in_progress`, or `failed` has no bytes to serve
+and `/content` returns `404`:
+
+```json
+{
+  "error": "The rendered video is not available yet. Poll GET /v1/videos/{video_id} until the status is completed."
+}
+```
+
+Errors use the standard envelope, e.g. when the Videos API is not enabled:
+
+```json
+{
+  "error": "The Videos API is not enabled. Set VIDEOS_ENABLED=true to enable it."
 }
 ```
 
