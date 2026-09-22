@@ -465,7 +465,11 @@ func applyProviderAuth(req *http.Request, provider core.IProvider) error {
 	case constants.AuthTypeBearer:
 		req.Header.Set("Authorization", "Bearer "+token)
 	case constants.AuthTypeXheader:
-		req.Header.Set("x-api-key", token)
+		header := provider.GetAuthHeader()
+		if header == "" {
+			header = constants.DefaultAuthHeader
+		}
+		req.Header.Set(header, token)
 	case constants.AuthTypeQuery:
 		query := req.URL.Query()
 		query.Set("key", token)

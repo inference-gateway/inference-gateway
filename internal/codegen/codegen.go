@@ -222,6 +222,18 @@ const (
     {{- with (index $config.Endpoints "speech").Endpoint }}
     {{pascalCase $name}}SpeechEndpoint = "{{.}}"
     {{- end }}
+    {{- with (index $config.Endpoints "sfx").Endpoint }}
+    {{pascalCase $name}}SFXEndpoint = "{{.}}"
+    {{- end }}
+    {{- with (index $config.Endpoints "videos").Endpoint }}
+    {{pascalCase $name}}VideosEndpoint = "{{.}}"
+    {{- end }}
+    {{- with (index $config.Endpoints "videos_retrieve").Endpoint }}
+    {{pascalCase $name}}VideosRetrieveEndpoint = "{{.}}"
+    {{- end }}
+    {{- with (index $config.Endpoints "videos_content").Endpoint }}
+    {{pascalCase $name}}VideosContentEndpoint = "{{.}}"
+    {{- end }}
     {{- end }}
 )
 
@@ -600,6 +612,9 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Name:           constants.{{pascalCase $name}}DisplayName,
 		URL:            constants.{{pascalCase $name}}DefaultBaseURL,
 		AuthType:       constants.{{getAuthType $config.AuthType}},
+		{{- with $config.AuthHeader }}
+		AuthHeader:     "{{.}}",
+		{{- end }}
 		{{- if $config.ExtraHeaders }}
 		ExtraHeaders: map[string][]string{
 			{{- range $header, $value := $config.ExtraHeaders }}
@@ -624,6 +639,18 @@ var Registry = map[types.Provider]*ProviderConfig{
 			{{- end }}
 			{{- if (index $config.Endpoints "speech").Endpoint }}
 			Speech: ptr(constants.{{pascalCase $name}}SpeechEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "sfx").Endpoint }}
+			Sfx: ptr(constants.{{pascalCase $name}}SFXEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "videos").Endpoint }}
+			Videos: ptr(constants.{{pascalCase $name}}VideosEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "videos_retrieve").Endpoint }}
+			VideosRetrieve: ptr(constants.{{pascalCase $name}}VideosRetrieveEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "videos_content").Endpoint }}
+			VideosContent: ptr(constants.{{pascalCase $name}}VideosContentEndpoint),
 			{{- end }}
 		},
 	},

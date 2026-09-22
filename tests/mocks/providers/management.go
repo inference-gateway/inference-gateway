@@ -56,6 +56,20 @@ func (mr *MockIProviderMockRecorder) ChatCompletions(ctx, clientReq any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChatCompletions", reflect.TypeOf((*MockIProvider)(nil).ChatCompletions), ctx, clientReq)
 }
 
+// GetAuthHeader mocks base method.
+func (m *MockIProvider) GetAuthHeader() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAuthHeader")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetAuthHeader indicates an expected call of GetAuthHeader.
+func (mr *MockIProviderMockRecorder) GetAuthHeader() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthHeader", reflect.TypeOf((*MockIProvider)(nil).GetAuthHeader))
+}
+
 // GetAuthType mocks base method.
 func (m *MockIProvider) GetAuthType() string {
 	m.ctrl.T.Helper()

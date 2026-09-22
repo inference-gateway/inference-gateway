@@ -1693,6 +1693,14 @@ components:
           type: string
         speech:
           type: string
+        sfx:
+          type: string
+        videos:
+          type: string
+        videos_retrieve:
+          type: string
+        videos_content:
+          type: string
       required:
         - models
         - chat
@@ -4395,7 +4403,12 @@ components:
                   env: 'AUDIO_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Audio API (POST /v1/audio/speech). When disabled, the endpoint returns a 404. Served by providers with speech support (currently openai) or by the local llama-tts engine'
+                  description: 'Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx). When disabled, the endpoints return a 404. Served by providers with speech or sound-effect support (currently openai and elevenlabs) or by the local llama-tts engine'
+                - name: videos_enabled
+                  env: 'VIDEOS_ENABLED'
+                  type: bool
+                  default: 'false'
+                  description: 'Enable the Videos API (POST /v1/videos, GET /v1/videos/{video_id}, GET /v1/videos/{video_id}/content). When disabled, the endpoints return a 404. Only providers with video support (currently elevenlabs) can serve these endpoints'
                 - name: audio_local_auto_download
                   env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
                   type: bool

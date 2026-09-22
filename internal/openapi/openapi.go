@@ -74,6 +74,7 @@ type ProviderConfig struct {
 	ID           string                    `yaml:"id"`
 	URL          string                    `yaml:"url"`
 	AuthType     string                    `yaml:"auth_type"`
+	AuthHeader   string                    `yaml:"auth_header"`
 	ExtraHeaders map[string]ExtraHeader    `yaml:"extra_headers"`
 	Endpoints    map[string]EndpointSchema `yaml:"endpoints"`
 }

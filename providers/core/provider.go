@@ -37,6 +37,7 @@ type ProviderImpl struct {
 	URL          string
 	Token        string
 	AuthType     string
+	AuthHeader   string
 	ExtraHeaders map[string][]string
 	Endpoints    types.Endpoints
 	Client       client.Client
@@ -61,6 +62,12 @@ func (p *ProviderImpl) GetToken() string {
 
 func (p *ProviderImpl) GetAuthType() string {
 	return p.AuthType
+}
+
+// GetAuthHeader returns the header name that carries the provider's API key
+// for the xheader auth type. Empty means constants.DefaultAuthHeader.
+func (p *ProviderImpl) GetAuthHeader() string {
+	return p.AuthHeader
 }
 
 func (p *ProviderImpl) GetExtraHeaders() map[string][]string {

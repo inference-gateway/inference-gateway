@@ -25,6 +25,7 @@ type ProviderConfig struct {
 	URL          string
 	Token        string
 	AuthType     string
+	AuthHeader   string
 	ExtraHeaders map[string][]string
 	Endpoints    types.Endpoints
 }
@@ -67,6 +68,7 @@ func (p *ProviderRegistryImpl) BuildProvider(providerID types.Provider, c client
 		URL:          provider.URL,
 		Token:        provider.Token,
 		AuthType:     provider.AuthType,
+		AuthHeader:   provider.AuthHeader,
 		ExtraHeaders: provider.ExtraHeaders,
 		Endpoints:    provider.Endpoints,
 		Logger:       p.logger,

@@ -2091,7 +2091,11 @@ type Endpoints struct {
 	ImagesVariations *string `json:"images_variations,omitempty"`
 	Models           string  `json:"models"`
 	Responses        *string `json:"responses,omitempty"`
+	Sfx              *string `json:"sfx,omitempty"`
 	Speech           *string `json:"speech,omitempty"`
+	Videos           *string `json:"videos,omitempty"`
+	VideosContent    *string `json:"videos_content,omitempty"`
+	VideosRetrieve   *string `json:"videos_retrieve,omitempty"`
 }
 
 // Error defines model for Error.

@@ -14,6 +14,7 @@ type IProvider interface {
 	GetURL() string
 	GetToken() string
 	GetAuthType() string
+	GetAuthHeader() string
 	GetExtraHeaders() map[string][]string
 	GetEndpoints() types.Endpoints
 
