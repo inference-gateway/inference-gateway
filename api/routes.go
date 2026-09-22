@@ -1263,14 +1263,7 @@ type jsonProxy struct {
 	exampleModel string
 	accept       string
 	endpointOf   func(types.Endpoints) *string
-
-	// notSupported overrides the message sent when the resolved provider does
-	// not implement the endpoint.
 	notSupported string
-
-	// translators holds the per-provider request rewrites for providers whose
-	// API is not OpenAI-compatible. A provider absent from the map is proxied
-	// byte-for-byte with only the `model` field rewritten.
 	translators map[types.Provider]jsonTranslator
 }
 
