@@ -1264,7 +1264,7 @@ type jsonProxy struct {
 	accept       string
 	endpointOf   func(types.Endpoints) *string
 	notSupported string
-	translators map[types.Provider]jsonTranslator
+	translators  map[types.Provider]jsonTranslator
 }
 
 // proxyJSONBody forwards an OpenAI-style JSON request byte-for-byte to the
