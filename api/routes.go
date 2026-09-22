@@ -1803,22 +1803,12 @@ const (
 // not carry one and fallbackModel the model to report when it is not echoed back.
 type videoJobMapper func(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, string, error)
 
-// videoJobMappers holds the per-provider response mappings for providers whose
-// Videos API is not OpenAI-compatible. A provider absent from the map already
-// answers with a schema-shaped VideoJob and is decoded as-is.
+// videoJobMappers holds the per-provider response mappings. Every provider that
+// carries a Videos endpoint in the registry needs an entry here; there is no
+// OpenAI-shaped passthrough because no provider answers with a schema-shaped
+// VideoJob yet.
 var videoJobMappers = map[types.Provider]videoJobMapper{
 	constants.ElevenlabsID: elevenlabs.Job,
-}
-
-// videoJobPassthrough decodes a provider's already-schema-shaped VideoJob. Such
-// providers serve the rendered bytes from their own content endpoint, so no
-// download URL is reported.
-func videoJobPassthrough(raw []byte, _ string, _ int) (types.VideoJob, string, error) {
-	var job types.VideoJob
-	if err := json.Unmarshal(raw, &job); err != nil {
-		return types.VideoJob{}, "", fmt.Errorf("failed to decode video job response: %w", err)
-	}
-	return job, "", nil
 }
 
 // VideosHandler implements POST /v1/videos, the OpenAI-compatible Videos API:
@@ -1831,8 +1821,8 @@ func videoJobPassthrough(raw []byte, _ string, _ int) (types.VideoJob, string, e
 // bytes from GET /v1/videos/{video_id}/content.
 //
 // The returned job id is prefixed with the provider that created it
-// ("elevenlabs/abc123"), mirroring the provider/model convention, because the
-// gateway keeps no job state and has to route the follow-up calls somewhere.
+// ("elevenlabs:abc123", see videoJobIDSeparator), because the gateway keeps no
+// job state and has to route the follow-up calls somewhere.
 //
 // Only providers that carry a Videos endpoint (currently elevenlabs) can serve
 // the request; the rest receive a 400, mirroring the schema's VideosNotSupported
@@ -2079,7 +2069,9 @@ func (router *RouterImpl) videoJob(c *gin.Context, provider core.IProvider, prov
 
 	mapper := videoJobMappers[providerID]
 	if mapper == nil {
-		mapper = videoJobPassthrough
+		router.logger.Error("no video job mapping for provider", nil, "provider", providerID)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: videosNotSupportedMessage})
+		return types.VideoJob{}, "", false
 	}
 
 	job, downloadURL, err := mapper(body, fallbackModel, int(time.Now().Unix()))

@@ -40,7 +40,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 	})
 
 	mux.HandleFunc("/proxy/ollama_cloud/models", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, `{"object":"list","data":[{"id":"deepseek-v4-pro","object":"model","created":1750000000,"owned_by":"ollama"}]}`)
+		writeJSON(w, `{"object":"list","data":[{"id":"kimi-k2.5","object":"model","created":1750000000,"owned_by":"ollama"}]}`)
 	})
 
 	server := httptest.NewServer(mux)
@@ -104,7 +104,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		assert.Equal(t, "0", free["output_per_token"])
 		assert.NotContains(t, free, "subscription", "free-tier models must not carry a subscription flag")
 
-		gated, ok := models["ollama_cloud/deepseek-v4-pro"]["pricing"].(map[string]any)
+		gated, ok := models["ollama_cloud/kimi-k2.5"]["pricing"].(map[string]any)
 		require.True(t, ok, "subscription-gated models must resolve in the community table")
 		assert.Equal(t, "community", gated["source"])
 		assert.Equal(t, "0", gated["input_per_token"])
