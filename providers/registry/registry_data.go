@@ -51,6 +51,17 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.DeepseekChatEndpoint,
 		},
 	},
+	constants.ElevenlabsID: {
+		ID:       constants.ElevenlabsID,
+		Name:     constants.ElevenlabsDisplayName,
+		URL:      constants.ElevenlabsDefaultBaseURL,
+		AuthType: constants.AuthTypeXheader,
+		Endpoints: types.Endpoints{
+			Models: constants.ElevenlabsModelsEndpoint,
+			Chat:   constants.ElevenlabsChatEndpoint,
+			Speech: ptr(constants.ElevenlabsSpeechEndpoint),
+		},
+	},
 	constants.GoogleID: {
 		ID:       constants.GoogleID,
 		Name:     constants.GoogleDisplayName,

@@ -119,6 +119,8 @@
 | OPENAI_API_KEY       | `""`                                                            | OpenAI API Key       |
 | DEEPSEEK_API_URL     | `https://api.deepseek.com`                                      | DeepSeek API URL     |
 | DEEPSEEK_API_KEY     | `""`                                                            | DeepSeek API Key     |
+| ELEVENLABS_API_URL   | `https://api.elevenlabs.io/v1`                                  | ElevenLabs API URL   |
+| ELEVENLABS_API_KEY   | `""`                                                            | ElevenLabs API Key   |
 | GOOGLE_API_URL       | `https://generativelanguage.googleapis.com/v1beta/openai`       | Google API URL       |
 | GOOGLE_API_KEY       | `""`                                                            | Google API Key       |
 | MISTRAL_API_URL      | `https://api.mistral.ai/v1`                                     | Mistral API URL      |

@@ -171,30 +171,60 @@ func (e CreateMessagesRequestThinkingType) Valid() bool {
 	}
 }
 
+// Defines values for CreateSFXRequestResponseFormat.
+const (
+	CreateSFXRequestResponseFormatAac  CreateSFXRequestResponseFormat = "aac"
+	CreateSFXRequestResponseFormatFlac CreateSFXRequestResponseFormat = "flac"
+	CreateSFXRequestResponseFormatMp3  CreateSFXRequestResponseFormat = "mp3"
+	CreateSFXRequestResponseFormatOpus CreateSFXRequestResponseFormat = "opus"
+	CreateSFXRequestResponseFormatPcm  CreateSFXRequestResponseFormat = "pcm"
+	CreateSFXRequestResponseFormatWav  CreateSFXRequestResponseFormat = "wav"
+)
+
+// Valid indicates whether the value is a known member of the CreateSFXRequestResponseFormat enum.
+func (e CreateSFXRequestResponseFormat) Valid() bool {
+	switch e {
+	case CreateSFXRequestResponseFormatAac:
+		return true
+	case CreateSFXRequestResponseFormatFlac:
+		return true
+	case CreateSFXRequestResponseFormatMp3:
+		return true
+	case CreateSFXRequestResponseFormatOpus:
+		return true
+	case CreateSFXRequestResponseFormatPcm:
+		return true
+	case CreateSFXRequestResponseFormatWav:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreateSpeechRequestResponseFormat.
 const (
-	Aac  CreateSpeechRequestResponseFormat = "aac"
-	Flac CreateSpeechRequestResponseFormat = "flac"
-	Mp3  CreateSpeechRequestResponseFormat = "mp3"
-	Opus CreateSpeechRequestResponseFormat = "opus"
-	Pcm  CreateSpeechRequestResponseFormat = "pcm"
-	Wav  CreateSpeechRequestResponseFormat = "wav"
+	CreateSpeechRequestResponseFormatAac  CreateSpeechRequestResponseFormat = "aac"
+	CreateSpeechRequestResponseFormatFlac CreateSpeechRequestResponseFormat = "flac"
+	CreateSpeechRequestResponseFormatMp3  CreateSpeechRequestResponseFormat = "mp3"
+	CreateSpeechRequestResponseFormatOpus CreateSpeechRequestResponseFormat = "opus"
+	CreateSpeechRequestResponseFormatPcm  CreateSpeechRequestResponseFormat = "pcm"
+	CreateSpeechRequestResponseFormatWav  CreateSpeechRequestResponseFormat = "wav"
 )
 
 // Valid indicates whether the value is a known member of the CreateSpeechRequestResponseFormat enum.
 func (e CreateSpeechRequestResponseFormat) Valid() bool {
 	switch e {
-	case Aac:
+	case CreateSpeechRequestResponseFormatAac:
 		return true
-	case Flac:
+	case CreateSpeechRequestResponseFormatFlac:
 		return true
-	case Mp3:
+	case CreateSpeechRequestResponseFormatMp3:
 		return true
-	case Opus:
+	case CreateSpeechRequestResponseFormatOpus:
 		return true
-	case Pcm:
+	case CreateSpeechRequestResponseFormatPcm:
 		return true
-	case Wav:
+	case CreateSpeechRequestResponseFormatWav:
 		return true
 	default:
 		return false
@@ -702,6 +732,7 @@ const (
 	Cloudflare  Provider = "cloudflare"
 	Cohere      Provider = "cohere"
 	Deepseek    Provider = "deepseek"
+	Elevenlabs  Provider = "elevenlabs"
 	Google      Provider = "google"
 	Groq        Provider = "groq"
 	Llamacpp    Provider = "llamacpp"
@@ -725,6 +756,8 @@ func (e Provider) Valid() bool {
 	case Cohere:
 		return true
 	case Deepseek:
+		return true
+	case Elevenlabs:
 		return true
 	case Google:
 		return true
@@ -1254,6 +1287,45 @@ const (
 func (e TextContentPartType) Valid() bool {
 	switch e {
 	case TextContentPartTypeText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VideoJobObject.
+const (
+	VideoJobObjectVideo VideoJobObject = "video"
+)
+
+// Valid indicates whether the value is a known member of the VideoJobObject enum.
+func (e VideoJobObject) Valid() bool {
+	switch e {
+	case VideoJobObjectVideo:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for VideoJobStatus.
+const (
+	VideoJobStatusCompleted  VideoJobStatus = "completed"
+	VideoJobStatusFailed     VideoJobStatus = "failed"
+	VideoJobStatusInProgress VideoJobStatus = "in_progress"
+	VideoJobStatusQueued     VideoJobStatus = "queued"
+)
+
+// Valid indicates whether the value is a known member of the VideoJobStatus enum.
+func (e VideoJobStatus) Valid() bool {
+	switch e {
+	case VideoJobStatusCompleted:
+		return true
+	case VideoJobStatusFailed:
+		return true
+	case VideoJobStatusInProgress:
+		return true
+	case VideoJobStatusQueued:
 		return true
 	default:
 		return false
@@ -1902,6 +1974,34 @@ type CreateResponseRequest struct {
 	User *string `json:"user,omitempty"`
 }
 
+// CreateSFXRequest Request body for generating a non-speech audio clip - a sound effect
+// or ambience - from a text prompt.
+type CreateSFXRequest struct {
+	// DurationSeconds Length of the generated clip in seconds. Omit to let the provider
+	// pick a length that fits the prompt.
+	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
+
+	// Loop Whether to generate a clip that loops seamlessly.
+	Loop *bool `json:"loop,omitempty"`
+
+	// Model Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`).
+	Model string `json:"model"`
+
+	// Prompt Description of the sound to generate (e.g. `distant thunder rolling over a valley`).
+	Prompt string `json:"prompt"`
+
+	// PromptInfluence How closely the generation follows the prompt. Higher values stay
+	// closer to the prompt, lower values allow more variation. Omit to
+	// use the provider default.
+	PromptInfluence *float32 `json:"prompt_influence,omitempty"`
+
+	// ResponseFormat The audio format of the response.
+	ResponseFormat *CreateSFXRequestResponseFormat `json:"response_format,omitempty"`
+}
+
+// CreateSFXRequestResponseFormat The audio format of the response.
+type CreateSFXRequestResponseFormat string
+
 // CreateSpeechRequest Request body for generating speech audio via the OpenAI-compatible
 // Audio API.
 type CreateSpeechRequest struct {
@@ -1939,12 +2039,49 @@ type CreateSpeechRequest struct {
 	// Voice The voice to use when generating the audio. OpenAI built-in voices
 	// are `alloy`, `ash`, `ballad`, `coral`, `echo`, `fable`, `onyx`,
 	// `nova`, `sage`, `shimmer`, `verse`, `marin`, and `cedar`. Other
-	// providers accept their own voice identifiers.
+	// providers accept their own voice identifiers - for ElevenLabs this
+	// is a voice id, including the id of a previously cloned voice.
 	Voice string `json:"voice"`
 }
 
 // CreateSpeechRequestResponseFormat The audio format of the response.
 type CreateSpeechRequestResponseFormat string
+
+// CreateVideoRequest Request body for creating a video generation job via the
+// OpenAI-compatible Videos API. Sent as `multipart/form-data`.
+type CreateVideoRequest struct {
+	// Audio Non-standard extension (OpenAI's Videos API has no audio field):
+	// an audio clip - `audio/wav` or `audio/mpeg` - that drives the
+	// render. When present, the model lip-syncs `input_reference` to it
+	// and the generated video lasts as long as the clip, so `seconds` is
+	// ignored. Forwarded to the provider as-is; only providers with
+	// talking-avatar support honor it (e.g. ElevenLabs
+	// `creatify-aurora`), others ignore or reject it.
+	Audio *openapi_types.File `json:"audio,omitempty"`
+
+	// InputReference Optional image used as the first frame or, for avatar models, the
+	// portrait to animate.
+	InputReference *openapi_types.File `json:"input_reference,omitempty"`
+
+	// Model Model ID to use for video generation (e.g. `elevenlabs/creatify-aurora`).
+	Model string `json:"model"`
+
+	// Prompt Text description of the video to generate. Optional for
+	// audio-driven avatar models, where the dialogue comes from `audio`
+	// and the prompt only describes framing, never the spoken words.
+	Prompt *string `json:"prompt,omitempty"`
+
+	// Seconds Requested duration of the generated video in seconds, as a string
+	// (e.g. `4`, `8`, `12`). Providers accept a limited set of values;
+	// omit to use the provider default. Ignored when `audio` is present.
+	Seconds *string `json:"seconds,omitempty"`
+
+	// Size Requested output resolution as `widthxheight` (e.g. `720x1280`).
+	// Providers accept a limited set of values - ElevenLabs
+	// `creatify-aurora` maps to `480p` and `720p`. Omit to use the
+	// provider default.
+	Size *string `json:"size,omitempty"`
+}
 
 // Endpoints defines model for Endpoints.
 type Endpoints struct {
@@ -3097,6 +3234,54 @@ type ToolCallExtraContent_Google struct {
 	AdditionalProperties map[string]any `json:"-"`
 }
 
+// VideoJob A video generation job. Returned by `POST /videos` and
+// `GET /videos/{video_id}`.
+type VideoJob struct {
+	// CompletedAt Unix timestamp (in seconds) of when the job finished, null while it is still running.
+	CompletedAt *int `json:"completed_at,omitempty"`
+
+	// CreatedAt Unix timestamp (in seconds) of when the job was created.
+	CreatedAt int `json:"created_at"`
+
+	// Error The error that caused the job to fail, null otherwise.
+	Error *struct {
+		// Code Machine-readable error code.
+		Code *string `json:"code,omitempty"`
+
+		// Message Human-readable error message.
+		Message *string `json:"message,omitempty"`
+	} `json:"error,omitempty"`
+
+	// ID Identifier of the video generation job. Opaque to clients - it may
+	// encode the provider - and must be sent back verbatim to
+	// `GET /videos/{video_id}`.
+	ID string `json:"id"`
+
+	// Model The model used to generate the video.
+	Model string `json:"model"`
+
+	// Object The object type, which is always `video`.
+	Object VideoJobObject `json:"object"`
+
+	// Progress Completion percentage of the render.
+	Progress *int `json:"progress,omitempty"`
+
+	// Seconds Duration of the generated video in seconds, as a string.
+	Seconds *string `json:"seconds,omitempty"`
+
+	// Size Resolution of the generated video as `widthxheight`.
+	Size *string `json:"size,omitempty"`
+
+	// Status Current status of the job.
+	Status VideoJobStatus `json:"status"`
+}
+
+// VideoJobObject The object type, which is always `video`.
+type VideoJobObject string
+
+// VideoJobStatus Current status of the job.
+type VideoJobStatus string
+
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
 
@@ -3111,6 +3296,9 @@ type MCPNotExposed = Error
 
 // MessagesNotSupported An error response in the Anthropic error format.
 type MessagesNotSupported = MessagesError
+
+// NotFound defines model for NotFound.
+type NotFound = Error
 
 // ProviderResponse Provider-specific response format. Examples:
 //
@@ -3156,11 +3344,17 @@ type ProviderResponse = ProviderSpecificResponse
 // ResponsesNotSupported defines model for ResponsesNotSupported.
 type ResponsesNotSupported = Error
 
+// SFXNotSupported defines model for SFXNotSupported.
+type SFXNotSupported = Error
+
 // SpeechNotSupported defines model for SpeechNotSupported.
 type SpeechNotSupported = Error
 
 // Unauthorized defines model for Unauthorized.
 type Unauthorized = Error
+
+// VideosNotSupported defines model for VideosNotSupported.
+type VideosNotSupported = Error
 
 // ProviderRequest defines model for ProviderRequest.
 type ProviderRequest struct {
@@ -3170,6 +3364,12 @@ type ProviderRequest struct {
 	} `json:"messages,omitempty"`
 	Model       *string  `json:"model,omitempty"`
 	Temperature *float32 `json:"temperature,omitempty"`
+}
+
+// CreateSFXParams defines parameters for CreateSFX.
+type CreateSFXParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
 // CreateSpeechParams defines parameters for CreateSpeech.
@@ -3325,6 +3525,27 @@ type CreateResponseParams struct {
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
+// CreateVideoParams defines parameters for CreateVideo.
+type CreateVideoParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// RetrieveVideoParams defines parameters for RetrieveVideo.
+type RetrieveVideoParams struct {
+	// Provider Specific provider to use (default determined by the job id)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// DownloadVideoContentParams defines parameters for DownloadVideoContent.
+type DownloadVideoContentParams struct {
+	// Provider Specific provider to use (default determined by the job id)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// CreateSFXJSONRequestBody defines body for CreateSFX for application/json ContentType.
+type CreateSFXJSONRequestBody = CreateSFXRequest
+
 // CreateSpeechJSONRequestBody defines body for CreateSpeech for application/json ContentType.
 type CreateSpeechJSONRequestBody = CreateSpeechRequest
 
@@ -3357,6 +3578,9 @@ type ProxyPutJSONRequestBody ProxyPutJSONBody
 
 // CreateResponseJSONRequestBody defines body for CreateResponse for application/json ContentType.
 type CreateResponseJSONRequestBody = CreateResponseRequest
+
+// CreateVideoMultipartRequestBody defines body for CreateVideo for multipart/form-data ContentType.
+type CreateVideoMultipartRequestBody = CreateVideoRequest
 
 // Getter for additional properties for ToolCallExtraContent_Google. Returns the specified
 // element and whether it was found

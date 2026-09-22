@@ -18,6 +18,8 @@ func NewListModelsTransformer(provider types.Provider) constants.ListModelsTrans
 		return &ListModelsResponseCohere{}
 	case constants.DeepseekID:
 		return &ListModelsResponseDeepseek{}
+	case constants.ElevenlabsID:
+		return &ListModelsResponseElevenlabs{}
 	case constants.GoogleID:
 		return &ListModelsResponseGoogle{}
 	case constants.GroqID:
