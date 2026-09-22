@@ -236,9 +236,23 @@ const (
 	videoFieldSize      = "size"
 	videoFieldReference = "input_reference"
 	videoFieldAudio     = "audio"
+	videoFieldRefImages = "reference_images"
 	inlineMediaType     = "inline_base64"
 	sizeSeparator       = "x"
+	veoModelPrefix      = "veo-"
+	veoRoleSubject      = "subject"
 )
+
+// referenceImageLimits is how many `images` each ElevenLabs video model
+// accepts. Models missing here take no reference images.
+var referenceImageLimits = map[string]int{
+	"bytedance-seedance-v2":      9,
+	"bytedance-seedance-v2-fast": 9,
+	"bytedance-seedance-v2-mini": 9,
+	"bytedance-seedance-v2.5":    30,
+	"veo-3.1-generate-001":       3,
+	"veo-3.1-fast-generate-001":  3,
+}
 
 var resolutions = map[int]string{480: "480p", 720: "720p", 1080: "1080p"}
 
@@ -252,8 +266,8 @@ type inlineMedia struct {
 
 // videoBody is the ElevenLabs POST /flows/video payload. Avatar models
 // (creatify-aurora) take `image` and `audio` and no prompt; every other model
-// takes a prompt with an optional `start_frame`. The two shapes are merged
-// here and fields left nil are omitted.
+// takes a prompt with an optional `start_frame` or reference `images`. The two
+// shapes are merged here and fields left nil are omitted.
 type videoBody struct {
 	ModelID      string       `json:"model_id"`
 	Prompt       string       `json:"prompt,omitempty"`
@@ -261,15 +275,23 @@ type videoBody struct {
 	Resolution   string       `json:"resolution,omitempty"`
 	AspectRatio  string       `json:"aspect_ratio,omitempty"`
 	StartFrame   *inlineMedia `json:"start_frame,omitempty"`
+	Images       []any        `json:"images,omitempty"`
 	Image        *inlineMedia `json:"image,omitempty"`
 	Audio        *inlineMedia `json:"audio,omitempty"`
+}
+
+// veoImage is a Veo `images` entry: Veo wraps each image with the role it
+// plays, where the other models take the bare image.
+type veoImage struct {
+	Image *inlineMedia `json:"image"`
+	Role  string       `json:"role"`
 }
 
 // Video rewrites an OpenAI Videos multipart form into the ElevenLabs flows
 // JSON shape. A form carrying `audio` is treated as an avatar (lip-sync)
 // request: the reference image becomes `image`, the clip becomes `audio`,
-// and prompt/seconds are dropped because those models reject them. model is
-// the request model with the provider prefix already stripped.
+// and prompt/seconds/reference_images are dropped because those models reject
+// them. model is the request model with the provider prefix already stripped.
 func Video(model string, form *multipart.Form) ([]byte, error) {
 	out := videoBody{ModelID: model}
 
@@ -300,6 +322,12 @@ func Video(model string, form *multipart.Form) ([]byte, error) {
 	out.Prompt = formValue(form, videoFieldPrompt)
 	if strings.TrimSpace(out.Prompt) == "" {
 		return nil, fmt.Errorf("the 'prompt' field is required")
+	}
+	if out.Images, err = referenceImages(model, form); err != nil {
+		return nil, err
+	}
+	if out.Images != nil && image != nil {
+		return nil, fmt.Errorf("'reference_images' cannot be combined with 'input_reference'")
 	}
 	out.StartFrame = image
 	if seconds := formValue(form, videoFieldSeconds); seconds != "" {
@@ -336,15 +364,51 @@ func gcd(a, b int) int {
 	return a
 }
 
+// referenceImages inlines every `reference_images` part into an ElevenLabs
+// `images` list, or returns nil when none were sent. The count is checked
+// against the model's limit before any file is read.
+func referenceImages(model string, form *multipart.Form) ([]any, error) {
+	headers := form.File[videoFieldRefImages]
+	if len(headers) == 0 {
+		return nil, nil
+	}
+	limit, ok := referenceImageLimits[model]
+	if !ok {
+		return nil, fmt.Errorf("model %q does not accept 'reference_images'", model)
+	}
+	if len(headers) > limit {
+		return nil, fmt.Errorf("model %q accepts at most %d 'reference_images', got %d", model, limit, len(headers))
+	}
+	images := make([]any, len(headers))
+	for i, fh := range headers {
+		img, err := inlineHeader(fh, videoFieldRefImages)
+		if err != nil {
+			return nil, err
+		}
+		if strings.HasPrefix(model, veoModelPrefix) {
+			images[i] = veoImage{Image: img, Role: veoRoleSubject}
+		} else {
+			images[i] = img
+		}
+	}
+	return images, nil
+}
+
 // inlineFile reads the first uploaded file for field into an inline media
-// reference, or returns nil when the field is absent. The mime type comes
-// from the part header, sniffed from the bytes when the client sent none.
+// reference, or returns nil when the field is absent.
 func inlineFile(form *multipart.Form, field string) (*inlineMedia, error) {
 	headers := form.File[field]
 	if len(headers) == 0 {
 		return nil, nil
 	}
-	f, err := headers[0].Open()
+	return inlineHeader(headers[0], field)
+}
+
+// inlineHeader reads one uploaded file into an inline media reference. The
+// mime type comes from the part header, sniffed from the bytes when the
+// client sent none.
+func inlineHeader(fh *multipart.FileHeader, field string) (*inlineMedia, error) {
+	f, err := fh.Open()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open uploaded %s: %w", field, err)
 	}
@@ -353,7 +417,7 @@ func inlineFile(form *multipart.Form, field string) (*inlineMedia, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read uploaded %s: %w", field, err)
 	}
-	mimeType := headers[0].Header.Get("Content-Type")
+	mimeType := fh.Header.Get("Content-Type")
 	if mimeType == "" || mimeType == "application/octet-stream" {
 		mimeType = http.DetectContentType(data)
 	}

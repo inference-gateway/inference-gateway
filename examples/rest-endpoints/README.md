@@ -723,8 +723,11 @@ keeps no job state. Send it back verbatim; `?provider=` still overrides it.
 
 Form fields: `model` (required), `prompt`, `input_reference` (image used as the
 first frame, or the portrait for avatar models), `seconds`, `size`
-(`widthxheight`), and the non-standard `audio` (a WAV or MP3 clip the avatar
-lip-syncs to; when present `seconds` is ignored).
+(`widthxheight`), and two non-standard fields: `audio` (a WAV or MP3 clip the
+avatar lip-syncs to; when present `seconds` is ignored) and `reference_images`
+(repeat the field once per image of the subject; `veo-3.1-*` takes up to 3,
+`bytedance-seedance-v2*` up to 9 and `bytedance-seedance-v2.5` up to 30; it
+cannot be combined with `input_reference`).
 
 ```bash
 # Create a job: animate a portrait to speak the given audio
