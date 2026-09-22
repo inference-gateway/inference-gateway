@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"net/textproto"
 	"strings"
 	"testing"
 	"time"
@@ -368,4 +369,72 @@ func readUploadedFile(t *testing.T, r *http.Request, field string) string {
 	b, err := io.ReadAll(f)
 	require.NoError(t, err)
 	return string(b)
+}
+
+// Leading bytes that http.DetectContentType recognises, and the upstream
+// part types the Images pass-through must label them with.
+const (
+	pngSignature        = "\x89PNG\r\n\x1a\n"
+	jpegSignature       = "\xff\xd8\xff"
+	webpSignature       = "RIFF\x00\x00\x00\x00WEBPVP8 "
+	contentTypeImagePNG = "image/png"
+	contentTypeImageJPG = "image/jpeg"
+	contentTypeImageWeb = "image/webp"
+	octetStream         = "application/octet-stream"
+)
+
+func TestImagesEditsHandler_LabelsFilePartContentType(t *testing.T) {
+	tests := []struct {
+		name     string
+		partType string // "" sends the part with no Content-Type header
+		data     string
+		want     string
+	}{
+		{"octet-stream png is sniffed", octetStream, pngSignature + "IMAGE", contentTypeImagePNG},
+		{"octet-stream jpeg is sniffed", octetStream, jpegSignature + "IMAGE", contentTypeImageJPG},
+		{"octet-stream webp is sniffed", octetStream, webpSignature + "IMAGE", contentTypeImageWeb},
+		{"missing type is sniffed", "", pngSignature + "IMAGE", contentTypeImagePNG},
+		{"explicit type is kept", contentTypeImageWeb, pngSignature + "IMAGE", contentTypeImageWeb},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotType, gotData string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				require.NoError(t, r.ParseMultipartForm(1<<20))
+				gotType = r.MultipartForm.File["image"][0].Header.Get("Content-Type")
+				gotData = readUploadedFile(t, r, "image")
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"created":1730000000,"data":[]}`))
+			}))
+			defer server.Close()
+
+			router := newImagesTestRouter(t, server.URL, true)
+			r := gin.New()
+			r.POST("/v1/images/edits", router.ImagesEditsHandler)
+
+			body := &bytes.Buffer{}
+			mw := multipart.NewWriter(body)
+			h := make(textproto.MIMEHeader)
+			h.Set("Content-Disposition", `form-data; name="image"; filename="photo"`)
+			if tt.partType != "" {
+				h.Set("Content-Type", tt.partType)
+			}
+			part, err := mw.CreatePart(h)
+			require.NoError(t, err)
+			_, err = io.WriteString(part, tt.data)
+			require.NoError(t, err)
+			require.NoError(t, mw.WriteField("prompt", "turn the head"))
+			require.NoError(t, mw.WriteField("model", "openai/gpt-image-2"))
+			require.NoError(t, mw.Close())
+
+			w := httptest.NewRecorder()
+			req := httptest.NewRequest("POST", "/v1/images/edits", body)
+			req.Header.Set("Content-Type", mw.FormDataContentType())
+			r.ServeHTTP(w, req)
+
+			require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+			assert.Equal(t, tt.want, gotType)
+			assert.Equal(t, tt.data, gotData, "the sniffed bytes must still reach the upstream")
+		})
+	}
 }

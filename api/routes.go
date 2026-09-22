@@ -1753,7 +1753,8 @@ func imagesFormValue(form *multipart.Form, key string) string {
 }
 
 // writeMultipartForm re-encodes a parsed multipart form onto mw, copying
-// each uploaded file straight through (preserving its Content-Type) so the
+// each uploaded file straight through (preserving an explicit Content-Type,
+// sniffing a missing or octet-stream one) so the
 // payload streams to the upstream without a second full in-memory copy. It
 // runs in its own goroutine writing to the io.Pipe. Shared by the Images and
 // Videos multipart endpoints.
@@ -1775,6 +1776,17 @@ func writeMultipartForm(mw *multipart.Writer, form *multipart.Form) error {
 	return mw.Close()
 }
 
+// Multipart file part content types.
+const (
+	contentTypeOctetStream = "application/octet-stream"
+	// contentSniffLen is how many leading bytes http.DetectContentType reads.
+	contentSniffLen = 512
+)
+
+// copyFormFile copies one uploaded file into mw. A part without a type or
+// typed application/octet-stream (what Go's multipart.CreateFormFile and many
+// clients send) is labelled from its leading bytes, because providers such as
+// OpenAI's /images/edits reject octet-stream uploads; an explicit type is kept.
 func copyFormFile(mw *multipart.Writer, field string, fh *multipart.FileHeader) error {
 	src, err := fh.Open()
 	if err != nil {
@@ -1782,16 +1794,30 @@ func copyFormFile(mw *multipart.Writer, field string, fh *multipart.FileHeader) 
 	}
 	defer src.Close()
 
+	var body io.Reader = src
+	ct := fh.Header.Get("Content-Type")
+	if ct == "" || ct == contentTypeOctetStream {
+		head := make([]byte, contentSniffLen)
+		n, err := io.ReadFull(src, head)
+		if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
+			return err
+		}
+		if n > 0 {
+			ct = http.DetectContentType(head[:n])
+		}
+		body = io.MultiReader(bytes.NewReader(head[:n]), src)
+	}
+
 	h := make(textproto.MIMEHeader)
 	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, field, fh.Filename))
-	if ct := fh.Header.Get("Content-Type"); ct != "" {
+	if ct != "" {
 		h.Set("Content-Type", ct)
 	}
 	dst, err := mw.CreatePart(h)
 	if err != nil {
 		return err
 	}
-	_, err = io.Copy(dst, src)
+	_, err = io.Copy(dst, body)
 	return err
 }
 
