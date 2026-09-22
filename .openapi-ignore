@@ -1,3 +1,4 @@
 # Transformer files listed here (as providers/transformers/<provider>.go) are
 # protected from being overwritten by `task generate`. Add an entry only when a
 # provider needs a hand-customized transformer.
+providers/transformers/elevenlabs.go
