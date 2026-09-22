@@ -107,6 +107,7 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 		"sst-models.dev-abc/providers/nvidia/models/meta/llama-free.toml":       "[cost]\ninput = 0.0\noutput = 0.0\n",
 		"sst-models.dev-abc/providers/ollama-cloud/models/kimi-sub.toml":        "name = \"kimi-sub\"\n",
 		"sst-models.dev-abc/providers/ollama-cloud/models/deepseek-v4-pro.toml": "name = \"deepseek-v4-pro\"\n",
+		"sst-models.dev-abc/providers/ollama-cloud/models/glm-priced.toml":      "[cost]\ninput = 0.15\noutput = 0.5\n",
 		"sst-models.dev-abc/providers/openai/models/gpt-paid.toml":              "[cost]\ninput = 3.0\noutput = 15.0\n",
 	})
 
@@ -142,6 +143,13 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 		if sub.Subscription == nil || !*sub.Subscription {
 			t.Errorf("%s must have subscription=true", key)
 		}
+	}
+	pricedSub, ok := table["ollama_cloud/glm-priced"]
+	if !ok || pricedSub.InputPerToken != "0.00000015" {
+		t.Errorf("priced subscription model entry = %+v, want input_per_token 0.00000015", pricedSub)
+	}
+	if pricedSub.Subscription == nil || !*pricedSub.Subscription {
+		t.Error("priced subscription-provider model must keep subscription=true")
 	}
 	paid, ok := table["openai/gpt-paid"]
 	if !ok || paid.InputPerToken != "0.000003" {

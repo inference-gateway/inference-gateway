@@ -53,11 +53,11 @@ var providerDirs = map[string]string{
 	"zai":                   "zai",
 }
 
-// subscriptionProviders are the gateway providers whose models are wholly
-// gated behind a paid subscription (e.g. Ollama Cloud Pro): models.dev
-// publishes no cost table for any of their models and carries no subscription
-// marker, so every "<provider>/<model>" key from these providers without a
-// cost section emits a zero-rate community entry with subscription=true.
+// subscriptionProviders are the gateway providers whose models are gated
+// behind a paid subscription (e.g. Ollama Cloud Pro). models.dev carries no
+// subscription marker, so every "<provider>/<model>" key from these providers
+// emits subscription=true: with the published per-token rates when models.dev
+// has a cost table (pay-as-you-go is also offered), zero-rate otherwise.
 var subscriptionProviders = map[string]bool{
 	"ollama_cloud": true,
 }
@@ -348,18 +348,22 @@ func tableKey(name string) (string, bool) {
 // subscription-gated providers (no cost section) become zero-rate entries with
 // subscription=true; everything else gets no entry.
 func pricingEntry(key string, model modelTOML, syncedAt time.Time) (types.Pricing, bool) {
+	provider, _, _ := strings.Cut(key, "/")
+	var subscription *bool
+	if subscriptionProviders[provider] {
+		subscription = new(bool)
+		*subscription = true
+	}
 	if model.Cost == nil {
-		provider, _, _ := strings.Cut(key, "/")
-		if !subscriptionProviders[provider] {
+		if subscription == nil {
 			return types.Pricing{}, false
 		}
-		subscription := true
 		return types.Pricing{
 			Currency:       "USD",
 			InputPerToken:  "0",
 			OutputPerToken: "0",
 			Source:         types.PricingSourceCommunity,
-			Subscription:   &subscription,
+			Subscription:   subscription,
 			UpdatedAt:      syncedAt,
 		}, true
 	}
@@ -375,6 +379,7 @@ func pricingEntry(key string, model modelTOML, syncedAt time.Time) (types.Pricin
 		CacheReadPerToken:  perMTokToPerToken(model.Cost.CacheRead),
 		CacheWritePerToken: perMTokToPerToken(model.Cost.CacheWrite),
 		Source:             types.PricingSourceCommunity,
+		Subscription:       subscription,
 		UpdatedAt:          syncedAt,
 	}, true
 }
