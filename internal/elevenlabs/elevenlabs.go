@@ -86,9 +86,6 @@ func Speech(endpoint, model string, req types.CreateSpeechRequest) (path, query 
 		return "", "", nil, err
 	}
 
-	// The voice id is user input landing in a URL path; escaping it confines a
-	// crafted value to its own path segment instead of rewriting the upstream
-	// path.
 	return strings.ReplaceAll(endpoint, VoicePathPlaceholder, url.PathEscape(req.Voice)), "output_format=" + format, body, nil
 }
 
