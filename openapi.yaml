@@ -829,6 +829,50 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
+  /audio/music:
+    post:
+      operationId: createMusic
+      tags:
+        - Audio
+      description: |
+        Composes a music clip from a text prompt. Gateway extension: OpenAI has
+        no music endpoint, so this mirrors `POST /audio/sfx` (JSON in, raw
+        audio bytes out) rather than an upstream OpenAI operation. The response
+        is the generated audio as raw binary bytes; the actual `Content-Type`
+        header of the response reflects the requested `response_format` (e.g.
+        `audio/mpeg` for `mp3`).
+
+        Not every provider implements music generation. Requests routed to a
+        provider that does not support it return `400 Bad Request` with an
+        explanatory error message.
+      summary: Compose a music clip from a text prompt
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: provider
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/Provider'
+          description: Specific provider to use (default determined by model)
+      requestBody:
+        $ref: '#/components/requestBodies/CreateMusicRequest'
+      responses:
+        '200':
+          description: |
+            The generated audio as raw binary bytes. The actual `Content-Type`
+            header of the response reflects the requested `response_format`.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/MusicNotSupported'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
   /videos:
     post:
       operationId: createVideo
@@ -1172,6 +1216,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/CreateSFXRequest'
+    CreateMusicRequest:
+      required: true
+      description: |
+        Request payload for composing a music clip from a text prompt.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateMusicRequest'
     CreateVideoRequest:
       required: true
       description: |
@@ -1273,6 +1325,17 @@ components:
             $ref: '#/components/schemas/Error'
           example:
             error: 'Sound effect generation is not supported by this provider yet.'
+    MusicNotSupported:
+      description: |
+        The selected provider does not implement music generation. The gateway
+        returns this when a request is routed to a provider without
+        text-to-music support.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: 'Music generation is not supported by this provider yet.'
     VideosNotSupported:
       description: |
         The selected provider does not implement the Videos API. The
@@ -1526,6 +1589,10 @@ components:
               name: 'create_sfx'
               method: 'POST'
               endpoint: '/sound-generation'
+            music:
+              name: 'create_music'
+              method: 'POST'
+              endpoint: '/music'
             videos:
               name: 'create_video'
               method: 'POST'
@@ -1693,8 +1760,11 @@ components:
           type: string
         speech:
           type: string
+        music:
+          type: string
         sfx:
           type: string
+          x-go-name: SFX
         videos:
           type: string
         videos_retrieve:
@@ -2975,6 +3045,42 @@ components:
         loop:
           type: boolean
           description: Whether to generate a clip that loops seamlessly.
+        response_format:
+          type: string
+          enum:
+            - mp3
+            - opus
+            - aac
+            - flac
+            - wav
+            - pcm
+          default: mp3
+          description: The audio format of the response.
+      required:
+        - model
+        - prompt
+    CreateMusicRequest:
+      type: object
+      description: |
+        Request body for composing a music clip from a text prompt.
+      properties:
+        model:
+          type: string
+          description: Model ID to use for music generation (e.g. `elevenlabs/music_v2_5`).
+        prompt:
+          type: string
+          description: Description of the music to compose - genre, mood, instruments, tempo.
+        duration_seconds:
+          type: number
+          minimum: 3
+          maximum: 600
+          description: |-
+            Length of the clip in seconds. Omit to let the provider pick a
+            length that fits the prompt.
+        instrumental:
+          type: boolean
+          default: false
+          description: Guarantee the generated clip has no vocals.
         response_format:
           type: string
           enum:
@@ -4401,7 +4507,7 @@ components:
                   env: 'AUDIO_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx). When disabled, the endpoints return a 404. Served by providers with speech or sound-effect support (currently openai and elevenlabs) or by the local llama-tts engine'
+                  description: 'Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx, POST /v1/audio/music). When disabled, the endpoints return a 404. Served by providers with speech, sound-effect or music support (currently openai and elevenlabs) or by the local llama-tts engine'
                 - name: videos_enabled
                   env: 'VIDEOS_ENABLED'
                   type: bool

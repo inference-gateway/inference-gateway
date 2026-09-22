@@ -171,6 +171,36 @@ func (e CreateMessagesRequestThinkingType) Valid() bool {
 	}
 }
 
+// Defines values for CreateMusicRequestResponseFormat.
+const (
+	CreateMusicRequestResponseFormatAac  CreateMusicRequestResponseFormat = "aac"
+	CreateMusicRequestResponseFormatFlac CreateMusicRequestResponseFormat = "flac"
+	CreateMusicRequestResponseFormatMp3  CreateMusicRequestResponseFormat = "mp3"
+	CreateMusicRequestResponseFormatOpus CreateMusicRequestResponseFormat = "opus"
+	CreateMusicRequestResponseFormatPcm  CreateMusicRequestResponseFormat = "pcm"
+	CreateMusicRequestResponseFormatWav  CreateMusicRequestResponseFormat = "wav"
+)
+
+// Valid indicates whether the value is a known member of the CreateMusicRequestResponseFormat enum.
+func (e CreateMusicRequestResponseFormat) Valid() bool {
+	switch e {
+	case CreateMusicRequestResponseFormatAac:
+		return true
+	case CreateMusicRequestResponseFormatFlac:
+		return true
+	case CreateMusicRequestResponseFormatMp3:
+		return true
+	case CreateMusicRequestResponseFormatOpus:
+		return true
+	case CreateMusicRequestResponseFormatPcm:
+		return true
+	case CreateMusicRequestResponseFormatWav:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreateSFXRequestResponseFormat.
 const (
 	CreateSFXRequestResponseFormatAac  CreateSFXRequestResponseFormat = "aac"
@@ -1920,6 +1950,28 @@ type CreateMessagesRequest_System struct {
 // CreateMessagesRequestThinkingType Always `enabled`.
 type CreateMessagesRequestThinkingType string
 
+// CreateMusicRequest Request body for composing a music clip from a text prompt.
+type CreateMusicRequest struct {
+	// DurationSeconds Length of the clip in seconds. Omit to let the provider pick a
+	// length that fits the prompt.
+	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
+
+	// Instrumental Guarantee the generated clip has no vocals.
+	Instrumental *bool `json:"instrumental,omitempty"`
+
+	// Model Model ID to use for music generation (e.g. `elevenlabs/music_v2_5`).
+	Model string `json:"model"`
+
+	// Prompt Description of the music to compose - genre, mood, instruments, tempo.
+	Prompt string `json:"prompt"`
+
+	// ResponseFormat The audio format of the response.
+	ResponseFormat *CreateMusicRequestResponseFormat `json:"response_format,omitempty"`
+}
+
+// CreateMusicRequestResponseFormat The audio format of the response.
+type CreateMusicRequestResponseFormat string
+
 // CreateResponseRequest Request body for creating a model response via the Responses API.
 type CreateResponseRequest struct {
 	// Background Whether to run the model response in the background. Useful for long-running or batched requests.
@@ -2090,8 +2142,9 @@ type Endpoints struct {
 	ImagesEdits      *string `json:"images_edits,omitempty"`
 	ImagesVariations *string `json:"images_variations,omitempty"`
 	Models           string  `json:"models"`
+	Music            *string `json:"music,omitempty"`
 	Responses        *string `json:"responses,omitempty"`
-	Sfx              *string `json:"sfx,omitempty"`
+	SFX              *string `json:"sfx,omitempty"`
 	Speech           *string `json:"speech,omitempty"`
 	Videos           *string `json:"videos,omitempty"`
 	VideosRetrieve   *string `json:"videos_retrieve,omitempty"`
@@ -3300,6 +3353,9 @@ type MCPNotExposed = Error
 // MessagesNotSupported An error response in the Anthropic error format.
 type MessagesNotSupported = MessagesError
 
+// MusicNotSupported defines model for MusicNotSupported.
+type MusicNotSupported = Error
+
 // NotFound defines model for NotFound.
 type NotFound = Error
 
@@ -3367,6 +3423,12 @@ type ProviderRequest struct {
 	} `json:"messages,omitempty"`
 	Model       *string  `json:"model,omitempty"`
 	Temperature *float32 `json:"temperature,omitempty"`
+}
+
+// CreateMusicParams defines parameters for CreateMusic.
+type CreateMusicParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
 // CreateSFXParams defines parameters for CreateSFX.
@@ -3545,6 +3607,9 @@ type DownloadVideoContentParams struct {
 	// Provider Specific provider to use (default determined by the job id)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
+
+// CreateMusicJSONRequestBody defines body for CreateMusic for application/json ContentType.
+type CreateMusicJSONRequestBody = CreateMusicRequest
 
 // CreateSFXJSONRequestBody defines body for CreateSFX for application/json ContentType.
 type CreateSFXJSONRequestBody = CreateSFXRequest
