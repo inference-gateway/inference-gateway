@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -177,17 +178,15 @@ func TestSFXHandler_ProviderWithoutSupport(t *testing.T) {
 }
 
 func TestVideosHandler_HappyPath(t *testing.T) {
-	var gotPath, gotModel, gotPrompt, gotReference, gotAudio, gotKey string
+	var gotPath, gotKey, gotContentType string
+	var gotBody map[string]any
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		gotKey = r.Header.Get(elevenlabsAPIKey)
-		require.NoError(t, r.ParseMultipartForm(1<<20))
-		gotModel = r.FormValue("model")
-		gotPrompt = r.FormValue("prompt")
-		gotReference = readUploadedFile(t, r, "input_reference")
-		gotAudio = readUploadedFile(t, r, "audio")
+		gotContentType = r.Header.Get("Content-Type")
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&gotBody))
 		w.Header().Set("Content-Type", contentTypeJSONVal)
-		_, _ = w.Write([]byte(`{"generation_id":"` + elevenlabsJobID + `","status":"queued","progress":0}`))
+		_, _ = w.Write([]byte(`{"id":"` + elevenlabsJobID + `","status":"pending"}`))
 	}))
 	defer server.Close()
 
@@ -196,6 +195,7 @@ func TestVideosHandler_HappyPath(t *testing.T) {
 		{name: "prompt", value: "a slow pan across a misty valley"},
 		{name: "input_reference", filename: "portrait.png", value: "PNG-PORTRAIT-BYTES"},
 		{name: "audio", filename: "line.wav", value: "RIFF-fake-wav"},
+		{name: "size", value: "720x1280"},
 	})
 
 	w := httptest.NewRecorder()
@@ -205,10 +205,16 @@ func TestVideosHandler_HappyPath(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 	assert.Equal(t, "/flows/video", gotPath)
-	assert.Equal(t, elevenlabsVidModel, gotModel, "the provider prefix must be stripped")
-	assert.Equal(t, "a slow pan across a misty valley", gotPrompt)
-	assert.Equal(t, "PNG-PORTRAIT-BYTES", gotReference, "the reference image must reach the provider as binary")
-	assert.Equal(t, "RIFF-fake-wav", gotAudio, "the driving audio must reach the provider as binary")
+	assert.Equal(t, contentTypeJSONVal, gotContentType, "elevenlabs takes JSON, not the OpenAI multipart form")
+	assert.Equal(t, elevenlabsVidModel, gotBody["model_id"], "the provider prefix must be stripped")
+	assert.Nil(t, gotBody["prompt"], "avatar requests carry no prompt")
+	assert.Equal(t, "720p", gotBody["resolution"])
+	assert.Nil(t, gotBody["aspect_ratio"], "avatar models reject aspect_ratio")
+	image := gotBody["image"].(map[string]any)
+	assert.Equal(t, "inline_base64", image["type"])
+	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("PNG-PORTRAIT-BYTES")), image["content_base64"], "the reference image must reach the provider inline")
+	audio := gotBody["audio"].(map[string]any)
+	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte("RIFF-fake-wav")), audio["content_base64"], "the driving audio must reach the provider inline")
 	assert.Equal(t, elevenlabsTestKey, gotKey)
 
 	var job map[string]any
@@ -264,14 +270,14 @@ func TestVideosHandler_UpstreamErrorRelayedVerbatim(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", contentTypeJSONVal)
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		_, _ = w.Write([]byte(`{"detail":"size 999x999 is not supported"}`))
+		_, _ = w.Write([]byte(`{"detail":"resolution 1080p is not supported by this model"}`))
 	}))
 	defer server.Close()
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "model", value: "elevenlabs/" + elevenlabsVidModel},
 		{name: "prompt", value: "a valley"},
-		{name: "size", value: "999x999"},
+		{name: "size", value: "1920x1080"},
 	})
 
 	w := httptest.NewRecorder()
@@ -280,7 +286,7 @@ func TestVideosHandler_UpstreamErrorRelayedVerbatim(t *testing.T) {
 	newVideosTestRouter(t, server.URL, enableVideos).ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusUnprocessableEntity, w.Code)
-	assert.Contains(t, w.Body.String(), "size 999x999 is not supported")
+	assert.Contains(t, w.Body.String(), "resolution 1080p is not supported by this model")
 }
 
 func TestRetrieveVideoHandler_StripsProviderPrefix(t *testing.T) {
@@ -376,7 +382,7 @@ func TestDownloadVideoContentHandler_StreamsCompletedRender(t *testing.T) {
 		}
 		gotJobPath = r.URL.Path
 		w.Header().Set("Content-Type", contentTypeJSONVal)
-		_, _ = w.Write([]byte(`{"generation_id":"` + elevenlabsJobID + `","status":"completed","media_url":"` + renderURL + `"}`))
+		_, _ = w.Write([]byte(`{"generation_id":"` + elevenlabsJobID + `","status":"completed","content_url":"` + renderURL + `"}`))
 	}))
 	defer server.Close()
 	renderURL = server.URL + "/renders/" + elevenlabsJobID + ".mp4"

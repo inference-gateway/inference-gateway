@@ -1,39 +1,27 @@
-// Package elevenlabs translates between the gateway's OpenAI-compatible audio
-// and video payloads and ElevenLabs' native API shapes.
-//
-// Every other provider the gateway speaks to is OpenAI-compatible, so their
-// requests are proxied byte-for-byte. ElevenLabs is not: the voice lives in
-// the URL path rather than the body, the text field is `text` instead of
-// `input`/`prompt`, the model is `model_id`, and the audio container is a
-// single `output_format` string that encodes sample rate and bitrate. The
-// functions here are pure so they can be tested without a server.
 package elevenlabs
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// VoicePathPlaceholder is the token in the speech endpoint that carries the
-// voice id (ElevenlabsSpeechEndpoint is "/text-to-speech/{voice}").
 const VoicePathPlaceholder = "{voice}"
 
-// Default ElevenLabs output formats per OpenAI response_format. ElevenLabs
-// takes a single string encoding container, sample rate and bitrate, and has
-// no aac, flac or wav variant at all - those are rejected rather than
-// silently downgraded, so a caller never gets mp3 bytes labelled as wav.
 var outputFormats = map[string]string{
 	string(types.CreateSpeechRequestResponseFormatMp3):  "mp3_44100_128",
 	string(types.CreateSpeechRequestResponseFormatOpus): "opus_48000_128",
 	string(types.CreateSpeechRequestResponseFormatPcm):  "pcm_24000",
 }
 
-// SupportedFormats lists the response_format values ElevenLabs can serve, for
-// use in client-facing error messages.
 const SupportedFormats = "mp3, opus, pcm"
 
 // OutputFormat maps an OpenAI response_format onto an ElevenLabs
@@ -89,7 +77,6 @@ func Speech(endpoint, model string, req types.CreateSpeechRequest) (path, query 
 	return strings.ReplaceAll(endpoint, VoicePathPlaceholder, url.PathEscape(req.Voice)), "output_format=" + format, body, nil
 }
 
-// sfxBody is the ElevenLabs POST /sound-generation payload.
 type sfxBody struct {
 	Text            string   `json:"text"`
 	ModelID         string   `json:"model_id"`
@@ -137,13 +124,11 @@ type videoPayload struct {
 	MediaURL     string `json:"media_url"`
 	VideoURL     string `json:"video_url"`
 	DownloadURL  string `json:"download_url"`
+	ContentURL   string `json:"content_url"`
 	Error        string `json:"error"`
 	ErrorMessage string `json:"error_message"`
 }
 
-// statuses maps ElevenLabs job states onto the VideoJob status enum. Anything
-// unrecognized is reported as in_progress so a client keeps polling instead of
-// treating a new upstream state as a terminal failure.
 var statuses = map[string]types.VideoJobStatus{
 	"queued":      types.VideoJobStatusQueued,
 	"pending":     types.VideoJobStatusQueued,
@@ -202,7 +187,144 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 	if status != types.VideoJobStatusCompleted {
 		return job, "", nil
 	}
-	return job, firstNonEmpty(p.MediaURL, p.VideoURL, p.DownloadURL), nil
+	return job, firstNonEmpty(p.ContentURL, p.MediaURL, p.VideoURL, p.DownloadURL), nil
+}
+
+const (
+	videoFieldPrompt    = "prompt"
+	videoFieldSeconds   = "seconds"
+	videoFieldSize      = "size"
+	videoFieldReference = "input_reference"
+	videoFieldAudio     = "audio"
+	inlineMediaType     = "inline_base64"
+	sizeSeparator       = "x"
+)
+
+var resolutions = map[int]string{480: "480p", 720: "720p", 1080: "1080p"}
+
+var aspectRatios = map[[2]int]string{{16, 9}: "16:9", {9, 16}: "9:16", {1, 1}: "1:1"}
+
+type inlineMedia struct {
+	Type          string `json:"type"`
+	ContentBase64 string `json:"content_base64"`
+	MimeType      string `json:"mime_type"`
+}
+
+// videoBody is the ElevenLabs POST /flows/video payload. Avatar models
+// (creatify-aurora) take `image` and `audio` and no prompt; every other model
+// takes a prompt with an optional `start_frame`. The two shapes are merged
+// here and fields left nil are omitted.
+type videoBody struct {
+	ModelID      string       `json:"model_id"`
+	Prompt       string       `json:"prompt,omitempty"`
+	DurationSecs *int         `json:"duration_secs,omitempty"`
+	Resolution   string       `json:"resolution,omitempty"`
+	AspectRatio  string       `json:"aspect_ratio,omitempty"`
+	StartFrame   *inlineMedia `json:"start_frame,omitempty"`
+	Image        *inlineMedia `json:"image,omitempty"`
+	Audio        *inlineMedia `json:"audio,omitempty"`
+}
+
+// Video rewrites an OpenAI Videos multipart form into the ElevenLabs flows
+// JSON shape. A form carrying `audio` is treated as an avatar (lip-sync)
+// request: the reference image becomes `image`, the clip becomes `audio`,
+// and prompt/seconds are dropped because those models reject them. model is
+// the request model with the provider prefix already stripped.
+func Video(model string, form *multipart.Form) ([]byte, error) {
+	out := videoBody{ModelID: model}
+
+	image, err := inlineFile(form, videoFieldReference)
+	if err != nil {
+		return nil, err
+	}
+	audio, err := inlineFile(form, videoFieldAudio)
+	if err != nil {
+		return nil, err
+	}
+
+	if size := formValue(form, videoFieldSize); size != "" {
+		if out.Resolution, out.AspectRatio, err = parseSize(size); err != nil {
+			return nil, err
+		}
+	}
+
+	if audio != nil {
+		if image == nil {
+			return nil, fmt.Errorf("the 'input_reference' image is required when 'audio' is provided")
+		}
+		out.Image, out.Audio = image, audio
+		out.AspectRatio = ""
+		return json.Marshal(out)
+	}
+
+	out.Prompt = formValue(form, videoFieldPrompt)
+	if strings.TrimSpace(out.Prompt) == "" {
+		return nil, fmt.Errorf("the 'prompt' field is required")
+	}
+	out.StartFrame = image
+	if seconds := formValue(form, videoFieldSeconds); seconds != "" {
+		n, err := strconv.Atoi(seconds)
+		if err != nil || n <= 0 {
+			return nil, fmt.Errorf("the 'seconds' field must be a positive integer")
+		}
+		out.DurationSecs = &n
+	}
+	return json.Marshal(out)
+}
+
+// parseSize turns an OpenAI `size` ("720x1280") into an ElevenLabs
+// resolution and aspect_ratio. The resolution is taken from the shorter side.
+func parseSize(size string) (resolution, aspect string, err error) {
+	w, h, ok := strings.Cut(size, sizeSeparator)
+	width, werr := strconv.Atoi(w)
+	height, herr := strconv.Atoi(h)
+	if !ok || werr != nil || herr != nil || width <= 0 || height <= 0 {
+		return "", "", fmt.Errorf("the 'size' field must be WIDTHxHEIGHT, e.g. 1280x720")
+	}
+	resolution, ok = resolutions[min(width, height)]
+	if !ok {
+		return "", "", fmt.Errorf("elevenlabs does not support size %q, the shorter side must be 480, 720 or 1080", size)
+	}
+	g := gcd(width, height)
+	return resolution, aspectRatios[[2]int{width / g, height / g}], nil
+}
+
+func gcd(a, b int) int {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
+// inlineFile reads the first uploaded file for field into an inline media
+// reference, or returns nil when the field is absent. The mime type comes
+// from the part header, sniffed from the bytes when the client sent none.
+func inlineFile(form *multipart.Form, field string) (*inlineMedia, error) {
+	headers := form.File[field]
+	if len(headers) == 0 {
+		return nil, nil
+	}
+	f, err := headers[0].Open()
+	if err != nil {
+		return nil, fmt.Errorf("failed to open uploaded %s: %w", field, err)
+	}
+	defer f.Close()
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read uploaded %s: %w", field, err)
+	}
+	mimeType := headers[0].Header.Get("Content-Type")
+	if mimeType == "" || mimeType == "application/octet-stream" {
+		mimeType = http.DetectContentType(data)
+	}
+	return &inlineMedia{Type: inlineMediaType, ContentBase64: base64.StdEncoding.EncodeToString(data), MimeType: mimeType}, nil
+}
+
+func formValue(form *multipart.Form, key string) string {
+	if vs := form.Value[key]; len(vs) > 0 {
+		return vs[0]
+	}
+	return ""
 }
 
 func firstNonEmpty(values ...string) string {

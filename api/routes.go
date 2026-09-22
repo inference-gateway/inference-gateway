@@ -1804,6 +1804,13 @@ var videoJobMappers = map[types.Provider]videoJobMapper{
 	constants.ElevenlabsID: elevenlabs.Job,
 }
 
+// videoRequestTranslators rewrite the OpenAI Videos multipart form into each
+// provider's native create-job payload. No provider speaks the OpenAI shape,
+// so every provider that carries a Videos endpoint must have an entry here.
+var videoRequestTranslators = map[types.Provider]func(model string, form *multipart.Form) ([]byte, error){
+	constants.ElevenlabsID: elevenlabs.Video,
+}
+
 // VideosHandler implements POST /v1/videos, the OpenAI-compatible Videos API:
 // https://platform.openai.com/docs/api-reference/videos/create
 //
@@ -1861,24 +1868,20 @@ func (router *RouterImpl) VideosHandler(c *gin.Context) {
 		return
 	}
 
-	if model != originalModel {
-		form.Value[imageFormFieldModel] = []string{model}
+	body, err := videoRequestTranslators[providerID](model, form)
+	if err != nil {
+		router.logger.Error("failed to translate request for provider", err, "api", videosAPIName, "provider", providerID)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
 	}
-
-	pr, pw := io.Pipe()
-	mw := multipart.NewWriter(pw)
-	go func() {
-		pw.CloseWithError(writeMultipartForm(mw, form))
-	}()
 
 	job, _, ok := router.videoJob(c, provider, providerID, model, upstreamRequest{
 		endpointPath: endpoint,
-		body:         pr,
-		contentType:  mw.FormDataContentType(),
+		body:         bytes.NewReader(body),
+		contentType:  contentTypeJSON,
 		accept:       contentTypeJSON,
 	})
 	if !ok {
-		_ = pr.CloseWithError(io.ErrClosedPipe)
 		return
 	}
 
