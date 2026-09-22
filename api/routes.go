@@ -2018,8 +2018,6 @@ func (router *RouterImpl) resolveVideoJobID(c *gin.Context, videoID string) (typ
 	providerID := types.Provider(c.Query("provider"))
 
 	if prefix, rest, found := strings.Cut(videoID, videoJobIDSeparator); found {
-		// An unknown prefix is left alone: the upstream id may legitimately
-		// contain a colon of its own.
 		if detected := types.Provider(strings.ToLower(prefix)); registry.Registry[detected] != nil {
 			videoID = rest
 			if providerID == "" {
