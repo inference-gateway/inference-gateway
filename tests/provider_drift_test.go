@@ -45,9 +45,13 @@ func TestProviderWiringDrift(t *testing.T) {
 				result := transformer.Transform()
 				require.NotNil(t, result.Provider)
 				assert.Equal(t, id, *result.Provider)
-				require.Len(t, result.Data, 1)
+				// A transformer may append models its provider does not list
+				// (elevenlabs), so only the first entry is pinned.
+				require.NotEmpty(t, result.Data)
 				assert.Equal(t, string(id)+"/m1", result.Data[0].ID)
-				assert.Equal(t, id, result.Data[0].ServedBy)
+				for _, m := range result.Data {
+					assert.Equal(t, id, m.ServedBy, m.ID)
+				}
 			})
 
 			t.Run("telemetry detects provider from model prefix", func(t *testing.T) {

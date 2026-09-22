@@ -59,17 +59,46 @@ func (l *ListModelsResponseElevenlabs) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// unlistedModels are the sound-effect and video models the gateway can
+// route to but ElevenLabs does not include in GET /v1/models. They are
+// appended to the listing so clients can discover them and filter on their
+// modalities. Kept in step with the video create endpoint's model_id enum:
+// https://elevenlabs.io/docs/api-reference/flows/video/create
+var unlistedModels = []struct {
+	id         string
+	modalities types.ModelModalities
+}{
+	{"eleven_text_to_sound_v2", types.ModelModalities{Input: []types.Modality{types.ModalityText}, Output: []types.Modality{types.ModalityAudio}}},
+	{"creatify-aurora", types.ModelModalities{Input: []types.Modality{types.ModalityImage, types.ModalityAudio}, Output: []types.Modality{types.ModalityVideo}}},
+	{"veo-3.1-generate-001", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
+	{"veo-3.1-fast-generate-001", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
+	{"bytedance-seedance-v2", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
+	{"bytedance-seedance-v2-fast", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
+	{"bytedance-seedance-v2-mini", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
+	{"bytedance-seedance-v2.5", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
+}
+
 func (l *ListModelsResponseElevenlabs) Transform() types.ListModelsResponse {
 	provider := constants.ElevenlabsID
-	models := make([]types.Model, len(l.Data))
-	for i, m := range l.Data {
-		models[i] = types.Model{
+	models := make([]types.Model, 0, len(l.Data)+len(unlistedModels))
+	for _, m := range l.Data {
+		models = append(models, types.Model{
 			ID:         string(provider) + "/" + m.ModelID,
 			Object:     "model",
 			OwnedBy:    string(provider),
 			ServedBy:   provider,
 			Modalities: m.modalities(),
-		}
+		})
+	}
+	for _, m := range unlistedModels {
+		mods := m.modalities
+		models = append(models, types.Model{
+			ID:         string(provider) + "/" + m.id,
+			Object:     "model",
+			OwnedBy:    string(provider),
+			ServedBy:   provider,
+			Modalities: &mods,
+		})
 	}
 
 	return types.ListModelsResponse{
