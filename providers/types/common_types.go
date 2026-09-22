@@ -2117,6 +2117,17 @@ type CreateVideoRequest struct {
 	// and the prompt only describes framing, never the spoken words.
 	Prompt *string `json:"prompt,omitempty"`
 
+	// ReferenceImages Non-standard extension (OpenAI's Videos API has no reference-images
+	// field): optional reference images of the subject (e.g. the same
+	// person from several angles), sent as repeated `reference_images`
+	// parts. Used by providers that keep a character consistent across
+	// shots (e.g. ElevenLabs `veo-3.1-*`, `bytedance-seedance-v2*`).
+	// Distinct from `input_reference`, which stays the first frame or,
+	// for avatar models, the portrait to animate - avatar models ignore
+	// this field. Providers without reference-image support ignore or
+	// reject it.
+	ReferenceImages *[]openapi_types.File `json:"reference_images,omitempty"`
+
 	// Seconds Requested duration of the generated video in seconds, as a string
 	// (e.g. `4`, `8`, `12`). Providers accept a limited set of values;
 	// omit to use the provider default. Ignored when `audio` is present.

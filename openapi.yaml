@@ -1234,6 +1234,9 @@ components:
         multipart/form-data:
           schema:
             $ref: '#/components/schemas/CreateVideoRequest'
+          encoding:
+            reference_images:
+              contentType: image/*
   responses:
     BadRequest:
       description: Bad request
@@ -3114,6 +3117,21 @@ components:
           description: |-
             Optional image used as the first frame or, for avatar models, the
             portrait to animate.
+        reference_images:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: |-
+            Non-standard extension (OpenAI's Videos API has no reference-images
+            field): optional reference images of the subject (e.g. the same
+            person from several angles), sent as repeated `reference_images`
+            parts. Used by providers that keep a character consistent across
+            shots (e.g. ElevenLabs `veo-3.1-*`, `bytedance-seedance-v2*`).
+            Distinct from `input_reference`, which stays the first frame or,
+            for avatar models, the portrait to animate - avatar models ignore
+            this field. Providers without reference-image support ignore or
+            reject it.
         audio:
           type: string
           format: binary
