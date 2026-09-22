@@ -3052,7 +3052,6 @@ components:
             - opus
             - aac
             - flac
-            - wav
             - pcm
           default: mp3
           description: The audio format of the response.
@@ -3088,7 +3087,6 @@ components:
             - opus
             - aac
             - flac
-            - wav
             - pcm
           default: mp3
           description: The audio format of the response.

@@ -178,7 +178,6 @@ const (
 	CreateMusicRequestResponseFormatMp3  CreateMusicRequestResponseFormat = "mp3"
 	CreateMusicRequestResponseFormatOpus CreateMusicRequestResponseFormat = "opus"
 	CreateMusicRequestResponseFormatPcm  CreateMusicRequestResponseFormat = "pcm"
-	CreateMusicRequestResponseFormatWav  CreateMusicRequestResponseFormat = "wav"
 )
 
 // Valid indicates whether the value is a known member of the CreateMusicRequestResponseFormat enum.
@@ -194,8 +193,6 @@ func (e CreateMusicRequestResponseFormat) Valid() bool {
 		return true
 	case CreateMusicRequestResponseFormatPcm:
 		return true
-	case CreateMusicRequestResponseFormatWav:
-		return true
 	default:
 		return false
 	}
@@ -208,7 +205,6 @@ const (
 	CreateSFXRequestResponseFormatMp3  CreateSFXRequestResponseFormat = "mp3"
 	CreateSFXRequestResponseFormatOpus CreateSFXRequestResponseFormat = "opus"
 	CreateSFXRequestResponseFormatPcm  CreateSFXRequestResponseFormat = "pcm"
-	CreateSFXRequestResponseFormatWav  CreateSFXRequestResponseFormat = "wav"
 )
 
 // Valid indicates whether the value is a known member of the CreateSFXRequestResponseFormat enum.
@@ -223,8 +219,6 @@ func (e CreateSFXRequestResponseFormat) Valid() bool {
 	case CreateSFXRequestResponseFormatOpus:
 		return true
 	case CreateSFXRequestResponseFormatPcm:
-		return true
-	case CreateSFXRequestResponseFormatWav:
 		return true
 	default:
 		return false
