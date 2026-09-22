@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	gin "github.com/gin-gonic/gin"
 	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -28,6 +29,7 @@ import (
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
+	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	proxy "github.com/inference-gateway/inference-gateway/internal/proxy"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
@@ -309,61 +311,99 @@ type upstreamFailure struct {
 	message string
 }
 
-// upstreamRequest describes a raw pass-through POST to a provider endpoint.
-// An empty accept leaves the upstream Accept header unset; streaming skips the
-// server read timeout so an open-ended (SSE) response is not cut short.
+// upstreamRequest describes a raw pass-through request to a provider endpoint.
+// An empty method means POST, an empty contentType leaves the upstream
+// Content-Type header unset (for GETs with no body) and an empty accept leaves
+// the upstream Accept header unset; streaming skips the server read timeout so
+// an open-ended (SSE) response is not cut short.
 type upstreamRequest struct {
+	method       string
 	endpointPath string
+	query        string
 	body         io.Reader
 	contentType  string
 	accept       string
 	streaming    bool
 }
 
-// forwardUpstream posts req.body to the provider endpoint and relays the
-// upstream response verbatim - JSON with its Content-Type, or SSE via relaySSE
-// when the upstream answers with text/event-stream. Non-streaming requests are
-// bounded by the server read timeout. A nil return means the response was
-// already written; otherwise the caller renders the failure in its own
-// envelope.
-func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvider, req upstreamRequest) *upstreamFailure {
+// url renders the absolute upstream URL for req against the provider base URL.
+func (req upstreamRequest) url(provider core.IProvider) string {
+	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + req.endpointPath
+	if req.query != "" {
+		upstreamURL += "?" + req.query
+	}
+	return upstreamURL
+}
+
+// callUpstream sends req to the provider and hands the live response back for
+// the caller to read. The caller closes resp.Body and calls done when it is
+// finished, which releases the read-timeout context; on failure done has
+// already run.
+func (router *RouterImpl) callUpstream(c *gin.Context, provider core.IProvider, req upstreamRequest) (*http.Response, func(), *upstreamFailure) {
+	noop := func() {}
+
 	ctx := c.Request.Context()
+	done := noop
 	if !req.streaming {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, router.cfg.Server.ReadTimeout)
-		defer cancel()
+		done = cancel
 	}
 
-	upstreamURL := strings.TrimSuffix(provider.GetURL(), "/") + req.endpointPath
-	upstreamReq, err := http.NewRequestWithContext(ctx, http.MethodPost, upstreamURL, req.body)
-	if err != nil {
-		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
-		return &upstreamFailure{http.StatusInternalServerError, "Failed to create upstream request"}
+	method := req.method
+	if method == "" {
+		method = http.MethodPost
 	}
-	upstreamReq.Header.Set("Content-Type", req.contentType)
+
+	upstreamURL := req.url(provider)
+	upstreamReq, err := http.NewRequestWithContext(ctx, method, upstreamURL, req.body)
+	if err != nil {
+		done()
+		router.logger.Error("failed to create upstream request", err, "url", upstreamURL)
+		return nil, noop, &upstreamFailure{http.StatusInternalServerError, "Failed to create upstream request"}
+	}
+	if req.contentType != "" {
+		upstreamReq.Header.Set("Content-Type", req.contentType)
+	}
 	if req.accept != "" {
 		upstreamReq.Header.Set("Accept", req.accept)
 	}
 
 	if err := applyProviderAuth(upstreamReq, provider); err != nil {
+		done()
 		router.logger.Error("unsupported auth type", err, "provider", provider.GetName())
-		return &upstreamFailure{http.StatusUnprocessableEntity, "Unsupported auth type"}
+		return nil, noop, &upstreamFailure{http.StatusUnprocessableEntity, "Unsupported auth type"}
 	}
 
 	otelapi.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(upstreamReq.Header))
 
 	resp, err := router.client.Do(upstreamReq)
 	if err != nil {
+		done()
 		if ctx.Err() == context.DeadlineExceeded {
 			router.logger.Error("request timed out", err, "url", upstreamURL, "provider", provider.GetName())
-			return &upstreamFailure{http.StatusGatewayTimeout, "Request timed out"}
+			return nil, noop, &upstreamFailure{http.StatusGatewayTimeout, "Request timed out"}
 		}
 		router.logger.Error("failed to reach upstream server", err, "url", upstreamURL, "provider", provider.GetName())
-		return &upstreamFailure{http.StatusBadGateway, "Failed to reach upstream server"}
+		return nil, noop, &upstreamFailure{http.StatusBadGateway, "Failed to reach upstream server"}
 	}
-	defer resp.Body.Close()
 
 	markUpstreamError(c, resp)
+	return resp, done, nil
+}
+
+// forwardUpstream sends req to the provider endpoint and relays the upstream
+// response verbatim - JSON with its Content-Type, or SSE via relaySSE when the
+// upstream answers with text/event-stream. Non-streaming requests are bounded
+// by the server read timeout. A nil return means the response was already
+// written; otherwise the caller renders the failure in its own envelope.
+func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvider, req upstreamRequest) *upstreamFailure {
+	resp, done, failure := router.callUpstream(c, provider, req)
+	if failure != nil {
+		return failure
+	}
+	defer done()
+	defer resp.Body.Close()
 
 	contentType := resp.Header.Get("Content-Type")
 	if !strings.HasPrefix(contentType, contentTypeEventStream) {
@@ -372,7 +412,7 @@ func (router *RouterImpl) forwardUpstream(c *gin.Context, provider core.IProvide
 	}
 
 	middlewares.SetSSEHeaders(c)
-	router.relaySSE(c, resp.Body, upstreamURL)
+	router.relaySSE(c, resp.Body, req.url(provider))
 	return nil
 }
 
@@ -1200,17 +1240,46 @@ func (router *RouterImpl) ImagesHandler(c *gin.Context) {
 		return
 	}
 
-	router.proxyJSONBody(c, "Images API", "openai/gpt-image-2", contentTypeJSON,
-		func(e types.Endpoints) *string { return e.Images })
+	router.proxyJSONBody(c, jsonProxy{
+		apiName:      "Images API",
+		exampleModel: "openai/gpt-image-2",
+		accept:       contentTypeJSON,
+		endpointOf:   func(e types.Endpoints) *string { return e.Images },
+	})
+}
+
+// jsonTranslator rewrites an OpenAI-style JSON request into a provider's own
+// request shape. endpoint is the provider's registry endpoint template and
+// model the request model with the provider prefix already stripped; it returns
+// the upstream path, its query string ("" for none) and the upstream body.
+type jsonTranslator func(endpoint, model string, body []byte) (path, query string, out []byte, err error)
+
+// jsonProxy describes a JSON pass-through to a provider endpoint. apiName
+// appears in client-facing errors, exampleModel in routing hints, accept sets
+// the upstream Accept header when non-empty and endpointOf picks the endpoint
+// off the resolved provider.
+type jsonProxy struct {
+	apiName      string
+	exampleModel string
+	accept       string
+	endpointOf   func(types.Endpoints) *string
+
+	// notSupported overrides the message sent when the resolved provider does
+	// not implement the endpoint.
+	notSupported string
+
+	// translators holds the per-provider request rewrites for providers whose
+	// API is not OpenAI-compatible. A provider absent from the map is proxied
+	// byte-for-byte with only the `model` field rewritten.
+	translators map[types.Provider]jsonTranslator
 }
 
 // proxyJSONBody forwards an OpenAI-style JSON request byte-for-byte to the
-// provider endpoint selected by endpointOf (only the `model` field is
+// provider endpoint selected by p.endpointOf (only the `model` field is
 // rewritten when the provider prefix is stripped) and relays the upstream
-// response with its Content-Type. apiName appears in client-facing errors,
-// exampleModel in routing hints, and accept sets the Accept header when
-// non-empty.
-func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, accept string, endpointOf func(types.Endpoints) *string) {
+// response with its Content-Type. Providers listed in p.translators get their
+// request rewritten into the provider's own shape instead.
+func (router *RouterImpl) proxyJSONBody(c *gin.Context, p jsonProxy) {
 	body, tooLarge, err := router.readBoundedBody(c)
 	if err != nil {
 		router.logger.Error("failed to read request body", err)
@@ -1237,7 +1306,7 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 	}
 	originalModel := model
 
-	providerID, model, msg := router.resolveProvider(c, model, exampleModel)
+	providerID, model, msg := router.resolveProvider(c, model, p.exampleModel)
 	if msg != "" {
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
@@ -1254,27 +1323,50 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 		return
 	}
 
-	endpoint := endpointOf(provider.GetEndpoints())
-	if endpoint == nil || *endpoint == "" {
-		router.logger.Error("api not supported by provider", nil, "api", apiName, "provider", providerID)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The " + apiName + " is not supported by this provider yet."})
+	endpoint, msg := router.providerEndpoint(provider, p.endpointOf, p.apiName, p.notSupported)
+	if msg != "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 
-	if model != originalModel {
+	path, query := endpoint, ""
+	if translate := p.translators[providerID]; translate != nil {
+		if path, query, body, err = translate(endpoint, model, body); err != nil {
+			router.logger.Error("failed to translate request for provider", err, "api", p.apiName, "provider", providerID)
+			c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+			return
+		}
+	} else if model != originalModel {
 		if body, err = router.rewriteModelOrRespond(c, body, model); err != nil {
 			return
 		}
 	}
 
 	if f := router.forwardUpstream(c, provider, upstreamRequest{
-		endpointPath: *endpoint,
+		endpointPath: path,
+		query:        query,
 		body:         bytes.NewReader(body),
 		contentType:  contentTypeJSON,
-		accept:       accept,
+		accept:       p.accept,
 	}); f != nil {
 		c.JSON(f.status, ErrorResponse{Error: f.message})
 	}
+}
+
+// providerEndpoint resolves an optional endpoint off the provider's registry
+// entry, returning the client-facing message ("" on success) when the provider
+// does not implement it. notSupported overrides the default message.
+func (router *RouterImpl) providerEndpoint(provider core.IProvider, endpointOf func(types.Endpoints) *string, apiName, notSupported string) (string, string) {
+	endpoint := endpointOf(provider.GetEndpoints())
+	if endpoint != nil && *endpoint != "" {
+		return *endpoint, ""
+	}
+
+	router.logger.Error("api not supported by provider", nil, "api", apiName, "provider", provider.GetName())
+	if notSupported != "" {
+		return "", notSupported
+	}
+	return "", "The " + apiName + " is not supported by this provider yet."
 }
 
 // SpeechHandler implements an OpenAI-compatible POST /v1/audio/speech
@@ -1286,17 +1378,20 @@ func (router *RouterImpl) proxyJSONBody(c *gin.Context, apiName, exampleModel, a
 // back as raw binary and is streamed to the caller with the upstream's
 // Content-Type (e.g. audio/mpeg for response_format mp3).
 //
+// ElevenLabs is the one provider whose audio API is not OpenAI-compatible, so
+// its speech and sound-effect requests are rewritten instead of proxied
+// byte-for-byte.
+//
 // Only providers that natively implement the Audio API are supported
-// (currently openai); other providers receive a 400, mirroring the schema's
-// SpeechNotSupported response. The llamacpp registry entry also carries a
-// Speech endpoint, but that path is a work in progress and not supported yet.
+// (currently openai and elevenlabs); other providers receive a 400, mirroring
+// the schema's SpeechNotSupported response. The llamacpp registry entry also
+// carries a Speech endpoint, but that path is a work in progress and not
+// supported yet.
 //
 // The endpoint is opt-in via AUDIO_ENABLED (default off). When disabled, the
 // handler returns 404.
 func (router *RouterImpl) SpeechHandler(c *gin.Context) {
-	if !router.cfg.AudioEnabled {
-		router.logger.Error("audio api not enabled", nil)
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Audio API is not enabled. Set AUDIO_ENABLED=true to enable it."})
+	if !router.audioEnabled(c) {
 		return
 	}
 
@@ -1306,8 +1401,70 @@ func (router *RouterImpl) SpeechHandler(c *gin.Context) {
 		return
 	}
 
-	router.proxyJSONBody(c, "Audio API", "openai/tts-1", "",
-		func(e types.Endpoints) *string { return e.Speech })
+	router.proxyJSONBody(c, jsonProxy{
+		apiName:      "Audio API",
+		exampleModel: "openai/tts-1",
+		endpointOf:   func(e types.Endpoints) *string { return e.Speech },
+		translators:  map[types.Provider]jsonTranslator{constants.ElevenlabsID: elevenlabsSpeech},
+	})
+}
+
+// SFXHandler implements POST /v1/audio/sfx, the gateway extension that
+// generates a non-speech audio clip - a sound effect or ambience - from a text
+// prompt. OpenAI has no sound-effects endpoint, so the request mirrors
+// /audio/speech (JSON in, raw audio bytes out) and only providers that carry an
+// Sfx endpoint (currently elevenlabs) can serve it; the rest receive a 400,
+// mirroring the schema's SFXNotSupported response.
+//
+// The endpoint shares the AUDIO_ENABLED toggle with /audio/speech.
+func (router *RouterImpl) SFXHandler(c *gin.Context) {
+	if !router.audioEnabled(c) {
+		return
+	}
+
+	router.proxyJSONBody(c, jsonProxy{
+		apiName:      "Sound effect generation",
+		exampleModel: "elevenlabs/eleven_text_to_sound_v2",
+		endpointOf:   func(e types.Endpoints) *string { return e.Sfx },
+		notSupported: "Sound effect generation is not supported by this provider yet.",
+		translators:  map[types.Provider]jsonTranslator{constants.ElevenlabsID: elevenlabsSFX},
+	})
+}
+
+// audioEnabled reports whether the Audio API is switched on, writing the 404
+// AUDIO_ENABLED response when it is not.
+func (router *RouterImpl) audioEnabled(c *gin.Context) bool {
+	if router.cfg.AudioEnabled {
+		return true
+	}
+	router.logger.Error("audio api not enabled", nil)
+	c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Audio API is not enabled. Set AUDIO_ENABLED=true to enable it."})
+	return false
+}
+
+// elevenlabsSpeech rewrites an OpenAI CreateSpeechRequest into the ElevenLabs
+// text-to-speech shape, which carries the voice in the URL path and the audio
+// container in an output_format query parameter.
+func elevenlabsSpeech(endpoint, model string, body []byte) (string, string, []byte, error) {
+	var req types.CreateSpeechRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		return "", "", nil, fmt.Errorf("failed to decode request: %w", err)
+	}
+	return elevenlabs.Speech(endpoint, model, req)
+}
+
+// elevenlabsSFX rewrites a gateway CreateSFXRequest into the ElevenLabs
+// sound-generation shape.
+func elevenlabsSFX(endpoint, model string, body []byte) (string, string, []byte, error) {
+	var req types.CreateSFXRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		return "", "", nil, fmt.Errorf("failed to decode request: %w", err)
+	}
+	out, err := elevenlabs.SFX(model, req)
+	if err != nil {
+		return "", "", nil, err
+	}
+	return endpoint, "", out, nil
 }
 
 // serveLocalSpeech handles the reserved local/ model prefix with the built-in
@@ -1412,9 +1569,9 @@ const (
 	imageFormFieldPrompt     = "prompt"
 	imageFormFieldModel      = "model"
 
-	// imagesMultipartMaxMemory caps how much of a multipart upload is kept in
+	// multipartMaxMemory caps how much of a multipart upload is kept in
 	// memory; parts above it spill to temp files instead.
-	imagesMultipartMaxMemory = 1 << 20
+	multipartMaxMemory = 1 << 20
 )
 
 // imagesMultipartTarget selects which multipart Images endpoint a request is
@@ -1468,16 +1625,8 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		return
 	}
 
-	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(maxBodySize))
-	if err := c.Request.ParseMultipartForm(imagesMultipartMaxMemory); err != nil {
-		var maxErr *http.MaxBytesError
-		if errors.As(err, &maxErr) {
-			c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
-			return
-		}
-		router.logger.Error("failed to parse multipart form", err)
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to parse multipart/form-data request"})
+	form, ok := router.parseBoundedMultipart(c)
+	if !ok {
 		return
 	}
 	defer func() {
@@ -1485,8 +1634,6 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 			_ = c.Request.MultipartForm.RemoveAll()
 		}
 	}()
-
-	form := c.Request.MultipartForm
 
 	if len(form.File[imageFormFieldImage])+len(form.File[imageFormFieldImageArray]) == 0 {
 		router.logger.Error("images request missing image file", nil)
@@ -1533,7 +1680,7 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
 	go func() {
-		pw.CloseWithError(writeImagesMultipartForm(mw, form))
+		pw.CloseWithError(writeMultipartForm(mw, form))
 	}()
 
 	if f := router.forwardUpstream(c, provider, upstreamRequest{
@@ -1548,6 +1695,26 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 	}
 }
 
+// parseBoundedMultipart parses the request's multipart/form-data body within the
+// configured max request body size and returns the form. It writes the client
+// response and reports false when the body is too large or malformed; the caller
+// still owns removing the form's temp files.
+func (router *RouterImpl) parseBoundedMultipart(c *gin.Context) (*multipart.Form, bool) {
+	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(maxBodySize))
+	if err := c.Request.ParseMultipartForm(multipartMaxMemory); err != nil {
+		var maxErr *http.MaxBytesError
+		if errors.As(err, &maxErr) {
+			c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+			return nil, false
+		}
+		router.logger.Error("failed to parse multipart form", err)
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to parse multipart/form-data request"})
+		return nil, false
+	}
+	return c.Request.MultipartForm, true
+}
+
 // imagesFormValue returns the first value for key in a parsed multipart form,
 // or "" when absent.
 func imagesFormValue(form *multipart.Form, key string) string {
@@ -1557,11 +1724,12 @@ func imagesFormValue(form *multipart.Form, key string) string {
 	return ""
 }
 
-// writeImagesMultipartForm re-encodes a parsed multipart form onto mw, copying
+// writeMultipartForm re-encodes a parsed multipart form onto mw, copying
 // each uploaded file straight through (preserving its Content-Type) so the
 // payload streams to the upstream without a second full in-memory copy. It
-// runs in its own goroutine writing to the io.Pipe.
-func writeImagesMultipartForm(mw *multipart.Writer, form *multipart.Form) error {
+// runs in its own goroutine writing to the io.Pipe. Shared by the Images and
+// Videos multipart endpoints.
+func writeMultipartForm(mw *multipart.Writer, form *multipart.Form) error {
 	for field, values := range form.Value {
 		for _, v := range values {
 			if err := mw.WriteField(field, v); err != nil {
@@ -1571,7 +1739,7 @@ func writeImagesMultipartForm(mw *multipart.Writer, form *multipart.Form) error 
 	}
 	for field, headers := range form.File {
 		for _, fh := range headers {
-			if err := copyImagesFormFile(mw, field, fh); err != nil {
+			if err := copyFormFile(mw, field, fh); err != nil {
 				return err
 			}
 		}
@@ -1579,7 +1747,7 @@ func writeImagesMultipartForm(mw *multipart.Writer, form *multipart.Form) error 
 	return mw.Close()
 }
 
-func copyImagesFormFile(mw *multipart.Writer, field string, fh *multipart.FileHeader) error {
+func copyFormFile(mw *multipart.Writer, field string, fh *multipart.FileHeader) error {
 	src, err := fh.Open()
 	if err != nil {
 		return err
@@ -1597,6 +1765,342 @@ func copyImagesFormFile(mw *multipart.Writer, field string, fh *multipart.FileHe
 	}
 	_, err = io.Copy(dst, src)
 	return err
+}
+
+// Videos API constants.
+const (
+	// videosExampleModel is the routing hint used in client-facing Videos errors.
+	videosExampleModel = "elevenlabs/creatify-aurora"
+
+	// videosNotSupportedMessage mirrors the schema's VideosNotSupported response.
+	videosNotSupportedMessage = "The Videos API is not supported by this provider yet."
+
+	// videosAPIName labels the Videos API in logs and errors.
+	videosAPIName = "Videos API"
+
+	// videoJobMaxResponseSize caps how much of a provider's job payload is read
+	// before mapping it onto a VideoJob.
+	videoJobMaxResponseSize = 1 << 20
+
+	// videoIDPlaceholder is the token registry video endpoints carry for the
+	// upstream job id.
+	videoIDPlaceholder = "{generation_id}"
+
+	// videoJobIDSeparator joins the provider to the upstream job id in the video
+	// id handed back to clients. Models use "provider/model", but a video id has
+	// to survive as a single path segment of GET /v1/videos/{video_id}, so this
+	// one cannot be a slash.
+	videoJobIDSeparator = ":"
+
+	// videoJobIDHint explains how to route a per-job Videos request.
+	videoJobIDHint = "Please specify a provider using the ?provider= query parameter or pass the video id returned by POST /v1/videos (e.g., elevenlabs" +
+		videoJobIDSeparator + "gen_abc123)."
+)
+
+// videoJobMapper maps a provider's job payload onto the schema's VideoJob and
+// returns the URL the rendered video can be downloaded from, empty while the
+// render is unfinished. createdAt is the fallback timestamp for payloads that do
+// not carry one and fallbackModel the model to report when it is not echoed back.
+type videoJobMapper func(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, string, error)
+
+// videoJobMappers holds the per-provider response mappings for providers whose
+// Videos API is not OpenAI-compatible. A provider absent from the map already
+// answers with a schema-shaped VideoJob and is decoded as-is.
+var videoJobMappers = map[types.Provider]videoJobMapper{
+	constants.ElevenlabsID: elevenlabs.Job,
+}
+
+// videoJobPassthrough decodes a provider's already-schema-shaped VideoJob. Such
+// providers serve the rendered bytes from their own content endpoint, so no
+// download URL is reported.
+func videoJobPassthrough(raw []byte, _ string, _ int) (types.VideoJob, string, error) {
+	var job types.VideoJob
+	if err := json.Unmarshal(raw, &job); err != nil {
+		return types.VideoJob{}, "", fmt.Errorf("failed to decode video job response: %w", err)
+	}
+	return job, "", nil
+}
+
+// VideosHandler implements POST /v1/videos, the OpenAI-compatible Videos API:
+// https://platform.openai.com/docs/api-reference/videos/create
+//
+// Video generation is asynchronous at every provider, so the multipart request
+// (prompt plus optional reference image and driving audio) is forwarded to the
+// provider and the created job is returned immediately. Clients poll
+// GET /v1/videos/{video_id} until the status is completed, then download the
+// bytes from GET /v1/videos/{video_id}/content.
+//
+// The returned job id is prefixed with the provider that created it
+// ("elevenlabs/abc123"), mirroring the provider/model convention, because the
+// gateway keeps no job state and has to route the follow-up calls somewhere.
+//
+// Only providers that carry a Videos endpoint (currently elevenlabs) can serve
+// the request; the rest receive a 400, mirroring the schema's VideosNotSupported
+// response. The endpoint is opt-in via VIDEOS_ENABLED (default off).
+func (router *RouterImpl) VideosHandler(c *gin.Context) {
+	if !router.videosEnabled(c) {
+		return
+	}
+
+	form, ok := router.parseBoundedMultipart(c)
+	if !ok {
+		return
+	}
+	defer func() {
+		if c.Request.MultipartForm != nil {
+			_ = c.Request.MultipartForm.RemoveAll()
+		}
+	}()
+
+	model := imagesFormValue(form, imageFormFieldModel)
+	originalModel := model
+
+	providerID, model, msg := router.resolveProvider(c, model, videosExampleModel)
+	if msg != "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
+	}
+
+	if reason := router.modelDenied(originalModel); reason != "" {
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: reason})
+		return
+	}
+
+	provider, msg, err := router.buildProvider(providerID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
+	}
+
+	endpoint, msg := router.providerEndpoint(provider, func(e types.Endpoints) *string { return e.Videos }, videosAPIName, videosNotSupportedMessage)
+	if msg != "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
+	}
+
+	if model != originalModel {
+		form.Value[imageFormFieldModel] = []string{model}
+	}
+
+	pr, pw := io.Pipe()
+	mw := multipart.NewWriter(pw)
+	go func() {
+		pw.CloseWithError(writeMultipartForm(mw, form))
+	}()
+
+	job, _, ok := router.videoJob(c, provider, providerID, model, upstreamRequest{
+		endpointPath: endpoint,
+		body:         pr,
+		contentType:  mw.FormDataContentType(),
+		accept:       contentTypeJSON,
+	})
+	if !ok {
+		_ = pr.CloseWithError(io.ErrClosedPipe)
+		return
+	}
+
+	job.ID = string(providerID) + videoJobIDSeparator + job.ID
+	c.JSON(http.StatusOK, job)
+}
+
+// RetrieveVideoHandler implements GET /v1/videos/{video_id}. The gateway keeps
+// no job state, so the request is forwarded to the provider encoded in the job
+// id (or named by ?provider=) and the upstream payload is mapped back onto a
+// VideoJob.
+func (router *RouterImpl) RetrieveVideoHandler(c *gin.Context) {
+	provider, providerID, videoID, endpoint, ok := router.resolveVideoTarget(c, func(e types.Endpoints) *string { return e.VideosRetrieve })
+	if !ok {
+		return
+	}
+
+	job, _, ok := router.videoJob(c, provider, providerID, "", upstreamRequest{
+		method:       http.MethodGet,
+		endpointPath: strings.ReplaceAll(endpoint, videoIDPlaceholder, url.PathEscape(videoID)),
+		accept:       contentTypeJSON,
+	})
+	if !ok {
+		return
+	}
+
+	job.ID = string(providerID) + videoJobIDSeparator + job.ID
+	c.JSON(http.StatusOK, job)
+}
+
+// DownloadVideoContentHandler implements GET /v1/videos/{video_id}/content. No
+// provider serves the rendered bytes from its own API - the render lands on a
+// signed CDN URL - so the job is retrieved first and the video is streamed from
+// the download URL it carries. A job that is still queued, in progress or failed
+// has no bytes to serve and returns 404, as the schema requires.
+func (router *RouterImpl) DownloadVideoContentHandler(c *gin.Context) {
+	provider, providerID, videoID, endpoint, ok := router.resolveVideoTarget(c, func(e types.Endpoints) *string { return e.VideosRetrieve })
+	if !ok {
+		return
+	}
+
+	job, downloadURL, ok := router.videoJob(c, provider, providerID, "", upstreamRequest{
+		method:       http.MethodGet,
+		endpointPath: strings.ReplaceAll(endpoint, videoIDPlaceholder, url.PathEscape(videoID)),
+		accept:       contentTypeJSON,
+	})
+	if !ok {
+		return
+	}
+
+	if job.Status != types.VideoJobStatusCompleted || downloadURL == "" {
+		router.logger.Warn("rendered video not available", "video_id", videoID, "status", job.Status)
+		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The rendered video is not available yet. Poll GET /v1/videos/{video_id} until the status is completed."})
+		return
+	}
+
+	router.streamRenderedVideo(c, downloadURL)
+}
+
+// streamRenderedVideo relays the rendered video from the provider-supplied
+// download URL. The URL comes from the provider's own authenticated response and
+// is already signed, so no gateway or provider credential is attached; it is
+// still required to be an absolute HTTP(S) URL so a malformed payload cannot
+// make the gateway fetch a file:// or other non-HTTP address.
+func (router *RouterImpl) streamRenderedVideo(c *gin.Context, downloadURL string) {
+	parsed, err := url.Parse(downloadURL)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		router.logger.Error("provider returned an unusable video download url", err, "url", downloadURL)
+		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "The provider returned an unusable video download URL."})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request.Context(), router.cfg.Server.ReadTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, parsed.String(), nil)
+	if err != nil {
+		router.logger.Error("failed to create video download request", err, "url", downloadURL)
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
+		return
+	}
+
+	resp, err := router.client.Do(req)
+	if err != nil {
+		router.logger.Error("failed to download rendered video", err, "url", downloadURL)
+		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to download the rendered video"})
+		return
+	}
+	defer resp.Body.Close()
+
+	markUpstreamError(c, resp)
+	c.DataFromReader(resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body, nil)
+}
+
+// resolveVideoTarget resolves the provider, upstream job id and endpoint for a
+// per-job Videos request, writing the client response and reporting false on
+// failure.
+func (router *RouterImpl) resolveVideoTarget(c *gin.Context, endpointOf func(types.Endpoints) *string) (core.IProvider, types.Provider, string, string, bool) {
+	if !router.videosEnabled(c) {
+		return nil, "", "", "", false
+	}
+
+	providerID, videoID, msg := router.resolveVideoJobID(c, c.Param("video_id"))
+	if msg != "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
+		return nil, "", "", "", false
+	}
+
+	provider, msg, err := router.buildProvider(providerID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
+		return nil, "", "", "", false
+	}
+
+	endpoint, msg := router.providerEndpoint(provider, endpointOf, videosAPIName, videosNotSupportedMessage)
+	if msg != "" {
+		c.JSON(http.StatusBadRequest, ErrorResponse{Error: msg})
+		return nil, "", "", "", false
+	}
+
+	return provider, providerID, videoID, endpoint, true
+}
+
+// resolveVideoJobID splits the gateway's "provider:job_id" video id into the
+// provider and the upstream id that must be sent back verbatim. An explicit
+// ?provider= wins over the prefix, mirroring model routing; the prefix is
+// stripped either way. It returns the client-facing message ("" on success) when
+// neither names a provider.
+func (router *RouterImpl) resolveVideoJobID(c *gin.Context, videoID string) (types.Provider, string, string) {
+	providerID := types.Provider(c.Query("provider"))
+
+	if prefix, rest, found := strings.Cut(videoID, videoJobIDSeparator); found {
+		// An unknown prefix is left alone: the upstream id may legitimately
+		// contain a colon of its own.
+		if detected := types.Provider(strings.ToLower(prefix)); registry.Registry[detected] != nil {
+			videoID = rest
+			if providerID == "" {
+				providerID = detected
+			}
+		}
+	}
+
+	if providerID == "" {
+		router.logger.Error("unable to determine provider for video job", nil, "video_id", videoID)
+		return "", "", "Unable to determine provider for this video id. " + videoJobIDHint
+	}
+	if videoID == "" {
+		router.logger.Error("video job request carries no id", nil)
+		return "", "", "The video id is required."
+	}
+
+	return providerID, videoID, ""
+}
+
+// videoJob sends req to the provider and maps the payload onto a VideoJob,
+// returning it alongside the URL its rendered video can be downloaded from
+// (empty until the render completes). Failures and upstream error responses are
+// already written to c, reported by a false ok.
+func (router *RouterImpl) videoJob(c *gin.Context, provider core.IProvider, providerID types.Provider, fallbackModel string, req upstreamRequest) (types.VideoJob, string, bool) {
+	resp, done, failure := router.callUpstream(c, provider, req)
+	if failure != nil {
+		c.JSON(failure.status, ErrorResponse{Error: failure.message})
+		return types.VideoJob{}, "", false
+	}
+	defer done()
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, videoJobMaxResponseSize))
+	if err != nil {
+		router.logger.Error("failed to read video job response", err, "provider", providerID)
+		c.JSON(http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+		return types.VideoJob{}, "", false
+	}
+
+	// Upstream errors are relayed verbatim so the provider's own explanation
+	// (quota, unsupported size, unknown job) reaches the caller unaltered.
+	if resp.StatusCode >= http.StatusBadRequest {
+		c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), body)
+		return types.VideoJob{}, "", false
+	}
+
+	mapper := videoJobMappers[providerID]
+	if mapper == nil {
+		mapper = videoJobPassthrough
+	}
+
+	job, downloadURL, err := mapper(body, fallbackModel, int(time.Now().Unix()))
+	if err != nil {
+		router.logger.Error("failed to map video job response", err, "provider", providerID)
+		c.JSON(http.StatusBadGateway, ErrorResponse{Error: err.Error()})
+		return types.VideoJob{}, "", false
+	}
+
+	return job, downloadURL, true
+}
+
+// videosEnabled reports whether the Videos API is switched on, writing the 404
+// VIDEOS_ENABLED response when it is not.
+func (router *RouterImpl) videosEnabled(c *gin.Context) bool {
+	if router.cfg.VideosEnabled {
+		return true
+	}
+	router.logger.Error("videos api not enabled", nil)
+	c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Videos API is not enabled. Set VIDEOS_ENABLED=true to enable it."})
+	return false
 }
 
 // ListToolsHandler implements an endpoint that returns available MCP tools

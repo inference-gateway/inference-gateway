@@ -12,6 +12,7 @@ package elevenlabs
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -20,10 +21,6 @@ import (
 // VoicePathPlaceholder is the token in the speech endpoint that carries the
 // voice id (ElevenlabsSpeechEndpoint is "/text-to-speech/{voice}").
 const VoicePathPlaceholder = "{voice}"
-
-// JobIDPathPlaceholder is the token in the video retrieve endpoint that
-// carries the upstream generation id.
-const JobIDPathPlaceholder = "{generation_id}"
 
 // Default ElevenLabs output formats per OpenAI response_format. ElevenLabs
 // takes a single string encoding container, sample rate and bitrate, and has
@@ -89,9 +86,10 @@ func Speech(endpoint, model string, req types.CreateSpeechRequest) (path, query 
 		return "", "", nil, err
 	}
 
-	// The voice id is user input landing in a URL path; escaping it keeps a
-	// crafted value from rewriting the upstream path.
-	return strings.ReplaceAll(endpoint, VoicePathPlaceholder, pathEscape(req.Voice)), "output_format=" + format, body, nil
+	// The voice id is user input landing in a URL path; escaping it confines a
+	// crafted value to its own path segment instead of rewriting the upstream
+	// path.
+	return strings.ReplaceAll(endpoint, VoicePathPlaceholder, url.PathEscape(req.Voice)), "output_format=" + format, body, nil
 }
 
 // sfxBody is the ElevenLabs POST /sound-generation payload.
@@ -150,16 +148,16 @@ type videoPayload struct {
 // unrecognized is reported as in_progress so a client keeps polling instead of
 // treating a new upstream state as a terminal failure.
 var statuses = map[string]types.VideoJobStatus{
-	"queued":     types.VideoJobStatusQueued,
-	"pending":    types.VideoJobStatusQueued,
-	"processing": types.VideoJobStatusInProgress,
+	"queued":      types.VideoJobStatusQueued,
+	"pending":     types.VideoJobStatusQueued,
+	"processing":  types.VideoJobStatusInProgress,
 	"in_progress": types.VideoJobStatusInProgress,
-	"generating": types.VideoJobStatusInProgress,
-	"completed":  types.VideoJobStatusCompleted,
-	"done":       types.VideoJobStatusCompleted,
-	"succeeded":  types.VideoJobStatusCompleted,
-	"failed":     types.VideoJobStatusFailed,
-	"error":      types.VideoJobStatusFailed,
+	"generating":  types.VideoJobStatusInProgress,
+	"completed":   types.VideoJobStatusCompleted,
+	"done":        types.VideoJobStatusCompleted,
+	"succeeded":   types.VideoJobStatusCompleted,
+	"failed":      types.VideoJobStatusFailed,
+	"error":       types.VideoJobStatusFailed,
 }
 
 // Job maps an ElevenLabs video generation payload onto the gateway's VideoJob
@@ -210,12 +208,6 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 	return job, firstNonEmpty(p.MediaURL, p.VideoURL, p.DownloadURL), nil
 }
 
-// RetrievePath substitutes the upstream job id into the retrieve endpoint
-// template.
-func RetrievePath(endpoint, jobID string) string {
-	return strings.ReplaceAll(endpoint, JobIDPathPlaceholder, pathEscape(jobID))
-}
-
 func firstNonEmpty(values ...string) string {
 	for _, v := range values {
 		if v != "" {
@@ -223,12 +215,6 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
-}
-
-// pathEscape strips the characters that would let a caller-supplied id or
-// voice escape its path segment.
-func pathEscape(v string) string {
-	return strings.NewReplacer("/", "", "?", "", "#", "", "..", "").Replace(v)
 }
 
 func derefFormat(f *types.CreateSpeechRequestResponseFormat) string {

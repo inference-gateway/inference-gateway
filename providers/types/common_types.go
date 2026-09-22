@@ -2094,7 +2094,6 @@ type Endpoints struct {
 	Sfx              *string `json:"sfx,omitempty"`
 	Speech           *string `json:"speech,omitempty"`
 	Videos           *string `json:"videos,omitempty"`
-	VideosContent    *string `json:"videos_content,omitempty"`
 	VideosRetrieve   *string `json:"videos_retrieve,omitempty"`
 }
 

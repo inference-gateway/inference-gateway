@@ -1699,8 +1699,6 @@ components:
           type: string
         videos_retrieve:
           type: string
-        videos_content:
-          type: string
       required:
         - models
         - chat

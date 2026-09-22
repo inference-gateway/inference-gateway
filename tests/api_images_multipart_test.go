@@ -67,6 +67,15 @@ func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, op
 			AuthType:  constants.AuthTypeBearer,
 			Endpoints: registry.Registry[constants.LlamacppID].Endpoints,
 		},
+		constants.ElevenlabsID: {
+			ID:         constants.ElevenlabsID,
+			Name:       constants.ElevenlabsDisplayName,
+			URL:        upstreamURL,
+			Token:      elevenlabsTestKey,
+			AuthType:   constants.AuthTypeXheader,
+			AuthHeader: registry.Registry[constants.ElevenlabsID].AuthHeader,
+			Endpoints:  registry.Registry[constants.ElevenlabsID].Endpoints,
+		},
 	}
 
 	cfg := config.Config{

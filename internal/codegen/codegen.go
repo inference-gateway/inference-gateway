@@ -231,9 +231,6 @@ const (
     {{- with (index $config.Endpoints "videos_retrieve").Endpoint }}
     {{pascalCase $name}}VideosRetrieveEndpoint = "{{.}}"
     {{- end }}
-    {{- with (index $config.Endpoints "videos_content").Endpoint }}
-    {{pascalCase $name}}VideosContentEndpoint = "{{.}}"
-    {{- end }}
     {{- end }}
 )
 
@@ -648,9 +645,6 @@ var Registry = map[types.Provider]*ProviderConfig{
 			{{- end }}
 			{{- if (index $config.Endpoints "videos_retrieve").Endpoint }}
 			VideosRetrieve: ptr(constants.{{pascalCase $name}}VideosRetrieveEndpoint),
-			{{- end }}
-			{{- if (index $config.Endpoints "videos_content").Endpoint }}
-			VideosContent: ptr(constants.{{pascalCase $name}}VideosContentEndpoint),
 			{{- end }}
 		},
 	},
