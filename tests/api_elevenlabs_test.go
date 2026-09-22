@@ -19,15 +19,17 @@ import (
 
 // Fixtures shared by the ElevenLabs audio and video handler tests.
 const (
-	elevenlabsTestKey  = "test-elevenlabs-key"
-	elevenlabsAPIKey   = "xi-api-key"
-	elevenlabsVoice    = "21m00Tcm4TlvDq8ikWAM"
-	elevenlabsTTSModel = "eleven_multilingual_v2"
-	elevenlabsSFXModel = "eleven_text_to_sound_v2"
-	elevenlabsVidModel = "creatify-aurora"
-	elevenlabsJobID    = "gen-abc123"
+	elevenlabsTestKey    = "test-elevenlabs-key"
+	elevenlabsAPIKey     = "xi-api-key"
+	elevenlabsVoice      = "21m00Tcm4TlvDq8ikWAM"
+	elevenlabsTTSModel   = "eleven_multilingual_v2"
+	elevenlabsSFXModel   = "eleven_text_to_sound_v2"
+	elevenlabsMusicModel = "music_v2"
+	elevenlabsVidModel   = "creatify-aurora"
+	elevenlabsJobID      = "gen-abc123"
 
 	sfxPath            = "/v1/audio/sfx"
+	musicPath          = "/v1/audio/music"
 	videosPath         = "/v1/videos"
 	videoByIDPath      = "/v1/videos/:video_id"
 	videoContentPath   = "/v1/videos/:video_id/content"
@@ -175,6 +177,63 @@ func TestSFXHandler_ProviderWithoutSupport(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "Sound effect generation is not supported by this provider yet.")
+}
+
+func TestMusicHandler_HappyPath(t *testing.T) {
+	var gotPath, gotQuery, gotKey string
+	var gotBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath, gotQuery = r.URL.Path, r.URL.RawQuery
+		gotKey = r.Header.Get(elevenlabsAPIKey)
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		require.NoError(t, json.Unmarshal(body, &gotBody))
+		w.Header().Set("Content-Type", "audio/mpeg")
+		_, _ = w.Write([]byte("FAKE-MUSIC-BYTES"))
+	}))
+	defer server.Close()
+
+	router := newImagesTestRouter(t, server.URL, false, enableAudio)
+	r := gin.New()
+	r.POST(musicPath, router.MusicHandler)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", musicPath, strings.NewReader(
+		`{"model":"elevenlabs/`+elevenlabsMusicModel+`","prompt":"chill lo-fi hip hop","duration_seconds":15,"instrumental":true}`))
+	req.Header.Set("Content-Type", contentTypeJSONVal)
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Equal(t, "/music", gotPath)
+	assert.Equal(t, "output_format=mp3_44100_128", gotQuery)
+	assert.Equal(t, "chill lo-fi hip hop", gotBody["prompt"])
+	assert.Equal(t, elevenlabsMusicModel, gotBody["model_id"], "the provider prefix must be stripped")
+	assert.Equal(t, float64(15000), gotBody["music_length_ms"])
+	assert.Equal(t, true, gotBody["force_instrumental"])
+	assert.Equal(t, elevenlabsTestKey, gotKey)
+	assert.Equal(t, "audio/mpeg", w.Header().Get("Content-Type"))
+	assert.Equal(t, "FAKE-MUSIC-BYTES", w.Body.String())
+}
+
+// TestMusicHandler_ProviderWithoutSupport mirrors the SFX case: providers
+// without a music endpoint are rejected before anything is sent upstream.
+func TestMusicHandler_ProviderWithoutSupport(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("a provider without music support must never be called")
+	}))
+	defer server.Close()
+
+	router := newImagesTestRouter(t, server.URL, false, enableAudio)
+	r := gin.New()
+	r.POST(musicPath, router.MusicHandler)
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", musicPath, strings.NewReader(`{"model":"openai/tts-1","prompt":"lo-fi"}`))
+	req.Header.Set("Content-Type", contentTypeJSONVal)
+	r.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Music generation is not supported by this provider yet.")
 }
 
 func TestVideosHandler_HappyPath(t *testing.T) {

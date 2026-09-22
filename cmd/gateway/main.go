@@ -340,6 +340,7 @@ func main() {
 		v1.POST("/images/variations", api.ImagesVariationsHandler)
 		v1.POST("/audio/speech", api.SpeechHandler)
 		v1.POST("/audio/sfx", api.SFXHandler)
+		v1.POST("/audio/music", api.MusicHandler)
 		v1.POST("/videos", api.VideosHandler)
 		v1.GET("/videos/:video_id", api.RetrieveVideoHandler)
 		v1.GET("/videos/:video_id/content", api.DownloadVideoContentHandler)

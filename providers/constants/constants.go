@@ -39,6 +39,7 @@ const (
 	ElevenlabsChatEndpoint           = ""
 	ElevenlabsSpeechEndpoint         = "/text-to-speech/{voice}"
 	ElevenlabsSFXEndpoint            = "/sound-generation"
+	ElevenlabsMusicEndpoint          = "/music"
 	ElevenlabsVideosEndpoint         = "/flows/video"
 	ElevenlabsVideosRetrieveEndpoint = "/flows/video/{generation_id}"
 	GoogleModelsEndpoint             = "/models"
