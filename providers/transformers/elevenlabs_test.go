@@ -18,6 +18,8 @@ func TestListModelsResponseElevenlabs_DecodesBareArray(t *testing.T) {
 	require.Equal(t, "list", resp.Object)
 	require.Equal(t, []types.Modality{types.ModalityText}, resp.Data[0].Modalities.Input)
 	require.Equal(t, []types.Modality{types.ModalityAudio}, resp.Data[0].Modalities.Output)
-	require.Equal(t, "elevenlabs/creatify-aurora", resp.Data[2].ID)
-	require.Equal(t, []types.Modality{types.ModalityVideo}, resp.Data[2].Modalities.Output)
+	require.Equal(t, "elevenlabs/music_v2", resp.Data[2].ID)
+	require.Equal(t, []types.Modality{types.ModalityAudio}, resp.Data[2].Modalities.Output)
+	require.Equal(t, "elevenlabs/creatify-aurora", resp.Data[4].ID)
+	require.Equal(t, []types.Modality{types.ModalityVideo}, resp.Data[4].Modalities.Output)
 }
