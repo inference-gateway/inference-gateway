@@ -678,6 +678,35 @@ For a provider without sound-effect support:
 }
 ```
 
+## Music Generation
+
+`POST /v1/audio/music` is a gateway extension like `/audio/sfx`: it composes a
+music clip from a text prompt. JSON in, raw audio out. It shares the
+`AUDIO_ENABLED` toggle and is currently served by the `elevenlabs` provider
+only; other providers return `400`.
+
+`prompt` is required. Optional fields: `duration_seconds` (3-600 seconds,
+omitted lets the provider pick a length that fits the prompt), `instrumental`
+(guarantee no vocals), and `response_format` (`mp3` default, `opus`, `aac`,
+`flac`, `wav`, or `pcm` - elevenlabs accepts `mp3`, `opus`, or `pcm`).
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/music -d '{
+  "model": "elevenlabs/music_v2",
+  "prompt": "chill lo-fi hip hop beat with a mellow piano loop, 80 bpm",
+  "duration_seconds": 15,
+  "instrumental": true
+}' -o lofi.mp3
+```
+
+For a provider without music support:
+
+```json
+{
+  "error": "Music generation is not supported by this provider yet."
+}
+```
+
 ## Video Generation
 
 The gateway exposes an OpenAI-compatible Videos API for asynchronous video
