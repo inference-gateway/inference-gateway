@@ -703,44 +703,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '500':
           $ref: '#/components/responses/InternalError'
-  /images/variations:
-    post:
-      operationId: createImageVariation
-      tags:
-        - Images
-      description: |
-        Creates a variation of a given image using the OpenAI-compatible Images
-        API. The request is sent as `multipart/form-data` with the image file
-        as a binary upload.
-
-        Not every provider implements the Images API. Requests routed to a
-        provider that does not support it return `400 Bad Request` with an
-        explanatory error message; use `/chat/completions` for those providers.
-      summary: Create an image variation
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: provider
-          in: query
-          required: false
-          schema:
-            $ref: '#/components/schemas/Provider'
-          description: Specific provider to use (default determined by model)
-      requestBody:
-        $ref: '#/components/requestBodies/CreateImageVariationRequest'
-      responses:
-        '200':
-          description: Successful response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ImagesResponse'
-        '400':
-          $ref: '#/components/responses/ImagesNotSupported'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '500':
-          $ref: '#/components/responses/InternalError'
   /audio/speech:
     post:
       operationId: createSpeech
@@ -1164,41 +1126,6 @@ components:
             required:
               - image
               - prompt
-    CreateImageVariationRequest:
-      required: true
-      description: |
-        Request payload for the Images Variations API. Mirrors the OpenAI
-        `POST /v1/images/variations` request body. Sent as `multipart/form-data`
-        with the image file as a binary upload.
-      content:
-        multipart/form-data:
-          schema:
-            type: object
-            properties:
-              image:
-                type: string
-                format: binary
-                description: The image to use as the basis for the variation. For the GPT image models, a `png`, `webp`, or `jpg` file up to 50MB; for `dall-e-2`, a square PNG under 4MB.
-              model:
-                type: string
-                description: Model ID to use for image variation.
-              n:
-                type: integer
-                minimum: 1
-                maximum: 10
-                default: 1
-                description: Number of images to generate.
-              size:
-                $ref: '#/components/schemas/ImageSize'
-              response_format:
-                type: string
-                enum:
-                  - url
-                  - b64_json
-                default: url
-                description: The format in which the generated images are returned.
-            required:
-              - image
     CreateSpeechRequest:
       required: true
       description: |
@@ -1540,10 +1467,6 @@ components:
               name: 'create_image_edit'
               method: 'POST'
               endpoint: '/images/edits'
-            images_variations:
-              name: 'create_image_variation'
-              method: 'POST'
-              endpoint: '/images/variations'
             speech:
               name: 'create_speech'
               method: 'POST'
@@ -1758,8 +1681,6 @@ components:
         images:
           type: string
         images_edits:
-          type: string
-        images_variations:
           type: string
         speech:
           type: string
@@ -4518,7 +4439,7 @@ components:
                   env: 'IMAGES_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Images API (POST /v1/images/generations, /v1/images/edits, /v1/images/variations). When disabled, the endpoints return a 404. Only providers with images support (currently openai) can serve these endpoints'
+                  description: 'Enable the Images API (POST /v1/images/generations, /v1/images/edits). When disabled, the endpoints return a 404. Only providers with images support (currently openai) can serve these endpoints'
                 - name: audio_enabled
                   env: 'AUDIO_ENABLED'
                   type: bool

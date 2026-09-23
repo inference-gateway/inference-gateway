@@ -1401,24 +1401,6 @@ func (e CreateImageEditMultipartBodyResponseFormat) Valid() bool {
 	}
 }
 
-// Defines values for CreateImageVariationMultipartBodyResponseFormat.
-const (
-	CreateImageVariationMultipartBodyResponseFormatB64Json CreateImageVariationMultipartBodyResponseFormat = "b64_json"
-	CreateImageVariationMultipartBodyResponseFormatURL     CreateImageVariationMultipartBodyResponseFormat = "url"
-)
-
-// Valid indicates whether the value is a known member of the CreateImageVariationMultipartBodyResponseFormat enum.
-func (e CreateImageVariationMultipartBodyResponseFormat) Valid() bool {
-	switch e {
-	case CreateImageVariationMultipartBodyResponseFormatB64Json:
-		return true
-	case CreateImageVariationMultipartBodyResponseFormatURL:
-		return true
-	default:
-		return false
-	}
-}
-
 // Defines values for ListModelsParamsInclude.
 const (
 	ListModelsParamsIncludeContextWindow ListModelsParamsInclude = "context_window"
@@ -2142,17 +2124,16 @@ type CreateVideoRequest struct {
 
 // Endpoints defines model for Endpoints.
 type Endpoints struct {
-	Chat             string  `json:"chat"`
-	Images           *string `json:"images,omitempty"`
-	ImagesEdits      *string `json:"images_edits,omitempty"`
-	ImagesVariations *string `json:"images_variations,omitempty"`
-	Models           string  `json:"models"`
-	Music            *string `json:"music,omitempty"`
-	Responses        *string `json:"responses,omitempty"`
-	SFX              *string `json:"sfx,omitempty"`
-	Speech           *string `json:"speech,omitempty"`
-	Videos           *string `json:"videos,omitempty"`
-	VideosRetrieve   *string `json:"videos_retrieve,omitempty"`
+	Chat           string  `json:"chat"`
+	Images         *string `json:"images,omitempty"`
+	ImagesEdits    *string `json:"images_edits,omitempty"`
+	Models         string  `json:"models"`
+	Music          *string `json:"music,omitempty"`
+	Responses      *string `json:"responses,omitempty"`
+	SFX            *string `json:"sfx,omitempty"`
+	Speech         *string `json:"speech,omitempty"`
+	Videos         *string `json:"videos,omitempty"`
+	VideosRetrieve *string `json:"videos_retrieve,omitempty"`
 }
 
 // Error defines model for Error.
@@ -3505,37 +3486,6 @@ type CreateImageParams struct {
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
 
-// CreateImageVariationMultipartBody defines parameters for CreateImageVariation.
-type CreateImageVariationMultipartBody struct {
-	// Image The image to use as the basis for the variation. For the GPT image models, a `png`, `webp`, or `jpg` file up to 50MB; for `dall-e-2`, a square PNG under 4MB.
-	Image openapi_types.File `json:"image"`
-
-	// Model Model ID to use for image variation.
-	Model *string `json:"model,omitempty"`
-
-	// N Number of images to generate.
-	N *int `json:"n,omitempty"`
-
-	// ResponseFormat The format in which the generated images are returned.
-	ResponseFormat *CreateImageVariationMultipartBodyResponseFormat `json:"response_format,omitempty"`
-
-	// Size The size of the generated images. The GPT image models support
-	// `1024x1024`, `1536x1024`, `1024x1536`, and `auto`; `gpt-image-2`
-	// also accepts arbitrary `WIDTHxHEIGHT` values such as `1536x864`.
-	// `dall-e-2` supports `256x256`, `512x512`, and `1024x1024`;
-	// `dall-e-3` supports `1024x1024`, `1792x1024`, and `1024x1792`.
-	Size *ImageSize `json:"size,omitempty"`
-}
-
-// CreateImageVariationParams defines parameters for CreateImageVariation.
-type CreateImageVariationParams struct {
-	// Provider Specific provider to use (default determined by model)
-	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
-}
-
-// CreateImageVariationMultipartBodyResponseFormat defines parameters for CreateImageVariation.
-type CreateImageVariationMultipartBodyResponseFormat string
-
 // CreateMessageParams defines parameters for CreateMessage.
 type CreateMessageParams struct {
 	// Provider Specific provider to use (default determined by model)
@@ -3630,9 +3580,6 @@ type CreateImageEditMultipartRequestBody CreateImageEditMultipartBody
 
 // CreateImageJSONRequestBody defines body for CreateImage for application/json ContentType.
 type CreateImageJSONRequestBody = CreateImageRequest
-
-// CreateImageVariationMultipartRequestBody defines body for CreateImageVariation for multipart/form-data ContentType.
-type CreateImageVariationMultipartRequestBody CreateImageVariationMultipartBody
 
 // CreateMessageJSONRequestBody defines body for CreateMessage for application/json ContentType.
 type CreateMessageJSONRequestBody = CreateMessagesRequest
