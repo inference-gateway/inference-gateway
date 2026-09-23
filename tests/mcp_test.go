@@ -838,8 +838,9 @@ func TestAgent_RunWithStream(t *testing.T) {
 					assert.Contains(t, extractedContent, expectedContent, "Response should contain expected content: %s", expectedContent)
 				}
 
-				assert.Contains(t, fullResponse, "test_tool", "Response should contain first tool call information")
-				assert.Contains(t, fullResponse, "other_tool", "Response should contain second tool call information")
+				assert.NotContains(t, fullResponse, "test_tool", "Agent tool calls should not reach the client")
+				assert.NotContains(t, fullResponse, "other_tool", "Agent tool calls should not reach the client")
+				assert.NotContains(t, fullResponse, string(types.ToolCalls), "Agent tool-call finish reason should not reach the client")
 			},
 		},
 	}

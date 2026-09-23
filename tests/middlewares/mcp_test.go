@@ -912,7 +912,8 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 
 		assert.Equal(t, 1, doneCount, "Agent should send exactly one final [DONE] marker, but found %d", doneCount)
 		assert.Contains(t, allChunks, "pizza", "Response should contain content from first iteration")
-		assert.Contains(t, allChunks, "get-pizza-info", "Response should contain tool call")
+		assert.NotContains(t, allChunks, "get-pizza-info", "Agent tool calls should not reach the client")
+		assert.NotContains(t, allChunks, string(types.ToolCalls), "Agent tool-call finish reason should not reach the client")
 		assert.Contains(t, allChunks, "Margherita", "Response should contain content from final iteration")
 		assert.Contains(t, allChunks, "Pepperoni", "Response should contain content from final iteration")
 		assert.Contains(t, allChunks, "Hawaiian", "Response should contain content from final iteration")

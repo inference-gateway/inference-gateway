@@ -103,6 +103,18 @@ func send(ctx context.Context, ch chan<- []byte, b []byte) bool {
 	}
 }
 
+// isAgentChunk reports whether a streamed chunk belongs to the agent loop rather than
+// the client: a tool-call delta, or the finish chunk of an iteration that called tools.
+// ponytail: the middleware replaces client tools with MCP tools, so every tool call is the
+// gateway's to run; tell them apart by name here if client tools are ever passed through.
+func isAgentChunk(resp types.CreateChatCompletionStreamResponse, hasToolCalls bool) bool {
+	if len(resp.Choices) == 0 {
+		return false
+	}
+	choice := resp.Choices[0]
+	return (choice.Delta.ToolCalls != nil && len(*choice.Delta.ToolCalls) > 0) || (hasToolCalls && choice.FinishReason != "")
+}
+
 // RunWithStream executes the agent with the provided streaming response channel
 func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, model string, middlewareStreamCh chan []byte, body *types.CreateChatCompletionRequest) error {
 	currentRequest := *body
@@ -162,15 +174,18 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 				}
 
 				formattedData := []byte(types.SSEDataPrefix + chunkData + "\n\n")
-				if !send(ctx, middlewareStreamCh, formattedData) {
-					a.logger.Debug("context cancelled while sending stream chunk", "iteration", iteration+1)
-					return ctx.Err()
-				}
 				responseBodyBuilder.Write(formattedData)
 
 				var resp types.CreateChatCompletionStreamResponse
-				if err := json.Unmarshal([]byte(chunkData), &resp); err != nil {
-					a.logger.Debug("failed to unmarshal streaming chunk", err, "chunk_data", chunkData, "iteration", iteration+1)
+				parseErr := json.Unmarshal([]byte(chunkData), &resp)
+				if parseErr != nil || !isAgentChunk(resp, hasToolCalls) {
+					if !send(ctx, middlewareStreamCh, formattedData) {
+						a.logger.Debug("context cancelled while sending stream chunk", "iteration", iteration+1)
+						return ctx.Err()
+					}
+				}
+				if parseErr != nil {
+					a.logger.Debug("failed to unmarshal streaming chunk", parseErr, "chunk_data", chunkData, "iteration", iteration+1)
 					continue
 				}
 
