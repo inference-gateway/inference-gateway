@@ -105,8 +105,6 @@ func send(ctx context.Context, ch chan<- []byte, b []byte) bool {
 
 // isAgentChunk reports whether a streamed chunk belongs to the agent loop rather than
 // the client: a tool-call delta, or the finish chunk of an iteration that called tools.
-// ponytail: the middleware replaces client tools with MCP tools, so every tool call is the
-// gateway's to run; tell them apart by name here if client tools are ever passed through.
 func isAgentChunk(resp types.CreateChatCompletionStreamResponse, hasToolCalls bool) bool {
 	if len(resp.Choices) == 0 {
 		return false
