@@ -386,7 +386,7 @@ const (
 func TestImagesEditsHandler_LabelsFilePartContentType(t *testing.T) {
 	tests := []struct {
 		name     string
-		partType string // "" sends the part with no Content-Type header
+		partType string
 		data     string
 		want     string
 	}{
