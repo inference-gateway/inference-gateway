@@ -169,40 +169,6 @@ func TestImagesEditsHandler_HappyPath(t *testing.T) {
 	assert.Equal(t, float64(1730000000), resp["created"])
 }
 
-func TestImagesVariationsHandler_HappyPath(t *testing.T) {
-	var gotPath, gotModel, gotImage string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotPath = r.URL.Path
-		require.NoError(t, r.ParseMultipartForm(1<<20))
-		gotModel = r.FormValue("model")
-		gotImage = readUploadedFile(t, r, "image")
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"created":1730000000,"data":[{"b64_json":"aGk="}]}`))
-	}))
-	defer server.Close()
-
-	router := newImagesTestRouter(t, server.URL, true)
-	r := gin.New()
-	r.POST("/v1/images/variations", router.ImagesVariationsHandler)
-
-	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
-		{name: "image", filename: "sunset.png", value: "PNG-IMAGE-BYTES"},
-		{name: "model", value: "openai/dall-e-2"},
-		{name: "n", value: "2"},
-		{name: "response_format", value: "b64_json"},
-	})
-
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/v1/images/variations", body)
-	req.Header.Set("Content-Type", contentType)
-	r.ServeHTTP(w, req)
-
-	require.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "/images/variations", gotPath)
-	assert.Equal(t, "dall-e-2", gotModel)
-	assert.Equal(t, "PNG-IMAGE-BYTES", gotImage)
-}
-
 func TestImagesEditsHandler_MissingImage(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", true)
 	r := gin.New()
@@ -241,17 +207,18 @@ func TestImagesEditsHandler_MissingPrompt(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "prompt")
 }
 
-func TestImagesVariationsHandler_UnsupportedProvider(t *testing.T) {
+func TestImagesEditsHandler_UnsupportedProvider(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", true)
 	r := gin.New()
-	r.POST("/v1/images/variations", router.ImagesVariationsHandler)
+	r.POST("/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "image", filename: "sunset.png", value: "PNG-IMAGE-BYTES"},
+		{name: "prompt", value: "Add a flock of birds"},
 	})
 
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/v1/images/variations?provider=cohere", body)
+	req := httptest.NewRequest("POST", "/v1/images/edits?provider=cohere", body)
 	req.Header.Set("Content-Type", contentType)
 	r.ServeHTTP(w, req)
 

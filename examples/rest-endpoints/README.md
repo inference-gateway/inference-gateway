@@ -476,8 +476,6 @@ rules as `/images/generations`:
 - `POST /v1/images/edits` - edit or extend a source image. Requires the `image`
   file and a `prompt`; optional `mask`, `model`, `n` (1-10), `size`, `quality`,
   and `response_format` (`url` or `b64_json`).
-- `POST /v1/images/variations` - create variations of a source image. Requires
-  the `image` file; optional `model`, `n` (1-10), `size`, and `response_format`.
 
 The gateway streams the uploaded `image` (and optional `mask`) straight through
 to the provider without buffering the whole payload, so large images stay cheap.
@@ -493,15 +491,6 @@ curl -X POST "http://localhost:8080/v1/images/edits?provider=openai" \
   -F n=1 \
   -F size="1024x1024" \
   -F response_format="url"
-
-# Create a variation of an image
-curl -X POST "http://localhost:8080/v1/images/variations?provider=openai" \
-  -H "Authorization: Bearer $TOKEN" \
-  -F image="@sunset.png" \
-  -F model="dall-e-2" \
-  -F n=2 \
-  -F size="1024x1024" \
-  -F response_format="b64_json"
 ```
 
 Both return an `ImagesResponse`:

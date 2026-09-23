@@ -1587,8 +1587,7 @@ func (router *RouterImpl) serveLocalSpeech(c *gin.Context) bool {
 	return true
 }
 
-// Multipart form field names shared by the /images/edits and
-// /images/variations endpoints.
+// Multipart form field names used by the /images/edits endpoint.
 const (
 	imageFormFieldImage = "image"
 	// imageFormFieldImageArray is the multi-image variant accepted by
@@ -1602,38 +1601,13 @@ const (
 	multipartMaxMemory = 1 << 20
 )
 
-// imagesMultipartTarget selects which multipart Images endpoint a request is
-// forwarded to and whether a prompt is required (edits require one, variations
-// do not).
-type imagesMultipartTarget struct {
-	endpoint      func(types.Endpoints) *string
-	requirePrompt bool
-}
-
 // proxyTransport wraps http.DefaultTransport with OpenTelemetry instrumentation
 // so that every non-streaming reverse proxy call emits a distinct client span.
 var proxyTransport = otelhttp.NewTransport(http.DefaultTransport, client.SpanNameFormatter())
 
-var (
-	imagesEditsTarget = imagesMultipartTarget{
-		endpoint:      func(e types.Endpoints) *string { return e.ImagesEdits },
-		requirePrompt: true,
-	}
-	imagesVariationsTarget = imagesMultipartTarget{
-		endpoint:      func(e types.Endpoints) *string { return e.ImagesVariations },
-		requirePrompt: false,
-	}
-)
-
 // ImagesEditsHandler implements POST /v1/images/edits (multipart/form-data).
 func (router *RouterImpl) ImagesEditsHandler(c *gin.Context) {
-	router.handleImagesMultipart(c, imagesEditsTarget)
-}
-
-// ImagesVariationsHandler implements POST /v1/images/variations
-// (multipart/form-data).
-func (router *RouterImpl) ImagesVariationsHandler(c *gin.Context) {
-	router.handleImagesMultipart(c, imagesVariationsTarget)
+	router.handleImagesMultipart(c)
 }
 
 // handleImagesMultipart proxies a multipart Images upload to the resolved
@@ -1646,7 +1620,7 @@ func (router *RouterImpl) ImagesVariationsHandler(c *gin.Context) {
 // Behaviour mirrors ImagesHandler: opt-in via IMAGES_ENABLED (404 when off) and
 // only providers that natively implement the endpoint are supported (others
 // receive a 400).
-func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMultipartTarget) {
+func (router *RouterImpl) handleImagesMultipart(c *gin.Context) {
 	if !router.cfg.ImagesEnabled {
 		router.logger.Error("images api not enabled", nil)
 		c.JSON(http.StatusNotFound, ErrorResponse{Error: "The Images API is not enabled. Set IMAGES_ENABLED=true to enable it."})
@@ -1668,7 +1642,7 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'image' file is required."})
 		return
 	}
-	if target.requirePrompt && strings.TrimSpace(imagesFormValue(form, imageFormFieldPrompt)) == "" {
+	if strings.TrimSpace(imagesFormValue(form, imageFormFieldPrompt)) == "" {
 		router.logger.Error("images edit request missing prompt", nil)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The 'prompt' field is required."})
 		return
@@ -1694,7 +1668,7 @@ func (router *RouterImpl) handleImagesMultipart(c *gin.Context, target imagesMul
 		return
 	}
 
-	endpoint := target.endpoint(provider.GetEndpoints())
+	endpoint := provider.GetEndpoints().ImagesEdits
 	if endpoint == nil || *endpoint == "" {
 		router.logger.Error("images api not supported by provider", nil, "provider", providerID)
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "The Images API is not supported by this provider yet."})
