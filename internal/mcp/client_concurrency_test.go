@@ -22,6 +22,9 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
+// stubServerAlias is the alias the stub MCP server is registered under.
+const stubServerAlias = "stub"
+
 func newMCPStubServer(t *testing.T, initDelay time.Duration, initCount *atomic.Int32) *httptest.Server {
 	t.Helper()
 
@@ -99,7 +102,7 @@ func newStubMCPConfig() config.Config {
 func TestMCPClientConcurrentReadersDuringReconnection(t *testing.T) {
 	srv := newMCPStubServer(t, 0, nil)
 
-	mc := NewMCPClient([]string{srv.URL}, logger.NewNoopLogger(), newStubMCPConfig()).(*MCPClient)
+	mc := NewMCPClient([]ServerSpec{{Alias: stubServerAlias, URL: srv.URL}}, logger.NewNoopLogger(), newStubMCPConfig()).(*MCPClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -120,12 +123,12 @@ func TestMCPClientConcurrentReadersDuringReconnection(t *testing.T) {
 				mc.GetAllChatCompletionTools()
 				mc.GetAllServerStatuses()
 				mc.IsInitialized()
-				_, _ = mc.GetServerTools(srv.URL)
-				_, _ = mc.GetServerForTool("echo")
+				_, _ = mc.GetServerTools(stubServerAlias)
+				_, _, _ = mc.ResolveTool(NamespacedToolName(stubServerAlias, "echo"))
 				_, _ = mc.ExecuteTool(ctx, Request{
 					Method: "tools/call",
 					Params: map[string]any{"name": "echo", "arguments": map[string]any{}},
-				}, srv.URL)
+				}, stubServerAlias)
 			}
 		})
 	}
@@ -139,14 +142,14 @@ func TestMCPClientConcurrentReadersDuringReconnection(t *testing.T) {
 
 	tools := mc.GetAllChatCompletionTools()
 	require.Len(t, tools, 1)
-	assert.Equal(t, "mcp_echo", tools[0].Function.Name)
+	assert.Equal(t, NamespacedToolName(stubServerAlias, "echo"), tools[0].Function.Name)
 }
 
 func TestAttemptServerReconnectionSingleFlight(t *testing.T) {
 	var initCount atomic.Int32
 	srv := newMCPStubServer(t, 300*time.Millisecond, &initCount)
 
-	mc := NewMCPClient([]string{srv.URL}, logger.NewNoopLogger(), newStubMCPConfig()).(*MCPClient)
+	mc := NewMCPClient([]ServerSpec{{Alias: stubServerAlias, URL: srv.URL}}, logger.NewNoopLogger(), newStubMCPConfig()).(*MCPClient)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -154,7 +157,7 @@ func TestAttemptServerReconnectionSingleFlight(t *testing.T) {
 	var wg sync.WaitGroup
 	for range 5 {
 		wg.Go(func() {
-			mc.attemptServerReconnection(ctx, srv.URL)
+			mc.attemptServerReconnection(ctx, stubServerAlias)
 		})
 	}
 	wg.Wait()

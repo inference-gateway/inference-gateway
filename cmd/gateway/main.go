@@ -200,7 +200,12 @@ func main() {
 	var mcpMiddleware middlewares.MCPMiddleware
 	if cfg.MCP.Enabled {
 		if cfg.MCP.Servers != "" {
-			mcpClient = mcp.NewMCPClient(strings.Split(cfg.MCP.Servers, ","), appLogger, cfg)
+			mcpServers, err := mcp.ParseServers(cfg.MCP.Servers)
+			if err != nil {
+				appLogger.Error("invalid MCP_SERVERS configuration", err)
+				return
+			}
+			mcpClient = mcp.NewMCPClient(mcpServers, appLogger, cfg)
 
 			initCtx, cancel := context.WithTimeout(context.Background(), cfg.MCP.RequestTimeout)
 			defer cancel()

@@ -56,10 +56,10 @@ type TelemetryConfig struct {
 type MCPConfig struct {
 	Enabled                bool          `env:"ENABLED, default=false" description:"Enable MCP"`
 	Expose                 bool          `env:"EXPOSE, default=false" description:"Expose MCP tools endpoint"`
-	Servers                string        `env:"SERVERS" description:"List of MCP servers"`
+	Servers                string        `env:"SERVERS" description:"Comma-separated list of MCP servers as alias=url or url. A missing alias is derived from the url host; aliases must match ^[a-z0-9_-]+$, be unique, and not be the reserved alias tools. Tools are exposed to models as mcp_<alias>_<tool name>"`
 	ToolMode               string        `env:"TOOL_MODE, default=selector" description:"How MCP tools are exposed to the model. selector injects two meta-tools for discovery and dispatch; direct injects every tool schema"`
-	IncludeTools           string        `env:"INCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS"`
-	ExcludeTools           string        `env:"EXCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to skip injecting. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS"`
+	IncludeTools           string        `env:"INCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to inject, matched against either the bare tool name or the namespaced <alias>_<tool name> form. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS"`
+	ExcludeTools           string        `env:"EXCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to skip injecting, matched against either the bare tool name or the namespaced <alias>_<tool name> form. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS"`
 	ClientTimeout          time.Duration `env:"CLIENT_TIMEOUT, default=5s" description:"MCP client HTTP timeout"`
 	DialTimeout            time.Duration `env:"DIAL_TIMEOUT, default=3s" description:"MCP client dial timeout"`
 	TlsHandshakeTimeout    time.Duration `env:"TLS_HANDSHAKE_TIMEOUT, default=3s" description:"MCP client TLS handshake timeout"`

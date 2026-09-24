@@ -4519,7 +4519,7 @@ components:
                 - name: mcp_servers
                   env: 'MCP_SERVERS'
                   type: string
-                  description: 'List of MCP servers'
+                  description: 'Comma-separated list of MCP servers as alias=url or url. A missing alias is derived from the url host; aliases must match ^[a-z0-9_-]+$, be unique, and not be the reserved alias tools. Tools are exposed to models as mcp_<alias>_<tool name>'
                 - name: mcp_tool_mode
                   env: 'MCP_TOOL_MODE'
                   type: string
@@ -4528,11 +4528,11 @@ components:
                 - name: mcp_include_tools
                   env: 'MCP_INCLUDE_TOOLS'
                   type: string
-                  description: 'Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS'
+                  description: 'Comma-separated list of MCP tool names to inject, matched against either the bare tool name or the namespaced <alias>_<tool name> form. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS'
                 - name: mcp_exclude_tools
                   env: 'MCP_EXCLUDE_TOOLS'
                   type: string
-                  description: 'Comma-separated list of MCP tool names to skip injecting. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS'
+                  description: 'Comma-separated list of MCP tool names to skip injecting, matched against either the bare tool name or the namespaced <alias>_<tool name> form. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS'
                 - name: mcp_client_timeout
                   env: 'MCP_CLIENT_TIMEOUT'
                   type: time.Duration

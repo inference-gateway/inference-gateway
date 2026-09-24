@@ -791,7 +791,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 			{
 				Type: types.Function,
 				Function: types.FunctionObject{
-					Name: "get-pizza-info",
+					Name: "mcp_pizza_get-pizza-info",
 				},
 			},
 		}).AnyTimes()
@@ -808,9 +808,9 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		mockRegistry.EXPECT().BuildProvider(constants.GroqID, mockClient).Return(mockProvider, nil).AnyTimes()
 		mockProvider.EXPECT().GetName().Return("groq").AnyTimes()
 
-		mockMCPClient.EXPECT().GetServerForTool("get-pizza-info").Return("http://mcp-pizza-server:8084/mcp", nil).AnyTimes()
+		mockMCPClient.EXPECT().ResolveTool("mcp_pizza_get-pizza-info").Return("pizza", "get-pizza-info", nil).AnyTimes()
 
-		mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "http://mcp-pizza-server:8084/mcp").Return(&mcp.CallToolResult{
+		mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "pizza").Return(&mcp.CallToolResult{
 			Content: []mcp.ContentBlock{
 				mcp.TextContent{
 					Type: "text",
@@ -832,7 +832,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" get"},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" pizza"},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" info"},"finish_reason":null}]}`,
-				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw1","type":"function","function":{"name":"get-pizza-info","arguments":"{}"},"index":0}]},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw1","type":"function","function":{"name":"mcp_pizza_get-pizza-info","arguments":"{}"},"index":0}]},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-1","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
 			}
 			for _, chunk := range chunks {
@@ -850,7 +850,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" me"},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" get"},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"content":" more"},"finish_reason":null}]}`,
-				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw2","type":"function","function":{"name":"get-pizza-info","arguments":"{}"},"index":0}]},"finish_reason":null}]}`,
+				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{"tool_calls":[{"id":"call_vxw2","type":"function","function":{"name":"mcp_pizza_get-pizza-info","arguments":"{}"},"index":0}]},"finish_reason":null}]}`,
 				`{"id":"chatcmpl-2","object":"chat.completion.chunk","created":1748534842,"model":"meta-llama/llama-4-scout-17b-instruct","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`,
 			}
 			for _, chunk := range chunks {

@@ -44,7 +44,7 @@ func TestAgent_Selector_RoundTrip(t *testing.T) {
 	ctx := context.Background()
 
 	mockMCPClient.EXPECT().GetToolsCatalog("", []string(nil)).Return([]mcp.ToolCatalogEntry{
-		{Name: "read_file", Description: "Read a file", Server: "http://server-a"},
+		{Name: "mcp_server_a_read_file", Description: "Read a file", Server: "server_a"},
 	}).Times(1)
 
 	results, err := agent.ExecuteTools(ctx, []types.ChatCompletionMessageToolCall{
@@ -52,20 +52,20 @@ func TestAgent_Selector_RoundTrip(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Len(t, results, 1)
-	assert.Contains(t, toolResultContent(t, results[0]), "read_file")
+	assert.Contains(t, toolResultContent(t, results[0]), "mcp_server_a_read_file")
 
-	mockMCPClient.EXPECT().GetToolsCatalog("", []string{"read_file"}).Return([]mcp.ToolCatalogEntry{
-		{Name: "read_file", Description: "Read a file", Server: "http://server-a", InputSchema: map[string]any{"type": "object"}},
+	mockMCPClient.EXPECT().GetToolsCatalog("", []string{"mcp_server_a_read_file"}).Return([]mcp.ToolCatalogEntry{
+		{Name: "mcp_server_a_read_file", Description: "Read a file", Server: "server_a", InputSchema: map[string]any{"type": "object"}},
 	}).Times(1)
 
 	results, err = agent.ExecuteTools(ctx, []types.ChatCompletionMessageToolCall{
-		toolCall("call_schema", mcp.SelectorToolGet, `{"names":["read_file"]}`),
+		toolCall("call_schema", mcp.SelectorToolGet, `{"names":["mcp_server_a_read_file"]}`),
 	})
 	require.NoError(t, err)
 	require.Len(t, results, 1)
 	assert.Contains(t, toolResultContent(t, results[0]), "input_schema")
 
-	mockMCPClient.EXPECT().GetServerForTool("read_file").Return("http://server-a", nil).Times(1)
+	mockMCPClient.EXPECT().ResolveTool("mcp_server_a_read_file").Return("server_a", "read_file", nil).Times(1)
 	mockMCPClient.EXPECT().ExecuteTool(
 		gomock.Any(),
 		mcp.Request{
@@ -75,13 +75,13 @@ func TestAgent_Selector_RoundTrip(t *testing.T) {
 				"arguments": map[string]any{"path": "/tmp/x"},
 			},
 		},
-		"http://server-a",
+		"server_a",
 	).Return(&mcp.CallToolResult{
 		Content: []mcp.ContentBlock{mcp.TextContent{Type: "text", Text: "file contents"}},
 	}, nil).Times(1)
 
 	results, err = agent.ExecuteTools(ctx, []types.ChatCompletionMessageToolCall{
-		toolCall("call_exec", mcp.SelectorToolExecute, `{"name":"read_file","arguments":{"path":"/tmp/x"}}`),
+		toolCall("call_exec", mcp.SelectorToolExecute, `{"name":"mcp_server_a_read_file","arguments":{"path":"/tmp/x"}}`),
 	})
 	require.NoError(t, err)
 	require.Len(t, results, 1)
@@ -105,25 +105,30 @@ func TestAgent_Selector_ExecuteMissingName(t *testing.T) {
 	assert.Contains(t, toolResultContent(t, results[0]), "requires a 'name'")
 }
 
-// TestAgent_Selector_ExecuteStripsPrefix ensures a wrapped mcp_ prefix is stripped
-// before dispatch so guardrails and server lookup see the raw tool name.
-func TestAgent_Selector_ExecuteStripsPrefix(t *testing.T) {
+// TestAgent_SameToolNameOnTwoServers verifies that a tool name exposed by two
+// servers routes to the server named in the alias, not to whichever one a scan
+// happened to find first.
+func TestAgent_SameToolNameOnTwoServers(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
 	mockMCPClient := mcpmocks.NewMockMCPClientInterface(ctrl)
 	agent := mcp.NewAgent(logger.NewNoopLogger(), mockMCPClient)
 
-	mockMCPClient.EXPECT().GetServerForTool("read_file").Return("http://server-a", nil).Times(1)
-	mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "http://server-a").
-		Return(&mcp.CallToolResult{Content: []mcp.ContentBlock{mcp.TextContent{Type: "text", Text: "ok"}}}, nil).Times(1)
+	for _, alias := range []string{"server_a", "server_b"} {
+		mockMCPClient.EXPECT().ResolveTool("mcp_"+alias+"_read_file").Return(alias, "read_file", nil).Times(1)
+		mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), alias).
+			Return(&mcp.CallToolResult{Content: []mcp.ContentBlock{mcp.TextContent{Type: "text", Text: alias + " contents"}}}, nil).Times(1)
+	}
 
 	results, err := agent.ExecuteTools(context.Background(), []types.ChatCompletionMessageToolCall{
-		toolCall("call_exec", mcp.SelectorToolExecute, `{"name":"mcp_read_file","arguments":{}}`),
+		toolCall("call_a", "mcp_server_a_read_file", `{}`),
+		toolCall("call_b", mcp.SelectorToolExecute, `{"name":"mcp_server_b_read_file","arguments":{}}`),
 	})
 	require.NoError(t, err)
-	require.Len(t, results, 1)
-	assert.Contains(t, toolResultContent(t, results[0]), "ok")
+	require.Len(t, results, 2)
+	assert.Contains(t, toolResultContent(t, results[0]), "server_a contents")
+	assert.Contains(t, toolResultContent(t, results[1]), "server_b contents")
 
 	_, err = json.Marshal(mcp.ToolCatalogEntry{Name: "x"})
 	require.NoError(t, err)

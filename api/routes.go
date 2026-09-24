@@ -2166,15 +2166,15 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	default:
 		servers := router.mcpClient.GetServers()
 
-		for _, serverURL := range servers {
-			tools, err := router.mcpClient.GetServerTools(serverURL)
+		for _, alias := range servers {
+			tools, err := router.mcpClient.GetServerTools(alias)
 			if err != nil {
-				router.logger.Error("failed to get tools from mcp server", err, "server", serverURL)
+				router.logger.Error("failed to get tools from mcp server", err, "server", alias)
 				continue
 			}
 
 			for _, tool := range tools {
-				allTools = append(allTools, toMCPTool(tool, serverURL))
+				allTools = append(allTools, toMCPTool(tool, alias))
 			}
 		}
 
@@ -2191,17 +2191,18 @@ func (router *RouterImpl) ListToolsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// toMCPTool converts a server tool to the gateway's list entry. Description is
-// optional in the MCP schema, so a nil one becomes an empty string.
-func toMCPTool(tool mcp.Tool, serverURL string) types.MCPTool {
+// toMCPTool converts a server tool to the gateway's list entry, reporting the
+// namespaced tool name and the server alias. Description is optional in the MCP
+// schema, so a nil one becomes an empty string.
+func toMCPTool(tool mcp.Tool, serverAlias string) types.MCPTool {
 	var description string
 	if tool.Description != nil {
 		description = *tool.Description
 	}
 	return types.MCPTool{
-		Name:        mcp.ToolNamePrefix + tool.Name,
+		Name:        mcp.NamespacedToolName(serverAlias, tool.Name),
 		Description: description,
-		Server:      serverURL,
+		Server:      serverAlias,
 		InputSchema: &tool.InputSchema,
 	}
 }

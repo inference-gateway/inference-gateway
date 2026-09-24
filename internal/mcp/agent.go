@@ -367,8 +367,7 @@ func (a *Agent) ExecuteTools(ctx context.Context, toolCalls []types.ChatCompleti
 				results = append(results, a.toolMessage(toolCall.ID, fmt.Sprintf("Error: Failed to parse arguments: %v", err)))
 				continue
 			}
-			toolName := strings.TrimPrefix(toolCall.Function.Name, ToolNamePrefix)
-			results = append(results, a.dispatchTool(ctx, toolCall.ID, toolName, toolCall.Function.Arguments, args))
+			results = append(results, a.dispatchTool(ctx, toolCall.ID, toolCall.Function.Name, toolCall.Function.Arguments, args))
 		}
 	}
 
@@ -413,37 +412,39 @@ func (a *Agent) handleToolsExecute(ctx context.Context, toolCall types.ChatCompl
 		return a.toolMessage(toolCall.ID, "Error: "+SelectorToolExecute+" requires a 'name'")
 	}
 
-	toolName := strings.TrimPrefix(params.Name, ToolNamePrefix)
 	if params.Arguments == nil {
 		params.Arguments = map[string]any{}
 	}
 	argsJSON, err := json.Marshal(params.Arguments)
 	if err != nil {
-		a.logger.Error("failed to marshal unwrapped tool arguments", err, "tool", toolName)
+		a.logger.Error("failed to marshal unwrapped tool arguments", err, "tool", params.Name)
 		return a.toolMessage(toolCall.ID, fmt.Sprintf("Error: %v", err))
 	}
 
-	return a.dispatchTool(ctx, toolCall.ID, toolName, string(argsJSON), params.Arguments)
+	return a.dispatchTool(ctx, toolCall.ID, params.Name, string(argsJSON), params.Arguments)
 }
 
-// dispatchTool runs guardrails, resolves the server, executes the tool, and
-// runs output guardrails, returning the resulting tool message.
-func (a *Agent) dispatchTool(ctx context.Context, toolCallID, toolName, argsJSON string, args map[string]any) types.Message {
-	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, argsJSON, "", guardrails.PhaseToolArgs); err != nil {
-		a.logger.Error("guardrails blocked tool call", err, "tool", toolName)
+// dispatchTool runs guardrails, resolves the server from the namespaced
+// mcp_<alias>_<tool> name, executes the tool, and runs output guardrails,
+// returning the resulting tool message. Guardrails and traces see the
+// namespaced name the model called; only the MCP request carries the bare name
+// the server knows.
+func (a *Agent) dispatchTool(ctx context.Context, toolCallID, name, argsJSON string, args map[string]any) types.Message {
+	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, name, argsJSON, "", guardrails.PhaseToolArgs); err != nil {
+		a.logger.Error("guardrails blocked tool call", err, "tool", name)
 		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
 	}
 
 	toolCtx, span := otelapi.Tracer("github.com/inference-gateway/inference-gateway/internal/mcp").
-		Start(ctx, "execute_tool "+toolName, trace.WithAttributes(semconv.GenAIToolName(toolName)))
-	server, err := a.mcpClient.GetServerForTool(toolName)
+		Start(ctx, "execute_tool "+name, trace.WithAttributes(semconv.GenAIToolName(name)))
+	server, toolName, err := a.mcpClient.ResolveTool(name)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
 		span.End()
-		a.logger.Error("failed to find server for tool", err, "tool_name", toolName)
+		a.logger.Error("failed to find server for tool", err, "tool_name", name)
 		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
 	}
-	span.SetAttributes(attribute.String("mcp.server.url", server))
+	span.SetAttributes(attribute.String("mcp.server.alias", server))
 
 	mcpRequest := Request{
 		Method: "tools/call",
@@ -475,8 +476,8 @@ func (a *Agent) dispatchTool(ctx context.Context, toolCallID, toolName, argsJSON
 		}
 	}
 
-	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, toolName, argsJSON, resultStr, guardrails.PhaseToolOutput); err != nil {
-		a.logger.Error("guardrails blocked tool output", err, "tool", toolName)
+	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, name, argsJSON, resultStr, guardrails.PhaseToolOutput); err != nil {
+		a.logger.Error("guardrails blocked tool output", err, "tool", name)
 		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
 	}
 

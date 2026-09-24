@@ -351,11 +351,18 @@ and dual transport support.
 
 ### Quick Setup
 
-1. **Add your server URL** to the `MCP_SERVERS` environment variable:
+1. **Add your server URL** to the `MCP_SERVERS` environment variable, optionally
+   giving it an alias with `alias=url`:
 
    ```bash
-   MCP_SERVERS=http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://your-new-server:8085/mcp
+   MCP_SERVERS=time=http://mcp-time-server:8081/mcp,search=http://mcp-search-server:8082/mcp,http://your-new-server:8085/mcp
    ```
+
+   Each server gets an alias that namespaces its tools as
+   `mcp_<alias>_<tool name>`, so two servers can expose the same tool name. When
+   you omit `alias=`, the alias is derived from the URL host (the entry above
+   becomes `your-new-server`). Aliases must match `^[a-z0-9_-]+$`, be unique, and
+   must not be `tools` (which is reserved for the selector meta-tools).
 
 2. **Include your server** in the docker-compose.yml file (if running in Docker)
 
@@ -385,7 +392,7 @@ Environment variables you can configure:
 
 - `MCP_ENABLED`: Set to "true" to enable MCP middleware
 - `MCP_EXPOSE`: Set to "true" to expose MCP endpoints
-- `MCP_SERVERS`: Comma-separated list of MCP server URLs
+- `MCP_SERVERS`: Comma-separated list of MCP servers as `alias=url` or `url`
 - `MCP_INCLUDE_TOOLS`: Comma-separated allowlist of tool names to inject. When
   set, only these tools are injected; if empty, all tools are injected
 - `MCP_EXCLUDE_TOOLS`: Comma-separated denylist of tool names to skip injecting.
@@ -402,8 +409,10 @@ tools are injected with an allowlist or a denylist:
 - `MCP_EXCLUDE_TOOLS` is a denylist: the listed tools are never injected.
 
 `MCP_INCLUDE_TOOLS` takes precedence over `MCP_EXCLUDE_TOOLS`. Tool names are
-matched case-insensitively and the `mcp_` prefix is optional, so `read_file` and
-`mcp_read_file` are equivalent.
+matched case-insensitively and the `mcp_` prefix is optional. An entry matches
+either the bare tool name or the namespaced `<alias>_<tool name>` form, so
+`read_file` applies to every server exposing that tool while
+`filesystem_read_file` only applies to the `filesystem` server.
 
 ```bash
 # Only inject the time and search tools

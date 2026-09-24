@@ -151,14 +151,14 @@ func TestTracingExecuteToolsSpans(t *testing.T) {
 	require.NoError(t, err)
 
 	mockMCP := mcpmocks.NewMockMCPClientInterface(ctrl)
-	mockMCP.EXPECT().GetServerForTool("search").Return("http://mcp.local", nil)
-	mockMCP.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "http://mcp.local").Return(&mcp.CallToolResult{}, nil)
-	mockMCP.EXPECT().GetServerForTool("missing").Return("", assert.AnError)
+	mockMCP.EXPECT().ResolveTool("mcp_local_search").Return("local", "search", nil)
+	mockMCP.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), "local").Return(&mcp.CallToolResult{}, nil)
+	mockMCP.EXPECT().ResolveTool("mcp_local_missing").Return("", "", assert.AnError)
 
 	agent := mcp.NewAgent(log, mockMCP)
 	results, err := agent.ExecuteTools(context.Background(), []types.ChatCompletionMessageToolCall{
-		{ID: "1", Function: types.ChatCompletionMessageToolCallFunction{Name: "mcp_search", Arguments: "{}"}},
-		{ID: "2", Function: types.ChatCompletionMessageToolCallFunction{Name: "mcp_missing", Arguments: "{}"}},
+		{ID: "1", Function: types.ChatCompletionMessageToolCallFunction{Name: "mcp_local_search", Arguments: "{}"}},
+		{ID: "2", Function: types.ChatCompletionMessageToolCallFunction{Name: "mcp_local_missing", Arguments: "{}"}},
 	})
 	require.NoError(t, err)
 	require.Len(t, results, 2)
@@ -166,16 +166,16 @@ func TestTracingExecuteToolsSpans(t *testing.T) {
 	spans := sr.Ended()
 	require.Len(t, spans, 2)
 
-	assert.Equal(t, "execute_tool search", spans[0].Name())
+	assert.Equal(t, "execute_tool mcp_local_search", spans[0].Name())
 	toolName, ok := findAttr(spans[0].Attributes(), semconv.GenAIToolNameKey)
 	require.True(t, ok)
-	assert.Equal(t, "search", toolName)
-	serverURL, ok := findAttr(spans[0].Attributes(), attribute.Key("mcp.server.url"))
+	assert.Equal(t, "mcp_local_search", toolName)
+	serverAlias, ok := findAttr(spans[0].Attributes(), attribute.Key("mcp.server.alias"))
 	require.True(t, ok)
-	assert.Equal(t, "http://mcp.local", serverURL)
+	assert.Equal(t, "local", serverAlias)
 	assert.Equal(t, codes.Unset, spans[0].Status().Code)
 
-	assert.Equal(t, "execute_tool missing", spans[1].Name())
+	assert.Equal(t, "execute_tool mcp_local_missing", spans[1].Name())
 	assert.Equal(t, codes.Error, spans[1].Status().Code)
 }
 

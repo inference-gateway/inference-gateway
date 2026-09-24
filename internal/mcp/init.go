@@ -14,10 +14,11 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// NewMCPClient is a variable holding the function to create a new MCP client
-func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) MCPClientInterface {
+// NewMCPClient creates a new MCP client for the given server specs, as parsed
+// from MCP_SERVERS by ParseServers.
+func NewMCPClient(servers []ServerSpec, logger logger.Logger, cfg config.Config) MCPClientInterface {
 	return &MCPClient{
-		ServerURLs:          serverURLs,
+		Servers:             servers,
 		Logger:              logger,
 		Config:              cfg,
 		clients:             make(map[string]*golang.Client),
@@ -31,7 +32,7 @@ func NewMCPClient(serverURLs []string, logger logger.Logger, cfg config.Config) 
 
 // InitializeAll implements MCPClientInterface with enhanced transport fallback.
 func (mc *MCPClient) InitializeAll(ctx context.Context) error {
-	if len(mc.ServerURLs) == 0 {
+	if len(mc.Servers) == 0 {
 		return ErrNoServerURLs
 	}
 
@@ -40,21 +41,21 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	failedServers := make([]string, 0)
 
 	mc.mu.Lock()
-	for _, serverURL := range mc.ServerURLs {
-		mc.serverStatuses[serverURL] = ServerStatusUnknown
+	for _, server := range mc.Servers {
+		mc.serverStatuses[server.Alias] = ServerStatusUnknown
 	}
 	mc.mu.Unlock()
 
-	for _, serverURL := range mc.ServerURLs {
-		if err := mc.initializeServer(ctx, serverURL); err != nil {
-			mc.Logger.Error("failed to initialize mcp server", err, "server", serverURL, "component", "mcp_client")
+	for _, server := range mc.Servers {
+		if err := mc.initializeServer(ctx, server); err != nil {
+			mc.Logger.Error("failed to initialize mcp server", err, "server", server.Alias, "url", server.URL, "component", "mcp_client")
 			lastError = err
-			failedServers = append(failedServers, serverURL)
+			failedServers = append(failedServers, server.Alias)
 			continue
 		}
 
 		successfulInitializations++
-		mc.Logger.Info("successfully initialized mcp server", "server", serverURL, "component", "mcp_client")
+		mc.Logger.Info("successfully initialized mcp server", "server", server.Alias, "url", server.URL, "component", "mcp_client")
 	}
 
 	mc.mu.Lock()
@@ -64,7 +65,7 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	if successfulInitializations == 0 {
 		if mc.scheduleReconnectionIfEnabled(failedServers) {
 			mc.Logger.Warn("no servers successfully initialized; enabling MCP with background reconnection",
-				"total_servers", len(mc.ServerURLs),
+				"total_servers", len(mc.Servers),
 				"failed_servers", len(failedServers),
 				"component", "mcp_client")
 			return nil
@@ -85,7 +86,7 @@ func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	mc.Logger.Info("mcp client initialization completed",
 		"successful_servers", successfulInitializations,
 		"failed_servers", len(failedServers),
-		"total_servers", len(mc.ServerURLs),
+		"total_servers", len(mc.Servers),
 		"component", "mcp_client")
 
 	mc.scheduleReconnectionIfEnabled(failedServers)
@@ -147,7 +148,8 @@ func (mc *MCPClient) StopBackgroundReconnection() {
 }
 
 // initializeServer initializes a single server with retry logic
-func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) error {
+func (mc *MCPClient) initializeServer(ctx context.Context, server ServerSpec) error {
+	serverURL := server.URL
 	maxRetries := mc.Config.MCP.MaxRetries
 	initialBackoff := mc.Config.MCP.InitialBackoff
 	var lastErr error
@@ -204,9 +206,9 @@ func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) err
 		}
 
 		mc.mu.Lock()
-		mc.clients[serverURL] = client
-		mc.serverTools[serverURL] = tools
-		mc.serverStatuses[serverURL] = ServerStatusAvailable
+		mc.clients[server.Alias] = client
+		mc.serverTools[server.Alias] = tools
+		mc.serverStatuses[server.Alias] = ServerStatusAvailable
 		if mc.initialized {
 			mc.rebuildChatCompletionToolsLocked()
 		}
@@ -221,7 +223,7 @@ func (mc *MCPClient) initializeServer(ctx context.Context, serverURL string) err
 	}
 
 	mc.mu.Lock()
-	mc.serverStatuses[serverURL] = ServerStatusUnavailable
+	mc.serverStatuses[server.Alias] = ServerStatusUnavailable
 	mc.mu.Unlock()
 
 	return fmt.Errorf("failed to initialize server after %d attempts: %w", maxRetries+1, lastErr)
@@ -250,20 +252,20 @@ func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverUR
 // rebuildChatCompletionToolsLocked re-aggregates the pre-converted chat completion tools; mc.mu must be held
 func (mc *MCPClient) rebuildChatCompletionToolsLocked() {
 	all := make([]types.ChatCompletionTool, 0)
-	for serverURL, serverTools := range mc.serverTools {
+	for alias, serverTools := range mc.serverTools {
 		if len(serverTools) == 0 {
-			mc.Logger.Debug("no tools to convert for server", "server", serverURL)
+			mc.Logger.Debug("no tools to convert for server", "server", alias)
 			continue
 		}
 
-		toolsToConvert := mc.filterTools(serverTools)
+		toolsToConvert := mc.filterTools(alias, serverTools)
 		if len(toolsToConvert) == 0 {
-			mc.Logger.Debug("all tools filtered out by include/exclude config for server", "server", serverURL)
+			mc.Logger.Debug("all tools filtered out by include/exclude config for server", "server", alias)
 			continue
 		}
 
-		chatTools := mc.ConvertMCPToolsToChatCompletionTools(toolsToConvert)
-		mc.Logger.Debug("converted tools for server", "server", serverURL, "inputToolCount", len(serverTools), "outputCount", len(chatTools))
+		chatTools := mc.ConvertMCPToolsToChatCompletionTools(alias, toolsToConvert)
+		mc.Logger.Debug("converted tools for server", "server", alias, "inputToolCount", len(serverTools), "outputCount", len(chatTools))
 		all = append(all, chatTools...)
 	}
 
@@ -343,8 +345,8 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 	defer ticker.Stop()
 
 	reconnectingServers := make(map[string]bool)
-	for _, server := range failedServers {
-		reconnectingServers[server] = true
+	for _, alias := range failedServers {
+		reconnectingServers[alias] = true
 	}
 
 	for {
@@ -355,13 +357,13 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 		case <-ticker.C:
 			mc.mu.RLock()
 			serversToReconnect := make([]string, 0)
-			for serverURL := range reconnectingServers {
-				if status, exists := mc.serverStatuses[serverURL]; exists && status == ServerStatusUnavailable {
-					serversToReconnect = append(serversToReconnect, serverURL)
+			for alias := range reconnectingServers {
+				if status, exists := mc.serverStatuses[alias]; exists && status == ServerStatusUnavailable {
+					serversToReconnect = append(serversToReconnect, alias)
 				} else if status == ServerStatusAvailable {
-					delete(reconnectingServers, serverURL)
+					delete(reconnectingServers, alias)
 					mc.Logger.Info("server successfully reconnected, removing from background reconnection",
-						"server", serverURL, "component", "mcp_client")
+						"server", alias, "component", "mcp_client")
 				}
 			}
 			mc.mu.RUnlock()
@@ -371,40 +373,56 @@ func (mc *MCPClient) startBackgroundReconnection(ctx context.Context, failedServ
 				return
 			}
 
-			for _, serverURL := range serversToReconnect {
-				go mc.attemptServerReconnection(ctx, serverURL)
+			for _, alias := range serversToReconnect {
+				go mc.attemptServerReconnection(ctx, alias)
 			}
 		}
 	}
 }
 
 // attemptServerReconnection attempts to reconnect a single failed server
-func (mc *MCPClient) attemptServerReconnection(ctx context.Context, serverURL string) {
+func (mc *MCPClient) attemptServerReconnection(ctx context.Context, alias string) {
+	server, ok := mc.serverSpec(alias)
+	if !ok {
+		mc.Logger.Debug("no server spec for alias, skipping reconnection", "server", alias, "component", "mcp_client")
+		return
+	}
+
 	mc.mu.Lock()
-	if _, busy := mc.reconnecting[serverURL]; busy {
+	if _, busy := mc.reconnecting[alias]; busy {
 		mc.mu.Unlock()
 		return
 	}
-	mc.reconnecting[serverURL] = struct{}{}
+	mc.reconnecting[alias] = struct{}{}
 	mc.mu.Unlock()
 
 	defer func() {
 		mc.mu.Lock()
-		delete(mc.reconnecting, serverURL)
+		delete(mc.reconnecting, alias)
 		mc.mu.Unlock()
 	}()
 
-	mc.Logger.Info("attempting server reconnection", "server", serverURL, "component", "mcp_client")
+	mc.Logger.Info("attempting server reconnection", "server", alias, "component", "mcp_client")
 
 	reconnectCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.ClientTimeout)
 	defer cancel()
 
-	if err := mc.initializeServer(reconnectCtx, serverURL); err != nil {
-		mc.Logger.Info("server reconnection failed", "server", serverURL, "error", err, "component", "mcp_client")
+	if err := mc.initializeServer(reconnectCtx, server); err != nil {
+		mc.Logger.Info("server reconnection failed", "server", alias, "error", err, "component", "mcp_client")
 		return
 	}
 
-	mc.Logger.Info("server successfully reconnected", "server", serverURL, "component", "mcp_client")
+	mc.Logger.Info("server successfully reconnected", "server", alias, "component", "mcp_client")
+}
+
+// serverSpec looks up a configured server by alias.
+func (mc *MCPClient) serverSpec(alias string) (ServerSpec, bool) {
+	for _, server := range mc.Servers {
+		if server.Alias == alias {
+			return server, true
+		}
+	}
+	return ServerSpec{}, false
 }
 
 // Ensure compile-time interface compliance

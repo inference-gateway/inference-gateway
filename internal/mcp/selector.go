@@ -15,7 +15,8 @@ const (
 	ToolModeDirect = "direct"
 )
 
-// ToolNamePrefix namespaces every MCP tool exposed to models as mcp_<name>.
+// ToolNamePrefix namespaces every MCP tool exposed to models as
+// mcp_<server alias>_<tool name>.
 const ToolNamePrefix = "mcp_"
 
 // Selector meta-tool names. These are gateway-defined and handled inside the
@@ -25,7 +26,8 @@ const (
 	SelectorToolExecute = ToolNamePrefix + "tools_execute"
 )
 
-// ToolCatalogEntry describes a single MCP tool in the selector catalog. The
+// ToolCatalogEntry describes a single MCP tool in the selector catalog. Name is
+// the namespaced mcp_<alias>_<tool> name and Server is the server alias; the
 // input schema is only populated when full definitions are requested.
 type ToolCatalogEntry struct {
 	Name        string         `json:"name"`
@@ -40,7 +42,7 @@ func SelectorToolDefinitions() []types.ChatCompletionTool {
 	getDesc := "List available MCP tools or get their full input schemas. " +
 		"Call without arguments for a compact catalog (name + one-line description). " +
 		"Call with names to get full schemas before executing."
-	execDesc := "Execute an MCP tool by name. Look up the tool and its schema with mcp_tools_get first."
+	execDesc := "Execute an MCP tool by its namespaced mcp_<server>_<tool> name. Look up the tool and its schema with mcp_tools_get first."
 
 	return []types.ChatCompletionTool{
 		{
@@ -92,8 +94,8 @@ func (mc *MCPClient) GetSelectorTools() []types.ChatCompletionTool {
 		return []types.ChatCompletionTool{}
 	}
 
-	for _, serverTools := range mc.serverTools {
-		if len(mc.filterTools(serverTools)) > 0 {
+	for alias, serverTools := range mc.serverTools {
+		if len(mc.filterTools(alias, serverTools)) > 0 {
 			return SelectorToolDefinitions()
 		}
 	}
@@ -115,33 +117,36 @@ func (mc *MCPClient) GetToolsCatalog(query string, names []string) []ToolCatalog
 	q := strings.ToLower(strings.TrimSpace(query))
 
 	entries := make([]ToolCatalogEntry, 0)
-	for serverURL, serverTools := range mc.serverTools {
-		for _, tool := range mc.filterTools(serverTools) {
+	for alias, serverTools := range mc.serverTools {
+		for _, tool := range mc.filterTools(alias, serverTools) {
 			desc := ""
 			if tool.Description != nil {
 				desc = *tool.Description
 			}
+			name := NamespacedToolName(alias, tool.Name)
 
 			if len(wanted) > 0 {
-				if _, ok := wanted[normalizeToolName(tool.Name)]; !ok {
+				_, bareWanted := wanted[normalizeToolName(tool.Name)]
+				_, namespacedWanted := wanted[normalizeToolName(name)]
+				if !bareWanted && !namespacedWanted {
 					continue
 				}
 				entries = append(entries, ToolCatalogEntry{
-					Name:        tool.Name,
+					Name:        name,
 					Description: desc,
-					Server:      serverURL,
+					Server:      alias,
 					InputSchema: tool.InputSchema,
 				})
 				continue
 			}
 
-			if q != "" && !strings.Contains(strings.ToLower(tool.Name), q) && !strings.Contains(strings.ToLower(desc), q) {
+			if q != "" && !strings.Contains(strings.ToLower(name), q) && !strings.Contains(strings.ToLower(desc), q) {
 				continue
 			}
 			entries = append(entries, ToolCatalogEntry{
-				Name:        tool.Name,
+				Name:        name,
 				Description: desc,
-				Server:      serverURL,
+				Server:      alias,
 			})
 		}
 	}

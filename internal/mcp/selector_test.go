@@ -17,11 +17,11 @@ func newCatalogClient(include, exclude string) *MCPClient {
 		Config:      config.Config{MCP: &config.MCPConfig{IncludeTools: include, ExcludeTools: exclude}},
 		initialized: true,
 		serverTools: map[string][]Tool{
-			"http://server-a": {
+			"server_a": {
 				{Name: "read_file", Description: strPtr("Read a file from disk"), InputSchema: map[string]any{"type": "object"}},
 				{Name: "list_directory", Description: strPtr("List directory contents"), InputSchema: map[string]any{"type": "object"}},
 			},
-			"http://server-b": {
+			"server_b": {
 				{Name: "search_web", Description: strPtr("Search the web"), InputSchema: map[string]any{"type": "object", "required": []any{"q"}}},
 			},
 		},
@@ -53,30 +53,38 @@ func TestGetToolsCatalog_QueryFilter(t *testing.T) {
 
 	byName := catalogNames(mc.GetToolsCatalog("directory", nil))
 	assert.Len(t, byName, 1)
-	assert.Contains(t, byName, "list_directory")
+	assert.Contains(t, byName, "mcp_server_a_list_directory")
 
 	byName = catalogNames(mc.GetToolsCatalog("web", nil))
 	assert.Len(t, byName, 1)
-	assert.Contains(t, byName, "search_web")
+	assert.Contains(t, byName, "mcp_server_b_search_web")
+}
+
+func TestGetToolsCatalog_NamespacesNamesAndReportsAlias(t *testing.T) {
+	mc := newCatalogClient("", "")
+
+	byName := catalogNames(mc.GetToolsCatalog("", nil))
+	assert.Equal(t, "server_a", byName["mcp_server_a_read_file"].Server)
+	assert.Equal(t, "server_b", byName["mcp_server_b_search_web"].Server)
 }
 
 func TestGetToolsCatalog_NamesReturnsSchemas(t *testing.T) {
 	mc := newCatalogClient("", "")
 
-	entries := mc.GetToolsCatalog("", []string{"search_web", "mcp_read_file"})
+	entries := mc.GetToolsCatalog("", []string{"mcp_server_b_search_web", "read_file"})
 	byName := catalogNames(entries)
 	assert.Len(t, byName, 2)
-	assert.NotNil(t, byName["search_web"].InputSchema)
-	assert.NotNil(t, byName["read_file"].InputSchema, "mcp_ prefix in request should still match")
+	assert.NotNil(t, byName["mcp_server_b_search_web"].InputSchema, "namespaced name in request should match")
+	assert.NotNil(t, byName["mcp_server_a_read_file"].InputSchema, "bare name in request should still match")
 }
 
 func TestGetToolsCatalog_HonorsExcludeFilter(t *testing.T) {
 	mc := newCatalogClient("", "read_file")
 
 	byName := catalogNames(mc.GetToolsCatalog("", nil))
-	assert.NotContains(t, byName, "read_file")
-	assert.Contains(t, byName, "list_directory")
-	assert.Contains(t, byName, "search_web")
+	assert.NotContains(t, byName, "mcp_server_a_read_file")
+	assert.Contains(t, byName, "mcp_server_a_list_directory")
+	assert.Contains(t, byName, "mcp_server_b_search_web")
 }
 
 func TestGetSelectorTools(t *testing.T) {

@@ -20,15 +20,16 @@ import (
 )
 
 // TestToMCPTool_NilDescription verifies a server tool published without a
-// description does not panic and yields an empty description.
+// description does not panic and yields an empty description, and that the
+// listing reports the namespaced name and the server alias.
 func TestToMCPTool_NilDescription(t *testing.T) {
-	got := toMCPTool(mcp.Tool{Name: "no_desc"}, "http://server")
-	assert.Equal(t, "mcp_no_desc", got.Name)
+	got := toMCPTool(mcp.Tool{Name: "no_desc"}, "server")
+	assert.Equal(t, "mcp_server_no_desc", got.Name)
 	assert.Equal(t, "", got.Description)
-	assert.Equal(t, "http://server", got.Server)
+	assert.Equal(t, "server", got.Server)
 
 	desc := "Reads a file"
-	got = toMCPTool(mcp.Tool{Name: "read_file", Description: &desc}, "http://server")
+	got = toMCPTool(mcp.Tool{Name: "read_file", Description: &desc}, "server")
 	assert.Equal(t, desc, got.Description)
 }
 

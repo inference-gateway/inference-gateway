@@ -45,14 +45,14 @@ type MCPClientInterface interface {
 	// IsInitialized returns whether the client has been successfully initialized
 	IsInitialized() bool
 
-	// ExecuteTool invokes a tool on the appropriate MCP server
-	ExecuteTool(ctx context.Context, request Request, serverURL string) (*CallToolResult, error)
+	// ExecuteTool invokes a tool on the MCP server with the given alias
+	ExecuteTool(ctx context.Context, request Request, serverAlias string) (*CallToolResult, error)
 
-	// GetServers returns the list of MCP server URLs
+	// GetServers returns the aliases of the configured MCP servers
 	GetServers() []string
 
-	// GetServerTools returns the tools available on the specified server
-	GetServerTools(serverURL string) ([]Tool, error)
+	// GetServerTools returns the tools available on the server with the given alias
+	GetServerTools(serverAlias string) ([]Tool, error)
 
 	// GetAllChatCompletionTools returns all pre-converted chat completion tools from all servers
 	GetAllChatCompletionTools() []types.ChatCompletionTool
@@ -63,10 +63,11 @@ type MCPClientInterface interface {
 	// GetToolsCatalog answers an mcp_tools_get call from the cached tool map
 	GetToolsCatalog(query string, names []string) []ToolCatalogEntry
 
-	// GetServerForTool returns the server URL that provides the specified tool
-	GetServerForTool(toolName string) (string, error)
+	// ResolveTool splits a namespaced mcp_<alias>_<tool> name into the server
+	// alias that provides it and the bare tool name the server knows it by
+	ResolveTool(namespacedName string) (serverAlias string, toolName string, err error)
 
-	// GetAllServerStatuses returns the status of all servers
+	// GetAllServerStatuses returns the status of all servers, keyed by alias
 	GetAllServerStatuses() map[string]ServerStatus
 
 	// StartStatusPolling starts the background status polling goroutine
@@ -82,9 +83,11 @@ type MCPClientInterface interface {
 	StopBackgroundReconnection()
 }
 
-// MCPClient provides methods to interact with MCP servers
+// MCPClient provides methods to interact with MCP servers. Every per-server
+// map is keyed by the server's alias; the URL stays an internal detail carried
+// on the ServerSpec.
 type MCPClient struct {
-	ServerURLs          []string
+	Servers             []ServerSpec
 	Logger              logger.Logger
 	Config              config.Config
 	mu                  sync.RWMutex

@@ -43,18 +43,18 @@ func (m *MockMCPClientInterface) EXPECT() *MockMCPClientInterfaceMockRecorder {
 }
 
 // ExecuteTool mocks base method.
-func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, request mcp.Request, serverURL string) (*mcp.CallToolResult, error) {
+func (m *MockMCPClientInterface) ExecuteTool(ctx context.Context, request mcp.Request, serverAlias string) (*mcp.CallToolResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExecuteTool", ctx, request, serverURL)
+	ret := m.ctrl.Call(m, "ExecuteTool", ctx, request, serverAlias)
 	ret0, _ := ret[0].(*mcp.CallToolResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ExecuteTool indicates an expected call of ExecuteTool.
-func (mr *MockMCPClientInterfaceMockRecorder) ExecuteTool(ctx, request, serverURL any) *MockMCPClientInterfaceExecuteToolCall {
+func (mr *MockMCPClientInterfaceMockRecorder) ExecuteTool(ctx, request, serverAlias any) *MockMCPClientInterfaceExecuteToolCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteTool", reflect.TypeOf((*MockMCPClientInterface)(nil).ExecuteTool), ctx, request, serverURL)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecuteTool", reflect.TypeOf((*MockMCPClientInterface)(nil).ExecuteTool), ctx, request, serverAlias)
 	return &MockMCPClientInterfaceExecuteToolCall{Call: call}
 }
 
@@ -195,58 +195,19 @@ func (c *MockMCPClientInterfaceGetSelectorToolsCall) DoAndReturn(f func() []type
 	return c
 }
 
-// GetServerForTool mocks base method.
-func (m *MockMCPClientInterface) GetServerForTool(toolName string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetServerForTool", toolName)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetServerForTool indicates an expected call of GetServerForTool.
-func (mr *MockMCPClientInterfaceMockRecorder) GetServerForTool(toolName any) *MockMCPClientInterfaceGetServerForToolCall {
-	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerForTool", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerForTool), toolName)
-	return &MockMCPClientInterfaceGetServerForToolCall{Call: call}
-}
-
-// MockMCPClientInterfaceGetServerForToolCall wrap *gomock.Call
-type MockMCPClientInterfaceGetServerForToolCall struct {
-	*gomock.Call
-}
-
-// Return rewrite *gomock.Call.Return
-func (c *MockMCPClientInterfaceGetServerForToolCall) Return(arg0 string, arg1 error) *MockMCPClientInterfaceGetServerForToolCall {
-	c.Call = c.Call.Return(arg0, arg1)
-	return c
-}
-
-// Do rewrite *gomock.Call.Do
-func (c *MockMCPClientInterfaceGetServerForToolCall) Do(f func(string) (string, error)) *MockMCPClientInterfaceGetServerForToolCall {
-	c.Call = c.Call.Do(f)
-	return c
-}
-
-// DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockMCPClientInterfaceGetServerForToolCall) DoAndReturn(f func(string) (string, error)) *MockMCPClientInterfaceGetServerForToolCall {
-	c.Call = c.Call.DoAndReturn(f)
-	return c
-}
-
 // GetServerTools mocks base method.
-func (m *MockMCPClientInterface) GetServerTools(serverURL string) ([]mcp.Tool, error) {
+func (m *MockMCPClientInterface) GetServerTools(serverAlias string) ([]mcp.Tool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetServerTools", serverURL)
+	ret := m.ctrl.Call(m, "GetServerTools", serverAlias)
 	ret0, _ := ret[0].([]mcp.Tool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetServerTools indicates an expected call of GetServerTools.
-func (mr *MockMCPClientInterfaceMockRecorder) GetServerTools(serverURL any) *MockMCPClientInterfaceGetServerToolsCall {
+func (mr *MockMCPClientInterfaceMockRecorder) GetServerTools(serverAlias any) *MockMCPClientInterfaceGetServerToolsCall {
 	mr.mock.ctrl.T.Helper()
-	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerTools", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerTools), serverURL)
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetServerTools", reflect.TypeOf((*MockMCPClientInterface)(nil).GetServerTools), serverAlias)
 	return &MockMCPClientInterfaceGetServerToolsCall{Call: call}
 }
 
@@ -421,6 +382,46 @@ func (c *MockMCPClientInterfaceIsInitializedCall) Do(f func() bool) *MockMCPClie
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
 func (c *MockMCPClientInterfaceIsInitializedCall) DoAndReturn(f func() bool) *MockMCPClientInterfaceIsInitializedCall {
+	c.Call = c.Call.DoAndReturn(f)
+	return c
+}
+
+// ResolveTool mocks base method.
+func (m *MockMCPClientInterface) ResolveTool(namespacedName string) (string, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResolveTool", namespacedName)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ResolveTool indicates an expected call of ResolveTool.
+func (mr *MockMCPClientInterfaceMockRecorder) ResolveTool(namespacedName any) *MockMCPClientInterfaceResolveToolCall {
+	mr.mock.ctrl.T.Helper()
+	call := mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResolveTool", reflect.TypeOf((*MockMCPClientInterface)(nil).ResolveTool), namespacedName)
+	return &MockMCPClientInterfaceResolveToolCall{Call: call}
+}
+
+// MockMCPClientInterfaceResolveToolCall wrap *gomock.Call
+type MockMCPClientInterfaceResolveToolCall struct {
+	*gomock.Call
+}
+
+// Return rewrite *gomock.Call.Return
+func (c *MockMCPClientInterfaceResolveToolCall) Return(serverAlias, toolName string, err error) *MockMCPClientInterfaceResolveToolCall {
+	c.Call = c.Call.Return(serverAlias, toolName, err)
+	return c
+}
+
+// Do rewrite *gomock.Call.Do
+func (c *MockMCPClientInterfaceResolveToolCall) Do(f func(string) (string, string, error)) *MockMCPClientInterfaceResolveToolCall {
+	c.Call = c.Call.Do(f)
+	return c
+}
+
+// DoAndReturn rewrite *gomock.Call.DoAndReturn
+func (c *MockMCPClientInterfaceResolveToolCall) DoAndReturn(f func(string) (string, string, error)) *MockMCPClientInterfaceResolveToolCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

@@ -58,22 +58,22 @@ func (mc *MCPClient) statusPollingLoop(ctx context.Context) {
 
 // pollServerStatuses checks the health status of all servers
 func (mc *MCPClient) pollServerStatuses(ctx context.Context) {
-	for _, serverURL := range mc.ServerURLs {
-		go mc.checkServerHealth(ctx, serverURL)
+	for _, server := range mc.Servers {
+		go mc.checkServerHealth(ctx, server.Alias)
 	}
 }
 
 // checkServerHealth checks the health of a single server
-func (mc *MCPClient) checkServerHealth(ctx context.Context, serverURL string) {
+func (mc *MCPClient) checkServerHealth(ctx context.Context, alias string) {
 	checkCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.PollingTimeout)
 	defer cancel()
 
 	mc.mu.RLock()
-	client, exists := mc.clients[serverURL]
+	client, exists := mc.clients[alias]
 	mc.mu.RUnlock()
 
 	if !exists {
-		mc.Logger.Debug("server client not found for health check", "server", serverURL, "component", "mcp_client")
+		mc.Logger.Debug("server client not found for health check", "server", alias, "component", "mcp_client")
 		return
 	}
 
@@ -84,23 +84,23 @@ func (mc *MCPClient) checkServerHealth(ctx context.Context, serverURL string) {
 	if err != nil {
 		newStatus = ServerStatusUnavailable
 		if !mc.Config.MCP.DisableHealthcheckLogs {
-			mc.Logger.Debug("server health check failed", "server", serverURL, "error", err, "component", "mcp_client")
+			mc.Logger.Debug("server health check failed", "server", alias, "error", err, "component", "mcp_client")
 		}
 	} else if !mc.Config.MCP.DisableHealthcheckLogs {
-		mc.Logger.Debug("server health check passed", "server", serverURL, "component", "mcp_client")
+		mc.Logger.Debug("server health check passed", "server", alias, "component", "mcp_client")
 	}
 
 	mc.mu.Lock()
-	oldStatus := mc.serverStatuses[serverURL]
-	mc.serverStatuses[serverURL] = newStatus
+	oldStatus := mc.serverStatuses[alias]
+	mc.serverStatuses[alias] = newStatus
 	mc.mu.Unlock()
 
 	if oldStatus != newStatus {
-		mc.Logger.Info("server status changed", "server", serverURL, "oldStatus", string(oldStatus), "newStatus", string(newStatus), "component", "mcp_client")
+		mc.Logger.Info("server status changed", "server", alias, "oldStatus", string(oldStatus), "newStatus", string(newStatus), "component", "mcp_client")
 	}
 
 	if newStatus == ServerStatusUnavailable && oldStatus == ServerStatusAvailable && mc.Config.MCP.EnableReconnect {
-		mc.Logger.Info("server became unavailable, scheduling reconnection", "server", serverURL, "component", "mcp_client")
-		go mc.attemptServerReconnection(ctx, serverURL)
+		mc.Logger.Info("server became unavailable, scheduling reconnection", "server", alias, "component", "mcp_client")
+		go mc.attemptServerReconnection(ctx, alias)
 	}
 }

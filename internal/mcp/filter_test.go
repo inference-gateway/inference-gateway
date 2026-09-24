@@ -31,6 +31,8 @@ func TestNormalizeToolName(t *testing.T) {
 }
 
 func TestIsToolAllowed(t *testing.T) {
+	const alias = "deepwiki"
+
 	tests := []struct {
 		name        string
 		toolName    string
@@ -42,6 +44,36 @@ func TestIsToolAllowed(t *testing.T) {
 			name:     "no lists allows everything",
 			toolName: "read_file",
 			expected: true,
+		},
+		{
+			name:        "include list matches the namespaced name",
+			toolName:    "read_file",
+			includeList: "deepwiki_read_file",
+			expected:    true,
+		},
+		{
+			name:        "include list matches the namespaced name with the mcp prefix",
+			toolName:    "read_file",
+			includeList: "mcp_deepwiki_read_file",
+			expected:    true,
+		},
+		{
+			name:        "include list namespaced for another server blocks the tool",
+			toolName:    "read_file",
+			includeList: "other_read_file",
+			expected:    false,
+		},
+		{
+			name:        "exclude list matches the namespaced name",
+			toolName:    "read_file",
+			excludeList: "deepwiki_read_file",
+			expected:    false,
+		},
+		{
+			name:        "exclude list namespaced for another server keeps the tool",
+			toolName:    "read_file",
+			excludeList: "other_read_file",
+			expected:    true,
 		},
 		{
 			name:        "include list allows listed tool",
@@ -115,7 +147,7 @@ func TestIsToolAllowed(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, isToolAllowed(tt.toolName, tt.includeList, tt.excludeList))
+			assert.Equal(t, tt.expected, isToolAllowed(alias, tt.toolName, tt.includeList, tt.excludeList))
 		})
 	}
 }
@@ -180,7 +212,7 @@ func TestMCPClientFilterTools(t *testing.T) {
 				},
 			}
 
-			filtered := mc.filterTools(allTools)
+			filtered := mc.filterTools("deepwiki", allTools)
 			assert.Equal(t, tt.expected, toolNames(filtered))
 		})
 	}
