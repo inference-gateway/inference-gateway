@@ -4776,7 +4776,7 @@ components:
                 - name: mcp_servers
                   env: 'MCP_SERVERS'
                   type: string
-                  description: 'Comma-separated list of MCP servers as alias=url, e.g. deepwiki=https://mcp.deepwiki.com/mcp,http://mcp-time-server:8081/mcp. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$ and namespace the tools as mcp_<alias>_<tool>'
+                  description: 'Comma-separated list of MCP servers as alias=url, e.g. deepwiki=https://mcp.deepwiki.com/mcp,http://mcp-time-server:8081/mcp. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$, be unique, must not be the reserved alias tools, and namespace the tools as mcp_<alias>_<tool>'
                 - name: mcp_tool_mode
                   env: 'MCP_TOOL_MODE'
                   type: string
