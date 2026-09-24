@@ -55,8 +55,8 @@ type TelemetryConfig struct {
 // MCP configuration
 type MCPConfig struct {
 	Enabled                bool          `env:"ENABLED, default=false" description:"Enable MCP"`
-	Expose                 bool          `env:"EXPOSE, default=false" description:"Expose MCP tools endpoint"`
-	Servers                string        `env:"SERVERS" description:"List of MCP servers"`
+	Expose                 bool          `env:"EXPOSE, default=false" description:"Expose the gateway as an MCP server on POST /mcp (requires MCP_ENABLED)"`
+	Servers                string        `env:"SERVERS" description:"Comma-separated list of MCP servers as alias=url, e.g. deepwiki=https://mcp.deepwiki.com/mcp,http://mcp-time-server:8081/mcp. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$ and namespace the tools as mcp_<alias>_<tool>"`
 	ToolMode               string        `env:"TOOL_MODE, default=selector" description:"How MCP tools are exposed to the model. selector injects two meta-tools for discovery and dispatch; direct injects every tool schema"`
 	IncludeTools           string        `env:"INCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to inject. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS"`
 	ExcludeTools           string        `env:"EXCLUDE_TOOLS" description:"Comma-separated list of MCP tool names to skip injecting. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS"`

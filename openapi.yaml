@@ -20,6 +20,7 @@ servers:
     x-server-tags:
       - Health
       - Proxy
+      - MCP
   - url: http://localhost:8080/v1
     description: Default server with version prefix for listing models and chat completions
     x-server-tags:
@@ -55,7 +56,13 @@ tags:
   - name: Videos
     description: Generate videos using the OpenAI-compatible Videos API.
   - name: MCP
-    description: List and manage MCP tools.
+    description: |
+      Model Context Protocol surface. The gateway aggregates every server in
+      `MCP_SERVERS` behind a single JSON-RPC endpoint at `POST /mcp`, so an MCP
+      client configures one entry and gets the whole fleet.
+
+      Tools are namespaced `mcp_<server alias>_<tool name>` - see the
+      `MCPJSONRPCRequest` schema for the naming rules.
   - name: Proxy
     description: Proxy requests to provider endpoints.
   - name: Metrics
@@ -437,6 +444,80 @@ paths:
           $ref: '#/components/responses/MessagesNotSupported'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /mcp:
+    post:
+      operationId: mcpJsonRpc
+      tags:
+        - MCP
+      description: |
+        JSON-RPC 2.0 endpoint exposing the gateway itself as an MCP server. It
+        aggregates every server configured in `MCP_SERVERS` behind one URL, so
+        MCP clients (opencode, `infer`, IDE assistants) configure a single entry
+        and get the whole fleet, with the gateway's auth, metrics and guardrails
+        applied to every tool call.
+
+        The endpoint lives at the root, not under `/v1` - `/v1/*` is the
+        OpenAI-compatible surface, MCP is its own protocol and clients expect a
+        plain `/mcp`.
+
+        Gated by `MCP_EXPOSE=true` (and `MCP_ENABLED=true`); otherwise the
+        gateway answers `403`. Gateway auth is global, so when `AUTH_ENABLE=true`
+        this endpoint requires a bearer token like every other route except
+        `/health`.
+
+        Supported methods:
+
+        | Method | Params | Result |
+        | --- | --- | --- |
+        | `initialize` | `protocolVersion`, `capabilities`, `clientInfo` (`Implementation`) | `protocolVersion`, `capabilities` (`ServerCapabilities`, `tools.listChanged`), `serverInfo` (`Implementation`) |
+        | `notifications/initialized` | none | none - it is a JSON-RPC notification, sent without `id`, answered with `202` and an empty body |
+        | `tools/list` | optional `cursor` | `ListToolsResult` - the aggregated, namespaced tools of every healthy MCP server |
+        | `tools/call` | `CallToolRequestParams` (`name`, `arguments`) | `CallToolResult` |
+
+        Param and result shapes are the vendored MCP spec types in
+        [`mcp/mcp-schema.yaml`](https://github.com/inference-gateway/schemas/blob/main/mcp/mcp-schema.yaml)
+        (`Implementation`, `ServerCapabilities`, `ListToolsResult`,
+        `CallToolRequestParams`, `CallToolResult`); this spec only describes the
+        JSON-RPC envelopes the gateway puts them in.
+
+        `tools/list` tolerates partial availability: when one of the configured
+        MCP servers is unreachable its tools are omitted and the healthy servers'
+        tools are still returned, rather than failing the whole call. A
+        `tools/call` routed to an unavailable server fails with JSON-RPC error
+        code `-32603`.
+
+        Errors use the standard JSON-RPC codes - `-32700` parse error,
+        `-32600` invalid request, `-32601` method not found (unknown method),
+        `-32602` invalid params (unknown tool name, bad arguments), `-32603`
+        internal error (upstream MCP server failure). They are returned with
+        HTTP `200` and a JSON-RPC error envelope; transport-level failures
+        (auth, feature flag) use HTTP status codes instead.
+      summary: JSON-RPC 2.0 endpoint for the gateway's MCP server
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: A single JSON-RPC 2.0 request or notification
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MCPJSONRPCRequest'
+      responses:
+        '200':
+          description: |
+            JSON-RPC response envelope, carrying either a `result` or an `error`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPJSONRPCResponse'
+        '202':
+          description: Notification accepted; no response body
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/MCPNotExposed'
         '500':
           $ref: '#/components/responses/InternalError'
   /mcp/tools:
@@ -1190,13 +1271,15 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
     MCPNotExposed:
-      description: MCP tools endpoint is not exposed
+      description: |
+        The MCP surface is not exposed. Both `MCP_ENABLED=true` and
+        `MCP_EXPOSE=true` are required.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
           example:
-            error: 'MCP tools endpoint is not exposed. Set EXPOSE_MCP=true to enable.'
+            error: 'MCP endpoint is not exposed. Set MCP_EXPOSE=true to enable.'
     ResponsesNotSupported:
       description: |
         The selected provider does not implement the Responses API. The
@@ -2033,6 +2116,108 @@ components:
       required:
         - object
         - data
+    MCPJSONRPCRequest:
+      type: object
+      description: |
+        A JSON-RPC 2.0 request or notification sent to `POST /mcp`. Omit `id` to
+        send a notification (`notifications/initialized`).
+
+        `params` and the corresponding `result` follow the vendored MCP spec
+        types in `mcp/mcp-schema.yaml`: `initialize` takes `protocolVersion`,
+        `capabilities` and `clientInfo`; `tools/list` takes an optional `cursor`;
+        `tools/call` takes `CallToolRequestParams`.
+
+        Tool names are namespaced `mcp_<server alias>_<tool name>`, e.g.
+        `mcp_deepwiki_ask_question`. The alias comes from the `alias=url` syntax
+        in `MCP_SERVERS` and is derived from the URL host when omitted; it must
+        match `^[a-z0-9_-]+$` so the resulting tool name stays valid across all
+        LLM providers. The same namespacing applies to the tools injected into
+        `/v1/chat/completions`. `mcp_tools_get` and `mcp_tools_execute` are
+        reserved for the gateway's own selector meta-tools and cannot be used by
+        a configured server.
+      properties:
+        jsonrpc:
+          type: string
+          const: '2.0'
+          description: JSON-RPC protocol version, always "2.0"
+          example: '2.0'
+        id:
+          description: |
+            Request identifier echoed back in the response. Absent for
+            notifications.
+          oneOf:
+            - type: string
+            - type: integer
+          example: 1
+        method:
+          type: string
+          description: The MCP method to invoke
+          enum:
+            - initialize
+            - notifications/initialized
+            - tools/list
+            - tools/call
+          example: 'tools/call'
+        params:
+          type: object
+          additionalProperties: true
+          description: Method parameters, as defined by the MCP specification
+          example:
+            name: 'mcp_deepwiki_ask_question'
+            arguments:
+              repoName: 'inference-gateway/inference-gateway'
+              question: 'How is MCP wired up?'
+      required:
+        - jsonrpc
+        - method
+    MCPJSONRPCResponse:
+      type: object
+      description: |
+        A JSON-RPC 2.0 response envelope. Exactly one of `result` or `error` is
+        present. `result` carries the MCP result type for the requested method
+        (`ListToolsResult` for `tools/list`, `CallToolResult` for `tools/call`)
+        as defined in `mcp/mcp-schema.yaml`.
+      properties:
+        jsonrpc:
+          type: string
+          const: '2.0'
+          description: JSON-RPC protocol version, always "2.0"
+          example: '2.0'
+        id:
+          description: The `id` of the request this responds to
+          oneOf:
+            - type: string
+            - type: integer
+          example: 1
+        result:
+          type: object
+          additionalProperties: true
+          description: The method result, present on success
+        error:
+          $ref: '#/components/schemas/MCPJSONRPCError'
+      required:
+        - jsonrpc
+        - id
+    MCPJSONRPCError:
+      type: object
+      description: A JSON-RPC 2.0 error object
+      properties:
+        code:
+          type: integer
+          description: |
+            JSON-RPC error code: `-32700` parse error, `-32600` invalid request,
+            `-32601` method not found, `-32602` invalid params, `-32603` internal
+            error (including upstream MCP server failures).
+          example: -32602
+        message:
+          type: string
+          description: Short description of the error
+          example: 'unknown tool: mcp_deepwiki_missing_tool'
+        data:
+          description: Optional additional error detail
+      required:
+        - code
+        - message
     ListToolsResponse:
       type: object
       description: Response structure for listing MCP tools
@@ -4515,11 +4700,11 @@ components:
                   env: 'MCP_EXPOSE'
                   type: bool
                   default: 'false'
-                  description: 'Expose MCP tools endpoint'
+                  description: 'Expose the gateway as an MCP server on POST /mcp (requires MCP_ENABLED)'
                 - name: mcp_servers
                   env: 'MCP_SERVERS'
                   type: string
-                  description: 'List of MCP servers'
+                  description: 'Comma-separated list of MCP servers as alias=url, e.g. deepwiki=https://mcp.deepwiki.com/mcp,http://mcp-time-server:8081/mcp. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$ and namespace the tools as mcp_<alias>_<tool>'
                 - name: mcp_tool_mode
                   env: 'MCP_TOOL_MODE'
                   type: string
