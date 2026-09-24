@@ -73,8 +73,6 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 		c.JSON(http.StatusForbidden, ErrorResponse{Error: errMsgMCPNotExposed})
 		return
 	}
-	// MCP clients are not browsers, so any Origin is one this endpoint does not
-	// trust - rejecting them all closes DNS rebinding without an allowlist.
 	if origin := c.GetHeader(headerOrigin); origin != "" {
 		router.logger.Error("mcp request with an origin header rejected", nil, "origin", origin)
 		c.JSON(http.StatusForbidden, ErrorResponse{Error: errMsgMCPOrigin})
