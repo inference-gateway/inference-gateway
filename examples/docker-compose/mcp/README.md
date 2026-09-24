@@ -43,7 +43,8 @@ it must be set there rather than only exported in your shell.
 
 ### Test and Troubleshoot
 
-Use the MCP Inspector at `http://localhost:6274` to explore servers, test tools, and troubleshoot any issues.
+Use the MCP Inspector to explore the gateway's tools, run them, and troubleshoot any issues. Open the URL it
+prints on startup (`docker compose logs mcp-inspector`) - it carries the session token.
 
 ## Components
 
@@ -56,7 +57,8 @@ Use the MCP Inspector at `http://localhost:6274` to explore servers, test tools,
 
 ## MCP Inspector
 
-Debug and explore your MCP servers with the web interface at `http://localhost:6274`.
+Debug and explore your MCP servers with the web interface on `http://localhost:6274`, using the tokenized URL
+from `docker compose logs mcp-inspector`. Its ports are published on `127.0.0.1` only.
 
 **Capabilities:**
 
@@ -67,15 +69,12 @@ Debug and explore your MCP servers with the web interface at `http://localhost:6
 
 **Connected Server:**
 
-The Inspector is pointed at the gateway's own MCP endpoint,
+The Inspector is launched against the gateway's own MCP endpoint,
 `http://inference-gateway:8080/mcp`, so it sees the tools of all four backend
-servers at once. To debug a single backend server instead, enter its URL in the
-Inspector:
-
-- Time Server: `http://mcp-time-server:8081/mcp`
-- Search Server: `http://mcp-search-server:8082/mcp`
-- Filesystem Server: `http://mcp-filesystem-server:8083/mcp`
-- Pizza Server: `http://mcp-pizza-server:8084/mcp`
+servers at once. The endpoint speaks MCP `2026-07-28` only, so the Inspector runs
+with `--protocol-era modern` (its default is `legacy`). Connect the server card and
+the Tools view lists every `mcp_<alias>_<tool>`. The server list is read-only,
+because it comes from the launch flags in `docker-compose.yml`.
 
 ## Usage
 
