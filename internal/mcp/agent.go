@@ -13,8 +13,8 @@ import (
 	trace "go.opentelemetry.io/otel/trace"
 
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
-	logger "github.com/inference-gateway/inference-gateway/logger"
-	otel "github.com/inference-gateway/inference-gateway/otel"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
+	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )

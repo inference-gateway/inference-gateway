@@ -4,8 +4,6 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY config ./config
-COPY logger ./logger
-COPY otel ./otel
 COPY cmd ./cmd
 COPY api ./api
 COPY providers ./providers

@@ -7,7 +7,7 @@ import (
 	require "github.com/stretchr/testify/require"
 
 	config "github.com/inference-gateway/inference-gateway/config"
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
 func TestParseServers(t *testing.T) {

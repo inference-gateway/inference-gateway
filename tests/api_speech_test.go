@@ -20,8 +20,8 @@ import (
 
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
-	logger "github.com/inference-gateway/inference-gateway/logger"
 )
 
 func enableAudio(c *config.Config) { c.AudioEnabled = true }

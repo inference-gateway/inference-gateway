@@ -1,4 +1,4 @@
-//go:generate mockgen -source=otel.go -destination=../tests/mocks/otel.go -package=mocks
+//go:generate mockgen -source=otel.go -destination=../../../tests/mocks/otel.go -package=mocks
 package otel
 
 import (
@@ -20,7 +20,7 @@ import (
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 
 	config "github.com/inference-gateway/inference-gateway/config"
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
 // SourceGateway is the source attribute value for metrics recorded by the

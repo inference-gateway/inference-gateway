@@ -29,7 +29,7 @@ import (
 	"sync"
 	"time"
 
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
 const (

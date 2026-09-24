@@ -18,8 +18,8 @@ import (
 
 	rego "github.com/open-policy-agent/opa/v1/rego"
 
-	logger "github.com/inference-gateway/inference-gateway/logger"
-	otel "github.com/inference-gateway/inference-gateway/otel"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
+	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 

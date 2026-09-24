@@ -16,7 +16,7 @@ import (
 
 	require "github.com/stretchr/testify/require"
 
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
 func testEngine(t *testing.T, cfg Config) *Engine {

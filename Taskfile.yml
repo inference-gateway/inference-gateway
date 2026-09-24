@@ -40,7 +40,7 @@ tasks:
       - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0 --config=.oapi-codegen.mcp.yaml -o internal/mcp/generated_types.go internal/mcp/mcp-schema.openapi.yaml
       - gofmt -r 'interface{} -> any' -w internal/mcp/generated_types.go
       - rm -f internal/mcp/mcp-schema.openapi.yaml
-      - go generate ./providers/... ./api/... ./otel/... ./logger/... ./internal/mcp/...
+      - go generate ./providers/... ./api/... ./internal/...
       - task: format
       - echo "✅ Codegen completed successfully!"
 

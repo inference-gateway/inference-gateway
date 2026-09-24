@@ -17,7 +17,7 @@ import (
 
 	gin "github.com/gin-gonic/gin"
 
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	transformers "github.com/inference-gateway/inference-gateway/providers/transformers"

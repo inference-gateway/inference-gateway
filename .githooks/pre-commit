@@ -39,7 +39,7 @@ fi
 # --- Regenerate generated files and check for dirty tree ---
 if [ -n "$staged_go" ]; then
   echo "  go generate (regenerate mocks)"
-  go generate ./otel/... ./api/... ./logger/... ./internal/mcp/... ./providers/...
+  go generate ./internal/... ./api/... ./providers/...
   if ! git diff --quiet -- '*.go'; then
     echo "ERROR: Generated Go files are out of date. Run 'go generate ./...' and commit the result."
     git diff --name-only -- '*.go'

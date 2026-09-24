@@ -6,11 +6,15 @@ import (
 
 	zap "go.uber.org/zap"
 	zapcore "go.uber.org/zap/zapcore"
-
-	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )
 
-//go:generate mockgen -source=logger.go -destination=../tests/mocks/logger.go -package=mocks
+// EnvironmentDevelopment is the ENVIRONMENT value that switches the logger to
+// human-readable development output. Declared here so platform code does not
+// depend on a domain package; providers/constants holds the same value for
+// domain callers.
+const EnvironmentDevelopment = "development"
+
+//go:generate mockgen -source=logger.go -destination=../../../tests/mocks/logger.go -package=mocks
 type Logger interface {
 	Info(message string, fields ...any)
 	Debug(message string, fields ...any)
@@ -54,7 +58,7 @@ func NewLogger(env string) (Logger, error) {
 	}
 
 	var cfg zap.Config
-	if env == constants.EnvironmentDevelopment {
+	if env == EnvironmentDevelopment {
 		cfg = zap.NewDevelopmentConfig()
 	} else {
 		cfg = zap.NewProductionConfig()
@@ -77,7 +81,7 @@ func (l *LoggerZapImpl) Info(message string, fields ...any) {
 }
 
 func (l *LoggerZapImpl) Debug(message string, fields ...any) {
-	if l.env == constants.EnvironmentDevelopment {
+	if l.env == EnvironmentDevelopment {
 		l.logger.Debug(message, parseFields(fields...)...)
 	}
 }

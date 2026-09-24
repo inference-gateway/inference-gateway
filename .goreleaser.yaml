@@ -8,7 +8,7 @@ before:
   hooks:
     - go install go.uber.org/mock/mockgen@v0.6.0
     - go mod tidy
-    - go generate ./providers/... ./api/... ./otel/...
+    - go generate ./providers/... ./api/... ./internal/...
 
 builds:
   - id: inference-gateway

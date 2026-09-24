@@ -43,7 +43,7 @@ Config is env-only: `config/load.go` fills the generated `config.Config` via `go
 - **Import order** is enforced by the `gci` formatter (see `.golangci.yml`): standard library, `github.com/stretchr/testify` + `go.uber.org/mock`, `tests/mocks`, third-party (`default`), `github.com/inference-gateway/*`, then this module. Fix locally with `golangci-lint fmt`. Every non-standard-library import must be named after its last path element (`gin "github.com/gin-gonic/gin"`), enforced by `importas`; pin an alias in `.golangci.yml` only when two packages would collide. Fix with `golangci-lint run --fix`.
 - **Releases are automated** — never create tags/releases, publish packages, edit `CHANGELOG.md`, or bump versions manually.
 - **No magic numbers/strings** — name meaningful literals as consts (see `internal/guardrails`) and reference them everywhere, including tests.
-- **Tests** live next to the package or in `tests/`; mocks are committed under `tests/mocks/` (`mockgen` via `//go:generate`); after changing a mocked interface, `go generate ./providers/... ./api/... ./otel/... ./logger/... ./internal/mcp/...` refreshes just the mocks.
+- **Tests** live next to the package or in `tests/`; mocks are committed under `tests/mocks/` (`mockgen` via `//go:generate`); after changing a mocked interface, `go generate ./providers/... ./api/... ./internal/...` refreshes just the mocks.
 - **Pre-commit** (`task pre-commit:install`) is the source of truth for "PR-ready".
 
 ## Security
