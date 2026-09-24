@@ -20,8 +20,8 @@ import (
 
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
-	logger "github.com/inference-gateway/inference-gateway/logger"
-	otel "github.com/inference-gateway/inference-gateway/otel"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
+	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 )
 
 func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, telemetry otel.OpenTelemetry) *gin.Engine {

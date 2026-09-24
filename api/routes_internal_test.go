@@ -13,7 +13,7 @@ import (
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"

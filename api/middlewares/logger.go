@@ -6,7 +6,7 @@ import (
 
 	gin "github.com/gin-gonic/gin"
 
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
 type LoggerMiddleware struct {

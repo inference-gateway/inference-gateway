@@ -9,7 +9,7 @@ import (
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )
 

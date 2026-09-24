@@ -57,7 +57,7 @@ jobs:
         run: go mod tidy
 
       - name: Run generate
-        run: go generate ./providers/... ./api/... ./otel/...
+        run: go generate ./providers/... ./api/... ./internal/...
 
       - name: Check dirty
         run: git diff --exit-code

@@ -15,7 +15,7 @@ import (
 	propagation "go.opentelemetry.io/otel/propagation"
 	trace "go.opentelemetry.io/otel/sdk/trace"
 
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
 const (

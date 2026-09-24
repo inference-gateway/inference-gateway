@@ -10,7 +10,7 @@ import (
 	require "github.com/stretchr/testify/require"
 
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
 const (

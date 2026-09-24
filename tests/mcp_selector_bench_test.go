@@ -7,7 +7,7 @@ import (
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 

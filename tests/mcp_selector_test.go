@@ -12,7 +12,7 @@ import (
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
 
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
-	logger "github.com/inference-gateway/inference-gateway/logger"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
