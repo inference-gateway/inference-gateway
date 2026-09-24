@@ -85,13 +85,18 @@ func (mc *MCPClient) listTools(ctx context.Context, serverURL string) ([]Tool, e
 	}
 }
 
-// callTool runs a tool on a server under its bare name.
+// callTool runs a tool on a server under its bare name. arguments is always
+// sent, as {} when there are none: the generated CallToolRequestParams would
+// omit it, and some servers fail to decode a call without it.
 func (mc *MCPClient) callTool(ctx context.Context, serverURL, name string, arguments map[string]any) (*CallToolResult, error) {
-	req := CallToolRequest{
+	if arguments == nil {
+		arguments = make(map[string]any)
+	}
+	req := JSONRPCRequest{
 		ID:      rpcRequestID,
-		Jsonrpc: CallToolRequestJsonrpcN20,
-		Method:  ToolsCall,
-		Params:  CallToolRequestParams{UnderscoreMeta: requestMeta(), Name: name, Arguments: arguments},
+		Jsonrpc: JSONRPCRequestJsonrpcN20,
+		Method:  string(ToolsCall),
+		Params:  map[string]any{"_meta": requestMeta(), "name": name, "arguments": arguments},
 	}
 	var result CallToolResult
 	if err := mc.rpc(ctx, serverURL, string(ToolsCall), name, req, &result); err != nil {

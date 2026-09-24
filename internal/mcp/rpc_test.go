@@ -28,9 +28,10 @@ type rpcTestRequest struct {
 	ID     any    `json:"id"`
 	Method string `json:"method"`
 	Params struct {
-		Meta   RequestMetaObject `json:"_meta"`
-		Cursor *string           `json:"cursor"`
-		Name   string            `json:"name"`
+		Meta      RequestMetaObject `json:"_meta"`
+		Cursor    *string           `json:"cursor"`
+		Name      string            `json:"name"`
+		Arguments *map[string]any   `json:"arguments"`
 	} `json:"params"`
 }
 
@@ -56,7 +57,8 @@ func writeRPCResult(t *testing.T, w http.ResponseWriter, id any, result any) {
 
 // TestRPCRequestMetadata asserts every request is a stateless 2026-07-28
 // request: version in _meta and headers, the gateway as clientInfo, the trace
-// context propagated, and no credentials.
+// context propagated, and no credentials. A call without arguments still sends
+// an empty arguments object.
 func TestRPCRequestMetadata(t *testing.T) {
 	otelapi.SetTracerProvider(trace.NewTracerProvider())
 	otelapi.SetTextMapPropagator(propagation.TraceContext{})
@@ -69,6 +71,7 @@ func TestRPCRequestMetadata(t *testing.T) {
 		assert.Empty(t, r.Header.Get("Authorization"))
 		assert.Equal(t, ProtocolVersion, req.Params.Meta.IoModelcontextprotocolProtocolVersion)
 		assert.Equal(t, &GatewayInfo, req.Params.Meta.IoModelcontextprotocolClientInfo)
+		assert.NotNil(t, req.Params.Arguments, "arguments must be sent even when empty")
 		writeRPCResult(t, w, req.ID, map[string]any{"resultType": ResultTypeComplete, "content": []any{}})
 	})
 
