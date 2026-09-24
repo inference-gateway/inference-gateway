@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"slices"
 	"strings"
 
 	gin "github.com/gin-gonic/gin"
@@ -281,6 +282,14 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 		router.respondMCPError(c, req, jsonRPCInvalidParams, "unknown tool: "+name)
 		return
 	}
+	// ResolveTool falls back to the longest matching alias for a name it never
+	// discovered; /mcp only serves the tools tools/list advertised.
+	serverTools, _ := router.mcpClient.GetServerTools(alias)
+	if !slices.ContainsFunc(serverTools, func(tool mcp.Tool) bool { return tool.Name == toolName }) {
+		router.logger.Error("mcp tool call for a tool the server never listed", nil, "tool", name, "server", alias)
+		router.respondMCPError(c, req, jsonRPCInvalidParams, "unknown tool: "+name)
+		return
+	}
 	if !mcp.IsToolAllowed(alias, toolName, router.cfg.MCP.IncludeTools, router.cfg.MCP.ExcludeTools) {
 		router.logger.Error("mcp tool call rejected by include/exclude config", nil, "tool", name, "server", alias)
 		router.respondMCPError(c, req, jsonRPCInvalidParams, "unknown tool: "+name)
@@ -303,8 +312,9 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 		Params: map[string]any{"name": toolName, "arguments": arguments},
 	}, alias)
 	if err != nil {
+		// The upstream error can name internal hosts, so it stays in the log.
 		router.logger.Error("mcp tool call failed", err, "tool", toolName, "server", alias)
-		router.respondMCPError(c, req, jsonRPCInternalError, err.Error())
+		router.respondMCPError(c, req, jsonRPCInternalError, "mcp server "+alias+" failed")
 		return
 	}
 	if result == nil {

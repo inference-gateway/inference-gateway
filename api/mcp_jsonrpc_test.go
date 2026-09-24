@@ -392,6 +392,8 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		mcpClient := mcpmocks.NewMockMCPClientInterface(ctrl)
 		mcpClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+		mcpClient.EXPECT().GetServerTools(timeAlias).Return([]mcp.Tool{{Name: getTimeTool}}, nil).AnyTimes()
+		mcpClient.EXPECT().GetServerTools(weatherAlias).Return([]mcp.Tool{{Name: forecastTool}}, nil).AnyTimes()
 		setup(mcpClient)
 		cfg := mcpEnabledConfig()
 		cfg.MCP.ExcludeTools = excludeList
@@ -432,6 +434,15 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 		assertJSONRPCError(t, w, http.StatusOK, jsonRPCInvalidParams)
 	})
 
+	t.Run("tool the server never listed is invalid params", func(t *testing.T) {
+		e := engine(t, func(m *mcpmocks.MockMCPClientInterface) {
+			m.EXPECT().ResolveTool(gomock.Any()).Return(timeAlias, "nope", nil)
+		}, "")
+
+		w := postMCP(t, e, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp_time_nope"}}`)
+		assertJSONRPCError(t, w, http.StatusOK, jsonRPCInvalidParams)
+	})
+
 	t.Run("excluded tool is not callable", func(t *testing.T) {
 		e := engine(t, func(m *mcpmocks.MockMCPClientInterface) {
 			m.EXPECT().ResolveTool(nsForecastTool).Return(weatherAlias, forecastTool, nil)
@@ -460,7 +471,8 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 
 		w := postMCP(t, e, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"`+nsGetTimeTool+`"}}`)
 		body := assertJSONRPCError(t, w, http.StatusOK, jsonRPCInternalError)
-		assert.Contains(t, body.Error.Message, upstreamFailureMsg)
+		assert.Equal(t, "mcp server "+timeAlias+" failed", body.Error.Message)
+		assert.NotContains(t, body.Error.Message, upstreamFailureMsg)
 	})
 
 	t.Run("without a client it is an internal error", func(t *testing.T) {
