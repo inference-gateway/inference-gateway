@@ -110,6 +110,8 @@ tasks:
     desc: 'Deploy the Inference Gateway with MCP configuration via the operator'
     cmds:
       - kubectl apply -f gateway.yaml
+      - kubectl -n {{.NAMESPACE}} wait --for=create deployment/{{.RELEASE_NAME}} --timeout=60s
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/{{.RELEASE_NAME}} --timeout=180s
       - echo "🚪 Inference Gateway with MCP deployed successfully!"
       - echo "ℹ️  Add your provider API keys to the inference-gateway-secrets Secret in gateway.yaml."
 
