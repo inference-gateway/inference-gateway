@@ -113,9 +113,10 @@ tasks:
       - curl -fsSL -o openapi.yaml "https://raw.githubusercontent.com/inference-gateway/schemas/{{.SCHEMAS_REF | default "refs/heads/main"}}/openapi.yaml"
 
   oas-sync:
-    desc: 'Fetch the OpenAPI spec (pin with SCHEMAS_REF) and regenerate the gateway'
+    desc: 'Fetch the OpenAPI spec and MCP schema (pin with SCHEMAS_REF) and regenerate the gateway'
     cmds:
       - task: oas-download
+      - task: mcp:schema:download
       - task: generate
 
   test:
