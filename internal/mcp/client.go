@@ -3,9 +3,8 @@ package mcp
 import (
 	"context"
 	"errors"
+	"net/http"
 	"sync"
-
-	golang "github.com/metoro-io/mcp-golang"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -39,7 +38,7 @@ const (
 //
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/mcp/client.go -package=mcpmocks -typed
 type MCPClientInterface interface {
-	// InitializeAll establishes connection with MCP servers and performs handshake
+	// InitializeAll discovers every MCP server's tools; 2026-07-28 has no handshake
 	InitializeAll(ctx context.Context) error
 
 	// IsInitialized returns whether the client has been successfully initialized
@@ -91,7 +90,7 @@ type MCPClient struct {
 	Logger              logger.Logger
 	Config              config.Config
 	mu                  sync.RWMutex
-	clients             map[string]*golang.Client
+	httpClient          *http.Client
 	serverTools         map[string][]Tool
 	chatCompletionTools []types.ChatCompletionTool
 	initialized         bool

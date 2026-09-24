@@ -2,26 +2,28 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// ExecuteTool implements MCPClientInterface.
+// ExecuteTool implements MCPClientInterface. The result keeps everything the
+// server returned: isError, structuredContent and every content type.
 func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverAlias string) (*CallToolResult, error) {
 	mc.mu.RLock()
 	initialized := mc.initialized
-	client, exists := mc.clients[serverAlias]
+	_, exists := mc.serverTools[serverAlias]
 	mc.mu.RUnlock()
 
 	if !initialized {
 		return nil, ErrClientNotInitialized
 	}
 
-	if !exists {
+	server, ok := mc.serverSpec(serverAlias)
+	if !exists || !ok {
 		return nil, ErrServerNotFound
 	}
 
@@ -29,34 +31,9 @@ func (mc *MCPClient) ExecuteTool(ctx context.Context, request Request, serverAli
 	if !ok {
 		return nil, fmt.Errorf("tool request is missing a string 'name' parameter")
 	}
-	toolArgs := request.Params["arguments"]
+	arguments, _ := request.Params["arguments"].(map[string]any)
 
-	result, err := client.CallTool(ctx, toolName, toolArgs)
-	if err != nil {
-		return nil, err
-	}
-
-	response := CallToolResult{
-		Content: make([]ContentBlock, len(result.Content)),
-	}
-
-	for i, content := range result.Content {
-		contentBytes, err := json.Marshal(content)
-		if err != nil {
-			mc.Logger.Error("Failed to marshal content", err)
-			continue
-		}
-
-		var contentMap map[string]any
-		if err = json.Unmarshal(contentBytes, &contentMap); err != nil {
-			mc.Logger.Error("Failed to unmarshal content", err)
-			continue
-		}
-
-		response.Content[i] = contentMap
-	}
-
-	return &response, nil
+	return mc.callTool(ctx, server.URL, toolName, arguments)
 }
 
 func (mc *MCPClient) GetServers() []string {
@@ -67,12 +44,7 @@ func (mc *MCPClient) GetServers() []string {
 		return nil
 	}
 
-	servers := make([]string, 0, len(mc.clients))
-	for alias := range mc.clients {
-		servers = append(servers, alias)
-	}
-	slices.Sort(servers)
-	return servers
+	return slices.Sorted(maps.Keys(mc.serverTools))
 }
 
 func (mc *MCPClient) GetServerTools(serverAlias string) ([]Tool, error) {

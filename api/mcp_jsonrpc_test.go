@@ -75,18 +75,18 @@ func postMCP(t *testing.T, engine *gin.Engine, body string) *httptest.ResponseRe
 		params = make(map[string]any)
 	}
 	params["_meta"] = map[string]any{
-		metaProtocolVersion: mcpProtocolVersion,
+		metaProtocolVersion: mcp.ProtocolVersion,
 		metaClientInfo:      map[string]any{"name": "test", "version": "1.0.0"},
 		metaClientCaps:      map[string]any{},
 	}
 	msg["params"] = params
 
 	header := http.Header{}
-	header.Set(headerMCPProtocolVersion, mcpProtocolVersion)
+	header.Set(mcp.HeaderProtocolVersion, mcp.ProtocolVersion)
 	method, _ := msg["method"].(string)
-	header.Set(headerMCPMethod, method)
+	header.Set(mcp.HeaderMethod, method)
 	if name, ok := params["name"].(string); ok {
-		header.Set(headerMCPName, name)
+		header.Set(mcp.HeaderName, name)
 	}
 
 	raw, err := json.Marshal(msg)
@@ -163,12 +163,12 @@ func TestMCPJSONRPCHandler_Discover(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	require.Nil(t, resp.Error)
 	assert.JSONEq(t, `1`, string(resp.ID))
-	assert.Equal(t, []any{mcpProtocolVersion}, resp.Result["supportedVersions"])
+	assert.Equal(t, []any{mcp.ProtocolVersion}, resp.Result["supportedVersions"])
 	assert.Equal(t, map[string]any{"tools": map[string]any{"listChanged": false}}, resp.Result["capabilities"])
-	assert.Equal(t, resultTypeComplete, resp.Result["resultType"])
+	assert.Equal(t, mcp.ResultTypeComplete, resp.Result["resultType"])
 	assert.Equal(t, string(mcp.DiscoverResultCacheScopePrivate), resp.Result["cacheScope"])
 	assert.Contains(t, resp.Result, "ttlMs")
-	assert.Equal(t, map[string]any{metaServerInfo: map[string]any{"name": mcpServerName, "version": Version}}, resp.Result["_meta"])
+	assert.Equal(t, map[string]any{metaServerInfo: map[string]any{"name": mcp.GatewayInfo.Name, "version": mcp.GatewayInfo.Version}}, resp.Result["_meta"])
 }
 
 // TestMCPJSONRPCHandler_RequestMetadata pins the 2026-07-28 request metadata
@@ -194,50 +194,50 @@ func TestMCPJSONRPCHandler_RequestMetadata(t *testing.T) {
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
-			name: "missing protocol version header", method: string(types.ToolsList), metaVersion: mcpProtocolVersion,
-			header:     map[string]string{headerMCPMethod: string(types.ToolsList)},
+			name: "missing protocol version header", method: string(types.ToolsList), metaVersion: mcp.ProtocolVersion,
+			header:     map[string]string{mcp.HeaderMethod: string(types.ToolsList)},
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
 			name: "unsupported version", method: string(types.ToolsList), metaVersion: legacyVersion,
-			header:     map[string]string{headerMCPProtocolVersion: legacyVersion, headerMCPMethod: string(types.ToolsList)},
+			header:     map[string]string{mcp.HeaderProtocolVersion: legacyVersion, mcp.HeaderMethod: string(types.ToolsList)},
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCUnsupportedVersion,
-			wantData: map[string]any{"requested": legacyVersion, "supported": []any{mcpProtocolVersion}},
+			wantData: map[string]any{"requested": legacyVersion, "supported": []any{mcp.ProtocolVersion}},
 		},
 		{
 			name: "header disagrees with _meta", method: string(types.ToolsList), metaVersion: legacyVersion,
-			header:     map[string]string{headerMCPProtocolVersion: mcpProtocolVersion, headerMCPMethod: string(types.ToolsList)},
+			header:     map[string]string{mcp.HeaderProtocolVersion: mcp.ProtocolVersion, mcp.HeaderMethod: string(types.ToolsList)},
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
 			name: "missing _meta", method: string(types.ToolsList),
-			header:     map[string]string{headerMCPProtocolVersion: mcpProtocolVersion, headerMCPMethod: string(types.ToolsList)},
+			header:     map[string]string{mcp.HeaderProtocolVersion: mcp.ProtocolVersion, mcp.HeaderMethod: string(types.ToolsList)},
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
-			name: "method header disagrees with body", method: string(types.ToolsList), metaVersion: mcpProtocolVersion,
-			header:     map[string]string{headerMCPProtocolVersion: mcpProtocolVersion, headerMCPMethod: string(types.ToolsCall)},
+			name: "method header disagrees with body", method: string(types.ToolsList), metaVersion: mcp.ProtocolVersion,
+			header:     map[string]string{mcp.HeaderProtocolVersion: mcp.ProtocolVersion, mcp.HeaderMethod: string(types.ToolsCall)},
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
-			name: "tools/call without Mcp-Name", method: string(types.ToolsCall), params: toolParams, metaVersion: mcpProtocolVersion,
-			header:     map[string]string{headerMCPProtocolVersion: mcpProtocolVersion, headerMCPMethod: string(types.ToolsCall)},
+			name: "tools/call without Mcp-Name", method: string(types.ToolsCall), params: toolParams, metaVersion: mcp.ProtocolVersion,
+			header:     map[string]string{mcp.HeaderProtocolVersion: mcp.ProtocolVersion, mcp.HeaderMethod: string(types.ToolsCall)},
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
-			name: "tools/call with a different Mcp-Name", method: string(types.ToolsCall), params: toolParams, metaVersion: mcpProtocolVersion,
-			header:     map[string]string{headerMCPProtocolVersion: mcpProtocolVersion, headerMCPMethod: string(types.ToolsCall), headerMCPName: nsForecastTool},
+			name: "tools/call with a different Mcp-Name", method: string(types.ToolsCall), params: toolParams, metaVersion: mcp.ProtocolVersion,
+			header:     map[string]string{mcp.HeaderProtocolVersion: mcp.ProtocolVersion, mcp.HeaderMethod: string(types.ToolsCall), mcp.HeaderName: nsForecastTool},
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
-			name: "tools/call with malformed base64 Mcp-Name", method: string(types.ToolsCall), params: toolParams, metaVersion: mcpProtocolVersion,
-			header:     map[string]string{headerMCPProtocolVersion: mcpProtocolVersion, headerMCPMethod: string(types.ToolsCall), headerMCPName: base64HeaderPrefix + "!!!" + base64HeaderSuffix},
+			name: "tools/call with malformed base64 Mcp-Name", method: string(types.ToolsCall), params: toolParams, metaVersion: mcp.ProtocolVersion,
+			header:     map[string]string{mcp.HeaderProtocolVersion: mcp.ProtocolVersion, mcp.HeaderMethod: string(types.ToolsCall), mcp.HeaderName: base64HeaderPrefix + "!!!" + base64HeaderSuffix},
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
 			// Passing validation lands in tools/call, which has no client here.
-			name: "tools/call with base64 Mcp-Name passes validation", method: string(types.ToolsCall), params: toolParams, metaVersion: mcpProtocolVersion,
-			header:     map[string]string{headerMCPProtocolVersion: mcpProtocolVersion, headerMCPMethod: string(types.ToolsCall), headerMCPName: encodedName},
+			name: "tools/call with base64 Mcp-Name passes validation", method: string(types.ToolsCall), params: toolParams, metaVersion: mcp.ProtocolVersion,
+			header:     map[string]string{mcp.HeaderProtocolVersion: mcp.ProtocolVersion, mcp.HeaderMethod: string(types.ToolsCall), mcp.HeaderName: encodedName},
 			wantStatus: http.StatusOK, wantCode: jsonRPCInternalError,
 		},
 	}
@@ -272,18 +272,18 @@ func TestMCPJSONRPCHandler_RequestMetadata(t *testing.T) {
 // is rejected even when the first copy matches the body, since an intermediary
 // may act on the other copy.
 func TestMCPJSONRPCHandler_DuplicateHeaders(t *testing.T) {
-	for _, name := range []string{headerMCPProtocolVersion, headerMCPMethod, headerMCPName} {
+	for _, name := range []string{mcp.HeaderProtocolVersion, mcp.HeaderMethod, mcp.HeaderName} {
 		t.Run(name, func(t *testing.T) {
 			body, err := json.Marshal(map[string]any{
 				"jsonrpc": "2.0", "id": 1, "method": string(types.ToolsCall),
-				"params": map[string]any{"name": nsGetTimeTool, "_meta": map[string]any{metaProtocolVersion: mcpProtocolVersion}},
+				"params": map[string]any{"name": nsGetTimeTool, "_meta": map[string]any{metaProtocolVersion: mcp.ProtocolVersion}},
 			})
 			require.NoError(t, err)
 
 			header := http.Header{}
-			header.Set(headerMCPProtocolVersion, mcpProtocolVersion)
-			header.Set(headerMCPMethod, string(types.ToolsCall))
-			header.Set(headerMCPName, nsGetTimeTool)
+			header.Set(mcp.HeaderProtocolVersion, mcp.ProtocolVersion)
+			header.Set(mcp.HeaderMethod, string(types.ToolsCall))
+			header.Set(mcp.HeaderName, nsGetTimeTool)
 			header.Add(name, nsForecastTool)
 
 			w := postMCPRaw(t, newMCPEngine(t, mcpEnabledConfig(), nil), string(body), header)
@@ -407,7 +407,7 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 			m.EXPECT().ExecuteTool(gomock.Any(), mcp.Request{
 				Method: string(types.ToolsCall),
 				Params: map[string]any{"name": getTimeTool, "arguments": map[string]any{"timezone": "UTC"}},
-			}, timeAlias).Return(&mcp.CallToolResult{Content: []mcp.ContentBlock{
+			}, timeAlias).Return(&mcp.CallToolResult{ResultType: mcp.ResultTypeComplete, Content: []mcp.ContentBlock{
 				map[string]any{"type": "text", "text": "12:00"},
 			}}, nil)
 		}, "")
@@ -418,7 +418,7 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 		var resp jsonRPCTestResponse
 		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 		require.Nil(t, resp.Error)
-		assert.Equal(t, resultTypeComplete, resp.Result["resultType"])
+		assert.Equal(t, mcp.ResultTypeComplete, resp.Result["resultType"])
 		content, ok := resp.Result["content"].([]any)
 		require.True(t, ok)
 		require.Len(t, content, 1)

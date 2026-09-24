@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -27,61 +26,60 @@ const (
 	jsonRPCServerAlias = "stub"
 	jsonRPCToolName    = "echo"
 	jsonRPCToolOutput  = "ok"
+	jsonRPCInboundAuth = "Bearer caller-token"
 
-	// mcpProtocolVersion is the only MCP version the gateway's /mcp speaks.
-	mcpProtocolVersion       = "2026-07-28"
-	mcpHeaderProtocolVersion = "MCP-Protocol-Version"
-	mcpHeaderMethod          = "Mcp-Method"
-	mcpHeaderName            = "Mcp-Name"
 	// mcpRequestMeta is the params._meta every 2026-07-28 request carries.
-	mcpRequestMeta = `"_meta":{"io.modelcontextprotocol/protocolVersion":"` + mcpProtocolVersion + `","io.modelcontextprotocol/clientInfo":{"name":"test","version":"1.0.0"},"io.modelcontextprotocol/clientCapabilities":{}}`
+	mcpRequestMeta = `"_meta":{"io.modelcontextprotocol/protocolVersion":"` + mcp.ProtocolVersion + `","io.modelcontextprotocol/clientInfo":{"name":"test","version":"1.0.0"},"io.modelcontextprotocol/clientCapabilities":{}}`
 )
 
-// newJSONRPCStubServer is a minimal upstream MCP server: it answers the three
-// methods the gateway drives during initialization and tool execution.
+// newJSONRPCStubServer is a minimal stateless 2026-07-28 upstream MCP server.
+// It checks every request carries the request metadata the gateway must send
+// and none of the caller's credentials.
 func newJSONRPCStubServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-
 		var req struct {
-			ID     any            `json:"id"`
-			Method string         `json:"method"`
-			Params map[string]any `json:"params"`
+			ID     any    `json:"id"`
+			Method string `json:"method"`
+			Params struct {
+				Meta mcp.RequestMetaObject `json:"_meta"`
+				Name string                `json:"name"`
+			} `json:"params"`
 		}
-		require.NoError(t, json.Unmarshal(body, &req))
-
-		if req.ID == nil {
-			w.WriteHeader(http.StatusOK)
+		if !assert.NoError(t, json.NewDecoder(r.Body).Decode(&req)) {
 			return
 		}
 
+		assert.Empty(t, r.Header.Get("Authorization"), "the caller's credentials must not reach upstream servers")
+		assert.Equal(t, mcp.ProtocolVersion, r.Header.Get(mcp.HeaderProtocolVersion))
+		assert.Equal(t, mcp.ProtocolVersion, req.Params.Meta.IoModelcontextprotocolProtocolVersion)
+		assert.Equal(t, req.Method, r.Header.Get(mcp.HeaderMethod))
+
 		var result any
 		switch req.Method {
-		case "initialize":
+		case string(mcp.ToolsList):
 			result = map[string]any{
-				"protocolVersion": "2024-11-05",
-				"capabilities":    map[string]any{"tools": map[string]any{}},
-				"serverInfo":      map[string]any{"name": jsonRPCServerAlias, "version": "1.0.0"},
-			}
-		case "tools/list":
-			result = map[string]any{
+				"resultType": mcp.ResultTypeComplete,
 				"tools": []map[string]any{
 					{"name": jsonRPCToolName, "description": "echoes back", "inputSchema": map[string]any{"type": "object"}},
 				},
 			}
-		case "tools/call":
+		case string(mcp.ToolsCall):
 			// The gateway must strip the mcp_<alias>_ namespace before it gets here.
-			assert.Equal(t, jsonRPCToolName, req.Params["name"])
-			result = map[string]any{"content": []map[string]any{{"type": "text", "text": jsonRPCToolOutput}}}
+			assert.Equal(t, jsonRPCToolName, req.Params.Name)
+			assert.Equal(t, jsonRPCToolName, r.Header.Get(mcp.HeaderName))
+			result = map[string]any{
+				"resultType": mcp.ResultTypeComplete,
+				"content":    []map[string]any{{"type": "text", "text": jsonRPCToolOutput}},
+			}
 		default:
-			result = map[string]any{}
+			t.Errorf("unexpected upstream method %q", req.Method)
+			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 			"jsonrpc": "2.0",
 			"id":      req.ID,
 			"result":  result,
@@ -123,10 +121,11 @@ func TestMCPJSONRPCEndpointEndToEnd(t *testing.T) {
 	post := func(method types.MCPJSONRPCRequestMethod, toolName, body string) (int, map[string]any) {
 		req := httptest.NewRequest(http.MethodPost, middlewares.MCPPath, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set(mcpHeaderProtocolVersion, mcpProtocolVersion)
-		req.Header.Set(mcpHeaderMethod, string(method))
+		req.Header.Set("Authorization", jsonRPCInboundAuth)
+		req.Header.Set(mcp.HeaderProtocolVersion, mcp.ProtocolVersion)
+		req.Header.Set(mcp.HeaderMethod, string(method))
 		if toolName != "" {
-			req.Header.Set(mcpHeaderName, toolName)
+			req.Header.Set(mcp.HeaderName, toolName)
 		}
 		w := httptest.NewRecorder()
 		engine.ServeHTTP(w, req)
@@ -143,7 +142,7 @@ func TestMCPJSONRPCEndpointEndToEnd(t *testing.T) {
 	require.Equal(t, http.StatusOK, code)
 	result, ok := resp["result"].(map[string]any)
 	require.True(t, ok)
-	assert.Equal(t, []any{mcpProtocolVersion}, result["supportedVersions"])
+	assert.Equal(t, []any{mcp.ProtocolVersion}, result["supportedVersions"])
 
 	namespaced := mcp.NamespacedToolName(jsonRPCServerAlias, jsonRPCToolName)
 	code, resp = post(types.ToolsList, "", `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{`+mcpRequestMeta+`}}`)

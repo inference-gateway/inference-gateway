@@ -7,9 +7,8 @@ multiple MCP servers.
 ## Features
 
 - **🌐 Gateway as an MCP server**: one `POST /mcp` endpoint fronting every backend server, for agent clients
-- **✨ Server-Sent Events (SSE)**: Real-time streaming with dual JSON-RPC and SSE protocol support
 - **🔍 MCP Inspector**: Web-based debugging tool for exploring and testing MCP servers
-- **🛠️ Multiple Tools**: Time, search, filesystem, and pizza-related tools
+- **🛠️ Multiple Tools**: Time, search, and filesystem tools
 - **🔧 Easy Setup**: Docker Compose configuration with CORS support
 
 ## Table of Contents
@@ -52,7 +51,6 @@ prints on startup (`docker compose logs mcp-inspector`) - it carries the session
 - **MCP Time Server**: Provides time data tools
 - **MCP Search Server**: Provides web search functionality
 - **MCP Filesystem Server**: Provides file operations (read, write, delete, list directories)
-- **MCP Pizza Server**: TypeScript MCP server providing pizza-related tools using `@modelcontextprotocol/sdk`
 - **MCP Inspector**: Web-based debugging tool for exploring MCP servers
 
 ## MCP Inspector
@@ -70,7 +68,7 @@ from `docker compose logs mcp-inspector`. Its ports are published on `127.0.0.1`
 **Connected Server:**
 
 The Inspector is launched against the gateway's own MCP endpoint,
-`http://inference-gateway:8080/mcp`, so it sees the tools of all four backend
+`http://inference-gateway:8080/mcp`, so it sees the tools of all three backend
 servers at once. The endpoint speaks MCP `2026-07-28` only, so the Inspector runs
 with `--protocol-era modern` (its default is `legacy`). Connect the server card and
 the Tools view lists every `mcp_<alias>_<tool>`. The server list is read-only,
@@ -286,31 +284,7 @@ Example response:
 }
 ```
 
-### Example 9: Pizza Server Tools
-
-This example demonstrates using tools from the official TypeScript MCP server
-built with `@modelcontextprotocol/sdk`. The pizza server provides pizza-related
-tools:
-
-```bash
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-  "model": "deepseek/deepseek-v4-flash",
-  "messages": [
-    {
-      "role": "system",
-      "content": "You are a helpful assistant."
-    },
-    {
-      "role": "user",
-      "content": "Top 5 pizzas in the world. Go!"
-    }
-  ]
-}'
-```
-
-### Example 10: Point an MCP Client at the Gateway
+### Example 9: Point an MCP Client at the Gateway
 
 With `MCP_ENABLED=true` and `MCP_EXPOSE=true` the gateway is itself an MCP
 server at `POST /mcp`. An agent client declares **one** entry and discovers
@@ -409,15 +383,6 @@ When you send a request to the Inference Gateway, it will:
 
 All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 
-### Pizza Server Tools
-
-- **get-top-pizzas**: Returns mock data of the top 5 pizzas in the world with
-  detailed information
-
-The pizza server showcases best practices using the `@modelcontextprotocol/sdk`
-and includes comprehensive session management, type validation with Zod schemas,
-and dual transport support.
-
 ## Adding Your Own MCP Servers
 
 **It's incredibly easy to add more MCP servers!** Simply follow these steps:
@@ -443,21 +408,22 @@ and dual transport support.
 
 ### Requirements for Your MCP Server
 
-- Implements the [MCP specification](https://modelcontextprotocol.io/specification)
+- Speaks MCP `2026-07-28`, the stateless revision: the gateway sends no
+  `initialize` and keeps no session, so every `tools/list` and `tools/call` must
+  be answerable on its own. A server that requires a handshake or a session is
+  marked unavailable.
 - Responds to HTTP requests on the `/mcp` endpoint
 - Supports CORS for web clients (if using the MCP Inspector)
 
 ### Pre-configured Example Servers
 
-This example includes four pre-configured servers:
+This example includes three pre-configured servers:
 
 - **Time Server**: `http://mcp-time-server:8081/mcp` - Get current time
 - **Search Server**: `http://mcp-search-server:8082/mcp` - Web search
   functionality
 - **Filesystem Server**: `http://mcp-filesystem-server:8083/mcp` - File
   operations
-- **Pizza Server**: `http://mcp-pizza-server:8084/mcp` - TypeScript MCP server
-  providing pizza recommendation tools
 
 ### Configuration Options
 

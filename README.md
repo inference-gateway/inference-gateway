@@ -398,6 +398,11 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 The gateway automatically injects available tools into requests and handles tool
 execution, making external capabilities seamlessly available to any LLM.
 
+The servers in `MCP_SERVERS` must speak MCP `2026-07-28`, the stateless
+revision: the gateway sends no `initialize` and keeps no session, only
+`tools/list` and `tools/call` requests carrying their protocol version. A
+server that requires a legacy handshake or a session is marked unavailable.
+
 Querying the discovered tools over `GET /v1/mcp/tools` additionally requires
 `MCP_EXPOSE=true`; it defaults to `false`, and the endpoint returns 403 until
 it is enabled.

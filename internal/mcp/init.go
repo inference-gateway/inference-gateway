@@ -2,12 +2,11 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
 	"time"
-
-	golang "github.com/metoro-io/mcp-golang"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/logger"
@@ -18,10 +17,21 @@ import (
 // from MCP_SERVERS by ParseServers.
 func NewMCPClient(servers []ServerSpec, logger logger.Logger, cfg config.Config) MCPClientInterface {
 	return &MCPClient{
-		Servers:             servers,
-		Logger:              logger,
-		Config:              cfg,
-		clients:             make(map[string]*golang.Client),
+		Servers: servers,
+		Logger:  logger,
+		Config:  cfg,
+		httpClient: &http.Client{
+			Timeout: cfg.MCP.ClientTimeout,
+			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   cfg.MCP.DialTimeout,
+					KeepAlive: 30 * time.Second,
+				}).DialContext,
+				TLSHandshakeTimeout:   cfg.MCP.TlsHandshakeTimeout,
+				ResponseHeaderTimeout: cfg.MCP.ResponseHeaderTimeout,
+				ExpectContinueTimeout: cfg.MCP.ExpectContinueTimeout,
+			},
+		},
 		serverTools:         make(map[string][]Tool),
 		chatCompletionTools: make([]types.ChatCompletionTool, 0),
 		serverStatuses:      make(map[string]ServerStatus),
@@ -30,7 +40,7 @@ func NewMCPClient(servers []ServerSpec, logger logger.Logger, cfg config.Config)
 	}
 }
 
-// InitializeAll implements MCPClientInterface with enhanced transport fallback.
+// InitializeAll implements MCPClientInterface.
 func (mc *MCPClient) InitializeAll(ctx context.Context) error {
 	if len(mc.Servers) == 0 {
 		return ErrNoServerURLs
@@ -175,29 +185,10 @@ func (mc *MCPClient) initializeServer(ctx context.Context, server ServerSpec) er
 			}
 		}
 
-		client, err := mc.initializeClientWithTransport(ctx, serverURL, TransportModeStreamableHTTP)
+		tools, err := mc.discoverServerTools(ctx, serverURL)
 		if err != nil {
-			mc.Logger.Debug("streamable http failed, attempting sse fallback", "server", serverURL, "error", err.Error())
-
-			client, err = mc.initializeClientWithTransport(ctx, serverURL, TransportModeSSE)
-			if err != nil {
-				lastErr = fmt.Errorf("both streamable http and sse transports failed: %w", err)
-				mc.Logger.Debug("failed to initialize server",
-					"server", serverURL,
-					"attempt", attempt+1,
-					"error", err,
-					"component", "mcp_client")
-				continue
-			}
-			mc.Logger.Info("successfully connected using sse transport fallback", "server", serverURL)
-		} else {
-			mc.Logger.Debug("successfully connected using streamable http transport", "server", serverURL)
-		}
-
-		tools, err := mc.discoverServerTools(ctx, client, serverURL)
-		if err != nil {
-			lastErr = fmt.Errorf("failed to discover server capabilities: %w", err)
-			mc.Logger.Debug("failed to discover capabilities",
+			lastErr = fmt.Errorf("failed to discover server tools: %w", err)
+			mc.Logger.Debug("failed to discover server tools",
 				"server", serverURL,
 				"attempt", attempt+1,
 				"error", err,
@@ -206,7 +197,6 @@ func (mc *MCPClient) initializeServer(ctx context.Context, server ServerSpec) er
 		}
 
 		mc.mu.Lock()
-		mc.clients[server.Alias] = client
 		mc.serverTools[server.Alias] = tools
 		mc.serverStatuses[server.Alias] = ServerStatusAvailable
 		if mc.initialized {
@@ -227,26 +217,6 @@ func (mc *MCPClient) initializeServer(ctx context.Context, server ServerSpec) er
 	mc.mu.Unlock()
 
 	return fmt.Errorf("failed to initialize server after %d attempts: %w", maxRetries+1, lastErr)
-}
-
-// initializeClientWithTransport attempts to initialize a client with a specific transport
-func (mc *MCPClient) initializeClientWithTransport(ctx context.Context, serverURL string, mode TransportMode) (*golang.Client, error) {
-	client := mc.NewClientWithTransport(serverURL, mode)
-
-	mc.Logger.Debug("attempting client initialization", "server", serverURL, "transport", string(mode), "timeout", mc.Config.MCP.RequestTimeout.String())
-
-	initCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
-	defer cancel()
-
-	_, err := client.Initialize(initCtx)
-	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			return nil, fmt.Errorf("initialization timed out with %s transport: %w", mode, err)
-		}
-		return nil, fmt.Errorf("initialization failed with %s transport: %w", mode, err)
-	}
-
-	return client, nil
 }
 
 // rebuildChatCompletionToolsLocked re-aggregates the pre-converted chat completion tools; mc.mu must be held
@@ -273,59 +243,22 @@ func (mc *MCPClient) rebuildChatCompletionToolsLocked() {
 	mc.Logger.Debug("total pre-converted tools", "count", len(all))
 }
 
-// discoverServerTools fetches and converts the server's tool list
-func (mc *MCPClient) discoverServerTools(ctx context.Context, client *golang.Client, serverURL string) ([]Tool, error) {
-	mc.Logger.Debug("fetching available tools", "server", serverURL)
+// discoverServerTools fetches the server's tools, every page of them, within
+// MCP_REQUEST_TIMEOUT.
+func (mc *MCPClient) discoverServerTools(ctx context.Context, serverURL string) ([]Tool, error) {
+	toolsCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
+	defer cancel()
 
-	toolsCtx, toolsCancel := context.WithTimeout(ctx, mc.Config.MCP.RequestTimeout)
-	defer toolsCancel()
-
-	mc.Logger.Debug("attempting to list tools with timeout", "server", serverURL, "timeout", mc.Config.MCP.RequestTimeout.String())
-	var cursor *string
-	toolsResult, err := client.ListTools(toolsCtx, cursor)
+	tools, err := mc.listTools(toolsCtx, serverURL)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
-			mc.Logger.Error("tools listing timed out", err, "server", serverURL)
-		} else {
-			mc.Logger.Error("failed to list tools", err, "server", serverURL)
-			mc.Logger.Debug("tools listing error details", "error", err.Error(), "server", serverURL)
+			return nil, fmt.Errorf("tools listing timed out after %s: %w", mc.Config.MCP.RequestTimeout, err)
 		}
 		return nil, err
 	}
 
-	mc.Logger.Debug("successfully retrieved tools list", "server", serverURL, "rawToolsCount", len(toolsResult.Tools))
-	for i, tool := range toolsResult.Tools {
-		mc.Logger.Debug("mcp raw tool discovered", "server", serverURL, "index", i, "name", tool.Name, "hasDescription", tool.Description != nil, "hasInputSchema", tool.InputSchema != nil)
-	}
-
-	serverTools := make([]Tool, 0, len(toolsResult.Tools))
-
-	for _, tool := range toolsResult.Tools {
-		enhancedDesc := tool.Description
-		if enhancedDesc == nil {
-			enhancedDesc = new(string)
-			*enhancedDesc = ""
-		}
-
-		inputSchema := make(map[string]any)
-		if tool.InputSchema != nil {
-			if inputBytes, err := json.Marshal(tool.InputSchema); err == nil {
-				_ = json.Unmarshal(inputBytes, &inputSchema)
-			}
-		}
-
-		serverTools = append(serverTools, Tool{
-			Name:        tool.Name,
-			Description: enhancedDesc,
-			InputSchema: inputSchema,
-		})
-
-		mc.Logger.Debug("processed tool", "server", serverURL, "toolName", tool.Name, "enhancedDesc", *enhancedDesc)
-	}
-
-	mc.Logger.Debug("found tools for server", "server", serverURL, "count", len(serverTools))
-
-	return serverTools, nil
+	mc.Logger.Debug("found tools for server", "server", serverURL, "count", len(tools))
+	return tools, nil
 }
 
 // startBackgroundReconnection starts a background goroutine to reconnect failed servers

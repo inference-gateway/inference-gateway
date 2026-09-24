@@ -306,7 +306,7 @@ func main() {
 		go localTTS.Warmup(context.Background())
 	}
 
-	api.Version = version
+	mcp.GatewayInfo.Version = version
 	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector, localTTS)
 	r := gin.New()
 	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {

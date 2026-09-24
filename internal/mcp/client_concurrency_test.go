@@ -3,7 +3,6 @@ package mcp
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -25,52 +24,44 @@ import (
 // stubServerAlias is the alias the stub MCP server is registered under.
 const stubServerAlias = "stub"
 
-func newMCPStubServer(t *testing.T, initDelay time.Duration, initCount *atomic.Int32) *httptest.Server {
+// newMCPStubServer is a stateless 2026-07-28 MCP server. listDelay slows and
+// listCount counts tools/list, the call every discovery attempt makes.
+func newMCPStubServer(t *testing.T, listDelay time.Duration, listCount *atomic.Int32) *httptest.Server {
 	t.Helper()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-
 		var req struct {
 			ID     any    `json:"id"`
 			Method string `json:"method"`
 		}
-		require.NoError(t, json.Unmarshal(body, &req))
-
-		if req.ID == nil {
-			w.WriteHeader(http.StatusOK)
+		if !assert.NoError(t, json.NewDecoder(r.Body).Decode(&req)) {
 			return
 		}
 
 		var result any
 		switch req.Method {
-		case "initialize":
-			if initCount != nil {
-				initCount.Add(1)
+		case string(ToolsList):
+			if listCount != nil {
+				listCount.Add(1)
 			}
-			time.Sleep(initDelay)
+			time.Sleep(listDelay)
 			result = map[string]any{
-				"protocolVersion": "2024-11-05",
-				"capabilities":    map[string]any{"tools": map[string]any{}},
-				"serverInfo":      map[string]any{"name": "stub", "version": "1.0.0"},
-			}
-		case "tools/list":
-			result = map[string]any{
+				"resultType": ResultTypeComplete,
 				"tools": []map[string]any{
 					{"name": "echo", "description": "echo", "inputSchema": map[string]any{"type": "object"}},
 				},
 			}
-		case "tools/call":
+		case string(ToolsCall):
 			result = map[string]any{
-				"content": []map[string]any{{"type": "text", "text": "ok"}},
+				"resultType": ResultTypeComplete,
+				"content":    []map[string]any{{"type": "text", "text": "ok"}},
 			}
 		default:
 			result = map[string]any{}
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+		assert.NoError(t, json.NewEncoder(w).Encode(map[string]any{
 			"jsonrpc": "2.0",
 			"id":      req.ID,
 			"result":  result,
@@ -134,7 +125,7 @@ func TestMCPClientConcurrentReadersDuringReconnection(t *testing.T) {
 	}
 
 	for range 20 {
-		mc.attemptServerReconnection(ctx, srv.URL)
+		mc.attemptServerReconnection(ctx, stubServerAlias)
 	}
 
 	close(stop)
@@ -146,8 +137,8 @@ func TestMCPClientConcurrentReadersDuringReconnection(t *testing.T) {
 }
 
 func TestAttemptServerReconnectionSingleFlight(t *testing.T) {
-	var initCount atomic.Int32
-	srv := newMCPStubServer(t, 300*time.Millisecond, &initCount)
+	var listCount atomic.Int32
+	srv := newMCPStubServer(t, 300*time.Millisecond, &listCount)
 
 	mc := NewMCPClient([]ServerSpec{{Alias: stubServerAlias, URL: srv.URL}}, logger.NewNoopLogger(), newStubMCPConfig()).(*MCPClient)
 
@@ -162,7 +153,7 @@ func TestAttemptServerReconnectionSingleFlight(t *testing.T) {
 	}
 	wg.Wait()
 
-	assert.Equal(t, int32(1), initCount.Load())
+	assert.Equal(t, int32(1), listCount.Load())
 }
 
 func TestRunWithStreamReturnsWhenConsumerAbandons(t *testing.T) {

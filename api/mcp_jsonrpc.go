@@ -13,10 +13,6 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// Version is the gateway version reported as the MCP serverInfo version.
-// main overwrites it with the build version at startup.
-var Version = "dev"
-
 // JSON-RPC 2.0 error codes, as listed in the /mcp spec.
 const (
 	jsonRPCParseError     = -32700
@@ -32,29 +28,17 @@ const (
 )
 
 const (
-	// mcpServerName is the serverInfo name MCP clients see for the gateway.
-	mcpServerName = "inference-gateway"
-
-	// mcpProtocolVersion is the only MCP protocol version /mcp speaks: the
-	// stateless revision, with no initialize handshake and no session.
-	mcpProtocolVersion = "2026-07-28"
-
-	// Request metadata the Streamable HTTP transport mirrors from the body
-	// into headers, and the params._meta key carrying the protocol version.
-	headerMCPProtocolVersion = "MCP-Protocol-Version"
-	headerMCPMethod          = "Mcp-Method"
-	headerMCPName            = "Mcp-Name"
-	headerOrigin             = "Origin"
-	metaProtocolVersion      = "io.modelcontextprotocol/protocolVersion"
-	metaServerInfo           = "io.modelcontextprotocol/serverInfo"
+	// headerOrigin is refused on /mcp, and the meta keys are the params._meta
+	// key carrying the protocol version and the result _meta key naming the
+	// gateway. The mirrored MCP headers are shared with the outbound client.
+	headerOrigin        = "Origin"
+	metaProtocolVersion = "io.modelcontextprotocol/protocolVersion"
+	metaServerInfo      = "io.modelcontextprotocol/serverInfo"
 
 	// base64HeaderPrefix and base64HeaderSuffix wrap header values that are
 	// not plain ASCII: =?base64?<value>?=.
 	base64HeaderPrefix = "=?base64?"
 	base64HeaderSuffix = "?="
-
-	// resultTypeComplete marks a result as final rather than partial.
-	resultTypeComplete = "complete"
 
 	errMsgMCPNotExposed = "MCP endpoint is not exposed. Set MCP_EXPOSE=true to enable."
 	errMsgMCPOrigin     = "MCP endpoint does not accept browser requests"
@@ -141,21 +125,21 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 // ponytail: Mcp-Param-* headers are not validated; add it once an upstream
 // tool declares x-mcp-header in its inputSchema.
 func validateMCPRequest(header http.Header, req *types.MCPJSONRPCRequest) *types.MCPJSONRPCError {
-	for _, name := range []string{headerMCPProtocolVersion, headerMCPMethod, headerMCPName} {
+	for _, name := range []string{mcp.HeaderProtocolVersion, mcp.HeaderMethod, mcp.HeaderName} {
 		if len(header.Values(name)) > 1 {
 			return headerMismatch(name + " header sent more than once")
 		}
 	}
 
-	version := header.Get(headerMCPProtocolVersion)
+	version := header.Get(mcp.HeaderProtocolVersion)
 	if version == "" {
-		return headerMismatch("missing " + headerMCPProtocolVersion + " header; this server speaks MCP " + mcpProtocolVersion)
+		return headerMismatch("missing " + mcp.HeaderProtocolVersion + " header; this server speaks MCP " + mcp.ProtocolVersion)
 	}
-	if version != mcpProtocolVersion {
+	if version != mcp.ProtocolVersion {
 		return &types.MCPJSONRPCError{
 			Code:    jsonRPCUnsupportedVersion,
 			Message: errMsgUnsupported,
-			Data:    map[string]any{"requested": version, "supported": []string{mcpProtocolVersion}},
+			Data:    map[string]any{"requested": version, "supported": []string{mcp.ProtocolVersion}},
 		}
 	}
 
@@ -165,15 +149,15 @@ func validateMCPRequest(header http.Header, req *types.MCPJSONRPCRequest) *types
 	}
 	meta, _ := params["_meta"].(map[string]any)
 	if bodyVersion, _ := meta[metaProtocolVersion].(string); bodyVersion != version {
-		return headerMismatch(headerMCPProtocolVersion + " header does not match params._meta " + metaProtocolVersion)
+		return headerMismatch(mcp.HeaderProtocolVersion + " header does not match params._meta " + metaProtocolVersion)
 	}
-	if header.Get(headerMCPMethod) != string(req.Method) {
-		return headerMismatch(headerMCPMethod + " header does not match method " + string(req.Method))
+	if header.Get(mcp.HeaderMethod) != string(req.Method) {
+		return headerMismatch(mcp.HeaderMethod + " header does not match method " + string(req.Method))
 	}
 	if req.Method == types.ToolsCall {
 		name, _ := params["name"].(string)
-		if headerName, ok := decodeHeaderValue(header.Get(headerMCPName)); !ok || headerName == "" || headerName != name {
-			return headerMismatch(headerMCPName + " header does not match params.name")
+		if headerName, ok := decodeHeaderValue(header.Get(mcp.HeaderName)); !ok || headerName == "" || headerName != name {
+			return headerMismatch(mcp.HeaderName + " header does not match params.name")
 		}
 	}
 	return nil
@@ -213,8 +197,8 @@ func discoverResult() mcp.DiscoverResult {
 	}{ListChanged: &listChanged}
 
 	return mcp.DiscoverResult{
-		ResultType:        resultTypeComplete,
-		SupportedVersions: []string{mcpProtocolVersion},
+		ResultType:        mcp.ResultTypeComplete,
+		SupportedVersions: []string{mcp.ProtocolVersion},
 		Capabilities:      capabilities,
 		CacheScope:        mcp.DiscoverResultCacheScopePrivate,
 	}
@@ -256,7 +240,7 @@ func (router *RouterImpl) mcpToolsList() mcp.ListToolsResult {
 
 	return mcp.ListToolsResult{
 		Tools:      tools,
-		ResultType: resultTypeComplete,
+		ResultType: mcp.ResultTypeComplete,
 		CacheScope: mcp.ListToolsResultCacheScopePrivate,
 	}
 }
@@ -322,9 +306,6 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 		return
 	}
 
-	if result.ResultType == "" {
-		result.ResultType = resultTypeComplete
-	}
 	router.respondMCPResult(c, req, result)
 }
 
@@ -342,7 +323,7 @@ func (router *RouterImpl) respondMCPResult(c *gin.Context, req *types.MCPJSONRPC
 	if meta == nil {
 		meta = make(map[string]any)
 	}
-	meta[metaServerInfo] = mcp.Implementation{Name: mcpServerName, Version: Version}
+	meta[metaServerInfo] = mcp.GatewayInfo
 	(*payload)["_meta"] = meta
 
 	c.JSON(http.StatusOK, types.MCPJSONRPCResponse{

@@ -59,26 +59,26 @@ func (mc *MCPClient) statusPollingLoop(ctx context.Context) {
 // pollServerStatuses checks the health status of all servers
 func (mc *MCPClient) pollServerStatuses(ctx context.Context) {
 	for _, server := range mc.Servers {
-		go mc.checkServerHealth(ctx, server.Alias)
+		go mc.checkServerHealth(ctx, server)
 	}
 }
 
 // checkServerHealth checks the health of a single server
-func (mc *MCPClient) checkServerHealth(ctx context.Context, alias string) {
+func (mc *MCPClient) checkServerHealth(ctx context.Context, server ServerSpec) {
+	alias := server.Alias
 	checkCtx, cancel := context.WithTimeout(ctx, mc.Config.MCP.PollingTimeout)
 	defer cancel()
 
 	mc.mu.RLock()
-	client, exists := mc.clients[alias]
+	_, discovered := mc.serverTools[alias]
 	mc.mu.RUnlock()
 
-	if !exists {
-		mc.Logger.Debug("server client not found for health check", "server", alias, "component", "mcp_client")
+	if !discovered {
+		mc.Logger.Debug("server never discovered, leaving it to reconnection", "server", alias, "component", "mcp_client")
 		return
 	}
 
-	var cursor *string
-	_, err := client.ListTools(checkCtx, cursor)
+	_, err := mc.listTools(checkCtx, server.URL)
 
 	newStatus := ServerStatusAvailable
 	if err != nil {
