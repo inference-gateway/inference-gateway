@@ -268,6 +268,30 @@ func TestMCPJSONRPCHandler_RequestMetadata(t *testing.T) {
 	}
 }
 
+// TestMCPJSONRPCHandler_DuplicateHeaders asserts a mirrored header sent twice
+// is rejected even when the first copy matches the body, since an intermediary
+// may act on the other copy.
+func TestMCPJSONRPCHandler_DuplicateHeaders(t *testing.T) {
+	for _, name := range []string{headerMCPProtocolVersion, headerMCPMethod, headerMCPName} {
+		t.Run(name, func(t *testing.T) {
+			body, err := json.Marshal(map[string]any{
+				"jsonrpc": "2.0", "id": 1, "method": string(types.ToolsCall),
+				"params": map[string]any{"name": nsGetTimeTool, "_meta": map[string]any{metaProtocolVersion: mcpProtocolVersion}},
+			})
+			require.NoError(t, err)
+
+			header := http.Header{}
+			header.Set(headerMCPProtocolVersion, mcpProtocolVersion)
+			header.Set(headerMCPMethod, string(types.ToolsCall))
+			header.Set(headerMCPName, nsGetTimeTool)
+			header.Add(name, nsForecastTool)
+
+			w := postMCPRaw(t, newMCPEngine(t, mcpEnabledConfig(), nil), string(body), header)
+			assertJSONRPCError(t, w, http.StatusBadRequest, jsonRPCHeaderMismatch)
+		})
+	}
+}
+
 // TestMCPJSONRPCHandler_Notification asserts a request without an id is
 // answered with 202 and no body, as JSON-RPC requires for notifications.
 func TestMCPJSONRPCHandler_Notification(t *testing.T) {
