@@ -218,7 +218,6 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 		{name: "Valid token", engine: withClientID, path: testRoute, header: "Bearer " + valid, wantStatus: http.StatusOK, wantToken: valid},
 		{name: "Lowercase scheme accepted", engine: withClientID, path: testRoute, header: "bearer " + valid, wantStatus: http.StatusOK, wantToken: valid},
 		{name: "Health bypasses auth", engine: withClientID, path: middlewares.HealthPath, wantStatus: http.StatusOK},
-		// The gateway's own MCP server is not exempt: only /health is.
 		{
 			name: "MCP endpoint requires a token", engine: withClientID, method: http.MethodPost, path: middlewares.MCPPath,
 			wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing,
