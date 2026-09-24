@@ -35,6 +35,9 @@ tasks:
           --namespace cert-manager \
           --version {{.CERT_MANAGER_VERSION}} \
           --set crds.enabled=true \
+          --set config.apiVersion=controller.config.cert-manager.io/v1alpha1 \
+          --set config.kind=ControllerConfiguration \
+          --set config.enableGatewayAPI=true \
           --wait
       - kubectl apply -f cert-manager/
       - echo "🔐 Cert-manager deployed successfully!"

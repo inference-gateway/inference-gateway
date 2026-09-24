@@ -17,3 +17,6 @@ k3d:
           - arg: --disable=traefik
             nodeFilters:
               - server:0
+          - arg: --disable=gateway-api-crd
+            nodeFilters:
+              - server:0

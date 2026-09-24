@@ -4,14 +4,14 @@ Deploys the Inference Gateway with [OPA/Rego](https://www.openpolicyagent.org/) 
 enabled, via the [Inference Gateway Operator](https://github.com/inference-gateway/operator)
 and the Kubernetes Gateway API.
 
-Rego policies live in a `ConfigMap` and are mounted into the gateway at
-`spec.guardrails.policyDir`. Each `.rego` file must be in `package guardrails` and expose a
+Rego policies live in a `ConfigMap` referenced by `spec.guardrails.configMapRef` and are
+mounted into the gateway's policy directory. Each `.rego` file must be in `package guardrails` and expose a
 `main` rule returning `{"action": "allow"}` or `{"action": "block", "message": "..."}`.
 
 > **Note:** `spec.guardrails` requires an operator build that supports the guardrails field.
 > The gateway itself is configured through the `GUARDRAILS_*` env vars documented in
 > [`Configurations.md`](../../../Configurations.md); the operator maps `spec.guardrails` onto
-> them and mounts `policiesConfigMap` at `policyDir`.
+> them and mounts `configMapRef` at `GUARDRAILS_POLICY_DIR`.
 
 ## Prerequisites
 
@@ -38,9 +38,8 @@ Rego policies live in a `ConfigMap` and are mounted into the gateway at
 ## Configuration
 
 - `spec.guardrails.enabled` - turns the guardrails middleware on.
-- `spec.guardrails.failMode` - `closed` blocks on evaluation errors, `open` lets requests through.
-- `spec.guardrails.policyDir` - where policies are mounted inside the container.
-- `spec.guardrails.policiesConfigMap` - the ConfigMap whose `.rego` keys are mounted there.
+- `spec.guardrails.failMode` - `deny` blocks on evaluation errors, `allow` lets requests through.
+- `spec.guardrails.configMapRef.name` - the ConfigMap whose `.rego` keys are mounted as policies.
 
 Edit the ConfigMap in `gateway.yaml` to change enforcement, then re-apply.
 

@@ -32,9 +32,9 @@ spec:
         - '${GATEWAY_AUDIENCE}'
   guardrails:
     enabled: true
-    failMode: closed
-    policyDir: /etc/inference-gateway/guardrails/policies
-    policiesConfigMap: inference-gateway-guardrails-policies
+    failMode: deny
+    configMapRef:
+      name: inference-gateway-guardrails-policies
   providers:
     - name: OpenAI
       enabled: true

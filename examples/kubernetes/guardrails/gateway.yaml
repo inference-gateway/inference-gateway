@@ -6,8 +6,9 @@ metadata:
   labels:
     inference-gateway.com/managed: 'true'
 ---
-# Rego policies are shipped as a ConfigMap and mounted into the gateway at the
-# path referenced by spec.guardrails.policyDir. Every .rego file must be in
+# Rego policies are shipped as a ConfigMap, referenced by
+# spec.guardrails.configMapRef and mounted into the gateway's policy directory.
+# Every .rego file must be in
 # package guardrails and expose a main rule returning
 # {"action": "allow"} or {"action": "block", "message": "..."}.
 apiVersion: v1
@@ -58,9 +59,9 @@ spec:
       idle: '300s'
   guardrails:
     enabled: true
-    failMode: closed
-    policyDir: /etc/inference-gateway/guardrails/policies
-    policiesConfigMap: inference-gateway-guardrails-policies
+    failMode: deny
+    configMapRef:
+      name: inference-gateway-guardrails-policies
   providers:
     - name: OpenAI
       enabled: true
