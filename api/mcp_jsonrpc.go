@@ -107,8 +107,6 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 		return
 	}
 
-	// A request without an id is a notification: accept it, answer nothing.
-	// 2026-07-28 defines no client notifications over HTTP, nor headers for them.
 	if req.ID == nil {
 		router.logger.Debug("mcp notification accepted", "method", string(req.Method))
 		c.Status(http.StatusAccepted)
