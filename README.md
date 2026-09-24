@@ -403,16 +403,23 @@ Querying the discovered tools over `GET /v1/mcp/tools` additionally requires
 it is enabled.
 
 `MCP_EXPOSE=true` also turns the gateway itself into an MCP server at
-`POST /mcp`, a JSON-RPC 2.0 endpoint speaking `initialize`,
-`notifications/initialized`, `tools/list` and `tools/call`. An agent client
-(opencode, `infer`, IDE assistants) points one MCP entry at the gateway and
-discovers every backend server, with no client config churn when servers come
-and go:
+`POST /mcp`, a JSON-RPC 2.0 endpoint speaking MCP `2026-07-28` only:
+`server/discover`, `tools/list` and `tools/call`, with no `initialize`
+handshake and no session. An agent client points one MCP entry at the gateway
+and discovers every backend server, with no client config churn when servers
+come and go. The client must support MCP `2026-07-28`; a legacy client gets a
+`400` naming the supported version.
+
+Every request carries its protocol version in `params._meta`, mirrored in the
+`MCP-Protocol-Version` and `Mcp-Method` headers (plus `Mcp-Name` for
+`tools/call`):
 
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+  -H "MCP-Protocol-Version: 2026-07-28" \
+  -H "Mcp-Method: tools/list" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"curl","version":"1.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'
 ```
 
 `tools/list` returns the tools of the healthy servers and skips unavailable

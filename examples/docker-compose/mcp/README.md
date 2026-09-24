@@ -319,12 +319,20 @@ every backend server, so adding or removing a server never touches the client
 config. Tools are namespaced `mcp_<alias>_<tool>` from the `alias=url` entries
 in `MCP_SERVERS`.
 
-Handshake:
+The endpoint speaks MCP `2026-07-28` only - no `initialize` handshake, no
+session. Every request carries its protocol version, client info and client
+capabilities in `params._meta`, and mirrors the version, the method and (for
+`tools/call`) the tool name into the `MCP-Protocol-Version`, `Mcp-Method` and
+`Mcp-Name` headers. A request missing them is rejected with `400`.
+
+Discover what the gateway supports (optional - any request can go first):
 
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1.0"}}}'
+  -H "MCP-Protocol-Version: 2026-07-28" \
+  -H "Mcp-Method: server/discover" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"curl","version":"1.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'
 ```
 
 List the whole fleet's tools:
@@ -332,7 +340,9 @@ List the whole fleet's tools:
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+  -H "MCP-Protocol-Version: 2026-07-28" \
+  -H "Mcp-Method: tools/list" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"curl","version":"1.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'
 ```
 
 Call one of them - the alias decides which backend server runs it:
@@ -340,13 +350,17 @@ Call one of them - the alias decides which backend server runs it:
 ```bash
 curl -X POST http://localhost:8080/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"mcp_time_time","arguments":{}}}'
+  -H "MCP-Protocol-Version: 2026-07-28" \
+  -H "Mcp-Method: tools/call" \
+  -H "Mcp-Name: mcp_time_time" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"mcp_time_time","arguments":{},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"curl","version":"1.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'
 ```
 
 If a backend server is down, `tools/list` still returns the healthy servers'
 tools and a `tools/call` routed to it comes back as a JSON-RPC error.
 
-Client configuration, e.g. for opencode:
+Client configuration, e.g. for opencode (the client must support MCP
+`2026-07-28`):
 
 ```json
 {

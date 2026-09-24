@@ -333,6 +333,11 @@ func main() {
 
 	r.GET(middlewares.HealthPath, api.HealthcheckHandler)
 	r.POST(middlewares.MCPPath, api.MCPJSONRPCHandler)
+	// MCP 2026-07-28 has no standalone GET stream and no session to DELETE.
+	r.Match([]string{http.MethodGet, http.MethodDelete}, middlewares.MCPPath, func(c *gin.Context) {
+		c.Header("Allow", http.MethodPost)
+		c.Status(http.StatusMethodNotAllowed)
+	})
 	r.POST(middlewares.MetricsIngestPath, api.MetricsIngestionHandler)
 	r.POST(middlewares.ChatCompletionsPath, api.ChatCompletionsHandler)
 	r.POST(middlewares.ResponsesPath, api.ResponsesHandler)

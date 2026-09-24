@@ -371,18 +371,15 @@ func (e MCPJSONRPCRequestJsonrpc) Valid() bool {
 
 // Defines values for MCPJSONRPCRequestMethod.
 const (
-	Initialize               MCPJSONRPCRequestMethod = "initialize"
-	NotificationsInitialized MCPJSONRPCRequestMethod = "notifications/initialized"
-	ToolsCall                MCPJSONRPCRequestMethod = "tools/call"
-	ToolsList                MCPJSONRPCRequestMethod = "tools/list"
+	ServerDiscover MCPJSONRPCRequestMethod = "server/discover"
+	ToolsCall      MCPJSONRPCRequestMethod = "tools/call"
+	ToolsList      MCPJSONRPCRequestMethod = "tools/list"
 )
 
 // Valid indicates whether the value is a known member of the MCPJSONRPCRequestMethod enum.
 func (e MCPJSONRPCRequestMethod) Valid() bool {
 	switch e {
-	case Initialize:
-		return true
-	case NotificationsInitialized:
+	case ServerDiscover:
 		return true
 	case ToolsCall:
 		return true
@@ -2314,7 +2311,9 @@ type ListToolsResponse struct {
 type MCPJSONRPCError struct {
 	// Code JSON-RPC error code: `-32700` parse error, `-32600` invalid request,
 	// `-32601` method not found, `-32602` invalid params, `-32603` internal
-	// error (including upstream MCP server failures).
+	// error (including upstream MCP server failures), `-32020` header
+	// mismatch, `-32022` unsupported protocol version (`data` carries
+	// `requested` and `supported`).
 	Code int `json:"code"`
 
 	// Data Optional additional error detail
@@ -2324,13 +2323,18 @@ type MCPJSONRPCError struct {
 	Message string `json:"message"`
 }
 
-// MCPJSONRPCRequest A JSON-RPC 2.0 request or notification sent to `POST /mcp`. Omit `id` to
-// send a notification (`notifications/initialized`).
+// MCPJSONRPCRequest A JSON-RPC 2.0 request sent to `POST /mcp`, MCP protocol version
+// `2026-07-28`. A message without `id` is a notification; this protocol
+// version defines none over HTTP, so the gateway acknowledges it with `202`
+// and ignores it.
 //
 // `params` and the corresponding `result` follow the vendored MCP spec
-// types in `mcp/mcp-schema.yaml`: `initialize` takes `protocolVersion`,
-// `capabilities` and `clientInfo`; `tools/list` takes an optional `cursor`;
-// `tools/call` takes `CallToolRequestParams`.
+// types in `mcp/mcp-schema.yaml`. Every request's `params._meta` is a
+// `RequestMetaObject` (`io.modelcontextprotocol/protocolVersion`,
+// `io.modelcontextprotocol/clientInfo`,
+// `io.modelcontextprotocol/clientCapabilities`); `server/discover` takes
+// nothing else, `tools/list` takes an optional `cursor` and `tools/call`
+// takes `CallToolRequestParams`.
 //
 // Tool names are namespaced `mcp_<server alias>_<tool name>`, e.g.
 // `mcp_deepwiki_ask_question`. The alias comes from the `alias=url` syntax
@@ -2375,8 +2379,9 @@ type MCPJSONRPCRequestMethod string
 
 // MCPJSONRPCResponse A JSON-RPC 2.0 response envelope. Exactly one of `result` or `error` is
 // present. `result` carries the MCP result type for the requested method
-// (`ListToolsResult` for `tools/list`, `CallToolResult` for `tools/call`)
-// as defined in `mcp/mcp-schema.yaml`.
+// (`DiscoverResult` for `server/discover`, `ListToolsResult` for
+// `tools/list`, `CallToolResult` for `tools/call`) as defined in
+// `mcp/mcp-schema.yaml`.
 type MCPJSONRPCResponse struct {
 	// Error A JSON-RPC 2.0 error object
 	Error *MCPJSONRPCError `json:"error,omitempty"`
@@ -3633,6 +3638,19 @@ type CreateImageEditMultipartBodyResponseFormat string
 type CreateImageParams struct {
 	// Provider Specific provider to use (default determined by model)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// McpJSONRPCParams defines parameters for McpJSONRPC.
+type McpJSONRPCParams struct {
+	// MCPProtocolVersion Must equal `params._meta["io.modelcontextprotocol/protocolVersion"]`.
+	MCPProtocolVersion string `json:"MCP-Protocol-Version"`
+
+	// McpMethod Must equal the JSON-RPC `method`.
+	McpMethod string `json:"Mcp-Method"`
+
+	// McpName Required for `tools/call`; must equal `params.name`. Values that are
+	// not plain ASCII are sent as `=?base64?<value>?=`.
+	McpName *string `json:"Mcp-Name,omitempty"`
 }
 
 // CreateMessageParams defines parameters for CreateMessage.

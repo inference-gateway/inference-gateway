@@ -1401,6 +1401,21 @@ func (e SubscriptionsListenRequestMethod) Valid() bool {
 	}
 }
 
+// Defines values for SubscriptionsListenResultResponseJsonrpc.
+const (
+	SubscriptionsListenResultResponseJsonrpcN20 SubscriptionsListenResultResponseJsonrpc = "2.0"
+)
+
+// Valid indicates whether the value is a known member of the SubscriptionsListenResultResponseJsonrpc enum.
+func (e SubscriptionsListenResultResponseJsonrpc) Valid() bool {
+	switch e {
+	case SubscriptionsListenResultResponseJsonrpcN20:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for TextContentType.
 const (
 	Text TextContentType = "text"
@@ -1714,22 +1729,8 @@ type BooleanSchemaType string
 
 // CacheableResult A result that supports a time-to-live (TTL) hint for client-side caching.
 type CacheableResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// CacheScope Indicates the intended scope of the cached response, analogous to HTTP
 	// `Cache-Control: public` vs `Cache-Control: private`.
@@ -1812,22 +1813,8 @@ type CallToolRequestParams struct {
 
 // CallToolResult The result returned by the server for a {@link CallToolRequesttools/call} request.
 type CallToolResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// Content A list of content objects that represent the unstructured result of the tool call.
 	Content []ContentBlock `json:"content"`
@@ -2021,22 +2008,8 @@ type CompleteRequestParams_Ref struct {
 
 // CompleteResult The result returned by the server for a {@link CompleteRequestcompletion/complete} request.
 type CompleteResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 	Completion     struct {
 		// HasMore Indicates whether there are additional completion options beyond those provided in the current response, even if the exact total is unknown.
 		HasMore *bool `json:"hasMore,omitempty"`
@@ -2203,22 +2176,8 @@ type DiscoverRequestMethod string
 
 // DiscoverResult The result returned by the server for a {@link DiscoverRequestserver/discover} request.
 type DiscoverResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// CacheScope Indicates the intended scope of the cached response, analogous to HTTP
 	// `Cache-Control: public` vs `Cache-Control: private`.
@@ -2251,9 +2210,6 @@ type DiscoverResult struct {
 	// server implementing an earlier protocol version (which does not include
 	// `resultType`), the client MUST treat the absent field as `"complete"`.
 	ResultType string `json:"resultType"`
-
-	// ServerInfo Information about the server software implementation.
-	ServerInfo Implementation `json:"serverInfo"`
 
 	// SupportedVersions MCP Protocol Versions this server supports. The client should choose a
 	// version from this list for use in subsequent requests.
@@ -2474,22 +2430,8 @@ type GetPromptRequestParams struct {
 
 // GetPromptResult The result returned by the server for a {@link GetPromptRequestprompts/get} request.
 type GetPromptResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// Description An optional description for the prompt.
 	Description *string         `json:"description,omitempty"`
@@ -2683,22 +2625,8 @@ type InputRequests map[string]InputRequest
 //
 // At least one of `inputRequests` or `requestState` MUST be present.
 type InputRequiredResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// InputRequests A map of server-initiated requests that the client must fulfill.
 	// Keys are server-assigned identifiers; values are the request objects.
@@ -2901,22 +2829,8 @@ type ListPromptsRequestMethod string
 
 // ListPromptsResult The result returned by the server for a {@link ListPromptsRequestprompts/list} request.
 type ListPromptsResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// CacheScope Indicates the intended scope of the cached response, analogous to HTTP
 	// `Cache-Control: public` vs `Cache-Control: private`.
@@ -2999,22 +2913,8 @@ type ListResourceTemplatesRequestMethod string
 
 // ListResourceTemplatesResult The result returned by the server for a {@link ListResourceTemplatesRequestresources/templates/list} request.
 type ListResourceTemplatesResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// CacheScope Indicates the intended scope of the cached response, analogous to HTTP
 	// `Cache-Control: public` vs `Cache-Control: private`.
@@ -3097,22 +2997,8 @@ type ListResourcesRequestMethod string
 
 // ListResourcesResult The result returned by the server for a {@link ListResourcesRequestresources/list} request.
 type ListResourcesResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// CacheScope Indicates the intended scope of the cached response, analogous to HTTP
 	// `Cache-Control: public` vs `Cache-Control: private`.
@@ -3234,22 +3120,8 @@ type ListToolsRequestMethod string
 
 // ListToolsResult The result returned by the server for a {@link ListToolsRequesttools/list} request.
 type ListToolsResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// CacheScope Indicates the intended scope of the cached response, analogous to HTTP
 	// `Cache-Control: public` vs `Cache-Control: private`.
@@ -3536,22 +3408,8 @@ type PaginatedRequestParams struct {
 
 // PaginatedResult defines model for PaginatedResult.
 type PaginatedResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// NextCursor An opaque token representing the pagination position after the last returned result.
 	// If present, there may be more results available.
@@ -3770,22 +3628,8 @@ type ReadResourceRequestParams struct {
 
 // ReadResourceResult The result returned by the server for a {@link ReadResourceRequestresources/read} request.
 type ReadResourceResult struct {
-	// UnderscoreMeta Represents the contents of a `_meta` field, which clients and servers use to attach additional metadata to their interactions.
-	//
-	// Certain key names are reserved by MCP for protocol-level metadata; implementations MUST NOT make assumptions about values at these keys. Additionally, specific schema definitions may reserve particular names for purpose-specific metadata, as declared in those definitions.
-	//
-	// Valid keys have two segments:
-	//
-	// **Prefix:**
-	// - Optional — if specified, MUST be a series of _labels_ separated by dots (`.`), followed by a slash (`/`).
-	// - Labels MUST start with a letter and end with a letter or digit. Interior characters may be letters, digits, or hyphens (`-`).
-	// - Implementations SHOULD use reverse DNS notation (e.g., `com.example/` rather than `example.com/`).
-	// - Any prefix where the second label is `modelcontextprotocol` or `mcp` is **reserved** for MCP use. For example: `io.modelcontextprotocol/`, `dev.mcp/`, `org.modelcontextprotocol.api/`, and `com.mcp.tools/` are all reserved. However, `com.example.mcp/` is NOT reserved, as the second label is `example`.
-	//
-	// **Name:**
-	// - Unless empty, MUST start and end with an alphanumeric character (`[a-z0-9A-Z]`).
-	// - Interior characters may be alphanumeric, hyphens (`-`), underscores (`_`), or dots (`.`).
-	UnderscoreMeta *MetaObject `json:"_meta,omitempty"`
+	// UnderscoreMeta Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+	UnderscoreMeta *ResultMetaObject `json:"_meta,omitempty"`
 
 	// CacheScope Indicates the intended scope of the cached response, analogous to HTTP
 	// `Cache-Control: public` vs `Cache-Control: private`.
@@ -3871,11 +3715,18 @@ type RequestMetaObject struct {
 	// Servers MUST NOT infer capabilities from prior requests.
 	IoModelcontextprotocolClientCapabilities ClientCapabilities `json:"io.modelcontextprotocol/clientCapabilities"`
 
-	// IoModelcontextprotocolClientInfo Identifies the client software making the request. Required.
+	// IoModelcontextprotocolClientInfo Identifies the client software making the request. Clients SHOULD
+	// include this field on every request unless specifically configured not
+	// to do so.
 	//
 	// The {@link Implementation} schema requires `name` and `version`; other
 	// fields are optional.
-	IoModelcontextprotocolClientInfo Implementation `json:"io.modelcontextprotocol/clientInfo"`
+	//
+	// The value is self-reported by the client and is not verified by the
+	// protocol. It is intended for display, logging, and debugging. Servers
+	// SHOULD NOT use it to change their behavior, and SHOULD NOT rely on it for
+	// security decisions.
+	IoModelcontextprotocolClientInfo *Implementation `json:"io.modelcontextprotocol/clientInfo,omitempty"`
 
 	// IoModelcontextprotocolLogLevel The desired log level for this request. Optional.
 	//
@@ -4174,6 +4025,22 @@ type ResourceUpdatedNotificationParams struct {
 // Result Common result fields.
 type Result = map[string]any
 
+// ResultMetaObject Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+type ResultMetaObject struct {
+	// IoModelcontextprotocolServerInfo Identifies the server software producing the response. Servers SHOULD
+	// include this field on every response unless specifically configured not
+	// to do so.
+	//
+	// The {@link Implementation} schema requires `name` and `version`; other
+	// fields are optional.
+	//
+	// The value is self-reported by the server and is not verified by the
+	// protocol. It is intended for display, logging, and debugging. Clients
+	// SHOULD NOT use it to change their behavior, and SHOULD NOT rely on it for
+	// security decisions.
+	IoModelcontextprotocolServerInfo *Implementation `json:"io.modelcontextprotocol/serverInfo,omitempty"`
+}
+
 // ResultType Indicates the type of a {@link Result} object, allowing the client to
 // determine how to parse the response.
 //
@@ -4344,10 +4211,16 @@ type SubscriptionFilter struct {
 	ToolsListChanged *bool `json:"toolsListChanged,omitempty"`
 }
 
-// SubscriptionsAcknowledgedNotification Sent by the server as the first message on a
-// {@link SubscriptionsListenRequestsubscriptions/listen} stream to acknowledge
-// that the subscription has been established and to report which notification
-// types it agreed to honor.
+// SubscriptionsAcknowledgedNotification Sent by the server to acknowledge that a
+// {@link SubscriptionsListenRequestsubscriptions/listen} subscription has been
+// established and to report which notification types it agreed to honor.
+//
+// This notification MUST be the first message the server sends carrying the
+// subscription's ID in `io.modelcontextprotocol/subscriptionId`. The server MUST
+// NOT send any notification on the subscription before acknowledging it. On
+// stdio, where every subscription shares one channel, this ordering is defined
+// per subscription ID and not per channel: messages belonging to other
+// subscriptions MAY be interleaved before it.
 type SubscriptionsAcknowledgedNotification struct {
 	Jsonrpc SubscriptionsAcknowledgedNotificationJsonrpc `json:"jsonrpc"`
 	Method  SubscriptionsAcknowledgedNotificationMethod  `json:"method"`
@@ -4410,9 +4283,9 @@ type SubscriptionsListenRequestParams struct {
 // is sent only when the server tears the subscription down; an abrupt transport
 // close carries no response. The result body is otherwise empty.
 type SubscriptionsListenResult struct {
-	// UnderscoreMeta Extends {@link MetaObject} with the subscription-stream identifier carried by a
+	// UnderscoreMeta Extends {@link ResultMetaObject} with the subscription-stream identifier carried by a
 	// {@link SubscriptionsListenResult}. All key naming rules from `MetaObject` apply.
-	UnderscoreMeta SubscriptionsListenResultMeta `json:"_meta"`
+	UnderscoreMeta SubscriptionsListenResultMetaObject `json:"_meta"`
 
 	// ResultType Indicates the type of the result, which allows the client to determine
 	// how to parse the result object.
@@ -4424,9 +4297,22 @@ type SubscriptionsListenResult struct {
 	ResultType string `json:"resultType"`
 }
 
-// SubscriptionsListenResultMeta Extends {@link MetaObject} with the subscription-stream identifier carried by a
+// SubscriptionsListenResultMetaObject Extends {@link ResultMetaObject} with the subscription-stream identifier carried by a
 // {@link SubscriptionsListenResult}. All key naming rules from `MetaObject` apply.
-type SubscriptionsListenResultMeta struct {
+type SubscriptionsListenResultMetaObject struct {
+	// IoModelcontextprotocolServerInfo Identifies the server software producing the response. Servers SHOULD
+	// include this field on every response unless specifically configured not
+	// to do so.
+	//
+	// The {@link Implementation} schema requires `name` and `version`; other
+	// fields are optional.
+	//
+	// The value is self-reported by the server and is not verified by the
+	// protocol. It is intended for display, logging, and debugging. Clients
+	// SHOULD NOT use it to change their behavior, and SHOULD NOT rely on it for
+	// security decisions.
+	IoModelcontextprotocolServerInfo *Implementation `json:"io.modelcontextprotocol/serverInfo,omitempty"`
+
 	// IoModelcontextprotocolSubscriptionID Identifies the subscription stream this response closes, so the client can
 	// correlate it with the originating subscription — mirroring the same key on
 	// the stream's notifications. The value is the JSON-RPC ID of the
@@ -4434,6 +4320,24 @@ type SubscriptionsListenResultMeta struct {
 	// response's `id`).
 	IoModelcontextprotocolSubscriptionID RequestID `json:"io.modelcontextprotocol/subscriptionId"`
 }
+
+// SubscriptionsListenResultResponse A successful response from the server for a {@link SubscriptionsListenRequestsubscriptions/listen}
+// request, sent when the server tears the subscription down gracefully.
+type SubscriptionsListenResultResponse struct {
+	// ID A uniquely identifying ID for a request in JSON-RPC.
+	ID      RequestID                                `json:"id"`
+	Jsonrpc SubscriptionsListenResultResponseJsonrpc `json:"jsonrpc"`
+
+	// Result The response to a {@link SubscriptionsListenRequestsubscriptions/listen}
+	// request, signalling that the subscription has ended gracefully (for example,
+	// during server shutdown). Because the listen stream is long-lived, this result
+	// is sent only when the server tears the subscription down; an abrupt transport
+	// close carries no response. The result body is otherwise empty.
+	Result SubscriptionsListenResult `json:"result"`
+}
+
+// SubscriptionsListenResultResponseJsonrpc defines model for SubscriptionsListenResultResponse.Jsonrpc.
+type SubscriptionsListenResultResponseJsonrpc string
 
 // TextContent Text provided to or from an LLM.
 type TextContent struct {

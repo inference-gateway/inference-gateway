@@ -20,12 +20,21 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 const (
 	jsonRPCServerAlias = "stub"
 	jsonRPCToolName    = "echo"
 	jsonRPCToolOutput  = "ok"
+
+	// mcpProtocolVersion is the only MCP version the gateway's /mcp speaks.
+	mcpProtocolVersion       = "2026-07-28"
+	mcpHeaderProtocolVersion = "MCP-Protocol-Version"
+	mcpHeaderMethod          = "Mcp-Method"
+	mcpHeaderName            = "Mcp-Name"
+	// mcpRequestMeta is the params._meta every 2026-07-28 request carries.
+	mcpRequestMeta = `"_meta":{"io.modelcontextprotocol/protocolVersion":"` + mcpProtocolVersion + `","io.modelcontextprotocol/clientInfo":{"name":"test","version":"1.0.0"},"io.modelcontextprotocol/clientCapabilities":{}}`
 )
 
 // newJSONRPCStubServer is a minimal upstream MCP server: it answers the three
@@ -111,9 +120,14 @@ func TestMCPJSONRPCEndpointEndToEnd(t *testing.T) {
 	engine := gin.New()
 	engine.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
 
-	post := func(body string) (int, map[string]any) {
+	post := func(method types.MCPJSONRPCRequestMethod, toolName, body string) (int, map[string]any) {
 		req := httptest.NewRequest(http.MethodPost, middlewares.MCPPath, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set(mcpHeaderProtocolVersion, mcpProtocolVersion)
+		req.Header.Set(mcpHeaderMethod, string(method))
+		if toolName != "" {
+			req.Header.Set(mcpHeaderName, toolName)
+		}
 		w := httptest.NewRecorder()
 		engine.ServeHTTP(w, req)
 
@@ -125,18 +139,14 @@ func TestMCPJSONRPCEndpointEndToEnd(t *testing.T) {
 		return w.Code, resp
 	}
 
-	code, resp := post(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}`)
+	code, resp := post(types.ServerDiscover, "", `{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{`+mcpRequestMeta+`}}`)
 	require.Equal(t, http.StatusOK, code)
 	result, ok := resp["result"].(map[string]any)
 	require.True(t, ok)
-	assert.Equal(t, "2025-06-18", result["protocolVersion"])
-
-	code, resp = post(`{"jsonrpc":"2.0","method":"notifications/initialized"}`)
-	assert.Equal(t, http.StatusAccepted, code)
-	assert.Nil(t, resp)
+	assert.Equal(t, []any{mcpProtocolVersion}, result["supportedVersions"])
 
 	namespaced := mcp.NamespacedToolName(jsonRPCServerAlias, jsonRPCToolName)
-	code, resp = post(`{"jsonrpc":"2.0","id":2,"method":"tools/list"}`)
+	code, resp = post(types.ToolsList, "", `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{`+mcpRequestMeta+`}}`)
 	require.Equal(t, http.StatusOK, code)
 	result, ok = resp["result"].(map[string]any)
 	require.True(t, ok)
@@ -145,7 +155,7 @@ func TestMCPJSONRPCEndpointEndToEnd(t *testing.T) {
 	require.Len(t, tools, 1)
 	assert.Equal(t, namespaced, tools[0].(map[string]any)["name"])
 
-	code, resp = post(`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"` + namespaced + `","arguments":{"text":"hi"}}}`)
+	code, resp = post(types.ToolsCall, namespaced, `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"`+namespaced+`","arguments":{"text":"hi"},`+mcpRequestMeta+`}}`)
 	require.Equal(t, http.StatusOK, code)
 	require.Nil(t, resp["error"])
 	result, ok = resp["result"].(map[string]any)

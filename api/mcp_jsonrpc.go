@@ -1,9 +1,10 @@
 package api
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"slices"
+	"strings"
 
 	gin "github.com/gin-gonic/gin"
 
@@ -22,38 +23,45 @@ const (
 	jsonRPCMethodNotFound = -32601
 	jsonRPCInvalidParams  = -32602
 	jsonRPCInternalError  = -32603
+
+	// jsonRPCHeaderMismatch and jsonRPCUnsupportedVersion are the codes MCP
+	// 2026-07-28 reserves for request metadata failures.
+	jsonRPCHeaderMismatch     = -32020
+	jsonRPCUnsupportedVersion = -32022
 )
 
 const (
 	// mcpServerName is the serverInfo name MCP clients see for the gateway.
 	mcpServerName = "inference-gateway"
 
-	// defaultProtocolVersion is the MCP protocol version reported when the
-	// client asks for one the gateway does not know.
-	defaultProtocolVersion = "2025-06-18"
+	// mcpProtocolVersion is the only MCP protocol version /mcp speaks: the
+	// stateless revision, with no initialize handshake and no session.
+	mcpProtocolVersion = "2026-07-28"
+
+	// Request metadata the Streamable HTTP transport mirrors from the body
+	// into headers, and the params._meta key carrying the protocol version.
+	headerMCPProtocolVersion = "MCP-Protocol-Version"
+	headerMCPMethod          = "Mcp-Method"
+	headerMCPName            = "Mcp-Name"
+	headerOrigin             = "Origin"
+	metaProtocolVersion      = "io.modelcontextprotocol/protocolVersion"
+	metaServerInfo           = "io.modelcontextprotocol/serverInfo"
+
+	// base64HeaderPrefix and base64HeaderSuffix wrap header values that are
+	// not plain ASCII: =?base64?<value>?=.
+	base64HeaderPrefix = "=?base64?"
+	base64HeaderSuffix = "?="
 
 	// resultTypeComplete marks a result as final rather than partial.
 	resultTypeComplete = "complete"
 
 	errMsgMCPNotExposed = "MCP endpoint is not exposed. Set MCP_EXPOSE=true to enable."
+	errMsgMCPOrigin     = "MCP endpoint does not accept browser requests"
 	errMsgMCPUnusable   = "no mcp servers are available"
 	errMsgParse         = "parse error"
 	errMsgInvalidReq    = "invalid request: jsonrpc must be \"2.0\" and method is required"
+	errMsgUnsupported   = "unsupported protocol version"
 )
-
-// supportedProtocolVersions are the MCP protocol revisions the gateway answers
-// with verbatim; anything else is answered with defaultProtocolVersion so the
-// client can decide whether to continue.
-var supportedProtocolVersions = []string{"2024-11-05", "2025-03-26", defaultProtocolVersion}
-
-// mcpInitializeResult is the `initialize` result. The vendored MCP schema
-// models the handshake-free draft, so the three fields clients expect are
-// assembled from the spec types here.
-type mcpInitializeResult struct {
-	ProtocolVersion string                 `json:"protocolVersion"`
-	Capabilities    mcp.ServerCapabilities `json:"capabilities"`
-	ServerInfo      mcp.Implementation     `json:"serverInfo"`
-}
 
 // MCPJSONRPCHandler serves POST /mcp: the JSON-RPC 2.0 surface that exposes
 // every configured MCP server's tools through the gateway, so a client
@@ -63,6 +71,13 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 	if !router.cfg.MCP.Enabled || !router.cfg.MCP.Expose {
 		router.logger.Error("mcp endpoint access attempted but not exposed", nil)
 		c.JSON(http.StatusForbidden, ErrorResponse{Error: errMsgMCPNotExposed})
+		return
+	}
+	// MCP clients are not browsers, so any Origin is one this endpoint does not
+	// trust - rejecting them all closes DNS rebinding without an allowlist.
+	if origin := c.GetHeader(headerOrigin); origin != "" {
+		router.logger.Error("mcp request with an origin header rejected", nil, "origin", origin)
+		c.JSON(http.StatusForbidden, ErrorResponse{Error: errMsgMCPOrigin})
 		return
 	}
 
@@ -95,20 +110,22 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 	}
 
 	// A request without an id is a notification: accept it, answer nothing.
-	// notifications/initialized is the one clients send after the handshake.
+	// 2026-07-28 defines no client notifications over HTTP, nor headers for them.
 	if req.ID == nil {
 		router.logger.Debug("mcp notification accepted", "method", string(req.Method))
 		c.Status(http.StatusAccepted)
 		return
 	}
 
+	if rpcErr := validateMCPRequest(c.Request.Header, &req); rpcErr != nil {
+		router.logger.Error("mcp request metadata rejected", nil, "method", string(req.Method), "reason", rpcErr.Message)
+		router.writeMCPError(c, &req, rpcErr)
+		return
+	}
+
 	switch req.Method {
-	case types.Initialize:
-		router.respondMCPResult(c, &req, initializeResult(req.Params))
-	case types.NotificationsInitialized:
-		// Belt and braces: the method is a notification, but a client that
-		// sends it with an id is owed a response rather than "method not found".
-		router.respondMCPResult(c, &req, struct{}{})
+	case types.ServerDiscover:
+		router.respondMCPResult(c, &req, discoverResult())
 	case types.ToolsList:
 		router.respondMCPResult(c, &req, router.mcpToolsList())
 	case types.ToolsCall:
@@ -119,26 +136,84 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 	}
 }
 
-// initializeResult echoes back the client's protocol version when the gateway
-// knows it, and advertises tools as the only supported capability.
-func initializeResult(params *map[string]any) mcpInitializeResult {
-	protocolVersion := defaultProtocolVersion
-	if params != nil {
-		if requested, ok := (*params)["protocolVersion"].(string); ok && slices.Contains(supportedProtocolVersions, requested) {
-			protocolVersion = requested
+// validateMCPRequest enforces the 2026-07-28 request metadata: the protocol
+// version in params._meta, mirrored into MCP-Protocol-Version, plus the method
+// and, for tools/call, the tool name mirrored into Mcp-Method and Mcp-Name. A
+// legacy client opening with initialize sends none of these and is told which
+// version the gateway speaks.
+// ponytail: Mcp-Param-* headers are not validated; add it once an upstream
+// tool declares x-mcp-header in its inputSchema.
+func validateMCPRequest(header http.Header, req *types.MCPJSONRPCRequest) *types.MCPJSONRPCError {
+	version := header.Get(headerMCPProtocolVersion)
+	if version == "" {
+		return headerMismatch("missing " + headerMCPProtocolVersion + " header; this server speaks MCP " + mcpProtocolVersion)
+	}
+	if version != mcpProtocolVersion {
+		return &types.MCPJSONRPCError{
+			Code:    jsonRPCUnsupportedVersion,
+			Message: errMsgUnsupported,
+			Data:    map[string]any{"requested": version, "supported": []string{mcpProtocolVersion}},
 		}
 	}
 
+	params := map[string]any{}
+	if req.Params != nil {
+		params = *req.Params
+	}
+	meta, _ := params["_meta"].(map[string]any)
+	if bodyVersion, _ := meta[metaProtocolVersion].(string); bodyVersion != version {
+		return headerMismatch(headerMCPProtocolVersion + " header does not match params._meta " + metaProtocolVersion)
+	}
+	if header.Get(headerMCPMethod) != string(req.Method) {
+		return headerMismatch(headerMCPMethod + " header does not match method " + string(req.Method))
+	}
+	if req.Method == types.ToolsCall {
+		name, _ := params["name"].(string)
+		if headerName, ok := decodeHeaderValue(header.Get(headerMCPName)); !ok || headerName == "" || headerName != name {
+			return headerMismatch(headerMCPName + " header does not match params.name")
+		}
+	}
+	return nil
+}
+
+func headerMismatch(message string) *types.MCPJSONRPCError {
+	return &types.MCPJSONRPCError{Code: jsonRPCHeaderMismatch, Message: "header mismatch: " + message}
+}
+
+// decodeHeaderValue undoes the =?base64?<value>?= encoding clients use for
+// header values that are not plain ASCII; ok is false when it is malformed.
+func decodeHeaderValue(value string) (string, bool) {
+	encoded, found := strings.CutPrefix(value, base64HeaderPrefix)
+	if !found {
+		return value, true
+	}
+	encoded, found = strings.CutSuffix(encoded, base64HeaderSuffix)
+	if !found {
+		return "", false
+	}
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return "", false
+	}
+	return string(decoded), true
+}
+
+// discoverResult advertises the one protocol version /mcp speaks and tools as
+// the only capability. The scope is private because the tools a caller sees
+// depend on its auth context, and ttlMs is 0 because servers come and go with
+// their health.
+func discoverResult() mcp.DiscoverResult {
 	listChanged := false
 	capabilities := mcp.ServerCapabilities{}
 	capabilities.Tools = &struct {
 		ListChanged *bool `json:"listChanged,omitempty"`
 	}{ListChanged: &listChanged}
 
-	return mcpInitializeResult{
-		ProtocolVersion: protocolVersion,
-		Capabilities:    capabilities,
-		ServerInfo:      mcp.Implementation{Name: mcpServerName, Version: Version},
+	return mcp.DiscoverResult{
+		ResultType:        resultTypeComplete,
+		SupportedVersions: []string{mcpProtocolVersion},
+		Capabilities:      capabilities,
+		CacheScope:        mcp.DiscoverResultCacheScopePrivate,
 	}
 }
 
@@ -197,12 +272,8 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 		params = *req.Params
 	}
 
+	// validateMCPRequest already matched a non-empty Mcp-Name against it.
 	name, _ := params["name"].(string)
-	if name == "" {
-		router.respondMCPError(c, req, jsonRPCInvalidParams, "tools/call requires a 'name' parameter")
-		return
-	}
-
 	alias, toolName, err := router.mcpClient.ResolveTool(name)
 	if err != nil {
 		router.logger.Error("failed to resolve mcp tool", err, "tool", name)
@@ -248,7 +319,8 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 	router.respondMCPResult(c, req, result)
 }
 
-// respondMCPResult writes a JSON-RPC success envelope around an MCP result.
+// respondMCPResult writes a JSON-RPC success envelope around an MCP result,
+// naming the gateway as the server that produced it.
 func (router *RouterImpl) respondMCPResult(c *gin.Context, req *types.MCPJSONRPCRequest, result any) {
 	payload, err := mcpResultObject(result)
 	if err != nil {
@@ -257,6 +329,13 @@ func (router *RouterImpl) respondMCPResult(c *gin.Context, req *types.MCPJSONRPC
 		return
 	}
 
+	meta, _ := (*payload)["_meta"].(map[string]any)
+	if meta == nil {
+		meta = make(map[string]any)
+	}
+	meta[metaServerInfo] = mcp.Implementation{Name: mcpServerName, Version: Version}
+	(*payload)["_meta"] = meta
+
 	c.JSON(http.StatusOK, types.MCPJSONRPCResponse{
 		Jsonrpc: types.MCPJSONRPCResponseJsonrpcN20,
 		ID:      mcpResponseID(req),
@@ -264,13 +343,27 @@ func (router *RouterImpl) respondMCPResult(c *gin.Context, req *types.MCPJSONRPC
 	})
 }
 
-// respondMCPError writes a JSON-RPC error envelope. Protocol errors travel with
-// HTTP 200; only transport-level failures (auth, feature flag) use a status code.
+// respondMCPError writes a JSON-RPC error envelope with no error data.
 func (router *RouterImpl) respondMCPError(c *gin.Context, req *types.MCPJSONRPCRequest, code int, message string) {
-	c.JSON(http.StatusOK, types.MCPJSONRPCResponse{
+	router.writeMCPError(c, req, &types.MCPJSONRPCError{Code: code, Message: message})
+}
+
+// writeMCPError writes a JSON-RPC error envelope. Protocol errors travel with
+// HTTP 200 except where the 2026-07-28 transport pins a status: 400 for
+// header and version failures, 404 for an unknown method.
+func (router *RouterImpl) writeMCPError(c *gin.Context, req *types.MCPJSONRPCRequest, rpcErr *types.MCPJSONRPCError) {
+	status := http.StatusOK
+	switch rpcErr.Code {
+	case jsonRPCHeaderMismatch, jsonRPCUnsupportedVersion:
+		status = http.StatusBadRequest
+	case jsonRPCMethodNotFound:
+		status = http.StatusNotFound
+	}
+
+	c.JSON(status, types.MCPJSONRPCResponse{
 		Jsonrpc: types.MCPJSONRPCResponseJsonrpcN20,
 		ID:      mcpResponseID(req),
-		Error:   &types.MCPJSONRPCError{Code: code, Message: message},
+		Error:   rpcErr,
 	})
 }
 
