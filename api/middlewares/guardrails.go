@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"io"
@@ -99,9 +100,13 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		if err != nil {
 			m.logger.Error("guardrails: pre_call evaluation error", err)
 			if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
+				if path == MCPPath {
+					abortJSONRPCBlocked(c, bodyBytes, guardrails.MsgEvaluationFailed)
+					return
+				}
 				c.JSON(http.StatusForbidden, gin.H{
-					"error":   "guardrail evaluation failed",
-					"message": "request blocked by guardrails",
+					"error":   guardrails.MsgEvaluationFailed,
+					"message": guardrails.MsgBlocked,
 				})
 				c.Abort()
 				return
@@ -116,8 +121,12 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			if m.telemetry != nil {
 				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), guardrails.ActionBlock, path, model)
 			}
+			if path == MCPPath {
+				abortJSONRPCBlocked(c, bodyBytes, cmp.Or(dec.Message, guardrails.MsgBlocked))
+				return
+			}
 			c.JSON(http.StatusForbidden, gin.H{
-				"error":   "request blocked by guardrails",
+				"error":   guardrails.MsgBlocked,
 				"message": dec.Message,
 			})
 			c.Abort()
@@ -202,6 +211,27 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// abortJSONRPCBlocked refuses a /mcp request with a JSON-RPC error envelope
+// echoing the request id, so an MCP client can parse the refusal instead of
+// getting a plain error object it does not understand.
+func abortJSONRPCBlocked(c *gin.Context, body []byte, message string) {
+	var req struct {
+		ID json.RawMessage `json:"id"`
+	}
+	_ = json.Unmarshal(body, &req)
+
+	var id types.MCPJSONRPCResponse_ID
+	if len(req.ID) > 0 {
+		_ = id.UnmarshalJSON(req.ID)
+	}
+
+	c.AbortWithStatusJSON(http.StatusForbidden, types.MCPJSONRPCResponse{
+		Jsonrpc: types.MCPJSONRPCResponseJsonrpcN20,
+		ID:      id,
+		Error:   &types.MCPJSONRPCError{Code: JSONRPCGuardrailBlocked, Message: message},
+	})
 }
 
 // evaluate runs the policy evaluator and external guardrail check.

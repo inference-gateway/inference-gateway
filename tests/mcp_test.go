@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -22,8 +24,10 @@ import (
 	gin "github.com/gin-gonic/gin"
 
 	config "github.com/inference-gateway/inference-gateway/config"
+	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
+	otel "github.com/inference-gateway/inference-gateway/otel"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -131,7 +135,7 @@ func TestAgent_Run(t *testing.T) {
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providers.MockIProvider) {
 				mockLogger.EXPECT().Debug("agent loop iteration", "iteration", 1, "tool_calls", 1).Times(1)
 				mockLogger.EXPECT().Debug("executing tool calls", "count", 1).Times(1)
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=testsrv").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "name=test_tool args=map[param:value] server=testsrv").Times(1)
 				mockLogger.EXPECT().Debug("agent loop completed", "iterations", 1, "final_choices", 1).Times(1)
 
 				mockMCPClient.EXPECT().ResolveTool("mcp_test_tool").Return("testsrv", "test_tool", nil).Times(1)
@@ -276,7 +280,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "successful tool execution",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providers.MockIProvider) {
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=testsrv").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "name=test_tool args=map[param:value] server=testsrv").Times(1)
 
 				mockMCPClient.EXPECT().ResolveTool("mcp_test_tool").Return("testsrv", "test_tool", nil).Times(1)
 				mockMCPClient.EXPECT().ExecuteTool(
@@ -317,7 +321,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providers.MockIProvider) {
 				mockMCPClient.EXPECT().ResolveTool("mcp_server_tool").Return("customsrv", "server_tool", nil).Times(1)
 
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=server_tool args=map[param:value] server=customsrv").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "name=server_tool args=map[param:value] server=customsrv").Times(1)
 
 				mockMCPClient.EXPECT().ExecuteTool(
 					gomock.Any(),
@@ -374,7 +378,7 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "MCP execution error",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providers.MockIProvider) {
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_error name=failing_tool args=map[param:value] server=testsrv").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "name=failing_tool args=map[param:value] server=testsrv").Times(1)
 				mockLogger.EXPECT().Error("failed to execute tool call", gomock.Any(), "tool", "failing_tool", "server", "testsrv").Times(1)
 
 				mockMCPClient.EXPECT().ResolveTool("mcp_failing_tool").Return("testsrv", "failing_tool", nil).Times(1)
@@ -397,8 +401,8 @@ func TestAgent_ExecuteTools(t *testing.T) {
 		{
 			name: "multiple tool execution",
 			setupMocks: func(mockLogger *mocks.MockLogger, mockMCPClient *mcpmocks.MockMCPClientInterface, mockProvider *providers.MockIProvider) {
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi1 name=first_tool args=map[param:value1] server=testsrv").Times(1)
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_multi2 name=second_tool args=map[action:execute] server=testsrv").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "name=first_tool args=map[param:value1] server=testsrv").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "name=second_tool args=map[action:execute] server=testsrv").Times(1)
 
 				mockMCPClient.EXPECT().ResolveTool("mcp_first_tool").Return("testsrv", "first_tool", nil).Times(1)
 				mockMCPClient.EXPECT().ResolveTool("mcp_second_tool").Return("testsrv", "second_tool", nil).Times(1)
@@ -500,6 +504,46 @@ func TestAgent_ExecuteTools(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Agent-loop guardrail fixtures: a policy that compiles but fails to evaluate.
+const (
+	agentToolName       = "mcp_time_time"
+	agentPolicyFile     = "policy.rego"
+	agentConflictPolicy = `package guardrails
+
+main = {"action": "allow"} if {
+	input.phase == "tool_args"
+}
+
+main = {"action": "block"} if {
+	input.phase == "tool_args"
+}
+`
+)
+
+// TestAgent_ExecuteTools_CountsCallAndHidesEvaluationError asserts the agent
+// loop counts the MCP tool it dispatches, and a fail-closed evaluation error
+// reaches the model as the generic message, never the raw evaluator error.
+func TestAgent_ExecuteTools_CountsCallAndHidesEvaluationError(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, agentPolicyFile), []byte(agentConflictPolicy), 0o600))
+	evaluator, err := guardrails.NewEvaluator(context.Background(), dir)
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	telemetry := mocks.NewMockOpenTelemetry(ctrl)
+	telemetry.EXPECT().RecordToolCall(gomock.Any(), otel.SourceGateway, otel.TeamUnknown, "", "", mcp.ToolTypeMCP, agentToolName).Times(1)
+
+	agent := mcp.NewAgent(logger.NewNoopLogger(), mcpmocks.NewMockMCPClientInterface(ctrl))
+	agent.SetTelemetry(telemetry)
+	agent.SetGuardrails(evaluator, guardrails.FailModeClosed)
+
+	results, err := agent.ExecuteTools(context.Background(), []types.ChatCompletionMessageToolCall{toolCall("call_1", agentToolName, "{}")})
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	want := fmt.Sprintf("Error: %v", &guardrails.BlockedError{Message: guardrails.MsgEvaluationFailed})
+	assert.Equal(t, want, toolResultContent(t, results[0]))
 }
 
 func TestAgent_RunWithStream(t *testing.T) {
@@ -728,8 +772,8 @@ func TestAgent_RunWithStream(t *testing.T) {
 				mockLogger.EXPECT().Debug("parsed tool calls from stream", "count", 2, "iteration", 1).Times(1)
 				mockLogger.EXPECT().Debug("final parsed tool call", "tool_call", gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug("executing tool calls", "count", 2, "iteration", 1).Times(1)
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_123 name=test_tool args=map[param:value] server=testsrv").Times(1)
-				mockLogger.EXPECT().Info("executing tool call", "tool_call", "id=call_456 name=other_tool args=map[action:execute] server=testsrv").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "name=test_tool args=map[param:value] server=testsrv").Times(1)
+				mockLogger.EXPECT().Info("executing tool call", "tool_call", "name=other_tool args=map[action:execute] server=testsrv").Times(1)
 				mockLogger.EXPECT().Debug("tool execution complete, continuing to next iteration", "tool_results", 2, "total_messages", gomock.Any(), "iteration", 1).Times(1)
 
 				mockLogger.EXPECT().Debug("streaming iteration", "iteration", 2, "max_iterations", 10).Times(1)

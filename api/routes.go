@@ -49,6 +49,7 @@ type RouterImpl struct {
 	registry  registry.ProviderRegistry
 	client    client.Client
 	mcpClient mcp.MCPClientInterface
+	mcpAgent  *mcp.Agent
 	telemetry otel.OpenTelemetry
 	selector  *routing.Selector
 	tts       *tts.Engine
@@ -68,6 +69,7 @@ func NewRouter(
 	providerRegistry registry.ProviderRegistry,
 	httpClient client.Client,
 	mcpClient mcp.MCPClientInterface,
+	mcpAgent *mcp.Agent,
 	telemetry otel.OpenTelemetry,
 	selector *routing.Selector,
 	localTTS *tts.Engine,
@@ -78,6 +80,7 @@ func NewRouter(
 		providerRegistry,
 		httpClient,
 		mcpClient,
+		mcpAgent,
 		telemetry,
 		selector,
 		localTTS,

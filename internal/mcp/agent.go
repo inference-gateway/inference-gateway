@@ -28,8 +28,8 @@ type Agent struct {
 	logger              logger.Logger
 	mcpClient           MCPClientInterface
 	guardrailsEvaluator *guardrails.Evaluator
-	guardrailsTelemetry otel.OpenTelemetry
 	guardrailsFailMode  string
+	telemetry           otel.OpenTelemetry
 }
 
 // NewAgent creates a new Agent instance
@@ -40,10 +40,15 @@ func NewAgent(logger logger.Logger, mcpClient MCPClientInterface) *Agent {
 	}
 }
 
+// SetTelemetry sets where tool-call and tool-guardrail metrics go. A nil
+// telemetry records nothing.
+func (a *Agent) SetTelemetry(telemetry otel.OpenTelemetry) {
+	a.telemetry = telemetry
+}
+
 // SetGuardrails configures the guardrails evaluator for tool call evaluation.
-func (a *Agent) SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string) {
+func (a *Agent) SetGuardrails(evaluator *guardrails.Evaluator, failMode string) {
 	a.guardrailsEvaluator = evaluator
-	a.guardrailsTelemetry = telemetry
 	a.guardrailsFailMode = failMode
 	if evaluator != nil {
 		a.logger.Debug("guardrails set for agent", "fail_mode", failMode)
@@ -424,25 +429,37 @@ func (a *Agent) handleToolsExecute(ctx context.Context, toolCall types.ChatCompl
 	return a.dispatchTool(ctx, toolCall.ID, params.Name, string(argsJSON), params.Arguments)
 }
 
-// dispatchTool runs guardrails, resolves the server from the namespaced
-// mcp_<alias>_<tool> name, executes the tool, and runs output guardrails,
-// returning the resulting tool message. Guardrails and traces see the
-// namespaced name the model called; only the MCP request carries the bare name
-// the server knows.
+// dispatchTool executes a tool call and renders the result as a tool message.
 func (a *Agent) dispatchTool(ctx context.Context, toolCallID, name, argsJSON string, args map[string]any) types.Message {
-	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, name, argsJSON, "", guardrails.PhaseToolArgs); err != nil {
-		a.logger.Error("guardrails blocked tool call", err, "tool", name)
+	result, err := a.ExecuteToolCall(ctx, name, argsJSON, args)
+	if err != nil {
 		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
+	}
+	return a.toolMessage(toolCallID, toolResultJSON(result))
+}
+
+// ExecuteToolCall counts the call, then runs tool_args, the execute_tool span
+// and tool_output around the MCP request. The agent loop and POST /mcp share
+// it; everything but the MCP request sees the namespaced mcp_<alias>_<tool>.
+func (a *Agent) ExecuteToolCall(ctx context.Context, name, argsJSON string, args map[string]any) (*CallToolResult, error) {
+	if a.telemetry != nil {
+		a.telemetry.RecordToolCall(ctx, otel.SourceGateway, otel.TeamUnknown, "", "", ToolTypeMCP, name)
+	}
+
+	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.telemetry, a.logger, a.guardrailsFailMode, name, argsJSON, guardrails.PhaseToolArgs); err != nil {
+		a.logger.Error("guardrails blocked tool call", err, "tool", name)
+		return nil, err
 	}
 
 	toolCtx, span := otelapi.Tracer("github.com/inference-gateway/inference-gateway/internal/mcp").
 		Start(ctx, "execute_tool "+name, trace.WithAttributes(semconv.GenAIToolName(name)))
+	defer span.End()
+
 	server, toolName, err := a.mcpClient.ResolveTool(name)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
-		span.End()
 		a.logger.Error("failed to find server for tool", err, "tool_name", name)
-		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
+		return nil, err
 	}
 	span.SetAttributes(attribute.String("mcp.server.alias", server))
 
@@ -454,34 +471,33 @@ func (a *Agent) dispatchTool(ctx context.Context, toolCallID, name, argsJSON str
 		},
 	}
 
-	a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("id=%s name=%s args=%v server=%s", toolCallID, toolName, args, server))
+	a.logger.Info("executing tool call", "tool_call", fmt.Sprintf("name=%s args=%v server=%s", toolName, args, server))
 	result, err := a.mcpClient.ExecuteTool(toolCtx, mcpRequest, server)
 	if err != nil {
 		span.SetStatus(codes.Error, err.Error())
-		span.End()
 		a.logger.Error("failed to execute tool call", err, "tool", toolName, "server", server)
-		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
-	}
-	span.End()
-
-	var resultStr string
-	if result == nil {
-		resultStr = "null"
-	} else {
-		resultBytes, err := json.Marshal(result)
-		if err != nil {
-			resultStr = fmt.Sprintf("Error marshaling result: %v", err)
-		} else {
-			resultStr = string(resultBytes)
-		}
+		return nil, err
 	}
 
-	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, name, argsJSON, resultStr, guardrails.PhaseToolOutput); err != nil {
+	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.telemetry, a.logger, a.guardrailsFailMode, name, toolResultJSON(result), guardrails.PhaseToolOutput); err != nil {
 		a.logger.Error("guardrails blocked tool output", err, "tool", name)
-		return a.toolMessage(toolCallID, fmt.Sprintf("Error: %v", err))
+		return nil, err
 	}
 
-	return a.toolMessage(toolCallID, resultStr)
+	return result, nil
+}
+
+// toolResultJSON renders a tool result the way both the model and the
+// tool_output policy see it.
+func toolResultJSON(result *CallToolResult) string {
+	if result == nil {
+		return "null"
+	}
+	resultBytes, err := json.Marshal(result)
+	if err != nil {
+		return fmt.Sprintf("Error marshaling result: %v", err)
+	}
+	return string(resultBytes)
 }
 
 // parseToolArgs unmarshals tool-call arguments, tolerating an empty string.

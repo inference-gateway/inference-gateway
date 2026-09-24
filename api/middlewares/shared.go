@@ -16,6 +16,11 @@ const (
 	MCPPath             = "/mcp"
 )
 
+// JSONRPCGuardrailBlocked is the server-defined JSON-RPC error code (the
+// -32000..-32099 range) for a guardrails block on /mcp, so a client can tell a
+// policy refusal from an upstream failure (-32603).
+const JSONRPCGuardrailBlocked = -32001
+
 // SetSSEHeaders sets the response headers required for server-sent event streaming
 func SetSSEHeaders(c *gin.Context) {
 	c.Header("Content-Type", "text/event-stream")

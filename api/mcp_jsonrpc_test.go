@@ -1,11 +1,14 @@
 package api
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -13,14 +16,17 @@ import (
 	require "github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
 
 	gin "github.com/gin-gonic/gin"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
+	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
+	otel "github.com/inference-gateway/inference-gateway/otel"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -37,6 +43,66 @@ const (
 	metaClientCaps     = "io.modelcontextprotocol/clientCapabilities"
 )
 
+// Guardrail fixtures: the policies POST /mcp is evaluated against and the
+// tools/call body they see.
+const (
+	policyFileName    = "policy.rego"
+	toolOutputText    = "12:00"
+	argsBlockedMsg    = "tool arguments refused"
+	outputBlockedMsg  = "tool output refused"
+	preCallBlockedMsg = "mcp endpoint refused"
+	toolsCallBody     = `{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"` + nsGetTimeTool + `","arguments":{"timezone":"UTC"}}}`
+
+	// allowPolicy allows every phase.
+	allowPolicy = `package guardrails
+
+main = {"action": "allow"}
+`
+
+	// blockToolArgsPolicy also pins the tool-phase input shape: TOOL_CALL as the
+	// method and the namespaced tool name as the path.
+	blockToolArgsPolicy = `package guardrails
+
+main = {"action": "block", "message": "` + argsBlockedMsg + `"} if {
+	input.method == "TOOL_CALL"
+	input.phase == "tool_args"
+	input.path == "` + nsGetTimeTool + `"
+}
+`
+
+	// blockToolOutputPolicy matches the upstream result, which only reaches the
+	// policy when tool_output passes the tool output as the request body.
+	blockToolOutputPolicy = `package guardrails
+
+main = {"action": "block", "message": "` + outputBlockedMsg + `"} if {
+	input.phase == "tool_output"
+	contains(input.request.body, "` + toolOutputText + `")
+}
+`
+
+	// conflictingPolicy compiles but fails at evaluation time, which is what
+	// GUARDRAILS_FAIL_MODE decides on.
+	conflictingPolicy = `package guardrails
+
+main = {"action": "allow"} if {
+	input.phase == "tool_args"
+}
+
+main = {"action": "block"} if {
+	input.phase == "tool_args"
+}
+`
+
+	// blockMCPPathPolicy blocks at the pre_call phase the middleware runs.
+	blockMCPPathPolicy = `package guardrails
+
+main = {"action": "block", "message": "` + preCallBlockedMsg + `"} if {
+	input.path == "` + middlewares.MCPPath + `"
+	input.phase == "pre_call"
+}
+`
+)
+
 // jsonRPCTestResponse is the decoded envelope the assertions work against; the
 // handler writes the generated types.MCPJSONRPCResponse.
 type jsonRPCTestResponse struct {
@@ -50,14 +116,33 @@ type jsonRPCTestResponse struct {
 	} `json:"error"`
 }
 
-// newMCPEngine wires POST /mcp exactly as cmd/gateway/main.go does.
+// newMCPEngine wires POST /mcp exactly as cmd/gateway/main.go does, with
+// guardrails off and telemetry disabled.
 func newMCPEngine(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface) *gin.Engine {
 	t.Helper()
+	return newMCPEngineWithAgent(t, cfg, mcpClient, mcp.NewAgent(logger.NewNoopLogger(), mcpClient))
+}
+
+// newMCPEngineWithAgent wires POST /mcp with the agent the caller supplies, the
+// way main.go hands the router the guardrails- and telemetry-configured agent.
+func newMCPEngineWithAgent(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface, agent *mcp.Agent) *gin.Engine {
+	t.Helper()
 	gin.SetMode(gin.TestMode)
-	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, nil, nil, nil)
+	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, agent, nil, nil, nil)
 	r := gin.New()
 	r.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
 	return r
+}
+
+// newEvaluator compiles a single policy the way GUARDRAILS_POLICY_DIR is loaded
+// at startup.
+func newEvaluator(t *testing.T, policy string) *guardrails.Evaluator {
+	t.Helper()
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, policyFileName), []byte(policy), 0o600))
+	evaluator, err := guardrails.NewEvaluator(context.Background(), dir)
+	require.NoError(t, err)
+	return evaluator
 }
 
 // postMCP sends body the way a 2026-07-28 client does: the protocol version in
@@ -402,7 +487,7 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 
 	t.Run("dispatches to the resolved server", func(t *testing.T) {
 		e := engine(t, func(m *mcpmocks.MockMCPClientInterface) {
-			m.EXPECT().ResolveTool(nsGetTimeTool).Return(timeAlias, getTimeTool, nil)
+			m.EXPECT().ResolveTool(nsGetTimeTool).Return(timeAlias, getTimeTool, nil).AnyTimes()
 			m.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{timeAlias: mcp.ServerStatusAvailable})
 			m.EXPECT().ExecuteTool(gomock.Any(), mcp.Request{
 				Method: string(types.ToolsCall),
@@ -464,7 +549,7 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 
 	t.Run("upstream failure is an internal error", func(t *testing.T) {
 		e := engine(t, func(m *mcpmocks.MockMCPClientInterface) {
-			m.EXPECT().ResolveTool(nsGetTimeTool).Return(timeAlias, getTimeTool, nil)
+			m.EXPECT().ResolveTool(nsGetTimeTool).Return(timeAlias, getTimeTool, nil).AnyTimes()
 			m.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{timeAlias: mcp.ServerStatusAvailable})
 			m.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), timeAlias).Return(nil, errors.New(upstreamFailureMsg))
 		}, "")
@@ -479,6 +564,127 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 		w := postMCP(t, newMCPEngine(t, mcpEnabledConfig(), nil), `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"`+nsGetTimeTool+`"}}`)
 		body := assertJSONRPCError(t, w, http.StatusOK, jsonRPCInternalError)
 		assert.Equal(t, errMsgMCPUnusable, body.Error.Message)
+	})
+}
+
+// TestMCPJSONRPCHandler_ToolsCallGuardrails asserts tools/call runs tool_args
+// before the upstream call and tool_output after it, GUARDRAILS_FAIL_MODE
+// decides evaluation errors, and every block is a JSON-RPC error envelope.
+func TestMCPJSONRPCHandler_ToolsCallGuardrails(t *testing.T) {
+	tests := []struct {
+		name         string
+		policy       string
+		failMode     string
+		wantUpstream bool
+		wantMessage  string
+	}{
+		{name: "allowed call reaches the server", policy: allowPolicy, failMode: guardrails.FailModeClosed, wantUpstream: true},
+		{name: "tool_args block never reaches the server", policy: blockToolArgsPolicy, failMode: guardrails.FailModeClosed, wantMessage: argsBlockedMsg},
+		{name: "tool_output block withholds the result", policy: blockToolOutputPolicy, failMode: guardrails.FailModeClosed, wantUpstream: true, wantMessage: outputBlockedMsg},
+		{name: "evaluation error blocks when failing closed", policy: conflictingPolicy, failMode: guardrails.FailModeClosed, wantMessage: guardrails.MsgEvaluationFailed},
+		{name: "evaluation error allows when failing open", policy: conflictingPolicy, failMode: guardrails.FailModeOpen, wantUpstream: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			mcpClient := mcpmocks.NewMockMCPClientInterface(ctrl)
+			mcpClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+			mcpClient.EXPECT().GetServerTools(timeAlias).Return([]mcp.Tool{{Name: getTimeTool}}, nil).AnyTimes()
+			mcpClient.EXPECT().ResolveTool(nsGetTimeTool).Return(timeAlias, getTimeTool, nil).AnyTimes()
+			mcpClient.EXPECT().GetAllServerStatuses().
+				Return(map[string]mcp.ServerStatus{timeAlias: mcp.ServerStatusAvailable}).AnyTimes()
+
+			upstreamCalls := 0
+			if tt.wantUpstream {
+				upstreamCalls = 1
+			}
+			mcpClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), timeAlias).
+				Return(&mcp.CallToolResult{ResultType: mcp.ResultTypeComplete, Content: []mcp.ContentBlock{
+					map[string]any{"type": "text", "text": toolOutputText},
+				}}, nil).Times(upstreamCalls)
+
+			agent := mcp.NewAgent(logger.NewNoopLogger(), mcpClient)
+			agent.SetGuardrails(newEvaluator(t, tt.policy), tt.failMode)
+			w := postMCP(t, newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, agent), toolsCallBody)
+
+			if tt.wantMessage == "" {
+				require.Equal(t, http.StatusOK, w.Code)
+				var resp jsonRPCTestResponse
+				require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+				require.Nil(t, resp.Error)
+				assert.Equal(t, mcp.ResultTypeComplete, resp.Result["resultType"])
+				return
+			}
+
+			resp := assertJSONRPCError(t, w, http.StatusForbidden, middlewares.JSONRPCGuardrailBlocked)
+			assert.Equal(t, tt.wantMessage, resp.Error.Message)
+			assert.JSONEq(t, `7`, string(resp.ID))
+		})
+	}
+}
+
+// TestMCPJSONRPCHandler_PreCallBlockEnvelope asserts a pre_call block on /mcp
+// answers with a JSON-RPC error envelope echoing the request id, not the plain
+// error object an MCP client cannot parse.
+func TestMCPJSONRPCHandler_PreCallBlockEnvelope(t *testing.T) {
+	cfg := mcpEnabledConfig()
+	cfg.Guardrails = &config.GuardrailsConfig{Enabled: true, FailMode: guardrails.FailModeClosed}
+
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
+	engine := gin.New()
+	engine.Use(middlewares.NewGuardrailsMiddleware(newEvaluator(t, blockMCPPathPolicy), nil, nil, logger.NewNoopLogger(), nil, cfg).Middleware())
+	engine.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
+
+	w := postMCP(t, engine, toolsCallBody)
+
+	resp := assertJSONRPCError(t, w, http.StatusForbidden, middlewares.JSONRPCGuardrailBlocked)
+	assert.Equal(t, preCallBlockedMsg, resp.Error.Message)
+	assert.JSONEq(t, `7`, string(resp.ID))
+}
+
+// TestMCPJSONRPCHandler_ToolsCallMetrics asserts a tools/call that resolves to
+// an advertised tool is counted, and that a name that resolves to nothing is
+// not, so client-supplied strings cannot inflate label cardinality.
+func TestMCPJSONRPCHandler_ToolsCallMetrics(t *testing.T) {
+	newClient := func(ctrl *gomock.Controller) *mcpmocks.MockMCPClientInterface {
+		mcpClient := mcpmocks.NewMockMCPClientInterface(ctrl)
+		mcpClient.EXPECT().IsInitialized().Return(true).AnyTimes()
+		mcpClient.EXPECT().GetServerTools(timeAlias).Return([]mcp.Tool{{Name: getTimeTool}}, nil).AnyTimes()
+		return mcpClient
+	}
+
+	t.Run("resolved tool is recorded", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mcpClient := newClient(ctrl)
+		mcpClient.EXPECT().ResolveTool(nsGetTimeTool).Return(timeAlias, getTimeTool, nil).AnyTimes()
+		mcpClient.EXPECT().GetAllServerStatuses().Return(map[string]mcp.ServerStatus{timeAlias: mcp.ServerStatusAvailable})
+		mcpClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), timeAlias).
+			Return(&mcp.CallToolResult{ResultType: mcp.ResultTypeComplete}, nil)
+
+		telemetry := mocks.NewMockOpenTelemetry(ctrl)
+		telemetry.EXPECT().RecordToolCall(gomock.Any(), otel.SourceGateway, otel.TeamUnknown, "", "", mcp.ToolTypeMCP, nsGetTimeTool).Times(1)
+
+		agent := mcp.NewAgent(logger.NewNoopLogger(), mcpClient)
+		agent.SetTelemetry(telemetry)
+		engine := newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, agent)
+		assert.Equal(t, http.StatusOK, postMCP(t, engine, toolsCallBody).Code)
+	})
+
+	t.Run("unknown tool is not recorded", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mcpClient := newClient(ctrl)
+		mcpClient.EXPECT().ResolveTool(gomock.Any()).Return("", "", errors.New("no such tool"))
+
+		telemetry := mocks.NewMockOpenTelemetry(ctrl)
+		telemetry.EXPECT().RecordToolCall(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+		agent := mcp.NewAgent(logger.NewNoopLogger(), mcpClient)
+		agent.SetTelemetry(telemetry)
+		engine := newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, agent)
+		w := postMCP(t, engine, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp_time_nope"}}`)
+		assertJSONRPCError(t, w, http.StatusOK, jsonRPCInvalidParams)
 	})
 }
 

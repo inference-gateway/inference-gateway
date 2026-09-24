@@ -230,6 +230,7 @@ func main() {
 			appLogger.Info("mcp is enabled but no servers configured, using no-op middleware")
 			mcpAgent = mcp.NewAgent(appLogger, mcpClient)
 		}
+		mcpAgent.SetTelemetry(telemetryImpl)
 		mcpMiddleware, err = middlewares.NewMCPMiddleware(providerRegistry, httpClient, mcpClient, mcpAgent, appLogger, cfg)
 		if err != nil {
 			appLogger.Error("failed to initialize mcp middleware", err)
@@ -264,7 +265,7 @@ func main() {
 		appLogger.Info("guardrails middleware initialized", "policy_dir", cfg.Guardrails.PolicyDir)
 
 		if mcpAgent != nil {
-			mcpAgent.SetGuardrails(evaluator, telemetryImpl, cfg.Guardrails.FailMode)
+			mcpAgent.SetGuardrails(evaluator, cfg.Guardrails.FailMode)
 		}
 	} else {
 		guardrailsMiddleware = middlewares.NewGuardrailsMiddleware(nil, nil, nil, appLogger, telemetryImpl, cfg)
@@ -307,7 +308,7 @@ func main() {
 	}
 
 	mcp.GatewayInfo.Version = version
-	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector, localTTS)
+	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, mcpAgent, telemetryImpl, selector, localTTS)
 	r := gin.New()
 	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
 		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {

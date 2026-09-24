@@ -4,6 +4,7 @@ package guardrails
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -31,6 +32,12 @@ const (
 	ActionBlock  = "block"
 	ActionRedact = "redact"
 	ActionWarn   = "warn"
+)
+
+// Client-facing messages for a block that carries no policy message of its own.
+const (
+	MsgBlocked          = "request blocked by guardrails"
+	MsgEvaluationFailed = "guardrail evaluation failed"
 )
 
 // Phase is the point in the request lifecycle a policy runs.
@@ -353,8 +360,24 @@ func claimsFromContext(ctx context.Context) map[string]any {
 	return claims
 }
 
-// EvaluateToolCall evaluates a tool call against guardrails policies.
-// This is called from the MCP agent's ExecuteTools method.
+// BlockedError reports a tool call a policy refused. Error renders only the
+// client-facing Message; Err, the raw evaluation failure behind a fail-closed
+// block, is logged by EvaluateToolCall and reachable through Unwrap.
+type BlockedError struct {
+	Phase   Phase
+	Message string
+	Err     error
+}
+
+func (e *BlockedError) Error() string {
+	return "guardrails: tool call blocked: " + e.Message
+}
+
+func (e *BlockedError) Unwrap() error { return e.Err }
+
+// EvaluateToolCall evaluates one tool-call phase against guardrails policies.
+// body is the tool arguments for PhaseToolArgs and the tool output for
+// PhaseToolOutput. A block comes back as a *BlockedError.
 func EvaluateToolCall(
 	ctx context.Context,
 	evaluator *Evaluator,
@@ -362,8 +385,7 @@ func EvaluateToolCall(
 	log logger.Logger,
 	failMode string,
 	toolName string,
-	toolArgs string,
-	toolOutput string,
+	body string,
 	phase Phase,
 ) error {
 	if evaluator == nil {
@@ -375,7 +397,7 @@ func EvaluateToolCall(
 		Path:   toolName,
 		Phase:  phase,
 		Request: &Req{
-			Body:  toolArgs,
+			Body:  body,
 			Model: "",
 		},
 		Identity: claimsFromContext(ctx),
@@ -384,7 +406,8 @@ func EvaluateToolCall(
 	dec, err := evaluator.Eval(ctx, input)
 	if err != nil {
 		if failMode == FailModeClosed {
-			return fmt.Errorf("guardrails: tool call blocked: %w", err)
+			log.Error("guardrails: tool call evaluation error, blocking in closed mode", err, "tool", toolName, "phase", string(phase))
+			return &BlockedError{Phase: phase, Message: MsgEvaluationFailed, Err: err}
 		}
 		log.Warn("guardrails: tool call evaluation error, allowing in open mode", "error", err.Error())
 		return nil
@@ -394,7 +417,7 @@ func EvaluateToolCall(
 		if telemetry != nil {
 			telemetry.RecordGuardrail(ctx, otel.SourceGateway, string(phase), ActionBlock, toolName, "")
 		}
-		return fmt.Errorf("guardrails: tool call blocked: %s", dec.Message)
+		return &BlockedError{Phase: phase, Message: cmp.Or(dec.Message, MsgBlocked)}
 	}
 
 	if telemetry != nil {

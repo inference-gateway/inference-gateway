@@ -73,7 +73,7 @@ func newResponsesTestRouter(t *testing.T, upstreamURL string) *api.RouterImpl {
 		Providers: providerCfg,
 	}
 
-	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil, nil)
+	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil, nil, nil)
 }
 
 func TestResponsesHandler_NonStreamingPassthrough(t *testing.T) {

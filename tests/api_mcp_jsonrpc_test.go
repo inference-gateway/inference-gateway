@@ -114,7 +114,7 @@ func TestMCPJSONRPCEndpointEndToEnd(t *testing.T) {
 	defer cancel()
 	require.NoError(t, mcpClient.InitializeAll(ctx))
 
-	router := api.NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, nil, nil, nil)
+	router := api.NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, mcp.NewAgent(logger.NewNoopLogger(), mcpClient), nil, nil, nil)
 	engine := gin.New()
 	engine.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
 

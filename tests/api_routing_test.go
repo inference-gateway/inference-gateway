@@ -91,7 +91,7 @@ func TestChatCompletionsRouting_RoundRobinRotation(t *testing.T) {
 		routing.Deployment{Provider: "openai", Model: "model-a"},
 		routing.Deployment{Provider: "groq", Model: "model-b"},
 	)
-	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, sel, nil)
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, sel, nil)
 	r := gin.New()
 	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
@@ -130,7 +130,7 @@ func TestChatCompletionsRouting_StreamingPassthrough(t *testing.T) {
 		routing.Deployment{Provider: "openai", Model: "stream-model"},
 		routing.Deployment{Provider: "groq", Model: "stream-model-b"},
 	)
-	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, sel, nil)
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, sel, nil)
 	r := gin.New()
 	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
@@ -157,7 +157,7 @@ func TestChatCompletionsRouting_DisabledPassthrough(t *testing.T) {
 	mockClient := providers.NewMockClient(ctrl)
 	reg := providers.NewMockProviderRegistry(ctrl)
 
-	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil)
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil, nil)
 	r := gin.New()
 	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
@@ -190,7 +190,7 @@ func TestChatCompletionsRouting_ExplicitProviderWins(t *testing.T) {
 		routing.Deployment{Provider: "openai", Model: "model-a"},
 		routing.Deployment{Provider: "ollama", Model: "model-b"},
 	)
-	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, sel, nil)
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, sel, nil)
 	r := gin.New()
 	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 
@@ -236,7 +236,7 @@ func TestChatCompletionsRouting_AllowedModelsFiltersAlias(t *testing.T) {
 				routing.Deployment{Provider: "openai", Model: "model-a"},
 				routing.Deployment{Provider: "groq", Model: "model-b"},
 			)
-			router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, sel, nil)
+			router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, sel, nil)
 			r := gin.New()
 			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
 

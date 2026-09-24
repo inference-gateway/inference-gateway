@@ -335,6 +335,14 @@ curl -X POST http://localhost:8080/mcp \
 If a backend server is down, `tools/list` still returns the healthy servers'
 tools and a `tools/call` routed to it comes back as a JSON-RPC error.
 
+Calls over `/mcp` get the same enforcement and observability as the tools the
+gateway runs inside `/v1/chat/completions`: the `tool_args` guardrail runs
+before the upstream call and `tool_output` after it (see the
+[guardrails example](../guardrails/)), each call increments
+`inference_gateway.tool_calls` with `gen_ai.tool.type=mcp` and runs inside an
+`execute_tool <name>` span. A policy block answers `403` with a JSON-RPC error
+envelope carrying code `-32001` and the policy's message.
+
 Client configuration, e.g. for opencode (the client must support MCP
 `2026-07-28`):
 
