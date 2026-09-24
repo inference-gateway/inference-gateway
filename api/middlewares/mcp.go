@@ -103,8 +103,6 @@ func (m *MCPMiddlewareImpl) Middleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		// The body is consumed above, so the handler reads the request from
-		// here on every path, including the early exits below.
 		c.Set(string(mcpBypassKey), &originalRequestBody)
 
 		if !m.mcpClient.IsInitialized() {
