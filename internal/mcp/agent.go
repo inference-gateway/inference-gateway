@@ -28,8 +28,8 @@ type Agent struct {
 	logger              logger.Logger
 	mcpClient           MCPClientInterface
 	guardrailsEvaluator *guardrails.Evaluator
-	guardrailsTelemetry otel.OpenTelemetry
 	guardrailsFailMode  string
+	telemetry           otel.OpenTelemetry
 }
 
 // NewAgent creates a new Agent instance
@@ -40,10 +40,15 @@ func NewAgent(logger logger.Logger, mcpClient MCPClientInterface) *Agent {
 	}
 }
 
+// SetTelemetry sets where tool-call and tool-guardrail metrics go. A nil
+// telemetry records nothing.
+func (a *Agent) SetTelemetry(telemetry otel.OpenTelemetry) {
+	a.telemetry = telemetry
+}
+
 // SetGuardrails configures the guardrails evaluator for tool call evaluation.
-func (a *Agent) SetGuardrails(evaluator *guardrails.Evaluator, telemetry otel.OpenTelemetry, failMode string) {
+func (a *Agent) SetGuardrails(evaluator *guardrails.Evaluator, failMode string) {
 	a.guardrailsEvaluator = evaluator
-	a.guardrailsTelemetry = telemetry
 	a.guardrailsFailMode = failMode
 	if evaluator != nil {
 		a.logger.Debug("guardrails set for agent", "fail_mode", failMode)
@@ -433,14 +438,15 @@ func (a *Agent) dispatchTool(ctx context.Context, toolCallID, name, argsJSON str
 	return a.toolMessage(toolCallID, toolResultJSON(result))
 }
 
-// ExecuteToolCall runs the tool_args guardrail, resolves the server from the
-// namespaced mcp_<alias>_<tool> name, executes the tool inside an execute_tool
-// span, and runs the tool_output guardrail on the result. The agent loop and
-// POST /mcp share it, so both surfaces get one policy input shape and one span.
-// Guardrails and traces see the namespaced name the caller used; only the MCP
-// request carries the bare name the server knows.
+// ExecuteToolCall counts the call, then runs tool_args, the execute_tool span
+// and tool_output around the MCP request. The agent loop and POST /mcp share
+// it; everything but the MCP request sees the namespaced mcp_<alias>_<tool>.
 func (a *Agent) ExecuteToolCall(ctx context.Context, name, argsJSON string, args map[string]any) (*CallToolResult, error) {
-	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, name, argsJSON, guardrails.PhaseToolArgs); err != nil {
+	if a.telemetry != nil {
+		a.telemetry.RecordToolCall(ctx, otel.SourceGateway, otel.TeamUnknown, "", "", ToolTypeMCP, name)
+	}
+
+	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.telemetry, a.logger, a.guardrailsFailMode, name, argsJSON, guardrails.PhaseToolArgs); err != nil {
 		a.logger.Error("guardrails blocked tool call", err, "tool", name)
 		return nil, err
 	}
@@ -473,7 +479,7 @@ func (a *Agent) ExecuteToolCall(ctx context.Context, name, argsJSON string, args
 		return nil, err
 	}
 
-	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.guardrailsTelemetry, a.logger, a.guardrailsFailMode, name, toolResultJSON(result), guardrails.PhaseToolOutput); err != nil {
+	if err := guardrails.EvaluateToolCall(ctx, a.guardrailsEvaluator, a.telemetry, a.logger, a.guardrailsFailMode, name, toolResultJSON(result), guardrails.PhaseToolOutput); err != nil {
 		a.logger.Error("guardrails blocked tool output", err, "tool", name)
 		return nil, err
 	}

@@ -31,9 +31,8 @@ main = {"action": "block", "message": "` + blockedMsg + `"} if {
 )
 
 // TestEvaluateToolCall_ToolOutputBody asserts the tool_output phase sees the
-// tool output as input.request.body, the way post_call sees the response body.
-// The arguments never carry the marker, so a tool_args evaluation of the same
-// policy must pass.
+// tool output as input.request.body. The arguments never carry the marker, so
+// a tool_args evaluation of the same policy must pass.
 func TestEvaluateToolCall_ToolOutputBody(t *testing.T) {
 	dir := t.TempDir()
 	require.NoError(t, os.WriteFile(filepath.Join(dir, policyFile), []byte(outputOnly), 0o600))

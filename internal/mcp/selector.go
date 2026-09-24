@@ -19,6 +19,10 @@ const (
 // mcp_<server alias>_<tool name>.
 const ToolNamePrefix = "mcp_"
 
+// ToolTypeMCP is the gen_ai.tool.type recorded on inference_gateway.tool_calls
+// for a tool served by a configured MCP server.
+const ToolTypeMCP = "mcp"
+
 // Selector meta-tool names. These are gateway-defined and handled inside the
 // agent loop, never dispatched to an upstream MCP server.
 const (

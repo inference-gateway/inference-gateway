@@ -101,7 +101,6 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			m.logger.Error("guardrails: pre_call evaluation error", err)
 			if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
 				if path == MCPPath {
-					// The raw evaluator error stays in the log above.
 					abortJSONRPCBlocked(c, bodyBytes, guardrails.MsgEvaluationFailed)
 					return
 				}

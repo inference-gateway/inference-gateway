@@ -120,15 +120,15 @@ type jsonRPCTestResponse struct {
 // guardrails off and telemetry disabled.
 func newMCPEngine(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface) *gin.Engine {
 	t.Helper()
-	return newMCPEngineWithAgent(t, cfg, mcpClient, mcp.NewAgent(logger.NewNoopLogger(), mcpClient), nil)
+	return newMCPEngineWithAgent(t, cfg, mcpClient, mcp.NewAgent(logger.NewNoopLogger(), mcpClient))
 }
 
-// newMCPEngineWithAgent wires POST /mcp with the agent and telemetry the caller
-// supplies, the way main.go hands the router the guardrails-configured agent.
-func newMCPEngineWithAgent(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface, agent *mcp.Agent, telemetry otel.OpenTelemetry) *gin.Engine {
+// newMCPEngineWithAgent wires POST /mcp with the agent the caller supplies, the
+// way main.go hands the router the guardrails- and telemetry-configured agent.
+func newMCPEngineWithAgent(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface, agent *mcp.Agent) *gin.Engine {
 	t.Helper()
 	gin.SetMode(gin.TestMode)
-	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, agent, telemetry, nil, nil)
+	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, agent, nil, nil, nil)
 	r := gin.New()
 	r.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
 	return r
@@ -567,10 +567,9 @@ func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
 	})
 }
 
-// TestMCPJSONRPCHandler_ToolsCallGuardrails asserts tools/call runs the same
-// per-tool policies as the chat-completions agent loop: tool_args before the
-// upstream call, tool_output after it, with GUARDRAILS_FAIL_MODE deciding
-// evaluation errors. Every block comes back as a JSON-RPC error envelope.
+// TestMCPJSONRPCHandler_ToolsCallGuardrails asserts tools/call runs tool_args
+// before the upstream call and tool_output after it, GUARDRAILS_FAIL_MODE
+// decides evaluation errors, and every block is a JSON-RPC error envelope.
 func TestMCPJSONRPCHandler_ToolsCallGuardrails(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -606,8 +605,8 @@ func TestMCPJSONRPCHandler_ToolsCallGuardrails(t *testing.T) {
 				}}, nil).Times(upstreamCalls)
 
 			agent := mcp.NewAgent(logger.NewNoopLogger(), mcpClient)
-			agent.SetGuardrails(newEvaluator(t, tt.policy), nil, tt.failMode)
-			w := postMCP(t, newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, agent, nil), toolsCallBody)
+			agent.SetGuardrails(newEvaluator(t, tt.policy), tt.failMode)
+			w := postMCP(t, newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, agent), toolsCallBody)
 
 			if tt.wantMessage == "" {
 				require.Equal(t, http.StatusOK, w.Code)
@@ -665,9 +664,11 @@ func TestMCPJSONRPCHandler_ToolsCallMetrics(t *testing.T) {
 			Return(&mcp.CallToolResult{ResultType: mcp.ResultTypeComplete}, nil)
 
 		telemetry := mocks.NewMockOpenTelemetry(ctrl)
-		telemetry.EXPECT().RecordToolCall(gomock.Any(), otel.SourceGateway, otel.TeamUnknown, "", "", middlewares.ToolTypeMCP, nsGetTimeTool).Times(1)
+		telemetry.EXPECT().RecordToolCall(gomock.Any(), otel.SourceGateway, otel.TeamUnknown, "", "", mcp.ToolTypeMCP, nsGetTimeTool).Times(1)
 
-		engine := newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, mcp.NewAgent(logger.NewNoopLogger(), mcpClient), telemetry)
+		agent := mcp.NewAgent(logger.NewNoopLogger(), mcpClient)
+		agent.SetTelemetry(telemetry)
+		engine := newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, agent)
 		assert.Equal(t, http.StatusOK, postMCP(t, engine, toolsCallBody).Code)
 	})
 
@@ -679,7 +680,9 @@ func TestMCPJSONRPCHandler_ToolsCallMetrics(t *testing.T) {
 		telemetry := mocks.NewMockOpenTelemetry(ctrl)
 		telemetry.EXPECT().RecordToolCall(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
-		engine := newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, mcp.NewAgent(logger.NewNoopLogger(), mcpClient), telemetry)
+		agent := mcp.NewAgent(logger.NewNoopLogger(), mcpClient)
+		agent.SetTelemetry(telemetry)
+		engine := newMCPEngineWithAgent(t, mcpEnabledConfig(), mcpClient, agent)
 		w := postMCP(t, engine, `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp_time_nope"}}`)
 		assertJSONRPCError(t, w, http.StatusOK, jsonRPCInvalidParams)
 	})

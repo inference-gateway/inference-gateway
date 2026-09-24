@@ -13,7 +13,6 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
-	otel "github.com/inference-gateway/inference-gateway/otel"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -249,10 +248,9 @@ func (router *RouterImpl) mcpToolsList() mcp.ListToolsResult {
 	}
 }
 
-// mcpToolsCall resolves the namespaced tool name to its server and hands the
-// call to the agent, which runs the tool guardrails and the execute_tool span
-// the chat-completions loop runs. Upstream failures come back as JSON-RPC
-// errors, never as a 500.
+// mcpToolsCall hands an advertised, allowed tool to the agent, which runs the
+// same guardrails, span and counter as the chat-completions loop. Unknown names
+// never reach it, and upstream failures come back as JSON-RPC errors.
 func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequest) {
 	if router.mcpClient == nil || !router.mcpClient.IsInitialized() || router.mcpAgent == nil {
 		router.logger.Error("mcp tools/call with no usable mcp client", nil)
@@ -302,18 +300,11 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 		return
 	}
 
-	// Only names that resolved to an advertised, allowed tool are recorded, so
-	// client-supplied strings cannot inflate label cardinality.
-	if router.telemetry != nil {
-		router.telemetry.RecordToolCall(c.Request.Context(), otel.SourceGateway, otel.TeamUnknown, "", "", middlewares.ToolTypeMCP, name)
-	}
-
 	router.logger.Debug("executing mcp tool call", "tool", toolName, "server", alias)
 	result, err := router.mcpAgent.ExecuteToolCall(c.Request.Context(), name, string(argsJSON), arguments)
 	if err != nil {
 		var blocked *guardrails.BlockedError
 		if errors.As(err, &blocked) {
-			// The raw evaluator error stays in the agent's log.
 			router.respondMCPError(c, req, middlewares.JSONRPCGuardrailBlocked, blocked.Message)
 			return
 		}
@@ -359,10 +350,9 @@ func (router *RouterImpl) respondMCPError(c *gin.Context, req *types.MCPJSONRPCR
 	router.writeMCPError(c, req, &types.MCPJSONRPCError{Code: code, Message: message})
 }
 
-// writeMCPError writes a JSON-RPC error envelope. Protocol errors travel with
-// HTTP 200 except where the 2026-07-28 transport pins a status: 400 for
-// header and version failures, 404 for an unknown method. A guardrails block
-// answers 403, the same status every other blocked route returns.
+// writeMCPError writes a JSON-RPC error envelope with HTTP 200, except 400 for
+// header and version failures and 404 for an unknown method (both pinned by
+// 2026-07-28), and 403 for a guardrails block, like every other blocked route.
 func (router *RouterImpl) writeMCPError(c *gin.Context, req *types.MCPJSONRPCRequest, rpcErr *types.MCPJSONRPCError) {
 	status := http.StatusOK
 	switch rpcErr.Code {

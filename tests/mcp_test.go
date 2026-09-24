@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -22,8 +24,10 @@ import (
 	gin "github.com/gin-gonic/gin"
 
 	config "github.com/inference-gateway/inference-gateway/config"
+	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/logger"
+	otel "github.com/inference-gateway/inference-gateway/otel"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -500,6 +504,46 @@ func TestAgent_ExecuteTools(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Agent-loop guardrail fixtures: a policy that compiles but fails to evaluate.
+const (
+	agentToolName       = "mcp_time_time"
+	agentPolicyFile     = "policy.rego"
+	agentConflictPolicy = `package guardrails
+
+main = {"action": "allow"} if {
+	input.phase == "tool_args"
+}
+
+main = {"action": "block"} if {
+	input.phase == "tool_args"
+}
+`
+)
+
+// TestAgent_ExecuteTools_CountsCallAndHidesEvaluationError asserts the agent
+// loop counts the MCP tool it dispatches, and a fail-closed evaluation error
+// reaches the model as the generic message, never the raw evaluator error.
+func TestAgent_ExecuteTools_CountsCallAndHidesEvaluationError(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dir, agentPolicyFile), []byte(agentConflictPolicy), 0o600))
+	evaluator, err := guardrails.NewEvaluator(context.Background(), dir)
+	require.NoError(t, err)
+
+	ctrl := gomock.NewController(t)
+	telemetry := mocks.NewMockOpenTelemetry(ctrl)
+	telemetry.EXPECT().RecordToolCall(gomock.Any(), otel.SourceGateway, otel.TeamUnknown, "", "", mcp.ToolTypeMCP, agentToolName).Times(1)
+
+	agent := mcp.NewAgent(logger.NewNoopLogger(), mcpmocks.NewMockMCPClientInterface(ctrl))
+	agent.SetTelemetry(telemetry)
+	agent.SetGuardrails(evaluator, guardrails.FailModeClosed)
+
+	results, err := agent.ExecuteTools(context.Background(), []types.ChatCompletionMessageToolCall{toolCall("call_1", agentToolName, "{}")})
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	want := fmt.Sprintf("Error: %v", &guardrails.BlockedError{Message: guardrails.MsgEvaluationFailed})
+	assert.Equal(t, want, toolResultContent(t, results[0]))
 }
 
 func TestAgent_RunWithStream(t *testing.T) {
