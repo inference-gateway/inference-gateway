@@ -10,7 +10,7 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       MCP_ENABLED: ${MCP_ENABLED:-true}
       MCP_EXPOSE: ${MCP_EXPOSE:-true}
-      MCP_SERVERS: ${MCP_SERVERS:-http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp,http://mcp-pizza-server:8084/mcp}
+      MCP_SERVERS: ${MCP_SERVERS:-time=http://mcp-time-server:8081/mcp,search=http://mcp-search-server:8082/mcp,filesystem=http://mcp-filesystem-server:8083/mcp,pizza=http://mcp-pizza-server:8084/mcp}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
     depends_on:
       - mcp-time-server
@@ -31,14 +31,13 @@ services:
     environment:
       LOG_LEVEL: debug
       HOST: 0.0.0.0
-      MCP_SERVER_URL: http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp,http://mcp-pizza-server:8084/mcp
+      # One entry for the whole fleet: the gateway's own MCP server aggregates
+      # every server in MCP_SERVERS behind MCP_EXPOSE.
+      MCP_SERVER_URL: http://inference-gateway:8080/mcp
     networks:
       - mcp-network
     depends_on:
-      - mcp-time-server
-      - mcp-search-server
-      - mcp-filesystem-server
-      - mcp-pizza-server
+      - inference-gateway
 
   mcp-time-server:
     build:

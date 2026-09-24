@@ -155,6 +155,7 @@ For streaming the tokens simply add to the request body `stream: true`.
 | `GET /health`                 | Liveness probe, no authentication required                                                                                                                                                                                                                                                                 |
 | `GET /v1/models`              | List models from every configured provider                                                                                                                                                                                                                                                                 |
 | `GET /v1/mcp/tools`           | List the tools discovered from the configured MCP servers. Opt-in via `MCP_EXPOSE=true`, otherwise the endpoint returns 403                                                                                                                                                                                |
+| `POST /mcp`                   | The gateway as an MCP server: one JSON-RPC 2.0 endpoint aggregating every configured MCP server, so a client configures a single entry. Opt-in via `MCP_EXPOSE=true`, otherwise the endpoint returns 403                                                                                                   |
 | `POST /v1/chat/completions`   | OpenAI-compatible chat completions, streaming and tools included - works with every provider                                                                                                                                                                                                               |
 | `POST /v1/messages`           | [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) compatibility - the body is relayed byte-for-byte, so `cache_control` and the Anthropic SSE event envelope pass through untouched (Anthropic provider only)                                                                           |
 | `POST /v1/responses`          | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) compatibility, relayed byte-for-byte (OpenAI provider only)                                                                                                                                                               |
@@ -400,6 +401,24 @@ execution, making external capabilities seamlessly available to any LLM.
 Querying the discovered tools over `GET /v1/mcp/tools` additionally requires
 `MCP_EXPOSE=true`; it defaults to `false`, and the endpoint returns 403 until
 it is enabled.
+
+`MCP_EXPOSE=true` also turns the gateway itself into an MCP server at
+`POST /mcp`, a JSON-RPC 2.0 endpoint speaking `initialize`,
+`notifications/initialized`, `tools/list` and `tools/call`. An agent client
+(opencode, `infer`, IDE assistants) points one MCP entry at the gateway and
+discovers every backend server, with no client config churn when servers come
+and go:
+
+```bash
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+`tools/list` returns the tools of the healthy servers and skips unavailable
+ones; a `tools/call` routed to an unavailable server comes back as a JSON-RPC
+error. Authentication applies like it does to every endpoint other than
+`/health`.
 
 > **Learn more**:
 > [Model Context Protocol Documentation](https://modelcontextprotocol.io/) |

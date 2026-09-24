@@ -112,6 +112,7 @@ func newAuthEngine(t *testing.T, auth config.AuthConfig) *gin.Engine {
 	}
 	r.GET(middlewares.HealthPath, echo)
 	r.GET(testRoute, echo)
+	r.POST(middlewares.MCPPath, echo)
 	return r
 }
 
@@ -166,6 +167,7 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 	tests := []struct {
 		name          string
 		engine        *gin.Engine
+		method        string
 		path          string
 		header        string
 		wantStatus    int
@@ -216,11 +218,24 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 		{name: "Valid token", engine: withClientID, path: testRoute, header: "Bearer " + valid, wantStatus: http.StatusOK, wantToken: valid},
 		{name: "Lowercase scheme accepted", engine: withClientID, path: testRoute, header: "bearer " + valid, wantStatus: http.StatusOK, wantToken: valid},
 		{name: "Health bypasses auth", engine: withClientID, path: middlewares.HealthPath, wantStatus: http.StatusOK},
+		// The gateway's own MCP server is not exempt: only /health is.
+		{
+			name: "MCP endpoint requires a token", engine: withClientID, method: http.MethodPost, path: middlewares.MCPPath,
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing,
+		},
+		{
+			name: "MCP endpoint accepts a valid token", engine: withClientID, method: http.MethodPost, path: middlewares.MCPPath,
+			header: "Bearer " + valid, wantStatus: http.StatusOK, wantToken: valid,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			method := tt.method
+			if method == "" {
+				method = http.MethodGet
+			}
+			req := httptest.NewRequest(method, tt.path, nil)
 			if tt.header != "" {
 				req.Header.Set("Authorization", tt.header)
 			}

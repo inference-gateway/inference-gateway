@@ -1,0 +1,157 @@
+package tests
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+	"time"
+
+	assert "github.com/stretchr/testify/assert"
+	require "github.com/stretchr/testify/require"
+
+	gin "github.com/gin-gonic/gin"
+
+	api "github.com/inference-gateway/inference-gateway/api"
+	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
+	config "github.com/inference-gateway/inference-gateway/config"
+	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
+	logger "github.com/inference-gateway/inference-gateway/logger"
+)
+
+const (
+	jsonRPCServerAlias = "stub"
+	jsonRPCToolName    = "echo"
+	jsonRPCToolOutput  = "ok"
+)
+
+// newJSONRPCStubServer is a minimal upstream MCP server: it answers the three
+// methods the gateway drives during initialization and tool execution.
+func newJSONRPCStubServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+
+		var req struct {
+			ID     any            `json:"id"`
+			Method string         `json:"method"`
+			Params map[string]any `json:"params"`
+		}
+		require.NoError(t, json.Unmarshal(body, &req))
+
+		if req.ID == nil {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		var result any
+		switch req.Method {
+		case "initialize":
+			result = map[string]any{
+				"protocolVersion": "2024-11-05",
+				"capabilities":    map[string]any{"tools": map[string]any{}},
+				"serverInfo":      map[string]any{"name": jsonRPCServerAlias, "version": "1.0.0"},
+			}
+		case "tools/list":
+			result = map[string]any{
+				"tools": []map[string]any{
+					{"name": jsonRPCToolName, "description": "echoes back", "inputSchema": map[string]any{"type": "object"}},
+				},
+			}
+		case "tools/call":
+			// The gateway must strip the mcp_<alias>_ namespace before it gets here.
+			assert.Equal(t, jsonRPCToolName, req.Params["name"])
+			result = map[string]any{"content": []map[string]any{{"type": "text", "text": jsonRPCToolOutput}}}
+		default:
+			result = map[string]any{}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		require.NoError(t, json.NewEncoder(w).Encode(map[string]any{
+			"jsonrpc": "2.0",
+			"id":      req.ID,
+			"result":  result,
+		}))
+	}))
+
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+// TestMCPJSONRPCEndpointEndToEnd drives POST /mcp against a real MCP client
+// talking to a real (stub) MCP server, so the namespacing and the dispatch back
+// to the upstream server are exercised end to end rather than mocked.
+func TestMCPJSONRPCEndpointEndToEnd(t *testing.T) {
+	srv := newJSONRPCStubServer(t)
+
+	cfg := config.Config{MCP: &config.MCPConfig{
+		Enabled:               true,
+		Expose:                true,
+		DialTimeout:           2 * time.Second,
+		TlsHandshakeTimeout:   2 * time.Second,
+		ResponseHeaderTimeout: 2 * time.Second,
+		ExpectContinueTimeout: time.Second,
+		ClientTimeout:         5 * time.Second,
+		RequestTimeout:        5 * time.Second,
+		RetryInterval:         10 * time.Millisecond,
+		InitialBackoff:        10 * time.Millisecond,
+	}}
+
+	mcpClient := mcp.NewMCPClient([]mcp.ServerSpec{{Alias: jsonRPCServerAlias, URL: srv.URL}}, logger.NewNoopLogger(), cfg)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	require.NoError(t, mcpClient.InitializeAll(ctx))
+
+	router := api.NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, nil, nil, nil)
+	engine := gin.New()
+	engine.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
+
+	post := func(body string) (int, map[string]any) {
+		req := httptest.NewRequest(http.MethodPost, middlewares.MCPPath, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+		engine.ServeHTTP(w, req)
+
+		if w.Body.Len() == 0 {
+			return w.Code, nil
+		}
+		var resp map[string]any
+		require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+		return w.Code, resp
+	}
+
+	code, resp := post(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}`)
+	require.Equal(t, http.StatusOK, code)
+	result, ok := resp["result"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "2025-06-18", result["protocolVersion"])
+
+	code, resp = post(`{"jsonrpc":"2.0","method":"notifications/initialized"}`)
+	assert.Equal(t, http.StatusAccepted, code)
+	assert.Nil(t, resp)
+
+	namespaced := mcp.NamespacedToolName(jsonRPCServerAlias, jsonRPCToolName)
+	code, resp = post(`{"jsonrpc":"2.0","id":2,"method":"tools/list"}`)
+	require.Equal(t, http.StatusOK, code)
+	result, ok = resp["result"].(map[string]any)
+	require.True(t, ok)
+	tools, ok := result["tools"].([]any)
+	require.True(t, ok)
+	require.Len(t, tools, 1)
+	assert.Equal(t, namespaced, tools[0].(map[string]any)["name"])
+
+	code, resp = post(`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"` + namespaced + `","arguments":{"text":"hi"}}}`)
+	require.Equal(t, http.StatusOK, code)
+	require.Nil(t, resp["error"])
+	result, ok = resp["result"].(map[string]any)
+	require.True(t, ok)
+	content, ok := result["content"].([]any)
+	require.True(t, ok)
+	require.Len(t, content, 1)
+	assert.Equal(t, jsonRPCToolOutput, content[0].(map[string]any)["text"])
+}

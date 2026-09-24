@@ -6,6 +6,7 @@ multiple MCP servers.
 
 ## Features
 
+- **🌐 Gateway as an MCP server**: one `POST /mcp` endpoint fronting every backend server, for agent clients
 - **✨ Server-Sent Events (SSE)**: Real-time streaming with dual JSON-RPC and SSE protocol support
 - **🔍 MCP Inspector**: Web-based debugging tool for exploring and testing MCP servers
 - **🛠️ Multiple Tools**: Time, search, filesystem, and pizza-related tools
@@ -64,7 +65,12 @@ Debug and explore your MCP servers with the web interface at `http://localhost:6
 - Execute tool calls and see responses
 - Monitor protocol messages and debug issues
 
-**Connected Servers:**
+**Connected Server:**
+
+The Inspector is pointed at the gateway's own MCP endpoint,
+`http://inference-gateway:8080/mcp`, so it sees the tools of all four backend
+servers at once. To debug a single backend server instead, enter its URL in the
+Inspector:
 
 - Time Server: `http://mcp-time-server:8081/mcp`
 - Search Server: `http://mcp-search-server:8082/mcp`
@@ -304,6 +310,60 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   ]
 }'
 ```
+
+### Example 10: Point an MCP Client at the Gateway
+
+With `MCP_ENABLED=true` and `MCP_EXPOSE=true` the gateway is itself an MCP
+server at `POST /mcp`. An agent client declares **one** entry and discovers
+every backend server, so adding or removing a server never touches the client
+config. Tools are namespaced `mcp_<alias>_<tool>` from the `alias=url` entries
+in `MCP_SERVERS`.
+
+Handshake:
+
+```bash
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"curl","version":"1.0"}}}'
+```
+
+List the whole fleet's tools:
+
+```bash
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+```
+
+Call one of them - the alias decides which backend server runs it:
+
+```bash
+curl -X POST http://localhost:8080/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"mcp_time_time","arguments":{}}}'
+```
+
+If a backend server is down, `tools/list` still returns the healthy servers'
+tools and a `tools/call` routed to it comes back as a JSON-RPC error.
+
+Client configuration, e.g. for opencode:
+
+```json
+{
+  "mcp": {
+    "inference-gateway": {
+      "type": "remote",
+      "url": "http://localhost:8080/mcp",
+      "enabled": true
+    }
+  }
+}
+```
+
+The client keeps its own local tools (bash, read, edit) executing client-side;
+only the gateway's tools travel over `/mcp`. When `AUTH_ENABLED=true`, send the
+bearer token the same way as for every other endpoint - only `/health` skips
+authentication.
 
 ## How It Works
 

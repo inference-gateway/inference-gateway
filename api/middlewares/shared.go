@@ -13,6 +13,10 @@ const (
 	ResponsesPath       = "/v1/responses"
 	HealthPath          = "/health"
 	MetricsIngestPath   = "/v1/metrics"
+	// MCPPath is the gateway's own MCP server: JSON-RPC at the root, not under
+	// /v1, because /v1 is the OpenAI-compatible surface and MCP clients expect
+	// a plain /mcp.
+	MCPPath = "/mcp"
 )
 
 // SetSSEHeaders sets the response headers required for server-sent event streaming

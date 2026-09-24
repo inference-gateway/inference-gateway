@@ -131,6 +131,13 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 			shouldSkip: true,
 		},
 		{
+			// The middleware only rewrites chat-completion bodies, so the
+			// gateway's own MCP server must pass straight through to its handler.
+			name:       "Skip the gateway's own mcp endpoint",
+			path:       middlewares.MCPPath,
+			shouldSkip: true,
+		},
+		{
 			name: "Process chat completions without internal header",
 			path: "/v1/chat/completions",
 			setupMocks: func(mockRegistry *providers.MockProviderRegistry, mockClient *providers.MockClient, mockMCPClient *mcpmocks.MockMCPClientInterface, mockLogger *mocks.MockLogger, mockProvider *providers.MockIProvider) {
