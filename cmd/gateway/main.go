@@ -307,7 +307,7 @@ func main() {
 	}
 
 	mcp.GatewayInfo.Version = version
-	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, telemetryImpl, selector, localTTS)
+	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, mcpAgent, telemetryImpl, selector, localTTS)
 	r := gin.New()
 	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
 		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {

@@ -44,6 +44,13 @@ const (
 	usageTrailingChunks      = 4
 )
 
+// gen_ai.tool.type values on inference_gateway.tool_calls.
+const (
+	// ToolTypeMCP marks a tool served by a configured MCP server.
+	ToolTypeMCP      = "mcp"
+	toolTypeStandard = "standard_tool_use"
+)
+
 // responseBodyWriter is a wrapper for the response writer that captures the body
 type responseBodyWriter struct {
 	gin.ResponseWriter
@@ -272,8 +279,8 @@ func (t *TelemetryMiddleware) recordToolCallMetrics(ctx context.Context, team, p
 // classifyToolType determines the tool type based on the tool name
 func classifyToolType(toolName string) string {
 	if strings.HasPrefix(toolName, mcp.ToolNamePrefix) {
-		return "mcp"
+		return ToolTypeMCP
 	}
 
-	return "standard_tool_use"
+	return toolTypeStandard
 }

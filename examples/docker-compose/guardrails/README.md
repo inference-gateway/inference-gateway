@@ -40,8 +40,30 @@ group_allowed if {
 }
 ```
 
-Identity is passed on the `pre_call`, `post_call`, and `tool_call` phases, so the same
-`input.identity` is available when guarding tool arguments and outputs.
+Identity is passed on every phase, so the same `input.identity` is available when
+guarding tool arguments and outputs.
+
+### Phases
+
+Every policy sees `input.phase`:
+
+| Phase         | When it runs                    | `input.method` | `input.path`         | `input.request.body` |
+| ------------- | ------------------------------- | -------------- | -------------------- | -------------------- |
+| `pre_call`    | before the request is forwarded | the HTTP verb  | the request path     | the request body     |
+| `post_call`   | on the response body            | the HTTP verb  | the request path     | the response body    |
+| `tool_args`   | before an MCP tool runs         | `TOOL_CALL`    | `mcp_<alias>_<tool>` | the tool arguments   |
+| `tool_output` | after an MCP tool returns       | `TOOL_CALL`    | `mcp_<alias>_<tool>` | the tool output      |
+
+The tool phases apply to both surfaces that run MCP tools: the agent loop behind
+`/v1/chat/completions` and a `tools/call` on `POST /mcp`, so one policy covers both.
+On `/mcp` a block comes back as a JSON-RPC error envelope with code `-32001`.
+
+```rego
+main := {"action": "block", "message": "that tool is off limits"} if {
+    input.phase == "tool_args"
+    input.path == "mcp_filesystem_write_file"
+}
+```
 
 ## Quick Start
 

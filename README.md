@@ -436,6 +436,14 @@ ones; a `tools/call` routed to an unavailable server comes back as a JSON-RPC
 error. Authentication applies like it does to every endpoint other than
 `/health`.
 
+A `tools/call` runs through the same tool guardrails as the chat-completions
+agent loop - `tool_args` before the upstream call and `tool_output` after it -
+and is counted under `inference_gateway.tool_calls` with
+`gen_ai.tool.type=mcp` and traced with an `execute_tool <name>` span. A policy
+block (at any phase, including `pre_call`) answers `403` with a JSON-RPC error
+envelope using code `-32001`, so a client can tell a policy refusal from an
+upstream failure (`-32603`).
+
 > **Learn more**:
 > [Model Context Protocol Documentation](https://modelcontextprotocol.io/) |
 > [MCP Integration Example](examples/docker-compose/mcp/)

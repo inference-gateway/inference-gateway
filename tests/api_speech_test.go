@@ -153,7 +153,7 @@ func newLocalSpeechRouter(t *testing.T, home string, opts ...func(*config.Config
 	for _, opt := range opts {
 		opt(&cfg)
 	}
-	return api.NewRouter(cfg, log, nil, nil, nil, nil, nil, engine)
+	return api.NewRouter(cfg, log, nil, nil, nil, nil, nil, nil, engine)
 }
 
 // seedLocalSpeechModels plants placeholder GGUF weights in the engine's cache.

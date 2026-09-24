@@ -91,7 +91,7 @@ func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, op
 		opt(&cfg)
 	}
 
-	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil, nil)
+	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil, nil, nil)
 }
 
 // imagesMultipartField is one part of a multipart image request; a non-empty

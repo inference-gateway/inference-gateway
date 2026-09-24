@@ -182,7 +182,7 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -280,7 +280,7 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 				},
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -358,7 +358,7 @@ func TestListModelsHandler_Include(t *testing.T) {
 		},
 		Providers: providerCfg,
 	}
-	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil)
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -604,7 +604,7 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -661,7 +661,7 @@ func TestChatCompletionsHandler_RejectsOversizedBody(t *testing.T) {
 	}
 	reg := registry.NewProviderRegistry(providerCfg, log)
 	cfg := config.Config{Server: &config.ServerConfig{ReadTimeout: 5 * time.Second}, Providers: providerCfg}
-	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil)
+	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil, nil)
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
@@ -810,7 +810,7 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -986,7 +986,7 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -1143,7 +1143,7 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 				Providers: providerCfg,
 			}
 
-			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil)
+			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
@@ -1293,7 +1293,7 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 				BuildProvider(constants.OpenaiID, mockClient).
 				Return(mockProvider, nil)
 
-			router := api.NewRouter(cfg, log, mockRegistry, mockClient, nil, nil, nil, nil)
+			router := api.NewRouter(cfg, log, mockRegistry, mockClient, nil, nil, nil, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			r := gin.New()
