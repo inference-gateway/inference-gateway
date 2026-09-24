@@ -21,7 +21,7 @@ This example demonstrates the simplest deployment of the Inference Gateway using
 - **Operator**: The Inference Gateway Operator watches `Gateway` custom resources and reconciles the
   underlying Deployment, Service and autoscaling.
 - **Gateway**: An `inference-gateway` `Gateway` resource (`core.inference-gateway.com/v1alpha1`).
-- **Routing**: North-south traffic is served via the Kubernetes Gateway API (`spec.routing`), implemented by
+- **Routing**: North-south traffic is served via the Kubernetes Gateway API (`spec.gatewayAPI`), implemented by
   Envoy Gateway (the `envoy` GatewayClass).
 
 ## Prerequisites

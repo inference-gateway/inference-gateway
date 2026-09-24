@@ -2,9 +2,9 @@
 version: '3'
 
 vars:
-  GATEWAY_API_VERSION: v1.5.1
-  ENVOY_GATEWAY_VERSION: v1.2.0
-  OPERATOR_VERSION: v0.16.3
+  # Envoy Gateway's chart installs the Gateway API CRDs it supports (v1.6).
+  ENVOY_GATEWAY_VERSION: v1.9.1
+  OPERATOR_VERSION: v0.25.0
   PROMETHEUS_STACK_VERSION: 72.6.2
   GRAFANA_OPERATOR_VERSION: 5.18.0
 
@@ -13,7 +13,6 @@ tasks:
     desc: 'Deploy monitoring infrastructure'
     cmds:
       - task: create-cluster
-      - task: deploy-gateway-api
       - task: deploy-envoy-gateway
       - task: deploy-inference-gateway-operator
       - task: deploy-monitoring-stack
@@ -25,14 +24,8 @@ tasks:
       - ctlptl apply -f Cluster.yaml
       - echo "🛠️ Cluster created successfully!"
 
-  deploy-gateway-api:
-    desc: 'Install the Kubernetes Gateway API CRDs'
-    cmds:
-      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
-      - echo "🌐 Gateway API CRDs installed successfully!"
-
   deploy-envoy-gateway:
-    desc: 'Deploy Envoy Gateway and register the envoy GatewayClass'
+    desc: 'Deploy Envoy Gateway (with its Gateway API CRDs) and register the envoy GatewayClass'
     cmds:
       - |
         helm upgrade --install envoy-gateway \
@@ -40,7 +33,6 @@ tasks:
           --version {{.ENVOY_GATEWAY_VERSION}} \
           --namespace envoy-gateway-system \
           --create-namespace \
-          --skip-crds \
           --wait
       - kubectl -n envoy-gateway-system wait --for=condition=Available --timeout=120s deployment/envoy-gateway
       - |

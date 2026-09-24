@@ -3,8 +3,8 @@ version: '3'
 
 vars:
   CERT_MANAGER_VERSION: v1.20.2
-  GATEWAY_API_VERSION: v1.5.1
-  ENVOY_GATEWAY_VERSION: v1.2.0
+  # Envoy Gateway's chart installs the Gateway API CRDs it supports (v1.6).
+  ENVOY_GATEWAY_VERSION: v1.9.1
   POSTGRES_VERSION: 16.6.2
   KEYCLOAK_VERSION: 26.2.4
   # Requires an operator release that wires the OIDC issuer/clientId env vars and
@@ -16,20 +16,14 @@ tasks:
     desc: 'Deploy authentication infrastructure'
     cmds:
       - ctlptl apply -f Cluster.yaml
-      - task: deploy-gateway-api
-      - task: deploy-cert-manager
+      # Envoy Gateway first: it brings the Gateway API CRDs cert-manager watches.
       - task: deploy-envoy-gateway
+      - task: deploy-cert-manager
       - task: deploy-postgres
       - task: deploy-keycloak
       - task: configure-coredns
       - task: deploy-inference-gateway-operator
       - echo "🔐 Authentication infrastructure deployed successfully!"
-
-  deploy-gateway-api:
-    desc: 'Install the Kubernetes Gateway API CRDs (before cert-manager so it watches Gateways)'
-    cmds:
-      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
-      - echo "🌐 Gateway API CRDs installed successfully!"
 
   deploy-cert-manager:
     desc: 'Deploy cert-manager and the self-signed ClusterIssuer'
@@ -50,7 +44,7 @@ tasks:
       - echo "🔐 Cert-manager deployed successfully!"
 
   deploy-envoy-gateway:
-    desc: 'Deploy Envoy Gateway and register the envoy GatewayClass'
+    desc: 'Deploy Envoy Gateway (with its Gateway API CRDs) and register the envoy GatewayClass'
     cmds:
       - |
         helm upgrade --install envoy-gateway \
@@ -58,7 +52,6 @@ tasks:
           --version {{.ENVOY_GATEWAY_VERSION}} \
           --namespace envoy-gateway-system \
           --create-namespace \
-          --skip-crds \
           --wait
       - kubectl -n envoy-gateway-system wait --for=condition=Available --timeout=120s deployment/envoy-gateway
       - |

@@ -2,8 +2,8 @@
 version: '3'
 
 vars:
-  GATEWAY_API_VERSION: v1.5.1
-  OPERATOR_VERSION: v0.16.3
+  GATEWAY_API_VERSION: v1.6.2
+  OPERATOR_VERSION: v0.25.0
 
 tasks:
   deploy-infrastructure:

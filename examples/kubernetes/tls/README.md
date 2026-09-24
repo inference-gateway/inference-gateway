@@ -7,7 +7,7 @@ This example demonstrates secure TLS communication with the Inference Gateway us
 - cert-manager for automatic certificate issuance
 
 > **Note:** The gateway is now deployed through the operator, and TLS is
-> configured via `spec.routing.gateway.tls`.
+> configured via `spec.gatewayAPI.gateway.tls`.
 
 ## Table of Contents
 
@@ -74,7 +74,7 @@ This example demonstrates secure TLS communication with the Inference Gateway us
 
 - **Certificate / issuer**: edit `cert-manager/clusterissuer.yaml` (a Let's Encrypt issuer is included,
   commented, for production).
-- **Gateway TLS**: configured in `gateway.yaml` under `spec.routing.gateway.tls` (`issuer` selects the
+- **Gateway TLS**: configured in `gateway.yaml` under `spec.gatewayAPI.gateway.tls` (`issuer` selects the
   cert-manager `ClusterIssuer`; `secretName` is where the issued certificate is stored).
 
 ## Cleanup
