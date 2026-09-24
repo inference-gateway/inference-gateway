@@ -9,7 +9,7 @@ vars:
   KEYCLOAK_VERSION: 26.2.4
   # Requires an operator release that wires the OIDC issuer/clientId env vars and
   # supports spec.auth.oidc.caCertRef and audiences (see the operator repo).
-  OPERATOR_VERSION: v0.25.0
+  OPERATOR_VERSION: v0.25.1
 
 tasks:
   deploy-infrastructure:

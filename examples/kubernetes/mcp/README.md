@@ -52,7 +52,7 @@ API, and as an MCP server of its own on `POST /mcp`.
 - **MCP Inspector**: A web UI (`mcp-inspector`) connected to the gateway's own `/mcp` endpoint, so it sees
   every server's tools at once.
 - **Routing**: HTTP traffic via the Kubernetes Gateway API (Envoy Gateway `v1.9`, which installs Gateway API
-  `v1.6`), configured under `spec.gatewayAPI`. The example pins operator `v0.25.0` and k3s `v1.37`.
+  `v1.6`), configured under `spec.gatewayAPI`. The example pins operator `v0.25.1` and k3s `v1.37`.
 
 ## Prerequisites
 

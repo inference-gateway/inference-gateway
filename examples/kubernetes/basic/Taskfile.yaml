@@ -5,7 +5,7 @@ vars:
   # Envoy Gateway's chart installs the Gateway API CRDs it supports (v1.6).
   ENVOY_GATEWAY_VERSION: v1.9.1
   # Overridable so examples that include this Taskfile can pin a newer release.
-  OPERATOR_VERSION: '{{.OPERATOR_VERSION | default "v0.25.0"}}'
+  OPERATOR_VERSION: '{{.OPERATOR_VERSION | default "v0.25.1"}}'
 
 tasks:
   deploy-infrastructure:
