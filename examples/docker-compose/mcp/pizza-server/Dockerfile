@@ -24,5 +24,6 @@ EXPOSE 8084
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8084/health || exit 1
 
-# Run the application
-CMD ["npm", "start"]
+# Run node directly: npm wants a writable home, which a read-only, non-root
+# container (as in the Kubernetes example) does not have.
+CMD ["node", "dist/index.js"]

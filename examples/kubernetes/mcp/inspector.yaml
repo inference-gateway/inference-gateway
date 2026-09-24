@@ -27,21 +27,28 @@ spec:
           command:
             - sh
             - -c
+            # One entry for the whole fleet: the gateway's own MCP server
+            # aggregates every server in spec.mcp.servers. It speaks MCP
+            # 2026-07-28 only, so the Inspector uses the modern protocol era
+            # (it defaults to legacy).
             - |
               echo "Starting MCP Inspector..."
-              npx -y @modelcontextprotocol/inspector
+              npx -y @modelcontextprotocol/inspector --web --transport http \
+                --server-url http://inference-gateway:8080/mcp --protocol-era modern
           ports:
             - containerPort: 6274
               name: inspector
-            - containerPort: 6277
-              name: websocket
+            - containerPort: 6275
+              name: sandbox
           env:
             - name: LOG_LEVEL
               value: 'debug'
             - name: HOST
               value: '0.0.0.0'
-            - name: MCP_SERVER_URL
-              value: 'http://mcp-time-server:8081/mcp,http://mcp-search-server:8082/mcp,http://mcp-filesystem-server:8083/mcp'
+            # The Inspector refuses to listen on all interfaces without this,
+            # and the Service needs it to reach the pod.
+            - name: DANGEROUSLY_BIND_ALL_INTERFACES
+              value: 'true'
           livenessProbe:
             httpGet:
               path: /
@@ -79,6 +86,6 @@ spec:
     - port: 6274
       targetPort: 6274
       name: inspector
-    - port: 6277
-      targetPort: 6277
-      name: websocket
+    - port: 6275
+      targetPort: 6275
+      name: sandbox

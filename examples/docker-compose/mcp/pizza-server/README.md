@@ -32,7 +32,9 @@ npm start       # run the build
 ```
 
 The server listens on port `8084` (override with `PORT`). `createMcpExpressApp`
-rejects requests whose `Host` isn't `mcp-pizza-server` or `localhost`, which
+rejects requests whose `Host` isn't `mcp-pizza-server` (Compose),
+`pizza-service.inference-gateway.svc.cluster.local` (the Service the Kubernetes
+example's `MCP` resource gets) or `localhost`, which
 protects it from DNS rebinding; add a host to `allowedHosts` in `src/index.ts`
 to reach it under another name.
 

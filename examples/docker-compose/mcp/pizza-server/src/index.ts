@@ -89,10 +89,16 @@ const handler = createMcpHandler(() => {
 });
 
 // Bound to all interfaces inside the container, so name the hosts the
-// gateway reaches it by; the DNS rebinding check rejects any other Host.
+// gateway reaches it by - the Compose service, and the Service the operator
+// creates for the Kubernetes example's MCP resource, which service discovery
+// addresses by its cluster FQDN; the DNS rebinding check rejects any other Host.
 const app = createMcpExpressApp({
   host: '0.0.0.0',
-  allowedHosts: ['mcp-pizza-server', 'localhost'],
+  allowedHosts: [
+    'mcp-pizza-server',
+    'pizza-service.inference-gateway.svc.cluster.local',
+    'localhost',
+  ],
 });
 const node = toNodeHandler(handler);
 app.all('/mcp', (req, res) => void node(req, res, req.body));

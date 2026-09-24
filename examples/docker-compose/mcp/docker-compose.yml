@@ -35,7 +35,7 @@ services:
     # host side stays on loopback so the UI is not exposed to the network.
     ports:
       - '127.0.0.1:6274:6274'
-      - '127.0.0.1:6277:6277'
+      - '127.0.0.1:6275:6275'
     environment:
       LOG_LEVEL: debug
       HOST: 0.0.0.0

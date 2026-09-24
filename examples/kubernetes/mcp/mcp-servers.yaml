@@ -1,0 +1,95 @@
+# The example MCP servers as operator-managed MCP resources: the operator runs
+# each image as a Deployment behind a <name>-service Service, and the gateway
+# finds them through service discovery (gateway.yaml). The gateway speaks MCP
+# 2026-07-28 to all of them.
+#
+# The images are built locally and imported into k3d. They are tagged :dev, not
+# :latest, so the default pull policy uses the imported image instead of trying
+# a registry. The operator runs /mcp-server unless server.command says
+# otherwise.
+#
+# The operator only reconciles MCP resources in namespaces labelled
+# inference-gateway.com/managed=true, and does not revisit one that was skipped,
+# so the namespace carries the label before any MCP lands in it.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inference-gateway
+  labels:
+    inference-gateway.com/managed: 'true'
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: MCP
+metadata:
+  name: time
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/part-of: inference-gateway-mcp
+spec:
+  image: mcp-time-server:dev
+  server:
+    port: 8081
+    command:
+      - /app/time-server
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: MCP
+metadata:
+  name: search
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/part-of: inference-gateway-mcp
+spec:
+  image: mcp-search-server:dev
+  server:
+    port: 8082
+    command:
+      - /app/search-server
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: MCP
+metadata:
+  name: filesystem
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/part-of: inference-gateway-mcp
+spec:
+  image: mcp-filesystem-server:dev
+  server:
+    port: 8083
+    command:
+      - /app/filesystem-server
+---
+# The official TypeScript SDK v2 (createMcpHandler), built from
+# ../../docker-compose/mcp/pizza-server.
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: MCP
+metadata:
+  name: pizza
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/part-of: inference-gateway-mcp
+spec:
+  image: mcp-pizza-server:dev
+  server:
+    port: 8084
+    command:
+      - node
+      - /app/dist/index.js
+---
+# The official Go SDK with a stateless Streamable HTTP handler, built from
+# ../../docker-compose/mcp/calculator-server.
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: MCP
+metadata:
+  name: calculator
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/part-of: inference-gateway-mcp
+spec:
+  image: mcp-calculator-server:dev
+  server:
+    port: 8085
+    command:
+      - /app/calculator-server

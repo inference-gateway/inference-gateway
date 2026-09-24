@@ -4,9 +4,10 @@ vars:
   NAMESPACE: inference-gateway
   RELEASE_NAME: inference-gateway
   CLUSTER_NAME: mcp-cluster
-  GATEWAY_API_VERSION: v1.5.1
-  ENVOY_GATEWAY_VERSION: v1.2.0
-  OPERATOR_VERSION: v0.16.3
+  # Envoy Gateway's chart installs the Gateway API CRDs it supports (v1.6).
+  ENVOY_GATEWAY_VERSION: v1.9.1
+  OPERATOR_VERSION: v0.25.0
+  COMPOSE_MCP_DIR: ../../docker-compose/mcp
 
 tasks:
   default:
@@ -36,25 +37,18 @@ tasks:
         echo "✅ All required tools are installed!"
 
   deploy-infrastructure:
-    desc: 'Deploy infrastructure (k3d cluster, Gateway API, Envoy Gateway, operator)'
+    desc: 'Deploy infrastructure (k3d cluster, Envoy Gateway with the Gateway API, operator)'
     deps:
       - validate-requirements
     cmds:
       - ctlptl apply -f Cluster.yaml
       - kubectl wait --for=condition=Ready nodes --all --timeout=300s
-      - task: deploy-gateway-api
       - task: deploy-envoy-gateway
       - task: deploy-inference-gateway-operator
       - echo "🚀 Infrastructure deployed successfully!"
 
-  deploy-gateway-api:
-    desc: 'Install the Kubernetes Gateway API CRDs'
-    cmds:
-      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
-      - echo "🌐 Gateway API CRDs installed successfully!"
-
   deploy-envoy-gateway:
-    desc: 'Deploy Envoy Gateway and register the envoy GatewayClass'
+    desc: 'Deploy Envoy Gateway (with its Gateway API CRDs) and register the envoy GatewayClass'
     cmds:
       - |
         helm upgrade --install envoy-gateway \
@@ -62,7 +56,6 @@ tasks:
           --version {{.ENVOY_GATEWAY_VERSION}} \
           --namespace envoy-gateway-system \
           --create-namespace \
-          --skip-crds \
           --wait
       - kubectl -n envoy-gateway-system wait --for=condition=Available --timeout=120s deployment/envoy-gateway
       - |
@@ -84,28 +77,32 @@ tasks:
       - echo "🛠️ Inference Gateway operator deployed successfully!"
 
   build-mcp-servers:
-    desc: 'Build the MCP servers (time, search, filesystem) and import them into k3d'
+    desc: 'Build the MCP servers (time, search, filesystem, pizza, calculator) and import them into k3d'
     cmds:
       - echo "🔨 Building MCP servers..."
-      - cd time-server && docker build -t mcp-time-server:latest . && cd ..
-      - cd search-server && docker build -t mcp-search-server:latest . && cd ..
-      - cd filesystem-server && docker build -t mcp-filesystem-server:latest . && cd ..
+      # Tagged :dev, not :latest, so the MCP resources' default pull policy uses
+      # the imported images instead of trying a registry.
+      - docker build -t mcp-time-server:dev time-server
+      - docker build -t mcp-search-server:dev search-server
+      - docker build -t mcp-filesystem-server:dev filesystem-server
+      # The official-SDK servers are shared with the docker-compose example.
+      - docker build -t mcp-pizza-server:dev {{.COMPOSE_MCP_DIR}}/pizza-server
+      - docker build -t mcp-calculator-server:dev {{.COMPOSE_MCP_DIR}}/calculator-server
       - |
         k3d image import \
-          mcp-time-server:latest \
-          mcp-search-server:latest \
-          mcp-filesystem-server:latest \
+          mcp-time-server:dev \
+          mcp-search-server:dev \
+          mcp-filesystem-server:dev \
+          mcp-pizza-server:dev \
+          mcp-calculator-server:dev \
           --cluster {{.CLUSTER_NAME}}
       - echo "🔧 MCP servers built and imported successfully!"
 
   deploy-mcp-servers:
-    desc: 'Deploy the MCP servers and the MCP Inspector'
+    desc: 'Deploy the MCP servers (as MCP resources) and the MCP Inspector'
     cmds:
       - task: build-mcp-servers
-      - kubectl create namespace {{.NAMESPACE}} --dry-run=client -o yaml | kubectl apply --server-side -f -
-      - kubectl apply -f filesystem-server/ -n {{.NAMESPACE}}
-      - kubectl apply -f search-server/ -n {{.NAMESPACE}}
-      - kubectl apply -f time-server/ -n {{.NAMESPACE}}
+      - kubectl apply -f mcp-servers.yaml
       - kubectl apply -f inspector.yaml
       - echo "🔧 MCP servers and inspector deployed successfully!"
 
@@ -126,16 +123,17 @@ tasks:
       - echo "🎉 Complete MCP setup deployed successfully!"
 
   wait:
-    desc: 'Wait for the MCP server pods to be ready'
+    desc: 'Wait for the MCP servers to be ready'
     cmds:
-      - kubectl wait --for=condition=ready pod -l app.kubernetes.io/component=mcp-server -n {{.NAMESPACE}} --timeout=300s
-      - echo "✅ MCP server pods are ready!"
+      - kubectl wait --for=jsonpath='{.status.ready}'=true mcp --all -n {{.NAMESPACE}} --timeout=300s
+      - echo "✅ MCP servers are ready!"
 
   test:
-    desc: 'Run MCP integration tests (health + tools discovery)'
+    desc: 'Run MCP integration tests (health, tools discovery, the gateway as an MCP server)'
     deps:
       - test:health
       - test:mcp-tools
+      - test:mcp-endpoint
     cmds:
       - echo "🎉 All MCP integration tests passed successfully!"
 
@@ -156,11 +154,28 @@ tasks:
           curl -s http://{{.RELEASE_NAME}}:8080/v1/mcp/tools
       - echo "✅ MCP tools endpoint working correctly"
 
-  port-forward:
-    desc: 'Forward the MCP Inspector to http://localhost:6274'
+  test:mcp-endpoint:
+    desc: 'Test the gateway as an MCP server (POST /mcp, MCP 2026-07-28) in-cluster'
     cmds:
-      - 'echo "MCP Inspector: http://localhost:6274 (Ctrl+C to stop)"'
-      - kubectl port-forward -n {{.NAMESPACE}} service/mcp-inspector 6274:6274
+      - |
+        kubectl run test-pod-02 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -sf -X POST http://{{.RELEASE_NAME}}:8080/mcp \
+            -H 'Content-Type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: tools/list' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"test","version":"1.0"},"io.modelcontextprotocol/clientCapabilities":{}}}}'
+      - echo "✅ The gateway answers as an MCP server"
+
+  port-forward:
+    desc: 'Forward the MCP Inspector UI (6274) and its MCP Apps sandbox (6275) to localhost'
+    cmds:
+      - 'echo "MCP Inspector: open the tokenized URL from task inspector-url (Ctrl+C to stop)"'
+      - kubectl port-forward -n {{.NAMESPACE}} service/mcp-inspector 6274:6274 6275:6275
+
+  inspector-url:
+    desc: 'Print the MCP Inspector URL, which carries its session token'
+    cmds:
+      - kubectl logs -n {{.NAMESPACE}} deployment/mcp-inspector | grep -o 'http://localhost:6274?MCP_INSPECTOR_API_TOKEN=[^ ]*' | tail -1
 
   port-forward-gateway:
     desc: 'Forward the Envoy data plane for the gateway to http://localhost:8080'
@@ -188,9 +203,7 @@ tasks:
     cmds:
       - kubectl delete -f gateway.yaml --ignore-not-found=true
       - kubectl delete -f inspector.yaml --ignore-not-found=true
-      - kubectl delete -f filesystem-server/ -n {{.NAMESPACE}} --ignore-not-found=true
-      - kubectl delete -f search-server/ -n {{.NAMESPACE}} --ignore-not-found=true
-      - kubectl delete -f time-server/ -n {{.NAMESPACE}} --ignore-not-found=true
+      - kubectl delete -f mcp-servers.yaml --ignore-not-found=true
 
   clean:
     desc: 'Clean up everything including the cluster'

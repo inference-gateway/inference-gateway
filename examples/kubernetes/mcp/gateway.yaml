@@ -55,10 +55,13 @@ spec:
             secretKeyRef:
               name: inference-gateway-secrets
               key: ANTHROPIC_API_KEY
-  # The three MCP servers are deployed as plain Deployments/Services (see the
-  # time-server/, search-server/ and filesystem-server/ directories). They are
-  # wired into the gateway as static MCP servers - the operator's documented
-  # pattern for externally-hosted MCPs that have no MCP custom resource.
+  # The MCP servers are MCP resources (mcp-servers.yaml); the operator runs
+  # each as a Deployment behind a <name>-service Service. Service discovery
+  # picks up every MCP resource in this namespace - add a selector to narrow
+  # it by label - so adding a server needs no change here. The gateway speaks
+  # MCP 2026-07-28 to them; the pizza and calculator servers show how the
+  # official TypeScript and Go SDKs serve it. expose: true also makes the
+  # gateway itself an MCP server on POST /mcp.
   mcp:
     enabled: true
     expose: true
@@ -68,13 +71,8 @@ spec:
       tlsHandshake: '3s'
       responseHeader: '3s'
       request: '5s'
-    servers:
-      - name: time-server
-        url: 'http://mcp-time-server:8081/mcp'
-      - name: search-server
-        url: 'http://mcp-search-server:8082/mcp'
-      - name: filesystem-server
-        url: 'http://mcp-filesystem-server:8083/mcp'
+    serviceDiscovery:
+      enabled: true
   resources:
     requests:
       cpu: '100m'
@@ -82,7 +80,7 @@ spec:
     limits:
       cpu: '1000m'
       memory: '512Mi'
-  routing:
+  gatewayAPI:
     enabled: true
     gateway:
       gatewayClassName: envoy
