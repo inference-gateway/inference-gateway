@@ -109,7 +109,7 @@ $defs:
     description: A result that supports a time-to-live (TTL) hint for client-side caching.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       cacheScope:
         description: |-
           Indicates the intended scope of the cached response, analogous to HTTP
@@ -196,7 +196,7 @@ $defs:
     description: The result returned by the server for a {@link CallToolRequesttools/call} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       content:
         description: A list of content objects that represent the unstructured result of the tool call.
         items:
@@ -435,7 +435,7 @@ $defs:
     description: The result returned by the server for a {@link CompleteRequestcompletion/complete} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       completion:
         properties:
           hasMore:
@@ -629,7 +629,7 @@ $defs:
     description: The result returned by the server for a {@link DiscoverRequestserver/discover} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       cacheScope:
         description: |-
           Indicates the intended scope of the cached response, analogous to HTTP
@@ -668,9 +668,6 @@ $defs:
           server implementing an earlier protocol version (which does not include
           `resultType`), the client MUST treat the absent field as `"complete"`.
         type: string
-      serverInfo:
-        $ref: '#/$defs/Implementation'
-        description: Information about the server software implementation.
       supportedVersions:
         description: |-
           MCP Protocol Versions this server supports. The client should choose a
@@ -694,7 +691,6 @@ $defs:
       - cacheScope
       - capabilities
       - resultType
-      - serverInfo
       - supportedVersions
       - ttlMs
     type: object
@@ -908,7 +904,7 @@ $defs:
     description: The result returned by the server for a {@link GetPromptRequestprompts/get} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       description:
         description: An optional description for the prompt.
         type: string
@@ -1125,7 +1121,7 @@ $defs:
       At least one of `inputRequests` or `requestState` MUST be present.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       inputRequests:
         $ref: '#/$defs/InputRequests'
       requestState:
@@ -1369,7 +1365,7 @@ $defs:
     description: The result returned by the server for a {@link ListPromptsRequestprompts/list} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       cacheScope:
         description: |-
           Indicates the intended scope of the cached response, analogous to HTTP
@@ -1461,7 +1457,7 @@ $defs:
     description: The result returned by the server for a {@link ListResourceTemplatesRequestresources/templates/list} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       cacheScope:
         description: |-
           Indicates the intended scope of the cached response, analogous to HTTP
@@ -1553,7 +1549,7 @@ $defs:
     description: The result returned by the server for a {@link ListResourcesRequestresources/list} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       cacheScope:
         description: |-
           Indicates the intended scope of the cached response, analogous to HTTP
@@ -1679,7 +1675,7 @@ $defs:
     description: The result returned by the server for a {@link ListToolsRequesttools/list} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       cacheScope:
         description: |-
           Indicates the intended scope of the cached response, analogous to HTTP
@@ -2031,7 +2027,7 @@ $defs:
   PaginatedResult:
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       nextCursor:
         description: |-
           An opaque token representing the pagination position after the last returned result.
@@ -2279,7 +2275,7 @@ $defs:
     description: The result returned by the server for a {@link ReadResourceRequestresources/read} request.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       cacheScope:
         description: |-
           Indicates the intended scope of the cached response, analogous to HTTP
@@ -2376,10 +2372,17 @@ $defs:
       io.modelcontextprotocol/clientInfo:
         $ref: '#/$defs/Implementation'
         description: |-
-          Identifies the client software making the request. Required.
+          Identifies the client software making the request. Clients SHOULD
+          include this field on every request unless specifically configured not
+          to do so.
 
           The {@link Implementation} schema requires `name` and `version`; other
           fields are optional.
+
+          The value is self-reported by the client and is not verified by the
+          protocol. It is intended for display, logging, and debugging. Servers
+          SHOULD NOT use it to change their behavior, and SHOULD NOT rely on it for
+          security decisions.
       io.modelcontextprotocol/logLevel:
         $ref: '#/$defs/LoggingLevel'
         description: |-
@@ -2402,7 +2405,6 @@ $defs:
         description: If specified, the caller is requesting out-of-band progress notifications for this request (as represented by {@link ProgressNotificationnotifications/progress}). The value of this parameter is an opaque token that will be attached to any subsequent notifications. The receiver is not obligated to provide these notifications.
     required:
       - io.modelcontextprotocol/clientCapabilities
-      - io.modelcontextprotocol/clientInfo
       - io.modelcontextprotocol/protocolVersion
     type: object
   RequestParams:
@@ -2675,7 +2677,7 @@ $defs:
     description: Common result fields.
     properties:
       _meta:
-        $ref: '#/$defs/MetaObject'
+        $ref: '#/$defs/ResultMetaObject'
       resultType:
         description: |-
           Indicates the type of the result, which allows the client to determine
@@ -2688,6 +2690,24 @@ $defs:
         type: string
     required:
       - resultType
+    type: object
+  ResultMetaObject:
+    description: Extends {@link MetaObject} with additional result-specific fields. All key naming rules from `MetaObject` apply.
+    properties:
+      io.modelcontextprotocol/serverInfo:
+        $ref: '#/$defs/Implementation'
+        description: |-
+          Identifies the server software producing the response. Servers SHOULD
+          include this field on every response unless specifically configured not
+          to do so.
+
+          The {@link Implementation} schema requires `name` and `version`; other
+          fields are optional.
+
+          The value is self-reported by the server and is not verified by the
+          protocol. It is intended for display, logging, and debugging. Clients
+          SHOULD NOT use it to change their behavior, and SHOULD NOT rely on it for
+          security decisions.
     type: object
   ResultType:
     description: |-
@@ -2882,10 +2902,16 @@ $defs:
     type: object
   SubscriptionsAcknowledgedNotification:
     description: |-
-      Sent by the server as the first message on a
-      {@link SubscriptionsListenRequestsubscriptions/listen} stream to acknowledge
-      that the subscription has been established and to report which notification
-      types it agreed to honor.
+      Sent by the server to acknowledge that a
+      {@link SubscriptionsListenRequestsubscriptions/listen} subscription has been
+      established and to report which notification types it agreed to honor.
+
+      This notification MUST be the first message the server sends carrying the
+      subscription's ID in `io.modelcontextprotocol/subscriptionId`. The server MUST
+      NOT send any notification on the subscription before acknowledging it. On
+      stdio, where every subscription shares one channel, this ordering is defined
+      per subscription ID and not per channel: messages belonging to other
+      subscriptions MAY be interleaved before it.
     properties:
       jsonrpc:
         const: '2.0'
@@ -2961,7 +2987,7 @@ $defs:
       close carries no response. The result body is otherwise empty.
     properties:
       _meta:
-        $ref: '#/$defs/SubscriptionsListenResultMeta'
+        $ref: '#/$defs/SubscriptionsListenResultMetaObject'
       resultType:
         description: |-
           Indicates the type of the result, which allows the client to determine
@@ -2976,11 +3002,25 @@ $defs:
       - _meta
       - resultType
     type: object
-  SubscriptionsListenResultMeta:
+  SubscriptionsListenResultMetaObject:
     description: |-
-      Extends {@link MetaObject} with the subscription-stream identifier carried by a
+      Extends {@link ResultMetaObject} with the subscription-stream identifier carried by a
       {@link SubscriptionsListenResult}. All key naming rules from `MetaObject` apply.
     properties:
+      io.modelcontextprotocol/serverInfo:
+        $ref: '#/$defs/Implementation'
+        description: |-
+          Identifies the server software producing the response. Servers SHOULD
+          include this field on every response unless specifically configured not
+          to do so.
+
+          The {@link Implementation} schema requires `name` and `version`; other
+          fields are optional.
+
+          The value is self-reported by the server and is not verified by the
+          protocol. It is intended for display, logging, and debugging. Clients
+          SHOULD NOT use it to change their behavior, and SHOULD NOT rely on it for
+          security decisions.
       io.modelcontextprotocol/subscriptionId:
         $ref: '#/$defs/RequestId'
         description: |-
@@ -2991,6 +3031,23 @@ $defs:
           response's `id`).
     required:
       - io.modelcontextprotocol/subscriptionId
+    type: object
+  SubscriptionsListenResultResponse:
+    description: |-
+      A successful response from the server for a {@link SubscriptionsListenRequestsubscriptions/listen}
+      request, sent when the server tears the subscription down gracefully.
+    properties:
+      id:
+        $ref: '#/$defs/RequestId'
+      jsonrpc:
+        const: '2.0'
+        type: string
+      result:
+        $ref: '#/$defs/SubscriptionsListenResult'
+    required:
+      - id
+      - jsonrpc
+      - result
     type: object
   TextContent:
     description: Text provided to or from an LLM.

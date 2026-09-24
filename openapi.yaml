@@ -467,20 +467,31 @@ paths:
         this endpoint requires a bearer token like every other route except
         `/health`.
 
+        The endpoint speaks MCP protocol version `2026-07-28` only, over the
+        stateless Streamable HTTP transport with `application/json` responses.
+        There is no `initialize` handshake and no session: every request carries
+        its protocol version in `params._meta["io.modelcontextprotocol/protocolVersion"]`
+        (alongside the required `io.modelcontextprotocol/clientInfo` and
+        `io.modelcontextprotocol/clientCapabilities`), mirrored in the
+        `MCP-Protocol-Version`, `Mcp-Method` and, for `tools/call`, `Mcp-Name`
+        headers. `Mcp-Name` may use the `=?base64?<value>?=` encoding.
+
         Supported methods:
 
         | Method | Params | Result |
         | --- | --- | --- |
-        | `initialize` | `protocolVersion`, `capabilities`, `clientInfo` (`Implementation`) | `protocolVersion`, `capabilities` (`ServerCapabilities`, `tools.listChanged`), `serverInfo` (`Implementation`) |
-        | `notifications/initialized` | none | none - it is a JSON-RPC notification, sent without `id`, answered with `202` and an empty body |
+        | `server/discover` | `_meta` only | `DiscoverResult` - `supportedVersions` (`["2026-07-28"]`), `capabilities` (`tools`) |
         | `tools/list` | optional `cursor` | `ListToolsResult` - the aggregated, namespaced tools of every healthy MCP server |
         | `tools/call` | `CallToolRequestParams` (`name`, `arguments`) | `CallToolResult` |
 
+        Every result carries `resultType: "complete"` and identifies the gateway
+        in `_meta["io.modelcontextprotocol/serverInfo"]`.
+
         Param and result shapes are the vendored MCP spec types in
         [`mcp/mcp-schema.yaml`](https://github.com/inference-gateway/schemas/blob/main/mcp/mcp-schema.yaml)
-        (`Implementation`, `ServerCapabilities`, `ListToolsResult`,
-        `CallToolRequestParams`, `CallToolResult`); this spec only describes the
-        JSON-RPC envelopes the gateway puts them in.
+        (`RequestMetaObject`, `DiscoverResult`, `ServerCapabilities`,
+        `ListToolsResult`, `CallToolRequestParams`, `CallToolResult`); this spec
+        only describes the JSON-RPC envelopes the gateway puts them in.
 
         `tools/list` tolerates partial availability: when one of the configured
         MCP servers is unreachable its tools are omitted and the healthy servers'
@@ -488,15 +499,49 @@ paths:
         `tools/call` routed to an unavailable server fails with JSON-RPC error
         code `-32603`.
 
-        Errors use the standard JSON-RPC codes - `-32700` parse error,
-        `-32600` invalid request, `-32601` method not found (unknown method),
-        `-32602` invalid params (unknown tool name, bad arguments), `-32603`
-        internal error (upstream MCP server failure). They are returned with
-        HTTP `200` and a JSON-RPC error envelope; transport-level failures
-        (auth, feature flag) use HTTP status codes instead.
+        Errors use JSON-RPC error envelopes:
+
+        | Code | Meaning | HTTP status |
+        | --- | --- | --- |
+        | `-32020` | header mismatch - a required header is missing, malformed or disagrees with the body; a legacy `initialize` request lands here | `400` |
+        | `-32022` | unsupported protocol version; `data` carries `requested` and `supported` | `400` |
+        | `-32601` | method not found | `404` |
+        | `-32700` | parse error | `200` |
+        | `-32600` | invalid request | `200` |
+        | `-32602` | invalid params (unknown tool name, bad arguments) | `200` |
+        | `-32603` | internal error (upstream MCP server failure) | `200` |
+
+        A request carrying an `Origin` header is rejected with `403`: MCP
+        clients are not browsers, and this blocks DNS-rebinding attacks. `GET`
+        and `DELETE` answer `405` - there is no standalone stream and no session
+        to terminate.
       summary: JSON-RPC 2.0 endpoint for the gateway's MCP server
       security:
         - bearerAuth: []
+      parameters:
+        - name: MCP-Protocol-Version
+          in: header
+          required: true
+          description: Must equal `params._meta["io.modelcontextprotocol/protocolVersion"]`.
+          schema:
+            type: string
+            example: '2026-07-28'
+        - name: Mcp-Method
+          in: header
+          required: true
+          description: Must equal the JSON-RPC `method`.
+          schema:
+            type: string
+            example: 'tools/call'
+        - name: Mcp-Name
+          in: header
+          required: false
+          description: |
+            Required for `tools/call`; must equal `params.name`. Values that are
+            not plain ASCII are sent as `=?base64?<value>?=`.
+          schema:
+            type: string
+            example: 'mcp_deepwiki_ask_question'
       requestBody:
         required: true
         description: A single JSON-RPC 2.0 request or notification
@@ -514,6 +559,20 @@ paths:
                 $ref: '#/components/schemas/MCPJSONRPCResponse'
         '202':
           description: Notification accepted; no response body
+        '400':
+          description: |
+            Header mismatch (`-32020`) or unsupported protocol version
+            (`-32022`), as a JSON-RPC error envelope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPJSONRPCResponse'
+        '404':
+          description: Method not found (`-32601`), as a JSON-RPC error envelope.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MCPJSONRPCResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -2119,13 +2178,18 @@ components:
     MCPJSONRPCRequest:
       type: object
       description: |
-        A JSON-RPC 2.0 request or notification sent to `POST /mcp`. Omit `id` to
-        send a notification (`notifications/initialized`).
+        A JSON-RPC 2.0 request sent to `POST /mcp`, MCP protocol version
+        `2026-07-28`. A message without `id` is a notification; this protocol
+        version defines none over HTTP, so the gateway acknowledges it with `202`
+        and ignores it.
 
         `params` and the corresponding `result` follow the vendored MCP spec
-        types in `mcp/mcp-schema.yaml`: `initialize` takes `protocolVersion`,
-        `capabilities` and `clientInfo`; `tools/list` takes an optional `cursor`;
-        `tools/call` takes `CallToolRequestParams`.
+        types in `mcp/mcp-schema.yaml`. Every request's `params._meta` is a
+        `RequestMetaObject` (`io.modelcontextprotocol/protocolVersion`,
+        `io.modelcontextprotocol/clientInfo`,
+        `io.modelcontextprotocol/clientCapabilities`); `server/discover` takes
+        nothing else, `tools/list` takes an optional `cursor` and `tools/call`
+        takes `CallToolRequestParams`.
 
         Tool names are namespaced `mcp_<server alias>_<tool name>`, e.g.
         `mcp_deepwiki_ask_question`. The alias comes from the `alias=url` syntax
@@ -2153,8 +2217,7 @@ components:
           type: string
           description: The MCP method to invoke
           enum:
-            - initialize
-            - notifications/initialized
+            - server/discover
             - tools/list
             - tools/call
           example: 'tools/call'
@@ -2167,6 +2230,12 @@ components:
             arguments:
               repoName: 'inference-gateway/inference-gateway'
               question: 'How is MCP wired up?'
+            _meta:
+              io.modelcontextprotocol/protocolVersion: '2026-07-28'
+              io.modelcontextprotocol/clientInfo:
+                name: 'opencode'
+                version: '1.0.0'
+              io.modelcontextprotocol/clientCapabilities: {}
       required:
         - jsonrpc
         - method
@@ -2175,8 +2244,9 @@ components:
       description: |
         A JSON-RPC 2.0 response envelope. Exactly one of `result` or `error` is
         present. `result` carries the MCP result type for the requested method
-        (`ListToolsResult` for `tools/list`, `CallToolResult` for `tools/call`)
-        as defined in `mcp/mcp-schema.yaml`.
+        (`DiscoverResult` for `server/discover`, `ListToolsResult` for
+        `tools/list`, `CallToolResult` for `tools/call`) as defined in
+        `mcp/mcp-schema.yaml`.
       properties:
         jsonrpc:
           type: string
@@ -2207,7 +2277,9 @@ components:
           description: |
             JSON-RPC error code: `-32700` parse error, `-32600` invalid request,
             `-32601` method not found, `-32602` invalid params, `-32603` internal
-            error (including upstream MCP server failures).
+            error (including upstream MCP server failures), `-32020` header
+            mismatch, `-32022` unsupported protocol version (`data` carries
+            `requested` and `supported`).
           example: -32602
         message:
           type: string
@@ -4704,7 +4776,7 @@ components:
                 - name: mcp_servers
                   env: 'MCP_SERVERS'
                   type: string
-                  description: 'Comma-separated list of MCP servers as alias=url, e.g. deepwiki=https://mcp.deepwiki.com/mcp,http://mcp-time-server:8081/mcp. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$ and namespace the tools as mcp_<alias>_<tool>'
+                  description: 'Comma-separated list of MCP servers as alias=url, e.g. deepwiki=https://mcp.deepwiki.com/mcp,http://mcp-time-server:8081/mcp. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$, be unique, must not be the reserved alias tools, and namespace the tools as mcp_<alias>_<tool>'
                 - name: mcp_tool_mode
                   env: 'MCP_TOOL_MODE'
                   type: string
