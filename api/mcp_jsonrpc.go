@@ -140,8 +140,6 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 // ponytail: Mcp-Param-* headers are not validated; add it once an upstream
 // tool declares x-mcp-header in its inputSchema.
 func validateMCPRequest(header http.Header, req *types.MCPJSONRPCRequest) *types.MCPJSONRPCError {
-	// A mirrored header sent twice is malformed: an intermediary may route on a
-	// different copy than the one validated here.
 	for _, name := range []string{headerMCPProtocolVersion, headerMCPMethod, headerMCPName} {
 		if len(header.Values(name)) > 1 {
 			return headerMismatch(name + " header sent more than once")
