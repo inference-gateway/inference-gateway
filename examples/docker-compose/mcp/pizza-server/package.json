@@ -1,0 +1,29 @@
+{
+  "name": "pizza-demo-mcp-server",
+  "version": "1.0.0",
+  "description": "Pizza demo MCP server on the official TypeScript SDK v2",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/express": "^2.0.1",
+    "@modelcontextprotocol/node": "^2.1.0",
+    "@modelcontextprotocol/server": "^2.1.0",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.6.2",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=24.14.0",
+    "npm": ">=11.9.0"
+  }
+}

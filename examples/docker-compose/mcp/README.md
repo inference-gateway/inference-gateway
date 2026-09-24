@@ -8,7 +8,8 @@ multiple MCP servers.
 
 - **🌐 Gateway as an MCP server**: one `POST /mcp` endpoint fronting every backend server, for agent clients
 - **🔍 MCP Inspector**: Web-based debugging tool for exploring and testing MCP servers
-- **🛠️ Multiple Tools**: Time, search, and filesystem tools
+- **🛠️ Multiple Tools**: Time, search, filesystem, pizza and calculator tools
+- **📦 Official SDKs**: the pizza (TypeScript) and calculator (Go) servers show how to serve MCP `2026-07-28` with the official SDKs
 - **🔧 Easy Setup**: Docker Compose configuration with CORS support
 
 ## Table of Contents
@@ -51,6 +52,8 @@ prints on startup (`docker compose logs mcp-inspector`) - it carries the session
 - **MCP Time Server**: Provides time data tools
 - **MCP Search Server**: Provides web search functionality
 - **MCP Filesystem Server**: Provides file operations (read, write, delete, list directories)
+- **MCP Pizza Server**: Pizza demo tool on the official TypeScript SDK v2 ([pizza-server](pizza-server/))
+- **MCP Calculator Server**: Calculator tool with structured output on the official Go SDK ([calculator-server](calculator-server/))
 - **MCP Inspector**: Web-based debugging tool for exploring MCP servers
 
 ## MCP Inspector
@@ -68,7 +71,7 @@ from `docker compose logs mcp-inspector`. Its ports are published on `127.0.0.1`
 **Connected Server:**
 
 The Inspector is launched against the gateway's own MCP endpoint,
-`http://inference-gateway:8080/mcp`, so it sees the tools of all three backend
+`http://inference-gateway:8080/mcp`, so it sees the tools of all five backend
 servers at once. The endpoint speaks MCP `2026-07-28` only, so the Inspector runs
 with `--protocol-era modern` (its default is `legacy`). Connect the server card and
 the Tools view lists every `mcp_<alias>_<tool>`. The server list is read-only,
@@ -383,6 +386,17 @@ When you send a request to the Inference Gateway, it will:
 
 All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 
+### Pizza Server Tools
+
+- **get_top_pizzas**: The top 5 pizzas in the world with their origin,
+  description, year created and key ingredients
+
+### Calculator Server Tools
+
+- **calculate**: Add, subtract, multiply or divide two numbers. The result comes
+  back as `structuredContent` (`{"result": 42}`), and a division by zero as a
+  result with `isError: true`
+
 ## Adding Your Own MCP Servers
 
 **It's incredibly easy to add more MCP servers!** Simply follow these steps:
@@ -393,7 +407,7 @@ All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
    giving it an alias with `alias=url`:
 
    ```bash
-   MCP_SERVERS=time=http://mcp-time-server:8081/mcp,search=http://mcp-search-server:8082/mcp,http://your-new-server:8085/mcp
+   MCP_SERVERS=time=http://mcp-time-server:8081/mcp,search=http://mcp-search-server:8082/mcp,http://your-new-server:8086/mcp
    ```
 
    Each server gets an alias that namespaces its tools as
@@ -411,19 +425,31 @@ All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 - Speaks MCP `2026-07-28`, the stateless revision: the gateway sends no
   `initialize` and keeps no session, so every `tools/list` and `tools/call` must
   be answerable on its own. A server that requires a handshake or a session is
-  marked unavailable.
+  marked unavailable. The official SDKs serve it alongside the 2025-era
+  protocol:
+  - **TypeScript** v2 (`@modelcontextprotocol/server`): mount
+    `createMcpHandler`, as the [pizza server](pizza-server/) does. The v1
+    `@modelcontextprotocol/sdk` package does not speak `2026-07-28`.
+  - **Go** (`github.com/modelcontextprotocol/go-sdk` v1.7+): a Streamable HTTP
+    handler with `Stateless: true`, as the [calculator server](calculator-server/)
+    does.
+  - **Python** v2 (`mcp` 2.x): serves both revisions with no configuration.
 - Responds to HTTP requests on the `/mcp` endpoint
 - Supports CORS for web clients (if using the MCP Inspector)
 
 ### Pre-configured Example Servers
 
-This example includes three pre-configured servers:
+This example includes five pre-configured servers:
 
 - **Time Server**: `http://mcp-time-server:8081/mcp` - Get current time
 - **Search Server**: `http://mcp-search-server:8082/mcp` - Web search
   functionality
 - **Filesystem Server**: `http://mcp-filesystem-server:8083/mcp` - File
   operations
+- **Pizza Server**: `http://mcp-pizza-server:8084/mcp` - Pizza demo on the
+  official TypeScript SDK v2
+- **Calculator Server**: `http://mcp-calculator-server:8085/mcp` - Calculator
+  on the official Go SDK
 
 ### Configuration Options
 

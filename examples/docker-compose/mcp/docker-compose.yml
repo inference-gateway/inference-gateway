@@ -10,12 +10,14 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       MCP_ENABLED: ${MCP_ENABLED:-true}
       MCP_EXPOSE: ${MCP_EXPOSE:-true}
-      MCP_SERVERS: ${MCP_SERVERS:-time=http://mcp-time-server:8081/mcp,search=http://mcp-search-server:8082/mcp,filesystem=http://mcp-filesystem-server:8083/mcp}
+      MCP_SERVERS: ${MCP_SERVERS:-time=http://mcp-time-server:8081/mcp,search=http://mcp-search-server:8082/mcp,filesystem=http://mcp-filesystem-server:8083/mcp,pizza=http://mcp-pizza-server:8084/mcp,calculator=http://mcp-calculator-server:8085/mcp}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
     depends_on:
       - mcp-time-server
       - mcp-search-server
       - mcp-filesystem-server
+      - mcp-pizza-server
+      - mcp-calculator-server
     networks:
       - mcp-network
 
@@ -63,6 +65,22 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./filesystem-data:/tmp/mcp-files
+    networks:
+      - mcp-network
+
+  # Built on the official TypeScript SDK v2 (createMcpHandler).
+  mcp-pizza-server:
+    build:
+      context: ./pizza-server
+      dockerfile: Dockerfile
+    networks:
+      - mcp-network
+
+  # Built on the official Go SDK (stateless Streamable HTTP handler).
+  mcp-calculator-server:
+    build:
+      context: ./calculator-server
+      dockerfile: Dockerfile
     networks:
       - mcp-network
 
