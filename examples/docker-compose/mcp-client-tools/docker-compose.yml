@@ -1,0 +1,45 @@
+---
+# Both gateways are built from this checkout, so rerunning the example after a
+# change shows the new behaviour.
+x-gateway: &gateway
+  build:
+    context: ../../..
+  image: inference-gateway:mcp-client-tools
+  depends_on:
+    - mock-llm
+
+x-gateway-env: &gateway-env
+  ENVIRONMENT: development
+  OPENAI_API_URL: http://mock-llm:8080/v1
+  OPENAI_API_KEY: mock
+  MCP_ENABLED: 'true'
+
+services:
+  inference-gateway:
+    <<: *gateway
+    ports:
+      - '8080:8080'
+    environment:
+      <<: *gateway-env
+      MCP_SERVERS: http://mcp-time-server:8081/mcp
+    depends_on:
+      - mock-llm
+      - mcp-time-server
+
+  # Same gateway, but its only MCP server never answers.
+  inference-gateway-mcp-down:
+    <<: *gateway
+    ports:
+      - '8081:8080'
+    environment:
+      <<: *gateway-env
+      MCP_SERVERS: http://mcp-unreachable:8081/mcp
+      MCP_MAX_RETRIES: '0'
+
+  mock-llm:
+    build:
+      context: ./mock-llm
+
+  mcp-time-server:
+    build:
+      context: ../mcp/time-server

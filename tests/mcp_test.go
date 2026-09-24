@@ -1114,3 +1114,110 @@ func TestSSEFallbackURLGeneration(t *testing.T) {
 		})
 	}
 }
+
+func TestAgent_WithClientDeclaredTools(t *testing.T) {
+	const (
+		clientTool = "bash"
+		mcpTool    = "mcp_time"
+		mcpServer  = "http://time-server:8081/mcp"
+		mcpResult  = "The current time is 12:00:00"
+		finalReply = "It is noon."
+		model      = "test-model"
+	)
+	declared := []types.ChatCompletionTool{
+		{Type: types.Function, Function: types.FunctionObject{Name: clientTool}},
+		{Type: types.Function, Function: types.FunctionObject{Name: mcpTool}},
+	}
+	toolCall := func(id, name string) types.ChatCompletionMessageToolCall {
+		return types.ChatCompletionMessageToolCall{
+			ID:       id,
+			Type:     types.Function,
+			Function: types.ChatCompletionMessageToolCallFunction{Name: name, Arguments: "{}"},
+		}
+	}
+	newAgent := func(t *testing.T) (*mcp.Agent, *mcpmocks.MockMCPClientInterface, *providers.MockIProvider) {
+		ctrl := gomock.NewController(t)
+		mockLogger := mocks.NewMockLogger(ctrl)
+		mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
+		mockLogger.EXPECT().Info(gomock.Any(), gomock.Any()).AnyTimes()
+		mockMCPClient := mcpmocks.NewMockMCPClientInterface(ctrl)
+		mockMCPClient.EXPECT().GetAllChatCompletionTools().Return(declared[1:]).AnyTimes()
+		return mcp.NewAgent(mockLogger, mockMCPClient), mockMCPClient, providers.NewMockIProvider(ctrl)
+	}
+
+	t.Run("mcp call still runs server-side", func(t *testing.T) {
+		agent, mockMCPClient, provider := newAgent(t)
+		mockMCPClient.EXPECT().GetServerForTool(strings.TrimPrefix(mcpTool, mcp.ToolNamePrefix)).Return(mcpServer, nil).Times(1)
+		mockMCPClient.EXPECT().ExecuteTool(gomock.Any(), gomock.Any(), mcpServer).Return(&mcp.CallToolResult{
+			Content: []mcp.ContentBlock{mcp.TextContent{Type: "text", Text: mcpResult}},
+		}, nil).Times(1)
+		provider.EXPECT().ChatCompletions(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, req types.CreateChatCompletionRequest) (types.CreateChatCompletionResponse, error) {
+			toolResult, err := req.Messages[len(req.Messages)-1].Content.AsMessageContent0()
+			assert.NoError(t, err)
+			assert.Contains(t, toolResult, mcpResult, "the tool result should be fed back to the model")
+			return types.CreateChatCompletionResponse{Choices: []types.ChatCompletionChoice{{
+				Message:      types.NewTextMessage(t, types.Assistant, finalReply),
+				FinishReason: types.Stop,
+			}}}, nil
+		}).Times(1)
+
+		toolCalls := []types.ChatCompletionMessageToolCall{toolCall("call_1", mcpTool)}
+		request := &types.CreateChatCompletionRequest{Model: model, Tools: &declared}
+		response := &types.CreateChatCompletionResponse{Choices: []types.ChatCompletionChoice{{
+			Message:      types.NewAssistantMessage(t, "", &toolCalls),
+			FinishReason: types.ToolCalls,
+		}}}
+
+		require.NoError(t, agent.Run(context.Background(), provider, model, request, response))
+
+		content, err := response.Choices[0].Message.Content.AsMessageContent0()
+		require.NoError(t, err)
+		assert.Equal(t, finalReply, content)
+		assert.Nil(t, response.Choices[0].Message.ToolCalls)
+	})
+
+	for _, tt := range []struct {
+		name      string
+		toolCalls []types.ChatCompletionMessageToolCall
+	}{
+		{name: "client call only", toolCalls: []types.ChatCompletionMessageToolCall{toolCall("call_1", clientTool)}},
+		{name: "mixed turn drops the mcp call", toolCalls: []types.ChatCompletionMessageToolCall{toolCall("call_1", clientTool), toolCall("call_2", mcpTool)}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			agent, _, provider := newAgent(t)
+			request := &types.CreateChatCompletionRequest{Model: model, Tools: &declared}
+			response := &types.CreateChatCompletionResponse{Choices: []types.ChatCompletionChoice{{
+				Message:      types.NewAssistantMessage(t, "", &tt.toolCalls),
+				FinishReason: types.ToolCalls,
+			}}}
+
+			require.NoError(t, agent.Run(context.Background(), provider, model, request, response))
+
+			require.NotNil(t, response.Choices[0].Message.ToolCalls)
+			assert.Equal(t, []types.ChatCompletionMessageToolCall{toolCall("call_1", clientTool)}, *response.Choices[0].Message.ToolCalls)
+			assert.Equal(t, types.ToolCalls, response.Choices[0].FinishReason)
+		})
+	}
+
+	t.Run("streaming", func(t *testing.T) {
+		agent, _, provider := newAgent(t)
+		upstream := make(chan []byte, 3)
+		upstream <- []byte(`data: {"id":"chunk","model":"test-model","choices":[{"index":0,"delta":{"role":"assistant","tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"bash","arguments":"{}"}}]},"finish_reason":null}]}`)
+		upstream <- []byte(`data: {"id":"chunk","model":"test-model","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`)
+		upstream <- []byte(`data: [DONE]`)
+		close(upstream)
+		provider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(upstream, nil).Times(1)
+
+		downstream := make(chan []byte, 10)
+		require.NoError(t, agent.RunWithStream(context.Background(), provider, model, downstream, &types.CreateChatCompletionRequest{Model: model, Tools: &declared}))
+		close(downstream)
+
+		var body strings.Builder
+		for chunk := range downstream {
+			body.Write(chunk)
+		}
+		assert.Equal(t, []types.ChatCompletionMessageToolCall{toolCall("call_1", clientTool)}, types.AccumulateStreamingToolCalls(body.String()))
+		assert.Contains(t, body.String(), `"finish_reason":"tool_calls"`)
+		assert.True(t, strings.HasSuffix(body.String(), types.SSEDoneEvent))
+	})
+}

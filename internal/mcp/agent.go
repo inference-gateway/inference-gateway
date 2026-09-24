@@ -60,6 +60,12 @@ func (a *Agent) Run(ctx context.Context, provider core.IProvider, model string, 
 			break
 		}
 
+		if clientCalls := a.clientToolCalls(request.Tools, *currentResponse.Choices[0].Message.ToolCalls); len(clientCalls) > 0 {
+			a.logger.Debug("returning client tool calls to the client", "count", len(clientCalls), "iteration", iteration+1)
+			currentResponse.Choices[0].Message.ToolCalls = &clientCalls
+			break
+		}
+
 		a.logger.Debug("agent loop iteration", "iteration", iteration+1, "tool_calls", len(*currentResponse.Choices[0].Message.ToolCalls))
 
 		a.logger.Debug("executing tool calls", "count", len(*currentResponse.Choices[0].Message.ToolCalls))
@@ -148,6 +154,7 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 
 		streamComplete := false
 		hasToolCalls := false
+		var lastChunk types.CreateChatCompletionStreamResponse
 
 		for !streamComplete {
 			select {
@@ -186,6 +193,7 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 					a.logger.Debug("failed to unmarshal streaming chunk", parseErr, "chunk_data", chunkData, "iteration", iteration+1)
 					continue
 				}
+				lastChunk = resp
 
 				if len(resp.Choices) == 0 {
 					continue
@@ -249,6 +257,16 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 			return nil
 		}
 
+		if clientCalls := a.clientToolCalls(body.Tools, toolCalls); len(clientCalls) > 0 {
+			a.logger.Debug("returning client tool calls to the client", "count", len(clientCalls), "iteration", iteration+1)
+			for _, chunk := range toolCallChunks(lastChunk, clientCalls) {
+				if !send(ctx, middlewareStreamCh, chunk) {
+					return ctx.Err()
+				}
+			}
+			return nil
+		}
+
 		a.logger.Debug("executing tool calls", "count", len(toolCalls), "iteration", iteration+1)
 		toolResults, err := a.ExecuteTools(ctx, toolCalls)
 		if err != nil {
@@ -268,6 +286,65 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 
 	a.logger.Warn("agent streaming reached maximum iterations", "max_iterations", MaxAgentIterations, "iterations_completed", MaxAgentIterations)
 	return nil
+}
+
+// clientToolCalls returns the calls to tools the client declared itself. The
+// client executes those, so the loop hands them back instead of running them.
+// ponytail: in a turn that mixes client and MCP calls the MCP calls are dropped
+// unexecuted, since the client could not answer them; the model asks again.
+func (a *Agent) clientToolCalls(declared *[]types.ChatCompletionTool, toolCalls []types.ChatCompletionMessageToolCall) []types.ChatCompletionMessageToolCall {
+	if declared == nil {
+		return nil
+	}
+
+	mcpTools := map[string]struct{}{SelectorToolGet: {}, SelectorToolExecute: {}}
+	for _, tool := range a.mcpClient.GetAllChatCompletionTools() {
+		mcpTools[tool.Function.Name] = struct{}{}
+	}
+	clientTools := make(map[string]struct{})
+	for _, tool := range *declared {
+		if _, isMCP := mcpTools[tool.Function.Name]; !isMCP {
+			clientTools[tool.Function.Name] = struct{}{}
+		}
+	}
+
+	var clientCalls []types.ChatCompletionMessageToolCall
+	for _, toolCall := range toolCalls {
+		if _, ok := clientTools[toolCall.Function.Name]; ok {
+			clientCalls = append(clientCalls, toolCall)
+		}
+	}
+	return clientCalls
+}
+
+// toolCallChunks renders tool calls as the SSE frames a streaming client
+// expects: one delta carrying every call, then the tool_calls finish chunk.
+// The loop holds the provider's own deltas back until it knows whether the
+// calls belong to MCP or to the client, so they are rebuilt here.
+func toolCallChunks(template types.CreateChatCompletionStreamResponse, toolCalls []types.ChatCompletionMessageToolCall) [][]byte {
+	deltas := make([]types.ChatCompletionMessageToolCallChunk, len(toolCalls))
+	for i, toolCall := range toolCalls {
+		id, toolType, function := toolCall.ID, string(toolCall.Type), toolCall.Function
+		deltas[i] = types.ChatCompletionMessageToolCallChunk{
+			Index:        i,
+			ID:           &id,
+			Type:         &toolType,
+			Function:     &function,
+			ExtraContent: toolCall.ExtraContent,
+		}
+	}
+
+	choices := []types.ChatCompletionStreamChoice{
+		{Delta: types.ChatCompletionStreamResponseDelta{Role: types.Assistant, ToolCalls: &deltas}},
+		{Delta: types.ChatCompletionStreamResponseDelta{Role: types.Assistant}, FinishReason: types.ToolCalls},
+	}
+	chunks := make([][]byte, 0, len(choices))
+	for _, choice := range choices {
+		template.Choices = []types.ChatCompletionStreamChoice{choice}
+		payload, _ := json.Marshal(template)
+		chunks = append(chunks, []byte(types.SSEDataPrefix+string(payload)+"\n\n"))
+	}
+	return chunks
 }
 
 // ExecuteTools executes tools with the provided context, tool name, and arguments.

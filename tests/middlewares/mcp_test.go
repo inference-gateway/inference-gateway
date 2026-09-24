@@ -285,6 +285,16 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			router.POST("/v1/chat/completions", func(c *gin.Context) {
 				toolsAdded = true
 
+				value, exists := c.Get(middlewares.MCPBypassHeader)
+				if !assert.True(t, exists, "handler should receive the parsed request") {
+					return
+				}
+				toolCount := 0
+				if tools := value.(*types.CreateChatCompletionRequest).Tools; tools != nil {
+					toolCount = len(*tools)
+				}
+				assert.Equal(t, tt.expectedCount, toolCount)
+
 				response := types.CreateChatCompletionResponse{
 					ID:    "test-id",
 					Model: "gpt-3.5-turbo",

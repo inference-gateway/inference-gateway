@@ -1,0 +1,152 @@
+version: '3'
+
+vars:
+  GATEWAY: http://localhost:8080
+  GATEWAY_MCP_DOWN: http://localhost:8081
+  MODEL: '"model":"openai/mock"'
+  LIST_FILES: '"messages":[{"role":"user","content":"List the files in the current directory"}]'
+  ASK_TIME: '"messages":[{"role":"user","content":"What time is it?"}]'
+  TOOLS: >-
+    "tools":[
+    {"type":"function","function":{"name":"bash","description":"Run a shell command","parameters":{"type":"object","properties":{"command":{"type":"string"}}}}},
+    {"type":"function","function":{"name":"read","description":"Read a file","parameters":{"type":"object","properties":{"path":{"type":"string"}}}}}]
+  BYPASS: "-H 'X-MCP-Bypass: true'"
+
+tasks:
+  default:
+    desc: 'Show available tasks'
+    cmds:
+      - task --list
+
+  up:
+    desc: 'Build both gateways from this checkout, start the stack and wait until it is healthy'
+    cmds:
+      - docker compose up -d --build
+      - |
+        for url in {{.GATEWAY}} {{.GATEWAY_MCP_DOWN}}; do
+          attempts=0
+          until curl -sf "$url/health" >/dev/null; do
+            attempts=$((attempts + 1))
+            [ "$attempts" -lt 90 ] || { echo "$url did not become healthy"; exit 1; }
+            sleep 2
+          done
+        done
+
+  down:
+    desc: 'Stop the stack'
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: 'Show the tools each upstream call carried'
+    cmds:
+      - docker compose logs --no-log-prefix mock-llm
+
+  test:
+    desc: 'Run every case'
+    cmds:
+      - task: client-tools
+      - task: client-tools:stream
+      - task: client-tools:bypass
+      - task: mcp-down
+      - task: mcp-down:bypass
+      - task: mcp-tool
+      - task: mcp-tool:stream
+      - task: mcp-tool:client-tools
+
+  client-tools:
+    desc: 'Client tools, non-streaming'
+    cmds:
+      - task: chat
+        vars:
+          NAME: '{{.TASK}}'
+          EXPECTED: bash tool call returned to the client
+          URL: '{{.GATEWAY}}'
+          BODY: '{ {{.MODEL}},{{.LIST_FILES}},{{.TOOLS}} }'
+
+  client-tools:stream:
+    desc: 'Client tools, streaming'
+    cmds:
+      - task: chat
+        vars:
+          NAME: '{{.TASK}}'
+          EXPECTED: bash tool-call deltas streamed to the client
+          URL: '{{.GATEWAY}}'
+          BODY: '{ {{.MODEL}},{{.LIST_FILES}},{{.TOOLS}},"stream":true }'
+
+  client-tools:bypass:
+    desc: 'Control: client-tools with X-MCP-Bypass'
+    cmds:
+      - task: chat
+        vars:
+          NAME: '{{.TASK}}'
+          EXPECTED: the shape client-tools should have
+          URL: '{{.GATEWAY}}'
+          BODY: '{ {{.MODEL}},{{.LIST_FILES}},{{.TOOLS}} }'
+          HEADERS: '{{.BYPASS}}'
+
+  mcp-down:
+    desc: 'All MCP servers down, no client tools'
+    cmds:
+      - task: chat
+        vars:
+          NAME: '{{.TASK}}'
+          EXPECTED: 200, the request passes through
+          URL: '{{.GATEWAY_MCP_DOWN}}'
+          BODY: '{ {{.MODEL}},{{.LIST_FILES}} }'
+
+  mcp-down:bypass:
+    desc: 'Control: mcp-down with X-MCP-Bypass'
+    cmds:
+      - task: chat
+        vars:
+          NAME: '{{.TASK}}'
+          EXPECTED: '200'
+          URL: '{{.GATEWAY_MCP_DOWN}}'
+          BODY: '{ {{.MODEL}},{{.LIST_FILES}} }'
+          HEADERS: '{{.BYPASS}}'
+
+  mcp-tool:
+    desc: 'No client tools, asks for the time'
+    cmds:
+      - task: chat
+        vars:
+          NAME: '{{.TASK}}'
+          EXPECTED: gateway runs the MCP time tool and answers
+          URL: '{{.GATEWAY}}'
+          BODY: '{ {{.MODEL}},{{.ASK_TIME}} }'
+
+  mcp-tool:stream:
+    desc: 'No client tools, asks for the time, streaming'
+    cmds:
+      - task: chat
+        vars:
+          NAME: '{{.TASK}}'
+          EXPECTED: only the answer is streamed, no tool-call deltas
+          URL: '{{.GATEWAY}}'
+          BODY: '{ {{.MODEL}},{{.ASK_TIME}},"stream":true }'
+
+  mcp-tool:client-tools:
+    desc: 'Client tools, asks for the time'
+    cmds:
+      - task: chat
+        vars:
+          NAME: '{{.TASK}}'
+          EXPECTED: gateway runs the MCP time tool and answers, client tools unused
+          URL: '{{.GATEWAY}}'
+          BODY: '{ {{.MODEL}},{{.ASK_TIME}},{{.TOOLS}} }'
+
+  chat:
+    internal: true
+    silent: true
+    requires:
+      vars:
+        - NAME
+        - EXPECTED
+        - URL
+        - BODY
+    cmds:
+      - |
+        printf '\n=== %s (expected: %s)\n' '{{.NAME}}' '{{.EXPECTED}}'
+        curl -sS -w '\n[HTTP %{http_code}]\n' '{{.URL}}/v1/chat/completions' \
+          -H 'Content-Type: application/json' {{.HEADERS}} -d '{{.BODY}}'

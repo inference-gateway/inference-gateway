@@ -12,6 +12,8 @@ This directory contains examples that demonstrate how to use the Inference Gatew
 - [Basic](basic/README.md) - Simple setup with a single model provider
 - [MCP](mcp/README.md) - Model Context Protocol integration with multiple tool
   servers
+- [MCP with client tools](mcp-client-tools/README.md) - What the MCP middleware
+  does with tools the client declares itself, against a mock LLM
 - [Hybrid](hybrid/README.md) - Configuration with multiple model providers
   (cloud and local)
 - [Tools](tools/README.md) - Function calling and tool usage examples
