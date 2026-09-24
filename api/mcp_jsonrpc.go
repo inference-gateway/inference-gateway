@@ -268,7 +268,6 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 		params = *req.Params
 	}
 
-	// validateMCPRequest already matched a non-empty Mcp-Name against it.
 	name, _ := params["name"].(string)
 	alias, toolName, err := router.mcpClient.ResolveTool(name)
 	if err != nil {
@@ -276,8 +275,6 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 		router.respondMCPError(c, req, jsonRPCInvalidParams, "unknown tool: "+name)
 		return
 	}
-	// A tool the include/exclude lists hide is not callable either, and stays
-	// indistinguishable from one that does not exist.
 	if !mcp.IsToolAllowed(alias, toolName, router.cfg.MCP.IncludeTools, router.cfg.MCP.ExcludeTools) {
 		router.logger.Error("mcp tool call rejected by include/exclude config", nil, "tool", name, "server", alias)
 		router.respondMCPError(c, req, jsonRPCInvalidParams, "unknown tool: "+name)
