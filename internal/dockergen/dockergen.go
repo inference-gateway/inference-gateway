@@ -41,7 +41,6 @@ func GenerateEnvExample(output string, oas string) error {
 {{- end }}
 `
 
-	// Create template with functions
 	t, err := template.New("env").Funcs(template.FuncMap{
 		"upper": strings.ToUpper,
 	}).Parse(tmpl)
@@ -49,14 +48,12 @@ func GenerateEnvExample(output string, oas string) error {
 		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	// Create file
 	f, err := os.Create(output)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer f.Close()
 
-	// Prepare template data
 	data := struct {
 		Sections           []map[string]openapi.Section
 		Providers          map[string]openapi.ProviderConfig
@@ -69,7 +66,6 @@ func GenerateEnvExample(output string, oas string) error {
 		ServerHostInDocker: serverHostInDocker,
 	}
 
-	// Execute template
 	if err := t.Execute(f, data); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)
 	}
