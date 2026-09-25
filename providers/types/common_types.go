@@ -2878,6 +2878,20 @@ type ModelModalities struct {
 	Output []Modality `json:"output"`
 }
 
+// OAuthProtectedResourceMetadata OAuth 2.0 Protected Resource Metadata (RFC 9728) for the gateway's MCP
+// endpoint. Only the fields a client needs to find the authorization
+// server are published.
+type OAuthProtectedResourceMetadata struct {
+	// AuthorizationServers Issuer identifiers of the authorization servers that mint tokens for this resource
+	AuthorizationServers []string `json:"authorization_servers"`
+
+	// BearerMethodsSupported How a bearer token may be sent; the gateway reads the Authorization header only
+	BearerMethodsSupported []string `json:"bearer_methods_supported"`
+
+	// Resource The canonical public URL of the protected resource
+	Resource string `json:"resource"`
+}
+
 // Pricing Pricing information for a model
 type Pricing struct {
 	// CacheReadPerToken Price per cached input token read

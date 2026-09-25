@@ -3,9 +3,13 @@ package middlewares
 import (
 	"bytes"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	gin "github.com/gin-gonic/gin"
+
+	config "github.com/inference-gateway/inference-gateway/config"
 )
 
 const (
@@ -14,7 +18,51 @@ const (
 	MetricsIngestPath   = "/v1/metrics"
 	HealthPath          = "/health"
 	MCPPath             = "/mcp"
+
+	// ProtectedResourcePath is the RFC 9728 well-known prefix; the metadata
+	// document for a resource lives at the prefix followed by its path, so
+	// /mcp is described at /.well-known/oauth-protected-resource/mcp.
+	ProtectedResourcePath    = "/.well-known/oauth-protected-resource"
+	MCPProtectedResourcePath = ProtectedResourcePath + MCPPath
 )
+
+// ForwardedProtoHeader carries the scheme a terminating proxy received on,
+// which is the part of the public URL the gateway cannot otherwise see.
+const ForwardedProtoHeader = "X-Forwarded-Proto"
+
+// MCPExposed reports whether the gateway serves POST /mcp as an MCP server.
+func MCPExposed(mcp *config.MCPConfig) bool {
+	return mcp != nil && mcp.Enabled && mcp.Expose
+}
+
+// MCPResourceURL is the canonical public URL of POST /mcp, published as the
+// resource of the RFC 9728 metadata document. MCP_RESOURCE_URL wins; without
+// it the URL is derived from the request, which is only right when nothing
+// between the client and the gateway rewrites the scheme or the host.
+func MCPResourceURL(mcp *config.MCPConfig, r *http.Request) string {
+	if mcp != nil && mcp.ResourceUrl != "" {
+		return mcp.ResourceUrl
+	}
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if forwarded, _, _ := strings.Cut(r.Header.Get(ForwardedProtoHeader), ","); forwarded != "" {
+		scheme = strings.TrimSpace(forwarded)
+	}
+	return scheme + "://" + r.Host + MCPPath
+}
+
+// ProtectedResourceMetadataURL maps a resource URL to the URL of the RFC 9728
+// document describing it, by inserting the well-known prefix before its path.
+func ProtectedResourceMetadataURL(resource string) string {
+	u, err := url.Parse(resource)
+	if err != nil {
+		return resource
+	}
+	u.Path = ProtectedResourcePath + strings.TrimSuffix(u.Path, "/")
+	return u.String()
+}
 
 // JSONRPCGuardrailBlocked is the server-defined JSON-RPC error code (the
 // -32000..-32099 range) for a guardrails block on /mcp, so a client can tell a

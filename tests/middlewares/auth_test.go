@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,6 +18,7 @@ import (
 	jose "github.com/go-jose/go-jose/v4"
 	jwt "github.com/go-jose/go-jose/v4/jwt"
 
+	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -31,8 +34,17 @@ const (
 	testRSABits     = 2048
 	testRoute       = "/v1/models"
 
+	wwwAuthenticate  = "WWW-Authenticate"
 	challengeMissing = `Bearer realm="inference-gateway"`
 	challengeInvalid = `Bearer realm="inference-gateway", error="invalid_token"`
+
+	// testResourceURL is the canonical /mcp URL MCP_RESOURCE_URL pins; without
+	// it the gateway derives one from the request, whose host defaults to
+	// example.com.
+	testResourceURL         = "https://gateway.example.com/mcp"
+	testRequestResource     = "http://example.com" + middlewares.MCPPath
+	metadataFromResourceURL = `, resource_metadata="https://gateway.example.com/.well-known/oauth-protected-resource/mcp"`
+	metadataFromRequest     = `, resource_metadata="http://example.com/.well-known/oauth-protected-resource/mcp"`
 )
 
 // fakeIdP serves the two OIDC endpoints go-oidc needs (discovery and JWKS)
@@ -97,11 +109,15 @@ func (p *fakeIdP) mint(t *testing.T, override func(*jwt.Claims), private ...map[
 }
 
 // newAuthEngine wires the real middleware in front of a handler that echoes
-// what the middleware stored on the request context.
-func newAuthEngine(t *testing.T, auth config.AuthConfig) *gin.Engine {
+// what the middleware stored on the request context, with the routes
+// cmd/gateway/main.go registers. mcp is nil unless the case needs the gateway
+// to be an exposed MCP server.
+func newAuthEngine(t *testing.T, auth config.AuthConfig, mcp *config.MCPConfig) *gin.Engine {
 	t.Helper()
-	mw, err := middlewares.NewOIDCAuthenticatorMiddleware(logger.NewNoopLogger(), config.Config{Auth: &auth})
+	cfg := config.Config{Auth: &auth, MCP: mcp}
+	mw, err := middlewares.NewOIDCAuthenticatorMiddleware(logger.NewNoopLogger(), cfg)
 	require.NoError(t, err)
+	router := api.NewRouter(cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
 
 	r := gin.New()
 	r.Use(mw.Middleware())
@@ -111,6 +127,7 @@ func newAuthEngine(t *testing.T, auth config.AuthConfig) *gin.Engine {
 		c.JSON(http.StatusOK, gin.H{"sub": claims["sub"], "token": token})
 	}
 	r.GET(middlewares.HealthPath, echo)
+	r.GET(middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
 	r.GET(testRoute, echo)
 	r.POST(middlewares.MCPPath, echo)
 	return r
@@ -155,11 +172,13 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 	withAudienceList := newAuthEngine(t, config.AuthConfig{
 		Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID,
 		OidcAudience: testAPIAudience + ", second-api",
-	})
+	}, nil)
 	// Audience list empty: falls back to the client ID.
-	withClientID := newAuthEngine(t, config.AuthConfig{
-		Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID,
-	})
+	authOnly := config.AuthConfig{Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID}
+	withClientID := newAuthEngine(t, authOnly, nil)
+	// /mcp exposed: its challenges advertise the RFC 9728 document.
+	withMCPExposed := newAuthEngine(t, authOnly, &config.MCPConfig{Enabled: true, Expose: true})
+	withMCPResourceURL := newAuthEngine(t, authOnly, &config.MCPConfig{Enabled: true, Expose: true, ResourceUrl: testResourceURL})
 
 	valid := idp.mint(t, nil)
 	forAPI := idp.mint(t, func(c *jwt.Claims) { c.Audience = jwt.Audience{testAPIAudience} })
@@ -226,6 +245,27 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 			name: "MCP endpoint accepts a valid token", engine: withClientID, method: http.MethodPost, path: middlewares.MCPPath,
 			header: "Bearer " + valid, wantStatus: http.StatusOK, wantToken: valid,
 		},
+		{
+			name: "MCP challenge omits the metadata while /mcp is not exposed", engine: withClientID, method: http.MethodPost, path: middlewares.MCPPath,
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing,
+		},
+		{
+			name: "MCP missing token challenge points at the metadata", engine: withMCPExposed, method: http.MethodPost, path: middlewares.MCPPath,
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing + metadataFromRequest,
+		},
+		{
+			name: "MCP invalid token challenge points at the metadata", engine: withMCPExposed, method: http.MethodPost, path: middlewares.MCPPath,
+			header: "Bearer not-a-jwt", wantStatus: http.StatusUnauthorized, wantChallenge: challengeInvalid + metadataFromRequest,
+		},
+		{
+			name: "MCP metadata follows the configured resource url", engine: withMCPResourceURL, method: http.MethodPost, path: middlewares.MCPPath,
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing + metadataFromResourceURL,
+		},
+		{
+			name: "Other endpoints do not advertise the MCP metadata", engine: withMCPExposed, path: testRoute,
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing,
+		},
+		{name: "Protected resource metadata bypasses auth", engine: withMCPExposed, path: middlewares.MCPProtectedResourcePath, wantStatus: http.StatusOK},
 	}
 
 	for _, tt := range tests {
@@ -242,7 +282,7 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 			tt.engine.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.wantStatus, w.Code)
-			assert.Equal(t, tt.wantChallenge, w.Header().Get("WWW-Authenticate"))
+			assert.Equal(t, tt.wantChallenge, w.Header().Get(wwwAuthenticate))
 			if tt.wantToken == "" {
 				return
 			}
@@ -255,4 +295,36 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 			assert.Equal(t, tt.wantToken, body.Token)
 		})
 	}
+}
+
+// TestMCPProtectedResourceDiscovery walks the flow MCP 2026-07-28 expects of a
+// client that knows only the /mcp URL: the 401 hands it the metadata document,
+// the document names the issuer, and its resource is the endpoint the
+// challenge came from - which is what the client checks before trusting it.
+func TestMCPProtectedResourceDiscovery(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	idp := newFakeIdP(t)
+	engine := newAuthEngine(t,
+		config.AuthConfig{Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID},
+		&config.MCPConfig{Enabled: true, Expose: true})
+
+	w := httptest.NewRecorder()
+	engine.ServeHTTP(w, httptest.NewRequest(http.MethodPost, middlewares.MCPPath, nil))
+	require.Equal(t, http.StatusUnauthorized, w.Code)
+
+	_, advertised, ok := strings.Cut(w.Header().Get(wwwAuthenticate), `resource_metadata="`)
+	require.True(t, ok, "the challenge must point at the metadata document")
+	metadataURL, _, _ := strings.Cut(advertised, `"`)
+	u, err := url.Parse(metadataURL)
+	require.NoError(t, err)
+
+	w = httptest.NewRecorder()
+	engine.ServeHTTP(w, httptest.NewRequest(http.MethodGet, u.Path, nil))
+	require.Equal(t, http.StatusOK, w.Code, "the document is fetched without a token")
+
+	var doc types.OAuthProtectedResourceMetadata
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &doc))
+	assert.Equal(t, []string{idp.issuer}, doc.AuthorizationServers)
+	assert.Equal(t, testRequestResource, doc.Resource)
+	assert.Equal(t, metadataURL, middlewares.ProtectedResourceMetadataURL(doc.Resource))
 }

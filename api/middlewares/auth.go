@@ -45,6 +45,9 @@ type OIDCAuthenticatorImpl struct {
 	logger    logger.Logger
 	verifier  *oidc.IDTokenVerifier
 	audiences []string
+	// mcp decides whether the challenges on /mcp advertise the RFC 9728
+	// metadata document, which is only served while /mcp is exposed.
+	mcp *config.MCPConfig
 }
 
 type OIDCAuthenticatorNoop struct{}
@@ -72,6 +75,7 @@ func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OI
 		logger:    logger,
 		verifier:  provider.Verifier(&oidc.Config{SkipClientIDCheck: true}),
 		audiences: audiences,
+		mcp:       cfg.MCP,
 	}, nil
 }
 
@@ -87,7 +91,10 @@ func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
 // Middleware implementation of the OIDCAuthenticator interface
 func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.URL.Path == HealthPath {
+		// The protected resource metadata is fetched by clients that have no
+		// token yet, so it is exempt like the health check.
+		switch c.Request.URL.Path {
+		case HealthPath, MCPProtectedResourcePath:
 			c.Next()
 			return
 		}
@@ -95,21 +102,21 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 		scheme, token, _ := strings.Cut(c.GetHeader("Authorization"), " ")
 		token = strings.TrimSpace(token)
 		if !strings.EqualFold(scheme, bearerScheme) || token == "" {
-			unauthorized(c, wwwAuthenticateMissing)
+			a.unauthorized(c, wwwAuthenticateMissing)
 			return
 		}
 
 		idToken, err := a.verifier.Verify(c.Request.Context(), token)
 		if err != nil {
 			a.logger.Error("failed to verify bearer token", err)
-			unauthorized(c, wwwAuthenticateInvalid)
+			a.unauthorized(c, wwwAuthenticateInvalid)
 			return
 		}
 
 		var claims map[string]any
 		if err := idToken.Claims(&claims); err != nil {
 			a.logger.Error("failed to decode bearer token claims", err)
-			unauthorized(c, wwwAuthenticateInvalid)
+			a.unauthorized(c, wwwAuthenticateInvalid)
 			return
 		}
 
@@ -122,7 +129,7 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 		if !slices.ContainsFunc(audiences, func(aud string) bool { return slices.Contains(a.audiences, aud) }) {
 			a.logger.Error("failed to verify bearer token",
 				fmt.Errorf("oidc: expected one of audiences %q got %q", a.audiences, audiences))
-			unauthorized(c, wwwAuthenticateInvalid)
+			a.unauthorized(c, wwwAuthenticateInvalid)
 			return
 		}
 
@@ -134,7 +141,14 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 	}
 }
 
-func unauthorized(c *gin.Context, challenge string) {
+// unauthorized answers the 401 challenge. On /mcp it also points at the RFC
+// 9728 document, which is how an MCP client that knows only the endpoint URL
+// discovers the authorization server (MCP 2026-07-28 authorization).
+func (a *OIDCAuthenticatorImpl) unauthorized(c *gin.Context, challenge string) {
+	if c.Request.URL.Path == MCPPath && MCPExposed(a.mcp) {
+		metadata := ProtectedResourceMetadataURL(MCPResourceURL(a.mcp, c.Request))
+		challenge += fmt.Sprintf(", resource_metadata=%q", metadata)
+	}
 	c.Header(wwwAuthenticateHeader, challenge)
 	c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 	c.Abort()

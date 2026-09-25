@@ -360,8 +360,24 @@ Client configuration, e.g. for opencode (the client must support MCP
 
 The client keeps its own local tools (bash, read, edit) executing client-side;
 only the gateway's tools travel over `/mcp`. When `AUTH_ENABLED=true`, send the
-bearer token the same way as for every other endpoint - only `/health` skips
-authentication.
+bearer token the same way as for every other endpoint.
+
+A client that has no token yet discovers where to get one, as MCP `2026-07-28`
+requires: the `401` from `/mcp` carries a `resource_metadata` pointing at the
+OAuth 2.0 Protected Resource Metadata
+([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) document, which
+names the issuer. Like `/health`, that document needs no token:
+
+```bash
+curl -i -X POST http://localhost:8080/mcp
+# WWW-Authenticate: Bearer realm="inference-gateway", resource_metadata="http://localhost:8080/.well-known/oauth-protected-resource/mcp"
+
+curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
+```
+
+Behind an ingress that rewrites the scheme or host, set `MCP_RESOURCE_URL` to
+the canonical public `/mcp` URL clients use; otherwise the document derives it
+from the request.
 
 ## How It Works
 

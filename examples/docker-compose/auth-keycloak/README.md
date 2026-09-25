@@ -97,6 +97,35 @@ The token's `sub` and `preferred_username`
 (`service-account-inference-gateway-client`) are what identity-based guardrails
 see in `input.identity`.
 
+## MCP clients discover Keycloak on their own
+
+Expose the gateway as an MCP server (`MCP_ENABLED=true`, `MCP_EXPOSE=true`) and
+an MCP client needs no pre-issued token to find the IdP, as MCP `2026-07-28`
+requires. The `401` from `/mcp` points at the OAuth 2.0 Protected Resource
+Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) document,
+which names this realm:
+
+```bash
+curl -i -X POST http://localhost:8080/mcp
+# WWW-Authenticate: Bearer realm="inference-gateway", resource_metadata="http://localhost:8080/.well-known/oauth-protected-resource/mcp"
+
+curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
+# {"resource":"http://localhost:8080/mcp",
+#  "authorization_servers":["http://keycloak:8080/realms/inference-gateway-realm"],
+#  "bearer_methods_supported":["header"]}
+```
+
+The document itself takes no token - like `/health`, it is fetched precisely
+because the client has none yet. The client then reads Keycloak's own
+`/.well-known/openid-configuration` under that issuer and runs its grant, which
+is what `get-token.sh` does by hand above.
+
+`resource` defaults to the request scheme (honouring `X-Forwarded-Proto`) and
+`Host`; behind an ingress that rewrites either, set `MCP_RESOURCE_URL` to the
+canonical public `/mcp` URL. If the IdP is configured to stamp that resource
+into `aud` ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), list the
+same value in `AUTH_OIDC_AUDIENCE`.
+
 ## Running a real chat completion
 
 Every endpoint except `/health` requires a token once auth is enabled. To

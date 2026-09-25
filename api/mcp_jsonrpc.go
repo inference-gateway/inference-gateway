@@ -43,6 +43,10 @@ const (
 	base64HeaderPrefix = "=?base64?"
 	base64HeaderSuffix = "?="
 
+	// bearerMethodHeader is the only RFC 6750 method the gateway accepts a
+	// token by, published in the protected resource metadata.
+	bearerMethodHeader = "header"
+
 	errMsgMCPNotExposed = "MCP endpoint is not exposed. Set MCP_EXPOSE=true to enable."
 	errMsgMCPOrigin     = "MCP endpoint does not accept browser requests"
 	errMsgMCPUnusable   = "no mcp servers are available"
@@ -118,6 +122,25 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 		router.logger.Error("unsupported mcp method", nil, "method", string(req.Method))
 		router.respondMCPError(c, &req, jsonRPCMethodNotFound, "method not found: "+string(req.Method))
 	}
+}
+
+// MCPProtectedResourceMetadataHandler serves the OAuth 2.0 Protected Resource
+// Metadata (RFC 9728) for POST /mcp, which MCP 2026-07-28 requires a protected
+// MCP server to publish so a client holding only the endpoint URL can find the
+// authorization server. Auth skips this route; without an authorization server
+// to name, or with /mcp not exposed, there is nothing to serve and it is a 404.
+func (router *RouterImpl) MCPProtectedResourceMetadataHandler(c *gin.Context) {
+	auth := router.cfg.Auth
+	if auth == nil || !auth.Enabled || !middlewares.MCPExposed(router.cfg.MCP) {
+		router.NotFoundHandler(c)
+		return
+	}
+
+	c.JSON(http.StatusOK, types.OAuthProtectedResourceMetadata{
+		Resource:               middlewares.MCPResourceURL(router.cfg.MCP, c.Request),
+		AuthorizationServers:   []string{auth.OidcIssuer},
+		BearerMethodsSupported: []string{bearerMethodHeader},
+	})
 }
 
 // validateMCPRequest enforces the 2026-07-28 request metadata: the protocol

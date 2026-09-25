@@ -333,6 +333,7 @@ func main() {
 	}
 
 	r.GET(middlewares.HealthPath, api.HealthcheckHandler)
+	r.GET(middlewares.MCPProtectedResourcePath, api.MCPProtectedResourceMetadataHandler)
 	r.POST(middlewares.MCPPath, api.MCPJSONRPCHandler)
 	r.Match([]string{http.MethodGet, http.MethodDelete}, middlewares.MCPPath, func(c *gin.Context) {
 		c.Header("Allow", http.MethodPost)

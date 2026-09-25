@@ -41,6 +41,13 @@ const (
 	legacyVersion      = "2025-06-18"
 	metaClientInfo     = "io.modelcontextprotocol/clientInfo"
 	metaClientCaps     = "io.modelcontextprotocol/clientCapabilities"
+
+	// Protected resource metadata fixtures: the issuer the document points at,
+	// the host a test request arrives on and the public URL MCP_RESOURCE_URL
+	// pins when the request cannot be trusted to carry it.
+	testIssuer      = "https://idp.example.com/realms/inference-gateway-realm"
+	testRequestHost = "gateway.internal:8080"
+	testResourceURL = "https://gateway.example.com/mcp"
 )
 
 // Guardrail fixtures: the policies POST /mcp is evaluated against and the
@@ -730,4 +737,79 @@ func assertJSONRPCError(t *testing.T, w *httptest.ResponseRecorder, wantStatus, 
 	assert.Equal(t, wantCode, resp.Error.Code)
 	assert.NotEmpty(t, resp.Error.Message)
 	return resp
+}
+
+// TestMCPProtectedResourceMetadataHandler pins the RFC 9728 document: it is
+// served only while there is an authorization server to name and /mcp is
+// exposed, and its resource is MCP_RESOURCE_URL or, failing that, the URL the
+// request arrived on.
+func TestMCPProtectedResourceMetadataHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	authEnabled := &config.AuthConfig{Enabled: true, OidcIssuer: testIssuer}
+	exposed := &config.MCPConfig{Enabled: true, Expose: true}
+
+	tests := []struct {
+		name           string
+		cfg            config.Config
+		forwardedProto string
+		wantStatus     int
+		wantResource   string
+	}{
+		{
+			name:         "derived from the request",
+			cfg:          config.Config{Auth: authEnabled, MCP: exposed},
+			wantStatus:   http.StatusOK,
+			wantResource: "http://" + testRequestHost + middlewares.MCPPath,
+		},
+		{
+			name:           "derived behind a tls terminating proxy",
+			cfg:            config.Config{Auth: authEnabled, MCP: exposed},
+			forwardedProto: "https, http",
+			wantStatus:     http.StatusOK,
+			wantResource:   "https://" + testRequestHost + middlewares.MCPPath,
+		},
+		{
+			name:         "configured resource url wins",
+			cfg:          config.Config{Auth: authEnabled, MCP: &config.MCPConfig{Enabled: true, Expose: true, ResourceUrl: testResourceURL}},
+			wantStatus:   http.StatusOK,
+			wantResource: testResourceURL,
+		},
+		{
+			name:       "auth disabled",
+			cfg:        config.Config{Auth: &config.AuthConfig{}, MCP: exposed},
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			name:       "mcp not exposed",
+			cfg:        config.Config{Auth: authEnabled, MCP: &config.MCPConfig{Enabled: true}},
+			wantStatus: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := NewRouter(tt.cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
+			engine := gin.New()
+			engine.GET(middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
+
+			req := httptest.NewRequest(http.MethodGet, middlewares.MCPProtectedResourcePath, nil)
+			req.Host = testRequestHost
+			if tt.forwardedProto != "" {
+				req.Header.Set(middlewares.ForwardedProtoHeader, tt.forwardedProto)
+			}
+			w := httptest.NewRecorder()
+			engine.ServeHTTP(w, req)
+
+			require.Equal(t, tt.wantStatus, w.Code)
+			if tt.wantStatus != http.StatusOK {
+				return
+			}
+
+			var metadata types.OAuthProtectedResourceMetadata
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &metadata))
+			assert.Equal(t, tt.wantResource, metadata.Resource)
+			assert.Equal(t, []string{testIssuer}, metadata.AuthorizationServers)
+			assert.Equal(t, []string{bearerMethodHeader}, metadata.BearerMethodsSupported)
+		})
+	}
 }
