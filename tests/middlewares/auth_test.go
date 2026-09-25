@@ -38,9 +38,6 @@ const (
 	challengeMissing = `Bearer realm="inference-gateway"`
 	challengeInvalid = `Bearer realm="inference-gateway", error="invalid_token"`
 
-	// testResourceURL is the canonical /mcp URL MCP_RESOURCE_URL pins; without
-	// it the gateway derives one from the request, whose host defaults to
-	// example.com.
 	testResourceURL         = "https://gateway.example.com/mcp"
 	testRequestResource     = "http://example.com" + middlewares.MCPPath
 	metadataFromResourceURL = `, resource_metadata="https://gateway.example.com/.well-known/oauth-protected-resource/mcp"`
