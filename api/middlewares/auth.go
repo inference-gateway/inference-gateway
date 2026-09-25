@@ -45,8 +45,6 @@ type OIDCAuthenticatorImpl struct {
 	logger    logger.Logger
 	verifier  *oidc.IDTokenVerifier
 	audiences []string
-	// mcp decides whether the challenges on /mcp advertise the RFC 9728
-	// metadata document, which is only served while /mcp is exposed.
 	mcp *config.MCPConfig
 }
 
