@@ -2298,15 +2298,6 @@ type ListModelsResponse struct {
 	Provider *Provider `json:"provider,omitempty"`
 }
 
-// ListToolsResponse Response structure for listing MCP tools
-type ListToolsResponse struct {
-	// Data Array of available MCP tools
-	Data []MCPTool `json:"data"`
-
-	// Object Always "list"
-	Object string `json:"object"`
-}
-
 // MCPJSONRPCError A JSON-RPC 2.0 error object
 type MCPJSONRPCError struct {
 	// Code JSON-RPC error code: `-32700` parse error, `-32600` invalid request,
@@ -2411,21 +2402,6 @@ type MCPJSONRPCResponse_ID struct {
 
 // MCPJSONRPCResponseJsonrpc JSON-RPC protocol version, always "2.0"
 type MCPJSONRPCResponseJsonrpc string
-
-// MCPTool An MCP tool definition
-type MCPTool struct {
-	// Description A description of what the tool does
-	Description string `json:"description"`
-
-	// InputSchema JSON schema for the tool's input parameters
-	InputSchema *map[string]any `json:"input_schema,omitempty"`
-
-	// Name The name of the tool
-	Name string `json:"name"`
-
-	// Server The MCP server that provides this tool
-	Server string `json:"server"`
-}
 
 // Message Message structure for provider requests
 type Message struct {
