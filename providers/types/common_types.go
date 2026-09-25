@@ -2311,9 +2311,11 @@ type ListToolsResponse struct {
 type MCPJSONRPCError struct {
 	// Code JSON-RPC error code: `-32700` parse error, `-32600` invalid request,
 	// `-32601` method not found, `-32602` invalid params, `-32603` internal
-	// error (including upstream MCP server failures), `-32020` header
-	// mismatch, `-32022` unsupported protocol version (`data` carries
-	// `requested` and `supported`).
+	// error (including upstream MCP server failures), `-32001` request
+	// blocked by guardrails at any phase (`pre_call`, `tool_args`,
+	// `tool_output`), answered with HTTP `403` and the policy message,
+	// `-32020` header mismatch, `-32022` unsupported protocol version
+	// (`data` carries `requested` and `supported`).
 	Code int `json:"code"`
 
 	// Data Optional additional error detail
