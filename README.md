@@ -170,7 +170,7 @@ For streaming the tokens simply add to the request body `stream: true`.
 | `POST /v1/videos`                               | [OpenAI Videos API](https://platform.openai.com/docs/api-reference/videos/create) - create a video generation job, `multipart/form-data`. Opt-in via `VIDEOS_ENABLED=true` (ElevenLabs provider only)                                                                                                      |
 | `GET /v1/videos/:id`                            | Poll a video generation job. The id returned by `POST /v1/videos` carries the provider (`elevenlabs:gen_abc123`) and must be sent back verbatim                                                                                                                                                            |
 | `GET /v1/videos/:id/content`                    | Download the rendered video once the job is `completed`, 404 before that                                                                                                                                                                                                                                   |
-| `POST /v1/metrics`                              | OTLP metrics push from clients. Opt-in via `TELEMETRY_METRICS_PUSH_ENABLED=true`                                                                                                                                                                                                                           |
+| `POST /v1/metrics`                              | OTLP metrics push. Needs `TELEMETRY_ENABLED` + `TELEMETRY_METRICS_PUSH_ENABLED`                                                                                                                                                                                                                            |
 | `ANY /proxy/:provider/*path`                    | Passthrough to a provider's native API with the API key injected                                                                                                                                                                                                                                           |
 
 All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
@@ -511,10 +511,22 @@ Every series carries a `source` label: `gateway` for gateway-observed traffic, o
 | `gen_ai_client_operation_time_to_first_chunk_seconds` | Histogram | Time to first chunk (push-only)                                         |
 | `gen_ai_server_time_to_first_token_seconds`           | Histogram | Time to first token (push-only)                                         |
 | `inference_gateway_tool_calls_total`                  | Counter   | Total function/tool calls                                               |
+| `inference_gateway_guardrails_total`                  | Counter   | Number of guardrail evaluations                                         |
 
-**Common labels**: `gen_ai_provider_name`, `gen_ai_request_model`, `gen_ai_operation_name`, `source`;
+**Common labels**: `gen_ai_provider_name`, `gen_ai_request_model`, `source`, `team`;
 tool metrics add `gen_ai_tool_type` and `gen_ai_tool_name`; token usage adds `gen_ai_token_type`;
-`error_type` (HTTP status string) is present only on errors.
+`error_type` (HTTP status string) is present only on errors. `gen_ai_operation_name` is set on the
+token usage and request duration metrics, but not on `inference_gateway_tool_calls_total` or
+`inference_gateway_guardrails_total`. Gateway-recorded series use `team="unknown"`; pushed series
+take the client-supplied `team` attribute.
+
+`inference_gateway_guardrails_total` carries `guardrail_phase`, `guardrail_action`, `guardrail_path`,
+`source` and `team`, plus `gen_ai_request_model` when the model is known - it has no
+`gen_ai_provider_name` label.
+
+Tool calls executed by the MCP agent loop and by `POST /mcp` are counted with empty
+`gen_ai_provider_name` and `gen_ai_request_model`, so provider or model breakdowns of
+`inference_gateway_tool_calls_total` do not include them.
 
 ```promql
 # Input tokens used by OpenAI models in the last hour
@@ -534,8 +546,9 @@ topk(10, sum(increase(inference_gateway_tool_calls_total[1h])) by (gen_ai_tool_n
 
 Clients such as the infer CLI can push their own metrics (e.g. token usage from subscription-based sessions)
 to the gateway. Enable the opt-in endpoint with `TELEMETRY_METRICS_PUSH_ENABLED=true` (alongside
-`TELEMETRY_ENABLED=true`) and POST OTLP JSON to `POST /v1/metrics`; pushed series are exposed on the same
-Prometheus endpoint with the client-supplied `source` label.
+`TELEMETRY_ENABLED=true`, both are required or the endpoint returns 403) and POST OTLP JSON to
+`POST /v1/metrics`; pushed series are exposed on the same Prometheus endpoint with the
+client-supplied `source` and `team` labels.
 See [examples/docker-compose/monitoring](examples/docker-compose/monitoring/README.md) for a full example.
 
 ### Monitoring Setup
