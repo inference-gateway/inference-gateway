@@ -66,7 +66,7 @@ use of Mixture of Experts.
 | ☸️ **Kubernetes Ready**          | Deploy with the [Inference Gateway Operator](https://github.com/inference-gateway/operator) and scale horizontally with [HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) |
 | 📊 **OpenTelemetry**             | Prometheus metrics following the GenAI semantic conventions, plus an OTLP push endpoint                                                                                                                   |
 | 🛡️ **Enterprise Ready**          | OIDC authentication, authorization, configurable timeouts, and TLS support                                                                                                                                |
-| 🌿 **Lightweight**               | Essential libraries and runtime only - a ~13MB binary with minimal resource footprint                                                                                                                   |
+| 🌿 **Lightweight**               | Essential libraries and runtime only - a ~13MB binary with minimal resource footprint                                                                                                                     |
 | 🔒 **Privacy First**             | Self-hosted, zero data collection, Apache 2.0 licensed                                                                                                                                                    |
 | ⌨️ **CLI Tool**                  | An [agentic command-line interface](https://github.com/inference-gateway/cli) for managing and interacting with the gateway                                                                               |
 
