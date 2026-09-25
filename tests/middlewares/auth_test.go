@@ -173,7 +173,6 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 	// Audience list empty: falls back to the client ID.
 	authOnly := config.AuthConfig{Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID}
 	withClientID := newAuthEngine(t, authOnly, nil)
-	// /mcp exposed: its challenges advertise the RFC 9728 document.
 	withMCPExposed := newAuthEngine(t, authOnly, &config.MCPConfig{Enabled: true, Expose: true})
 	withMCPResourceURL := newAuthEngine(t, authOnly, &config.MCPConfig{Enabled: true, Expose: true, ResourceUrl: testResourceURL})
 
