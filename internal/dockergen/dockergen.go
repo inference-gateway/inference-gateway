@@ -9,6 +9,13 @@ import (
 	openapi "github.com/inference-gateway/inference-gateway/internal/openapi"
 )
 
+const (
+	// serverHostEnv binds the API server; the code default (127.0.0.1) makes a
+	// container unreachable from the host, so containerized examples get 0.0.0.0.
+	serverHostEnv      = "SERVER_HOST"
+	serverHostInDocker = "0.0.0.0"
+)
+
 func GenerateEnvExample(output string, oas string) error {
 	// Read OpenAPI spec
 	schema, err := openapi.Read(oas)
@@ -21,7 +28,7 @@ func GenerateEnvExample(output string, oas string) error {
 {{- if eq $name "providers" }}{{ else }}
 # {{ $section.Title }}
 {{- range $setting := $section.Settings }}
-{{ $setting.Env }}={{ if $setting.Default }}{{ $setting.Default }}{{ end }}
+{{ $setting.Env }}={{ if eq $setting.Env $.ServerHostEnv }}{{ $.ServerHostInDocker }}{{ else if $setting.Default }}{{ $setting.Default }}{{ end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -51,11 +58,15 @@ func GenerateEnvExample(output string, oas string) error {
 
 	// Prepare template data
 	data := struct {
-		Sections  []map[string]openapi.Section
-		Providers map[string]openapi.ProviderConfig
+		Sections           []map[string]openapi.Section
+		Providers          map[string]openapi.ProviderConfig
+		ServerHostEnv      string
+		ServerHostInDocker string
 	}{
-		Sections:  schema.Components.Schemas.Config.XConfig.Sections,
-		Providers: schema.Components.Schemas.Provider.XProviderConfigs,
+		Sections:           schema.Components.Schemas.Config.XConfig.Sections,
+		Providers:          schema.Components.Schemas.Provider.XProviderConfigs,
+		ServerHostEnv:      serverHostEnv,
+		ServerHostInDocker: serverHostInDocker,
 	}
 
 	// Execute template
