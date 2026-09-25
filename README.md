@@ -157,8 +157,8 @@ For streaming the tokens simply add to the request body `stream: true`.
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /health`                                   | Liveness probe, no authentication required                                                                                                                                                                                                                                                                 |
 | `GET /v1/models`                                | List models from every configured provider                                                                                                                                                                                                                                                                 |
-| `POST /mcp`                                     | The gateway as an MCP server: one JSON-RPC 2.0 endpoint aggregating every configured MCP server, so a client configures a single entry. Opt-in via `MCP_EXPOSE=true`, otherwise the endpoint returns 403                                                                                                   |
-| `GET /.well-known/oauth-protected-resource/mcp` | OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) for `POST /mcp`, so an MCP client discovers the authorization server on its own. No authentication required; served while `AUTH_ENABLED=true` and `MCP_EXPOSE=true`, otherwise 404                       |
+| `POST /mcp`                                     | The gateway as an MCP server: one JSON-RPC 2.0 endpoint aggregating every configured MCP server, so a client configures a single entry. Opt-in via `MCP_ENABLED=true` **and** `MCP_EXPOSE=true`, otherwise the endpoint returns 403                                                                        |
+| `GET /.well-known/oauth-protected-resource/mcp` | OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) for `POST /mcp`, so an MCP client discovers the authorization server on its own. No authentication required; served while `AUTH_ENABLED=true`, `MCP_ENABLED=true` and `MCP_EXPOSE=true`, otherwise 404   |
 | `POST /v1/chat/completions`                     | OpenAI-compatible chat completions, streaming and tools included - works with every provider                                                                                                                                                                                                               |
 | `POST /v1/messages`                             | [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) compatibility - the body is relayed byte-for-byte, so `cache_control` and the Anthropic SSE event envelope pass through untouched (Anthropic provider only)                                                                           |
 | `POST /v1/responses`                            | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) compatibility, relayed byte-for-byte (OpenAI provider only)                                                                                                                                                               |
@@ -395,7 +395,7 @@ manage them:
 
 ```bash
 # Enable MCP and connect to tool servers (alias=url, or a bare url to derive the
-# alias from the host). Tools are exposed to the model as mcp_<alias>_<tool name>
+# alias from the host). Tools are named mcp_<alias>_<tool name>.
 export MCP_ENABLED=true
 export MCP_SERVERS="filesystem=http://filesystem-server:3001/mcp,search=http://search-server:3002/mcp"
 
@@ -407,8 +407,18 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   }'
 ```
 
-The gateway automatically injects available tools into requests and handles tool
-execution, making external capabilities seamlessly available to any LLM.
+The gateway injects tools into requests and handles tool execution, making
+external capabilities seamlessly available to any LLM. `MCP_TOOL_MODE` decides
+what is injected:
+
+- `selector` (default) injects only two meta-tools, `mcp_tools_get` and
+  `mcp_tools_execute`. The model lists the available tools with
+  `mcp_tools_get`, which returns their `mcp_<alias>_<tool name>` names and
+  schemas, then runs one through `mcp_tools_execute`. Prompts stay small no
+  matter how many servers are configured.
+- `direct` injects every discovered tool schema into every request under its
+  `mcp_<alias>_<tool name>` name, so the model calls it without a discovery
+  round-trip.
 
 The servers in `MCP_SERVERS` must speak MCP `2026-07-28`, the stateless
 revision: the gateway sends no `initialize` and keeps no session, only
@@ -419,11 +429,11 @@ The official SDKs serve it: TypeScript v2 (`createMcpHandler`), Go v1.7+
 [MCP example](examples/docker-compose/mcp/) has a server on each of the first
 two.
 
-`MCP_EXPOSE=true` turns the gateway itself into an MCP server at
-`POST /mcp`, a JSON-RPC 2.0 endpoint speaking MCP `2026-07-28` only:
-`server/discover`, `tools/list` and `tools/call`, with no `initialize`
-handshake and no session. It defaults to `false`, and the endpoint returns 403
-until it is enabled. An agent client points one MCP entry at the gateway
+`MCP_EXPOSE=true` (which also requires `MCP_ENABLED=true`) turns the gateway
+itself into an MCP server at `POST /mcp`, a JSON-RPC 2.0 endpoint speaking MCP
+`2026-07-28` only: `server/discover`, `tools/list` and `tools/call`, with no
+`initialize` handshake and no session. Both default to `false`, and the
+endpoint returns 403 until both are enabled. An agent client points one MCP entry at the gateway
 and discovers every backend server, with no client config churn when servers
 come and go. The client must support MCP `2026-07-28`; a legacy client gets a
 `400` naming the supported version.
