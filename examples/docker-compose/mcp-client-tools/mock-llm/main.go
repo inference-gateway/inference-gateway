@@ -1,11 +1,11 @@
 // Command mock-llm is a scripted OpenAI-compatible chat completions server.
 //
-// When offered any tools it asks for the MCP `time` tool if the user asked for
-// the time, and for the client tool `bash` otherwise, even if the gateway
-// removed it, so the gateway's handling of either kind of call is visible.
-// Once a tool result comes back, or when no tools were offered, it answers
-// with the tools it received and the last message, so the client can see what
-// the gateway did without reading any logs.
+// When offered any tools it asks for the MCP tool `mcp_time_time` if the user
+// asked for the time, and for the client tool `bash` otherwise, even if the
+// gateway removed it, so the gateway's handling of either kind of call is
+// visible. Once a tool result comes back, or when no tools were offered, it
+// answers with the tools it received and the last message, so the client can
+// see what the gateway did without reading any logs.
 package main
 
 import (
@@ -24,12 +24,15 @@ const (
 	clientToolName = "bash"
 	clientToolArgs = `{"command":"ls"}`
 	timeKeyword    = "time"
+	// The time tool as a model sees it: mcp_<alias>_<tool>, with the alias from
+	// the MCP_SERVERS entry in docker-compose.yml (time=...). A real model reads
+	// this name from mcp_tools_get; the mock has to be kept in step by hand.
+	mcpTimeTool = "mcp_time_time"
+	mcpTimeArgs = `{}`
 	// The gateway offers MCP tools either through the selector meta-tool
 	// (MCP_TOOL_MODE=selector, the default) or one by one (direct).
 	selectorExecute  = "mcp_tools_execute"
-	selectorTimeArgs = `{"name":"time","arguments":{}}`
-	directTimeTool   = "mcp_time"
-	directTimeArgs   = `{}`
+	selectorTimeArgs = `{"name":"` + mcpTimeTool + `","arguments":{}}`
 	toolCallID       = "call_mock_1"
 	toolRole         = "tool"
 	finishStop       = "stop"
@@ -80,7 +83,7 @@ func chatCompletions(w http.ResponseWriter, r *http.Request) {
 
 	name, args := clientToolName, clientToolArgs
 	if strings.Contains(strings.ToLower(fmt.Sprint(last.Content)), timeKeyword) {
-		name, args = directTimeTool, directTimeArgs
+		name, args = mcpTimeTool, mcpTimeArgs
 		if slices.Contains(tools, selectorExecute) {
 			name, args = selectorExecute, selectorTimeArgs
 		}

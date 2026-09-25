@@ -34,6 +34,7 @@ tasks:
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/tools/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/auth-keycloak/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp-client-tools/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/monitoring/.env.example
       - go run cmd/generate/main.go -type Env -output examples/docker-compose/guardrails/.env.example
       - go run cmd/generate/main.go -type MCPWrap -output internal/mcp/mcp-schema.openapi.yaml

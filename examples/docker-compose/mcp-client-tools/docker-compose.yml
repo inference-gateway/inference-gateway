@@ -13,6 +13,11 @@ x-gateway-env: &gateway-env
   OPENAI_API_URL: http://mock-llm:8080/v1
   OPENAI_API_KEY: mock
   MCP_ENABLED: 'true'
+  # Only used by the opt-in real-provider run (`task test MODEL=groq/...`).
+  # Compose picks it up from .env; empty and unused with the default mock.
+  # env_file is deliberately avoided: .env.example also sets SERVER_HOST,
+  # which would override the image's 0.0.0.0 and hide the published ports.
+  GROQ_API_KEY: ${GROQ_API_KEY:-}
 
 services:
   inference-gateway:
@@ -21,7 +26,8 @@ services:
       - '8080:8080'
     environment:
       <<: *gateway-env
-      MCP_SERVERS: http://mcp-time-server:8081/mcp
+      # The explicit alias keeps the tool name short: mcp_time_time.
+      MCP_SERVERS: time=http://mcp-time-server:8081/mcp
     depends_on:
       - mock-llm
       - mcp-time-server
