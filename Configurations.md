@@ -1,144 +1,144 @@
 ## Configurations
 
 ### General settings
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| ENVIRONMENT | `production` | The environment |
+| ALLOWED_MODELS | `""` | Comma-separated list of models to allow. If empty, all models will be available |
+| DISALLOWED_MODELS | `""` | Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS |
+| VISION_ENABLED | `false` | Enable vision/multimodal handling for all providers. When enabled, image content is stripped from requests to models known to accept only non-image input; unknown models are passed through. When disabled, image content is forwarded to the provider untouched |
+| IMAGES_ENABLED | `false` | Enable the Images API (POST /v1/images/generations, /v1/images/edits). When disabled, the endpoints return a 404. Only providers with images support (currently openai) can serve these endpoints |
+| AUDIO_ENABLED | `false` | Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx, POST /v1/audio/music). When disabled, the endpoints return a 404. Served by providers with speech, sound-effect or music support (currently openai and elevenlabs) or by the local llama-tts engine |
+| VIDEOS_ENABLED | `false` | Enable the Videos API (POST /v1/videos, GET /v1/videos/{video_id}, GET /v1/videos/{video_id}/content). When disabled, the endpoints return a 404. Only providers with video support (currently elevenlabs) can serve these endpoints |
+| AUDIO_LOCAL_AUTO_DOWNLOAD | `true` | Allow downloading the llama-tts binary and GGUF models on first use. Anything already present is never re-downloaded: the cache is checked first, whether populated by an earlier run, the CLI, a mounted volume, or a pre-baked image layer. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing |
+| AUDIO_LOCAL_MAX_CONCURRENCY | `2` | Maximum concurrent local speech syntheses; requests beyond the limit queue |
+| AUDIO_LOCAL_TIMEOUT | `300` | Timeout in seconds for a single local speech synthesis |
+| DEBUG_CONTENT_TRUNCATE_WORDS | `10` | Number of words to truncate per content section in debug logs (development mode only) |
+| DEBUG_MAX_MESSAGES | `100` | Maximum number of messages to show in debug logs (development mode only) |
 
-| Environment Variable         | Default Value | Description                                                                                                                                                                                                                                                                                                                                                               |
-| ---------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ENVIRONMENT                  | `production`  | The environment                                                                                                                                                                                                                                                                                                                                                           |
-| ALLOWED_MODELS               | `""`          | Comma-separated list of models to allow. If empty, all models will be available                                                                                                                                                                                                                                                                                           |
-| DISALLOWED_MODELS            | `""`          | Comma-separated list of models to disallow. If empty, no models will be blocked. Takes lower precedence than ALLOWED_MODELS                                                                                                                                                                                                                                               |
-| VISION_ENABLED               | `false`       | Enable vision/multimodal handling for all providers. When enabled, image content is stripped from requests to models known to accept only non-image input; unknown models are passed through. When disabled, image content is forwarded to the provider untouched                                                                                                         |
-| IMAGES_ENABLED               | `false`       | Enable the Images API (POST /v1/images/generations, /v1/images/edits). When disabled, the endpoints return a 404. Only providers with images support (currently openai) can serve these endpoints                                                                                                                                                                         |
-| AUDIO_ENABLED                | `false`       | Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx, POST /v1/audio/music). When disabled, the endpoints return a 404. Served by providers with speech, sound-effect or music support (currently openai and elevenlabs) or by the local llama-tts engine                                                                                                      |
-| VIDEOS_ENABLED               | `false`       | Enable the Videos API (POST /v1/videos, GET /v1/videos/{video_id}, GET /v1/videos/{video_id}/content). When disabled, the endpoints return a 404. Only providers with video support (currently elevenlabs) can serve these endpoints                                                                                                                                      |
-| AUDIO_LOCAL_AUTO_DOWNLOAD    | `true`        | Allow downloading the llama-tts binary and GGUF models on first use. Anything already present is never re-downloaded: the cache is checked first, whether populated by an earlier run, the CLI, a mounted volume, or a pre-baked image layer. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing |
-| AUDIO_LOCAL_MAX_CONCURRENCY  | `2`           | Maximum concurrent local speech syntheses; requests beyond the limit queue                                                                                                                                                                                                                                                                                                |
-| AUDIO_LOCAL_TIMEOUT          | `300`         | Timeout in seconds for a single local speech synthesis                                                                                                                                                                                                                                                                                                                    |
-| DEBUG_CONTENT_TRUNCATE_WORDS | `10`          | Number of words to truncate per content section in debug logs (development mode only)                                                                                                                                                                                                                                                                                     |
-| DEBUG_MAX_MESSAGES           | `100`         | Maximum number of messages to show in debug logs (development mode only)                                                                                                                                                                                                                                                                                                  |
 
 ### Telemetry
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| TELEMETRY_ENABLED | `false` | Enable telemetry |
+| TELEMETRY_METRICS_PUSH_ENABLED | `false` | Enable the OTLP metrics push endpoint (POST /metrics) |
+| TELEMETRY_METRICS_PORT | `9464` | Port for telemetry metrics server |
+| TELEMETRY_TRACING_ENABLED | `false` | Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLED) |
+| TELEMETRY_TRACING_OTLP_ENDPOINT | `http://localhost:4318` | OTLP HTTP endpoint for trace export |
 
-| Environment Variable            | Default Value           | Description                                                     |
-| ------------------------------- | ----------------------- | --------------------------------------------------------------- |
-| TELEMETRY_ENABLED               | `false`                 | Enable telemetry                                                |
-| TELEMETRY_METRICS_PUSH_ENABLED  | `false`                 | Enable the OTLP metrics push endpoint (POST /v1/metrics)        |
-| TELEMETRY_METRICS_PORT          | `9464`                  | Port for telemetry metrics server                               |
-| TELEMETRY_TRACING_ENABLED       | `false`                 | Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLED) |
-| TELEMETRY_TRACING_OTLP_ENDPOINT | `http://localhost:4318` | OTLP HTTP endpoint for trace export                             |
 
 ### Model Context Protocol (MCP)
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| MCP_ENABLED | `false` | Enable MCP |
+| MCP_EXPOSE | `false` | Expose the gateway as an MCP server on POST /mcp (requires MCP_ENABLED) |
+| MCP_RESOURCE_URL | `""` | Canonical public URL of POST /mcp, e.g. https://gateway.example.com/mcp. Published as the resource of the OAuth 2.0 Protected Resource Metadata (RFC 9728) document served at /.well-known/oauth-protected-resource/mcp, and pointed at by the resource_metadata of every 401 challenge on /mcp. Defaults to the request scheme (honouring X-Forwarded-Proto) and Host with /mcp appended; set it behind an ingress that rewrites either |
+| MCP_SERVERS | `""` | Comma-separated list of MCP servers as alias=url, e.g. deepwiki=https://mcp.deepwiki.com/mcp,http://mcp-time-server:8081/mcp. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$, be unique, must not be the reserved alias tools, and namespace the tools as mcp_<alias>_<tool> |
+| MCP_TOOL_MODE | `selector` | How MCP tools are exposed to the model. selector injects two meta-tools for discovery and dispatch; direct injects every tool schema |
+| MCP_INCLUDE_TOOLS | `""` | Comma-separated list of MCP tool names to inject, matched against either the bare tool name or the namespaced <alias>_<tool name> form. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS |
+| MCP_EXCLUDE_TOOLS | `""` | Comma-separated list of MCP tool names to skip injecting, matched against either the bare tool name or the namespaced <alias>_<tool name> form. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS |
+| MCP_CLIENT_TIMEOUT | `5s` | MCP client HTTP timeout |
+| MCP_DIAL_TIMEOUT | `3s` | MCP client dial timeout |
+| MCP_TLS_HANDSHAKE_TIMEOUT | `3s` | MCP client TLS handshake timeout |
+| MCP_RESPONSE_HEADER_TIMEOUT | `3s` | MCP client response header timeout |
+| MCP_EXPECT_CONTINUE_TIMEOUT | `1s` | MCP client expect continue timeout |
+| MCP_REQUEST_TIMEOUT | `5s` | MCP client request timeout for initialize and tool calls |
+| MCP_MAX_RETRIES | `3` | Maximum number of connection retry attempts |
+| MCP_RETRY_INTERVAL | `5s` | Interval between connection retry attempts |
+| MCP_INITIAL_BACKOFF | `1s` | Initial backoff duration for exponential backoff retry |
+| MCP_ENABLE_RECONNECT | `true` | Enable automatic reconnection for failed servers |
+| MCP_RECONNECT_INTERVAL | `30s` | Interval between reconnection attempts |
+| MCP_POLLING_ENABLED | `true` | Enable health check polling |
+| MCP_POLLING_INTERVAL | `30s` | Interval between health check polling requests |
+| MCP_POLLING_TIMEOUT | `5s` | Timeout for individual health check requests |
+| MCP_DISABLE_HEALTHCHECK_LOGS | `true` | Disable health check log messages to reduce noise |
 
-| Environment Variable         | Default Value | Description                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ---------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MCP_ENABLED                  | `false`       | Enable MCP                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| MCP_EXPOSE                   | `false`       | Expose the gateway as an MCP server on POST /mcp (requires MCP_ENABLED)                                                                                                                                                                                                                                                                                                                                                                  |
-| MCP_RESOURCE_URL             | `""`          | Canonical public URL of POST /mcp, e.g. https://gateway.example.com/mcp. Published as the resource of the OAuth 2.0 Protected Resource Metadata (RFC 9728) document served at /.well-known/oauth-protected-resource/mcp, and pointed at by the resource_metadata of every 401 challenge on /mcp. Defaults to the request scheme (honouring X-Forwarded-Proto) and Host with /mcp appended; set it behind an ingress that rewrites either |
-| MCP_SERVERS                  | `""`          | Comma-separated list of MCP servers as alias=url, e.g. deepwiki=https://mcp.deepwiki.com/mcp,http://mcp-time-server:8081/mcp. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$, be unique, must not be the reserved alias tools, and namespace the tools as mcp_<alias>_<tool>                                                                                                                    |
-| MCP_TOOL_MODE                | `selector`    | How MCP tools are exposed to the model. selector injects two meta-tools for discovery and dispatch; direct injects every tool schema                                                                                                                                                                                                                                                                                                     |
-| MCP_INCLUDE_TOOLS            | `""`          | Comma-separated list of MCP tool names to inject, matched against either the bare tool name or the namespaced <alias>_<tool name> form. If empty, all tools are injected. Takes precedence over MCP_EXCLUDE_TOOLS                                                                                                                                                                                                                        |
-| MCP_EXCLUDE_TOOLS            | `""`          | Comma-separated list of MCP tool names to skip injecting, matched against either the bare tool name or the namespaced <alias>_<tool name> form. If empty, no tools are excluded. Takes lower precedence than MCP_INCLUDE_TOOLS                                                                                                                                                                                                           |
-| MCP_CLIENT_TIMEOUT           | `5s`          | MCP client HTTP timeout                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| MCP_DIAL_TIMEOUT             | `3s`          | MCP client dial timeout                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| MCP_TLS_HANDSHAKE_TIMEOUT    | `3s`          | MCP client TLS handshake timeout                                                                                                                                                                                                                                                                                                                                                                                                         |
-| MCP_RESPONSE_HEADER_TIMEOUT  | `3s`          | MCP client response header timeout                                                                                                                                                                                                                                                                                                                                                                                                       |
-| MCP_EXPECT_CONTINUE_TIMEOUT  | `1s`          | MCP client expect continue timeout                                                                                                                                                                                                                                                                                                                                                                                                       |
-| MCP_REQUEST_TIMEOUT          | `5s`          | MCP client request timeout for initialize and tool calls                                                                                                                                                                                                                                                                                                                                                                                 |
-| MCP_MAX_RETRIES              | `3`           | Maximum number of connection retry attempts                                                                                                                                                                                                                                                                                                                                                                                              |
-| MCP_RETRY_INTERVAL           | `5s`          | Interval between connection retry attempts                                                                                                                                                                                                                                                                                                                                                                                               |
-| MCP_INITIAL_BACKOFF          | `1s`          | Initial backoff duration for exponential backoff retry                                                                                                                                                                                                                                                                                                                                                                                   |
-| MCP_ENABLE_RECONNECT         | `true`        | Enable automatic reconnection for failed servers                                                                                                                                                                                                                                                                                                                                                                                         |
-| MCP_RECONNECT_INTERVAL       | `30s`         | Interval between reconnection attempts                                                                                                                                                                                                                                                                                                                                                                                                   |
-| MCP_POLLING_ENABLED          | `true`        | Enable health check polling                                                                                                                                                                                                                                                                                                                                                                                                              |
-| MCP_POLLING_INTERVAL         | `30s`         | Interval between health check polling requests                                                                                                                                                                                                                                                                                                                                                                                           |
-| MCP_POLLING_TIMEOUT          | `5s`          | Timeout for individual health check requests                                                                                                                                                                                                                                                                                                                                                                                             |
-| MCP_DISABLE_HEALTHCHECK_LOGS | `true`        | Disable health check log messages to reduce noise                                                                                                                                                                                                                                                                                                                                                                                        |
 
 ### Authentication
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| AUTH_ENABLED | `false` | Enable authentication |
+| AUTH_OIDC_ISSUER | `""` | OIDC issuer URL. Discovery runs once at startup against {issuer}/.well-known/openid-configuration |
+| AUTH_OIDC_CLIENT_ID | `""` | OIDC client ID. Used as the expected token audience when AUTH_OIDC_AUDIENCE is empty |
+| AUTH_OIDC_AUDIENCE | `""` | Comma-separated list of accepted aud values, for example an API identifier. Defaults to AUTH_OIDC_CLIENT_ID |
 
-| Environment Variable | Default Value | Description                                                                                                 |
-| -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
-| AUTH_ENABLED         | `false`       | Enable authentication                                                                                       |
-| AUTH_OIDC_ISSUER     | `""`          | OIDC issuer URL. Discovery runs once at startup against {issuer}/.well-known/openid-configuration           |
-| AUTH_OIDC_CLIENT_ID  | `""`          | OIDC client ID. Used as the expected token audience when AUTH_OIDC_AUDIENCE is empty                        |
-| AUTH_OIDC_AUDIENCE   | `""`          | Comma-separated list of accepted aud values, for example an API identifier. Defaults to AUTH_OIDC_CLIENT_ID |
 
 ### Guardrails
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| GUARDRAILS_ENABLED | `false` | Enable gateway guardrails (OPA/Rego policy enforcement) |
+| GUARDRAILS_POLICY_DIR | `""` | Directory of .rego files compiled at startup |
+| GUARDRAILS_FAIL_MODE | `closed` | closed or open: behavior on policy/external error or timeout |
+| GUARDRAILS_EXTERNAL_URL | `""` | Optional external HTTP guardrail service |
+| GUARDRAILS_EXTERNAL_TIMEOUT | `5s` | Timeout for the external guardrail service |
 
-| Environment Variable        | Default Value | Description                                                  |
-| --------------------------- | ------------- | ------------------------------------------------------------ |
-| GUARDRAILS_ENABLED          | `false`       | Enable gateway guardrails (OPA/Rego policy enforcement)      |
-| GUARDRAILS_POLICY_DIR       | `""`          | Directory of .rego files compiled at startup                 |
-| GUARDRAILS_FAIL_MODE        | `closed`      | closed or open: behavior on policy/external error or timeout |
-| GUARDRAILS_EXTERNAL_URL     | `""`          | Optional external HTTP guardrail service                     |
-| GUARDRAILS_EXTERNAL_TIMEOUT | `5s`          | Timeout for the external guardrail service                   |
 
 ### Server settings
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| SERVER_HOST | `127.0.0.1` | Server host |
+| SERVER_PORT | `8080` | Server port |
+| SERVER_READ_TIMEOUT | `30s` | Read timeout |
+| SERVER_WRITE_TIMEOUT | `30s` | Write timeout |
+| SERVER_IDLE_TIMEOUT | `120s` | Idle timeout |
+| SERVER_MAX_REQUEST_BODY_SIZE | `10485760` | Maximum request body size in bytes (10 MiB) |
+| SERVER_TLS_CERT_PATH | `""` | TLS certificate path |
+| SERVER_TLS_KEY_PATH | `""` | TLS key path |
 
-| Environment Variable         | Default Value | Description                                 |
-| ---------------------------- | ------------- | ------------------------------------------- |
-| SERVER_HOST                  | `127.0.0.1`   | Server host                                 |
-| SERVER_PORT                  | `8080`        | Server port                                 |
-| SERVER_READ_TIMEOUT          | `30s`         | Read timeout                                |
-| SERVER_WRITE_TIMEOUT         | `30s`         | Write timeout                               |
-| SERVER_IDLE_TIMEOUT          | `120s`        | Idle timeout                                |
-| SERVER_MAX_REQUEST_BODY_SIZE | `10485760`    | Maximum request body size in bytes (10 MiB) |
-| SERVER_TLS_CERT_PATH         | `""`          | TLS certificate path                        |
-| SERVER_TLS_KEY_PATH          | `""`          | TLS key path                                |
 
 ### Client settings
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| CLIENT_TIMEOUT | `30s` | Client timeout |
+| CLIENT_MAX_IDLE_CONNS | `20` | Maximum idle connections |
+| CLIENT_MAX_IDLE_CONNS_PER_HOST | `20` | Maximum idle connections per host |
+| CLIENT_IDLE_CONN_TIMEOUT | `30s` | Idle connection timeout |
+| CLIENT_TLS_MIN_VERSION | `TLS12` | Minimum TLS version |
+| CLIENT_DISABLE_COMPRESSION | `true` | Disable compression for faster streaming |
+| CLIENT_RESPONSE_HEADER_TIMEOUT | `10s` | Response header timeout |
+| CLIENT_EXPECT_CONTINUE_TIMEOUT | `1s` | Expect continue timeout |
 
-| Environment Variable           | Default Value | Description                              |
-| ------------------------------ | ------------- | ---------------------------------------- |
-| CLIENT_TIMEOUT                 | `30s`         | Client timeout                           |
-| CLIENT_MAX_IDLE_CONNS          | `20`          | Maximum idle connections                 |
-| CLIENT_MAX_IDLE_CONNS_PER_HOST | `20`          | Maximum idle connections per host        |
-| CLIENT_IDLE_CONN_TIMEOUT       | `30s`         | Idle connection timeout                  |
-| CLIENT_TLS_MIN_VERSION         | `TLS12`       | Minimum TLS version                      |
-| CLIENT_DISABLE_COMPRESSION     | `true`        | Disable compression for faster streaming |
-| CLIENT_RESPONSE_HEADER_TIMEOUT | `10s`         | Response header timeout                  |
-| CLIENT_EXPECT_CONTINUE_TIMEOUT | `1s`          | Expect continue timeout                  |
 
 ### Providers
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| ANTHROPIC_API_URL | `https://api.anthropic.com/v1` | Anthropic API URL |
+| ANTHROPIC_API_KEY | `""` | Anthropic API Key |
+| CLOUDFLARE_API_URL | `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai` | Cloudflare API URL |
+| CLOUDFLARE_API_KEY | `""` | Cloudflare API Key |
+| COHERE_API_URL | `https://api.cohere.ai` | Cohere API URL |
+| COHERE_API_KEY | `""` | Cohere API Key |
+| GROQ_API_URL | `https://api.groq.com/openai/v1` | Groq API URL |
+| GROQ_API_KEY | `""` | Groq API Key |
+| LLAMACPP_API_URL | `http://llamacpp:8080/v1` | llama.cpp API URL |
+| LLAMACPP_API_KEY | `""` | llama.cpp API Key |
+| OLLAMA_API_URL | `http://ollama:8080/v1` | Ollama API URL |
+| OLLAMA_API_KEY | `""` | Ollama API Key |
+| OLLAMA_CLOUD_API_URL | `https://ollama.com/v1` | Ollama Cloud API URL |
+| OLLAMA_CLOUD_API_KEY | `""` | Ollama Cloud API Key |
+| OPENAI_API_URL | `https://api.openai.com/v1` | OpenAI API URL |
+| OPENAI_API_KEY | `""` | OpenAI API Key |
+| DEEPSEEK_API_URL | `https://api.deepseek.com` | DeepSeek API URL |
+| DEEPSEEK_API_KEY | `""` | DeepSeek API Key |
+| ELEVENLABS_API_URL | `https://api.elevenlabs.io/v1` | ElevenLabs API URL |
+| ELEVENLABS_API_KEY | `""` | ElevenLabs API Key |
+| GOOGLE_API_URL | `https://generativelanguage.googleapis.com/v1beta/openai` | Google API URL |
+| GOOGLE_API_KEY | `""` | Google API Key |
+| MISTRAL_API_URL | `https://api.mistral.ai/v1` | Mistral API URL |
+| MISTRAL_API_KEY | `""` | Mistral API Key |
+| MINIMAX_API_URL | `https://api.minimax.io/v1` | MiniMax API URL |
+| MINIMAX_API_KEY | `""` | MiniMax API Key |
+| MOONSHOT_API_URL | `https://api.moonshot.ai/v1` | Moonshot API URL |
+| MOONSHOT_API_KEY | `""` | Moonshot API Key |
+| NVIDIA_API_URL | `https://integrate.api.nvidia.com/v1` | NVIDIA API URL |
+| NVIDIA_API_KEY | `""` | NVIDIA API Key |
+| ZAI_API_URL | `https://api.z.ai/api/paas/v4` | ZAI API URL |
+| ZAI_API_KEY | `""` | ZAI API Key |
 
-| Environment Variable | Default Value                                                   | Description          |
-| -------------------- | --------------------------------------------------------------- | -------------------- |
-| ANTHROPIC_API_URL    | `https://api.anthropic.com/v1`                                  | Anthropic API URL    |
-| ANTHROPIC_API_KEY    | `""`                                                            | Anthropic API Key    |
-| CLOUDFLARE_API_URL   | `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai` | Cloudflare API URL   |
-| CLOUDFLARE_API_KEY   | `""`                                                            | Cloudflare API Key   |
-| COHERE_API_URL       | `https://api.cohere.ai`                                         | Cohere API URL       |
-| COHERE_API_KEY       | `""`                                                            | Cohere API Key       |
-| GROQ_API_URL         | `https://api.groq.com/openai/v1`                                | Groq API URL         |
-| GROQ_API_KEY         | `""`                                                            | Groq API Key         |
-| LLAMACPP_API_URL     | `http://llamacpp:8080/v1`                                       | llama.cpp API URL    |
-| LLAMACPP_API_KEY     | `""`                                                            | llama.cpp API Key    |
-| OLLAMA_API_URL       | `http://ollama:8080/v1`                                         | Ollama API URL       |
-| OLLAMA_API_KEY       | `""`                                                            | Ollama API Key       |
-| OLLAMA_CLOUD_API_URL | `https://ollama.com/v1`                                         | Ollama Cloud API URL |
-| OLLAMA_CLOUD_API_KEY | `""`                                                            | Ollama Cloud API Key |
-| OPENAI_API_URL       | `https://api.openai.com/v1`                                     | OpenAI API URL       |
-| OPENAI_API_KEY       | `""`                                                            | OpenAI API Key       |
-| DEEPSEEK_API_URL     | `https://api.deepseek.com`                                      | DeepSeek API URL     |
-| DEEPSEEK_API_KEY     | `""`                                                            | DeepSeek API Key     |
-| ELEVENLABS_API_URL   | `https://api.elevenlabs.io/v1`                                  | ElevenLabs API URL   |
-| ELEVENLABS_API_KEY   | `""`                                                            | ElevenLabs API Key   |
-| GOOGLE_API_URL       | `https://generativelanguage.googleapis.com/v1beta/openai`       | Google API URL       |
-| GOOGLE_API_KEY       | `""`                                                            | Google API Key       |
-| MISTRAL_API_URL      | `https://api.mistral.ai/v1`                                     | Mistral API URL      |
-| MISTRAL_API_KEY      | `""`                                                            | Mistral API Key      |
-| MINIMAX_API_URL      | `https://api.minimax.io/v1`                                     | MiniMax API URL      |
-| MINIMAX_API_KEY      | `""`                                                            | MiniMax API Key      |
-| MOONSHOT_API_URL     | `https://api.moonshot.ai/v1`                                    | Moonshot API URL     |
-| MOONSHOT_API_KEY     | `""`                                                            | Moonshot API Key     |
-| NVIDIA_API_URL       | `https://integrate.api.nvidia.com/v1`                           | NVIDIA API URL       |
-| NVIDIA_API_KEY       | `""`                                                            | NVIDIA API Key       |
-| ZAI_API_URL          | `https://api.z.ai/api/paas/v4`                                  | ZAI API URL          |
-| ZAI_API_KEY          | `""`                                                            | ZAI API Key          |
 
 ### Routing
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| ROUTING_ENABLED | `false` | Enable gateway-native model routing: logical model aliases backed by a pool of upstream provider deployments, selected round-robin per replica. Opt-in; when disabled, direct provider/model routing is unchanged |
+| ROUTING_CONFIG_PATH | `""` | Path to a YAML file mapping logical model aliases to their upstream deployment pools. Required when ROUTING_ENABLED is true |
 
-| Environment Variable | Default Value | Description                                                                                                                                                                                                       |
-| -------------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ROUTING_ENABLED      | `false`       | Enable gateway-native model routing: logical model aliases backed by a pool of upstream provider deployments, selected round-robin per replica. Opt-in; when disabled, direct provider/model routing is unchanged |
-| ROUTING_CONFIG_PATH  | `""`          | Path to a YAML file mapping logical model aliases to their upstream deployment pools. Required when ROUTING_ENABLED is true                                                                                       |

@@ -15,7 +15,7 @@ The Grafana dashboard (identical to the Kubernetes monitoring example) is organi
 - **Token Usage** - Token rate by source and cumulative totals by source & model
 - **Tool Calls** - Tool call rate by type and top tools by usage
 - **Pushed Client Metrics (OTLP push only)** - Tool execution duration, client operation duration, time to first
-  token/chunk, tool failures by error type, and tool success rate; fed exclusively by clients pushing to `POST /v1/metrics`
+  token/chunk, tool failures by error type, and tool success rate; fed exclusively by clients pushing to `POST /metrics`
 - **Gateway Process** - CPU, goroutines, and resident memory
 
 All panels are filterable by the `provider` and `source` template variables, so gateway-served traffic and pushed
@@ -144,10 +144,12 @@ Note that duration histograms are now in **seconds** (previously milliseconds), 
 
 Subscription clients (e.g. the infer CLI driving Claude Code) can push their own metrics to the gateway.
 Enable the opt-in push endpoint with `TELEMETRY_METRICS_PUSH_ENABLED=true` (alongside `TELEMETRY_ENABLED=true`),
-then POST OTLP JSON to `/v1/metrics`:
+then POST OTLP JSON to `/metrics`. Standard OTLP exporters append `/v1/metrics` to a bare
+`OTEL_EXPORTER_OTLP_ENDPOINT`, so set the full per-signal URL instead:
+`OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:8080/metrics`. Or with curl:
 
 ```bash
-curl -X POST http://localhost:8080/v1/metrics \
+curl -X POST http://localhost:8080/metrics \
   -H 'Content-Type: application/json' \
   -d '{
     "resourceMetrics": [{

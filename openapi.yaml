@@ -4820,7 +4820,7 @@ components:
                   env: 'TELEMETRY_METRICS_PUSH_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the OTLP metrics push endpoint (POST /v1/metrics)'
+                  description: 'Enable the OTLP metrics push endpoint (POST /metrics)'
                 - name: telemetry_metrics_port
                   env: 'TELEMETRY_METRICS_PORT'
                   type: string

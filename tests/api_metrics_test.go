@@ -19,6 +19,7 @@ import (
 	proto "google.golang.org/protobuf/proto"
 
 	api "github.com/inference-gateway/inference-gateway/api"
+	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
@@ -41,7 +42,7 @@ func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, tele
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.POST("/v1/metrics", router.MetricsIngestionHandler)
+	r.POST(middlewares.MetricsIngestPath, router.MetricsIngestionHandler)
 	return r
 }
 
@@ -51,7 +52,7 @@ func TestMetricsIngestionHandler(t *testing.T) {
 			r := newMetricsTestRouter(t, flags[0], flags[1], nil)
 
 			w := httptest.NewRecorder()
-			req := httptest.NewRequest(http.MethodPost, "/v1/metrics", bytes.NewBufferString("{}"))
+			req := httptest.NewRequest(http.MethodPost, middlewares.MetricsIngestPath, bytes.NewBufferString("{}"))
 			req.Header.Set("Content-Type", "application/json")
 			r.ServeHTTP(w, req)
 
@@ -63,7 +64,7 @@ func TestMetricsIngestionHandler(t *testing.T) {
 		r := newMetricsTestRouter(t, true, true, nil)
 
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/v1/metrics", bytes.NewBufferString("hello"))
+		req := httptest.NewRequest(http.MethodPost, middlewares.MetricsIngestPath, bytes.NewBufferString("hello"))
 		req.Header.Set("Content-Type", "text/plain")
 		r.ServeHTTP(w, req)
 
@@ -74,7 +75,7 @@ func TestMetricsIngestionHandler(t *testing.T) {
 		r := newMetricsTestRouter(t, true, true, nil)
 
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/v1/metrics", bytes.NewBufferString("not-json"))
+		req := httptest.NewRequest(http.MethodPost, middlewares.MetricsIngestPath, bytes.NewBufferString("not-json"))
 		req.Header.Set("Content-Type", "application/json")
 		r.ServeHTTP(w, req)
 
@@ -92,7 +93,7 @@ func TestMetricsIngestionHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/v1/metrics", bytes.NewBuffer(body))
+		req := httptest.NewRequest(http.MethodPost, middlewares.MetricsIngestPath, bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/json")
 		r.ServeHTTP(w, req)
 
@@ -118,7 +119,7 @@ func TestMetricsIngestionHandler(t *testing.T) {
 		require.NoError(t, err)
 
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/v1/metrics", bytes.NewBuffer(body))
+		req := httptest.NewRequest(http.MethodPost, middlewares.MetricsIngestPath, bytes.NewBuffer(body))
 		req.Header.Set("Content-Type", "application/x-protobuf")
 		r.ServeHTTP(w, req)
 
@@ -147,7 +148,7 @@ func TestMetricsIngestionHandler(t *testing.T) {
 		require.NoError(t, gz.Close())
 
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/v1/metrics", &compressed)
+		req := httptest.NewRequest(http.MethodPost, middlewares.MetricsIngestPath, &compressed)
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Content-Encoding", "gzip")
 		r.ServeHTTP(w, req)
@@ -159,7 +160,7 @@ func TestMetricsIngestionHandler(t *testing.T) {
 		r := newMetricsTestRouter(t, true, true, nil)
 
 		w := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/v1/metrics", bytes.NewBuffer(make([]byte, 5<<20)))
+		req := httptest.NewRequest(http.MethodPost, middlewares.MetricsIngestPath, bytes.NewBuffer(make([]byte, 5<<20)))
 		req.Header.Set("Content-Type", "application/x-protobuf")
 		r.ServeHTTP(w, req)
 

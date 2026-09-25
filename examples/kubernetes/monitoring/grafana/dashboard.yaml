@@ -890,7 +890,7 @@ spec:
               "sort": "desc"
             }
           },
-          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /metrics (e.g. subscription clients). Empty until a client pushes this metric."
         },
         {
           "datasource": {
@@ -952,7 +952,7 @@ spec:
               "sort": "desc"
             }
           },
-          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /metrics (e.g. subscription clients). Empty until a client pushes this metric."
         },
         {
           "datasource": {
@@ -1023,7 +1023,7 @@ spec:
               "sort": "desc"
             }
           },
-          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /metrics (e.g. subscription clients). Empty until a client pushes this metric."
         },
         {
           "datasource": {
@@ -1087,7 +1087,7 @@ spec:
             "minVizHeight": 16,
             "maxVizHeight": 48
           },
-          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /metrics (e.g. subscription clients). Empty until a client pushes this metric."
         },
         {
           "datasource": {
@@ -1150,7 +1150,7 @@ spec:
             },
             "showThresholdLabels": false
           },
-          "description": "Fed exclusively by clients pushing OTLP metrics to POST /v1/metrics (e.g. subscription clients). Empty until a client pushes this metric."
+          "description": "Fed exclusively by clients pushing OTLP metrics to POST /metrics (e.g. subscription clients). Empty until a client pushes this metric."
         },
         {
           "id": 23,

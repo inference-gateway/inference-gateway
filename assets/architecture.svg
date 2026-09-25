@@ -48,7 +48,7 @@
       <text x="26" y="191">/proxy/{provider}</text>
     </g>
     <text x="26" y="206" fill="#d2a8ff">POST /mcp</text>
-    <text x="26" y="221" fill="#56d4dd">POST /v1/metrics (OTLP)</text>
+    <text x="26" y="221" fill="#56d4dd">POST /metrics (OTLP)</text>
   </g>
 
   <!-- gateway panel -->
@@ -91,7 +91,7 @@
     <text x="348" y="374" text-anchor="middle" fill="#56d4dd">TELEMETRY_ENABLED</text>
     <g fill="#e6edf3">
       <text x="330" y="396">:9464/metrics</text>
-      <text x="330" y="412">POST /v1/metrics</text>
+      <text x="330" y="412">POST /metrics</text>
       <text x="330" y="428">spans → OTLP</text>
     </g>
   </g>

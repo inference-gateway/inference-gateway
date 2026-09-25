@@ -171,7 +171,7 @@ For streaming the tokens simply add to the request body `stream: true`.
 | `POST /v1/videos`                               | [OpenAI Videos API](https://platform.openai.com/docs/api-reference/videos/create) - create a video generation job, `multipart/form-data`. Opt-in via `VIDEOS_ENABLED=true` (ElevenLabs provider only)                                                                                                      |
 | `GET /v1/videos/:id`                            | Poll a video generation job. The id returned by `POST /v1/videos` carries the provider (`elevenlabs:gen_abc123`) and must be sent back verbatim                                                                                                                                                            |
 | `GET /v1/videos/:id/content`                    | Download the rendered video once the job is `completed`, 404 before that                                                                                                                                                                                                                                   |
-| `POST /v1/metrics`                              | OTLP metrics push from clients. Opt-in via `TELEMETRY_METRICS_PUSH_ENABLED=true`                                                                                                                                                                                                                           |
+| `POST /metrics`                              | OTLP metrics push from clients. Opt-in via `TELEMETRY_METRICS_PUSH_ENABLED=true`                                                                                                                                                                                                                           |
 | `ANY /proxy/:provider/*path`                    | Passthrough to a provider's native API with the API key injected                                                                                                                                                                                                                                           |
 
 All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
@@ -529,8 +529,10 @@ topk(10, sum(increase(inference_gateway_tool_calls_total[1h])) by (gen_ai_tool_n
 
 Clients such as the infer CLI can push their own metrics (e.g. token usage from subscription-based sessions)
 to the gateway. Enable the opt-in endpoint with `TELEMETRY_METRICS_PUSH_ENABLED=true` (alongside
-`TELEMETRY_ENABLED=true`) and POST OTLP JSON to `POST /v1/metrics`; pushed series are exposed on the same
+`TELEMETRY_ENABLED=true`) and POST OTLP JSON to `POST /metrics`; pushed series are exposed on the same
 Prometheus endpoint with the client-supplied `source` label.
+Standard OTLP exporters append `/v1/metrics` to a bare `OTEL_EXPORTER_OTLP_ENDPOINT`, so point them at the
+full per-signal URL instead: `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://gateway:8080/metrics`.
 See [examples/docker-compose/monitoring](examples/docker-compose/monitoring/README.md) for a full example.
 
 ### Monitoring Setup

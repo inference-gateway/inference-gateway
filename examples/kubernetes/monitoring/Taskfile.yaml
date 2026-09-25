@@ -163,7 +163,7 @@ tasks:
             TOOL_ERROR_ATTR=""
             TOOL_RESULT="success"
           fi
-          curl -s -X POST http://localhost:8080/v1/metrics \
+          curl -s -X POST http://localhost:8080/metrics \
             -H "Content-Type: application/json" \
             -H "Host: api.inference-gateway.local" \
             --max-time 10 \

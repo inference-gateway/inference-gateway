@@ -20,7 +20,7 @@ const (
 	contentTypeEventStream = "text/event-stream"
 )
 
-// MetricsIngestionHandler is the OTLP/HTTP metrics receiver (POST /v1/metrics).
+// MetricsIngestionHandler is the OTLP/HTTP metrics receiver (POST /metrics).
 // It lets clients that bypass the gateway's inference path (e.g. subscription
 // clients driving Claude Code directly) push their usage metrics.
 func (router *RouterImpl) MetricsIngestionHandler(c *gin.Context) {
