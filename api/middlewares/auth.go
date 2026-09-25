@@ -45,7 +45,7 @@ type OIDCAuthenticatorImpl struct {
 	logger    logger.Logger
 	verifier  *oidc.IDTokenVerifier
 	audiences []string
-	mcp *config.MCPConfig
+	mcp       *config.MCPConfig
 }
 
 type OIDCAuthenticatorNoop struct{}

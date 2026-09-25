@@ -13,11 +13,11 @@ import (
 )
 
 const (
-	ChatCompletionsPath = "/v1/chat/completions"
-	ResponsesPath       = "/v1/responses"
-	MetricsIngestPath   = "/v1/metrics"
-	HealthPath          = "/health"
-	MCPPath             = "/mcp"
+	ChatCompletionsPath      = "/v1/chat/completions"
+	ResponsesPath            = "/v1/responses"
+	MetricsIngestPath        = "/v1/metrics"
+	HealthPath               = "/health"
+	MCPPath                  = "/mcp"
 	ProtectedResourcePath    = "/.well-known/oauth-protected-resource"
 	MCPProtectedResourcePath = ProtectedResourcePath + MCPPath
 )

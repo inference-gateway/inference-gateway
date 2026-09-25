@@ -41,9 +41,9 @@ const (
 	legacyVersion      = "2025-06-18"
 	metaClientInfo     = "io.modelcontextprotocol/clientInfo"
 	metaClientCaps     = "io.modelcontextprotocol/clientCapabilities"
-	testIssuer      = "https://idp.example.com/realms/inference-gateway-realm"
-	testRequestHost = "gateway.internal:8080"
-	testResourceURL = "https://gateway.example.com/mcp"
+	testIssuer         = "https://idp.example.com/realms/inference-gateway-realm"
+	testRequestHost    = "gateway.internal:8080"
+	testResourceURL    = "https://gateway.example.com/mcp"
 )
 
 // Guardrail fixtures: the policies POST /mcp is evaluated against and the
