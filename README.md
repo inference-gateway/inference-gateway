@@ -103,7 +103,7 @@ while OpenTelemetry collects metrics, traces and OTLP pushes from clients" />
 Client is sending:
 
 ```bash
-curl -X POST http://localhost:8080/v1/chat/completions
+curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{
     "model": "openai/gpt-3.5-turbo",
     "messages": [
@@ -115,7 +115,7 @@ curl -X POST http://localhost:8080/v1/chat/completions
         "role": "user",
         "content": "Hello, world! How are you doing today?"
       }
-    ],
+    ]
   }'
 ```
 
@@ -175,6 +175,15 @@ For streaming the tokens simply add to the request body `stream: true`.
 
 All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
 from an explicit `?provider=` query parameter.
+
+With `ROUTING_ENABLED=true` and a `ROUTING_CONFIG_PATH` pool file,
+`/v1/chat/completions` first resolves logical model aliases against the
+round-robin deployment pools - only when `?provider=` is absent - and reports
+the pick in the `X-Selected-Provider` and `X-Selected-Model` response headers.
+
+`GET /v1/videos/:id` and `GET /v1/videos/:id/content` are the exception: they
+route by the `provider:` prefix of the video id (`elevenlabs:gen_abc123`)
+rather than by a model, with `?provider=` still taking precedence.
 
 Anthropic Messages API:
 
@@ -553,7 +562,7 @@ task deploy-infrastructure
 task deploy-inference-gateway
 
 # Access via port-forward or ingress
-kubectl port-forward svc/grafana-service 3000:3000
+kubectl -n monitoring port-forward svc/grafana-service 3000:3000
 ```
 
 ### Grafana Dashboard
@@ -583,6 +592,7 @@ The included Grafana dashboard provides:
 - [Cohere](https://docs.cohere.com/docs/the-cohere-platform)
 - [Anthropic](https://docs.anthropic.com/en/api/getting-started)
 - [DeepSeek](https://api-docs.deepseek.com/)
+- [ElevenLabs](https://elevenlabs.io/docs/api-reference/introduction)
 - [Google](https://aistudio.google.com/)
 - [Mistral](https://mistral.ai/)
 - [MiniMax](https://platform.minimax.io/docs)
