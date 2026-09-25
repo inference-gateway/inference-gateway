@@ -92,8 +92,10 @@ The following diagram illustrates the flow:
 <div align="center">
 
 <img src="./assets/architecture.svg" width="950"
-alt="Requests flow from clients through OIDC auth, MCP middleware and the
-provider router to the LLM providers, with tokens streaming back" />
+alt="Requests flow from clients through OIDC auth, guardrails, MCP middleware and
+the provider router to 16 LLM providers, with tokens streaming back. MCP tool
+calls and the POST /mcp server endpoint reach MCP servers through guardrails,
+while OpenTelemetry collects metrics, traces and OTLP pushes from clients" />
 
 </div>
 

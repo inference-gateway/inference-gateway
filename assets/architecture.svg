@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="950" height="430" viewBox="0 0 950 430" font-family="ui-sans-serif,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="464" viewBox="0 0 950 464" font-family="ui-sans-serif,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.30"/>
@@ -8,106 +8,217 @@
       <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.16"/>
       <stop offset="100%" stop-color="#2563EB" stop-opacity="0.16"/>
     </linearGradient>
+    <marker id="arr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0L6 3L0 6z" fill="#484f58"/>
+    </marker>
 
-    <path id="w1" d="M182 215 H248"/>
-    <path id="w2" d="M388 215 H408"/>
-    <path id="w3" d="M548 215 H568"/>
-    <path id="w4" d="M478 245 V344"/>
-    <path id="p1" d="M708 215 C748 215 748 62 788 62"/>
-    <path id="p2" d="M708 215 C748 215 748 133 788 133"/>
-    <path id="p3" d="M708 215 H788"/>
-    <path id="p4" d="M708 215 C748 215 748 297 788 297"/>
-    <path id="p5" d="M708 215 C748 215 748 368 788 368"/>
-
-    <g id="req"><circle r="4.5" fill="#a5b4fc"/></g>
-    <g id="res"><circle r="4" fill="#7ee787"/></g>
+    <path id="a1" d="M184 94 H232"/>
+    <path id="a2" d="M324 94 H341"/>
+    <path id="a3" d="M465 94 H482"/>
+    <path id="a4" d="M594 94 H612"/>
+    <path id="b1" d="M184 202 H232"/>
+    <path id="b2" d="M324 202 H341"/>
+    <path id="b3" d="M465 202 H482"/>
+    <path id="t1" d="M594 112 H597 Q603 112 603 118 V336"/>
+    <path id="t2" d="M538 232 V336"/>
+    <path id="o1" d="M100 232 V372 Q100 388 116 388 H232"/>
+    <path id="p1" d="M724 94 C758 94 758 50 792 50"/>
+    <path id="p2" d="M724 94 C758 94 758 118 792 118"/>
+    <path id="p3" d="M724 94 C758 94 758 186 792 186"/>
+    <path id="p4" d="M724 94 C758 94 758 254 792 254"/>
+    <path id="p5" d="M724 94 C758 94 758 333 792 333"/>
   </defs>
 
-  <rect x="2" y="2" width="946" height="426" rx="16" fill="url(#bg)"/>
-  <rect x="6" y="6" width="938" height="418" rx="14" fill="#0d1117" stroke="#30363d"/>
+  <!-- master clock: every beat below is an offset from clock.begin, so the loop never drifts -->
+  <rect width="0" height="0"><animate id="clock" attributeName="x" from="0" to="0" begin="0s;clock.end" dur="8s"/></rect>
+
+  <rect x="2" y="2" width="946" height="460" rx="16" fill="url(#bg)"/>
+  <rect x="6" y="6" width="938" height="452" rx="14" fill="#0d1117" stroke="#30363d"/>
 
   <!-- clients -->
-  <rect x="30" y="182" width="152" height="66" rx="12" fill="#3B1F7A" stroke="#7C3AED"/>
-  <text x="106" y="208" text-anchor="middle" fill="#e6edf3" font-size="14">Clients · Agents</text>
-  <text x="106" y="230" text-anchor="middle" fill="#c9a7ff" font-size="12">SDKs · CLI</text>
+  <rect x="16" y="64" width="168" height="168" rx="12" fill="#3B1F7A" stroke="#7C3AED"/>
+  <text x="100" y="88" text-anchor="middle" fill="#e6edf3">Clients · Agents</text>
+  <text x="100" y="106" text-anchor="middle" fill="#c9a7ff" font-size="12">SDKs · CLI · IDEs</text>
+  <g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="10">
+    <g fill="#a5b4fc">
+      <text x="26" y="131">/v1/chat/completions</text>
+      <text x="26" y="146">/v1/messages · responses</text>
+      <text x="26" y="161">/v1/images/* · audio/*</text>
+      <text x="26" y="176">/v1/videos · models</text>
+      <text x="26" y="191">/proxy/{provider}</text>
+    </g>
+    <text x="26" y="206" fill="#d2a8ff">POST /mcp</text>
+    <text x="26" y="221" fill="#56d4dd">POST /v1/metrics (OTLP)</text>
+  </g>
 
   <!-- gateway panel -->
-  <rect x="228" y="120" width="480" height="190" rx="14" fill="url(#gw)" stroke="#7C3AED" stroke-dasharray="5 4"/>
-  <text x="468" y="148" text-anchor="middle" fill="#c9a7ff" font-size="13">Inference Gateway · scales horizontally</text>
+  <rect x="220" y="22" width="516" height="284" rx="14" fill="url(#gw)" stroke="#7C3AED"/>
+  <text x="478" y="44" text-anchor="middle" fill="#c9a7ff" font-size="13">Inference Gateway · scales horizontally</text>
 
-  <rect x="248" y="188" width="140" height="54" rx="10" fill="#161b22" stroke="#326CE5"/>
-  <text x="318" y="210" text-anchor="middle" fill="#e6edf3" font-size="13">OIDC Auth</text>
-  <text x="318" y="228" text-anchor="middle" fill="#8b949e" font-size="11">optional</text>
+  <g fill="#161b22" stroke-dasharray="5 3">
+    <rect x="232" y="64" width="92" height="168" rx="10" stroke="#326CE5"/>
+    <rect x="341" y="64" width="124" height="168" rx="10" stroke="#D29922"/>
+    <rect x="482" y="64" width="112" height="60" rx="10" stroke="#DB61A2"/>
+    <rect x="482" y="172" width="112" height="60" rx="10" stroke="#DB61A2"/>
+  </g>
+  <rect x="612" y="64" width="112" height="60" rx="10" fill="#161b22" stroke="#326CE5"/>
 
-  <rect x="408" y="188" width="140" height="54" rx="10" fill="#161b22" stroke="#DB61A2"/>
-  <text x="478" y="210" text-anchor="middle" fill="#e6edf3" font-size="13">MCP Middleware</text>
-  <text x="478" y="228" text-anchor="middle" fill="#8b949e" font-size="11">X-MCP-Bypass</text>
+  <g text-anchor="middle" fill="#e6edf3" font-size="13">
+    <text x="278" y="140">OIDC Auth</text>
+    <text x="403" y="128">Guardrails</text>
+    <text x="538" y="86">MCP Middleware</text>
+    <text x="668" y="86">Provider Router</text>
+    <text x="538" y="194">MCP Server</text>
+  </g>
+  <g text-anchor="middle" fill="#8b949e" font-size="11">
+    <text x="403" y="146">OPA · Rego policies</text>
+    <text x="668" y="102">model prefix</text>
+  </g>
+  <g text-anchor="middle" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="10">
+    <text x="278" y="158" fill="#79c0ff">AUTH_ENABLED</text>
+    <text x="403" y="164" fill="#e3b341">GUARDRAILS_ENABLED</text>
+    <text x="538" y="102" fill="#f0a8cd">MCP_ENABLED</text>
+    <text x="538" y="116" fill="#8b949e">X-MCP-Bypass</text>
+    <text x="668" y="116" fill="#79c0ff">?provider=</text>
+    <text x="538" y="210" fill="#d2a8ff">POST /mcp</text>
+    <text x="538" y="224" fill="#8b949e">MCP_EXPOSE</text>
+  </g>
 
-  <rect x="568" y="188" width="140" height="54" rx="10" fill="#161b22" stroke="#326CE5"/>
-  <text x="638" y="210" text-anchor="middle" fill="#e6edf3" font-size="13">Provider Router</text>
-  <text x="638" y="228" text-anchor="middle" fill="#8b949e" font-size="11">model prefix</text>
+  <!-- telemetry -->
+  <rect x="232" y="336" width="233" height="104" rx="10" fill="#0d2226" stroke="#39C5CF" stroke-dasharray="5 3"/>
+  <text x="348" y="358" text-anchor="middle" fill="#e6edf3" font-size="13">OpenTelemetry</text>
+  <g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="10">
+    <text x="348" y="374" text-anchor="middle" fill="#56d4dd">TELEMETRY_ENABLED</text>
+    <g fill="#e6edf3">
+      <text x="330" y="396">:9464/metrics</text>
+      <text x="330" y="412">POST /v1/metrics</text>
+      <text x="330" y="428">spans → OTLP</text>
+    </g>
+  </g>
+  <g fill="#8b949e" font-size="11">
+    <text x="246" y="396">Prometheus</text>
+    <text x="246" y="412">OTLP push</text>
+    <text x="246" y="428">Tracing</text>
+  </g>
+  <text x="341" y="290" fill="#56d4dd" font-size="10">metrics · spans</text>
 
   <!-- mcp servers -->
-  <rect x="398" y="344" width="160" height="54" rx="10" fill="#4A1F3A" stroke="#DB61A2"/>
-  <text x="478" y="366" text-anchor="middle" fill="#e6edf3" font-size="13">MCP Servers</text>
-  <text x="478" y="384" text-anchor="middle" fill="#f0a8cd" font-size="11">tool discovery &amp; execution</text>
+  <rect x="490" y="336" width="226" height="54" rx="10" fill="#4A1F3A" stroke="#DB61A2"/>
+  <text x="603" y="358" text-anchor="middle" fill="#e6edf3" font-size="13">MCP Servers</text>
+  <text x="603" y="376" text-anchor="middle" fill="#f0a8cd" font-size="11">tool discovery &amp; execution</text>
 
   <!-- providers -->
   <g fill="#161b22" stroke="#2EA043">
-    <rect x="788" y="39" width="132" height="46" rx="10"/>
-    <rect x="788" y="110" width="132" height="46" rx="10"/>
-    <rect x="788" y="192" width="132" height="46" rx="10"/>
-    <rect x="788" y="274" width="132" height="46" rx="10"/>
-    <rect x="788" y="345" width="132" height="46" rx="10"/>
+    <rect x="792" y="28" width="138" height="44" rx="10"/>
+    <rect x="792" y="96" width="138" height="44" rx="10"/>
+    <rect x="792" y="164" width="138" height="44" rx="10"/>
+    <rect x="792" y="232" width="138" height="44" rx="10"/>
+    <rect x="792" y="300" width="138" height="66" rx="10"/>
   </g>
   <g text-anchor="middle" fill="#e6edf3" font-size="13">
-    <text x="854" y="67">OpenAI</text>
-    <text x="854" y="138">Anthropic</text>
-    <text x="854" y="220">Groq</text>
-    <text x="854" y="302">Ollama</text>
-    <text x="854" y="362">+ 8 more</text>
+    <text x="861" y="55">OpenAI</text>
+    <text x="861" y="123">Anthropic</text>
+    <text x="861" y="191">Google</text>
+    <text x="861" y="259">Ollama</text>
+    <text x="861" y="322">+ 12 more</text>
   </g>
-  <text x="854" y="380" text-anchor="middle" fill="#7ee787" font-size="10">Google · Mistral · Cohere ...</text>
+  <g text-anchor="middle" fill="#7ee787" font-size="10">
+    <text x="861" y="340">Groq · Mistral · Cohere</text>
+    <text x="861" y="354">DeepSeek · Nvidia · …</text>
+  </g>
 
   <!-- wires -->
   <g fill="none" stroke="#30363d" stroke-width="2">
-    <use href="#w1"/><use href="#w2"/><use href="#w3"/>
+    <g marker-end="url(#arr)">
+      <use href="#a1"/><use href="#a2"/><use href="#a3"/><use href="#a4"/>
+      <use href="#b1"/><use href="#b2"/><use href="#b3"/>
+    </g>
     <use href="#p1"/><use href="#p2"/><use href="#p3"/><use href="#p4"/><use href="#p5"/>
   </g>
-  <use href="#w4" fill="none" stroke="#DB61A2" stroke-width="2" stroke-dasharray="6 5" opacity="0.7"/>
-
-  <g text-anchor="middle" fill="#8b949e" font-size="11">
-    <text x="106" y="272">POST /v1/chat/completions</text>
-    <text x="106" y="290">POST /v1/messages</text>
-    <text x="106" y="308">POST /v1/images/generations</text>
-    <text x="106" y="326" font-size="10">/v1/responses · /v1/models</text>
-    <text x="106" y="342" font-size="10">/v1/mcp/tools · /proxy/{provider}</text>
+  <g fill="none" stroke-width="2" stroke-dasharray="6 5" opacity="0.7">
+    <use href="#t1" stroke="#DB61A2"/>
+    <use href="#t2" stroke="#DB61A2"/>
+    <use href="#o1" stroke="#39C5CF"/>
+  </g>
+  <path d="M333 236 V336" fill="none" stroke="#39C5CF" stroke-width="2" stroke-dasharray="2 4" opacity="0.8">
+    <animate attributeName="stroke-dashoffset" from="6" to="0" dur="0.6s" repeatCount="indefinite"/>
+  </path>
+  <g text-anchor="middle" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="10">
+    <text x="202" y="88" fill="#a5b4fc">/v1/*</text>
+    <text x="202" y="196" fill="#d2a8ff">/mcp</text>
+    <text x="170" y="381" fill="#56d4dd">OTLP push</text>
   </g>
 
-  <!-- animated request packets: client -> gateway -> provider -->
-  <g>
-    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="0s"><mpath href="#w1"/></animateMotion></use>
-    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="0.35s"><mpath href="#w2"/></animateMotion></use>
-    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="0.7s"><mpath href="#w3"/></animateMotion></use>
-    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="1.05s"><mpath href="#p1"/></animateMotion></use>
-    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="1.4s"><mpath href="#p3"/></animateMotion></use>
-    <use href="#req"><animateMotion dur="3s" repeatCount="indefinite" begin="1.75s"><mpath href="#p5"/></animateMotion></use>
+  <!-- request: clients -> auth -> guardrails -> mcp -> router -> provider -->
+  <g fill="#a5b4fc">
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin" dur="0.45s"/><animateMotion begin="clock.begin" dur="0.45s"><mpath href="#a1"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+0.65s" dur="0.2s"/><animateMotion begin="clock.begin+0.65s" dur="0.2s"><mpath href="#a2"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+1.05s" dur="0.2s"/><animateMotion begin="clock.begin+1.05s" dur="0.2s"><mpath href="#a3"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+3.45s" dur="0.2s"/><animateMotion begin="clock.begin+3.45s" dur="0.2s"><mpath href="#a4"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+3.85s" dur="0.45s"/><animateMotion begin="clock.begin+3.85s" dur="0.45s"><mpath href="#p2"/></animateMotion></circle>
   </g>
 
-  <!-- streamed tokens coming back -->
-  <g>
-    <use href="#res"><animateMotion dur="3s" repeatCount="indefinite" begin="2s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#p2"/></animateMotion></use>
-    <use href="#res"><animateMotion dur="3s" repeatCount="indefinite" begin="2.3s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#p4"/></animateMotion></use>
-    <use href="#res"><animateMotion dur="3s" repeatCount="indefinite" begin="2.6s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#w1"/></animateMotion></use>
+  <!-- mcp tool call round trip, checked by guardrails on the way -->
+  <g fill="#DB61A2">
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+1.45s" dur="0.8s"/><animateMotion begin="clock.begin+1.45s" dur="0.8s"><mpath href="#t1"/></animateMotion></circle>
+    <circle r="4" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+2.55s" dur="0.8s"/><animateMotion begin="clock.begin+2.55s" dur="0.8s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#t1"/></animateMotion></circle>
   </g>
 
-  <!-- mcp tool call round trip -->
-  <use href="#res" fill="#DB61A2">
-    <animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="0;1;0" keyTimes="0;0.5;1" calcMode="linear"><mpath href="#w4"/></animateMotion>
-  </use>
+  <!-- streamed tokens back to the client -->
+  <g fill="#7ee787">
+    <circle r="3.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+4.55s" dur="0.45s"/><animateMotion begin="clock.begin+4.55s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#p2"/></animateMotion></circle>
+    <circle r="3.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+4.7s" dur="0.45s"/><animateMotion begin="clock.begin+4.7s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#p2"/></animateMotion></circle>
+    <circle r="3.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+4.85s" dur="0.45s"/><animateMotion begin="clock.begin+4.85s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#p2"/></animateMotion></circle>
+    <circle r="3.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+5.2s" dur="0.45s"/><animateMotion begin="clock.begin+5.2s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#a1"/></animateMotion></circle>
+    <circle r="3.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+5.35s" dur="0.45s"/><animateMotion begin="clock.begin+5.35s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#a1"/></animateMotion></circle>
+    <circle r="3.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+5.5s" dur="0.45s"/><animateMotion begin="clock.begin+5.5s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#a1"/></animateMotion></circle>
+  </g>
 
-  <!-- gateway pulse -->
-  <rect x="228" y="120" width="480" height="190" rx="14" fill="none" stroke="#7C3AED" opacity="0.5">
-    <animate attributeName="opacity" values="0.15;0.55;0.15" dur="3s" repeatCount="indefinite"/>
+  <!-- gateway as an mcp server: POST /mcp -> auth -> guardrails -> mcp servers -->
+  <g fill="#d2a8ff">
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+4.4s" dur="0.45s"/><animateMotion begin="clock.begin+4.4s" dur="0.45s"><mpath href="#b1"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+5.05s" dur="0.2s"/><animateMotion begin="clock.begin+5.05s" dur="0.2s"><mpath href="#b2"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+5.45s" dur="0.2s"/><animateMotion begin="clock.begin+5.45s" dur="0.2s"><mpath href="#b3"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+5.85s" dur="0.6s"/><animateMotion begin="clock.begin+5.85s" dur="0.6s"><mpath href="#t2"/></animateMotion></circle>
+    <circle r="4" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+6.7s" dur="0.6s"/><animateMotion begin="clock.begin+6.7s" dur="0.6s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#t2"/></animateMotion></circle>
+    <circle r="4" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+7.4s" dur="0.45s"/><animateMotion begin="clock.begin+7.4s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#b1"/></animateMotion></circle>
+  </g>
+
+  <!-- client-side metrics pushed over OTLP -->
+  <circle r="4" fill="#56d4dd" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+1s" dur="1.2s"/><animateMotion begin="clock.begin+1s" dur="1.2s"><mpath href="#o1"/></animateMotion></circle>
+
+  <!-- guardrails gate for tool calls, drawn over the wires so packets pass through it -->
+  <rect x="482" y="256" width="242" height="26" rx="6" fill="#2b2110" stroke="#D29922" stroke-dasharray="5 3"/>
+  <rect x="482" y="256" width="242" height="26" rx="6" fill="#D29922" opacity="0">
+    <animate attributeName="opacity" values="0;0.45;0" begin="clock.begin+1.95s; clock.begin+5.98s" dur="0.5s"/>
   </rect>
+  <text x="603" y="273" text-anchor="middle" fill="#e3b341" font-size="11">guardrails · every tool call</text>
+
+  <!-- stage pulses as a packet passes through -->
+  <g fill="none" stroke-width="2.5">
+    <rect x="16" y="64" width="168" height="168" rx="12" stroke="#7ee787" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+5.6s" dur="0.5s"/></rect>
+    <rect x="232" y="64" width="92" height="168" rx="10" stroke="#326CE5" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+0.4s; clock.begin+4.8s" dur="0.5s"/></rect>
+    <rect x="341" y="64" width="124" height="168" rx="10" stroke="#D29922" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+0.8s; clock.begin+5.2s" dur="0.5s"/></rect>
+    <rect x="482" y="64" width="112" height="60" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+1.2s; clock.begin+3.3s" dur="0.5s"/></rect>
+    <rect x="612" y="64" width="112" height="60" rx="10" stroke="#326CE5" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+3.6s" dur="0.5s"/></rect>
+    <rect x="482" y="172" width="112" height="60" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+5.6s; clock.begin+7.25s" dur="0.5s"/></rect>
+    <rect x="490" y="336" width="226" height="54" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.25s; clock.begin+6.45s" dur="0.5s"/></rect>
+    <rect x="232" y="336" width="233" height="104" rx="10" stroke="#39C5CF" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.2s" dur="0.5s"/></rect>
+    <rect x="792" y="96" width="138" height="44" rx="10" stroke="#2EA043" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+4.25s" dur="0.5s"/></rect>
+  </g>
+
+  <!-- gateway breathe -->
+  <rect x="220" y="22" width="516" height="284" rx="14" fill="none" stroke="#7C3AED" opacity="0.15">
+    <animate attributeName="opacity" values="0.15;0.45;0.15" dur="4s" repeatCount="indefinite"/>
+  </rect>
+
+  <!-- legend -->
+  <g font-size="10" fill="#8b949e">
+    <path d="M752 395 H772" stroke="#8b949e" stroke-dasharray="5 3"/>
+    <text x="778" y="399">opt-in</text>
+    <circle cx="756" cy="414" r="4" fill="#a5b4fc"/><text x="764" y="418">request</text>
+    <circle cx="836" cy="414" r="4" fill="#7ee787"/><text x="844" y="418">tokens</text>
+    <circle cx="756" cy="432" r="4" fill="#DB61A2"/><text x="764" y="436">tool call</text>
+    <circle cx="836" cy="432" r="4" fill="#d2a8ff"/><text x="844" y="436">/mcp</text>
+  </g>
 </svg>
