@@ -99,11 +99,12 @@ see in `input.identity`.
 
 ## MCP clients discover Keycloak on their own
 
-Expose the gateway as an MCP server (`MCP_ENABLED=true`, `MCP_EXPOSE=true`) and
-an MCP client needs no pre-issued token to find the IdP, as MCP `2026-07-28`
-requires. The `401` from `/mcp` points at the OAuth 2.0 Protected Resource
-Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) document,
-which names this realm:
+The compose file exposes the gateway as an MCP server (`MCP_ENABLED=true`,
+`MCP_EXPOSE=true`), so an MCP client needs no pre-issued token to find the IdP,
+as MCP `2026-07-28` requires. The `401` from `/mcp` points at the OAuth 2.0
+Protected Resource Metadata
+([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) document, which
+names this realm:
 
 ```bash
 curl -i -X POST http://localhost:8080/mcp

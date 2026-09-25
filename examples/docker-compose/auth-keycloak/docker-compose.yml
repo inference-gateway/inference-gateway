@@ -52,6 +52,10 @@ services:
       # Optional: comma-separated aud values to accept instead of the client ID,
       # for example an API identifier.
       # AUTH_OIDC_AUDIENCE: https://api.example.com
+      # Exposed as an MCP server (with no MCP servers of its own) so the
+      # protected resource metadata walkthrough in the README works as shipped.
+      MCP_ENABLED: 'true'
+      MCP_EXPOSE: 'true'
     ports:
       - '8080:8080'
     depends_on:
