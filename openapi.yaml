@@ -602,6 +602,51 @@ paths:
           $ref: '#/components/responses/MCPNotExposed'
         '500':
           $ref: '#/components/responses/InternalError'
+  /.well-known/oauth-protected-resource/mcp:
+    get:
+      operationId: getMCPProtectedResourceMetadata
+      tags:
+        - MCP
+      description: |
+        OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728))
+        for `POST /mcp`, which MCP `2026-07-28` requires every protected MCP
+        server to publish so a client can discover the authorization server on
+        its own instead of being handed a pre-configured token.
+
+        Served without a token - it is the one route besides `/health` that
+        skips gateway auth, since a client fetches it precisely because it has
+        no credentials yet. Every `401` from `POST /mcp` points here through the
+        `resource_metadata` parameter of its `WWW-Authenticate` challenge.
+
+        Returns `404` unless `AUTH_ENABLED=true` and the MCP endpoint is exposed
+        (`MCP_ENABLED=true` and `MCP_EXPOSE=true`): with no authorization server
+        there is nothing to advertise.
+
+        `resource` is `MCP_RESOURCE_URL` when set, and otherwise the request
+        scheme (honouring `X-Forwarded-Proto`) and `Host` with `/mcp` appended.
+        Behind an ingress that rewrites either, set `MCP_RESOURCE_URL` to the
+        canonical public URL clients use.
+
+        Tokens must be issued for that resource (RFC 8707): when the IdP stamps
+        the resource indicator into `aud`, list the same value in
+        `AUTH_OIDC_AUDIENCE`.
+      summary: OAuth 2.0 Protected Resource Metadata for the MCP endpoint
+      security: []
+      responses:
+        '200':
+          description: The Protected Resource Metadata document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OAuthProtectedResourceMetadata'
+              example:
+                resource: 'https://gateway.example.com/mcp'
+                authorization_servers:
+                  - 'https://keycloak.example.com/realms/inference-gateway-realm'
+                bearer_methods_supported:
+                  - 'header'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /metrics:
     post:
       operationId: pushMetrics
@@ -2277,9 +2322,11 @@ components:
           description: |
             JSON-RPC error code: `-32700` parse error, `-32600` invalid request,
             `-32601` method not found, `-32602` invalid params, `-32603` internal
-            error (including upstream MCP server failures), `-32020` header
-            mismatch, `-32022` unsupported protocol version (`data` carries
-            `requested` and `supported`).
+            error (including upstream MCP server failures), `-32001` request
+            blocked by guardrails at any phase (`pre_call`, `tool_args`,
+            `tool_output`), answered with HTTP `403` and the policy message,
+            `-32020` header mismatch, `-32022` unsupported protocol version
+            (`data` carries `requested` and `supported`).
           example: -32602
         message:
           type: string
@@ -2307,6 +2354,35 @@ components:
       required:
         - object
         - data
+    OAuthProtectedResourceMetadata:
+      type: object
+      description: |
+        OAuth 2.0 Protected Resource Metadata (RFC 9728) for the gateway's MCP
+        endpoint. Only the fields a client needs to find the authorization
+        server are published.
+      properties:
+        resource:
+          type: string
+          description: The canonical public URL of the protected resource
+          example: 'https://gateway.example.com/mcp'
+        authorization_servers:
+          type: array
+          items:
+            type: string
+          description: Issuer identifiers of the authorization servers that mint tokens for this resource
+          example:
+            - 'https://keycloak.example.com/realms/inference-gateway-realm'
+        bearer_methods_supported:
+          type: array
+          items:
+            type: string
+          description: How a bearer token may be sent; the gateway reads the Authorization header only
+          example:
+            - 'header'
+      required:
+        - resource
+        - authorization_servers
+        - bearer_methods_supported
     MCPTool:
       type: object
       description: An MCP tool definition
@@ -4773,6 +4849,10 @@ components:
                   type: bool
                   default: 'false'
                   description: 'Expose the gateway as an MCP server on POST /mcp (requires MCP_ENABLED)'
+                - name: mcp_resource_url
+                  env: 'MCP_RESOURCE_URL'
+                  type: string
+                  description: 'Canonical public URL of POST /mcp, e.g. https://gateway.example.com/mcp. Published as the resource of the OAuth 2.0 Protected Resource Metadata (RFC 9728) document served at /.well-known/oauth-protected-resource/mcp, and pointed at by the resource_metadata of every 401 challenge on /mcp. Defaults to the request scheme (honouring X-Forwarded-Proto) and Host with /mcp appended; set it behind an ingress that rewrites either'
                 - name: mcp_servers
                   env: 'MCP_SERVERS'
                   type: string

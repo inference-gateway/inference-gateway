@@ -2311,9 +2311,11 @@ type ListToolsResponse struct {
 type MCPJSONRPCError struct {
 	// Code JSON-RPC error code: `-32700` parse error, `-32600` invalid request,
 	// `-32601` method not found, `-32602` invalid params, `-32603` internal
-	// error (including upstream MCP server failures), `-32020` header
-	// mismatch, `-32022` unsupported protocol version (`data` carries
-	// `requested` and `supported`).
+	// error (including upstream MCP server failures), `-32001` request
+	// blocked by guardrails at any phase (`pre_call`, `tool_args`,
+	// `tool_output`), answered with HTTP `403` and the policy message,
+	// `-32020` header mismatch, `-32022` unsupported protocol version
+	// (`data` carries `requested` and `supported`).
 	Code int `json:"code"`
 
 	// Data Optional additional error detail
@@ -2876,6 +2878,20 @@ type Model struct {
 type ModelModalities struct {
 	Input  []Modality `json:"input"`
 	Output []Modality `json:"output"`
+}
+
+// OAuthProtectedResourceMetadata OAuth 2.0 Protected Resource Metadata (RFC 9728) for the gateway's MCP
+// endpoint. Only the fields a client needs to find the authorization
+// server are published.
+type OAuthProtectedResourceMetadata struct {
+	// AuthorizationServers Issuer identifiers of the authorization servers that mint tokens for this resource
+	AuthorizationServers []string `json:"authorization_servers"`
+
+	// BearerMethodsSupported How a bearer token may be sent; the gateway reads the Authorization header only
+	BearerMethodsSupported []string `json:"bearer_methods_supported"`
+
+	// Resource The canonical public URL of the protected resource
+	Resource string `json:"resource"`
 }
 
 // Pricing Pricing information for a model
