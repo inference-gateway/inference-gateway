@@ -18,10 +18,6 @@ const (
 	MetricsIngestPath   = "/v1/metrics"
 	HealthPath          = "/health"
 	MCPPath             = "/mcp"
-
-	// ProtectedResourcePath is the RFC 9728 well-known prefix; the metadata
-	// document for a resource lives at the prefix followed by its path, so
-	// /mcp is described at /.well-known/oauth-protected-resource/mcp.
 	ProtectedResourcePath    = "/.well-known/oauth-protected-resource"
 	MCPProtectedResourcePath = ProtectedResourcePath + MCPPath
 )
