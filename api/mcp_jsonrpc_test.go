@@ -41,10 +41,6 @@ const (
 	legacyVersion      = "2025-06-18"
 	metaClientInfo     = "io.modelcontextprotocol/clientInfo"
 	metaClientCaps     = "io.modelcontextprotocol/clientCapabilities"
-
-	// Protected resource metadata fixtures: the issuer the document points at,
-	// the host a test request arrives on and the public URL MCP_RESOURCE_URL
-	// pins when the request cannot be trusted to carry it.
 	testIssuer      = "https://idp.example.com/realms/inference-gateway-realm"
 	testRequestHost = "gateway.internal:8080"
 	testResourceURL = "https://gateway.example.com/mcp"
