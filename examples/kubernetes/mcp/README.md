@@ -78,24 +78,20 @@ task restart
 
 ## Testing
 
-Run the in-cluster integration tests (gateway health, MCP tools discovery, and `POST /mcp`):
+Run the in-cluster integration tests (gateway health and `POST /mcp`):
 
 ```bash
 task test
 ```
 
-To call the gateway from your machine, port-forward the Envoy data plane and query the MCP tools endpoint:
+To call the gateway from your machine, port-forward the Envoy data plane:
 
 ```bash
 task port-forward-gateway
 ```
 
-```bash
-curl -s http://localhost:8080/v1/mcp/tools -H "Host: api.inference-gateway.local" | jq '.data[] | .name'
-```
-
-Or use the gateway as an MCP server. Every request carries MCP `2026-07-28` in `params._meta`, mirrored
-into headers:
+Then list the discovered tools over `tools/list`. Every request carries MCP `2026-07-28` in
+`params._meta`, mirrored into headers:
 
 ```bash
 curl -s -X POST http://localhost:8080/mcp \

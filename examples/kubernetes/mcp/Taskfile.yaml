@@ -131,10 +131,9 @@ tasks:
       - echo "✅ MCP servers are ready!"
 
   test:
-    desc: 'Run MCP integration tests (health, tools discovery, the gateway as an MCP server)'
+    desc: 'Run MCP integration tests (health, the gateway as an MCP server)'
     deps:
       - test:health
-      - test:mcp-tools
       - test:mcp-endpoint
     cmds:
       - echo "🎉 All MCP integration tests passed successfully!"
@@ -147,14 +146,6 @@ tasks:
         kubectl run test-pod-01 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -f http://{{.RELEASE_NAME}}:8080/health
       - echo "✅ Gateway is healthy"
-
-  test:mcp-tools:
-    desc: 'Test the MCP tools discovery endpoint in-cluster'
-    cmds:
-      - |
-        kubectl run test-pod --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
-          curl -s http://{{.RELEASE_NAME}}:8080/v1/mcp/tools
-      - echo "✅ MCP tools endpoint working correctly"
 
   test:mcp-endpoint:
     desc: 'Test the gateway as an MCP server (POST /mcp, MCP 2026-07-28) in-cluster'

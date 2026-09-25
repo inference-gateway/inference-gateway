@@ -346,7 +346,6 @@ func main() {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/models", api.ListModelsHandler)
-		v1.GET("/mcp/tools", api.ListToolsHandler)
 		v1.POST("/messages", api.MessagesHandler)
 		v1.POST("/images/generations", api.ImagesHandler)
 		v1.POST("/images/edits", api.ImagesEditsHandler)

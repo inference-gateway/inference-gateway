@@ -157,7 +157,6 @@ For streaming the tokens simply add to the request body `stream: true`.
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `GET /health`                                   | Liveness probe, no authentication required                                                                                                                                                                                                                                                                 |
 | `GET /v1/models`                                | List models from every configured provider                                                                                                                                                                                                                                                                 |
-| `GET /v1/mcp/tools`                             | List the tools discovered from the configured MCP servers. Opt-in via `MCP_EXPOSE=true`, otherwise the endpoint returns 403                                                                                                                                                                                |
 | `POST /mcp`                                     | The gateway as an MCP server: one JSON-RPC 2.0 endpoint aggregating every configured MCP server, so a client configures a single entry. Opt-in via `MCP_EXPOSE=true`, otherwise the endpoint returns 403                                                                                                   |
 | `GET /.well-known/oauth-protected-resource/mcp` | OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) for `POST /mcp`, so an MCP client discovers the authorization server on its own. No authentication required; served while `AUTH_ENABLED=true` and `MCP_EXPOSE=true`, otherwise 404                       |
 | `POST /v1/chat/completions`                     | OpenAI-compatible chat completions, streaming and tools included - works with every provider                                                                                                                                                                                                               |
@@ -411,14 +410,11 @@ The official SDKs serve it: TypeScript v2 (`createMcpHandler`), Go v1.7+
 [MCP example](examples/docker-compose/mcp/) has a server on each of the first
 two.
 
-Querying the discovered tools over `GET /v1/mcp/tools` additionally requires
-`MCP_EXPOSE=true`; it defaults to `false`, and the endpoint returns 403 until
-it is enabled.
-
-`MCP_EXPOSE=true` also turns the gateway itself into an MCP server at
+`MCP_EXPOSE=true` turns the gateway itself into an MCP server at
 `POST /mcp`, a JSON-RPC 2.0 endpoint speaking MCP `2026-07-28` only:
 `server/discover`, `tools/list` and `tools/call`, with no `initialize`
-handshake and no session. An agent client points one MCP entry at the gateway
+handshake and no session. It defaults to `false`, and the endpoint returns 403
+until it is enabled. An agent client points one MCP entry at the gateway
 and discovers every backend server, with no client config churn when servers
 come and go. The client must support MCP `2026-07-28`; a legacy client gets a
 `400` naming the supported version.
