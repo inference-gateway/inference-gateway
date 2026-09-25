@@ -22,7 +22,7 @@
 | Environment Variable            | Default Value           | Description                                                     |
 | ------------------------------- | ----------------------- | --------------------------------------------------------------- |
 | TELEMETRY_ENABLED               | `false`                 | Enable telemetry                                                |
-| TELEMETRY_METRICS_PUSH_ENABLED  | `false`                 | Enable the OTLP metrics push endpoint (POST /v1/metrics)        |
+| TELEMETRY_METRICS_PUSH_ENABLED  | `false`                 | Enable the OTLP metrics push endpoint (POST /metrics)           |
 | TELEMETRY_METRICS_PORT          | `9464`                  | Port for telemetry metrics server                               |
 | TELEMETRY_TRACING_ENABLED       | `false`                 | Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLED) |
 | TELEMETRY_TRACING_OTLP_ENDPOINT | `http://localhost:4318` | OTLP HTTP endpoint for trace export                             |

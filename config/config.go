@@ -46,7 +46,7 @@ type Config struct {
 // Telemetry configuration
 type TelemetryConfig struct {
 	Enabled             bool   `env:"ENABLED, default=false" description:"Enable telemetry"`
-	MetricsPushEnabled  bool   `env:"METRICS_PUSH_ENABLED, default=false" description:"Enable the OTLP metrics push endpoint (POST /v1/metrics)"`
+	MetricsPushEnabled  bool   `env:"METRICS_PUSH_ENABLED, default=false" description:"Enable the OTLP metrics push endpoint (POST /metrics)"`
 	MetricsPort         string `env:"METRICS_PORT, default=9464" description:"Port for telemetry metrics server"`
 	TracingEnabled      bool   `env:"TRACING_ENABLED, default=false" description:"Enable OpenTelemetry tracing spans (requires TELEMETRY_ENABLED)"`
 	TracingOtlpEndpoint string `env:"TRACING_OTLP_ENDPOINT, default=http://localhost:4318" description:"OTLP HTTP endpoint for trace export"`
