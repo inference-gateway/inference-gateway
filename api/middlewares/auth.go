@@ -91,8 +91,6 @@ func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
 // Middleware implementation of the OIDCAuthenticator interface
 func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// The protected resource metadata is fetched by clients that have no
-		// token yet, so it is exempt like the health check.
 		switch c.Request.URL.Path {
 		case HealthPath, MCPProtectedResourcePath:
 			c.Next()
