@@ -10,8 +10,6 @@ import (
 )
 
 const (
-	// serverHostEnv binds the API server; the code default (127.0.0.1) makes a
-	// container unreachable from the host, so containerized examples get 0.0.0.0.
 	serverHostEnv      = "SERVER_HOST"
 	serverHostInDocker = "0.0.0.0"
 )
