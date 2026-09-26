@@ -1,7 +1,6 @@
 charts/**/*
 CHANGELOG.md
 AGENTS.md
-CLAUDE.md
 .infer
 .agents
 .github/workflows/claude.yml

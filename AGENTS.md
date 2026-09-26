@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Guidance for coding agents working in this repository. `CLAUDE.md` is a symlink to this file.
+Guidance for coding agents working in this repository.
 
 The Inference Gateway is a Go service that proxies a single OpenAI-compatible API to many upstream LLM providers. Most per-provider code is generated from `openapi.yaml`; the runtime is a thin Gin server with a configurable middleware chain.
 
@@ -51,7 +51,8 @@ Config is env-only: `config/load.go` fills the generated `config.Config` via `go
 - Write self-explanatory code: clear names and small, single-purpose functions carry the intent.
   If a block needs a comment to be understood, extract it into a well-named function or variable.
 - No inline comments inside function bodies.
-- Doc comments on functions, types, and modules are at most 5 lines: what it does and why, not how.
+- Doc comments on functions and types are at most 5 lines: what it does and why, not how.
+- No comments above modules, packages, or files.
 - Tool directives are not comments and stay where the tool needs them (lint suppressions, build
   tags, compiler pragmas, code generation markers).
 
