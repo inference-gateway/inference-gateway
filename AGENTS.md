@@ -46,6 +46,15 @@ Config is env-only: `config/load.go` fills the generated `config.Config` via `go
 - **Tests** live next to the package or in `tests/`; mocks are committed under `tests/mocks/` (`mockgen` via `//go:generate`); after changing a mocked interface, `go generate ./providers/... ./api/... ./internal/...` refreshes just the mocks.
 - **Pre-commit** (`task pre-commit:install`) is the source of truth for "PR-ready".
 
+## Code Readability
+
+- Write self-explanatory code: clear names and small, single-purpose functions carry the intent.
+  If a block needs a comment to be understood, extract it into a well-named function or variable.
+- No inline comments inside function bodies.
+- Doc comments on functions, types, and modules are at most 5 lines: what it does and why, not how.
+- Tool directives are not comments and stay where the tool needs them (lint suppressions, build
+  tags, compiler pragmas, code generation markers).
+
 ## Security
 
 Never commit provider API keys, tokens, or local `.env` files. Use `.env.example` as templates. Review auth, telemetry, and routing changes carefully — they affect gateway-wide behavior.
