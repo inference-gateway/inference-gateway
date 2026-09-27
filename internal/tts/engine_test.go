@@ -306,7 +306,7 @@ func TestEnsureBinaryUpgradesStaleBinary(t *testing.T) {
 	t.Run("leaves a PATH binary alone", func(t *testing.T) {
 		installFakeBinary(t, "exit 0\n")
 		old := binaryRepoBase
-		binaryRepoBase = "http://127.0.0.1:1" // any fetch would fail the test
+		binaryRepoBase = "http://127.0.0.1:1"
 		t.Cleanup(func() { binaryRepoBase = old })
 		e := testEngine(t, Config{AutoDownload: true, Home: t.TempDir()})
 
