@@ -224,8 +224,9 @@ model is synthesized by the gateway itself via llama.cpp's `llama-tts`
 (one-shot, WAV output, supports `reference_audio` voice cloning). With
 `AUDIO_LOCAL_AUTO_DOWNLOAD=true` (default) the binary and GGUF models are
 fetched in the background at startup into the shared `~/.infer` cache
-(`~/.infer/models/tts`, `~/.infer/bin`); requests answer `503` with
-`Retry-After` until assets are ready:
+(`~/.infer/models/tts`, `~/.infer/bin/tools`); the binary is re-downloaded when
+a newer release supersedes it; requests answer `503` with `Retry-After` until
+assets are ready:
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech \

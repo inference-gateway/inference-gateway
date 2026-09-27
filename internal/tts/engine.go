@@ -5,11 +5,13 @@
 // favor of proxying to llama-server.
 //
 // The asset cache is shared with the Inference Gateway CLI in fixed
-// well-known locations (never configurable): binaries in ~/.infer/bin and
-// GGUF weights in ~/.infer/models/tts. Downloads write to a temp file and
-// rename atomically, so a concurrently running CLI and gateway never corrupt
-// the cache; an already-present file is treated as done and never
-// re-downloaded.
+// well-known locations (never configurable): binaries in ~/.infer/bin/tools
+// (falling back to the legacy ~/.infer/bin) and GGUF weights in
+// ~/.infer/models/tts. Downloads write to a temp file and rename atomically,
+// so a concurrently running CLI and gateway never corrupt the cache. A cached
+// llama-tts is replaced when its sha256 differs from the latest release's
+// checksums.txt, mirroring the binaries repo's install.sh; pinned GGUF weights
+// never change under a filename, so an existing one is treated as done.
 package tts
 
 import (
@@ -45,6 +47,7 @@ const (
 
 	// Shared cache layout, adopted from the CLI (fixed, not configurable).
 	// Exported because the 503 guidance and manual pre-download docs name them.
+	CacheToolsDir  = ".infer/bin/tools"
 	CacheBinDir    = ".infer/bin"
 	CacheModelsDir = ".infer/models/tts"
 	checksumsName  = "checksums.txt"
@@ -118,9 +121,9 @@ type Request struct {
 
 // Config wires the AUDIO_LOCAL_* settings plus the cache root.
 type Config struct {
-	// AutoDownload allows fetching the llama-tts binary and GGUF weights.
-	// Anything already present is never re-downloaded. When false the engine
-	// is purely a consumer of the existing cache or PATH.
+	// AutoDownload allows fetching the llama-tts binary and GGUF weights, and
+	// replacing a cached llama-tts that no longer matches the latest release.
+	// When false the engine is purely a consumer of the existing cache or PATH.
 	AutoDownload bool
 	// MaxConcurrency bounds concurrent syntheses; requests beyond it queue.
 	MaxConcurrency int
@@ -281,7 +284,7 @@ func (e *Engine) readiness() (ok bool, detail string) {
 	}
 
 	hint := fmt.Sprintf("; pre-download them into %s and %s, or set AUDIO_LOCAL_AUTO_DOWNLOAD=true",
-		filepath.Join(e.cfg.Home, CacheBinDir), filepath.Join(e.cfg.Home, CacheModelsDir))
+		filepath.Join(e.cfg.Home, CacheToolsDir), filepath.Join(e.cfg.Home, CacheModelsDir))
 
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -299,10 +302,8 @@ func (e *Engine) readiness() (ok bool, detail string) {
 // ensure verifies every asset and downloads the ones that are missing.
 // Callers must ensure only one runs at a time (Warmup dedups).
 func (e *Engine) ensure(ctx context.Context) error {
-	if _, ok := e.resolveBinary(); !ok {
-		if err := e.downloadBinary(ctx); err != nil {
-			return fmt.Errorf("obtaining llama-tts binary: %w", err)
-		}
+	if err := e.ensureBinary(ctx); err != nil {
+		return fmt.Errorf("obtaining llama-tts binary: %w", err)
 	}
 	for _, gguf := range []string{BackboneGGUF, MmprojGGUF} {
 		dest := filepath.Join(e.modelDir(), gguf)
@@ -316,19 +317,51 @@ func (e *Engine) ensure(ctx context.Context) error {
 	return nil
 }
 
-// downloadBinary fetches the static binary from the binaries repo, sha256-verified
-// against the release's checksums.txt.
-func (e *Engine) downloadBinary(ctx context.Context) error {
+// ensureBinary downloads llama-tts when it is missing and replaces a cached one
+// whose sha256 differs from the latest release, following the binaries repo's
+// install.sh. An unreachable checksums.txt keeps whatever is already cached.
+func (e *Engine) ensureBinary(ctx context.Context) error {
+	if p, err := exec.LookPath(BinaryName); err == nil {
+		e.logger.Debug("audio: using llama-tts from PATH; upgrades are the operator's", "binary", p)
+		return nil
+	}
+
+	dest, cached := e.cachedBinary()
 	asset := binaryAsset()
-	sums, err := e.fetchChecksums(ctx, strings.TrimSuffix(binaryRepoBase, "/")+"/"+checksumsName)
+	base := strings.TrimSuffix(binaryRepoBase, "/")
+	sums, err := e.fetchChecksums(ctx, base+"/"+checksumsName)
 	if err != nil {
+		if cached {
+			e.logger.Warn("audio: cannot check llama-tts for a newer release; keeping the cached binary",
+				"binary", dest, "error", err.Error())
+			return nil
+		}
 		return fmt.Errorf("fetching %s: %w", checksumsName, err)
 	}
 	want, ok := sums[asset]
 	if !ok {
 		return fmt.Errorf("%s has no entry for %s", checksumsName, asset)
 	}
-	return e.download(ctx, strings.TrimSuffix(binaryRepoBase, "/")+"/"+asset, e.binPath(), want, 0o755)
+
+	if cached {
+		got, err := fileSHA256(dest)
+		if err == nil && got == want {
+			return nil
+		}
+		e.logger.Info("audio: llama-tts is stale; downloading the latest release", "binary", dest)
+	}
+	return e.download(ctx, base+"/"+asset, dest, want, 0o755)
+}
+
+// cachedBinary returns the cached llama-tts and whether it exists; when it does
+// not, the path is where a download lands.
+func (e *Engine) cachedBinary() (path string, exists bool) {
+	for _, p := range []string{e.binPath(), e.legacyBinPath()} {
+		if info, err := os.Stat(p); err == nil && !info.IsDir() {
+			return p, true
+		}
+	}
+	return e.binPath(), false
 }
 
 // download fetches rawURL into dest atomically (temp file in the same
@@ -431,14 +464,19 @@ func (e *Engine) resolveBinary() (string, bool) {
 	if p, err := exec.LookPath(BinaryName); err == nil {
 		return p, true
 	}
-	p := e.binPath()
-	if info, err := os.Stat(p); err == nil && !info.IsDir() {
+	if p, exists := e.cachedBinary(); exists {
 		return p, true
 	}
 	return "", false
 }
 
+// binPath is the CLI's tools install dir, where gateway downloads land too.
 func (e *Engine) binPath() string {
+	return filepath.Join(e.cfg.Home, CacheToolsDir, binaryFileName())
+}
+
+// legacyBinPath is the flat pre-tools cache location, still honored for reads.
+func (e *Engine) legacyBinPath() string {
 	return filepath.Join(e.cfg.Home, CacheBinDir, binaryFileName())
 }
 
@@ -452,6 +490,19 @@ func (e *Engine) backbonePath() string {
 
 func (e *Engine) mmprojPath() string {
 	return filepath.Join(e.cfg.Home, CacheModelsDir, MmprojGGUF)
+}
+
+func fileSHA256(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	hash := sha256.New()
+	if _, err := io.Copy(hash, f); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 // binaryAsset is the per-platform asset name on binaries releases,

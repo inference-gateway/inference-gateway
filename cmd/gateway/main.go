@@ -296,7 +296,7 @@ func main() {
 	if cfg.AudioEnabled {
 		home, homeErr := os.UserHomeDir()
 		if homeErr != nil {
-			appLogger.Warn("audio: cannot resolve home dir; local speech cache paths resolve relative to the working directory (.infer/bin, .infer/models/tts)", "error", homeErr.Error())
+			appLogger.Warn("audio: cannot resolve home dir; local speech cache paths resolve relative to the working directory (.infer/bin/tools, .infer/models/tts)", "error", homeErr.Error())
 		}
 		localTTS = tts.NewEngine(appLogger, tts.Config{
 			AutoDownload:   cfg.AudioLocalAutoDownload,

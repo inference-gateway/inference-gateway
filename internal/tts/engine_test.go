@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -215,7 +216,7 @@ func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, body)
 	}
-	for _, dir := range []string{filepath.Join(home, CacheBinDir), e.modelDir()} {
+	for _, dir := range []string{filepath.Dir(e.binPath()), e.modelDir()} {
 		leftovers, err := filepath.Glob(filepath.Join(dir, ".*"))
 		require.NoError(t, err)
 		require.Empty(t, leftovers, "no .part temp files may survive the atomic rename")
@@ -225,7 +226,104 @@ func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 	mu.Lock()
 	defer mu.Unlock()
 	for name, n := range hits {
-		require.Equal(t, 1, n, "asset %s downloaded %d times; cache was not reused", name, n)
+		want := 1
+		if name == checksumsName {
+			want = 2 // re-read every warmup to spot a newer release
+		}
+		require.Equal(t, want, n, "asset %s downloaded %d times; cache was not reused", name, n)
 	}
 	require.Len(t, hits, 4, fmt.Sprintf("unexpected fetches: %v", hits))
+}
+
+// releaseServer serves a checksums.txt plus the llama-tts asset for body, and
+// counts how often the asset itself was fetched.
+func releaseServer(t *testing.T, body string) *atomic.Int64 {
+	t.Helper()
+	var assetHits atomic.Int64
+	mux := http.NewServeMux()
+	mux.HandleFunc("/"+checksumsName, func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(sha256Hex(body) + "  " + binaryAsset() + "\n"))
+	})
+	mux.HandleFunc("/"+binaryAsset(), func(w http.ResponseWriter, r *http.Request) {
+		assetHits.Add(1)
+		_, _ = w.Write([]byte(body))
+	})
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+
+	old := binaryRepoBase
+	binaryRepoBase = server.URL
+	t.Cleanup(func() { binaryRepoBase = old })
+	return &assetHits
+}
+
+func TestEnsureBinaryUpgradesStaleBinary(t *testing.T) {
+	const latest = "#!/bin/sh\necho new\n"
+
+	t.Run("replaces a stale binary in the tools dir", func(t *testing.T) {
+		releaseServer(t, latest)
+		t.Setenv("PATH", t.TempDir())
+		e := testEngine(t, Config{AutoDownload: true, Home: t.TempDir()})
+		writeBinary(t, e.binPath(), "#!/bin/sh\necho old\n")
+
+		require.NoError(t, e.ensureBinary(context.Background()))
+		require.Equal(t, latest, readFile(t, e.binPath()), "a sha256 mismatch must be replaced")
+	})
+
+	t.Run("replaces a stale binary in the legacy bin dir in place", func(t *testing.T) {
+		releaseServer(t, latest)
+		t.Setenv("PATH", t.TempDir())
+		e := testEngine(t, Config{AutoDownload: true, Home: t.TempDir()})
+		writeBinary(t, e.legacyBinPath(), "#!/bin/sh\necho old\n")
+
+		require.NoError(t, e.ensureBinary(context.Background()))
+		require.Equal(t, latest, readFile(t, e.legacyBinPath()))
+		require.NoFileExists(t, e.binPath(), "the legacy copy is upgraded where it lives")
+	})
+
+	t.Run("keeps a matching binary", func(t *testing.T) {
+		assetHits := releaseServer(t, latest)
+		t.Setenv("PATH", t.TempDir())
+		e := testEngine(t, Config{AutoDownload: true, Home: t.TempDir()})
+		writeBinary(t, e.binPath(), latest)
+
+		require.NoError(t, e.ensureBinary(context.Background()))
+		require.Zero(t, assetHits.Load(), "a matching binary must not be re-downloaded")
+	})
+
+	t.Run("keeps the cached binary when checksums.txt is unreachable", func(t *testing.T) {
+		old := binaryRepoBase
+		binaryRepoBase = "http://127.0.0.1:1"
+		t.Cleanup(func() { binaryRepoBase = old })
+		t.Setenv("PATH", t.TempDir())
+		e := testEngine(t, Config{AutoDownload: true, Home: t.TempDir()})
+		writeBinary(t, e.binPath(), "#!/bin/sh\necho offline\n")
+
+		require.NoError(t, e.ensureBinary(context.Background()), "offline must not fail warmup")
+		require.Equal(t, "#!/bin/sh\necho offline\n", readFile(t, e.binPath()))
+	})
+
+	t.Run("leaves a PATH binary alone", func(t *testing.T) {
+		installFakeBinary(t, "exit 0\n")
+		old := binaryRepoBase
+		binaryRepoBase = "http://127.0.0.1:1" // any fetch would fail the test
+		t.Cleanup(func() { binaryRepoBase = old })
+		e := testEngine(t, Config{AutoDownload: true, Home: t.TempDir()})
+
+		require.NoError(t, e.ensureBinary(context.Background()))
+		require.NoFileExists(t, e.binPath())
+	})
+}
+
+func writeBinary(t *testing.T, path, body string) {
+	t.Helper()
+	require.NoError(t, os.MkdirAll(filepath.Dir(path), 0o755))
+	require.NoError(t, os.WriteFile(path, []byte(body), 0o755))
+}
+
+func readFile(t *testing.T, path string) string {
+	t.Helper()
+	body, err := os.ReadFile(path)
+	require.NoError(t, err)
+	return string(body)
 }
