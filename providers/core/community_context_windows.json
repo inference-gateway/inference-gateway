@@ -39,6 +39,10 @@
     "context": 1000000,
     "output": 128000
   },
+  "anthropic/claude-opus-5-5": {
+    "context": 1000000,
+    "output": 128000
+  },
   "anthropic/claude-sonnet-4-5": {
     "context": 1000000
   },
@@ -101,10 +105,6 @@
     "context": 131072,
     "output": 131072
   },
-  "cloudflare/@cf/mistralai/mistral-small-3.1-24b-instruct": {
-    "context": 128000,
-    "output": 128000
-  },
   "cloudflare/@cf/moonshotai/kimi-k2.7-code": {
     "context": 262144,
     "output": 262144
@@ -134,8 +134,7 @@
     "output": 24000
   },
   "cloudflare/@cf/zai-org/glm-4.7-flash": {
-    "context": 131072,
-    "output": 131072
+    "context": 131072
   },
   "cloudflare/@cf/zai-org/glm-5.2": {
     "context": 262144,
@@ -143,7 +142,7 @@
   },
   "cloudflare/@cf/zai-org/glm-5.3": {
     "context": 1310720,
-    "output": 1310720
+    "output": 1048576
   },
   "cloudflare/@cf/zai-org/glm-5.3-flash": {
     "context": 1310720,
@@ -205,19 +204,7 @@
     "context": 256000,
     "output": 64000
   },
-  "deepseek/deepseek-flash": {
-    "context": 1000000,
-    "output": 384000
-  },
   "deepseek/deepseek-v4-flash": {
-    "context": 1000000,
-    "output": 384000
-  },
-  "deepseek/deepseek-v4-flash-vision-exp": {
-    "context": 1000000,
-    "output": 384000
-  },
-  "deepseek/deepseek-v4-pro": {
     "context": 1000000,
     "output": 384000
   },
@@ -228,8 +215,8 @@
     "context": 131072
   },
   "google/gemini-2.5-computer-use-preview-10-2025": {
-    "context": 131072,
-    "output": 65536
+    "context": 128000,
+    "output": 64000
   },
   "google/gemini-2.5-flash": {
     "context": 1048576,
@@ -260,14 +247,15 @@
     "output": 65536
   },
   "google/gemini-3-pro-image": {
-    "context": 131072
+    "context": 65536,
+    "output": 32768
   },
   "google/gemini-3-pro-image-preview": {
     "context": 131072
   },
   "google/gemini-3.1-flash-image": {
-    "context": 65536,
-    "output": 65536
+    "context": 131072,
+    "output": 32768
   },
   "google/gemini-3.1-flash-image-preview": {
     "context": 65536,
@@ -276,6 +264,10 @@
   "google/gemini-3.1-flash-lite": {
     "context": 1048576,
     "output": 65536
+  },
+  "google/gemini-3.1-flash-lite-image": {
+    "context": 65536,
+    "output": 4096
   },
   "google/gemini-3.1-flash-lite-preview": {
     "context": 1048576,
@@ -441,7 +433,7 @@
     "output": 131072
   },
   "minimax/MiniMax-M3": {
-    "context": 1048576,
+    "context": 1000000,
     "output": 512000
   },
   "mistral/codestral-latest": {
@@ -587,10 +579,6 @@
   "moonshot/kimi-k2.7-code-highspeed": {
     "context": 262144,
     "output": 262144
-  },
-  "moonshot/kimi-k3": {
-    "context": 1048576,
-    "output": 131072
   },
   "nvidia/abacusai/dracarys-llama-3.1-70b-instruct": {
     "context": 128000,
@@ -1170,6 +1158,22 @@
     "context": 1050000,
     "output": 128000
   },
+  "openai/gpt-6-luna": {
+    "context": 1050000,
+    "output": 128000
+  },
+  "openai/gpt-6-sol": {
+    "context": 1050000,
+    "output": 128000
+  },
+  "openai/gpt-daybreak-blue-latest": {
+    "context": 1050000,
+    "output": 128000
+  },
+  "openai/gpt-daybreak-red-latest": {
+    "context": 400000,
+    "output": 128000
+  },
   "openai/gpt-realtime-2.1": {
     "context": 128000,
     "output": 32000
@@ -1231,6 +1235,10 @@
     "output": 131072
   },
   "zai/glm-4.6v": {
+    "context": 128000,
+    "output": 32768
+  },
+  "zai/glm-4.6v-flash": {
     "context": 128000,
     "output": 32768
   },

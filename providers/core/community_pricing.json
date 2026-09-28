@@ -89,6 +89,15 @@
     "source": "community",
     "updated_at": "2026-07-27T09:42:20Z"
   },
+  "anthropic/claude-opus-5-5": {
+    "cache_read_per_token": "0.0000002",
+    "cache_write_per_token": "0.000005",
+    "currency": "USD",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.00002",
+    "source": "community",
+    "updated_at": "2026-09-28T12:45:24Z"
+  },
   "anthropic/claude-sonnet-4-5": {
     "cache_read_per_token": "0.0000003",
     "cache_write_per_token": "0.00000375",
@@ -2287,6 +2296,42 @@
     "output_per_token": "0.00005",
     "source": "community",
     "updated_at": "2026-09-07T11:26:11Z"
+  },
+  "openai/gpt-6-luna": {
+    "cache_read_per_token": "0.00000001",
+    "cache_write_per_token": "0.000000125",
+    "currency": "USD",
+    "input_per_token": "0.0000001",
+    "output_per_token": "0.0000005",
+    "source": "community",
+    "updated_at": "2026-09-28T12:45:24Z"
+  },
+  "openai/gpt-6-sol": {
+    "cache_read_per_token": "0.0000002",
+    "cache_write_per_token": "0.0000025",
+    "currency": "USD",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-09-28T12:45:24Z"
+  },
+  "openai/gpt-daybreak-blue-latest": {
+    "cache_read_per_token": "0.0000004",
+    "cache_write_per_token": "0.000005",
+    "currency": "USD",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.00002",
+    "source": "community",
+    "updated_at": "2026-09-28T12:45:24Z"
+  },
+  "openai/gpt-daybreak-red-latest": {
+    "cache_read_per_token": "0.00000125",
+    "cache_write_per_token": "0.000015625",
+    "currency": "USD",
+    "input_per_token": "0.0000125",
+    "output_per_token": "0.000075",
+    "source": "community",
+    "updated_at": "2026-09-28T12:45:24Z"
   },
   "openai/gpt-image-2": {
     "cache_read_per_token": "0.00000125",

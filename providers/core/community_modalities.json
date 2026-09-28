@@ -89,6 +89,15 @@
       "text"
     ]
   },
+  "anthropic/claude-opus-5-5": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "anthropic/claude-sonnet-4-5": {
     "input": [
       "text",
@@ -232,14 +241,6 @@
       "text"
     ]
   },
-  "cloudflare/@cf/mistralai/mistral-small-3.1-24b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "cloudflare/@cf/nvidia/nemotron-3-120b-a12b": {
     "input": [
       "text"
@@ -307,15 +308,6 @@
   "cloudflare/@cf/zai-org/glm-5.3": {
     "input": [
       "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "cloudflare/@cf/zai-org/glm-5.3-flash": {
-    "input": [
-      "text",
-      "image"
     ],
     "output": [
       "text"
@@ -3585,6 +3577,24 @@
       "text"
     ]
   },
+  "openai/gpt-6-luna": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "openai/gpt-6-sol": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "openai/gpt-audio": {
     "input": [
       "text",
@@ -3613,6 +3623,24 @@
     "output": [
       "text",
       "audio"
+    ]
+  },
+  "openai/gpt-daybreak-blue-latest": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "openai/gpt-daybreak-red-latest": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
     ]
   },
   "openai/gpt-image-1": {
@@ -3935,6 +3963,16 @@
     ]
   },
   "zai/glm-4.6v": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "zai/glm-4.6v-flash": {
     "input": [
       "text",
       "image",
