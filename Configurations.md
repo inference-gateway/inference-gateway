@@ -101,40 +101,40 @@
 
 ### Providers
 
-| Environment Variable | Default Value                                                   | Description          |
-| -------------------- | --------------------------------------------------------------- | -------------------- |
-| ANTHROPIC_API_URL    | `https://api.anthropic.com/v1`                                  | Anthropic API URL    |
-| ANTHROPIC_API_KEY    | `""`                                                            | Anthropic API Key    |
-| CLOUDFLARE_API_URL   | `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai` | Cloudflare API URL   |
-| CLOUDFLARE_API_KEY   | `""`                                                            | Cloudflare API Key   |
-| COHERE_API_URL       | `https://api.cohere.ai`                                         | Cohere API URL       |
-| COHERE_API_KEY       | `""`                                                            | Cohere API Key       |
-| GROQ_API_URL         | `https://api.groq.com/openai/v1`                                | Groq API URL         |
-| GROQ_API_KEY         | `""`                                                            | Groq API Key         |
-| LLAMACPP_API_URL     | `http://llamacpp:8080/v1`                                       | llama.cpp API URL    |
-| LLAMACPP_API_KEY     | `""`                                                            | llama.cpp API Key    |
-| OLLAMA_API_URL       | `http://ollama:8080/v1`                                         | Ollama API URL       |
-| OLLAMA_API_KEY       | `""`                                                            | Ollama API Key       |
-| OLLAMA_CLOUD_API_URL | `https://ollama.com/v1`                                         | Ollama Cloud API URL |
-| OLLAMA_CLOUD_API_KEY | `""`                                                            | Ollama Cloud API Key |
-| OPENAI_API_URL       | `https://api.openai.com/v1`                                     | OpenAI API URL       |
-| OPENAI_API_KEY       | `""`                                                            | OpenAI API Key       |
-| DEEPSEEK_API_URL     | `https://api.deepseek.com`                                      | DeepSeek API URL     |
-| DEEPSEEK_API_KEY     | `""`                                                            | DeepSeek API Key     |
-| ELEVENLABS_API_URL   | `https://api.elevenlabs.io/v1`                                  | ElevenLabs API URL   |
-| ELEVENLABS_API_KEY   | `""`                                                            | ElevenLabs API Key   |
-| GOOGLE_API_URL       | `https://generativelanguage.googleapis.com/v1beta/openai`       | Google API URL       |
-| GOOGLE_API_KEY       | `""`                                                            | Google API Key       |
-| MISTRAL_API_URL      | `https://api.mistral.ai/v1`                                     | Mistral API URL      |
-| MISTRAL_API_KEY      | `""`                                                            | Mistral API Key      |
-| MINIMAX_API_URL      | `https://api.minimax.io/v1`                                     | MiniMax API URL      |
-| MINIMAX_API_KEY      | `""`                                                            | MiniMax API Key      |
-| MOONSHOT_API_URL     | `https://api.moonshot.ai/v1`                                    | Moonshot API URL     |
-| MOONSHOT_API_KEY     | `""`                                                            | Moonshot API Key     |
-| NVIDIA_API_URL       | `https://integrate.api.nvidia.com/v1`                           | NVIDIA API URL       |
-| NVIDIA_API_KEY       | `""`                                                            | NVIDIA API Key       |
-| ZAI_API_URL          | `https://api.z.ai/api/paas/v4`                                  | ZAI API URL          |
-| ZAI_API_KEY          | `""`                                                            | ZAI API Key          |
+| Environment Variable | Default Value                                                   | Description                                                                                                                                                                                        |
+| -------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ANTHROPIC_API_URL    | `https://api.anthropic.com/v1`                                  | Anthropic API URL                                                                                                                                                                                  |
+| ANTHROPIC_API_KEY    | `""`                                                            | Anthropic API Key                                                                                                                                                                                  |
+| CLOUDFLARE_API_URL   | `https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/ai` | Cloudflare API URL                                                                                                                                                                                 |
+| CLOUDFLARE_API_KEY   | `""`                                                            | Cloudflare API Key                                                                                                                                                                                 |
+| COHERE_API_URL       | `https://api.cohere.ai`                                         | Cohere API URL                                                                                                                                                                                     |
+| COHERE_API_KEY       | `""`                                                            | Cohere API Key                                                                                                                                                                                     |
+| GROQ_API_URL         | `https://api.groq.com/openai/v1`                                | Groq API URL                                                                                                                                                                                       |
+| GROQ_API_KEY         | `""`                                                            | Groq API Key                                                                                                                                                                                       |
+| LLAMACPP_API_URL     | `http://llamacpp:8080/v1`                                       | llama.cpp API URL                                                                                                                                                                                  |
+| LLAMACPP_API_KEY     | `""`                                                            | llama.cpp API Key                                                                                                                                                                                  |
+| OLLAMA_API_URL       | `http://ollama:8080/v1`                                         | Ollama API URL                                                                                                                                                                                     |
+| OLLAMA_API_KEY       | `""`                                                            | Ollama API Key                                                                                                                                                                                     |
+| OLLAMA_CLOUD_API_URL | `https://ollama.com/v1`                                         | Ollama Cloud API URL                                                                                                                                                                               |
+| OLLAMA_CLOUD_API_KEY | `""`                                                            | Ollama Cloud API Key                                                                                                                                                                               |
+| OPENAI_API_URL       | `https://api.openai.com/v1`                                     | OpenAI API URL                                                                                                                                                                                     |
+| OPENAI_API_KEY       | `""`                                                            | OpenAI API Key                                                                                                                                                                                     |
+| DEEPSEEK_API_URL     | `https://api.deepseek.com`                                      | DeepSeek API URL                                                                                                                                                                                   |
+| DEEPSEEK_API_KEY     | `""`                                                            | DeepSeek API Key                                                                                                                                                                                   |
+| ELEVENLABS_API_URL   | `https://api.elevenlabs.io/v1`                                  | ElevenLabs API URL                                                                                                                                                                                 |
+| ELEVENLABS_API_KEY   | `""`                                                            | ElevenLabs API Key                                                                                                                                                                                 |
+| GOOGLE_API_URL       | `https://generativelanguage.googleapis.com/v1beta/openai`       | Google API URL                                                                                                                                                                                     |
+| GOOGLE_API_KEY       | `""`                                                            | Google API Key                                                                                                                                                                                     |
+| MISTRAL_API_URL      | `https://api.mistral.ai/v1`                                     | Mistral API URL                                                                                                                                                                                    |
+| MISTRAL_API_KEY      | `""`                                                            | Mistral API Key                                                                                                                                                                                    |
+| MINIMAX_API_URL      | `https://api.minimax.io/v1`                                     | MiniMax API URL                                                                                                                                                                                    |
+| MINIMAX_API_KEY      | `""`                                                            | MiniMax API Key                                                                                                                                                                                    |
+| MOONSHOT_API_URL     | `https://api.moonshot.ai/v1`                                    | Moonshot API URL                                                                                                                                                                                   |
+| MOONSHOT_API_KEY     | `""`                                                            | Moonshot API Key                                                                                                                                                                                   |
+| NVIDIA_API_URL       | `https://integrate.api.nvidia.com/v1`                           | NVIDIA API URL                                                                                                                                                                                     |
+| NVIDIA_API_KEY       | `""`                                                            | NVIDIA API Key                                                                                                                                                                                     |
+| ZAI_API_URL          | `https://api.z.ai/api/coding/paas/v4`                           | ZAI API URL - the default is the GLM Coding Plan endpoint, so subscription requests draw on the plan. Users without a Coding Plan must set https://api.z.ai/api/paas/v4 to be billed pay-as-you-go |
+| ZAI_API_KEY          | `""`                                                            | ZAI API Key                                                                                                                                                                                        |
 
 ### Routing
 
