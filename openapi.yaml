@@ -1759,7 +1759,7 @@ components:
               endpoint: '/chat/completions'
         zai:
           id: 'zai'
-          url: 'https://api.z.ai/api/paas/v4'
+          url: 'https://api.z.ai/api/coding/paas/v4'
           auth_type: 'bearer'
           endpoints:
             models:
@@ -5160,8 +5160,8 @@ components:
                 - name: zai_api_url
                   env: 'ZAI_API_URL'
                   type: string
-                  default: 'https://api.z.ai/api/paas/v4'
-                  description: 'ZAI API URL'
+                  default: 'https://api.z.ai/api/coding/paas/v4'
+                  description: 'ZAI API URL - the default is the GLM Coding Plan endpoint, so subscription requests draw on the plan. Users without a Coding Plan must set https://api.z.ai/api/paas/v4 to be billed pay-as-you-go'
                 - name: zai_api_key
                   env: 'ZAI_API_KEY'
                   type: string
