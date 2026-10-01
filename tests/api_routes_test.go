@@ -1193,6 +1193,7 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 		providerError      error
 		expectedStatusCode int
 		expectedError      string
+		expectedRetryAfter string
 		description        string
 	}{
 		{
@@ -1225,8 +1226,9 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 		},
 		{
 			name:               "HTTP 429 error is returned with correct status code",
-			providerError:      &core.HTTPError{StatusCode: http.StatusTooManyRequests, Message: `{"error":{"message":"rate limit exceeded"}}`},
+			providerError:      &core.HTTPError{StatusCode: http.StatusTooManyRequests, Message: `{"error":{"message":"rate limit exceeded"}}`, RetryAfter: "7200"},
 			expectedStatusCode: http.StatusTooManyRequests,
+			expectedRetryAfter: "7200",
 			expectedError:      "rate limit exceeded",
 			description:        "HTTP 429 errors should return with correct status code",
 		},
@@ -1318,6 +1320,7 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 			r.ServeHTTP(w, req)
 
 			assert.Equal(t, tt.expectedStatusCode, w.Code, "Expected status code %d but got %d", tt.expectedStatusCode, w.Code)
+			assert.Equal(t, tt.expectedRetryAfter, w.Header().Get("Retry-After"))
 
 			var response map[string]any
 			err = json.Unmarshal(w.Body.Bytes(), &response)

@@ -25,6 +25,7 @@ import (
 type HTTPError struct {
 	StatusCode int
 	Message    string
+	RetryAfter string
 }
 
 func (e *HTTPError) Error() string {
@@ -160,6 +161,7 @@ func (p *ProviderImpl) handleHTTPError(response *http.Response, operation string
 	err := &HTTPError{
 		StatusCode: response.StatusCode,
 		Message:    errorMsg,
+		RetryAfter: response.Header.Get("Retry-After"),
 	}
 	p.Logger.Error("non-200 status code", err, "provider", p.GetName(), "statusCode", response.StatusCode, "operation", operation)
 	return err

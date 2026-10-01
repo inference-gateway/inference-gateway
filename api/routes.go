@@ -972,7 +972,7 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		if err != nil {
 			router.logger.Error("failed to start streaming", err, "provider", providerID)
 
-			c.JSON(httpErrorStatus(err), ErrorResponse{Error: err.Error()})
+			writeProviderError(c, err)
 			return
 		}
 
@@ -1017,21 +1017,26 @@ func (router *RouterImpl) ChatCompletionsHandler(c *gin.Context) {
 		}
 		router.logger.Error("failed to generate tokens", err, "provider", providerID)
 
-		c.JSON(httpErrorStatus(err), ErrorResponse{Error: err.Error()})
+		writeProviderError(c, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-// httpErrorStatus returns the upstream status carried by a *core.HTTPError
-// anywhere in err's chain, or 400 otherwise.
-func httpErrorStatus(err error) int {
+// writeProviderError relays an upstream provider failure to the client with
+// the upstream status and its Retry-After header, so clients can tell a quota
+// wall from a transient error. Errors without an upstream status become 400.
+func writeProviderError(c *gin.Context, err error) {
+	status := http.StatusBadRequest
 	var httpErr *core.HTTPError
 	if errors.As(err, &httpErr) {
-		return httpErr.StatusCode
+		status = httpErr.StatusCode
+		if httpErr.RetryAfter != "" {
+			c.Header("Retry-After", httpErr.RetryAfter)
+		}
 	}
-	return http.StatusBadRequest
+	c.JSON(status, ErrorResponse{Error: err.Error()})
 }
 
 // messagesError writes a gateway-generated error in the Anthropic error
