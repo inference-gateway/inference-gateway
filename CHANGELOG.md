@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.57.1](https://github.com/inference-gateway/inference-gateway/compare/v0.57.0...v0.57.1) (2026-10-01)
+
+### ♻️ Improvements
+
+* change zai default API endpoint sync generated types with schemas v0.34.4 ([#750](https://github.com/inference-gateway/inference-gateway/issues/750)) ([1feb06c](https://github.com/inference-gateway/inference-gateway/commit/1feb06c9a2cfadf1b978c6e68ad3595cfd5f206c))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.280 -> 2.1.283 ([#748](https://github.com/inference-gateway/inference-gateway/issues/748)) ([7b279de](https://github.com/inference-gateway/inference-gateway/commit/7b279de0f5e94328ba2c49ef87eb687eec0abf4e))
+* **deps:** bump infer CLI v0.208.0 -> v0.218.0 ([#749](https://github.com/inference-gateway/inference-gateway/issues/749)) ([f2c0cbb](https://github.com/inference-gateway/inference-gateway/commit/f2c0cbb7831046ad022d8e497de218428f651832))
+
 ## [0.57.0](https://github.com/inference-gateway/inference-gateway/compare/v0.56.1...v0.57.0) (2026-09-28)
 
 ### ✨ Features
