@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.57.2](https://github.com/inference-gateway/inference-gateway/compare/v0.57.1...v0.57.2) (2026-10-01)
+
+### 🐛 Bug Fixes
+
+* forward the provider's Retry-After header on error responses ([#752](https://github.com/inference-gateway/inference-gateway/issues/752)) ([892bc83](https://github.com/inference-gateway/inference-gateway/commit/892bc83250facefd8842586243c64d06e9212047))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump infer CLI v0.218.0 -> v0.221.1 ([#751](https://github.com/inference-gateway/inference-gateway/issues/751)) ([d339337](https://github.com/inference-gateway/inference-gateway/commit/d33933744b4873d05144a14f6ff6c08e95d99524))
+
 ## [0.57.1](https://github.com/inference-gateway/inference-gateway/compare/v0.57.0...v0.57.1) (2026-10-01)
 
 ### ♻️ Improvements
