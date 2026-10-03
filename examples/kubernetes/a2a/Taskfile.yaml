@@ -1,0 +1,113 @@
+version: '3'
+
+vars:
+  NAMESPACE: inference-gateway
+  RELEASE_NAME: inference-gateway
+
+tasks:
+  default:
+    desc: 'Show available options for the A2A Kubernetes deployment'
+    silent: true
+    cmds:
+      - echo "🤝 A2A Kubernetes Deployment"
+      - echo ""
+      - echo "🎯 Common tasks:"
+      - echo "   task deploy        - Deploy the cluster, the mock agent and the gateway"
+      - echo "   task test          - Relay a message through the gateway to the agent"
+      - echo "   task port-forward  - Forward the gateway to http://localhost:8080"
+      - echo "   task clean         - Tear everything down"
+      - echo ""
+      - echo "📋 Run 'task --list' to see all available tasks"
+
+  validate-requirements:
+    desc: 'Validate that all required tools are installed'
+    silent: true
+    cmds:
+      - |
+        command -v ctlptl >/dev/null 2>&1 || { echo "❌ ctlptl is required"; exit 1; }
+        command -v kubectl >/dev/null 2>&1 || { echo "❌ kubectl is required"; exit 1; }
+        echo "✅ All required tools are installed!"
+
+  deploy-infrastructure:
+    desc: 'Provision the local k3d cluster'
+    deps:
+      - validate-requirements
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+      - kubectl wait --for=condition=Ready nodes --all --timeout=300s
+      - echo "🚀 Infrastructure deployed successfully!"
+
+  deploy-a2a:
+    desc: 'Deploy the mock agent and the gateway with A2A enabled'
+    cmds:
+      - kubectl apply -f a2a.yaml
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/mock-agent --timeout=180s
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/{{.RELEASE_NAME}} --timeout=180s
+      - echo "🤝 Gateway and agent deployed successfully!"
+
+  deploy:
+    desc: 'Deploy the complete A2A setup'
+    cmds:
+      - task: deploy-infrastructure
+      - task: deploy-a2a
+      - echo "🎉 Complete A2A setup deployed successfully!"
+
+  test:
+    desc: 'Run A2A integration tests (merged card, registry, message relay)'
+    cmds:
+      - task: test:agent-card
+      - task: test:agents
+      - task: test:send-message
+      - echo "🎉 All A2A integration tests passed successfully!"
+
+  test:agent-card:
+    desc: 'Test the merged gateway card in-cluster'
+    cmds:
+      - |
+        kubectl run test-pod-01 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -sf http://{{.RELEASE_NAME}}:8080/.well-known/agent-card.json
+      - echo "✅ The gateway publishes a merged agent card"
+
+  test:agents:
+    desc: 'Test the agent registry in-cluster'
+    cmds:
+      - |
+        kubectl run test-pod-02 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -sf http://{{.RELEASE_NAME}}:8080/a2a/agents
+      - echo "✅ The mock agent is registered and reachable"
+
+  test:send-message:
+    desc: 'Relay a SendMessage call through the gateway to the mock agent'
+    cmds:
+      - |
+        kubectl run test-pod-03 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+          curl -sf -X POST http://{{.RELEASE_NAME}}:8080/a2a \
+            -H 'Content-Type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"SendMessage","params":{"tenant":"mock","message":{"messageId":"m-1","role":"ROLE_USER","parts":[{"text":"echo hello"}]}}}'
+      - echo "✅ The gateway relays A2A calls to the agent"
+
+  port-forward:
+    desc: 'Forward the gateway to http://localhost:8080'
+    cmds:
+      - kubectl port-forward -n {{.NAMESPACE}} service/{{.RELEASE_NAME}} 8080:8080
+
+  logs:gateway:
+    desc: 'Show logs from the inference gateway'
+    cmds:
+      - kubectl logs -l app={{.RELEASE_NAME}} -n {{.NAMESPACE}} --tail=100 -f
+
+  logs:agent:
+    desc: 'Show logs from the mock agent'
+    cmds:
+      - kubectl logs -l app=mock-agent -n {{.NAMESPACE}} --tail=100 -f
+
+  undeploy:
+    desc: 'Remove the A2A components'
+    cmds:
+      - kubectl delete -f a2a.yaml --ignore-not-found=true
+
+  clean:
+    desc: 'Clean up everything including the cluster'
+    cmds:
+      - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Everything cleaned up successfully!"

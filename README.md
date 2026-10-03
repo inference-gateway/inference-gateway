@@ -564,7 +564,8 @@ through `A2A_AGENTS`; the gateway never talks to Kubernetes itself.
 
 > **Learn more**:
 > [A2A Protocol](https://a2a-protocol.org/) |
-> [A2A Example](examples/docker-compose/a2a/) |
+> [Docker Compose example](examples/docker-compose/a2a/) |
+> [Kubernetes example](examples/kubernetes/a2a/) |
 > [Agent Development Kit](https://github.com/inference-gateway/adk)
 
 ## Metrics and Observability
@@ -756,6 +757,8 @@ through recognition.
   - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
   - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in
     Kubernetes
+  - [A2A](examples/kubernetes/a2a/) - The gateway as an Agent-to-Agent server
+    relaying to a mock agent
   - [Agent deployment](examples/kubernetes/agent/) - Standalone agent deployment
   - [Hybrid deployment](examples/kubernetes/hybrid/) - Multiple providers in
     Kubernetes

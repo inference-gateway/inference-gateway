@@ -5,7 +5,9 @@ This directory contains examples that demonstrate how to deploy the Inference Ga
 
 > **Note:** Each example installs the operator and applies
 > a `Gateway` custom resource (`gateway.yaml`). North-south traffic is served via the Kubernetes Gateway API
-> (Envoy Gateway) using `spec.gatewayAPI`, rather than ingress-nginx.
+> (Envoy Gateway) using `spec.gatewayAPI`, rather than ingress-nginx. The A2A example is the one exception:
+> it applies plain manifests until the operator grows a `spec.a2a`
+> ([operator#268](https://github.com/inference-gateway/operator/issues/268)).
 
 - [Basic](basic/README.md)
 - [Hybrid Environment](hybrid/README.md)
@@ -15,6 +17,7 @@ This directory contains examples that demonstrate how to deploy the Inference Ga
 - [Agent Building](agent/README.md)
 - [Monitoring](monitoring/README.md)
 - [Model Context Protocol (MCP)](mcp/README.md)
+- [Agent-to-Agent (A2A)](a2a/README.md)
 - [Guardrails](guardrails/README.md)
 
 Every example shares the same shape:

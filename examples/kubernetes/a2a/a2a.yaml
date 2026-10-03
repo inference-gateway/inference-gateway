@@ -1,0 +1,120 @@
+# The gateway as an A2A server in front of one agent, as plain manifests: the
+# operator's Gateway resource has no spec.a2a yet
+# (https://github.com/inference-gateway/operator/issues/268), so this example
+# sets the A2A_* env vars on a Deployment directly. Everything else about the
+# gateway is unchanged, so adding providers means adding <ID>_API_KEY env vars.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inference-gateway
+---
+# An A2A agent built on the ADK with a mock LLM: no API key needed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-agent
+  namespace: inference-gateway
+  labels:
+    app: mock-agent
+spec:
+  selector:
+    matchLabels:
+      app: mock-agent
+  template:
+    metadata:
+      labels:
+        app: mock-agent
+    spec:
+      containers:
+        - name: mock-agent
+          image: ghcr.io/inference-gateway/mock-agent:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: A2A_SERVER_PORT
+              value: '8080'
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources:
+            requests:
+              cpu: '50m'
+              memory: '64Mi'
+            limits:
+              cpu: '500m'
+              memory: '256Mi'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-agent
+  namespace: inference-gateway
+spec:
+  selector:
+    app: mock-agent
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app: inference-gateway
+spec:
+  selector:
+    matchLabels:
+      app: inference-gateway
+  template:
+    metadata:
+      labels:
+        app: inference-gateway
+    spec:
+      containers:
+        - name: inference-gateway
+          image: ghcr.io/inference-gateway/inference-gateway:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ENVIRONMENT
+              value: development
+            - name: SERVER_HOST
+              value: '0.0.0.0'
+            - name: A2A_ENABLED
+              value: 'true'
+            # alias=url, comma separated. The gateway fetches each card at
+            # startup and every A2A_CARD_REFRESH_INTERVAL; an unreachable agent
+            # is not fatal.
+            - name: A2A_AGENTS
+              value: 'mock=http://mock-agent:8080'
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources:
+            requests:
+              cpu: '100m'
+              memory: '128Mi'
+            limits:
+              cpu: '1000m'
+              memory: '512Mi'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+spec:
+  selector:
+    app: inference-gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
