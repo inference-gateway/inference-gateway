@@ -124,6 +124,8 @@ func (h *A2AHandler) relayStream(c *gin.Context, req *types.JSONRPCRequest, para
 	c.Writer.Flush()
 
 	idle := h.cfg.A2A.StreamIdleTimeout
+	cutoff := newIdleCutoff(idle)
+	defer cutoff.Stop()
 	for {
 		select {
 		case result, ok := <-events:
@@ -133,7 +135,8 @@ func (h *A2AHandler) relayStream(c *gin.Context, req *types.JSONRPCRequest, para
 			if !h.writeEvent(c, types.JSONRPCSuccessResponse{ID: *req.ID, JSONRPC: jsonRPCVersion, Result: result}, idle) {
 				return
 			}
-		case <-idleAfter(idle):
+			cutoff.Reset()
+		case <-cutoff.C():
 			h.logger.Warn("a2a stream closed after idle timeout", "method", string(req.Method), "agent", alias, "idle", idle.String())
 			return
 		case <-ctx.Done():
@@ -142,12 +145,38 @@ func (h *A2AHandler) relayStream(c *gin.Context, req *types.JSONRPCRequest, para
 	}
 }
 
-// idleAfter is a timer channel that never fires when the cutoff is disabled.
-func idleAfter(idle time.Duration) <-chan time.Time {
-	if idle <= 0 {
+// idleCutoff is one timer rearmed after every relayed event; a non-positive
+// cutoff never fires.
+type idleCutoff struct {
+	idle  time.Duration
+	timer *time.Timer
+}
+
+func newIdleCutoff(idle time.Duration) *idleCutoff {
+	cutoff := &idleCutoff{idle: idle}
+	if idle > 0 {
+		cutoff.timer = time.NewTimer(idle)
+	}
+	return cutoff
+}
+
+func (c *idleCutoff) C() <-chan time.Time {
+	if c.timer == nil {
 		return nil
 	}
-	return time.After(idle)
+	return c.timer.C
+}
+
+func (c *idleCutoff) Reset() {
+	if c.timer != nil {
+		c.timer.Reset(c.idle)
+	}
+}
+
+func (c *idleCutoff) Stop() {
+	if c.timer != nil {
+		c.timer.Stop()
+	}
 }
 
 func (h *A2AHandler) writeEvent(c *gin.Context, event types.JSONRPCSuccessResponse, idle time.Duration) bool {

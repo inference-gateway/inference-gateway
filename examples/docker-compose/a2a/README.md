@@ -17,12 +17,12 @@ No API key is needed: the mock agent uses a mock LLM.
 
 ## What the gateway serves
 
-| Endpoint                                        | Description                                                                 |
-| ----------------------------------------------- | --------------------------------------------------------------------------- |
-| `GET /.well-known/agent-card.json`              | The gateway's own card: every agent's skills, ids prefixed `<alias>_`       |
-| `POST /a2a`                                     | JSON-RPC 2.0 relay for the eleven A2A methods                               |
-| `GET /a2a/agents`                               | The registry: alias, url, card, reachable, lastSeen                          |
-| `GET /.well-known/oauth-protected-resource/a2a` | RFC 9728 metadata, served when `AUTH_ENABLED=true`                           |
+| Endpoint                                        | Description                                                           |
+| ----------------------------------------------- | --------------------------------------------------------------------- |
+| `GET /.well-known/agent-card.json`              | The gateway's own card: every agent's skills, ids prefixed `<alias>_` |
+| `POST /a2a`                                     | JSON-RPC 2.0 relay for the eleven A2A methods                         |
+| `GET /a2a/agents`                               | The registry: alias, url, card, reachable, lastSeen                   |
+| `GET /.well-known/oauth-protected-resource/a2a` | RFC 9728 metadata, served when `AUTH_ENABLED=true`                    |
 
 ## Usage
 
