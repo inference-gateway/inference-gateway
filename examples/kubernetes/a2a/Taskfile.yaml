@@ -3,6 +3,9 @@ version: '3'
 vars:
   NAMESPACE: inference-gateway
   RELEASE_NAME: inference-gateway
+  AGENT_NAME: mock-agent
+  GATEWAY_API_VERSION: v1.6.2
+  OPERATOR_VERSION: v0.27.0
 
 tasks:
   default:
@@ -12,7 +15,7 @@ tasks:
       - echo "🤝 A2A Kubernetes Deployment"
       - echo ""
       - echo "🎯 Common tasks:"
-      - echo "   task deploy        - Deploy the cluster, the mock agent and the gateway"
+      - echo "   task deploy        - Deploy the cluster, the operator, the agent and the gateway"
       - echo "   task test          - Relay a message through the gateway to the agent"
       - echo "   task port-forward  - Forward the gateway to http://localhost:8080"
       - echo "   task clean         - Tear everything down"
@@ -29,36 +32,71 @@ tasks:
         echo "✅ All required tools are installed!"
 
   deploy-infrastructure:
-    desc: 'Provision the local k3d cluster'
+    desc: 'Provision the local k3d cluster, the Gateway API CRDs and the operator'
     deps:
       - validate-requirements
     cmds:
       - ctlptl apply -f Cluster.yaml
       - kubectl wait --for=condition=Ready nodes --all --timeout=300s
+      - task: deploy-gateway-api
+      - task: deploy-inference-gateway-operator
       - echo "🚀 Infrastructure deployed successfully!"
 
-  deploy-a2a:
-    desc: 'Deploy the mock agent and the gateway with A2A enabled'
+  deploy-gateway-api:
+    # The operator watches Gateway API resources, so their CRDs must be present
+    # for it to start - even though this example does not expose the gateway.
+    desc: 'Install the Kubernetes Gateway API CRDs (required by the operator)'
     cmds:
-      - kubectl apply -f a2a.yaml
-      - kubectl -n {{.NAMESPACE}} rollout status deployment/mock-agent --timeout=180s
+      - kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/{{.GATEWAY_API_VERSION}}/standard-install.yaml
+      - echo "🌐 Gateway API CRDs installed successfully!"
+
+  deploy-inference-gateway-operator:
+    desc: 'Deploy the Inference Gateway operator'
+    cmds:
+      - kubectl apply -f https://github.com/inference-gateway/operator/releases/download/{{.OPERATOR_VERSION}}/install.yaml
+      - kubectl -n inference-gateway-system wait --for=condition=Available --timeout=120s deployment/operator-inference-gateway
+      - echo "🛠️ Inference Gateway operator deployed successfully!"
+
+  deploy-inference-gateway:
+    desc: 'Deploy the namespace and the gateway with A2A enabled via the operator'
+    cmds:
+      - kubectl apply -f gateway.yaml
       - kubectl -n {{.NAMESPACE}} rollout status deployment/{{.RELEASE_NAME}} --timeout=180s
-      - echo "🤝 Gateway and agent deployed successfully!"
+      - echo "🚪 Gateway deployed successfully!"
+
+  deploy-agents:
+    # Applying the Agent re-renders A2A_AGENTS on the gateway Deployment, so the
+    # gateway rolls a second time - wait for it before testing.
+    desc: 'Deploy the mock agent as an Agent custom resource'
+    cmds:
+      - kubectl apply -f agents.yaml
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/{{.AGENT_NAME}} --timeout=180s
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/{{.RELEASE_NAME}} --timeout=180s
+      - echo "🤖 Mock agent deployed and discovered successfully!"
 
   deploy:
     desc: 'Deploy the complete A2A setup'
     cmds:
       - task: deploy-infrastructure
-      - task: deploy-a2a
+      - task: deploy-inference-gateway
+      - task: deploy-agents
       - echo "🎉 Complete A2A setup deployed successfully!"
 
   test:
-    desc: 'Run A2A integration tests (merged card, registry, message relay)'
+    desc: 'Run A2A integration tests (discovery, merged card, registry, message relay)'
     cmds:
+      - task: test:discovery
       - task: test:agent-card
       - task: test:agents
       - task: test:send-message
       - echo "🎉 All A2A integration tests passed successfully!"
+
+  test:discovery:
+    desc: 'Test that the operator discovered the Agent CR and rendered A2A_AGENTS'
+    cmds:
+      - kubectl -n {{.NAMESPACE}} get gateway {{.RELEASE_NAME}} -o jsonpath='{.status.a2aAgents}'
+      - echo ""
+      - echo "✅ The operator discovered the Agent CR"
 
   test:agent-card:
     desc: 'Test the merged gateway card in-cluster'
@@ -83,7 +121,7 @@ tasks:
         kubectl run test-pod-03 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -sf -X POST http://{{.RELEASE_NAME}}:8080/a2a \
             -H 'Content-Type: application/json' \
-            -d '{"jsonrpc":"2.0","id":1,"method":"SendMessage","params":{"tenant":"mock","message":{"messageId":"m-1","role":"ROLE_USER","parts":[{"text":"echo hello"}]}}}'
+            -d '{"jsonrpc":"2.0","id":1,"method":"SendMessage","params":{"tenant":"{{.AGENT_NAME}}","message":{"messageId":"m-1","role":"ROLE_USER","parts":[{"text":"echo hello"}]}}}'
       - echo "✅ The gateway relays A2A calls to the agent"
 
   port-forward:
@@ -99,12 +137,13 @@ tasks:
   logs:agent:
     desc: 'Show logs from the mock agent'
     cmds:
-      - kubectl logs -l app=mock-agent -n {{.NAMESPACE}} --tail=100 -f
+      - kubectl logs -l app={{.AGENT_NAME}} -n {{.NAMESPACE}} --tail=100 -f
 
   undeploy:
     desc: 'Remove the A2A components'
     cmds:
-      - kubectl delete -f a2a.yaml --ignore-not-found=true
+      - kubectl delete -f agents.yaml --ignore-not-found=true
+      - kubectl delete -f gateway.yaml --ignore-not-found=true
 
   clean:
     desc: 'Clean up everything including the cluster'

@@ -7,11 +7,9 @@ merged agent card and forwards each JSON-RPC call to the agent that owns it, so
 auth, guardrails and telemetry apply to agent traffic the same way they apply to
 inference.
 
-> **Note:** unlike the other Kubernetes examples, this one applies plain
-> manifests instead of a `Gateway` custom resource. The operator has no
-> `spec.a2a` yet
-> ([operator#268](https://github.com/inference-gateway/operator/issues/268)), so
-> the `A2A_*` variables are set on a `Deployment` directly (`a2a.yaml`).
+The gateway never talks to the Kubernetes API: the operator discovers the
+`Agent` custom resources and renders `A2A_AGENTS` for it. That needs operator
+`v0.27.0` or newer, which is where `Gateway.spec.a2a` landed.
 
 ## Prerequisites
 
@@ -28,17 +26,37 @@ task deploy
 task test
 ```
 
-`task deploy` provisions the cluster and applies `a2a.yaml`: the mock agent, and
-the gateway with
+`task deploy` provisions the cluster, installs the Gateway API CRDs and the
+operator, then applies `gateway.yaml` and `agents.yaml`. The `Gateway` turns A2A
+on and selects agents by label:
 
 ```yaml
-A2A_ENABLED: 'true'
-A2A_AGENTS: 'mock=http://mock-agent:8080'
+spec:
+  a2a:
+    enabled: true
+    serviceDiscovery:
+      enabled: true
+      selector:
+        matchLabels:
+          a2a: demo
 ```
 
-`task test` checks the merged card, the registry and a relayed `SendMessage`,
-all from inside the cluster. The manifest pins the gateway to `:latest`, so A2A
-is served from the first release that ships it onward.
+The operator lists the matching `Agent` CRs and renders one `A2A_AGENTS` entry
+per agent, `<metadata.name>=<url>`, onto the gateway Deployment - visible on the
+`Gateway` status:
+
+```console
+$ kubectl -n inference-gateway get gateway inference-gateway -o jsonpath='{.status.a2aAgents}'
+["mock-agent=http://mock-agent.inference-gateway.svc.cluster.local:8080"]
+```
+
+Creating or deleting a matching `Agent` re-renders that variable and rolls the
+gateway, so the alias set always matches the cluster.
+
+`task test` checks the rendered status, the merged card, the registry and a
+relayed `SendMessage`, all from inside the cluster. `gateway.yaml` pins the
+gateway to `:latest`, so A2A is served from the first release that ships it
+onward.
 
 ## What the gateway serves
 
@@ -76,7 +94,7 @@ curl -s -X POST http://localhost:8080/a2a \
     "id": 1,
     "method": "SendMessage",
     "params": {
-      "tenant": "mock",
+      "tenant": "mock-agent",
       "message": {
         "messageId": "m-1",
         "role": "ROLE_USER",
@@ -86,22 +104,34 @@ curl -s -X POST http://localhost:8080/a2a \
   }' | jq .
 ```
 
-The task id comes back as `mock:<task id>`; the prefix is all the gateway needs
-to route a follow-up call:
+The task id comes back as `mock-agent:<task id>`; the prefix is all the gateway
+needs to route a follow-up call:
 
 ```bash
 curl -s -X POST http://localhost:8080/a2a \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"GetTask","params":{"id":"mock:<task id>"}}' | jq .
+  -d '{"jsonrpc":"2.0","id":2,"method":"GetTask","params":{"id":"mock-agent:<task id>"}}' | jq .
 ```
 
 ## Adding your own agents
 
-Deploy the agent in the cluster and add an `alias=url` entry to `A2A_AGENTS` in
-`a2a.yaml`, comma separated, then `task deploy-a2a`. Without `alias=` the alias
-is derived from the URL host. Per-agent credentials go into the URL as basic
-auth (`alias=https://user:pass@agent.example.com`); the caller's bearer token is
-never forwarded to agents.
+Copy the `Agent` in `agents.yaml`, give it your image and keep the `a2a: demo`
+label, then `task deploy-agents`. The CR name becomes the alias, so it must
+match `^[a-z0-9_-]+$`.
+
+Agents that live outside the cluster are static entries on the `Gateway`
+instead, unioned with the discovered ones:
+
+```yaml
+spec:
+  a2a:
+    agents:
+      - name: remote
+        url: https://user:pass@agent.example.com
+```
+
+Per-agent credentials go into the URL as basic auth; the caller's bearer token
+is never forwarded to agents.
 
 ## Tear down
 
