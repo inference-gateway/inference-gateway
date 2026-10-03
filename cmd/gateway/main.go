@@ -239,7 +239,7 @@ func main() {
 		}
 	}
 
-	// Initialize the A2A registry if enabled; agents are never fatal at startup.
+	// Initialize the A2A registry if enabled - agents are never fatal at startup.
 	var a2aRegistry *a2a.Registry
 	if cfg.A2A != nil && cfg.A2A.Enabled {
 		agentSpecs, err := a2a.ParseAgents(cfg.A2A.Agents)
