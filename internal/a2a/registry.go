@@ -4,7 +4,6 @@ import (
 	"context"
 	"maps"
 	"net/http"
-	"net/url"
 	"slices"
 	"sync"
 	"time"
@@ -84,19 +83,9 @@ func NewRegistry(cfg config.A2AConfig, log logger.Logger, clients map[string]cli
 		aliases: slices.Sorted(maps.Keys(clients)),
 	}
 	for alias, adk := range clients {
-		registry.agents[alias] = &agent{client: adk, url: redactURL(adk.GetBaseURL())}
+		registry.agents[alias] = &agent{client: adk, url: endpoints.RedactURL(adk.GetBaseURL())}
 	}
 	return registry
-}
-
-// redactURL hides any basic-auth password before an agent URL is logged or
-// served; an unparseable URL is dropped entirely rather than echoed.
-func redactURL(rawURL string) string {
-	parsed, err := url.Parse(rawURL)
-	if err != nil {
-		return ""
-	}
-	return parsed.Redacted()
 }
 
 // Start fetches every card once and, when A2A_CARD_REFRESH_INTERVAL is

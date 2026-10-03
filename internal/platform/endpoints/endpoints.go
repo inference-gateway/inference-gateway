@@ -70,6 +70,30 @@ func splitEntry(entry string) (alias, rawURL string) {
 	return strings.TrimSpace(name), strings.TrimSpace(rest)
 }
 
+// Redact masks the password of every URL in a MCP_SERVERS or A2A_AGENTS value
+// and keeps the aliases, so the raw setting can be logged.
+func Redact(raw string) string {
+	entries := strings.Split(raw, ",")
+	for i, entry := range entries {
+		alias, rawURL := splitEntry(strings.TrimSpace(entry))
+		entries[i] = RedactURL(rawURL)
+		if alias != "" {
+			entries[i] = alias + "=" + entries[i]
+		}
+	}
+	return strings.Join(entries, ",")
+}
+
+// RedactURL hides any basic-auth password before a URL is logged or served; an
+// unparseable URL is dropped entirely rather than echoed.
+func RedactURL(rawURL string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return parsed.Redacted()
+}
+
 // DeriveAlias turns a URL host into an alias, e.g. mcp.deepwiki.com ->
 // mcp_deepwiki_com.
 func DeriveAlias(host string) string {
