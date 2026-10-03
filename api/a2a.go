@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -124,7 +125,7 @@ func (h *A2AHandler) relayStream(c *gin.Context, req *types.JSONRPCRequest, para
 	c.Writer.Flush()
 
 	idle := h.cfg.A2A.StreamIdleTimeout
-	cutoff := newIdleCutoff(idle)
+	cutoff := time.NewTimer(idleCutoff(idle))
 	defer cutoff.Stop()
 	for {
 		select {
@@ -135,8 +136,8 @@ func (h *A2AHandler) relayStream(c *gin.Context, req *types.JSONRPCRequest, para
 			if !h.writeEvent(c, types.JSONRPCSuccessResponse{ID: *req.ID, JSONRPC: jsonRPCVersion, Result: result}, idle) {
 				return
 			}
-			cutoff.Reset()
-		case <-cutoff.C():
+			cutoff.Reset(idleCutoff(idle))
+		case <-cutoff.C:
 			h.logger.Warn("a2a stream closed after idle timeout", "method", string(req.Method), "agent", alias, "idle", idle.String())
 			return
 		case <-ctx.Done():
@@ -145,38 +146,13 @@ func (h *A2AHandler) relayStream(c *gin.Context, req *types.JSONRPCRequest, para
 	}
 }
 
-// idleCutoff is one timer rearmed after every relayed event; a non-positive
-// cutoff never fires.
-type idleCutoff struct {
-	idle  time.Duration
-	timer *time.Timer
-}
-
-func newIdleCutoff(idle time.Duration) *idleCutoff {
-	cutoff := &idleCutoff{idle: idle}
-	if idle > 0 {
-		cutoff.timer = time.NewTimer(idle)
+// idleCutoff maps a non-positive A2A_STREAM_IDLE_TIMEOUT to a timer that never
+// fires within the lifetime of a stream.
+func idleCutoff(idle time.Duration) time.Duration {
+	if idle <= 0 {
+		return math.MaxInt64
 	}
-	return cutoff
-}
-
-func (c *idleCutoff) C() <-chan time.Time {
-	if c.timer == nil {
-		return nil
-	}
-	return c.timer.C
-}
-
-func (c *idleCutoff) Reset() {
-	if c.timer != nil {
-		c.timer.Reset(c.idle)
-	}
-}
-
-func (c *idleCutoff) Stop() {
-	if c.timer != nil {
-		c.timer.Stop()
-	}
+	return idle
 }
 
 func (h *A2AHandler) writeEvent(c *gin.Context, event types.JSONRPCSuccessResponse, idle time.Duration) bool {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"maps"
 	"net/http"
+	"net/url"
 	"slices"
 	"sync"
 	"time"
@@ -31,11 +32,10 @@ func ParseAgents(raw string) ([]endpoints.Spec, error) {
 // no overall timeout because the same client relays SSE streams; unary calls
 // get A2A_CLIENT_TIMEOUT as a context deadline instead. Retries are off: a
 // relay must not re-send a task the client sent once.
-func DialAgents(specs []endpoints.Spec, cfg config.A2AConfig) map[string]client.A2AClient {
+func DialAgents(specs []endpoints.Spec) map[string]client.A2AClient {
 	agents := make(map[string]client.A2AClient, len(specs))
 	for _, spec := range specs {
 		adkCfg := client.DefaultConfig(spec.URL)
-		adkCfg.Timeout = cfg.ClientTimeout
 		adkCfg.UserAgent = userAgent
 		adkCfg.MaxRetries = 0
 		adkCfg.HTTPClient = &http.Client{}
@@ -44,17 +44,19 @@ func DialAgents(specs []endpoints.Spec, cfg config.A2AConfig) map[string]client.
 	return agents
 }
 
-// AgentStatus is one registry entry as reported by GET /a2a/agents.
+// AgentStatus is one registry entry as reported by GET /a2a/agents. URL is
+// redacted: a basic-auth password in A2A_AGENTS never leaves the ADK client.
 type AgentStatus struct {
 	Alias     string           `json:"alias"`
 	URL       string           `json:"url"`
 	Card      *types.AgentCard `json:"card,omitempty"`
 	Reachable bool             `json:"reachable"`
-	LastSeen  *time.Time       `json:"lastSeen,omitempty"`
+	LastSeen  time.Time        `json:"lastSeen,omitzero"`
 }
 
 type agent struct {
 	client    client.A2AClient
+	url       string
 	card      *types.AgentCard
 	reachable bool
 	lastSeen  time.Time
@@ -82,9 +84,19 @@ func NewRegistry(cfg config.A2AConfig, log logger.Logger, clients map[string]cli
 		aliases: slices.Sorted(maps.Keys(clients)),
 	}
 	for alias, adk := range clients {
-		registry.agents[alias] = &agent{client: adk}
+		registry.agents[alias] = &agent{client: adk, url: redactURL(adk.GetBaseURL())}
 	}
 	return registry
+}
+
+// redactURL hides any basic-auth password before an agent URL is logged or
+// served; an unparseable URL is dropped entirely rather than echoed.
+func redactURL(rawURL string) string {
+	parsed, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return parsed.Redacted()
 }
 
 // Start fetches every card once and, when A2A_CARD_REFRESH_INTERVAL is
@@ -131,7 +143,7 @@ func (r *Registry) refreshAgent(ctx context.Context, alias string) {
 	defer r.mu.Unlock()
 	if err != nil {
 		entry.reachable = false
-		r.logger.Warn("a2a agent card fetch failed", "agent", alias, "url", entry.client.GetBaseURL(), "error", err.Error())
+		r.logger.Warn("a2a agent card fetch failed", "agent", alias, "url", entry.url, "error", err.Error())
 		return
 	}
 	entry.card = card
@@ -161,12 +173,13 @@ func (r *Registry) Agents() []AgentStatus {
 	statuses := make([]AgentStatus, 0, len(r.aliases))
 	for _, alias := range r.aliases {
 		entry := r.agents[alias]
-		status := AgentStatus{Alias: alias, URL: entry.client.GetBaseURL(), Card: entry.card, Reachable: entry.reachable}
-		if !entry.lastSeen.IsZero() {
-			lastSeen := entry.lastSeen
-			status.LastSeen = &lastSeen
-		}
-		statuses = append(statuses, status)
+		statuses = append(statuses, AgentStatus{
+			Alias:     alias,
+			URL:       entry.url,
+			Card:      entry.card,
+			Reachable: entry.reachable,
+			LastSeen:  entry.lastSeen,
+		})
 	}
 	return statuses
 }
@@ -215,8 +228,8 @@ func (r *Registry) Card(url, version string) types.AgentCard {
 		Description:         "Inference Gateway A2A server delegating to " + joinAliases(r.aliases),
 		Version:             version,
 		Capabilities:        types.AgentCapabilities{Streaming: &streaming, PushNotifications: &pushNotifications},
-		DefaultInputModes:   slices.Sorted(maps.Keys(inputModes)),
-		DefaultOutputModes:  slices.Sorted(maps.Keys(outputModes)),
+		DefaultInputModes:   sortedKeys(inputModes),
+		DefaultOutputModes:  sortedKeys(outputModes),
 		Skills:              skills,
 		SupportedInterfaces: interfaces,
 	}
@@ -234,6 +247,14 @@ func gatewayInterface(url string, tenant *string) types.AgentInterface {
 // SkillID is the id a registered agent's skill carries on the gateway card.
 func SkillID(alias, skillID string) string {
 	return alias + "_" + skillID
+}
+
+// sortedKeys is slices.Sorted over a set, except never nil: the A2A schema
+// marks the mode lists required, so they must serialize as [] when empty.
+func sortedKeys(set map[string]struct{}) []string {
+	keys := slices.AppendSeq(make([]string, 0, len(set)), maps.Keys(set))
+	slices.Sort(keys)
+	return keys
 }
 
 func boolValue(b *bool) bool {

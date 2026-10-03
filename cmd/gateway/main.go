@@ -247,7 +247,7 @@ func main() {
 			appLogger.Error("invalid A2A_AGENTS configuration", err)
 			return
 		}
-		a2aRegistry = a2a.NewRegistry(*cfg.A2A, appLogger, a2a.DialAgents(agentSpecs, *cfg.A2A))
+		a2aRegistry = a2a.NewRegistry(*cfg.A2A, appLogger, a2a.DialAgents(agentSpecs))
 		a2aCtx, cancelA2A := context.WithCancel(context.Background())
 		defer cancelA2A()
 		a2aRegistry.Start(a2aCtx)

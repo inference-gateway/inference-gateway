@@ -29,6 +29,7 @@ const (
 	upstreamTask  = "task-1"
 	prefixedTask  = researchAlias + ":" + upstreamTask
 	configID      = "cfg-9"
+	agentPassword = "s3cret"
 	testTimeout   = 5 * time.Second
 )
 
@@ -97,11 +98,34 @@ func TestRefreshMarksReachability(t *testing.T) {
 	assert.Equal(t, researchURL, agents[0].URL)
 	assert.True(t, agents[0].Reachable)
 	assert.NotNil(t, agents[0].Card)
-	assert.NotNil(t, agents[0].LastSeen)
+	assert.False(t, agents[0].LastSeen.IsZero())
 	assert.Equal(t, writerAlias, agents[1].Alias)
 	assert.False(t, agents[1].Reachable)
 	assert.Nil(t, agents[1].Card)
-	assert.Nil(t, agents[1].LastSeen)
+	assert.True(t, agents[1].LastSeen.IsZero())
+}
+
+func TestAgentsRedactsCredentials(t *testing.T) {
+	registry := a2a.NewRegistry(testConfig(), logger.NewNoopLogger(), map[string]client.A2AClient{
+		researchAlias: fakeAgent("https://user:" + agentPassword + "@research-agent:8443"),
+	})
+
+	agents := registry.Agents()
+	require.Len(t, agents, 1)
+	assert.Equal(t, "https://user:xxxxx@research-agent:8443", agents[0].URL)
+
+	raw, err := json.Marshal(agents)
+	require.NoError(t, err)
+	assert.NotContains(t, string(raw), agentPassword)
+}
+
+func TestCardWithoutAnyLoadedCardHasEmptyModeLists(t *testing.T) {
+	registry := newRegistry(fakeAgent(researchURL), fakeAgent(writerURL))
+
+	raw, err := json.Marshal(registry.Card(gatewayURL, gatewayVer))
+	require.NoError(t, err)
+	assert.Contains(t, string(raw), `"defaultInputModes":[]`)
+	assert.Contains(t, string(raw), `"defaultOutputModes":[]`)
 }
 
 func TestCardMergesAgents(t *testing.T) {

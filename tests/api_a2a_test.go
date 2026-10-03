@@ -153,7 +153,7 @@ func newA2AEnv(t *testing.T, agentURL string, telemetry *mocks.MockOpenTelemetry
 	}
 	specs, err := a2a.ParseAgents(a2aAgentAlias + "=" + agentURL)
 	require.NoError(t, err)
-	registry := a2a.NewRegistry(*cfg.A2A, logger.NewNoopLogger(), a2a.DialAgents(specs, *cfg.A2A))
+	registry := a2a.NewRegistry(*cfg.A2A, logger.NewNoopLogger(), a2a.DialAgents(specs))
 	registry.Refresh(context.Background())
 
 	var otelImpl otel.OpenTelemetry

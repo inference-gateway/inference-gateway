@@ -134,6 +134,10 @@ func (r *Registry) Stream(ctx context.Context, method types.A2AMethod, params ty
 	go func() {
 		defer close(out)
 		for event := range upstream {
+			if event.Result == nil {
+				r.logger.Warn("a2a stream event dropped: no result", "agent", alias, "method", string(method))
+				continue
+			}
 			result := decodeResult(event.Result)
 			rewriteTaskIDs(result, false, prefixer(alias))
 			select {
@@ -261,14 +265,10 @@ func rewriteObjectTaskIDs(object map[string]any, rootIDIsTask bool, fn func(stri
 	}
 }
 
-type unaryCall[T any] func(context.Context, T) (*types.JSONRPCSuccessResponse, error)
-
-type streamCall[T any] func(context.Context, T) (<-chan types.JSONRPCSuccessResponse, error)
-
 // call decodes params into the ADK request type, invokes the agent and
 // returns its result with task ids prefixed. A params shape the type rejects
 // is -32602; any upstream failure is -32603 carrying the ADK error text.
-func call[T any](ctx context.Context, alias string, params types.Struct, fn unaryCall[T]) (any, *Error) {
+func call[T any](ctx context.Context, alias string, params types.Struct, fn func(context.Context, T) (*types.JSONRPCSuccessResponse, error)) (any, *Error) {
 	typed, rpcErr := convert[T](params)
 	if rpcErr != nil {
 		return nil, rpcErr
@@ -282,7 +282,7 @@ func call[T any](ctx context.Context, alias string, params types.Struct, fn unar
 	return result, nil
 }
 
-func stream[T any](ctx context.Context, alias string, params types.Struct, fn streamCall[T]) (<-chan types.JSONRPCSuccessResponse, *Error) {
+func stream[T any](ctx context.Context, alias string, params types.Struct, fn func(context.Context, T) (<-chan types.JSONRPCSuccessResponse, error)) (<-chan types.JSONRPCSuccessResponse, *Error) {
 	typed, rpcErr := convert[T](params)
 	if rpcErr != nil {
 		return nil, rpcErr
@@ -310,6 +310,8 @@ func convert[T any](params types.Struct) (T, *Error) {
 // agent's own JSON-RPC error text, as an internal error naming the agent.
 // ponytail: the upstream code is flattened into the message because the ADK
 // client returns a plain error; surface it once the client exposes a typed one.
+// The same gap drops mid-stream JSON-RPC errors in Stream, which the client
+// decodes into a result-only envelope.
 func upstreamError(alias string, err error) *Error {
 	return &Error{Code: CodeInternalError, Message: fmt.Sprintf("agent %q failed: %v", alias, err)}
 }
@@ -329,7 +331,6 @@ func decodeResult(result types.Value) any {
 }
 
 type fanOutResult struct {
-	alias  string
 	result any
 	rpcErr *Error
 }
@@ -347,16 +348,16 @@ func (r *Registry) listTasksFanOut(ctx context.Context, params types.Struct) (an
 			callCtx, cancel := r.callContext(ctx)
 			defer cancel()
 			result, rpcErr := call(callCtx, alias, params, entry.client.ListTasks)
-			results[i] = fanOutResult{alias: alias, result: result, rpcErr: rpcErr}
+			results[i] = fanOutResult{result: result, rpcErr: rpcErr}
 		})
 	}
 	wg.Wait()
 
 	tasks := make([]any, 0)
 	totalSize, pageSize, succeeded := 0.0, 0.0, 0
-	for _, outcome := range results {
+	for i, outcome := range results {
 		if outcome.rpcErr != nil {
-			r.logger.Warn("a2a ListTasks fan-out skipped an agent", "agent", outcome.alias, "error", outcome.rpcErr.Message)
+			r.logger.Warn("a2a ListTasks fan-out skipped an agent", "agent", r.aliases[i], "error", outcome.rpcErr.Message)
 			continue
 		}
 		succeeded++
@@ -366,7 +367,8 @@ func (r *Registry) listTasksFanOut(ctx context.Context, params types.Struct) (an
 		}
 		size, _ := page[keyTotalSize].(float64)
 		totalSize += size
-		pageSize = max(pageSize, numberValue(page[keyPageSize]))
+		size, _ = page[keyPageSize].(float64)
+		pageSize = max(pageSize, size)
 	}
 	if succeeded == 0 && len(r.aliases) > 0 {
 		return nil, &Error{Code: CodeInternalError, Message: "every agent failed to list tasks"}
@@ -377,11 +379,6 @@ func (r *Registry) listTasksFanOut(ctx context.Context, params types.Struct) (an
 		keyPageSize:      pageSize,
 		keyNextPageToken: "",
 	}, nil
-}
-
-func numberValue(v any) float64 {
-	n, _ := v.(float64)
-	return n
 }
 
 func joinAliases(aliases []string) string {

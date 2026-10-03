@@ -603,7 +603,7 @@ Every series carries a `source` label: `gateway` for gateway-observed traffic, o
 | `inference_gateway_tool_calls_total`                  | Counter   | Total function/tool calls                                               |
 | `inference_gateway_guardrails_total`                  | Counter   | Number of guardrail evaluations                                         |
 | `a2a_requests_total`                                  | Counter   | A2A calls relayed to agents; `alias`, `method`, `status` (`ok` or code) |
-| `a2a_request_duration_seconds`                        | Histogram | Duration of relayed A2A calls; `alias`, `method`                        |
+| `a2a_request_duration_seconds`                        | Histogram | Relayed A2A call duration (streaming: time to open); `alias`, `method`  |
 
 **Common labels**: `gen_ai_provider_name`, `gen_ai_request_model`, `source`, `team`;
 tool metrics add `gen_ai_tool_type` and `gen_ai_tool_name`; token usage adds `gen_ai_token_type`;
