@@ -4,6 +4,8 @@ vars:
   NAMESPACE: inference-gateway
   RELEASE_NAME: inference-gateway
   AGENT_NAME: mock-agent
+  AGENT_B_NAME: mock-agent-b
+  AGENT_NAMES: '{{.AGENT_NAME}} {{.AGENT_B_NAME}}'
   GATEWAY_API_VERSION: v1.6.2
   OPERATOR_VERSION: v0.27.0
 
@@ -15,8 +17,8 @@ tasks:
       - echo "🤝 A2A Kubernetes Deployment"
       - echo ""
       - echo "🎯 Common tasks:"
-      - echo "   task deploy        - Deploy the cluster, the operator, the agent and the gateway"
-      - echo "   task test          - Relay a message through the gateway to the agent"
+      - echo "   task deploy        - Deploy the cluster, the operator, the agents and the gateway"
+      - echo "   task test          - Relay messages through the gateway to both agents"
       - echo "   task port-forward  - Forward the gateway to http://localhost:8080"
       - echo "   task clean         - Tear everything down"
       - echo ""
@@ -65,14 +67,15 @@ tasks:
       - echo "🚪 Gateway deployed successfully!"
 
   deploy-agents:
-    # Applying the Agent re-renders A2A_AGENTS on the gateway Deployment, so the
-    # gateway rolls a second time - wait for it before testing.
-    desc: 'Deploy the mock agent as an Agent custom resource'
+    # Applying the Agents re-renders A2A_AGENTS on the gateway Deployment, so the
+    # gateway rolls again - wait for it before testing.
+    desc: 'Deploy the two mock agents as Agent custom resources'
     cmds:
       - kubectl apply -f agents.yaml
       - kubectl -n {{.NAMESPACE}} rollout status deployment/{{.AGENT_NAME}} --timeout=180s
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/{{.AGENT_B_NAME}} --timeout=180s
       - kubectl -n {{.NAMESPACE}} rollout status deployment/{{.RELEASE_NAME}} --timeout=180s
-      - echo "🤖 Mock agent deployed and discovered successfully!"
+      - echo "🤖 Mock agents deployed and discovered successfully!"
 
   deploy:
     desc: 'Deploy the complete A2A setup'
@@ -83,12 +86,13 @@ tasks:
       - echo "🎉 Complete A2A setup deployed successfully!"
 
   test:
-    desc: 'Run A2A integration tests (discovery, merged card, registry, message relay)'
+    desc: 'Run A2A integration tests (discovery, merged card, registry, message relay, fan-out)'
     cmds:
       - task: test:discovery
       - task: test:agent-card
       - task: test:agents
       - task: test:send-message
+      - task: test:list-tasks
       - echo "🎉 All A2A integration tests passed successfully!"
 
   test:discovery:
@@ -96,7 +100,7 @@ tasks:
     cmds:
       - kubectl -n {{.NAMESPACE}} get gateway {{.RELEASE_NAME}} -o jsonpath='{.status.a2aAgents}'
       - echo ""
-      - echo "✅ The operator discovered the Agent CR"
+      - echo "✅ The operator discovered both Agent CRs"
 
   test:agent-card:
     desc: 'Test the merged gateway card in-cluster'
@@ -112,17 +116,28 @@ tasks:
       - |
         kubectl run test-pod-02 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -sf http://{{.RELEASE_NAME}}:8080/a2a/agents
-      - echo "✅ The mock agent is registered and reachable"
+      - echo "✅ Both mock agents are registered and reachable"
 
   test:send-message:
-    desc: 'Relay a SendMessage call through the gateway to the mock agent'
+    desc: 'Relay a SendMessage call through the gateway to each mock agent'
+    cmds:
+      - for: { var: AGENT_NAMES }
+        cmd: |
+          kubectl run test-pod-03-{{.ITEM}} --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+            curl -sf -X POST http://{{.RELEASE_NAME}}:8080/a2a \
+              -H 'Content-Type: application/json' \
+              -d '{"jsonrpc":"2.0","id":1,"method":"SendMessage","params":{"tenant":"{{.ITEM}}","message":{"messageId":"m-1","role":"ROLE_USER","parts":[{"text":"echo hello"}]}}}'
+      - echo "✅ The gateway relays A2A calls to the agent each request names"
+
+  test:list-tasks:
+    desc: 'Fan ListTasks out to both mock agents through the gateway'
     cmds:
       - |
-        kubectl run test-pod-03 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
+        kubectl run test-pod-04 --rm -i --restart=Never --image=curlimages/curl -n {{.NAMESPACE}} -- \
           curl -sf -X POST http://{{.RELEASE_NAME}}:8080/a2a \
             -H 'Content-Type: application/json' \
-            -d '{"jsonrpc":"2.0","id":1,"method":"SendMessage","params":{"tenant":"{{.AGENT_NAME}}","message":{"messageId":"m-1","role":"ROLE_USER","parts":[{"text":"echo hello"}]}}}'
-      - echo "✅ The gateway relays A2A calls to the agent"
+            -d '{"jsonrpc":"2.0","id":1,"method":"ListTasks","params":{}}'
+      - echo "✅ ListTasks without a tenant merges both agents' tasks"
 
   port-forward:
     desc: 'Forward the gateway to http://localhost:8080'
@@ -135,9 +150,14 @@ tasks:
       - kubectl logs -l app={{.RELEASE_NAME}} -n {{.NAMESPACE}} --tail=100 -f
 
   logs:agent:
-    desc: 'Show logs from the mock agent'
+    desc: 'Show logs from the first mock agent'
     cmds:
       - kubectl logs -l app={{.AGENT_NAME}} -n {{.NAMESPACE}} --tail=100 -f
+
+  logs:agent-b:
+    desc: 'Show logs from the second mock agent'
+    cmds:
+      - kubectl logs -l app={{.AGENT_B_NAME}} -n {{.NAMESPACE}} --tail=100 -f
 
   undeploy:
     desc: 'Remove the A2A components'

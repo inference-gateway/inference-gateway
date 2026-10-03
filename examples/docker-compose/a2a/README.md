@@ -1,10 +1,11 @@
 # Agent-to-Agent (A2A) Example
 
-This example runs the Inference Gateway as an A2A server in front of the
-[mock agent](https://github.com/inference-gateway/mock-agent). An A2A client
-talks to the gateway only; the gateway forwards each JSON-RPC call to the agent
-that owns it and relays the answer, so auth, guardrails and telemetry apply to
-agent traffic the same way they apply to inference.
+This example runs the Inference Gateway as an A2A server in front of two
+instances of the [mock agent](https://github.com/inference-gateway/mock-agent),
+registered as `mock` and `mock-b`. An A2A client talks to the gateway only; the
+gateway forwards each JSON-RPC call to the agent that owns it and relays the
+answer, so auth, guardrails and telemetry apply to agent traffic the same way
+they apply to inference.
 
 ## Quick Start
 
@@ -26,11 +27,13 @@ No API key is needed: the mock agent uses a mock LLM.
 
 ## Usage
 
-Read the merged card and the registry:
+Read the merged card and the registry. The card carries both agents' skills,
+`mock_*` and `mock-b_*`, plus one interface per agent with its alias as the
+tenant; the registry lists both:
 
 ```bash
-curl -s http://localhost:8080/.well-known/agent-card.json | jq .
-curl -s http://localhost:8080/a2a/agents | jq .
+curl -s http://localhost:8080/.well-known/agent-card.json | jq '{skills: [.skills[].id], interfaces: .supportedInterfaces}'
+curl -s http://localhost:8080/a2a/agents | jq '.agents[] | {alias, url, reachable}'
 ```
 
 Send a message. The agent is named with `params.tenant` (the alias, which the
@@ -73,8 +76,43 @@ curl -N -X POST http://localhost:8080/a2a \
   -d '{"jsonrpc":"2.0","id":3,"method":"SubscribeToTask","params":{"id":"mock:<task id>"}}'
 ```
 
-`ListTasks` without a `tenant` fans out to every registered agent and merges the
-pages.
+## Two agents
+
+With more than one agent registered the gateway never guesses. A call that
+names no agent is rejected with `-32602` listing the aliases:
+
+```bash
+curl -s -X POST http://localhost:8080/a2a \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":4,"method":"SendMessage","params":{"message":{"messageId":"m-2","role":"ROLE_USER","parts":[{"text":"echo hello"}]}}}' | jq .error
+```
+
+A call whose hints disagree, e.g. `tenant: "mock-b"` with a `mock:` task id,
+is rejected with `-32602` too. Send the same message with `"tenant": "mock-b"` and the task id comes back
+as `mock-b:<task id>`; follow-up calls route on that prefix alone.
+
+`ListTasks` is the one method that may name no agent: it fans out to every
+registered agent and merges the pages, so both agents' tasks come back with
+their own prefixes:
+
+```bash
+curl -s -X POST http://localhost:8080/a2a \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":5,"method":"ListTasks","params":{}}' | jq '[.result.tasks[].id]'
+```
+
+Stop one agent and the other keeps serving. `ListTasks` skips the agent that
+fails and still returns `mock`'s tasks, a call to `mock-b` comes back as
+`-32603`, and the registry marks it unreachable on the next card refresh
+(`A2A_CARD_REFRESH_INTERVAL`):
+
+```bash
+docker compose stop mock-agent-b
+curl -s -X POST http://localhost:8080/a2a \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":6,"method":"ListTasks","params":{}}' | jq '[.result.tasks[].id]'
+docker compose start mock-agent-b
+```
 
 ## Debugging with a2a-debugger
 

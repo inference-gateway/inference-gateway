@@ -1,8 +1,8 @@
 # Agent-to-Agent (A2A) on Kubernetes
 
-This example runs the Inference Gateway as an A2A server in front of the
-[mock agent](https://github.com/inference-gateway/mock-agent) in a local k3d
-cluster. An A2A client talks to the gateway only; the gateway publishes one
+This example runs the Inference Gateway as an A2A server in front of two
+instances of the [mock agent](https://github.com/inference-gateway/mock-agent),
+`mock-agent` and `mock-agent-b`, in a local k3d cluster. An A2A client talks to the gateway only; the gateway publishes one
 merged agent card and forwards each JSON-RPC call to the agent that owns it, so
 auth, guardrails and telemetry apply to agent traffic the same way they apply to
 inference.
@@ -47,14 +47,15 @@ per agent, `<metadata.name>=<url>`, onto the gateway Deployment - visible on the
 
 ```console
 $ kubectl -n inference-gateway get gateway inference-gateway -o jsonpath='{.status.a2aAgents}'
-["mock-agent=http://mock-agent.inference-gateway.svc.cluster.local:8080"]
+["mock-agent=http://mock-agent.inference-gateway.svc.cluster.local:8080","mock-agent-b=http://mock-agent-b.inference-gateway.svc.cluster.local:8080"]
 ```
 
 Creating or deleting a matching `Agent` re-renders that variable and rolls the
 gateway, so the alias set always matches the cluster.
 
-`task test` checks the rendered status, the merged card, the registry and a
-relayed `SendMessage`, all from inside the cluster. `gateway.yaml` pins the
+`task test` checks the rendered status, the merged card, the registry, a
+relayed `SendMessage` to each agent and a `ListTasks` fanned out to both, all
+from inside the cluster. `gateway.yaml` pins the
 gateway to `:latest`, so A2A is served from the first release that ships it
 onward.
 
@@ -75,11 +76,13 @@ Reach the gateway from your machine:
 task port-forward
 ```
 
-Read the merged card and the registry:
+Read the merged card and the registry. The card carries both agents' skills,
+`mock-agent_*` and `mock-agent-b_*`, plus one interface per agent with its alias
+as the tenant; the registry lists both:
 
 ```bash
-curl -s http://localhost:8080/.well-known/agent-card.json | jq .
-curl -s http://localhost:8080/a2a/agents | jq .
+curl -s http://localhost:8080/.well-known/agent-card.json | jq '{skills: [.skills[].id], interfaces: .supportedInterfaces}'
+curl -s http://localhost:8080/a2a/agents | jq '.agents[] | {alias, url, reachable}'
 ```
 
 Send a message. The agent is named with `params.tenant` (the alias, which the
@@ -112,6 +115,29 @@ curl -s -X POST http://localhost:8080/a2a \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":2,"method":"GetTask","params":{"id":"mock-agent:<task id>"}}' | jq .
 ```
+
+With two agents the gateway never guesses: a call that names no agent is
+rejected with `-32602` listing the aliases, and so is one whose hints disagree
+(`tenant: "mock-agent-b"` with a `mock-agent:` task id). `ListTasks` is the exception - with
+no tenant it fans out to both agents and merges their tasks:
+
+```bash
+curl -s -X POST http://localhost:8080/a2a \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"ListTasks","params":{}}' | jq '[.result.tasks[].id]'
+```
+
+Delete one agent to watch discovery follow the cluster: the operator drops it
+from `A2A_AGENTS`, rolls the gateway, and the card and registry list only the
+other one.
+
+```bash
+kubectl -n inference-gateway delete agent mock-agent-b
+kubectl -n inference-gateway rollout status deployment/inference-gateway
+curl -s http://localhost:8080/a2a/agents | jq '[.agents[].alias]'
+```
+
+`task deploy-agents` brings it back.
 
 ## Adding your own agents
 

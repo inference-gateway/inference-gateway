@@ -10,15 +10,24 @@ services:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       SERVER_HOST: 0.0.0.0
       A2A_ENABLED: ${A2A_ENABLED:-true}
-      A2A_AGENTS: ${A2A_AGENTS:-mock=http://mock-agent:8080}
+      A2A_AGENTS: ${A2A_AGENTS:-mock=http://mock-agent:8080,mock-b=http://mock-agent-b:8080}
     depends_on:
       - mock-agent
+      - mock-agent-b
     networks:
       - a2a-network
 
-  # An A2A agent built on the ADK with a mock LLM: no API key needed. The
-  # gateway fetches its card at startup and relays every /a2a call to it.
+  # Two A2A agents built on the ADK with a mock LLM: no API key needed. The
+  # gateway fetches both cards at startup, merges them into its own and relays
+  # each /a2a call to the one agent the request names.
   mock-agent:
+    image: ghcr.io/inference-gateway/mock-agent:latest
+    environment:
+      A2A_SERVER_PORT: '8080'
+    networks:
+      - a2a-network
+
+  mock-agent-b:
     image: ghcr.io/inference-gateway/mock-agent:latest
     environment:
       A2A_SERVER_PORT: '8080'
