@@ -22,6 +22,7 @@ import (
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
+	a2a "github.com/inference-gateway/inference-gateway/internal/a2a"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -238,6 +239,21 @@ func main() {
 		}
 	}
 
+	// Initialize the A2A registry if enabled; agents are never fatal at startup.
+	var a2aRegistry *a2a.Registry
+	if cfg.A2A != nil && cfg.A2A.Enabled {
+		agentSpecs, err := a2a.ParseAgents(cfg.A2A.Agents)
+		if err != nil {
+			appLogger.Error("invalid A2A_AGENTS configuration", err)
+			return
+		}
+		a2aRegistry = a2a.NewRegistry(*cfg.A2A, appLogger, a2a.DialAgents(agentSpecs, *cfg.A2A))
+		a2aCtx, cancelA2A := context.WithCancel(context.Background())
+		defer cancelA2A()
+		a2aRegistry.Start(a2aCtx)
+		appLogger.Info("a2a registry initialized", "agents", strings.Join(a2aRegistry.Aliases(), ", "))
+	}
+
 	// Initialize guardrails middleware if enabled
 	var guardrailsMiddleware middlewares.GuardrailsMiddleware
 	if cfg.Guardrails != nil && cfg.Guardrails.Enabled {
@@ -307,6 +323,11 @@ func main() {
 		go localTTS.Warmup(context.Background())
 	}
 
+	var a2aHandler *api.A2AHandler
+	if a2aRegistry != nil {
+		a2aHandler = api.NewA2AHandler(cfg, appLogger, a2aRegistry, telemetryImpl, version)
+	}
+
 	mcp.GatewayInfo.Version = version
 	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, mcpAgent, telemetryImpl, selector, localTTS)
 	r := gin.New()
@@ -339,6 +360,13 @@ func main() {
 		c.Header("Allow", http.MethodPost)
 		c.Status(http.StatusMethodNotAllowed)
 	})
+	if a2aHandler != nil {
+		r.GET(middlewares.A2AAgentCardPath, a2aHandler.AgentCard)
+		r.GET(middlewares.A2AProtectedResourcePath, a2aHandler.ProtectedResourceMetadata)
+		r.POST(middlewares.A2APath, a2aHandler.JSONRPC)
+		r.GET(middlewares.A2AAgentsPath, a2aHandler.Agents)
+		appLogger.Info("a2a server routes registered")
+	}
 	r.POST(middlewares.MetricsIngestPath, api.MetricsIngestionHandler)
 	r.POST(middlewares.ChatCompletionsPath, api.ChatCompletionsHandler)
 	r.POST(middlewares.ResponsesPath, api.ResponsesHandler)

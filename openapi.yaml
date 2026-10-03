@@ -4874,6 +4874,37 @@ components:
                   type: bool
                   default: 'true'
                   description: 'Disable health check log messages to reduce noise'
+          - a2a:
+              title: 'Agent-to-Agent (A2A)'
+              settings:
+                - name: a2a_enabled
+                  env: 'A2A_ENABLED'
+                  type: bool
+                  default: 'false'
+                  description: 'Expose the gateway as an A2A server that delegates every call to the agents in A2A_AGENTS: GET /.well-known/agent-card.json, POST /a2a and GET /a2a/agents. When disabled the routes return 404 and nothing A2A-related runs'
+                - name: a2a_agents
+                  env: 'A2A_AGENTS'
+                  type: string
+                  description: 'Comma-separated list of A2A agents as alias=url, e.g. research=http://research-agent:8080,http://mock-agent:8080. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$ and be unique; they prefix the skill ids on the gateway card, name the tenant of the per-agent interface, and prefix every task id the gateway hands out as <alias>:<task id>. Per-agent credentials go in the url as basic auth'
+                - name: a2a_resource_url
+                  env: 'A2A_RESOURCE_URL'
+                  type: string
+                  description: 'Canonical public URL of POST /a2a, e.g. https://gateway.example.com/a2a. Published as the url of the gateway agent card interfaces and as the resource of the OAuth 2.0 Protected Resource Metadata (RFC 9728) document served at /.well-known/oauth-protected-resource/a2a. Defaults to the request scheme (honouring X-Forwarded-Proto) and Host with /a2a appended; set it behind an ingress that rewrites either'
+                - name: a2a_client_timeout
+                  env: 'A2A_CLIENT_TIMEOUT'
+                  type: time.Duration
+                  default: '30s'
+                  description: 'Timeout for one non-streaming call to an agent, including the agent card fetch'
+                - name: a2a_stream_idle_timeout
+                  env: 'A2A_STREAM_IDLE_TIMEOUT'
+                  type: time.Duration
+                  default: '5m'
+                  description: 'Idle cutoff for a relayed SendStreamingMessage or SubscribeToTask stream: the relay closes when the agent sends nothing for this long. 0 disables the cutoff'
+                - name: a2a_card_refresh_interval
+                  env: 'A2A_CARD_REFRESH_INTERVAL'
+                  type: time.Duration
+                  default: '5m'
+                  description: 'Interval at which agent cards are re-fetched in the background so unreachable agents are retried and skill changes picked up. Cards are always fetched once at startup; 0 disables the background refresh'
           - auth:
               title: 'Authentication'
               settings:

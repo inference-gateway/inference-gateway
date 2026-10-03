@@ -1,0 +1,28 @@
+---
+services:
+  inference-gateway:
+    image: ghcr.io/inference-gateway/inference-gateway:latest
+    ports:
+      - '8080:8080'
+    env_file:
+      - .env
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      SERVER_HOST: 0.0.0.0
+      A2A_ENABLED: ${A2A_ENABLED:-true}
+      A2A_AGENTS: ${A2A_AGENTS:-mock=http://mock-agent:8080}
+    depends_on:
+      - mock-agent
+    networks:
+      - a2a-network
+
+  # An A2A agent built on the ADK with a mock LLM: no API key needed. The
+  # gateway fetches its card at startup and relays every /a2a call to it.
+  mock-agent:
+    image: ghcr.io/inference-gateway/mock-agent:latest
+    networks:
+      - a2a-network
+
+networks:
+  a2a-network:
+    driver: bridge

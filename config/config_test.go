@@ -63,6 +63,14 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			PollingTimeout:         5 * time.Second,
 			DisableHealthcheckLogs: true,
 		},
+		A2A: &config.A2AConfig{
+			Enabled:             false,
+			Agents:              "",
+			ResourceUrl:         "",
+			ClientTimeout:       30 * time.Second,
+			StreamIdleTimeout:   5 * time.Minute,
+			CardRefreshInterval: 5 * time.Minute,
+		},
 		Guardrails: &config.GuardrailsConfig{
 			Enabled:         false,
 			PolicyDir:       "",

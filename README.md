@@ -42,6 +42,7 @@ use of Mixture of Experts.
 - [Installation](#installation)
 - [Middleware Control and Bypass Mechanisms](#middleware-control-and-bypass-mechanisms)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
+- [Agent-to-Agent (A2A) Server](#agent-to-agent-a2a-server)
 - [Metrics and Observability](#metrics-and-observability)
 - [Supported API's](#supported-apis)
 - [Configuration](#configuration)
@@ -58,7 +59,8 @@ use of Mixture of Experts.
 | 🔀 **Unified API**               | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, llama.cpp, Cloudflare, DeepSeek, ElevenLabs, Google, Mistral, MiniMax, Moonshot, Nvidia, and Z.ai               |
 | 🔧 **Tool-use Support**          | Function calling capabilities across supported providers with a unified API                                                                                                                               |
 | 🌐 **MCP Support**               | Full Model Context Protocol integration - tools from MCP servers are discovered and exposed to LLMs automatically, and the gateway itself can serve them as an MCP server on `POST /mcp`                  |
-| 🚦 **Guardrails**                | OPA/Rego policies, secret and PII detection, and an optional external guardrail service - applied to requests, responses and MCP tool calls                                                               |
+| 🤝 **A2A Server**                | The gateway as an Agent-to-Agent server: one card and one `POST /a2a` endpoint relaying every call to the registered agent that owns it, through the same auth, guardrails and telemetry                  |
+| 🚦 **Guardrails**                | OPA/Rego policies, secret and PII detection, and an optional external guardrail service - applied to requests, responses, MCP tool calls and relayed A2A calls                                            |
 | 🌊 **Streaming**                 | Real-time token streaming from all supported providers                                                                                                                                                    |
 | 🖼️ **Vision / Multimodal**       | Process images alongside text with vision-capable models                                                                                                                                                  |
 | ⚙️ **Environment Configuration** | Configure API keys and URLs entirely through environment variables                                                                                                                                        |

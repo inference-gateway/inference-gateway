@@ -46,6 +46,7 @@ type OIDCAuthenticatorImpl struct {
 	verifier  *oidc.IDTokenVerifier
 	audiences []string
 	mcp       *config.MCPConfig
+	a2a       *config.A2AConfig
 }
 
 type OIDCAuthenticatorNoop struct{}
@@ -74,6 +75,7 @@ func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OI
 		verifier:  provider.Verifier(&oidc.Config{SkipClientIDCheck: true}),
 		audiences: audiences,
 		mcp:       cfg.MCP,
+		a2a:       cfg.A2A,
 	}, nil
 }
 
@@ -90,7 +92,7 @@ func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
 func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		switch c.Request.URL.Path {
-		case HealthPath, MCPProtectedResourcePath:
+		case HealthPath, MCPProtectedResourcePath, A2AProtectedResourcePath, A2AAgentCardPath:
 			c.Next()
 			return
 		}
@@ -137,15 +139,30 @@ func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
 	}
 }
 
-// unauthorized answers the 401 challenge. On /mcp it also points at the RFC
-// 9728 document, which is how an MCP client that knows only the endpoint URL
-// discovers the authorization server (MCP 2026-07-28 authorization).
+// unauthorized answers the 401 challenge. On /mcp and /a2a it also points at
+// the RFC 9728 document, which is how a client that knows only the endpoint
+// URL discovers the authorization server.
 func (a *OIDCAuthenticatorImpl) unauthorized(c *gin.Context, challenge string) {
-	if c.Request.URL.Path == MCPPath && MCPExposed(a.mcp) {
-		metadata := ProtectedResourceMetadataURL(MCPResourceURL(a.mcp, c.Request))
-		challenge += fmt.Sprintf(", resource_metadata=%q", metadata)
+	if resource := a.protectedResource(c.Request); resource != "" {
+		challenge += fmt.Sprintf(", resource_metadata=%q", ProtectedResourceMetadataURL(resource))
 	}
 	c.Header(wwwAuthenticateHeader, challenge)
 	c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 	c.Abort()
+}
+
+// protectedResource is the resource URL a 401 on r should advertise, or ""
+// when the path is not an exposed JSON-RPC server endpoint.
+func (a *OIDCAuthenticatorImpl) protectedResource(r *http.Request) string {
+	switch r.URL.Path {
+	case MCPPath:
+		if MCPExposed(a.mcp) {
+			return MCPResourceURL(a.mcp, r)
+		}
+	case A2APath:
+		if A2AEnabled(a.a2a) {
+			return A2AResourceURL(a.a2a, r)
+		}
+	}
+	return ""
 }

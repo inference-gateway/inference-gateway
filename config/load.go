@@ -76,12 +76,13 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 func (cfg *Config) String() string {
 	return fmt.Sprintf(
 		"Config{ApplicationName:%s, Version:%s Environment:%s, Telemetry:%+v, "+
-			"MCP:%+v, Auth:%+v, Server:%+v, Routing:%+v, Client:%+v, Providers:%+v}",
+			"MCP:%+v, A2A:%+v, Auth:%+v, Server:%+v, Routing:%+v, Client:%+v, Providers:%+v}",
 		APPLICATION_NAME,
 		VERSION,
 		cfg.Environment,
 		cfg.Telemetry,
 		cfg.MCP,
+		cfg.A2A,
 		cfg.Auth,
 		cfg.Server,
 		cfg.Routing,
