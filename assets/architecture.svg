@@ -30,7 +30,8 @@
     <path id="p2" d="M724 94 C758 94 758 118 792 118"/>
     <path id="p3" d="M724 94 C758 94 758 186 792 186"/>
     <path id="p4" d="M724 94 C758 94 758 254 792 254"/>
-    <path id="p5" d="M724 94 C758 94 758 333 792 333"/>
+    <path id="p5" d="M724 94 C758 94 758 322 792 322"/>
+    <path id="p6" d="M724 94 C758 94 758 401 792 401"/>
   </defs>
 
   <!-- master clock: every beat below is an offset from clock.begin, so the loop never drifts -->
@@ -135,18 +136,20 @@
     <rect x="792" y="96" width="138" height="44" rx="10"/>
     <rect x="792" y="164" width="138" height="44" rx="10"/>
     <rect x="792" y="232" width="138" height="44" rx="10"/>
-    <rect x="792" y="300" width="138" height="66" rx="10"/>
+    <rect x="792" y="300" width="138" height="44" rx="10"/>
+    <rect x="792" y="368" width="138" height="66" rx="10"/>
   </g>
   <g text-anchor="middle" fill="#e6edf3" font-size="13">
     <text x="861" y="55">OpenAI</text>
     <text x="861" y="123">Anthropic</text>
     <text x="861" y="191">Google</text>
     <text x="861" y="259">Ollama</text>
-    <text x="861" y="322">+ 12 more</text>
+    <text x="861" y="327">LlamaCPP</text>
+    <text x="861" y="390">+ 11 more</text>
   </g>
   <g text-anchor="middle" fill="#7ee787" font-size="10">
-    <text x="861" y="340">Groq · Mistral · Cohere</text>
-    <text x="861" y="354">DeepSeek · Nvidia · …</text>
+    <text x="861" y="408">Groq · Mistral · Cohere</text>
+    <text x="861" y="422">DeepSeek · Nvidia · …</text>
   </g>
 
   <!-- wires -->
@@ -156,7 +159,7 @@
       <use href="#b1"/><use href="#b2"/><use href="#b3"/>
       <use href="#c1"/><use href="#c2"/><use href="#c3"/>
     </g>
-    <use href="#p1"/><use href="#p2"/><use href="#p3"/><use href="#p4"/><use href="#p5"/>
+    <use href="#p1"/><use href="#p2"/><use href="#p3"/><use href="#p4"/><use href="#p5"/><use href="#p6"/>
   </g>
   <g fill="none" stroke-width="2" stroke-dasharray="6 5" opacity="0.7">
     <use href="#t1" stroke="#DB61A2"/>
