@@ -802,7 +802,7 @@ configuration, monitoring, and management of inference services.
 #### Using Go Install
 
 ```bash
-go install github.com/inference-gateway/cli@latest
+go install -tags purego github.com/inference-gateway/cli/cmd/infer@latest
 ```
 
 #### Using CLI Install Script
