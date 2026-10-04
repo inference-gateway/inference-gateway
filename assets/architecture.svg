@@ -111,8 +111,12 @@
   </g>
   <text x="341" y="398" fill="#56d4dd" font-size="10">metrics · spans</text>
 
-  <!-- mcp servers -->
-  <rect x="482" y="444" width="138" height="54" rx="10" fill="#4A1F3A" stroke="#DB61A2"/>
+  <!-- mcp servers: a stack of cards, there can be many -->
+  <g stroke="#DB61A2">
+    <rect x="494" y="456" width="138" height="54" rx="10" fill="#331528" stroke-opacity="0.55"/>
+    <rect x="488" y="450" width="138" height="54" rx="10" fill="#3e1a31" stroke-opacity="0.8"/>
+    <rect x="482" y="444" width="138" height="54" rx="10" fill="#4A1F3A"/>
+  </g>
   <text x="551" y="466" text-anchor="middle" fill="#e6edf3" font-size="13">MCP Servers</text>
   <text x="551" y="484" text-anchor="middle" fill="#f0a8cd" font-size="11">discovery &amp; execution</text>
 
@@ -235,6 +239,8 @@
     <rect x="482" y="172" width="112" height="60" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+5.6s; clock.begin+7.25s" dur="0.5s"/></rect>
     <rect x="612" y="280" width="112" height="60" rx="10" stroke="#F0883E" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+8.7s; clock.begin+10.45s" dur="0.5s"/></rect>
     <rect x="482" y="444" width="138" height="54" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.25s; clock.begin+6.45s" dur="0.5s"/></rect>
+    <path d="M616 450 Q626 450 626 460 V494 Q626 504 616 504 H498 Q488 504 488 498" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.37s; clock.begin+6.57s" dur="0.5s"/></path>
+    <path d="M622 456 Q632 456 632 466 V500 Q632 510 622 510 H504 Q494 510 494 504" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.49s; clock.begin+6.69s" dur="0.5s"/></path>
     <!-- the a2a stack lights up card by card: front, then the visible edges of the two behind it -->
     <rect x="482" y="522" width="230" height="54" rx="10" stroke="#ffa657" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+9.5s" dur="0.5s"/></rect>
     <path d="M709 529 Q719 529 719 539 V573 Q719 583 709 583 H499 Q489 583 489 576" stroke="#ffa657" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+9.62s" dur="0.5s"/></path>
