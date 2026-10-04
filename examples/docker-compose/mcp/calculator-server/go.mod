@@ -1,6 +1,6 @@
 module github.com/inference-gateway/inference-gateway/examples/docker-compose/mcp/calculator-server
 
-go 1.26.7
+go 1.26.8
 
 require github.com/modelcontextprotocol/go-sdk v1.8.0
 
