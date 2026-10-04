@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.58.0](https://github.com/inference-gateway/inference-gateway/compare/v0.57.2...v0.58.0) (2026-10-04)
+
+### ✨ Features
+
+* **a2a:** make the gateway talk A2A ([#756](https://github.com/inference-gateway/inference-gateway/issues/756)) ([8f43406](https://github.com/inference-gateway/inference-gateway/commit/8f434067ac2eb0e52e6c76fca4f8c9d330228fcc))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.283 -> 2.1.285 ([#753](https://github.com/inference-gateway/inference-gateway/issues/753)) ([63a19ac](https://github.com/inference-gateway/inference-gateway/commit/63a19ac947bffeaf945b75819b11d57fea601a08))
+* **deps:** bump github.com/open-policy-agent/opa ([#754](https://github.com/inference-gateway/inference-gateway/issues/754)) ([46d82dc](https://github.com/inference-gateway/inference-gateway/commit/46d82dc893a4d76b9a8f87a13a5a626b1bd1e672))
+
 ## [0.57.2](https://github.com/inference-gateway/inference-gateway/compare/v0.57.1...v0.57.2) (2026-10-01)
 
 ### 🐛 Bug Fixes
