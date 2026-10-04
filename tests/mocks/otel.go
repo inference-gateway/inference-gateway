@@ -72,6 +72,18 @@ func (mr *MockOpenTelemetryMockRecorder) Init(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockOpenTelemetry)(nil).Init), arg0, arg1)
 }
 
+// RecordA2ARequest mocks base method.
+func (m *MockOpenTelemetry) RecordA2ARequest(ctx context.Context, alias, method, status string, seconds float64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RecordA2ARequest", ctx, alias, method, status, seconds)
+}
+
+// RecordA2ARequest indicates an expected call of RecordA2ARequest.
+func (mr *MockOpenTelemetryMockRecorder) RecordA2ARequest(ctx, alias, method, status, seconds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordA2ARequest", reflect.TypeOf((*MockOpenTelemetry)(nil).RecordA2ARequest), ctx, alias, method, status, seconds)
+}
+
 // RecordGuardrail mocks base method.
 func (m *MockOpenTelemetry) RecordGuardrail(ctx context.Context, source, phase, action, path, model string) {
 	m.ctrl.T.Helper()

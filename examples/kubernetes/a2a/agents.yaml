@@ -1,0 +1,49 @@
+---
+# Two A2A agents built on the ADK with a mock LLM: no API key needed. The label
+# is what the Gateway's spec.a2a.serviceDiscovery selector matches, so both are
+# discovered and registered under their CR names.
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: Agent
+metadata:
+  name: mock-agent
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: mock-agent
+    app.kubernetes.io/part-of: inference-gateway
+    a2a: demo
+spec:
+  image: 'ghcr.io/inference-gateway/mock-agent:latest'
+  port: 8080
+  env:
+    - name: A2A_SERVER_PORT
+      value: '8080'
+  resources:
+    requests:
+      cpu: '50m'
+      memory: '64Mi'
+    limits:
+      cpu: '500m'
+      memory: '256Mi'
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: Agent
+metadata:
+  name: mock-agent-b
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: mock-agent-b
+    app.kubernetes.io/part-of: inference-gateway
+    a2a: demo
+spec:
+  image: 'ghcr.io/inference-gateway/mock-agent:latest'
+  port: 8080
+  env:
+    - name: A2A_SERVER_PORT
+      value: '8080'
+  resources:
+    requests:
+      cpu: '50m'
+      memory: '64Mi'
+    limits:
+      cpu: '500m'
+      memory: '256Mi'

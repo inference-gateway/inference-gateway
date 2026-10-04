@@ -293,6 +293,73 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 	}
 }
 
+// newA2AAuthEngine wires the real middleware in front of the A2A routes
+// main.go registers when A2A_ENABLED=true, each answering 200 when reached.
+func newA2AAuthEngine(t *testing.T, auth config.AuthConfig, a2a *config.A2AConfig) *gin.Engine {
+	t.Helper()
+	cfg := config.Config{Auth: &auth, A2A: a2a}
+	mw, err := middlewares.NewOIDCAuthenticatorMiddleware(logger.NewNoopLogger(), cfg)
+	require.NoError(t, err)
+
+	r := gin.New()
+	r.Use(mw.Middleware())
+	ok := func(c *gin.Context) { c.Status(http.StatusOK) }
+	r.GET(middlewares.A2AAgentCardPath, ok)
+	r.GET(middlewares.A2AProtectedResourcePath, ok)
+	r.POST(middlewares.A2APath, ok)
+	r.GET(middlewares.A2AAgentsPath, ok)
+	return r
+}
+
+// TestOIDCAuthenticatorMiddleware_A2A pins which A2A routes need a token: the
+// two well-known documents are public, everything else is challenged and the
+// /a2a challenge points at its own RFC 9728 document.
+func TestOIDCAuthenticatorMiddleware_A2A(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	idp := newFakeIdP(t)
+	auth := config.AuthConfig{Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID}
+	enabled := newA2AAuthEngine(t, auth, &config.A2AConfig{Enabled: true})
+	disabled := newA2AAuthEngine(t, auth, &config.A2AConfig{Enabled: false})
+	valid := idp.mint(t, nil)
+
+	tests := []struct {
+		name          string
+		engine        *gin.Engine
+		method        string
+		path          string
+		header        string
+		wantStatus    int
+		wantChallenge string
+	}{
+		{name: "Agent card bypasses auth", engine: enabled, method: http.MethodGet, path: middlewares.A2AAgentCardPath, wantStatus: http.StatusOK},
+		{name: "A2A protected resource metadata bypasses auth", engine: enabled, method: http.MethodGet, path: middlewares.A2AProtectedResourcePath, wantStatus: http.StatusOK},
+		{
+			name: "A2A endpoint challenge points at its metadata", engine: enabled, method: http.MethodPost, path: middlewares.A2APath,
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing + `, resource_metadata="http://example.com/.well-known/oauth-protected-resource/a2a"`,
+		},
+		{
+			name: "A2A challenge omits the metadata while disabled", engine: disabled, method: http.MethodPost, path: middlewares.A2APath,
+			wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing,
+		},
+		{name: "A2A endpoint accepts a valid token", engine: enabled, method: http.MethodPost, path: middlewares.A2APath, header: "Bearer " + valid, wantStatus: http.StatusOK},
+		{name: "Agents listing requires a token", engine: enabled, method: http.MethodGet, path: middlewares.A2AAgentsPath, wantStatus: http.StatusUnauthorized, wantChallenge: challengeMissing},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(tt.method, tt.path, nil)
+			if tt.header != "" {
+				req.Header.Set("Authorization", tt.header)
+			}
+			w := httptest.NewRecorder()
+			tt.engine.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+			assert.Equal(t, tt.wantChallenge, w.Header().Get(wwwAuthenticate))
+		})
+	}
+}
+
 // TestMCPProtectedResourceDiscovery walks the flow MCP 2026-07-28 expects of a
 // client that knows only the /mcp URL: the 401 hands it the metadata document,
 // the document names the issuer, and its resource is the endpoint the

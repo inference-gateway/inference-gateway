@@ -63,6 +63,14 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			PollingTimeout:         5 * time.Second,
 			DisableHealthcheckLogs: true,
 		},
+		A2A: &config.A2AConfig{
+			Enabled:             false,
+			Agents:              "",
+			ResourceUrl:         "",
+			ClientTimeout:       30 * time.Second,
+			StreamIdleTimeout:   5 * time.Minute,
+			CardRefreshInterval: 5 * time.Minute,
+		},
 		Guardrails: &config.GuardrailsConfig{
 			Enabled:         false,
 			PolicyDir:       "",
@@ -325,4 +333,33 @@ func TestLoadDoesNotMutateRegistryDefaults(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, originalURL, registry.Registry[constants.OllamaID].URL)
 	assert.Equal(t, originalToken, registry.Registry[constants.GroqID].Token)
+}
+
+const endpointPassword = "s3cret"
+
+func TestLoadRejectsCredentialsInResourceURLs(t *testing.T) {
+	for _, env := range []string{config.EnvA2AResourceURL, config.EnvMCPResourceURL} {
+		t.Run(env, func(t *testing.T) {
+			cfg := &config.Config{}
+			_, err := cfg.Load(envconfig.MapLookuper(map[string]string{
+				env: "https://user:" + endpointPassword + "@gateway.example.com/a2a",
+			}))
+
+			assert.EqualError(t, err, env+" must not carry credentials: it is published without authentication")
+			assert.NotContains(t, err.Error(), endpointPassword)
+		})
+	}
+}
+
+func TestStringRedactsEndpointCredentials(t *testing.T) {
+	cfg := config.Config{
+		MCP: &config.MCPConfig{Servers: "time=http://user:" + endpointPassword + "@mcp-time:8081/mcp"},
+		A2A: &config.A2AConfig{Agents: "mock=http://user:" + endpointPassword + "@mock-agent:8080,http://mock-agent-b:8080"},
+	}
+
+	rendered := cfg.String()
+
+	assert.NotContains(t, rendered, endpointPassword)
+	assert.Contains(t, rendered, "Servers:time=http://user:xxxxx@mcp-time:8081/mcp")
+	assert.Contains(t, rendered, "Agents:mock=http://user:xxxxx@mock-agent:8080,http://mock-agent-b:8080")
 }

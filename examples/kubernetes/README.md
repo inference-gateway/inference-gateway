@@ -15,6 +15,7 @@ This directory contains examples that demonstrate how to deploy the Inference Ga
 - [Agent Building](agent/README.md)
 - [Monitoring](monitoring/README.md)
 - [Model Context Protocol (MCP)](mcp/README.md)
+- [Agent-to-Agent (A2A)](a2a/README.md)
 - [Guardrails](guardrails/README.md)
 
 Every example shares the same shape:

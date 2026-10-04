@@ -28,6 +28,8 @@ type Config struct {
 	Telemetry *TelemetryConfig `env:", prefix=TELEMETRY_" description:"Telemetry configuration"`
 	// MCP settings
 	MCP *MCPConfig `env:", prefix=MCP_" description:"MCP configuration"`
+	// A2A settings
+	A2A *A2AConfig `env:", prefix=A2A_" description:"A2A configuration"`
 	// Authentication settings
 	Auth *AuthConfig `env:", prefix=AUTH_" description:"Authentication configuration"`
 	// Guardrails settings
@@ -76,6 +78,16 @@ type MCPConfig struct {
 	PollingInterval        time.Duration `env:"POLLING_INTERVAL, default=30s" description:"Interval between health check polling requests"`
 	PollingTimeout         time.Duration `env:"POLLING_TIMEOUT, default=5s" description:"Timeout for individual health check requests"`
 	DisableHealthcheckLogs bool          `env:"DISABLE_HEALTHCHECK_LOGS, default=true" description:"Disable health check log messages to reduce noise"`
+}
+
+// A2A configuration
+type A2AConfig struct {
+	Enabled             bool          `env:"ENABLED, default=false" description:"Expose the gateway as an A2A server that delegates every call to the agents in A2A_AGENTS: GET /.well-known/agent-card.json, POST /a2a and GET /a2a/agents. When disabled the routes return 404 and nothing A2A-related runs"`
+	Agents              string        `env:"AGENTS" description:"Comma-separated list of A2A agents as alias=url, e.g. research=http://research-agent:8080,http://mock-agent:8080. Without alias= the alias is derived from the URL host. Aliases must match ^[a-z0-9_-]+$ and be unique; they prefix the skill ids on the gateway card, name the tenant of the per-agent interface, and prefix every task id the gateway hands out as <alias>:<task id>. Per-agent credentials go in the url as basic auth"`
+	ResourceUrl         string        `env:"RESOURCE_URL" description:"Canonical public URL of POST /a2a, e.g. https://gateway.example.com/a2a. Published as the url of the gateway agent card interfaces and as the resource of the OAuth 2.0 Protected Resource Metadata (RFC 9728) document served at /.well-known/oauth-protected-resource/a2a. Defaults to the request scheme (honouring X-Forwarded-Proto) and Host with /a2a appended; set it behind an ingress that rewrites either"`
+	ClientTimeout       time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"Timeout for one non-streaming call to an agent, including the agent card fetch"`
+	StreamIdleTimeout   time.Duration `env:"STREAM_IDLE_TIMEOUT, default=5m" description:"Idle cutoff for a relayed SendStreamingMessage or SubscribeToTask stream: the relay closes when the agent sends nothing for this long. 0 disables the cutoff"`
+	CardRefreshInterval time.Duration `env:"CARD_REFRESH_INTERVAL, default=5m" description:"Interval at which agent cards are re-fetched in the background so unreachable agents are retried and skill changes picked up. Cards are always fetched once at startup; 0 disables the background refresh"`
 }
 
 // Authentication configuration

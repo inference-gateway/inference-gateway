@@ -18,8 +18,12 @@ const (
 	MetricsIngestPath        = "/v1/metrics"
 	HealthPath               = "/health"
 	MCPPath                  = "/mcp"
+	A2APath                  = "/a2a"
+	A2AAgentsPath            = A2APath + "/agents"
+	A2AAgentCardPath         = "/.well-known/agent-card.json"
 	ProtectedResourcePath    = "/.well-known/oauth-protected-resource"
 	MCPProtectedResourcePath = ProtectedResourcePath + MCPPath
+	A2AProtectedResourcePath = ProtectedResourcePath + A2APath
 )
 
 // ForwardedProtoHeader carries the scheme a terminating proxy received on,
@@ -31,6 +35,11 @@ func MCPExposed(mcp *config.MCPConfig) bool {
 	return mcp != nil && mcp.Enabled && mcp.Expose
 }
 
+// A2AEnabled reports whether the gateway serves POST /a2a as an A2A server.
+func A2AEnabled(a2a *config.A2AConfig) bool {
+	return a2a != nil && a2a.Enabled
+}
+
 // MCPResourceURL is the canonical public URL of POST /mcp, published as the
 // resource of the RFC 9728 metadata document. MCP_RESOURCE_URL wins; without
 // it the URL is derived from the request, which is only right when nothing
@@ -39,6 +48,20 @@ func MCPResourceURL(mcp *config.MCPConfig, r *http.Request) string {
 	if mcp != nil && mcp.ResourceUrl != "" {
 		return mcp.ResourceUrl
 	}
+	return requestResourceURL(r, MCPPath)
+}
+
+// A2AResourceURL is the canonical public URL of POST /a2a, published on the
+// gateway agent card and as the resource of its RFC 9728 metadata document.
+// A2A_RESOURCE_URL wins over the request-derived URL.
+func A2AResourceURL(a2a *config.A2AConfig, r *http.Request) string {
+	if a2a != nil && a2a.ResourceUrl != "" {
+		return a2a.ResourceUrl
+	}
+	return requestResourceURL(r, A2APath)
+}
+
+func requestResourceURL(r *http.Request, path string) string {
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"
@@ -46,7 +69,7 @@ func MCPResourceURL(mcp *config.MCPConfig, r *http.Request) string {
 	if forwarded, _, _ := strings.Cut(r.Header.Get(ForwardedProtoHeader), ","); forwarded != "" {
 		scheme = strings.TrimSpace(forwarded)
 	}
-	return scheme + "://" + r.Host + MCPPath
+	return scheme + "://" + r.Host + path
 }
 
 // ProtectedResourceMetadataURL maps a resource URL to the URL of the RFC 9728

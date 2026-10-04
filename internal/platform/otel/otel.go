@@ -57,6 +57,10 @@ type OpenTelemetry interface {
 	RecordToolCall(ctx context.Context, source, team, provider, model, toolType, toolName string)
 	RecordGuardrail(ctx context.Context, source, phase, action, path, model string)
 
+	// RecordA2ARequest counts one relayed A2A call and its duration; status is
+	// "ok" or the JSON-RPC error code the client got.
+	RecordA2ARequest(ctx context.Context, alias, method, status string, seconds float64)
+
 	// IngestMetrics maps an OTLP push payload onto the gateway's instruments.
 	IngestMetrics(ctx context.Context, req *colmetricspb.ExportMetricsServiceRequest) IngestResult
 
@@ -78,7 +82,17 @@ type OpenTelemetryImpl struct {
 	executeToolDuration     metric.Float64Histogram // gen_ai.execute_tool.duration (push only)
 	toolCallCounter         metric.Int64Counter     // inference_gateway.tool_calls
 	guardrailCounter        metric.Int64Counter     // inference_gateway.guardrails
+	a2aRequestCounter       metric.Int64Counter     // a2a_requests_total
+	a2aRequestDuration      metric.Float64Histogram // a2a_request_duration_seconds
 }
+
+// A2A relay attribute keys, exported as the alias, method and status labels of
+// a2a_requests_total and a2a_request_duration_seconds.
+const (
+	a2aAliasKey  = attribute.Key("alias")
+	a2aMethodKey = attribute.Key("method")
+	a2aStatusKey = attribute.Key("status")
+)
 
 // TracesEndpointURL appends the OTLP traces path to a path-less endpoint URL.
 // otel-go 1.45.0 stopped appending the default /v1/traces in WithEndpointURL,
@@ -181,7 +195,7 @@ func metricViews() []sdkmetric.View {
 func (o *OpenTelemetryImpl) initInstruments(provider *sdkmetric.MeterProvider) error {
 	o.meter = provider.Meter(config.APPLICATION_NAME)
 
-	var errs [8]error
+	var errs [10]error
 
 	o.tokenUsageHistogram, errs[0] = o.meter.Int64Histogram("gen_ai.client.token.usage",
 		metric.WithDescription("Number of input and output tokens used per operation"),
@@ -214,6 +228,14 @@ func (o *OpenTelemetryImpl) initInstruments(provider *sdkmetric.MeterProvider) e
 	o.guardrailCounter, errs[7] = o.meter.Int64Counter("inference_gateway.guardrails",
 		metric.WithDescription("Number of guardrail evaluations"),
 		metric.WithUnit("{evaluation}"))
+
+	o.a2aRequestCounter, errs[8] = o.meter.Int64Counter("a2a.requests",
+		metric.WithDescription("Number of A2A calls relayed to agents"),
+		metric.WithUnit("{request}"))
+
+	o.a2aRequestDuration, errs[9] = o.meter.Float64Histogram("a2a.request.duration",
+		metric.WithDescription("Duration of A2A calls relayed to agents"),
+		metric.WithUnit("s"))
 
 	for _, err := range errs {
 		if err != nil {
@@ -282,6 +304,12 @@ func (o *OpenTelemetryImpl) RecordGuardrail(ctx context.Context, source, phase, 
 		attributes = append(attributes, semconv.GenAIRequestModel(model))
 	}
 	o.guardrailCounter.Add(ctx, 1, metric.WithAttributes(attributes...))
+}
+
+func (o *OpenTelemetryImpl) RecordA2ARequest(ctx context.Context, alias, method, status string, seconds float64) {
+	labels := []attribute.KeyValue{a2aAliasKey.String(alias), a2aMethodKey.String(method)}
+	o.a2aRequestDuration.Record(ctx, seconds, metric.WithAttributes(labels...))
+	o.a2aRequestCounter.Add(ctx, 1, metric.WithAttributes(append(labels, a2aStatusKey.String(status))...))
 }
 
 func (o *OpenTelemetryImpl) ShutDown(ctx context.Context) error {

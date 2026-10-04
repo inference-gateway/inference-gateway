@@ -42,6 +42,7 @@ use of Mixture of Experts.
 - [Installation](#installation)
 - [Middleware Control and Bypass Mechanisms](#middleware-control-and-bypass-mechanisms)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
+- [Agent-to-Agent (A2A) Server](#agent-to-agent-a2a-server)
 - [Metrics and Observability](#metrics-and-observability)
 - [Supported API's](#supported-apis)
 - [Configuration](#configuration)
@@ -58,7 +59,8 @@ use of Mixture of Experts.
 | 🔀 **Unified API**               | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, llama.cpp, Cloudflare, DeepSeek, ElevenLabs, Google, Mistral, MiniMax, Moonshot, Nvidia, and Z.ai               |
 | 🔧 **Tool-use Support**          | Function calling capabilities across supported providers with a unified API                                                                                                                               |
 | 🌐 **MCP Support**               | Full Model Context Protocol integration - tools from MCP servers are discovered and exposed to LLMs automatically, and the gateway itself can serve them as an MCP server on `POST /mcp`                  |
-| 🚦 **Guardrails**                | OPA/Rego policies, secret and PII detection, and an optional external guardrail service - applied to requests, responses and MCP tool calls                                                               |
+| 🤝 **A2A Server**                | The gateway as an Agent-to-Agent server: one card and one `POST /a2a` endpoint relaying every call to the registered agent that owns it, through the same auth, guardrails and telemetry                  |
+| 🚦 **Guardrails**                | OPA/Rego policies, secret and PII detection, and an optional external guardrail service - applied to requests, responses, MCP tool calls and relayed A2A calls                                            |
 | 🌊 **Streaming**                 | Real-time token streaming from all supported providers                                                                                                                                                    |
 | 🖼️ **Vision / Multimodal**       | Process images alongside text with vision-capable models                                                                                                                                                  |
 | ⚙️ **Environment Configuration** | Configure API keys and URLs entirely through environment variables                                                                                                                                        |
@@ -159,6 +161,10 @@ For streaming the tokens simply add to the request body `stream: true`.
 | `GET /v1/models`                                | List models from every configured provider                                                                                                                                                                                                                                                                 |
 | `POST /mcp`                                     | The gateway as an MCP server: one JSON-RPC 2.0 endpoint aggregating every configured MCP server, so a client configures a single entry. Opt-in via `MCP_ENABLED=true` **and** `MCP_EXPOSE=true`, otherwise the endpoint returns 403                                                                        |
 | `GET /.well-known/oauth-protected-resource/mcp` | OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) for `POST /mcp`, so an MCP client discovers the authorization server on its own. No authentication required; served while `AUTH_ENABLED=true`, `MCP_ENABLED=true` and `MCP_EXPOSE=true`, otherwise 404   |
+| `GET /.well-known/agent-card.json`              | The gateway's own A2A agent card: the skills of every agent in `A2A_AGENTS`, ids prefixed `<alias>_`, and one interface per agent naming the alias as its tenant. No authentication required. Opt-in via `A2A_ENABLED=true`, otherwise 404                                                                 |
+| `POST /a2a`                                     | The gateway as an A2A server: one JSON-RPC 2.0 endpoint relaying each of the eleven A2A methods to the registered agent the request names, through auth, guardrails and telemetry. Opt-in via `A2A_ENABLED=true`, otherwise 404                                                                            |
+| `GET /a2a/agents`                               | The A2A registry: alias, url, card, reachable and lastSeen of every configured agent. Diagnostic only. Opt-in via `A2A_ENABLED=true`, otherwise 404                                                                                                                                                        |
+| `GET /.well-known/oauth-protected-resource/a2a` | OAuth 2.0 Protected Resource Metadata for `POST /a2a`, the same document as the `/mcp` one with the resource swapped. No authentication required; served while `AUTH_ENABLED=true` and `A2A_ENABLED=true`, otherwise 404                                                                                   |
 | `POST /v1/chat/completions`                     | OpenAI-compatible chat completions, streaming and tools included - works with every provider                                                                                                                                                                                                               |
 | `POST /v1/messages`                             | [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) compatibility - the body is relayed byte-for-byte, so `cache_control` and the Anthropic SSE event envelope pass through untouched (Anthropic provider only)                                                                           |
 | `POST /v1/responses`                            | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) compatibility, relayed byte-for-byte (OpenAI provider only)                                                                                                                                                               |
@@ -489,6 +495,79 @@ upstream failure (`-32603`).
 > [Model Context Protocol Documentation](https://modelcontextprotocol.io/) |
 > [MCP Integration Example](examples/docker-compose/mcp/)
 
+## Agent-to-Agent (A2A) Server
+
+`A2A_ENABLED=true` turns the gateway into an [A2A](https://a2a-protocol.org/)
+server that delegates. It fetches the card of every agent in `A2A_AGENTS` at
+startup and every `A2A_CARD_REFRESH_INTERVAL`, publishes one merged card, and
+relays each `POST /a2a` call to the one agent the request names. An A2A client
+configures the gateway as its only agent and gets auth, guardrails and
+telemetry on every delegated call, which talking to an agent directly does not
+give it. An agent that is down is logged, marked unreachable in
+`GET /a2a/agents` and retried; it never prevents startup.
+
+```bash
+# alias=url, or a bare url to derive the alias from the host
+export A2A_ENABLED=true
+export A2A_AGENTS="research=http://research-agent:8080,http://writer-agent:8080"
+
+curl http://localhost:8080/.well-known/agent-card.json
+curl http://localhost:8080/a2a/agents
+```
+
+The gateway keeps no task table, so every call must say which agent it is for.
+`SendMessage` and `SendStreamingMessage` name it with `params.tenant` (the
+alias, which the card also advertises as the tenant of that agent's interface)
+or `message.metadata.agent`:
+
+```bash
+curl -X POST http://localhost:8080/a2a \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"SendMessage","params":{"tenant":"research","message":{"messageId":"m-1","role":"ROLE_USER","parts":[{"text":"Summarise the A2A spec"}]}}}'
+# {"jsonrpc":"2.0","id":1,"result":{"task":{"id":"research:7f3c...","status":{"state":"TASK_STATE_WORKING"}}}}
+```
+
+Every task id leaves the gateway as `<alias>:<task id>` and is accepted back in
+that form by every task-scoped method (`GetTask`, `CancelTask`,
+`SubscribeToTask`, `ListTasks` and the push notification config methods), the
+same way `GET /v1/videos/:id` carries its provider. `GetTask` is a straight
+relay: a client polls the gateway exactly as it would poll the agent, the
+gateway never polls on its behalf. `SubscribeToTask` and `SendStreamingMessage`
+pipe the agent's SSE stream through event by event until the agent closes it or
+nothing arrives for `A2A_STREAM_IDLE_TIMEOUT`. `ListTasks` without a tenant
+fans out to every agent and merges the pages. Push notification configs are
+relayed unchanged, so the agent calls the client's webhook directly.
+
+```bash
+curl -X POST http://localhost:8080/a2a \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"GetTask","params":{"id":"research:7f3c..."}}'
+```
+
+A request that names no agent, or an unknown one, answers `-32602` listing the
+configured aliases; a method outside the A2A enum answers `-32601`; an agent
+that fails or cannot be reached answers `-32603` carrying the agent's error
+text; a guardrails block answers `403` with the same `-32001` envelope `/mcp`
+uses, with `pre_call` seeing the message parts and `post_call` the relayed
+result. Authentication covers every A2A route except the card and the RFC 9728
+document, which `401` challenges on `/a2a` point at the way they do on `/mcp`
+(`A2A_RESOURCE_URL` sets the canonical URL behind an ingress). The caller's
+bearer token is never forwarded; per-agent credentials go into the agent URL as
+basic auth. With `TELEMETRY_ENABLED=true` every relayed call is counted in
+`a2a_requests_total` and timed in `a2a_request_duration_seconds`, labelled
+`alias`, `method` and `status`.
+
+The gateway stays a stateless proxy: no tasks, messages or events are stored,
+no agent is injected as a tool into `/v1/chat/completions`, and no request is
+routed by intent. Operators discover agents and hand them to the gateway
+through `A2A_AGENTS`; the gateway never talks to Kubernetes itself.
+
+> **Learn more**:
+> [A2A Protocol](https://a2a-protocol.org/) |
+> [Docker Compose example](examples/docker-compose/a2a/) |
+> [Kubernetes example](examples/kubernetes/a2a/) |
+> [Agent Development Kit](https://github.com/inference-gateway/adk)
+
 ## Metrics and Observability
 
 The Inference Gateway provides comprehensive OpenTelemetry metrics for
@@ -523,6 +602,8 @@ Every series carries a `source` label: `gateway` for gateway-observed traffic, o
 | `gen_ai_server_time_to_first_token_seconds`           | Histogram | Time to first token (push-only)                                         |
 | `inference_gateway_tool_calls_total`                  | Counter   | Total function/tool calls                                               |
 | `inference_gateway_guardrails_total`                  | Counter   | Number of guardrail evaluations                                         |
+| `a2a_requests_total`                                  | Counter   | A2A calls relayed to agents; `alias`, `method`, `status` (`ok` or code) |
+| `a2a_request_duration_seconds`                        | Histogram | Relayed A2A call duration (streaming: time to open); `alias`, `method`  |
 
 **Common labels**: `gen_ai_provider_name`, `gen_ai_request_model`, `source`, `team`;
 tool metrics add `gen_ai_tool_type` and `gen_ai_tool_name`; token usage adds `gen_ai_token_type`;
@@ -659,6 +740,8 @@ through recognition.
     single provider
   - [MCP Integration](examples/docker-compose/mcp/) - Model Context Protocol with
     multiple tool servers
+  - [A2A](examples/docker-compose/a2a/) - The gateway as an Agent-to-Agent
+    server relaying to a mock agent
   - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers
     (cloud + local)
   - [Keycloak](examples/docker-compose/auth-keycloak/) - OIDC authentication and
@@ -674,6 +757,8 @@ through recognition.
   - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
   - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in
     Kubernetes
+  - [A2A](examples/kubernetes/a2a/) - The gateway as an Agent-to-Agent server
+    relaying to a mock agent
   - [Agent deployment](examples/kubernetes/agent/) - Standalone agent deployment
   - [Hybrid deployment](examples/kubernetes/hybrid/) - Multiple providers in
     Kubernetes

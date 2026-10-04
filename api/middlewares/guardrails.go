@@ -11,6 +11,7 @@ import (
 	gin "github.com/gin-gonic/gin"
 
 	config "github.com/inference-gateway/inference-gateway/config"
+	a2a "github.com/inference-gateway/inference-gateway/internal/a2a"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
@@ -100,14 +101,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 		if err != nil {
 			m.logger.Error("guardrails: pre_call evaluation error", err)
 			if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
-				if path == MCPPath {
-					abortJSONRPCBlocked(c, bodyBytes, guardrails.MsgEvaluationFailed)
-					return
-				}
-				c.JSON(http.StatusForbidden, gin.H{
-					"error":   guardrails.MsgEvaluationFailed,
-					"message": guardrails.MsgBlocked,
-				})
+				m.block(c, path, bodyBytes, guardrails.MsgEvaluationFailed, guardrails.MsgBlocked)
 				c.Abort()
 				return
 			}
@@ -121,14 +115,7 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			if m.telemetry != nil {
 				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), guardrails.ActionBlock, path, model)
 			}
-			if path == MCPPath {
-				abortJSONRPCBlocked(c, bodyBytes, cmp.Or(dec.Message, guardrails.MsgBlocked))
-				return
-			}
-			c.JSON(http.StatusForbidden, gin.H{
-				"error":   guardrails.MsgBlocked,
-				"message": dec.Message,
-			})
+			m.block(c, path, bodyBytes, guardrails.MsgBlocked, cmp.Or(dec.Message, guardrails.MsgBlocked))
 			c.Abort()
 			return
 		}
@@ -143,80 +130,119 @@ func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
 			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), dec.Action, path, model)
 		}
 
-		if path == ChatCompletionsPath && !isStreamingRequest(bodyBytes) {
-			customWriter := captureResponse(c)
-
+		if !capturesResponse(path, bodyBytes) {
 			c.Next()
-
-			if customWriter.statusCode >= http.StatusBadRequest {
-				customWriter.replay(c)
-				return
-			}
-
-			respInput := &guardrails.Input{
-				Method: c.Request.Method,
-				Path:   path,
-				Phase:  guardrails.PhasePostCall,
-				Request: &guardrails.Req{
-					Body:  customWriter.body.String(),
-					Model: model,
-				},
-				Identity: claims,
-			}
-
-			respDec, respErr := m.evaluate(c.Request.Context(), respInput)
-			if respErr != nil {
-				m.logger.Error("guardrails: post_call evaluation error", respErr)
-				if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
-					c.Writer = customWriter.ResponseWriter
-					c.JSON(http.StatusForbidden, gin.H{
-						"error":   "guardrail evaluation failed",
-						"message": "response blocked by guardrails",
-					})
-					return
-				}
-				m.logger.Warn("guardrails: post_call evaluation error, allowing in open mode", "error", respErr.Error())
-			}
-
-			if respDec.Action == guardrails.ActionBlock {
-				m.logger.Info("guardrails: response blocked", "path", path, "message", respDec.Message)
-				if m.telemetry != nil {
-					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionBlock, path, model)
-				}
-				c.Writer = customWriter.ResponseWriter
-				c.JSON(http.StatusForbidden, gin.H{
-					"error":   "response blocked by guardrails",
-					"message": respDec.Message,
-				})
-				return
-			}
-
-			if respDec.Action == guardrails.ActionRedact {
-				redactedBody := guardrails.RedactSensitive(customWriter.body.String(), m.detectors)
-				c.Writer = customWriter.ResponseWriter
-				c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), []byte(redactedBody))
-				if m.telemetry != nil {
-					m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionRedact, path, model)
-				}
-				return
-			}
-
-			if m.telemetry != nil {
-				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), respDec.Action, path, model)
-			}
-
-			customWriter.replay(c)
 			return
 		}
 
+		customWriter := captureResponse(c)
 		c.Next()
+		if customWriter.statusCode >= http.StatusBadRequest {
+			customWriter.replay(c)
+			return
+		}
+		m.evaluateResponse(c, customWriter, path, model, claims, bodyBytes)
 	}
 }
 
-// abortJSONRPCBlocked refuses a /mcp request with a JSON-RPC error envelope
-// echoing the request id, so an MCP client can parse the refusal instead of
-// getting a plain error object it does not understand.
-func abortJSONRPCBlocked(c *gin.Context, body []byte, message string) {
+// evaluateResponse runs post_call over the captured response and replays,
+// redacts or blocks it.
+func (m *GuardrailsMiddlewareImpl) evaluateResponse(c *gin.Context, customWriter *customResponseWriter, path, model string, claims map[string]any, requestBody []byte) {
+	respInput := &guardrails.Input{
+		Method: c.Request.Method,
+		Path:   path,
+		Phase:  guardrails.PhasePostCall,
+		Request: &guardrails.Req{
+			Body:  customWriter.body.String(),
+			Model: model,
+		},
+		Identity: claims,
+	}
+
+	respDec, respErr := m.evaluate(c.Request.Context(), respInput)
+	if respErr != nil {
+		m.logger.Error("guardrails: post_call evaluation error", respErr)
+		if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
+			c.Writer = customWriter.ResponseWriter
+			m.block(c, path, requestBody, msgResponseEvaluationFailed, msgResponseBlocked)
+			return
+		}
+		m.logger.Warn("guardrails: post_call evaluation error, allowing in open mode", "error", respErr.Error())
+	}
+
+	if respDec.Action == guardrails.ActionBlock {
+		m.logger.Info("guardrails: response blocked", "path", path, "message", respDec.Message)
+		if m.telemetry != nil {
+			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionBlock, path, model)
+		}
+		c.Writer = customWriter.ResponseWriter
+		m.block(c, path, requestBody, msgResponseBlocked, cmp.Or(respDec.Message, msgResponseBlocked))
+		return
+	}
+
+	if respDec.Action == guardrails.ActionRedact {
+		redactedBody := guardrails.RedactSensitive(customWriter.body.String(), m.detectors)
+		c.Writer = customWriter.ResponseWriter
+		c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), []byte(redactedBody))
+		if m.telemetry != nil {
+			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionRedact, path, model)
+		}
+		return
+	}
+
+	if m.telemetry != nil {
+		m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), respDec.Action, path, model)
+	}
+
+	customWriter.replay(c)
+}
+
+const (
+	msgResponseEvaluationFailed = "guardrail evaluation failed"
+	msgResponseBlocked          = "response blocked by guardrails"
+)
+
+// block writes the 403 for a guardrails refusal: a JSON-RPC error envelope on
+// the /mcp and /a2a server endpoints, a plain error object everywhere else.
+// The envelope carries the policy message when there is one and the cause
+// (evaluation failure or generic block) otherwise.
+func (m *GuardrailsMiddlewareImpl) block(c *gin.Context, path string, requestBody []byte, errorMsg, message string) {
+	if isJSONRPCPath(path) {
+		rpcMessage := message
+		if message == guardrails.MsgBlocked || message == msgResponseBlocked {
+			rpcMessage = errorMsg
+		}
+		writeJSONRPCBlocked(c, requestBody, rpcMessage)
+		return
+	}
+	c.JSON(http.StatusForbidden, gin.H{
+		"error":   errorMsg,
+		"message": message,
+	})
+}
+
+// isJSONRPCPath reports whether path is one of the gateway's JSON-RPC server
+// endpoints, whose clients expect refusals in the JSON-RPC error envelope.
+func isJSONRPCPath(path string) bool {
+	return path == MCPPath || path == A2APath
+}
+
+// capturesResponse reports whether post_call runs on path: non-streaming chat
+// completions and non-streaming A2A methods, whose whole response is one body.
+func capturesResponse(path string, body []byte) bool {
+	switch path {
+	case ChatCompletionsPath:
+		return !isStreamingRequest(body)
+	case A2APath:
+		return !a2a.IsStreamingMethod(jsonRPCMethod(body))
+	}
+	return false
+}
+
+// writeJSONRPCBlocked refuses a /mcp or /a2a request with a JSON-RPC error
+// envelope echoing the request id, so the client can parse the refusal instead
+// of getting a plain error object it does not understand.
+func writeJSONRPCBlocked(c *gin.Context, body []byte, message string) {
 	var req struct {
 		ID json.RawMessage `json:"id"`
 	}
@@ -227,11 +253,19 @@ func abortJSONRPCBlocked(c *gin.Context, body []byte, message string) {
 		_ = id.UnmarshalJSON(req.ID)
 	}
 
-	c.AbortWithStatusJSON(http.StatusForbidden, types.MCPJSONRPCResponse{
+	c.JSON(http.StatusForbidden, types.MCPJSONRPCResponse{
 		Jsonrpc: types.MCPJSONRPCResponseJsonrpcN20,
 		ID:      id,
 		Error:   &types.MCPJSONRPCError{Code: JSONRPCGuardrailBlocked, Message: message},
 	})
+}
+
+func jsonRPCMethod(body []byte) string {
+	var req struct {
+		Method string `json:"method"`
+	}
+	_ = json.Unmarshal(body, &req)
+	return req.Method
 }
 
 // evaluate runs the policy evaluator and external guardrail check.

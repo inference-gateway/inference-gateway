@@ -1,0 +1,43 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: inference-gateway
+  labels:
+    inference-gateway.com/managed: 'true'
+---
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: Gateway
+metadata:
+  name: inference-gateway
+  namespace: inference-gateway
+  labels:
+    app.kubernetes.io/name: inference-gateway
+    app.kubernetes.io/instance: inference-gateway
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: inference-gateway
+spec:
+  environment: development
+  image: 'ghcr.io/inference-gateway/inference-gateway:latest'
+  a2a:
+    enabled: true
+    # Every Agent CR in this namespace carrying the selector labels is rendered
+    # into A2A_AGENTS as "<metadata.name>=<url>", so the agent in agents.yaml is
+    # registered under the alias "mock-agent". Static entries go under agents[]:
+    #   agents:
+    #     - name: remote
+    #       url: https://agent.example.com
+    serviceDiscovery:
+      enabled: true
+      selector:
+        matchLabels:
+          a2a: demo
+  resources:
+    requests:
+      cpu: '100m'
+      memory: '128Mi'
+    limits:
+      cpu: '1000m'
+      memory: '512Mi'
+  # No routing: `task port-forward` reaches the ClusterIP Service the operator
+  # always creates, so no Gateway API resources are needed.

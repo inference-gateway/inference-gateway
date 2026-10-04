@@ -15,6 +15,8 @@ This directory contains examples that demonstrate how to use the Inference Gatew
 - [MCP with client tools](mcp-client-tools/README.md) - What the MCP middleware
   does with tools the client declares itself, against a mock LLM or, opt-in, a
   real provider
+- [A2A](a2a/README.md) - The gateway as an Agent-to-Agent server relaying to
+  two mock agents
 - [Hybrid](hybrid/README.md) - Configuration with multiple model providers
   (cloud and local)
 - [Tools](tools/README.md) - Function calling and tool usage examples
