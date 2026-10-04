@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.58.1](https://github.com/inference-gateway/inference-gateway/compare/v0.58.0...v0.58.1) (2026-10-04)
+
+### ♻️ Improvements
+
+* bump go toolchain to 1.26.8 ([#764](https://github.com/inference-gateway/inference-gateway/issues/764)) ([7692ea3](https://github.com/inference-gateway/inference-gateway/commit/7692ea346cf2ddda9112615b8ed11e9bf0e91a65))
+
+### 📚 Documentation
+
+* **agents:** add code readability guidelines ([#761](https://github.com/inference-gateway/inference-gateway/issues/761)) ([0cd6c16](https://github.com/inference-gateway/inference-gateway/commit/0cd6c164d3f2e78778b291b53d908e10f4ac5c7b))
+* correct auto-download and MCP timeout descriptions ([#760](https://github.com/inference-gateway/inference-gateway/issues/760)) ([fb130be](https://github.com/inference-gateway/inference-gateway/commit/fb130be527d6778bbd9b058d63824d2f00ef2204))
+* fix cli go install path to cmd/infer ([#759](https://github.com/inference-gateway/inference-gateway/issues/759)) ([9f52c67](https://github.com/inference-gateway/inference-gateway/commit/9f52c67137beaad509313725442fd5bd6e104816))
+
+### 🔧 Miscellaneous
+
+* sync generated types with schemas v1.2.0 ([#762](https://github.com/inference-gateway/inference-gateway/issues/762)) ([5cac846](https://github.com/inference-gateway/inference-gateway/commit/5cac846013dd8541e91c6b20b64531ca9123c77d))
+
 ## [0.58.0](https://github.com/inference-gateway/inference-gateway/compare/v0.57.2...v0.58.0) (2026-10-04)
 
 ### ✨ Features
