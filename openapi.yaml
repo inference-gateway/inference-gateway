@@ -4716,7 +4716,7 @@ components:
                   env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
                   type: bool
                   default: 'true'
-                  description: 'Allow downloading the llama-tts binary and GGUF models on first use. Anything already present is never re-downloaded: the cache is checked first, whether populated by an earlier run, the CLI, a mounted volume, or a pre-baked image layer. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing'
+                  description: 'Allow fetching the llama-tts binary and GGUF models, in the background at startup when the Audio API is enabled and on demand otherwise. A cached llama-tts is replaced when its sha256 no longer matches the latest release checksums.txt; a binary found on PATH and already present GGUF weights are never re-downloaded, whether written by an earlier run, the CLI, a mounted volume, or a pre-baked image layer. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing'
                 - name: audio_local_max_concurrency
                   env: 'AUDIO_LOCAL_MAX_CONCURRENCY'
                   type: int
@@ -4828,7 +4828,7 @@ components:
                   env: 'MCP_REQUEST_TIMEOUT'
                   type: time.Duration
                   default: '5s'
-                  description: 'MCP client request timeout for initialize and tool calls'
+                  description: 'Timeout for MCP server startup initialization and each server tools/list discovery call. Tool calls are not bounded by it; they use MCP_CLIENT_TIMEOUT and the request context'
                 - name: mcp_max_retries
                   env: 'MCP_MAX_RETRIES'
                   type: int
