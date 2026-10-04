@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="950" height="464" viewBox="0 0 950 464" font-family="ui-sans-serif,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14">
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="612" viewBox="0 0 950 612" font-family="ui-sans-serif,-apple-system,Segoe UI,Helvetica,Arial,sans-serif" font-size="14">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.30"/>
@@ -19,24 +19,29 @@
     <path id="b1" d="M184 202 H232"/>
     <path id="b2" d="M324 202 H341"/>
     <path id="b3" d="M465 202 H482"/>
-    <path id="t1" d="M594 112 H597 Q603 112 603 118 V336"/>
-    <path id="t2" d="M538 232 V336"/>
-    <path id="o1" d="M100 232 V372 Q100 388 116 388 H232"/>
+    <path id="c1" d="M184 310 H232"/>
+    <path id="c2" d="M324 310 H341"/>
+    <path id="c3" d="M465 310 H612"/>
+    <path id="t1" d="M594 112 H597 Q603 112 603 118 V444"/>
+    <path id="t2" d="M538 232 V444"/>
+    <path id="t3" d="M668 340 V522"/>
+    <path id="o1" d="M100 340 V480 Q100 496 116 496 H232"/>
     <path id="p1" d="M724 94 C758 94 758 50 792 50"/>
     <path id="p2" d="M724 94 C758 94 758 118 792 118"/>
     <path id="p3" d="M724 94 C758 94 758 186 792 186"/>
     <path id="p4" d="M724 94 C758 94 758 254 792 254"/>
-    <path id="p5" d="M724 94 C758 94 758 333 792 333"/>
+    <path id="p5" d="M724 94 C758 94 758 322 792 322"/>
+    <path id="p6" d="M724 94 C758 94 758 401 792 401"/>
   </defs>
 
   <!-- master clock: every beat below is an offset from clock.begin, so the loop never drifts -->
-  <rect width="0" height="0"><animate id="clock" attributeName="x" from="0" to="0" begin="0s;clock.end" dur="8s"/></rect>
+  <rect width="0" height="0"><animate id="clock" attributeName="x" from="0" to="0" begin="0s;clock.end" dur="11s"/></rect>
 
-  <rect x="2" y="2" width="946" height="460" rx="16" fill="url(#bg)"/>
-  <rect x="6" y="6" width="938" height="452" rx="14" fill="#0d1117" stroke="#30363d"/>
+  <rect x="2" y="2" width="946" height="608" rx="16" fill="url(#bg)"/>
+  <rect x="6" y="6" width="938" height="600" rx="14" fill="#0d1117" stroke="#30363d"/>
 
   <!-- clients -->
-  <rect x="16" y="64" width="168" height="168" rx="12" fill="#3B1F7A" stroke="#7C3AED"/>
+  <rect x="16" y="64" width="168" height="276" rx="12" fill="#3B1F7A" stroke="#7C3AED"/>
   <text x="100" y="88" text-anchor="middle" fill="#e6edf3">Clients · Agents</text>
   <text x="100" y="106" text-anchor="middle" fill="#c9a7ff" font-size="12">SDKs · CLI · IDEs</text>
   <g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="10">
@@ -48,64 +53,82 @@
       <text x="26" y="191">/proxy/{provider}</text>
     </g>
     <text x="26" y="206" fill="#d2a8ff">POST /mcp</text>
-    <text x="26" y="221" fill="#56d4dd">POST /v1/metrics (OTLP)</text>
+    <text x="26" y="221" fill="#ffa657">POST /a2a</text>
+    <text x="26" y="236" fill="#56d4dd">POST /v1/metrics (OTLP)</text>
   </g>
 
   <!-- gateway panel -->
-  <rect x="220" y="22" width="516" height="284" rx="14" fill="url(#gw)" stroke="#7C3AED"/>
+  <rect x="220" y="22" width="516" height="392" rx="14" fill="url(#gw)" stroke="#7C3AED"/>
   <text x="478" y="44" text-anchor="middle" fill="#c9a7ff" font-size="13">Inference Gateway · scales horizontally</text>
 
   <g fill="#161b22" stroke-dasharray="5 3">
-    <rect x="232" y="64" width="92" height="168" rx="10" stroke="#326CE5"/>
-    <rect x="341" y="64" width="124" height="168" rx="10" stroke="#D29922"/>
+    <rect x="232" y="64" width="92" height="276" rx="10" stroke="#326CE5"/>
+    <rect x="341" y="64" width="124" height="276" rx="10" stroke="#D29922"/>
     <rect x="482" y="64" width="112" height="60" rx="10" stroke="#DB61A2"/>
     <rect x="482" y="172" width="112" height="60" rx="10" stroke="#DB61A2"/>
+    <rect x="612" y="280" width="112" height="60" rx="10" stroke="#F0883E"/>
   </g>
   <rect x="612" y="64" width="112" height="60" rx="10" fill="#161b22" stroke="#326CE5"/>
 
   <g text-anchor="middle" fill="#e6edf3" font-size="13">
-    <text x="278" y="140">OIDC Auth</text>
-    <text x="403" y="128">Guardrails</text>
+    <text x="278" y="194">OIDC Auth</text>
+    <text x="403" y="182">Guardrails</text>
     <text x="538" y="86">MCP Middleware</text>
     <text x="668" y="86">Provider Router</text>
     <text x="538" y="194">MCP Server</text>
+    <text x="668" y="302">A2A Server</text>
   </g>
   <g text-anchor="middle" fill="#8b949e" font-size="11">
-    <text x="403" y="146">OPA · Rego policies</text>
+    <text x="403" y="200">OPA · Rego policies</text>
     <text x="668" y="102">model prefix</text>
   </g>
   <g text-anchor="middle" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="10">
-    <text x="278" y="158" fill="#79c0ff">AUTH_ENABLED</text>
-    <text x="403" y="164" fill="#e3b341">GUARDRAILS_ENABLED</text>
+    <text x="278" y="212" fill="#79c0ff">AUTH_ENABLED</text>
+    <text x="403" y="218" fill="#e3b341">GUARDRAILS_ENABLED</text>
     <text x="538" y="102" fill="#f0a8cd">MCP_ENABLED</text>
     <text x="538" y="116" fill="#8b949e">X-MCP-Bypass</text>
     <text x="668" y="116" fill="#79c0ff">?provider=</text>
     <text x="538" y="210" fill="#d2a8ff">POST /mcp</text>
     <text x="538" y="224" fill="#8b949e">MCP_EXPOSE</text>
+    <text x="668" y="318" fill="#ffa657">POST /a2a</text>
+    <text x="668" y="332" fill="#8b949e">A2A_ENABLED</text>
   </g>
 
   <!-- telemetry -->
-  <rect x="232" y="336" width="233" height="104" rx="10" fill="#0d2226" stroke="#39C5CF" stroke-dasharray="5 3"/>
-  <text x="348" y="358" text-anchor="middle" fill="#e6edf3" font-size="13">OpenTelemetry</text>
+  <rect x="232" y="444" width="233" height="104" rx="10" fill="#0d2226" stroke="#39C5CF" stroke-dasharray="5 3"/>
+  <text x="348" y="466" text-anchor="middle" fill="#e6edf3" font-size="13">OpenTelemetry</text>
   <g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="10">
-    <text x="348" y="374" text-anchor="middle" fill="#56d4dd">TELEMETRY_ENABLED</text>
+    <text x="348" y="482" text-anchor="middle" fill="#56d4dd">TELEMETRY_ENABLED</text>
     <g fill="#e6edf3">
-      <text x="330" y="396">:9464/metrics</text>
-      <text x="330" y="412">POST /v1/metrics</text>
-      <text x="330" y="428">spans → OTLP</text>
+      <text x="330" y="504">:9464/metrics</text>
+      <text x="330" y="520">POST /v1/metrics</text>
+      <text x="330" y="536">spans → OTLP</text>
     </g>
   </g>
   <g fill="#8b949e" font-size="11">
-    <text x="246" y="396">Prometheus</text>
-    <text x="246" y="412">OTLP push</text>
-    <text x="246" y="428">Tracing</text>
+    <text x="246" y="504">Prometheus</text>
+    <text x="246" y="520">OTLP push</text>
+    <text x="246" y="536">Tracing</text>
   </g>
-  <text x="341" y="290" fill="#56d4dd" font-size="10">metrics · spans</text>
+  <text x="341" y="398" fill="#56d4dd" font-size="10">metrics · spans</text>
 
-  <!-- mcp servers -->
-  <rect x="490" y="336" width="226" height="54" rx="10" fill="#4A1F3A" stroke="#DB61A2"/>
-  <text x="603" y="358" text-anchor="middle" fill="#e6edf3" font-size="13">MCP Servers</text>
-  <text x="603" y="376" text-anchor="middle" fill="#f0a8cd" font-size="11">tool discovery &amp; execution</text>
+  <!-- mcp servers: a stack of cards, there can be many -->
+  <g stroke="#DB61A2">
+    <rect x="494" y="456" width="138" height="54" rx="10" fill="#331528" stroke-opacity="0.55"/>
+    <rect x="488" y="450" width="138" height="54" rx="10" fill="#3e1a31" stroke-opacity="0.8"/>
+    <rect x="482" y="444" width="138" height="54" rx="10" fill="#4A1F3A"/>
+  </g>
+  <text x="551" y="466" text-anchor="middle" fill="#e6edf3" font-size="13">MCP Servers</text>
+  <text x="551" y="484" text-anchor="middle" fill="#f0a8cd" font-size="11">discovery &amp; execution</text>
+
+  <!-- a2a servers: a stack of cards, the gateway delegates to many -->
+  <g stroke="#F0883E">
+    <rect x="496" y="536" width="230" height="54" rx="10" fill="#2a180c" stroke-opacity="0.55"/>
+    <rect x="489" y="529" width="230" height="54" rx="10" fill="#33200f" stroke-opacity="0.8"/>
+    <rect x="482" y="522" width="230" height="54" rx="10" fill="#3d2612"/>
+  </g>
+  <text x="597" y="544" text-anchor="middle" fill="#e6edf3" font-size="13">A2A Servers</text>
+  <text x="597" y="562" text-anchor="middle" fill="#ffc680" font-size="11">A2A_AGENTS · relay by tenant</text>
 
   <!-- providers -->
   <g fill="#161b22" stroke="#2EA043">
@@ -113,18 +136,20 @@
     <rect x="792" y="96" width="138" height="44" rx="10"/>
     <rect x="792" y="164" width="138" height="44" rx="10"/>
     <rect x="792" y="232" width="138" height="44" rx="10"/>
-    <rect x="792" y="300" width="138" height="66" rx="10"/>
+    <rect x="792" y="300" width="138" height="44" rx="10"/>
+    <rect x="792" y="368" width="138" height="66" rx="10"/>
   </g>
   <g text-anchor="middle" fill="#e6edf3" font-size="13">
     <text x="861" y="55">OpenAI</text>
     <text x="861" y="123">Anthropic</text>
     <text x="861" y="191">Google</text>
     <text x="861" y="259">Ollama</text>
-    <text x="861" y="322">+ 12 more</text>
+    <text x="861" y="327">LlamaCPP</text>
+    <text x="861" y="390">+ 11 more</text>
   </g>
   <g text-anchor="middle" fill="#7ee787" font-size="10">
-    <text x="861" y="340">Groq · Mistral · Cohere</text>
-    <text x="861" y="354">DeepSeek · Nvidia · …</text>
+    <text x="861" y="408">Groq · Mistral · Cohere</text>
+    <text x="861" y="422">DeepSeek · Nvidia · …</text>
   </g>
 
   <!-- wires -->
@@ -132,21 +157,24 @@
     <g marker-end="url(#arr)">
       <use href="#a1"/><use href="#a2"/><use href="#a3"/><use href="#a4"/>
       <use href="#b1"/><use href="#b2"/><use href="#b3"/>
+      <use href="#c1"/><use href="#c2"/><use href="#c3"/>
     </g>
-    <use href="#p1"/><use href="#p2"/><use href="#p3"/><use href="#p4"/><use href="#p5"/>
+    <use href="#p1"/><use href="#p2"/><use href="#p3"/><use href="#p4"/><use href="#p5"/><use href="#p6"/>
   </g>
   <g fill="none" stroke-width="2" stroke-dasharray="6 5" opacity="0.7">
     <use href="#t1" stroke="#DB61A2"/>
     <use href="#t2" stroke="#DB61A2"/>
+    <use href="#t3" stroke="#F0883E"/>
     <use href="#o1" stroke="#39C5CF"/>
   </g>
-  <path d="M333 236 V336" fill="none" stroke="#39C5CF" stroke-width="2" stroke-dasharray="2 4" opacity="0.8">
+  <path d="M333 344 V444" fill="none" stroke="#39C5CF" stroke-width="2" stroke-dasharray="2 4" opacity="0.8">
     <animate attributeName="stroke-dashoffset" from="6" to="0" dur="0.6s" repeatCount="indefinite"/>
   </path>
   <g text-anchor="middle" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="10">
     <text x="202" y="88" fill="#a5b4fc">/v1/*</text>
     <text x="202" y="196" fill="#d2a8ff">/mcp</text>
-    <text x="170" y="381" fill="#56d4dd">OTLP push</text>
+    <text x="202" y="304" fill="#ffa657">/a2a</text>
+    <text x="170" y="489" fill="#56d4dd">OTLP push</text>
   </g>
 
   <!-- request: clients -> auth -> guardrails -> mcp -> router -> provider -->
@@ -184,41 +212,59 @@
     <circle r="4" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+7.4s" dur="0.45s"/><animateMotion begin="clock.begin+7.4s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#b1"/></animateMotion></circle>
   </g>
 
+  <!-- gateway as an a2a server: POST /a2a -> auth -> guardrails -> a2a server -> the agent the call names -->
+  <g fill="#ffa657">
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+7.3s" dur="0.45s"/><animateMotion begin="clock.begin+7.3s" dur="0.45s"><mpath href="#c1"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+7.95s" dur="0.2s"/><animateMotion begin="clock.begin+7.95s" dur="0.2s"><mpath href="#c2"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+8.35s" dur="0.4s"/><animateMotion begin="clock.begin+8.35s" dur="0.4s"><mpath href="#c3"/></animateMotion></circle>
+    <circle r="4.5" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+8.95s" dur="0.6s"/><animateMotion begin="clock.begin+8.95s" dur="0.6s"><mpath href="#t3"/></animateMotion></circle>
+    <circle r="4" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+9.95s" dur="0.6s"/><animateMotion begin="clock.begin+9.95s" dur="0.6s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#t3"/></animateMotion></circle>
+    <circle r="4" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+10.5s" dur="0.45s"/><animateMotion begin="clock.begin+10.5s" dur="0.45s" keyPoints="1;0" keyTimes="0;1" calcMode="linear"><mpath href="#c1"/></animateMotion></circle>
+  </g>
+
   <!-- client-side metrics pushed over OTLP -->
   <circle r="4" fill="#56d4dd" opacity="0"><set attributeName="opacity" to="1" begin="clock.begin+1s" dur="1.2s"/><animateMotion begin="clock.begin+1s" dur="1.2s"><mpath href="#o1"/></animateMotion></circle>
 
-  <!-- guardrails gate for tool calls, drawn over the wires so packets pass through it -->
-  <rect x="482" y="256" width="242" height="26" rx="6" fill="#2b2110" stroke="#D29922" stroke-dasharray="5 3"/>
-  <rect x="482" y="256" width="242" height="26" rx="6" fill="#D29922" opacity="0">
-    <animate attributeName="opacity" values="0;0.45;0" begin="clock.begin+1.95s; clock.begin+5.98s" dur="0.5s"/>
+  <!-- guardrails gate for tool calls and a2a relays, drawn over the wires so packets pass through it -->
+  <rect x="482" y="364" width="242" height="26" rx="6" fill="#2b2110" stroke="#D29922" stroke-dasharray="5 3"/>
+  <rect x="482" y="364" width="242" height="26" rx="6" fill="#D29922" opacity="0">
+    <animate attributeName="opacity" values="0;0.45;0" begin="clock.begin+2.1s; clock.begin+6.2s; clock.begin+9s" dur="0.5s"/>
   </rect>
-  <text x="603" y="273" text-anchor="middle" fill="#e3b341" font-size="11">guardrails · every tool call</text>
+  <text x="603" y="381" text-anchor="middle" fill="#e3b341" font-size="11">guardrails · tool calls · A2A relays</text>
 
   <!-- stage pulses as a packet passes through -->
   <g fill="none" stroke-width="2.5">
-    <rect x="16" y="64" width="168" height="168" rx="12" stroke="#7ee787" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+5.6s" dur="0.5s"/></rect>
-    <rect x="232" y="64" width="92" height="168" rx="10" stroke="#326CE5" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+0.4s; clock.begin+4.8s" dur="0.5s"/></rect>
-    <rect x="341" y="64" width="124" height="168" rx="10" stroke="#D29922" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+0.8s; clock.begin+5.2s" dur="0.5s"/></rect>
+    <rect x="16" y="64" width="168" height="276" rx="12" stroke="#7ee787" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+5.6s" dur="0.5s"/></rect>
+    <rect x="232" y="64" width="92" height="276" rx="10" stroke="#326CE5" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+0.4s; clock.begin+4.8s; clock.begin+7.7s" dur="0.5s"/></rect>
+    <rect x="341" y="64" width="124" height="276" rx="10" stroke="#D29922" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+0.8s; clock.begin+5.2s; clock.begin+8.1s" dur="0.5s"/></rect>
     <rect x="482" y="64" width="112" height="60" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+1.2s; clock.begin+3.3s" dur="0.5s"/></rect>
     <rect x="612" y="64" width="112" height="60" rx="10" stroke="#326CE5" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+3.6s" dur="0.5s"/></rect>
     <rect x="482" y="172" width="112" height="60" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+5.6s; clock.begin+7.25s" dur="0.5s"/></rect>
-    <rect x="490" y="336" width="226" height="54" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.25s; clock.begin+6.45s" dur="0.5s"/></rect>
-    <rect x="232" y="336" width="233" height="104" rx="10" stroke="#39C5CF" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.2s" dur="0.5s"/></rect>
+    <rect x="612" y="280" width="112" height="60" rx="10" stroke="#F0883E" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+8.7s; clock.begin+10.45s" dur="0.5s"/></rect>
+    <rect x="482" y="444" width="138" height="54" rx="10" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.25s; clock.begin+6.45s" dur="0.5s"/></rect>
+    <path d="M616 450 Q626 450 626 460 V494 Q626 504 616 504 H498 Q488 504 488 498" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.37s; clock.begin+6.57s" dur="0.5s"/></path>
+    <path d="M622 456 Q632 456 632 466 V500 Q632 510 622 510 H504 Q494 510 494 504" stroke="#DB61A2" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.49s; clock.begin+6.69s" dur="0.5s"/></path>
+    <!-- the a2a stack lights up card by card: front, then the visible edges of the two behind it -->
+    <rect x="482" y="522" width="230" height="54" rx="10" stroke="#ffa657" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+9.5s" dur="0.5s"/></rect>
+    <path d="M709 529 Q719 529 719 539 V573 Q719 583 709 583 H499 Q489 583 489 576" stroke="#ffa657" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+9.62s" dur="0.5s"/></path>
+    <path d="M716 536 Q726 536 726 546 V580 Q726 590 716 590 H506 Q496 590 496 583" stroke="#ffa657" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+9.74s" dur="0.5s"/></path>
+    <rect x="232" y="444" width="233" height="104" rx="10" stroke="#39C5CF" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+2.2s" dur="0.5s"/></rect>
     <rect x="792" y="96" width="138" height="44" rx="10" stroke="#2EA043" opacity="0"><animate attributeName="opacity" values="0;1;0" begin="clock.begin+4.25s" dur="0.5s"/></rect>
   </g>
 
   <!-- gateway breathe -->
-  <rect x="220" y="22" width="516" height="284" rx="14" fill="none" stroke="#7C3AED" opacity="0.15">
+  <rect x="220" y="22" width="516" height="392" rx="14" fill="none" stroke="#7C3AED" opacity="0.15">
     <animate attributeName="opacity" values="0.15;0.45;0.15" dur="4s" repeatCount="indefinite"/>
   </rect>
 
   <!-- legend -->
   <g font-size="10" fill="#8b949e">
-    <path d="M752 395 H772" stroke="#8b949e" stroke-dasharray="5 3"/>
-    <text x="778" y="399">opt-in</text>
-    <circle cx="756" cy="414" r="4" fill="#a5b4fc"/><text x="764" y="418">request</text>
-    <circle cx="836" cy="414" r="4" fill="#7ee787"/><text x="844" y="418">tokens</text>
-    <circle cx="756" cy="432" r="4" fill="#DB61A2"/><text x="764" y="436">tool call</text>
-    <circle cx="836" cy="432" r="4" fill="#d2a8ff"/><text x="844" y="436">/mcp</text>
+    <path d="M752 525 H772" stroke="#8b949e" stroke-dasharray="5 3"/>
+    <text x="778" y="529">opt-in</text>
+    <circle cx="756" cy="544" r="4" fill="#a5b4fc"/><text x="764" y="548">request</text>
+    <circle cx="836" cy="544" r="4" fill="#7ee787"/><text x="844" y="548">tokens</text>
+    <circle cx="756" cy="562" r="4" fill="#DB61A2"/><text x="764" y="566">tool call</text>
+    <circle cx="836" cy="562" r="4" fill="#d2a8ff"/><text x="844" y="566">/mcp</text>
+    <circle cx="756" cy="580" r="4" fill="#ffa657"/><text x="764" y="584">/a2a</text>
   </g>
 </svg>

@@ -98,7 +98,8 @@ The following diagram illustrates the flow:
 alt="Requests flow from clients through OIDC auth, guardrails, MCP middleware and
 the provider router to 16 LLM providers, with tokens streaming back. MCP tool
 calls and the POST /mcp server endpoint reach MCP servers through guardrails,
-while OpenTelemetry collects metrics, traces and OTLP pushes from clients" />
+A2A calls on POST /a2a are relayed through auth and guardrails to multiple
+registered A2A servers, while OpenTelemetry collects metrics, traces and OTLP pushes from clients" />
 
 </div>
 
