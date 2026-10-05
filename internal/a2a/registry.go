@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	client "github.com/inference-gateway/adk/client"
 	types "github.com/inference-gateway/adk/types"
 
@@ -27,17 +29,19 @@ func ParseAgents(raw string) ([]endpoints.Spec, error) {
 	return endpoints.Parse(raw, agentKind)
 }
 
-// DialAgents builds one ADK client per configured agent. The HTTP client has
-// no overall timeout because the same client relays SSE streams; unary calls
-// get A2A_CLIENT_TIMEOUT as a context deadline instead. Retries are off: a
-// relay must not re-send a task the client sent once.
+// DialAgents builds one ADK client per configured agent. The otelhttp
+// transport injects the trace context so an agent's spans nest under the
+// gateway's. The HTTP client has no overall timeout because the same client
+// relays SSE streams; unary calls get A2A_CLIENT_TIMEOUT as a context deadline
+// instead. Retries are off: a relay must not re-send a task the client sent
+// once.
 func DialAgents(specs []endpoints.Spec) map[string]client.A2AClient {
 	agents := make(map[string]client.A2AClient, len(specs))
 	for _, spec := range specs {
 		adkCfg := client.DefaultConfig(spec.URL)
 		adkCfg.UserAgent = userAgent
 		adkCfg.MaxRetries = 0
-		adkCfg.HTTPClient = &http.Client{}
+		adkCfg.HTTPClient = &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 		agents[spec.Alias] = client.NewClientWithConfig(adkCfg)
 	}
 	return agents
