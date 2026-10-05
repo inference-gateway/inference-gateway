@@ -134,9 +134,36 @@
       "text"
     ]
   },
+  "anthropic/claude-sonnet-5-5": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "cloudflare/@cf/aisingapore/gemma-sea-lion-v4-27b-it": {
     "input": [
       "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cloudflare/@cf/cloudflare/clef": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cloudflare/@cf/cloudflare/clef-flash": {
+    "input": [
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -321,24 +348,7 @@
       "text"
     ]
   },
-  "cohere/c4ai-aya-expanse-8b": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "cohere/c4ai-aya-vision-32b": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "cohere/c4ai-aya-vision-8b": {
     "input": [
       "text",
       "image"
@@ -422,6 +432,46 @@
     ]
   },
   "cohere/north-mini-code-1-0": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cohere/north-small-translate-09-2026": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cohere/tiny-aya-earth": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cohere/tiny-aya-fire": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cohere/tiny-aya-global": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cohere/tiny-aya-water": {
     "input": [
       "text"
     ],
@@ -1282,14 +1332,6 @@
       "text"
     ]
   },
-  "mistral/magistral-small": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "mistral/ministral-3b-latest": {
     "input": [
       "text"
@@ -1684,6 +1726,15 @@
   "nvidia/deepseek-ai/deepseek-v4-pro-0813": {
     "input": [
       "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "nvidia/deepseek-ai/deepseek-v4.1-flash": {
+    "input": [
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -2120,14 +2171,6 @@
     ]
   },
   "nvidia/mistralai/mixtral-8x7b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/moonshotai/kimi-k2-instruct-0905": {
     "input": [
       "text"
     ],
@@ -2661,14 +2704,6 @@
       "text",
       "image",
       "video"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/openai/gpt-oss-120b": {
-    "input": [
-      "text"
     ],
     "output": [
       "text"
@@ -3587,6 +3622,15 @@
     ]
   },
   "openai/gpt-6-sol": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "openai/gpt-6.1-sol": {
     "input": [
       "text",
       "image"
