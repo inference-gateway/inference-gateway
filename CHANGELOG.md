@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.58.2](https://github.com/inference-gateway/inference-gateway/compare/v0.58.1...v0.58.2) (2026-10-05)
+
+### 📚 Documentation
+
+* **readme:** add the /a2a lane to the architecture diagram ([#766](https://github.com/inference-gateway/inference-gateway/issues/766)) ([00d56c5](https://github.com/inference-gateway/inference-gateway/commit/00d56c5f6ed221918b963be6481f02682f962b34))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump go.opentelemetry.io/proto/otlp ([#765](https://github.com/inference-gateway/inference-gateway/issues/765)) ([414a1d4](https://github.com/inference-gateway/inference-gateway/commit/414a1d46ecdc6419ed30fe9c667b258062612f80))
+* **pricing,context-window,modalities:** sync community pricing, context-window, and modalities tables from models.dev ([#767](https://github.com/inference-gateway/inference-gateway/issues/767)) ([ffaf8ae](https://github.com/inference-gateway/inference-gateway/commit/ffaf8ae0a6ec8b0cc7ebfb05fa84b32e98ef450b))
+
 ## [0.58.1](https://github.com/inference-gateway/inference-gateway/compare/v0.58.0...v0.58.1) (2026-10-04)
 
 ### ♻️ Improvements
