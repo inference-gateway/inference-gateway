@@ -58,16 +58,28 @@
     "context": 1000000,
     "output": 128000
   },
+  "anthropic/claude-sonnet-5-5": {
+    "context": 1000000,
+    "output": 128000
+  },
   "cloudflare/@cf/aisingapore/gemma-sea-lion-v4-27b-it": {
     "context": 128000,
     "output": 128000
+  },
+  "cloudflare/@cf/cloudflare/clef": {
+    "context": 65536,
+    "output": 65536
+  },
+  "cloudflare/@cf/cloudflare/clef-flash": {
+    "context": 65536,
+    "output": 65536
   },
   "cloudflare/@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": {
     "context": 80000,
     "output": 80000
   },
   "cloudflare/@cf/deepseek-ai/deepseek-v4-flash-0731": {
-    "context": 1310720,
+    "context": 1048576,
     "output": 1048576
   },
   "cloudflare/@cf/deepseek-ai/deepseek-v4-pro-0813": {
@@ -141,26 +153,18 @@
     "output": 256000
   },
   "cloudflare/@cf/zai-org/glm-5.3": {
-    "context": 1310720,
+    "context": 1048576,
     "output": 1048576
   },
   "cloudflare/@cf/zai-org/glm-5.3-flash": {
-    "context": 1310720,
+    "context": 1048576,
     "output": 1048576
   },
   "cohere/c4ai-aya-expanse-32b": {
     "context": 128000,
     "output": 4000
   },
-  "cohere/c4ai-aya-expanse-8b": {
-    "context": 8000,
-    "output": 4000
-  },
   "cohere/c4ai-aya-vision-32b": {
-    "context": 16000,
-    "output": 4000
-  },
-  "cohere/c4ai-aya-vision-8b": {
     "context": 16000,
     "output": 4000
   },
@@ -203,6 +207,25 @@
   "cohere/north-mini-code-1-0": {
     "context": 256000,
     "output": 64000
+  },
+  "cohere/north-small-translate-09-2026": {
+    "context": 32768
+  },
+  "cohere/tiny-aya-earth": {
+    "context": 8000,
+    "output": 8000
+  },
+  "cohere/tiny-aya-fire": {
+    "context": 8000,
+    "output": 8000
+  },
+  "cohere/tiny-aya-global": {
+    "context": 8000,
+    "output": 8000
+  },
+  "cohere/tiny-aya-water": {
+    "context": 8000,
+    "output": 8000
   },
   "deepseek/deepseek-v4-flash": {
     "context": 1000000,
@@ -472,10 +495,6 @@
     "context": 128000,
     "output": 16384
   },
-  "mistral/magistral-small": {
-    "context": 128000,
-    "output": 128000
-  },
   "mistral/ministral-3b-latest": {
     "context": 128000,
     "output": 128000
@@ -622,6 +641,13 @@
     "context": 1000000,
     "output": 384000
   },
+  "nvidia/deepseek-ai/deepseek-v4.1-flash": {
+    "context": 1000000,
+    "output": 384000
+  },
+  "nvidia/google/diffusiongemma-26b-a4b-it": {
+    "context": 250000
+  },
   "nvidia/google/gemma-2-2b-it": {
     "context": 128000,
     "output": 4096
@@ -750,10 +776,6 @@
     "context": 32768,
     "output": 16384
   },
-  "nvidia/moonshotai/kimi-k2-instruct-0905": {
-    "context": 262144,
-    "output": 262144
-  },
   "nvidia/moonshotai/kimi-k2.6": {
     "context": 262144,
     "output": 262144
@@ -822,6 +844,10 @@
     "context": 1000000,
     "output": 65536
   },
+  "nvidia/nvidia/nemotron-3.5-content-safety": {
+    "context": 128000,
+    "output": 8192
+  },
   "nvidia/nvidia/nemotron-3.5-lightning-30b-a3b": {
     "context": 262144,
     "output": 262144
@@ -877,10 +903,6 @@
   "nvidia/nvidia/usdcode": {
     "context": 128000,
     "output": 4096
-  },
-  "nvidia/openai/gpt-oss-120b": {
-    "context": 128000,
-    "output": 8192
   },
   "nvidia/openai/gpt-oss-20b": {
     "context": 131072,
@@ -1163,6 +1185,10 @@
     "output": 128000
   },
   "openai/gpt-6-sol": {
+    "context": 1050000,
+    "output": 128000
+  },
+  "openai/gpt-6.1-sol": {
     "context": 1050000,
     "output": 128000
   },

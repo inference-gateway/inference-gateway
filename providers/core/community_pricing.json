@@ -134,12 +134,35 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "anthropic/claude-sonnet-5-5": {
+    "cache_read_per_token": "0.0000002",
+    "cache_write_per_token": "0.0000025",
+    "currency": "USD",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-10-05T13:26:20Z"
+  },
   "cloudflare/@cf/aisingapore/gemma-sea-lion-v4-27b-it": {
     "currency": "USD",
     "input_per_token": "0.000000351",
     "output_per_token": "0.000000555",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "cloudflare/@cf/cloudflare/clef": {
+    "currency": "USD",
+    "input_per_token": "0.00000024",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-05T13:26:20Z"
+  },
+  "cloudflare/@cf/cloudflare/clef-flash": {
+    "currency": "USD",
+    "input_per_token": "0.00000009",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "cloudflare/@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": {
     "currency": "USD",
@@ -165,11 +188,12 @@
     "updated_at": "2026-08-17T06:44:00Z"
   },
   "cloudflare/@cf/google/gemma-4-26b-a4b-it": {
+    "cache_read_per_token": "0.00000005",
     "currency": "USD",
     "input_per_token": "0.0000001",
     "output_per_token": "0.0000003",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "cloudflare/@cf/ibm-granite/granite-4.0-h-micro": {
     "currency": "USD",
@@ -401,6 +425,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "cohere/north-small-translate-09-2026": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-05T13:26:20Z"
+  },
   "deepseek/deepseek-flash": {
     "cache_read_per_token": "0.000000003",
     "currency": "USD",
@@ -426,12 +457,12 @@
     "updated_at": "2026-09-14T11:37:00Z"
   },
   "deepseek/deepseek-v4-pro": {
-    "cache_read_per_token": "0.000000003625",
+    "cache_read_per_token": "0.000000022",
     "currency": "USD",
-    "input_per_token": "0.000000435",
-    "output_per_token": "0.00000087",
+    "input_per_token": "0.00000066",
+    "output_per_token": "0.00000198",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "google/deep-research-max-preview-04-2026": {
     "cache_read_per_token": "0.0000002",
@@ -823,11 +854,12 @@
     "updated_at": "2026-08-16T06:15:34Z"
   },
   "mistral/codestral-latest": {
+    "cache_read_per_token": "0.00000003",
     "currency": "USD",
     "input_per_token": "0.0000003",
     "output_per_token": "0.0000009",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "mistral/devstral-2512": {
     "currency": "USD",
@@ -885,13 +917,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "mistral/magistral-small": {
-    "currency": "USD",
-    "input_per_token": "0.0000005",
-    "output_per_token": "0.0000015",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "mistral/ministral-3b-latest": {
     "currency": "USD",
     "input_per_token": "0.00000004",
@@ -921,18 +946,20 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "mistral/mistral-large-2512": {
+    "cache_read_per_token": "0.00000005",
     "currency": "USD",
     "input_per_token": "0.0000005",
     "output_per_token": "0.0000015",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "mistral/mistral-large-latest": {
+    "cache_read_per_token": "0.00000005",
     "currency": "USD",
     "input_per_token": "0.0000005",
     "output_per_token": "0.0000015",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "mistral/mistral-medium-2505": {
     "currency": "USD",
@@ -949,18 +976,20 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "mistral/mistral-medium-2604": {
+    "cache_read_per_token": "0.00000015",
     "currency": "USD",
     "input_per_token": "0.0000015",
     "output_per_token": "0.0000075",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "mistral/mistral-medium-latest": {
+    "cache_read_per_token": "0.00000015",
     "currency": "USD",
     "input_per_token": "0.0000015",
     "output_per_token": "0.0000075",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "mistral/mistral-nemo": {
     "currency": "USD",
@@ -977,18 +1006,20 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "mistral/mistral-small-2603": {
+    "cache_read_per_token": "0.000000015",
     "currency": "USD",
     "input_per_token": "0.00000015",
     "output_per_token": "0.0000006",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "mistral/mistral-small-latest": {
+    "cache_read_per_token": "0.000000015",
     "currency": "USD",
     "input_per_token": "0.00000015",
     "output_per_token": "0.0000006",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "mistral/open-mistral-7b": {
     "currency": "USD",
@@ -1165,6 +1196,20 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-08-31T12:36:08Z"
+  },
+  "nvidia/deepseek-ai/deepseek-v4.1-flash": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-05T13:26:20Z"
+  },
+  "nvidia/google/diffusiongemma-26b-a4b-it": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "nvidia/google/gemma-2-2b-it": {
     "currency": "USD",
@@ -1397,13 +1442,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/moonshotai/kimi-k2-instruct-0905": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/moonshotai/kimi-k2.6": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1580,6 +1618,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "nvidia/nvidia/nemotron-3.5-content-safety": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-05T13:26:20Z"
+  },
   "nvidia/nvidia/nemotron-3.5-lightning-30b-a3b": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1686,13 +1731,6 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "nvidia/nvidia/usdvalidate": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/openai/gpt-oss-120b": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
@@ -2314,6 +2352,15 @@
     "output_per_token": "0.00001",
     "source": "community",
     "updated_at": "2026-09-28T12:45:24Z"
+  },
+  "openai/gpt-6.1-sol": {
+    "cache_read_per_token": "0.0000001",
+    "cache_write_per_token": "0.0000025",
+    "currency": "USD",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-10-05T13:26:20Z"
   },
   "openai/gpt-daybreak-blue-latest": {
     "cache_read_per_token": "0.0000004",
