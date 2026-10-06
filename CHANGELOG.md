@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.58.3](https://github.com/inference-gateway/inference-gateway/compare/v0.58.2...v0.58.3) (2026-10-06)
+
+### 🐛 Bug Fixes
+
+* **a2a:** propagate trace context to agents ([#769](https://github.com/inference-gateway/inference-gateway/issues/769)) ([e4b4a01](https://github.com/inference-gateway/inference-gateway/commit/e4b4a0102753eb2bd092dc424c3e86b76be189c0))
+
 ## [0.58.2](https://github.com/inference-gateway/inference-gateway/compare/v0.58.1...v0.58.2) (2026-10-05)
 
 ### 📚 Documentation
