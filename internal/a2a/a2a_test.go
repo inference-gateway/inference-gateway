@@ -4,11 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+
+	otelapi "go.opentelemetry.io/otel"
+	propagation "go.opentelemetry.io/otel/propagation"
+	trace "go.opentelemetry.io/otel/trace"
 
 	client "github.com/inference-gateway/adk/client"
 	mocks "github.com/inference-gateway/adk/client/mocks"
@@ -16,6 +22,7 @@ import (
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	a2a "github.com/inference-gateway/inference-gateway/internal/a2a"
+	endpoints "github.com/inference-gateway/inference-gateway/internal/platform/endpoints"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
@@ -31,6 +38,10 @@ const (
 	configID      = "cfg-9"
 	agentPassword = "s3cret"
 	testTimeout   = 5 * time.Second
+
+	traceparentHeader = "traceparent"
+	testTraceID       = "4bf92f3577b34da6a3ce929d0e0e4736"
+	testSpanID        = "00f067aa0ba902b7"
 )
 
 var errAgentDown = errors.New("connection refused")
@@ -423,6 +434,34 @@ func TestStreamSubscribeStripsPrefix(t *testing.T) {
 	_, _, rpcErr = registry.Stream(context.Background(), types.A2AMethodSubscribeToTask, types.Struct{"id": prefixedTask})
 	require.NotNil(t, rpcErr)
 	assert.Equal(t, a2a.CodeInternalError, rpcErr.Code)
+}
+
+func TestDialAgentsPropagatesTraceContext(t *testing.T) {
+	otelapi.SetTextMapPropagator(propagation.TraceContext{})
+
+	traceparents := make(chan string, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		traceparents <- r.Header.Get(traceparentHeader)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(card("Research", true, true))
+	}))
+	defer server.Close()
+
+	agents := a2a.DialAgents([]endpoints.Spec{{Alias: researchAlias, URL: server.URL}})
+
+	traceID, err := trace.TraceIDFromHex(testTraceID)
+	require.NoError(t, err)
+	spanID, err := trace.SpanIDFromHex(testSpanID)
+	require.NoError(t, err)
+	ctx := trace.ContextWithSpanContext(context.Background(), trace.NewSpanContext(trace.SpanContextConfig{
+		TraceID:    traceID,
+		SpanID:     spanID,
+		TraceFlags: trace.FlagsSampled,
+		Remote:     true,
+	}))
+
+	_, _ = agents[researchAlias].GetAgentCard(ctx)
+	assert.Contains(t, <-traceparents, testTraceID)
 }
 
 func TestIsStreamingMethod(t *testing.T) {
