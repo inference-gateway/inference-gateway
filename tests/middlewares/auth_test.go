@@ -124,6 +124,7 @@ func newAuthEngine(t *testing.T, auth config.AuthConfig, mcp *config.MCPConfig) 
 	r.HandleFunc("GET "+middlewares.HealthPath, echo)
 	r.HandleFunc("GET "+middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
 	r.HandleFunc("GET "+testRoute, echo)
+	r.HandleFunc("POST "+middlewares.MCPPath, echo)
 	return mw.Middleware()(r)
 }
 
@@ -302,6 +303,7 @@ func newA2AAuthEngine(t *testing.T, auth config.AuthConfig, a2a *config.A2AConfi
 	r.HandleFunc("GET "+middlewares.A2AAgentCardPath, ok)
 	r.HandleFunc("GET "+middlewares.A2AProtectedResourcePath, ok)
 	r.HandleFunc("POST "+middlewares.A2APath, ok)
+	r.HandleFunc("GET "+middlewares.A2AAgentsPath, ok)
 	return mw.Middleware()(r)
 }
 

@@ -167,6 +167,7 @@ func (env a2aTestEnv) engine(extra ...func(http.Handler) http.Handler) http.Hand
 	r.HandleFunc("GET "+middlewares.A2AAgentCardPath, env.handler.AgentCard)
 	r.HandleFunc("GET "+middlewares.A2AProtectedResourcePath, env.handler.ProtectedResourceMetadata)
 	r.HandleFunc("POST "+middlewares.A2APath, env.handler.JSONRPC)
+	r.HandleFunc("GET "+middlewares.A2AAgentsPath, env.handler.Agents)
 	var h http.Handler = r
 	for i := len(extra) - 1; i >= 0; i-- {
 		h = extra[i](h)
