@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.58.4](https://github.com/inference-gateway/inference-gateway/compare/v0.58.3...v0.58.4) (2026-10-08)
+
+### ♻️ Improvements
+
+* **api:** replace gin server with net/http ServeMux ([#773](https://github.com/inference-gateway/inference-gateway/issues/773)) ([28cbc2d](https://github.com/inference-gateway/inference-gateway/commit/28cbc2db9a8f981d1727f7075d92123d54945a04))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.285 -> 2.1.289 ([#770](https://github.com/inference-gateway/inference-gateway/issues/770)) ([b55d9e4](https://github.com/inference-gateway/inference-gateway/commit/b55d9e4ab4cf9e2a3d04aae0685341daaaaa9a95))
+* **deps:** bump infer CLI v0.221.1 -> v0.226.0 ([#771](https://github.com/inference-gateway/inference-gateway/issues/771)) ([3df008f](https://github.com/inference-gateway/inference-gateway/commit/3df008f5642f500965a3bdcf2aafc024ca0b325b))
+
 ## [0.58.3](https://github.com/inference-gateway/inference-gateway/compare/v0.58.2...v0.58.3) (2026-10-06)
 
 ### 🐛 Bug Fixes
