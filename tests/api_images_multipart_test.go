@@ -18,8 +18,6 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -139,8 +137,8 @@ func TestImagesEditsHandler_HappyPath(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, true)
-	r := gin.New()
-	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "image", filename: "sunset.png", value: "PNG-IMAGE-BYTES"},
@@ -171,8 +169,8 @@ func TestImagesEditsHandler_HappyPath(t *testing.T) {
 
 func TestImagesEditsHandler_MissingImage(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", true)
-	r := gin.New()
-	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "prompt", value: "Add a flock of birds"},
@@ -190,8 +188,8 @@ func TestImagesEditsHandler_MissingImage(t *testing.T) {
 
 func TestImagesEditsHandler_MissingPrompt(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", true)
-	r := gin.New()
-	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "image", filename: "sunset.png", value: "PNG-IMAGE-BYTES"},
@@ -209,8 +207,8 @@ func TestImagesEditsHandler_MissingPrompt(t *testing.T) {
 
 func TestImagesEditsHandler_UnsupportedProvider(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", true)
-	r := gin.New()
-	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "image", filename: "sunset.png", value: "PNG-IMAGE-BYTES"},
@@ -228,8 +226,8 @@ func TestImagesEditsHandler_UnsupportedProvider(t *testing.T) {
 
 func TestImagesEditsHandler_Disabled(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", false)
-	r := gin.New()
-	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "image", filename: "sunset.png", value: "PNG-IMAGE-BYTES"},
@@ -248,8 +246,8 @@ func TestImagesEditsHandler_ModelNotAllowed(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", true, func(cfg *config.Config) {
 		cfg.AllowedModels = "openai/gpt-image-2"
 	})
-	r := gin.New()
-	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "image", filename: "sunset.png", value: "PNG-IMAGE-BYTES"},
@@ -270,8 +268,8 @@ func TestImagesEditsHandler_BodyTooLarge(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", true, func(cfg *config.Config) {
 		cfg.Server.MaxRequestBodySize = 64
 	})
-	r := gin.New()
-	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "image", filename: "sunset.png", value: strings.Repeat("A", 1024)},
@@ -306,8 +304,8 @@ func TestImagesEditsHandler_MultiImage(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, true)
-	r := gin.New()
-	r.POST("/v1/images/edits", router.ImagesEditsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 	body, contentType := buildImagesMultipart(t, []imagesMultipartField{
 		{name: "image[]", filename: "a.png", value: "IMAGE-A"},
@@ -376,8 +374,8 @@ func TestImagesEditsHandler_LabelsFilePartContentType(t *testing.T) {
 			defer server.Close()
 
 			router := newImagesTestRouter(t, server.URL, true)
-			r := gin.New()
-			r.POST("/v1/images/edits", router.ImagesEditsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/images/edits", router.ImagesEditsHandler)
 
 			body := &bytes.Buffer{}
 			mw := multipart.NewWriter(body)

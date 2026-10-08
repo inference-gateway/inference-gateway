@@ -14,8 +14,6 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -24,10 +22,6 @@ import (
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
-
-func init() {
-	gin.SetMode(gin.TestMode)
-}
 
 func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 	tests := []struct {
@@ -184,9 +178,8 @@ func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
 
 			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
-			r.GET("/v1/models", router.ListModelsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("GET "+"/v1/models", router.ListModelsHandler)
 
 			t.Run("SingleProvider", func(t *testing.T) {
 				w := httptest.NewRecorder()
@@ -282,9 +275,8 @@ func TestListModelsHandler_ErrorCases(t *testing.T) {
 
 			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
-			r.GET("/v1/models", router.ListModelsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("GET "+"/v1/models", router.ListModelsHandler)
 
 			w := httptest.NewRecorder()
 			req, err := http.NewRequest("GET", "/v1/models?provider="+tt.providerParam, nil)
@@ -360,9 +352,8 @@ func TestListModelsHandler_Include(t *testing.T) {
 	}
 	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil, nil)
 
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.GET("/v1/models", router.ListModelsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("GET "+"/v1/models", router.ListModelsHandler)
 
 	tests := []struct {
 		name         string
@@ -606,9 +597,8 @@ func TestChatCompletionsHandler_ModelValidation(t *testing.T) {
 
 			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
-			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 			requestBody := map[string]any{
 				"model": tt.requestModel,
@@ -663,9 +653,8 @@ func TestChatCompletionsHandler_RejectsOversizedBody(t *testing.T) {
 	cfg := config.Config{Server: &config.ServerConfig{ReadTimeout: 5 * time.Second}, Providers: providerCfg}
 	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil, nil)
 
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 	oversized := `{"model":"openai/gpt-4","messages":[{"role":"user","content":"` + strings.Repeat("a", 11<<20) + `"}]}`
 
@@ -812,9 +801,8 @@ func TestListModelsHandler_DisallowedModelsFiltering(t *testing.T) {
 
 			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
-			r.GET("/v1/models", router.ListModelsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("GET "+"/v1/models", router.ListModelsHandler)
 
 			t.Run("SingleProvider", func(t *testing.T) {
 				w := httptest.NewRecorder()
@@ -988,9 +976,8 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 
 			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
-			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 			requestBody := map[string]any{
 				"model": tt.requestModel,
@@ -1145,9 +1132,8 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 
 			router := api.NewRouter(cfg, log, registry, mockClient, nil, nil, nil, nil, nil)
 
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
-			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 			requestBody := map[string]any{
 				"model": tt.requestModel,
@@ -1297,9 +1283,8 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 
 			router := api.NewRouter(cfg, log, mockRegistry, mockClient, nil, nil, nil, nil, nil)
 
-			gin.SetMode(gin.TestMode)
-			r := gin.New()
-			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 			requestBody := types.CreateChatCompletionRequest{
 				Model:  "openai/gpt-4",

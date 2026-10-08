@@ -2,12 +2,12 @@ package middlewares
 
 import (
 	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-
-	gin "github.com/gin-gonic/gin"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 )
@@ -25,6 +25,39 @@ const (
 	MCPProtectedResourcePath = ProtectedResourcePath + MCPPath
 	A2AProtectedResourcePath = ProtectedResourcePath + A2APath
 )
+
+// contentTypeJSONWithCharset is the Content-Type gin rendered JSON with, kept
+// for byte-identical responses on every error path.
+const contentTypeJSONWithCharset = "application/json; charset=utf-8"
+
+// WriteJSON marshals v into the response body with the given status. The
+// Content-Type is only set when the response does not already carry one, and
+// the body has no trailing newline, exactly like gin's JSON rendering.
+func WriteJSON(w http.ResponseWriter, status int, v any) {
+	if len(w.Header()["Content-Type"]) == 0 {
+		w.Header().Set("Content-Type", contentTypeJSONWithCharset)
+	}
+	data, err := json.Marshal(v)
+	if err != nil {
+		http.Error(w, "failed to marshal JSON response", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(status)
+	_, _ = w.Write(data)
+}
+
+// StreamResponse repeatedly invokes step until it returns false, flushing the
+// response after each round so streamed lines reach the client immediately,
+// like gin's Context.Stream did.
+func StreamResponse(w http.ResponseWriter, step func(io.Writer) bool) {
+	for {
+		keepOpen := step(w)
+		_ = http.NewResponseController(w).Flush()
+		if !keepOpen {
+			return
+		}
+	}
+}
 
 // ForwardedProtoHeader carries the scheme a terminating proxy received on,
 // which is the part of the public URL the gateway cannot otherwise see.
@@ -89,21 +122,17 @@ func ProtectedResourceMetadataURL(resource string) string {
 const JSONRPCGuardrailBlocked = -32001
 
 // SetSSEHeaders sets the response headers required for server-sent event streaming
-func SetSSEHeaders(c *gin.Context) {
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
-	c.Header("Transfer-Encoding", "chunked")
-	c.Header("X-Accel-Buffering", "no")
+func SetSSEHeaders(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Header().Set("X-Accel-Buffering", "no")
 }
 
 // ResetWriteDeadline extends the response write deadline by d so streaming
 // responses are not cut off by the server's global write timeout
-func ResetWriteDeadline(c *gin.Context, d time.Duration) {
-	resetWriteDeadline(c.Writer, d)
-}
-
-func resetWriteDeadline(w http.ResponseWriter, d time.Duration) {
+func ResetWriteDeadline(w http.ResponseWriter, d time.Duration) {
 	var deadline time.Time
 	if d > 0 {
 		deadline = time.Now().Add(d)
@@ -115,12 +144,12 @@ func resetWriteDeadline(w http.ResponseWriter, d time.Duration) {
 // proxied streaming responses are not cut off by the server's write timeout.
 // Wrap the writer handed to httputil.ReverseProxy, which offers no per-write hook.
 type DeadlineResetWriter struct {
-	gin.ResponseWriter
+	http.ResponseWriter
 	Timeout time.Duration
 }
 
 func (w *DeadlineResetWriter) Write(b []byte) (int, error) {
-	resetWriteDeadline(w.ResponseWriter, w.Timeout)
+	ResetWriteDeadline(w.ResponseWriter, w.Timeout)
 	return w.ResponseWriter.Write(b)
 }
 
@@ -128,51 +157,28 @@ func (w *DeadlineResetWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
 }
 
-// customResponseWriter captures the response body but doesn't write it
-// to the client until we're ready, allowing us to intercept tool calls
+// customResponseWriter captures the downstream response so the wrapping
+// middleware can inspect, redact or refuse it before anything reaches the client.
 type customResponseWriter struct {
-	gin.ResponseWriter
-	body          *bytes.Buffer
-	statusCode    int
-	writeToClient bool
+	http.ResponseWriter
+	body       *bytes.Buffer
+	statusCode int
 }
 
-// captureResponse swaps a buffering writer into c.Writer so the downstream
-// handler's response can be inspected before anything reaches the client.
-func captureResponse(c *gin.Context) *customResponseWriter {
-	w := &customResponseWriter{
-		ResponseWriter: c.Writer,
-		body:           &bytes.Buffer{},
-		statusCode:     http.StatusOK,
-		writeToClient:  false,
-	}
-	c.Writer = w
-	return w
-}
-
-// replay restores the original writer and sends the captured response verbatim.
-func (w *customResponseWriter) replay(c *gin.Context) {
-	c.Writer = w.ResponseWriter
-	c.Data(w.statusCode, w.Header().Get("Content-Type"), w.body.Bytes())
-}
-
-// WriteHeader captures the status code but doesn't write it to the client
-// unless writeToClient is true
+// WriteHeader captures the status code but doesn't write it to the client.
 func (w *customResponseWriter) WriteHeader(code int) {
 	w.statusCode = code
-	if w.writeToClient {
-		w.ResponseWriter.WriteHeader(code)
-	}
 }
 
-// Write captures the response body but doesn't write it to the client
-// unless writeToClient is true
+// Write captures the response body but doesn't write it to the client.
 func (w *customResponseWriter) Write(b []byte) (int, error) {
-	w.body.Write(b)
-	if w.writeToClient {
-		return w.ResponseWriter.Write(b)
-	}
-	return len(b), nil
+	return w.body.Write(b)
+}
+
+// replay sends the captured status and body through the underlying writer.
+func (w *customResponseWriter) replayTo(inner http.ResponseWriter) {
+	inner.WriteHeader(w.statusCode)
+	_, _ = inner.Write(w.body.Bytes())
 }
 
 func (w *customResponseWriter) Unwrap() http.ResponseWriter {

@@ -8,8 +8,6 @@ import (
 	"io"
 	"net/http"
 
-	gin "github.com/gin-gonic/gin"
-
 	config "github.com/inference-gateway/inference-gateway/config"
 	a2a "github.com/inference-gateway/inference-gateway/internal/a2a"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
@@ -20,7 +18,7 @@ import (
 
 // GuardrailsMiddleware defines the interface for guardrails middleware.
 type GuardrailsMiddleware interface {
-	Middleware() gin.HandlerFunc
+	Middleware() func(http.Handler) http.Handler
 }
 
 // GuardrailsMiddlewareImpl implements the guardrails middleware.
@@ -62,94 +60,105 @@ func NewGuardrailsMiddleware(
 }
 
 // Middleware returns the no-op middleware handler.
-func (n *NoopGuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
+func (n *NoopGuardrailsMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 
 // Middleware returns the guardrails middleware handler.
-func (m *GuardrailsMiddlewareImpl) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		path := c.Request.URL.Path
+func (m *GuardrailsMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Path
 
-		maxBodySize := int64(m.cfg.Server.ResolveMaxRequestBodySize())
-		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxBodySize)
-		bodyBytes, err := c.GetRawData()
-		if err != nil {
-			m.logger.Error("guardrails: failed to read request body", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
-			c.Abort()
-			return
-		}
-		c.Request.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-
-		model := extractModel(bodyBytes, path)
-		claims, _ := c.Request.Context().Value(types.ClaimsContextKey).(map[string]any)
-		input := &guardrails.Input{
-			Method: c.Request.Method,
-			Path:   path,
-			Phase:  guardrails.PhasePreCall,
-			Request: &guardrails.Req{
-				Body:  string(bodyBytes),
-				Model: model,
-			},
-			Identity: claims,
-		}
-
-		dec, err := m.evaluate(c.Request.Context(), input)
-		if err != nil {
-			m.logger.Error("guardrails: pre_call evaluation error", err)
-			if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
-				m.block(c, path, bodyBytes, guardrails.MsgEvaluationFailed, guardrails.MsgBlocked)
-				c.Abort()
+			maxBodySize := int64(m.cfg.Server.ResolveMaxRequestBodySize())
+			r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
+			bodyBytes, err := io.ReadAll(r.Body)
+			if err != nil {
+				m.logger.Error("guardrails: failed to read request body", err)
+				WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "failed to read request body"})
 				return
 			}
-			m.logger.Warn("guardrails: pre_call evaluation error, allowing in open mode", "error", err.Error())
-			c.Next()
-			return
-		}
+			r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
-		if dec.Action == guardrails.ActionBlock {
-			m.logger.Info("guardrails: request blocked", "path", path, "message", dec.Message)
-			if m.telemetry != nil {
-				m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), guardrails.ActionBlock, path, model)
+			model := extractModel(bodyBytes, path)
+			claims, _ := r.Context().Value(types.ClaimsContextKey).(map[string]any)
+			input := &guardrails.Input{
+				Method: r.Method,
+				Path:   path,
+				Phase:  guardrails.PhasePreCall,
+				Request: &guardrails.Req{
+					Body:  string(bodyBytes),
+					Model: model,
+				},
+				Identity: claims,
 			}
-			m.block(c, path, bodyBytes, guardrails.MsgBlocked, cmp.Or(dec.Message, guardrails.MsgBlocked))
-			c.Abort()
-			return
-		}
 
-		if dec.Action == guardrails.ActionRedact {
-			redacted := guardrails.RedactSensitive(string(bodyBytes), m.detectors)
-			c.Request.Body = http.MaxBytesReader(c.Writer, io.NopCloser(bytes.NewReader([]byte(redacted))), maxBodySize)
-			m.logger.Debug("guardrails: request body redacted", "path", path)
-		}
+			dec, err := m.evaluate(r.Context(), input)
+			if err != nil {
+				m.logger.Error("guardrails: pre_call evaluation error", err)
+				if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
+					m.block(w, path, bodyBytes, guardrails.MsgEvaluationFailed, guardrails.MsgBlocked)
+					return
+				}
+				m.logger.Warn("guardrails: pre_call evaluation error, allowing in open mode", "error", err.Error())
+				next.ServeHTTP(w, r)
+				return
+			}
 
-		if m.telemetry != nil {
-			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), dec.Action, path, model)
-		}
+			if dec.Action == guardrails.ActionBlock {
+				m.logger.Info("guardrails: request blocked", "path", path, "message", dec.Message)
+				if m.telemetry != nil {
+					m.telemetry.RecordGuardrail(r.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), guardrails.ActionBlock, path, model)
+				}
+				m.block(w, path, bodyBytes, guardrails.MsgBlocked, cmp.Or(dec.Message, guardrails.MsgBlocked))
+				return
+			}
 
-		if !capturesResponse(path, bodyBytes) {
-			c.Next()
-			return
-		}
+			if dec.Action == guardrails.ActionRedact {
+				redacted := guardrails.RedactSensitive(string(bodyBytes), m.detectors)
+				r.Body = http.MaxBytesReader(w, io.NopCloser(bytes.NewReader([]byte(redacted))), maxBodySize)
+				m.logger.Debug("guardrails: request body redacted", "path", path)
+			}
 
-		customWriter := captureResponse(c)
-		c.Next()
-		if customWriter.statusCode >= http.StatusBadRequest {
-			customWriter.replay(c)
-			return
-		}
-		m.evaluateResponse(c, customWriter, path, model, claims, bodyBytes)
+			if m.telemetry != nil {
+				m.telemetry.RecordGuardrail(r.Context(), otel.SourceGateway, string(guardrails.PhasePreCall), dec.Action, path, model)
+			}
+
+			if !capturesResponse(path, bodyBytes) {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			customWriter := capture(w)
+			next.ServeHTTP(customWriter, r)
+			if customWriter.statusCode >= http.StatusBadRequest {
+				customWriter.replayTo(w)
+				return
+			}
+			m.evaluateResponse(w, r, customWriter, path, model, claims, bodyBytes)
+		})
+	}
+}
+
+// capture swaps a buffering writer in for next so the captured response can be
+// inspected before anything reaches the client.
+func capture(w http.ResponseWriter) *customResponseWriter {
+	return &customResponseWriter{
+		ResponseWriter: w,
+		body:           &bytes.Buffer{},
+		statusCode:     http.StatusOK,
 	}
 }
 
 // evaluateResponse runs post_call over the captured response and replays,
 // redacts or blocks it.
-func (m *GuardrailsMiddlewareImpl) evaluateResponse(c *gin.Context, customWriter *customResponseWriter, path, model string, claims map[string]any, requestBody []byte) {
+func (m *GuardrailsMiddlewareImpl) evaluateResponse(w http.ResponseWriter, r *http.Request, customWriter *customResponseWriter, path, model string, claims map[string]any, requestBody []byte) {
 	respInput := &guardrails.Input{
-		Method: c.Request.Method,
+		Method: r.Method,
 		Path:   path,
 		Phase:  guardrails.PhasePostCall,
 		Request: &guardrails.Req{
@@ -159,12 +168,11 @@ func (m *GuardrailsMiddlewareImpl) evaluateResponse(c *gin.Context, customWriter
 		Identity: claims,
 	}
 
-	respDec, respErr := m.evaluate(c.Request.Context(), respInput)
+	respDec, respErr := m.evaluate(r.Context(), respInput)
 	if respErr != nil {
 		m.logger.Error("guardrails: post_call evaluation error", respErr)
 		if m.cfg.Guardrails.FailMode == guardrails.FailModeClosed {
-			c.Writer = customWriter.ResponseWriter
-			m.block(c, path, requestBody, msgResponseEvaluationFailed, msgResponseBlocked)
+			m.block(w, path, requestBody, msgResponseEvaluationFailed, msgResponseBlocked)
 			return
 		}
 		m.logger.Warn("guardrails: post_call evaluation error, allowing in open mode", "error", respErr.Error())
@@ -173,28 +181,27 @@ func (m *GuardrailsMiddlewareImpl) evaluateResponse(c *gin.Context, customWriter
 	if respDec.Action == guardrails.ActionBlock {
 		m.logger.Info("guardrails: response blocked", "path", path, "message", respDec.Message)
 		if m.telemetry != nil {
-			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionBlock, path, model)
+			m.telemetry.RecordGuardrail(r.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionBlock, path, model)
 		}
-		c.Writer = customWriter.ResponseWriter
-		m.block(c, path, requestBody, msgResponseBlocked, cmp.Or(respDec.Message, msgResponseBlocked))
+		m.block(w, path, requestBody, msgResponseBlocked, cmp.Or(respDec.Message, msgResponseBlocked))
 		return
 	}
 
 	if respDec.Action == guardrails.ActionRedact {
 		redactedBody := guardrails.RedactSensitive(customWriter.body.String(), m.detectors)
-		c.Writer = customWriter.ResponseWriter
-		c.Data(customWriter.statusCode, customWriter.Header().Get("Content-Type"), []byte(redactedBody))
+		w.WriteHeader(customWriter.statusCode)
+		_, _ = w.Write([]byte(redactedBody))
 		if m.telemetry != nil {
-			m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionRedact, path, model)
+			m.telemetry.RecordGuardrail(r.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), guardrails.ActionRedact, path, model)
 		}
 		return
 	}
 
 	if m.telemetry != nil {
-		m.telemetry.RecordGuardrail(c.Request.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), respDec.Action, path, model)
+		m.telemetry.RecordGuardrail(r.Context(), otel.SourceGateway, string(guardrails.PhasePostCall), respDec.Action, path, model)
 	}
 
-	customWriter.replay(c)
+	customWriter.replayTo(w)
 }
 
 const (
@@ -206,16 +213,16 @@ const (
 // the /mcp and /a2a server endpoints, a plain error object everywhere else.
 // The envelope carries the policy message when there is one and the cause
 // (evaluation failure or generic block) otherwise.
-func (m *GuardrailsMiddlewareImpl) block(c *gin.Context, path string, requestBody []byte, errorMsg, message string) {
+func (m *GuardrailsMiddlewareImpl) block(w http.ResponseWriter, path string, requestBody []byte, errorMsg, message string) {
 	if isJSONRPCPath(path) {
 		rpcMessage := message
 		if message == guardrails.MsgBlocked || message == msgResponseBlocked {
 			rpcMessage = errorMsg
 		}
-		writeJSONRPCBlocked(c, requestBody, rpcMessage)
+		writeJSONRPCBlocked(w, requestBody, rpcMessage)
 		return
 	}
-	c.JSON(http.StatusForbidden, gin.H{
+	WriteJSON(w, http.StatusForbidden, map[string]string{
 		"error":   errorMsg,
 		"message": message,
 	})
@@ -242,7 +249,7 @@ func capturesResponse(path string, body []byte) bool {
 // writeJSONRPCBlocked refuses a /mcp or /a2a request with a JSON-RPC error
 // envelope echoing the request id, so the client can parse the refusal instead
 // of getting a plain error object it does not understand.
-func writeJSONRPCBlocked(c *gin.Context, body []byte, message string) {
+func writeJSONRPCBlocked(w http.ResponseWriter, body []byte, message string) {
 	var req struct {
 		ID json.RawMessage `json:"id"`
 	}
@@ -253,7 +260,7 @@ func writeJSONRPCBlocked(c *gin.Context, body []byte, message string) {
 		_ = id.UnmarshalJSON(req.ID)
 	}
 
-	c.JSON(http.StatusForbidden, types.MCPJSONRPCResponse{
+	WriteJSON(w, http.StatusForbidden, types.MCPJSONRPCResponse{
 		Jsonrpc: types.MCPJSONRPCResponseJsonrpcN20,
 		ID:      id,
 		Error:   &types.MCPJSONRPCError{Code: JSONRPCGuardrailBlocked, Message: message},

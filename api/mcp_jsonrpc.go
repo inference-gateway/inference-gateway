@@ -8,8 +8,6 @@ import (
 	"slices"
 	"strings"
 
-	gin "github.com/gin-gonic/gin"
-
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
@@ -59,68 +57,68 @@ const (
 // every configured MCP server's tools through the gateway, so a client
 // configures one entry and gets the whole fleet. Gated by MCP_ENABLED and
 // MCP_EXPOSE; gateway auth applies like it does to every route but /health.
-func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
+func (router *RouterImpl) MCPJSONRPCHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.cfg.MCP.Enabled || !router.cfg.MCP.Expose {
 		router.logger.Error("mcp endpoint access attempted but not exposed", nil)
-		c.JSON(http.StatusForbidden, ErrorResponse{Error: errMsgMCPNotExposed})
+		middlewares.WriteJSON(w, http.StatusForbidden, ErrorResponse{Error: errMsgMCPNotExposed})
 		return
 	}
-	if origin := c.GetHeader(headerOrigin); origin != "" {
+	if origin := r.Header.Get(headerOrigin); origin != "" {
 		router.logger.Error("mcp request with an origin header rejected", nil, "origin", origin)
-		c.JSON(http.StatusForbidden, ErrorResponse{Error: errMsgMCPOrigin})
+		middlewares.WriteJSON(w, http.StatusForbidden, ErrorResponse{Error: errMsgMCPOrigin})
 		return
 	}
 
-	body, tooLarge, err := router.readBoundedBody(c)
+	body, tooLarge, err := router.readBoundedBody(r)
 	if err != nil {
 		router.logger.Error("failed to read mcp jsonrpc request body", err)
-		router.respondMCPError(c, nil, jsonRPCParseError, errMsgParse)
+		router.respondMCPError(w, nil, jsonRPCParseError, errMsgParse)
 		return
 	}
 	if tooLarge {
-		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+		middlewares.WriteJSON(w, http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
 		return
 	}
 	if !json.Valid(body) {
 		router.logger.Error("mcp jsonrpc request is not valid json", nil)
-		router.respondMCPError(c, nil, jsonRPCParseError, errMsgParse)
+		router.respondMCPError(w, nil, jsonRPCParseError, errMsgParse)
 		return
 	}
 
 	var req types.MCPJSONRPCRequest
 	if err := json.Unmarshal(body, &req); err != nil {
 		router.logger.Error("mcp jsonrpc request has an unexpected shape", err)
-		router.respondMCPError(c, nil, jsonRPCInvalidRequest, errMsgInvalidReq)
+		router.respondMCPError(w, nil, jsonRPCInvalidRequest, errMsgInvalidReq)
 		return
 	}
 	if req.Jsonrpc != types.MCPJSONRPCRequestJsonrpcN20 || req.Method == "" {
 		router.logger.Error("mcp jsonrpc request is missing jsonrpc version or method", nil, "method", string(req.Method))
-		router.respondMCPError(c, &req, jsonRPCInvalidRequest, errMsgInvalidReq)
+		router.respondMCPError(w, &req, jsonRPCInvalidRequest, errMsgInvalidReq)
 		return
 	}
 
 	if req.ID == nil {
 		router.logger.Debug("mcp notification accepted", "method", string(req.Method))
-		c.Status(http.StatusAccepted)
+		w.WriteHeader(http.StatusAccepted)
 		return
 	}
 
-	if rpcErr := validateMCPRequest(c.Request.Header, &req); rpcErr != nil {
+	if rpcErr := validateMCPRequest(r.Header, &req); rpcErr != nil {
 		router.logger.Error("mcp request metadata rejected", nil, "method", string(req.Method), "reason", rpcErr.Message)
-		router.writeMCPError(c, &req, rpcErr)
+		router.writeMCPError(w, &req, rpcErr)
 		return
 	}
 
 	switch req.Method {
 	case types.ServerDiscover:
-		router.respondMCPResult(c, &req, discoverResult())
+		router.respondMCPResult(w, &req, discoverResult())
 	case types.ToolsList:
-		router.respondMCPResult(c, &req, router.mcpToolsList())
+		router.respondMCPResult(w, &req, router.mcpToolsList())
 	case types.ToolsCall:
-		router.mcpToolsCall(c, &req)
+		router.mcpToolsCall(w, r, &req)
 	default:
 		router.logger.Error("unsupported mcp method", nil, "method", string(req.Method))
-		router.respondMCPError(c, &req, jsonRPCMethodNotFound, "method not found: "+string(req.Method))
+		router.respondMCPError(w, &req, jsonRPCMethodNotFound, "method not found: "+string(req.Method))
 	}
 }
 
@@ -129,15 +127,15 @@ func (router *RouterImpl) MCPJSONRPCHandler(c *gin.Context) {
 // MCP server to publish so a client holding only the endpoint URL can find the
 // authorization server. Auth skips this route; without an authorization server
 // to name, or with /mcp not exposed, there is nothing to serve and it is a 404.
-func (router *RouterImpl) MCPProtectedResourceMetadataHandler(c *gin.Context) {
+func (router *RouterImpl) MCPProtectedResourceMetadataHandler(w http.ResponseWriter, r *http.Request) {
 	auth := router.cfg.Auth
 	if auth == nil || !auth.Enabled || !middlewares.MCPExposed(router.cfg.MCP) {
-		router.NotFoundHandler(c)
+		router.NotFoundHandler(w, r)
 		return
 	}
 
-	c.JSON(http.StatusOK, types.OAuthProtectedResourceMetadata{
-		Resource:               middlewares.MCPResourceURL(router.cfg.MCP, c.Request),
+	middlewares.WriteJSON(w, http.StatusOK, types.OAuthProtectedResourceMetadata{
+		Resource:               middlewares.MCPResourceURL(router.cfg.MCP, r),
 		AuthorizationServers:   []string{auth.OidcIssuer},
 		BearerMethodsSupported: []string{bearerMethodHeader},
 	})
@@ -274,10 +272,10 @@ func (router *RouterImpl) mcpToolsList() mcp.ListToolsResult {
 // mcpToolsCall hands an advertised, allowed tool to the agent, which runs the
 // same guardrails, span and counter as the chat-completions loop. Unknown names
 // never reach it, and upstream failures come back as JSON-RPC errors.
-func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequest) {
+func (router *RouterImpl) mcpToolsCall(w http.ResponseWriter, r *http.Request, req *types.MCPJSONRPCRequest) {
 	if router.mcpClient == nil || !router.mcpClient.IsInitialized() || router.mcpAgent == nil {
 		router.logger.Error("mcp tools/call with no usable mcp client", nil)
-		router.respondMCPError(c, req, jsonRPCInternalError, errMsgMCPUnusable)
+		router.respondMCPError(w, req, jsonRPCInternalError, errMsgMCPUnusable)
 		return
 	}
 
@@ -290,7 +288,7 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 	alias, toolName, err := router.mcpClient.ResolveTool(name)
 	if err != nil {
 		router.logger.Error("failed to resolve mcp tool", err, "tool", name)
-		router.respondMCPError(c, req, jsonRPCInvalidParams, "unknown tool: "+name)
+		router.respondMCPError(w, req, jsonRPCInvalidParams, "unknown tool: "+name)
 		return
 	}
 	// ResolveTool falls back to the longest matching alias for a name it never
@@ -298,17 +296,17 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 	serverTools, _ := router.mcpClient.GetServerTools(alias)
 	if !slices.ContainsFunc(serverTools, func(tool mcp.Tool) bool { return tool.Name == toolName }) {
 		router.logger.Error("mcp tool call for a tool the server never listed", nil, "tool", name, "server", alias)
-		router.respondMCPError(c, req, jsonRPCInvalidParams, "unknown tool: "+name)
+		router.respondMCPError(w, req, jsonRPCInvalidParams, "unknown tool: "+name)
 		return
 	}
 	if !mcp.IsToolAllowed(alias, toolName, router.cfg.MCP.IncludeTools, router.cfg.MCP.ExcludeTools) {
 		router.logger.Error("mcp tool call rejected by include/exclude config", nil, "tool", name, "server", alias)
-		router.respondMCPError(c, req, jsonRPCInvalidParams, "unknown tool: "+name)
+		router.respondMCPError(w, req, jsonRPCInvalidParams, "unknown tool: "+name)
 		return
 	}
 	if router.mcpClient.GetAllServerStatuses()[alias] == mcp.ServerStatusUnavailable {
 		router.logger.Error("mcp tool call routed to an unavailable server", nil, "tool", name, "server", alias)
-		router.respondMCPError(c, req, jsonRPCInternalError, "mcp server "+alias+" is unavailable")
+		router.respondMCPError(w, req, jsonRPCInternalError, "mcp server "+alias+" is unavailable")
 		return
 	}
 
@@ -319,38 +317,38 @@ func (router *RouterImpl) mcpToolsCall(c *gin.Context, req *types.MCPJSONRPCRequ
 	argsJSON, err := json.Marshal(arguments)
 	if err != nil {
 		router.logger.Error("failed to encode mcp tool arguments", err, "tool", name)
-		router.respondMCPError(c, req, jsonRPCInvalidParams, "invalid arguments for tool: "+name)
+		router.respondMCPError(w, req, jsonRPCInvalidParams, "invalid arguments for tool: "+name)
 		return
 	}
 
 	router.logger.Debug("executing mcp tool call", "tool", toolName, "server", alias)
-	result, err := router.mcpAgent.ExecuteToolCall(c.Request.Context(), name, string(argsJSON), arguments)
+	result, err := router.mcpAgent.ExecuteToolCall(r.Context(), name, string(argsJSON), arguments)
 	if err != nil {
 		var blocked *guardrails.BlockedError
 		if errors.As(err, &blocked) {
-			router.respondMCPError(c, req, middlewares.JSONRPCGuardrailBlocked, blocked.Message)
+			router.respondMCPError(w, req, middlewares.JSONRPCGuardrailBlocked, blocked.Message)
 			return
 		}
 		// The upstream error can name internal hosts, so it stays in the log.
 		router.logger.Error("mcp tool call failed", err, "tool", toolName, "server", alias)
-		router.respondMCPError(c, req, jsonRPCInternalError, "mcp server "+alias+" failed")
+		router.respondMCPError(w, req, jsonRPCInternalError, "mcp server "+alias+" failed")
 		return
 	}
 	if result == nil {
-		router.respondMCPError(c, req, jsonRPCInternalError, "mcp server "+alias+" returned no result")
+		router.respondMCPError(w, req, jsonRPCInternalError, "mcp server "+alias+" returned no result")
 		return
 	}
 
-	router.respondMCPResult(c, req, result)
+	router.respondMCPResult(w, req, result)
 }
 
 // respondMCPResult writes a JSON-RPC success envelope around an MCP result,
 // naming the gateway as the server that produced it.
-func (router *RouterImpl) respondMCPResult(c *gin.Context, req *types.MCPJSONRPCRequest, result any) {
+func (router *RouterImpl) respondMCPResult(w http.ResponseWriter, req *types.MCPJSONRPCRequest, result any) {
 	payload, err := mcpResultObject(result)
 	if err != nil {
 		router.logger.Error("failed to encode mcp result", err, "method", string(req.Method))
-		router.respondMCPError(c, req, jsonRPCInternalError, "failed to encode result")
+		router.respondMCPError(w, req, jsonRPCInternalError, "failed to encode result")
 		return
 	}
 
@@ -361,7 +359,7 @@ func (router *RouterImpl) respondMCPResult(c *gin.Context, req *types.MCPJSONRPC
 	meta[metaServerInfo] = mcp.GatewayInfo
 	(*payload)["_meta"] = meta
 
-	c.JSON(http.StatusOK, types.MCPJSONRPCResponse{
+	middlewares.WriteJSON(w, http.StatusOK, types.MCPJSONRPCResponse{
 		Jsonrpc: types.MCPJSONRPCResponseJsonrpcN20,
 		ID:      mcpResponseID(req),
 		Result:  payload,
@@ -369,14 +367,14 @@ func (router *RouterImpl) respondMCPResult(c *gin.Context, req *types.MCPJSONRPC
 }
 
 // respondMCPError writes a JSON-RPC error envelope with no error data.
-func (router *RouterImpl) respondMCPError(c *gin.Context, req *types.MCPJSONRPCRequest, code int, message string) {
-	router.writeMCPError(c, req, &types.MCPJSONRPCError{Code: code, Message: message})
+func (router *RouterImpl) respondMCPError(w http.ResponseWriter, req *types.MCPJSONRPCRequest, code int, message string) {
+	router.writeMCPError(w, req, &types.MCPJSONRPCError{Code: code, Message: message})
 }
 
 // writeMCPError writes a JSON-RPC error envelope with HTTP 200, except 400 for
 // header and version failures and 404 for an unknown method (both pinned by
 // 2026-07-28), and 403 for a guardrails block, like every other blocked route.
-func (router *RouterImpl) writeMCPError(c *gin.Context, req *types.MCPJSONRPCRequest, rpcErr *types.MCPJSONRPCError) {
+func (router *RouterImpl) writeMCPError(w http.ResponseWriter, req *types.MCPJSONRPCRequest, rpcErr *types.MCPJSONRPCError) {
 	status := http.StatusOK
 	switch rpcErr.Code {
 	case jsonRPCHeaderMismatch, jsonRPCUnsupportedVersion:
@@ -387,7 +385,7 @@ func (router *RouterImpl) writeMCPError(c *gin.Context, req *types.MCPJSONRPCReq
 		status = http.StatusForbidden
 	}
 
-	c.JSON(status, types.MCPJSONRPCResponse{
+	middlewares.WriteJSON(w, status, types.MCPJSONRPCResponse{
 		Jsonrpc: types.MCPJSONRPCResponseJsonrpcN20,
 		ID:      mcpResponseID(req),
 		Error:   rpcErr,

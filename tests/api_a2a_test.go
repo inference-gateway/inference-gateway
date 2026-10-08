@@ -19,8 +19,6 @@ import (
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
-	gin "github.com/gin-gonic/gin"
-
 	types "github.com/inference-gateway/adk/types"
 
 	api "github.com/inference-gateway/inference-gateway/api"
@@ -164,18 +162,19 @@ func newA2AEnv(t *testing.T, agentURL string, telemetry *mocks.MockOpenTelemetry
 	return a2aTestEnv{cfg: cfg, registry: registry, handler: handler}
 }
 
-func (env a2aTestEnv) engine(extra ...gin.HandlerFunc) *gin.Engine {
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.Use(extra...)
-	r.GET(middlewares.A2AAgentCardPath, env.handler.AgentCard)
-	r.GET(middlewares.A2AProtectedResourcePath, env.handler.ProtectedResourceMetadata)
-	r.POST(middlewares.A2APath, env.handler.JSONRPC)
-	r.GET(middlewares.A2AAgentsPath, env.handler.Agents)
-	return r
+func (env a2aTestEnv) engine(extra ...func(http.Handler) http.Handler) http.Handler {
+	r := http.NewServeMux()
+	r.HandleFunc("GET "+middlewares.A2AAgentCardPath, env.handler.AgentCard)
+	r.HandleFunc("GET "+middlewares.A2AProtectedResourcePath, env.handler.ProtectedResourceMetadata)
+	r.HandleFunc("POST "+middlewares.A2APath, env.handler.JSONRPC)
+	var h http.Handler = r
+	for i := len(extra) - 1; i >= 0; i-- {
+		h = extra[i](h)
+	}
+	return h
 }
 
-func postA2A(engine *gin.Engine, body string) *httptest.ResponseRecorder {
+func postA2A(engine http.Handler, body string) *httptest.ResponseRecorder {
 	req := httptest.NewRequest(http.MethodPost, middlewares.A2APath, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", a2aCallerAuth)

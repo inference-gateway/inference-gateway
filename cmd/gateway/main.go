@@ -14,10 +14,9 @@ import (
 	"syscall"
 	"time"
 
-	gin "github.com/gin-gonic/gin"
 	promhttp "github.com/prometheus/client_golang/prometheus/promhttp"
 	envconfig "github.com/sethvargo/go-envconfig"
-	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
@@ -29,7 +28,6 @@ import (
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
-	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
 )
@@ -37,6 +35,13 @@ import (
 var (
 	version = "dev"
 )
+
+// mcpMethodNotAllowed answers GET/DELETE /mcp, which serves only POST, with
+// the 405 the OpenAPI documents pin for this endpoint.
+var mcpMethodNotAllowed = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Allow", http.MethodPost)
+	w.WriteHeader(http.StatusMethodNotAllowed)
+})
 
 const (
 	metricsServerReadTimeout  = 10 * time.Second
@@ -303,11 +308,6 @@ func main() {
 		appLogger.Info("model routing enabled", "aliases", selector.Aliases())
 	}
 
-	// Set GIN mode based on environment
-	if cfg.Environment != constants.EnvironmentDevelopment {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
 	var localTTS *tts.Engine
 	if cfg.AudioEnabled {
 		home, homeErr := os.UserHomeDir()
@@ -330,65 +330,56 @@ func main() {
 
 	mcp.GatewayInfo.Version = version
 	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, mcpAgent, telemetryImpl, selector, localTTS)
-	r := gin.New()
-	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
-		r.Use(otelgin.Middleware("inference-gateway", otelgin.WithFilter(func(req *http.Request) bool {
-			return req.URL.Path != middlewares.HealthPath && req.URL.Path != middlewares.MetricsIngestPath
-		})))
-		appLogger.Info("tracing middleware added to request pipeline")
-	}
-	r.Use(loggerMiddleware.Middleware())
-	if cfg.Telemetry.Enabled {
-		r.Use(telemetry.Middleware())
-	}
-	r.Use(oidcAuthenticator.Middleware())
-
-	// Add guardrails middleware (before MCP so it wraps MCP's writer for post_call).
-	r.Use(guardrailsMiddleware.Middleware())
-	appLogger.Info("guardrails middleware added to request pipeline")
-
-	// Add MCP middleware if enabled
-	if cfg.MCP.Enabled {
-		r.Use(mcpMiddleware.Middleware())
-		appLogger.Info("mcp middleware added to request pipeline")
-	}
-
-	r.GET(middlewares.HealthPath, api.HealthcheckHandler)
-	r.GET(middlewares.MCPProtectedResourcePath, api.MCPProtectedResourceMetadataHandler)
-	r.POST(middlewares.MCPPath, api.MCPJSONRPCHandler)
-	r.Match([]string{http.MethodGet, http.MethodDelete}, middlewares.MCPPath, func(c *gin.Context) {
-		c.Header("Allow", http.MethodPost)
-		c.Status(http.StatusMethodNotAllowed)
-	})
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET "+middlewares.HealthPath, api.HealthcheckHandler)
+	mux.HandleFunc("GET "+middlewares.MCPProtectedResourcePath, api.MCPProtectedResourceMetadataHandler)
+	mux.HandleFunc("POST "+middlewares.MCPPath, api.MCPJSONRPCHandler)
+	mux.HandleFunc("GET "+middlewares.MCPPath, mcpMethodNotAllowed)
+	mux.HandleFunc("DELETE "+middlewares.MCPPath, mcpMethodNotAllowed)
 	if a2aHandler != nil {
-		r.GET(middlewares.A2AAgentCardPath, a2aHandler.AgentCard)
-		r.GET(middlewares.A2AProtectedResourcePath, a2aHandler.ProtectedResourceMetadata)
-		r.POST(middlewares.A2APath, a2aHandler.JSONRPC)
-		r.GET(middlewares.A2AAgentsPath, a2aHandler.Agents)
+		mux.HandleFunc("GET "+middlewares.A2AAgentCardPath, a2aHandler.AgentCard)
+		mux.HandleFunc("GET "+middlewares.A2AProtectedResourcePath, a2aHandler.ProtectedResourceMetadata)
+		mux.HandleFunc("POST "+middlewares.A2APath, a2aHandler.JSONRPC)
+		mux.HandleFunc("GET "+middlewares.A2AAgentsPath, a2aHandler.Agents)
 		appLogger.Info("a2a server routes registered")
 	}
-	r.POST(middlewares.MetricsIngestPath, api.MetricsIngestionHandler)
-	r.POST(middlewares.ChatCompletionsPath, api.ChatCompletionsHandler)
-	r.POST(middlewares.ResponsesPath, api.ResponsesHandler)
-	r.Any("/proxy/:provider/*path", api.ProxyHandler)
-	v1 := r.Group("/v1")
-	{
-		v1.GET("/models", api.ListModelsHandler)
-		v1.POST("/messages", api.MessagesHandler)
-		v1.POST("/images/generations", api.ImagesHandler)
-		v1.POST("/images/edits", api.ImagesEditsHandler)
-		v1.POST("/audio/speech", api.SpeechHandler)
-		v1.POST("/audio/sfx", api.SFXHandler)
-		v1.POST("/audio/music", api.MusicHandler)
-		v1.POST("/videos", api.VideosHandler)
-		v1.GET("/videos/:video_id", api.RetrieveVideoHandler)
-		v1.GET("/videos/:video_id/content", api.DownloadVideoContentHandler)
+	mux.HandleFunc("POST "+middlewares.MetricsIngestPath, api.MetricsIngestionHandler)
+	mux.HandleFunc("POST "+middlewares.ChatCompletionsPath, api.ChatCompletionsHandler)
+	mux.HandleFunc("POST "+middlewares.ResponsesPath, api.ResponsesHandler)
+	mux.HandleFunc("/proxy/{provider}/{path...}", api.ProxyHandler)
+	mux.HandleFunc("GET /v1/models", api.ListModelsHandler)
+	mux.HandleFunc("POST /v1/messages", api.MessagesHandler)
+	mux.HandleFunc("POST /v1/images/generations", api.ImagesHandler)
+	mux.HandleFunc("POST /v1/images/edits", api.ImagesEditsHandler)
+	mux.HandleFunc("POST /v1/audio/speech", api.SpeechHandler)
+	mux.HandleFunc("POST /v1/audio/sfx", api.SFXHandler)
+	mux.HandleFunc("POST /v1/audio/music", api.MusicHandler)
+	mux.HandleFunc("POST /v1/videos", api.VideosHandler)
+	mux.HandleFunc("GET /v1/videos/{video_id}", api.RetrieveVideoHandler)
+	mux.HandleFunc("GET /v1/videos/{video_id}/content", api.DownloadVideoContentHandler)
+	mux.HandleFunc("/", api.NotFoundHandler)
+
+	chain := loggerMiddleware.Middleware()(mux)
+	if cfg.Telemetry.Enabled {
+		chain = telemetry.Middleware()(chain)
 	}
-	r.NoRoute(api.NotFoundHandler)
+	chain = oidcAuthenticator.Middleware()(chain)
+	chain = guardrailsMiddleware.Middleware()(chain)
+	appLogger.Info("guardrails middleware added to request pipeline")
+	if cfg.MCP.Enabled {
+		chain = mcpMiddleware.Middleware()(chain)
+		appLogger.Info("mcp middleware added to request pipeline")
+	}
+	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
+		chain = otelhttp.NewHandler(chain, "inference-gateway", otelhttp.WithFilter(func(req *http.Request) bool {
+			return req.URL.Path != middlewares.HealthPath && req.URL.Path != middlewares.MetricsIngestPath
+		}))
+		appLogger.Info("tracing middleware added to request pipeline")
+	}
 
 	server := &http.Server{
 		Addr:         cfg.Server.Host + ":" + cfg.Server.Port,
-		Handler:      r,
+		Handler:      chain,
 		ReadTimeout:  cfg.Server.ReadTimeout,
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,

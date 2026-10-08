@@ -14,8 +14,6 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -92,8 +90,8 @@ func TestChatCompletionsRouting_RoundRobinRotation(t *testing.T) {
 		routing.Deployment{Provider: "groq", Model: "model-b"},
 	)
 	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, sel, nil)
-	r := gin.New()
-	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 	want := []struct{ provider, model string }{{"openai", "model-a"}, {"groq", "model-b"}}
 	for i, w := range want {
@@ -131,8 +129,8 @@ func TestChatCompletionsRouting_StreamingPassthrough(t *testing.T) {
 		routing.Deployment{Provider: "groq", Model: "stream-model-b"},
 	)
 	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, sel, nil)
-	r := gin.New()
-	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -158,8 +156,8 @@ func TestChatCompletionsRouting_DisabledPassthrough(t *testing.T) {
 	reg := providers.NewMockProviderRegistry(ctrl)
 
 	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil, nil)
-	r := gin.New()
-	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, chatRequest(t, "fast-chat", false))
@@ -191,8 +189,8 @@ func TestChatCompletionsRouting_ExplicitProviderWins(t *testing.T) {
 		routing.Deployment{Provider: "ollama", Model: "model-b"},
 	)
 	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, sel, nil)
-	r := gin.New()
-	r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 	req := chatRequest(t, "fast-chat", false)
 	req.URL.RawQuery = "provider=groq"
@@ -237,8 +235,8 @@ func TestChatCompletionsRouting_AllowedModelsFiltersAlias(t *testing.T) {
 				routing.Deployment{Provider: "groq", Model: "model-b"},
 			)
 			router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, sel, nil)
-			r := gin.New()
-			r.POST("/v1/chat/completions", router.ChatCompletionsHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/chat/completions", router.ChatCompletionsHandler)
 
 			rec := httptest.NewRecorder()
 			r.ServeHTTP(rec, chatRequest(t, "fast-chat", false))

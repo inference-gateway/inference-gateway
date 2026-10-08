@@ -4,11 +4,13 @@ import (
 	"compress/gzip"
 	"io"
 	"net/http"
+	"strings"
 
-	gin "github.com/gin-gonic/gin"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	protojson "google.golang.org/protobuf/encoding/protojson"
 	proto "google.golang.org/protobuf/proto"
+
+	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 )
 
 // maxMetricsBodyBytes caps the decoded OTLP push payload size.
@@ -20,26 +22,37 @@ const (
 	contentTypeEventStream = "text/event-stream"
 )
 
+// contentTypeOf returns the bare media type of a Content-Type header value,
+// matching gin's Context.ContentType: everything before the first space or
+// semicolon.
+func contentTypeOf(header http.Header) string {
+	value := header.Get("Content-Type")
+	if idx := strings.IndexAny(value, " ;"); idx != -1 {
+		return value[:idx]
+	}
+	return value
+}
+
 // MetricsIngestionHandler is the OTLP/HTTP metrics receiver (POST /v1/metrics).
 // It lets clients that bypass the gateway's inference path (e.g. subscription
 // clients driving Claude Code directly) push their usage metrics.
-func (router *RouterImpl) MetricsIngestionHandler(c *gin.Context) {
+func (router *RouterImpl) MetricsIngestionHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.cfg.Telemetry.Enabled || !router.cfg.Telemetry.MetricsPushEnabled {
-		c.JSON(http.StatusForbidden, ErrorResponse{Error: "Metrics push is not enabled"})
+		middlewares.WriteJSON(w, http.StatusForbidden, ErrorResponse{Error: "Metrics push is not enabled"})
 		return
 	}
 
-	contentType := c.ContentType()
+	contentType := contentTypeOf(r.Header)
 	if contentType != contentTypeProtobuf && contentType != contentTypeJSON {
-		c.JSON(http.StatusUnsupportedMediaType, ErrorResponse{Error: "Content-Type must be application/x-protobuf or application/json"})
+		middlewares.WriteJSON(w, http.StatusUnsupportedMediaType, ErrorResponse{Error: "Content-Type must be application/x-protobuf or application/json"})
 		return
 	}
 
-	var reader io.Reader = c.Request.Body
-	if c.GetHeader("Content-Encoding") == "gzip" {
+	var reader io.Reader = r.Body
+	if r.Header.Get("Content-Encoding") == "gzip" {
 		gz, err := gzip.NewReader(reader)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid gzip payload"})
+			middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid gzip payload"})
 			return
 		}
 		defer gz.Close()
@@ -48,11 +61,11 @@ func (router *RouterImpl) MetricsIngestionHandler(c *gin.Context) {
 
 	body, err := io.ReadAll(io.LimitReader(reader, maxMetricsBodyBytes+1))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to read request body"})
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read request body"})
 		return
 	}
 	if len(body) > maxMetricsBodyBytes {
-		c.JSON(http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Payload exceeds 4 MiB limit"})
+		middlewares.WriteJSON(w, http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Payload exceeds 4 MiB limit"})
 		return
 	}
 
@@ -63,11 +76,11 @@ func (router *RouterImpl) MetricsIngestionHandler(c *gin.Context) {
 		err = protojson.Unmarshal(body, req)
 	}
 	if err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: "Failed to decode OTLP payload"})
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to decode OTLP payload"})
 		return
 	}
 
-	result := router.telemetry.IngestMetrics(c.Request.Context(), req)
+	result := router.telemetry.IngestMetrics(r.Context(), req)
 
 	resp := &colmetricspb.ExportMetricsServiceResponse{}
 	if result.RejectedDataPoints > 0 {
@@ -84,17 +97,17 @@ func (router *RouterImpl) MetricsIngestionHandler(c *gin.Context) {
 	if contentType == contentTypeProtobuf {
 		payload, err := proto.Marshal(resp)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode response"})
+			middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode response"})
 			return
 		}
-		c.Data(http.StatusOK, contentTypeProtobuf, payload)
+		writeData(w, http.StatusOK, contentTypeProtobuf, payload)
 		return
 	}
 
 	payload, err := protojson.Marshal(resp)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode response"})
+		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to encode response"})
 		return
 	}
-	c.Data(http.StatusOK, contentTypeJSON, payload)
+	writeData(w, http.StatusOK, contentTypeJSON, payload)
 }

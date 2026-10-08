@@ -15,8 +15,6 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -85,8 +83,8 @@ func TestMessagesHandler_NonStreamingPassthrough(t *testing.T) {
 	defer server.Close()
 
 	router := newMessagesTestRouter(t, server.URL)
-	r := gin.New()
-	r.POST("/v1/messages", router.MessagesHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/messages", router.MessagesHandler)
 
 	reqBody := `{"model":"anthropic/claude-sonnet-4-5","max_tokens":16,"system":[{"type":"text","text":"be brief","cache_control":{"type":"ephemeral"}}],"messages":[{"role":"user","content":"Hello"}]}`
 	w := httptest.NewRecorder()
@@ -118,8 +116,8 @@ func TestMessagesHandler_StreamingPassthrough(t *testing.T) {
 	defer server.Close()
 
 	router := newMessagesTestRouter(t, server.URL)
-	r := gin.New()
-	r.POST("/v1/messages", router.MessagesHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/messages", router.MessagesHandler)
 
 	gatewayServer := httptest.NewServer(r)
 	defer gatewayServer.Close()
@@ -169,8 +167,8 @@ func TestMessagesHandler_Errors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router := newMessagesTestRouter(t, "http://localhost:0")
-			r := gin.New()
-			r.POST("/v1/messages", router.MessagesHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/messages", router.MessagesHandler)
 
 			w := httptest.NewRecorder()
 			req, err := http.NewRequest("POST", "/v1/messages", strings.NewReader(tt.body))

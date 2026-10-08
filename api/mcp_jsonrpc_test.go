@@ -19,8 +19,6 @@ import (
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
 
-	gin "github.com/gin-gonic/gin"
-
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
@@ -121,19 +119,18 @@ type jsonRPCTestResponse struct {
 
 // newMCPEngine wires POST /mcp exactly as cmd/gateway/main.go does, with
 // guardrails off and telemetry disabled.
-func newMCPEngine(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface) *gin.Engine {
+func newMCPEngine(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface) http.Handler {
 	t.Helper()
 	return newMCPEngineWithAgent(t, cfg, mcpClient, mcp.NewAgent(logger.NewNoopLogger(), mcpClient))
 }
 
 // newMCPEngineWithAgent wires POST /mcp with the agent the caller supplies, the
 // way main.go hands the router the guardrails- and telemetry-configured agent.
-func newMCPEngineWithAgent(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface, agent *mcp.Agent) *gin.Engine {
+func newMCPEngineWithAgent(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface, agent *mcp.Agent) http.Handler {
 	t.Helper()
-	gin.SetMode(gin.TestMode)
 	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, agent, nil, nil, nil)
-	r := gin.New()
-	r.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+middlewares.MCPPath, router.MCPJSONRPCHandler)
 	return r
 }
 
@@ -151,7 +148,7 @@ func newEvaluator(t *testing.T, policy string) *guardrails.Evaluator {
 // postMCP sends body the way a 2026-07-28 client does: the protocol version in
 // params._meta, mirrored with the method and tool name into headers. A body
 // that is not a JSON object goes out untouched.
-func postMCP(t *testing.T, engine *gin.Engine, body string) *httptest.ResponseRecorder {
+func postMCP(t *testing.T, engine http.Handler, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	var msg map[string]any
 	if json.Unmarshal([]byte(body), &msg) != nil {
@@ -182,7 +179,7 @@ func postMCP(t *testing.T, engine *gin.Engine, body string) *httptest.ResponseRe
 	return postMCPRaw(t, engine, string(raw), header)
 }
 
-func postMCPRaw(t *testing.T, engine *gin.Engine, body string, header http.Header) *httptest.ResponseRecorder {
+func postMCPRaw(t *testing.T, engine http.Handler, body string, header http.Header) *httptest.ResponseRecorder {
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, middlewares.MCPPath, strings.NewReader(body))
 	req.Header = header
@@ -475,7 +472,7 @@ func TestMCPJSONRPCHandler_ToolsListWithoutClient(t *testing.T) {
 // server under the bare tool name and that upstream failures surface as
 // JSON-RPC errors rather than 500s.
 func TestMCPJSONRPCHandler_ToolsCall(t *testing.T) {
-	engine := func(t *testing.T, setup func(*mcpmocks.MockMCPClientInterface), excludeList string) *gin.Engine {
+	engine := func(t *testing.T, setup func(*mcpmocks.MockMCPClientInterface), excludeList string) http.Handler {
 		t.Helper()
 		ctrl := gomock.NewController(t)
 		mcpClient := mcpmocks.NewMockMCPClientInterface(ctrl)
@@ -634,13 +631,11 @@ func TestMCPJSONRPCHandler_PreCallBlockEnvelope(t *testing.T) {
 	cfg := mcpEnabledConfig()
 	cfg.Guardrails = &config.GuardrailsConfig{Enabled: true, FailMode: guardrails.FailModeClosed}
 
-	gin.SetMode(gin.TestMode)
 	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
-	engine := gin.New()
-	engine.Use(middlewares.NewGuardrailsMiddleware(newEvaluator(t, blockMCPPathPolicy), nil, nil, logger.NewNoopLogger(), nil, cfg).Middleware())
-	engine.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
+	engine := http.NewServeMux()
+	engine.HandleFunc("POST "+middlewares.MCPPath, router.MCPJSONRPCHandler)
 
-	w := postMCP(t, engine, toolsCallBody)
+	w := postMCP(t, middlewares.NewGuardrailsMiddleware(newEvaluator(t, blockMCPPathPolicy), nil, nil, logger.NewNoopLogger(), nil, cfg).Middleware()(engine), toolsCallBody)
 
 	resp := assertJSONRPCError(t, w, http.StatusForbidden, middlewares.JSONRPCGuardrailBlocked)
 	assert.Equal(t, preCallBlockedMsg, resp.Error.Message)
@@ -740,7 +735,6 @@ func assertJSONRPCError(t *testing.T, w *httptest.ResponseRecorder, wantStatus, 
 // exposed, and its resource is MCP_RESOURCE_URL or, failing that, the URL the
 // request arrived on.
 func TestMCPProtectedResourceMetadataHandler(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	authEnabled := &config.AuthConfig{Enabled: true, OidcIssuer: testIssuer}
 	exposed := &config.MCPConfig{Enabled: true, Expose: true}
 
@@ -785,8 +779,8 @@ func TestMCPProtectedResourceMetadataHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router := NewRouter(tt.cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
-			engine := gin.New()
-			engine.GET(middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
+			engine := http.NewServeMux()
+			engine.HandleFunc("GET "+middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
 
 			req := httptest.NewRequest(http.MethodGet, middlewares.MCPProtectedResourcePath, nil)
 			req.Host = testRequestHost

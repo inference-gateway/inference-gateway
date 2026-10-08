@@ -21,8 +21,6 @@ import (
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-
 	config "github.com/inference-gateway/inference-gateway/config"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
@@ -30,10 +28,6 @@ import (
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
-
-func init() {
-	gin.SetMode(gin.TestMode)
-}
 
 func TestNewAgent(t *testing.T) {
 	tests := []struct {

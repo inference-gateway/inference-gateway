@@ -14,8 +14,6 @@ import (
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
-	gin "github.com/gin-gonic/gin"
-
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -79,17 +77,16 @@ func TestTelemetryMatchesChatPathExactly(t *testing.T) {
 
 	telemetry := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, logger.NewNoopLogger())
 
-	router := gin.New()
-	router.Use(telemetry.Middleware())
-	router.Any("/proxy/:provider/*path", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{})
+	router := http.NewServeMux()
+	router.HandleFunc("/proxy/{provider}/{path...}", func(w http.ResponseWriter, r *http.Request) {
+		middlewares.WriteJSON(w, http.StatusOK, map[string]any{})
 	})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/proxy/openai"+middlewares.ChatCompletionsPath, bytes.NewReader([]byte(`{"model":"openai/gpt-4o"}`)))
 	req.Header.Set("Content-Type", "application/json")
 
-	router.ServeHTTP(w, req)
+	telemetry.Middleware()(router).ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
@@ -112,16 +109,15 @@ func assertTelemetryDetects(t *testing.T, expectedProvider, requestBody, url str
 
 	telemetry := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, logger.NewNoopLogger())
 
-	router := gin.New()
-	router.Use(telemetry.Middleware())
-	router.POST(middlewares.ChatCompletionsPath, func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{})
+	router := http.NewServeMux()
+	router.HandleFunc("POST "+middlewares.ChatCompletionsPath, func(w http.ResponseWriter, r *http.Request) {
+		middlewares.WriteJSON(w, http.StatusOK, map[string]any{})
 	})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", url, bytes.NewReader([]byte(requestBody)))
 	req.Header.Set("Content-Type", "application/json")
 
-	router.ServeHTTP(w, req)
+	telemetry.Middleware()(router).ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 }

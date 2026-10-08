@@ -1,10 +1,9 @@
 package middlewares
 
 import (
+	"net/http"
 	"net/url"
 	"strings"
-
-	gin "github.com/gin-gonic/gin"
 
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
@@ -55,11 +54,13 @@ func sanitizeQuery(rawQuery string) map[string][]string {
 	return sanitized
 }
 
-func (l *LoggerMiddleware) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		l.logger.Info("request received", "method", c.Request.Method, "host", c.Request.Host, "path", c.Request.URL.Path)
-		l.logger.Debug("request details", "query", sanitizeQuery(c.Request.URL.RawQuery), "headers", sanitizeHeaders(c.Request.Header))
+func (l *LoggerMiddleware) Middleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			l.logger.Info("request received", "method", r.Method, "host", r.Host, "path", r.URL.Path)
+			l.logger.Debug("request details", "query", sanitizeQuery(r.URL.RawQuery), "headers", sanitizeHeaders(r.Header))
 
-		c.Next()
+			next.ServeHTTP(w, r)
+		})
 	}
 }

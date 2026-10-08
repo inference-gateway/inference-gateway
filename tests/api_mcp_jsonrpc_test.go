@@ -12,8 +12,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
-	gin "github.com/gin-gonic/gin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
@@ -115,8 +113,8 @@ func TestMCPJSONRPCEndpointEndToEnd(t *testing.T) {
 	require.NoError(t, mcpClient.InitializeAll(ctx))
 
 	router := api.NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, mcp.NewAgent(logger.NewNoopLogger(), mcpClient), nil, nil, nil)
-	engine := gin.New()
-	engine.POST(middlewares.MCPPath, router.MCPJSONRPCHandler)
+	engine := http.NewServeMux()
+	engine.HandleFunc("POST "+middlewares.MCPPath, router.MCPJSONRPCHandler)
 
 	post := func(method types.MCPJSONRPCRequestMethod, toolName, body string) (int, map[string]any) {
 		req := httptest.NewRequest(http.MethodPost, middlewares.MCPPath, strings.NewReader(body))

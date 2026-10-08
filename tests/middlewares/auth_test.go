@@ -14,7 +14,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
-	gin "github.com/gin-gonic/gin"
 	jose "github.com/go-jose/go-jose/v4"
 	jwt "github.com/go-jose/go-jose/v4/jwt"
 
@@ -109,25 +108,23 @@ func (p *fakeIdP) mint(t *testing.T, override func(*jwt.Claims), private ...map[
 // what the middleware stored on the request context, with the routes
 // cmd/gateway/main.go registers. mcp is nil unless the case needs the gateway
 // to be an exposed MCP server.
-func newAuthEngine(t *testing.T, auth config.AuthConfig, mcp *config.MCPConfig) *gin.Engine {
+func newAuthEngine(t *testing.T, auth config.AuthConfig, mcp *config.MCPConfig) http.Handler {
 	t.Helper()
 	cfg := config.Config{Auth: &auth, MCP: mcp}
 	mw, err := middlewares.NewOIDCAuthenticatorMiddleware(logger.NewNoopLogger(), cfg)
 	require.NoError(t, err)
 	router := api.NewRouter(cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
 
-	r := gin.New()
-	r.Use(mw.Middleware())
-	echo := func(c *gin.Context) {
-		claims, _ := c.Request.Context().Value(types.ClaimsContextKey).(map[string]any)
-		token, _ := c.Request.Context().Value(types.AuthTokenContextKey).(string)
-		c.JSON(http.StatusOK, gin.H{"sub": claims["sub"], "token": token})
+	r := http.NewServeMux()
+	echo := func(w http.ResponseWriter, r *http.Request) {
+		claims, _ := r.Context().Value(types.ClaimsContextKey).(map[string]any)
+		token, _ := r.Context().Value(types.AuthTokenContextKey).(string)
+		middlewares.WriteJSON(w, http.StatusOK, map[string]any{"sub": claims["sub"], "token": token})
 	}
-	r.GET(middlewares.HealthPath, echo)
-	r.GET(middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
-	r.GET(testRoute, echo)
-	r.POST(middlewares.MCPPath, echo)
-	return r
+	r.HandleFunc("GET "+middlewares.HealthPath, echo)
+	r.HandleFunc("GET "+middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
+	r.HandleFunc("GET "+testRoute, echo)
+	return mw.Middleware()(r)
 }
 
 func TestNewOIDCAuthenticatorMiddleware(t *testing.T) {
@@ -161,7 +158,6 @@ func TestNewOIDCAuthenticatorMiddleware(t *testing.T) {
 }
 
 func TestOIDCAuthenticatorMiddleware(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	idp := newFakeIdP(t)
 	otherIdP := newFakeIdP(t)
 
@@ -181,7 +177,7 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		engine        *gin.Engine
+		engine        http.Handler
 		method        string
 		path          string
 		header        string
@@ -295,27 +291,24 @@ func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 
 // newA2AAuthEngine wires the real middleware in front of the A2A routes
 // main.go registers when A2A_ENABLED=true, each answering 200 when reached.
-func newA2AAuthEngine(t *testing.T, auth config.AuthConfig, a2a *config.A2AConfig) *gin.Engine {
+func newA2AAuthEngine(t *testing.T, auth config.AuthConfig, a2a *config.A2AConfig) http.Handler {
 	t.Helper()
 	cfg := config.Config{Auth: &auth, A2A: a2a}
 	mw, err := middlewares.NewOIDCAuthenticatorMiddleware(logger.NewNoopLogger(), cfg)
 	require.NoError(t, err)
 
-	r := gin.New()
-	r.Use(mw.Middleware())
-	ok := func(c *gin.Context) { c.Status(http.StatusOK) }
-	r.GET(middlewares.A2AAgentCardPath, ok)
-	r.GET(middlewares.A2AProtectedResourcePath, ok)
-	r.POST(middlewares.A2APath, ok)
-	r.GET(middlewares.A2AAgentsPath, ok)
-	return r
+	r := http.NewServeMux()
+	ok := func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }
+	r.HandleFunc("GET "+middlewares.A2AAgentCardPath, ok)
+	r.HandleFunc("GET "+middlewares.A2AProtectedResourcePath, ok)
+	r.HandleFunc("POST "+middlewares.A2APath, ok)
+	return mw.Middleware()(r)
 }
 
 // TestOIDCAuthenticatorMiddleware_A2A pins which A2A routes need a token: the
 // two well-known documents are public, everything else is challenged and the
 // /a2a challenge points at its own RFC 9728 document.
 func TestOIDCAuthenticatorMiddleware_A2A(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	idp := newFakeIdP(t)
 	auth := config.AuthConfig{Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID}
 	enabled := newA2AAuthEngine(t, auth, &config.A2AConfig{Enabled: true})
@@ -324,7 +317,7 @@ func TestOIDCAuthenticatorMiddleware_A2A(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		engine        *gin.Engine
+		engine        http.Handler
 		method        string
 		path          string
 		header        string
@@ -365,7 +358,6 @@ func TestOIDCAuthenticatorMiddleware_A2A(t *testing.T) {
 // the document names the issuer, and its resource is the endpoint the
 // challenge came from - which is what the client checks before trusting it.
 func TestMCPProtectedResourceDiscovery(t *testing.T) {
-	gin.SetMode(gin.TestMode)
 	idp := newFakeIdP(t)
 	engine := newAuthEngine(t,
 		config.AuthConfig{Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID},
