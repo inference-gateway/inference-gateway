@@ -27,15 +27,16 @@ const (
 // context, replacing gin's per-request value store.
 type mcpContextKey struct{}
 
-// WithMCPRequest marks the request as MCP-originating and stores req (a
-// *types.CreateChatCompletionRequest) for the chat completions handler.
-func WithMCPRequest(ctx context.Context, req any) context.Context {
+// WithMCPRequest marks the request as MCP-originating and stores the parsed
+// request for the chat completions handler.
+func WithMCPRequest(ctx context.Context, req *types.CreateChatCompletionRequest) context.Context {
 	return context.WithValue(ctx, mcpContextKey{}, req)
 }
 
-// MCPRequestFromContext returns the value stored by WithMCPRequest, nil when absent.
-func MCPRequestFromContext(ctx context.Context) any {
-	return ctx.Value(mcpContextKey{})
+// MCPRequestFromContext returns the request stored by WithMCPRequest.
+func MCPRequestFromContext(ctx context.Context) (*types.CreateChatCompletionRequest, bool) {
+	req, ok := ctx.Value(mcpContextKey{}).(*types.CreateChatCompletionRequest)
+	return req, ok
 }
 
 // MCPProviderModelResult contains the result of provider and model determination
@@ -82,11 +83,7 @@ func NewMCPMiddleware(providerRegistry registry.ProviderRegistry, inferenceGatew
 
 // Middleware returns the no-op middleware handler
 func (n *NoopMCPMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
-	}
+	return func(next http.Handler) http.Handler { return next }
 }
 
 // Middleware returns the MCP middleware handler

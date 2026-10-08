@@ -61,11 +61,7 @@ func NewGuardrailsMiddleware(
 
 // Middleware returns the no-op middleware handler.
 func (n *NoopGuardrailsMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
-	}
+	return func(next http.Handler) http.Handler { return next }
 }
 
 // Middleware returns the guardrails middleware handler.

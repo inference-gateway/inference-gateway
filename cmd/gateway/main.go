@@ -52,6 +52,15 @@ const (
 	providerProbeTimeout      = 10 * time.Second
 )
 
+// applyMiddlewares wraps handler so that middlewares run in the order given:
+// the first is outermost and sees the request first.
+func applyMiddlewares(handler http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		handler = middlewares[i](handler)
+	}
+	return handler
+}
+
 func isLoopbackHost(host string) bool {
 	if host == "localhost" {
 		return true
@@ -359,17 +368,17 @@ func main() {
 	mux.HandleFunc("GET /v1/videos/{video_id}/content", api.DownloadVideoContentHandler)
 	mux.HandleFunc("/", api.NotFoundHandler)
 
-	chain := loggerMiddleware.Middleware()(mux)
+	pipeline := []func(http.Handler) http.Handler{loggerMiddleware.Middleware()}
 	if cfg.Telemetry.Enabled {
-		chain = telemetry.Middleware()(chain)
+		pipeline = append(pipeline, telemetry.Middleware())
 	}
-	chain = oidcAuthenticator.Middleware()(chain)
-	chain = guardrailsMiddleware.Middleware()(chain)
+	pipeline = append(pipeline, oidcAuthenticator.Middleware(), guardrailsMiddleware.Middleware())
 	appLogger.Info("guardrails middleware added to request pipeline")
 	if cfg.MCP.Enabled {
-		chain = mcpMiddleware.Middleware()(chain)
+		pipeline = append(pipeline, mcpMiddleware.Middleware())
 		appLogger.Info("mcp middleware added to request pipeline")
 	}
+	chain := applyMiddlewares(mux, pipeline...)
 	if cfg.Telemetry.Enabled && cfg.Telemetry.TracingEnabled {
 		chain = otelhttp.NewHandler(chain, "inference-gateway", otelhttp.WithFilter(func(req *http.Request) bool {
 			return req.URL.Path != middlewares.HealthPath && req.URL.Path != middlewares.MetricsIngestPath

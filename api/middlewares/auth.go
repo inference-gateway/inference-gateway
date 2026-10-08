@@ -82,11 +82,7 @@ func isListSeparator(r rune) bool { return r == ',' || unicode.IsSpace(r) }
 
 // Noop implementation of the OIDCAuthenticator interface
 func (a *OIDCAuthenticatorNoop) Middleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			next.ServeHTTP(w, r)
-		})
-	}
+	return func(next http.Handler) http.Handler { return next }
 }
 
 // Middleware implementation of the OIDCAuthenticator interface

@@ -282,13 +282,12 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 				toolsAdded = true
 
-				value := middlewares.MCPRequestFromContext(r.Context())
-				exists := value != nil
+				value, exists := middlewares.MCPRequestFromContext(r.Context())
 				if !assert.True(t, exists, "handler should receive the parsed request") {
 					return
 				}
 				toolCount := 0
-				if tools := value.(*types.CreateChatCompletionRequest).Tools; tools != nil {
+				if tools := value.Tools; tools != nil {
 					toolCount = len(*tools)
 				}
 				assert.Equal(t, tt.expectedCount, toolCount)
@@ -348,9 +347,8 @@ func TestMCPMiddleware_SelectorModeInjectsMetaTools(t *testing.T) {
 	router := http.NewServeMux()
 	router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 		var req types.CreateChatCompletionRequest
-		val := middlewares.MCPRequestFromContext(r.Context())
-		if r, ok := val.(*types.CreateChatCompletionRequest); ok && r.Tools != nil {
-			for _, tool := range *r.Tools {
+		if mcpReq, ok := middlewares.MCPRequestFromContext(r.Context()); ok && mcpReq.Tools != nil {
+			for _, tool := range *mcpReq.Tools {
 				injectedToolNames = append(injectedToolNames, tool.Function.Name)
 			}
 		}

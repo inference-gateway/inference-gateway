@@ -92,14 +92,10 @@ func (router *RouterImpl) NotFoundHandler(w http.ResponseWriter, r *http.Request
 }
 
 // writeData writes body as the response with the given status, matching gin's
-// Data rendering: Content-Type only when the response has none and
-// Content-Length when the body is non-empty.
+// Data rendering: Content-Type only when the response has none.
 func writeData(w http.ResponseWriter, status int, contentType string, body []byte) {
 	if contentType != "" && len(w.Header()["Content-Type"]) == 0 {
 		w.Header().Set("Content-Type", contentType)
-	}
-	if len(body) > 0 {
-		w.Header().Set("Content-Length", strconv.Itoa(len(body)))
 	}
 	w.WriteHeader(status)
 	_, _ = w.Write(body)
@@ -886,14 +882,8 @@ func (router *RouterImpl) modelDenied(model string) string {
 func (router *RouterImpl) ChatCompletionsHandler(w http.ResponseWriter, r *http.Request) {
 	var req types.CreateChatCompletionRequest
 
-	if mcpRequest := middlewares.MCPRequestFromContext(r.Context()); mcpRequest != nil {
-		if parsedRequest, ok := mcpRequest.(*types.CreateChatCompletionRequest); ok {
-			req = *parsedRequest
-		} else {
-			router.logger.Error("invalid mcp request type in context", nil)
-			middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Internal server error"})
-			return
-		}
+	if mcpRequest, ok := middlewares.MCPRequestFromContext(r.Context()); ok {
+		req = *mcpRequest
 	} else {
 		maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
 		r.Body = http.MaxBytesReader(w, r.Body, int64(maxBodySize))
