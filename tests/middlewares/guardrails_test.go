@@ -14,8 +14,6 @@ import (
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
-	gin "github.com/gin-gonic/gin"
-
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
@@ -79,20 +77,19 @@ func TestGuardrailsMiddleware_Noop(t *testing.T) {
 
 	mw := middlewares.NewGuardrailsMiddleware(nil, nil, nil, mockLogger, nil, cfg)
 
-	router := gin.New()
-	router.Use(mw.Middleware())
+	router := http.NewServeMux()
 
 	handlerCalled := false
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
+	router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
+		middlewares.WriteJSON(w, http.StatusOK, map[string]any{"message": "success"})
 	})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	router.ServeHTTP(w, req)
+	mw.Middleware()(router).ServeHTTP(w, req)
 
 	assert.True(t, handlerCalled, "Noop middleware should call next handler")
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -123,20 +120,19 @@ func TestGuardrailsMiddleware_BlockRequest(t *testing.T) {
 
 	mw := middlewares.NewGuardrailsMiddleware(evaluator, nil, nil, mockLogger, nil, cfg)
 
-	router := gin.New()
-	router.Use(mw.Middleware())
+	router := http.NewServeMux()
 
 	handlerCalled := false
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
+	router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
+		middlewares.WriteJSON(w, http.StatusOK, map[string]any{"message": "success"})
 	})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	router.ServeHTTP(w, req)
+	mw.Middleware()(router).ServeHTTP(w, req)
 
 	assert.True(t, handlerCalled)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -161,20 +157,19 @@ func TestGuardrailsMiddleware_ZeroMaxRequestBodySizeUsesDefault(t *testing.T) {
 
 	mw := middlewares.NewGuardrailsMiddleware(evaluator, nil, nil, mockLogger, nil, cfg)
 
-	router := gin.New()
-	router.Use(mw.Middleware())
+	router := http.NewServeMux()
 
 	handlerCalled := false
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
+	router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
+		middlewares.WriteJSON(w, http.StatusOK, map[string]any{"message": "success"})
 	})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	router.ServeHTTP(w, req)
+	mw.Middleware()(router).ServeHTTP(w, req)
 
 	assert.True(t, handlerCalled)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -295,8 +290,7 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 
 	mw := middlewares.NewGuardrailsMiddleware(evaluator, nil, nil, mockLogger, nil, cfg)
 
-	router := gin.New()
-	router.Use(mw.Middleware())
+	router := http.NewServeMux()
 
 	requestData := types.CreateChatCompletionRequest{
 		Model: "gpt-4",
@@ -306,7 +300,7 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 	}
 	requestBody, _ := json.Marshal(requestData)
 
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
+	router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 		response := types.CreateChatCompletionResponse{
 			ID:    "test-id",
 			Model: "gpt-4",
@@ -317,14 +311,14 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 				},
 			},
 		}
-		c.JSON(http.StatusOK, response)
+		middlewares.WriteJSON(w, http.StatusOK, response)
 	})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	router.ServeHTTP(w, req)
+	mw.Middleware()(router).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var resp types.CreateChatCompletionResponse

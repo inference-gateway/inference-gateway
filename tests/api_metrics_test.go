@@ -13,7 +13,6 @@ import (
 
 	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 
-	gin "github.com/gin-gonic/gin"
 	colmetricspb "go.opentelemetry.io/proto/otlp/collector/metrics/v1"
 	protojson "google.golang.org/protobuf/encoding/protojson"
 	proto "google.golang.org/protobuf/proto"
@@ -24,7 +23,7 @@ import (
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 )
 
-func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, telemetry otel.OpenTelemetry) *gin.Engine {
+func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, telemetry otel.OpenTelemetry) http.Handler {
 	t.Helper()
 
 	log, err := logger.NewLogger("test")
@@ -39,9 +38,8 @@ func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, tele
 
 	router := api.NewRouter(cfg, log, nil, nil, nil, nil, telemetry, nil, nil)
 
-	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	r.POST("/v1/metrics", router.MetricsIngestionHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/metrics", router.MetricsIngestionHandler)
 	return r
 }
 

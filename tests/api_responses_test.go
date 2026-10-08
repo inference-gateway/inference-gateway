@@ -15,8 +15,6 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -89,8 +87,8 @@ func TestResponsesHandler_NonStreamingPassthrough(t *testing.T) {
 	defer server.Close()
 
 	router := newResponsesTestRouter(t, server.URL)
-	r := gin.New()
-	r.POST("/v1/responses", router.ResponsesHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/responses", router.ResponsesHandler)
 
 	reqBody := `{"model":"openai/gpt-4o","input":"Hello","metadata":{"trace":"abc"}}`
 	w := httptest.NewRecorder()
@@ -118,8 +116,8 @@ func TestResponsesHandler_StreamingPassthrough(t *testing.T) {
 	defer server.Close()
 
 	router := newResponsesTestRouter(t, server.URL)
-	r := gin.New()
-	r.POST("/v1/responses", router.ResponsesHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/responses", router.ResponsesHandler)
 
 	gatewayServer := httptest.NewServer(r)
 	defer gatewayServer.Close()
@@ -171,8 +169,8 @@ func TestResponsesHandler_Errors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router := newResponsesTestRouter(t, "http://localhost:0")
-			r := gin.New()
-			r.POST("/v1/responses", router.ResponsesHandler)
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/responses", router.ResponsesHandler)
 
 			w := httptest.NewRecorder()
 			req, err := http.NewRequest("POST", "/v1/responses", strings.NewReader(tt.body))

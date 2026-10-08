@@ -9,8 +9,6 @@ import (
 	"syscall"
 	"testing"
 
-	gin "github.com/gin-gonic/gin"
-
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )
 
@@ -44,7 +42,7 @@ func mockModelsPayload(b *testing.B, n int, extra map[string]any) []byte {
 // request (cpu_ms/op, user+sys via getrusage) and the peak Go heap observed
 // across the run (peak_heap_MB), so memory/CPU spikes for large listings are
 // visible in `task benchmark` output.
-func benchmarkModelsEndpoint(b *testing.B, r *gin.Engine, wantModels int) {
+func benchmarkModelsEndpoint(b *testing.B, r http.Handler, wantModels int) {
 	b.Helper()
 
 	serve := func() *httptest.ResponseRecorder {

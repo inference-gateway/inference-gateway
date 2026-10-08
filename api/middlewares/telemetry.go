@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/json"
 	"io"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	gin "github.com/gin-gonic/gin"
 	codes "go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	trace "go.opentelemetry.io/otel/trace"
@@ -50,8 +50,9 @@ const toolTypeStandard = "standard_tool_use"
 
 // responseBodyWriter is a wrapper for the response writer that captures the body
 type responseBodyWriter struct {
-	gin.ResponseWriter
-	body *bytes.Buffer
+	http.ResponseWriter
+	body       *bytes.Buffer
+	statusCode int
 }
 
 // responseData holds all information extracted from a single response parse
@@ -64,6 +65,9 @@ type responseData struct {
 
 // Write captures the response body
 func (w *responseBodyWriter) Write(b []byte) (int, error) {
+	if w.statusCode == 0 {
+		w.statusCode = http.StatusOK
+	}
 	w.body.Write(b)
 	if w.body.Len() > maxCapturedResponseBytes {
 		w.body.Next(w.body.Len() - maxCapturedResponseBytes)
@@ -71,110 +75,115 @@ func (w *responseBodyWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+// WriteHeader forwards the status through and records it for the metrics above.
+func (w *responseBodyWriter) WriteHeader(code int) {
+	w.statusCode = code
+	w.ResponseWriter.WriteHeader(code)
+}
+
 func (w *responseBodyWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
 }
 
-func (t *TelemetryMiddleware) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		startTime := time.Now()
+func (t *TelemetryMiddleware) Middleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			startTime := time.Now()
 
-		if c.Request.URL.Path != ChatCompletionsPath {
-			c.Next()
-			return
-		}
-
-		var requestBody types.CreateChatCompletionRequest
-		bodyBytes, err := io.ReadAll(io.LimitReader(c.Request.Body, maxTelemetryRequestBytes+1))
-		if err != nil {
-			t.logger.Error("failed to read request body", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read request body"})
-			c.Abort()
-			return
-		}
-		if len(bodyBytes) > maxTelemetryRequestBytes {
-			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "request body too large"})
-			c.Abort()
-			return
-		}
-		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
-		_ = json.Unmarshal(bodyBytes, &requestBody)
-		model := requestBody.Model
-
-		provider := "unknown"
-		if detected, _, ok := routing.ResolveProvider(c.Query("provider"), model); ok {
-			if _, exists := registry.Registry[detected]; exists {
-				provider = string(detected)
+			if r.URL.Path != ChatCompletionsPath {
+				next.ServeHTTP(w, r)
+				return
 			}
-		}
 
-		w := &responseBodyWriter{
-			ResponseWriter: c.Writer,
-			body:           &bytes.Buffer{},
-		}
-		c.Writer = w
+			var requestBody types.CreateChatCompletionRequest
+			bodyBytes, err := io.ReadAll(io.LimitReader(r.Body, maxTelemetryRequestBytes+1))
+			if err != nil {
+				t.logger.Error("failed to read request body", err)
+				WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "failed to read request body"})
+				return
+			}
+			if len(bodyBytes) > maxTelemetryRequestBytes {
+				WriteJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
+				return
+			}
+			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			_ = json.Unmarshal(bodyBytes, &requestBody)
+			model := requestBody.Model
 
-		c.Next()
+			provider := "unknown"
+			if detected, _, ok := routing.ResolveProvider(r.URL.Query().Get("provider"), model); ok {
+				if _, exists := registry.Registry[detected]; exists {
+					provider = string(detected)
+				}
+			}
 
-		if provider == "unknown" {
-			t.logger.Warn("unknown provider detected",
+			rw := &responseBodyWriter{
+				ResponseWriter: w,
+				body:           &bytes.Buffer{},
+			}
+
+			next.ServeHTTP(rw, r)
+
+			if provider == "unknown" {
+				t.logger.Warn("unknown provider detected",
+					"model", model,
+					"path", r.URL.Path,
+					"query", r.URL.RawQuery)
+				return
+			}
+
+			// Post middleware begins
+			statusCode := cmp.Or(rw.statusCode, http.StatusOK)
+			duration := time.Since(startTime).Seconds()
+
+			errorType := ""
+			if statusCode >= http.StatusBadRequest {
+				errorType = strconv.Itoa(statusCode)
+			}
+
+			span := trace.SpanFromContext(r.Context())
+			span.SetAttributes(
+				semconv.GenAIProviderNameKey.String(provider),
+				semconv.GenAIRequestModel(model),
+			)
+			if errorType != "" {
+				span.SetStatus(codes.Error, errorType)
+				span.SetAttributes(semconv.ErrorTypeKey.String(errorType))
+			}
+
+			team := otel.TeamUnknown
+			t.telemetry.RecordRequestDuration(r.Context(), otel.SourceGateway, team, provider, model, errorType, duration)
+
+			respData := t.parseResponseData(rw.body.Bytes(), requestBody.Stream != nil && *requestBody.Stream, provider, model)
+
+			promptTokens := respData.PromptTokens
+			completionTokens := respData.CompletionTokens
+			totalTokens := respData.TotalTokens
+			toolCallCount := len(respData.ToolCalls)
+
+			t.logger.Debug("token usage recorded",
+				"provider", provider,
 				"model", model,
-				"path", c.Request.URL.Path,
-				"query", c.Request.URL.RawQuery)
-			return
-		}
+				"prompt_tokens", promptTokens,
+				"completion_tokens", completionTokens,
+				"total_tokens", totalTokens,
+				"tool_calls", toolCallCount,
+				"duration_seconds", duration,
+				"status_code", statusCode,
+			)
 
-		// Post middleware begins
-		statusCode := c.Writer.Status()
-		duration := time.Since(startTime).Seconds()
+			t.telemetry.RecordTokenUsage(
+				r.Context(),
+				otel.SourceGateway,
+				team,
+				provider,
+				model,
+				promptTokens,
+				completionTokens,
+			)
 
-		errorType := ""
-		if statusCode >= http.StatusBadRequest {
-			errorType = strconv.Itoa(statusCode)
-		}
-
-		span := trace.SpanFromContext(c.Request.Context())
-		span.SetAttributes(
-			semconv.GenAIProviderNameKey.String(provider),
-			semconv.GenAIRequestModel(model),
-		)
-		if errorType != "" {
-			span.SetStatus(codes.Error, errorType)
-			span.SetAttributes(semconv.ErrorTypeKey.String(errorType))
-		}
-
-		team := otel.TeamUnknown
-		t.telemetry.RecordRequestDuration(c.Request.Context(), otel.SourceGateway, team, provider, model, errorType, duration)
-
-		respData := t.parseResponseData(w.body.Bytes(), requestBody.Stream != nil && *requestBody.Stream, provider, model)
-
-		promptTokens := respData.PromptTokens
-		completionTokens := respData.CompletionTokens
-		totalTokens := respData.TotalTokens
-		toolCallCount := len(respData.ToolCalls)
-
-		t.logger.Debug("token usage recorded",
-			"provider", provider,
-			"model", model,
-			"prompt_tokens", promptTokens,
-			"completion_tokens", completionTokens,
-			"total_tokens", totalTokens,
-			"tool_calls", toolCallCount,
-			"duration_seconds", duration,
-			"status_code", statusCode,
-		)
-
-		t.telemetry.RecordTokenUsage(
-			c.Request.Context(),
-			otel.SourceGateway,
-			team,
-			provider,
-			model,
-			promptTokens,
-			completionTokens,
-		)
-
-		t.recordToolCallMetrics(c.Request.Context(), team, provider, model, &requestBody, respData)
+			t.recordToolCallMetrics(r.Context(), team, provider, model, &requestBody, respData)
+		})
 	}
 }
 

@@ -12,8 +12,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
-	gin "github.com/gin-gonic/gin"
-
 	config "github.com/inference-gateway/inference-gateway/config"
 )
 
@@ -31,8 +29,8 @@ const (
 	sfxPath            = "/v1/audio/sfx"
 	musicPath          = "/v1/audio/music"
 	videosPath         = "/v1/videos"
-	videoByIDPath      = "/v1/videos/:video_id"
-	videoContentPath   = "/v1/videos/:video_id/content"
+	videoByIDPath      = "/v1/videos/{video_id}"
+	videoContentPath   = "/v1/videos/{video_id}/content"
 	speechPath         = "/v1/audio/speech"
 	contentTypeJSONVal = "application/json"
 )
@@ -40,13 +38,13 @@ const (
 func enableVideos(c *config.Config) { c.VideosEnabled = true }
 
 // newVideosTestRouter registers all four Videos routes against upstream.
-func newVideosTestRouter(t *testing.T, upstreamURL string, opts ...func(*config.Config)) *gin.Engine {
+func newVideosTestRouter(t *testing.T, upstreamURL string, opts ...func(*config.Config)) http.Handler {
 	t.Helper()
 	router := newImagesTestRouter(t, upstreamURL, false, opts...)
-	r := gin.New()
-	r.POST(videosPath, router.VideosHandler)
-	r.GET(videoByIDPath, router.RetrieveVideoHandler)
-	r.GET(videoContentPath, router.DownloadVideoContentHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+videosPath, router.VideosHandler)
+	r.HandleFunc("GET "+videoByIDPath, router.RetrieveVideoHandler)
+	r.HandleFunc("GET "+videoContentPath, router.DownloadVideoContentHandler)
 	return r
 }
 
@@ -69,8 +67,8 @@ func TestSpeechHandler_Elevenlabs(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, false, enableAudio)
-	r := gin.New()
-	r.POST(speechPath, router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+speechPath, router.SpeechHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", speechPath, strings.NewReader(
@@ -95,8 +93,8 @@ func TestSpeechHandler_ElevenlabsRejectsUnsupportedFormat(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, false, enableAudio)
-	r := gin.New()
-	r.POST(speechPath, router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+speechPath, router.SpeechHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", speechPath, strings.NewReader(
@@ -123,8 +121,8 @@ func TestSFXHandler_HappyPath(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, false, enableAudio)
-	r := gin.New()
-	r.POST(sfxPath, router.SFXHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+sfxPath, router.SFXHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", sfxPath, strings.NewReader(
@@ -146,8 +144,8 @@ func TestSFXHandler_HappyPath(t *testing.T) {
 
 func TestSFXHandler_DisabledReturns404(t *testing.T) {
 	router := newImagesTestRouter(t, "http://127.0.0.1:0", false)
-	r := gin.New()
-	r.POST(sfxPath, router.SFXHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+sfxPath, router.SFXHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", sfxPath, strings.NewReader(`{"model":"elevenlabs/x","prompt":"thunder"}`))
@@ -167,8 +165,8 @@ func TestSFXHandler_ProviderWithoutSupport(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, false, enableAudio)
-	r := gin.New()
-	r.POST(sfxPath, router.SFXHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+sfxPath, router.SFXHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", sfxPath, strings.NewReader(`{"model":"openai/tts-1","prompt":"thunder"}`))
@@ -194,8 +192,8 @@ func TestMusicHandler_HappyPath(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, false, enableAudio)
-	r := gin.New()
-	r.POST(musicPath, router.MusicHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+musicPath, router.MusicHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", musicPath, strings.NewReader(
@@ -224,8 +222,8 @@ func TestMusicHandler_ProviderWithoutSupport(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, false, enableAudio)
-	r := gin.New()
-	r.POST(musicPath, router.MusicHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+musicPath, router.MusicHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", musicPath, strings.NewReader(`{"model":"openai/tts-1","prompt":"lo-fi"}`))

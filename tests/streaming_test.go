@@ -13,24 +13,22 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
-	gin "github.com/gin-gonic/gin"
-
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 )
 
 func TestSSEStreamSurvivesServerWriteTimeout(t *testing.T) {
-	router := gin.New()
-	router.GET("/stream", func(c *gin.Context) {
-		middlewares.SetSSEHeaders(c)
+	router := http.NewServeMux()
+	router.HandleFunc("GET "+"/stream", func(w http.ResponseWriter, r *http.Request) {
+		middlewares.SetSSEHeaders(w)
 		i := 0
-		c.Stream(func(w io.Writer) bool {
-			middlewares.ResetWriteDeadline(c, 200*time.Millisecond)
+		middlewares.StreamResponse(w, func(out io.Writer) bool {
+			middlewares.ResetWriteDeadline(w, 200*time.Millisecond)
 			if i >= 10 {
 				return false
 			}
 			i++
 			time.Sleep(100 * time.Millisecond)
-			_, err := fmt.Fprintf(w, "data: chunk-%d\n\n", i)
+			_, err := fmt.Fprintf(out, "data: chunk-%d\n\n", i)
 			return err == nil
 		})
 	})
@@ -67,10 +65,10 @@ func TestProxiedSSEStreamSurvivesServerWriteTimeout(t *testing.T) {
 	upstreamURL, err := url.Parse(upstream.URL)
 	require.NoError(t, err)
 
-	router := gin.New()
-	router.GET("/proxy", func(c *gin.Context) {
+	router := http.NewServeMux()
+	router.HandleFunc("GET "+"/proxy", func(w http.ResponseWriter, r *http.Request) {
 		proxy := &httputil.ReverseProxy{Rewrite: func(pr *httputil.ProxyRequest) { pr.SetURL(upstreamURL) }}
-		proxy.ServeHTTP(&middlewares.DeadlineResetWriter{ResponseWriter: c.Writer, Timeout: 200 * time.Millisecond}, c.Request)
+		proxy.ServeHTTP(&middlewares.DeadlineResetWriter{ResponseWriter: w, Timeout: 200 * time.Millisecond}, r)
 	})
 
 	srv := httptest.NewUnstartedServer(router)

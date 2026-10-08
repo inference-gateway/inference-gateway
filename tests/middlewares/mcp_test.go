@@ -17,18 +17,12 @@ import (
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
-
-func init() {
-	gin.SetMode(gin.TestMode)
-}
 
 // Test helper to create mock dependencies for each test case
 func createMockDependencies(t *testing.T) (*gomock.Controller, *providers.MockProviderRegistry, *providers.MockClient, *mcpmocks.MockMCPClientInterface, *mocks.MockLogger, *providers.MockIProvider) {
@@ -165,17 +159,16 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
-			router := gin.New()
-			router.Use(middleware.Middleware())
+			router := http.NewServeMux()
 
 			handlerCalled := false
-			router.POST("/*path", func(c *gin.Context) {
+			router.HandleFunc("POST "+"/{path...}", func(w http.ResponseWriter, r *http.Request) {
 				handlerCalled = true
-				c.JSON(http.StatusOK, gin.H{"status": "ok"})
+				middlewares.WriteJSON(w, http.StatusOK, map[string]any{"status": "ok"})
 			})
-			router.GET("/*path", func(c *gin.Context) {
+			router.HandleFunc("GET "+"/{path...}", func(w http.ResponseWriter, r *http.Request) {
 				handlerCalled = true
-				c.JSON(http.StatusOK, gin.H{"status": "ok"})
+				middlewares.WriteJSON(w, http.StatusOK, map[string]any{"status": "ok"})
 			})
 
 			w := httptest.NewRecorder()
@@ -189,7 +182,7 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 				req.Header.Set("X-MCP-Bypass", tt.internalHeader)
 			}
 
-			router.ServeHTTP(w, req)
+			middleware.Middleware()(router).ServeHTTP(w, req)
 
 			assert.True(t, handlerCalled, "Handler should always be called")
 			assert.Equal(t, http.StatusOK, w.Code)
@@ -283,19 +276,18 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
-			router := gin.New()
-			router.Use(middleware.Middleware())
+			router := http.NewServeMux()
 
 			toolsAdded := false
-			router.POST("/v1/chat/completions", func(c *gin.Context) {
+			router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 				toolsAdded = true
 
-				value, exists := c.Get(middlewares.MCPBypassHeader)
+				value, exists := middlewares.MCPRequestFromContext(r.Context())
 				if !assert.True(t, exists, "handler should receive the parsed request") {
 					return
 				}
 				toolCount := 0
-				if tools := value.(*types.CreateChatCompletionRequest).Tools; tools != nil {
+				if tools := value.Tools; tools != nil {
 					toolCount = len(*tools)
 				}
 				assert.Equal(t, tt.expectedCount, toolCount)
@@ -310,14 +302,14 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 						},
 					},
 				}
-				c.JSON(http.StatusOK, response)
+				middlewares.WriteJSON(w, http.StatusOK, response)
 			})
 
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			router.ServeHTTP(w, req)
+			middleware.Middleware()(router).ServeHTTP(w, req)
 
 			if tt.isInitialized {
 				assert.True(t, toolsAdded, "Handler should be called when MCP is initialized")
@@ -352,18 +344,16 @@ func TestMCPMiddleware_SelectorModeInjectsMetaTools(t *testing.T) {
 	mcpAgent := mcp.NewAgent(mockLogger, mockMCPClient)
 	middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 	assert.NoError(t, err)
-	router := gin.New()
-	router.Use(middleware.Middleware())
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
+	router := http.NewServeMux()
+	router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 		var req types.CreateChatCompletionRequest
-		val, _ := c.Get("X-MCP-Bypass")
-		if r, ok := val.(*types.CreateChatCompletionRequest); ok && r.Tools != nil {
-			for _, tool := range *r.Tools {
+		if mcpReq, ok := middlewares.MCPRequestFromContext(r.Context()); ok && mcpReq.Tools != nil {
+			for _, tool := range *mcpReq.Tools {
 				injectedToolNames = append(injectedToolNames, tool.Function.Name)
 			}
 		}
 		_ = req
-		c.JSON(http.StatusOK, types.CreateChatCompletionResponse{
+		middlewares.WriteJSON(w, http.StatusOK, types.CreateChatCompletionResponse{
 			ID:    "test-id",
 			Model: "gpt-3.5-turbo",
 			Choices: []types.ChatCompletionChoice{
@@ -375,7 +365,7 @@ func TestMCPMiddleware_SelectorModeInjectsMetaTools(t *testing.T) {
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 	req.Header.Set("Content-Type", "application/json")
-	router.ServeHTTP(w, req)
+	middleware.Middleware()(router).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.ElementsMatch(t, []string{mcp.SelectorToolGet, mcp.SelectorToolExecute}, injectedToolNames)
@@ -518,10 +508,9 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
-			router := gin.New()
-			router.Use(middleware.Middleware())
+			router := http.NewServeMux()
 
-			router.POST("/v1/chat/completions", func(c *gin.Context) {
+			router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 				response := types.CreateChatCompletionResponse{
 					ID:    "test-id",
 					Model: "gpt-3.5-turbo",
@@ -532,14 +521,14 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 						},
 					},
 				}
-				c.JSON(http.StatusOK, response)
+				middlewares.WriteJSON(w, http.StatusOK, response)
 			})
 
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			router.ServeHTTP(w, req)
+			middleware.Middleware()(router).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusOK, w.Code)
 		})
@@ -627,13 +616,12 @@ data: [DONE]`,
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
-			router := gin.New()
-			router.Use(middleware.Middleware())
+			router := http.NewServeMux()
 
-			router.POST("/v1/chat/completions", func(c *gin.Context) {
-				c.Header("Content-Type", "text/event-stream")
-				c.Writer.WriteHeader(http.StatusOK)
-				_, err := c.Writer.Write([]byte(tt.streamingResponse))
+			router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "text/event-stream")
+				w.WriteHeader(http.StatusOK)
+				_, err := w.Write([]byte(tt.streamingResponse))
 				assert.NoError(t, err)
 			})
 
@@ -641,7 +629,7 @@ data: [DONE]`,
 			req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			router.ServeHTTP(w, req)
+			middleware.Middleware()(router).ServeHTTP(w, req)
 
 			responseBody := w.Body.String()
 			assert.NotEmpty(t, responseBody, "Response should not be empty")
@@ -725,20 +713,19 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 			assert.NoError(t, err)
 
-			router := gin.New()
-			router.Use(middleware.Middleware())
+			router := http.NewServeMux()
 
 			handlerCalled := false
-			router.POST("/v1/chat/completions", func(c *gin.Context) {
+			router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 				handlerCalled = true
-				c.JSON(http.StatusOK, gin.H{"status": "ok"})
+				middlewares.WriteJSON(w, http.StatusOK, map[string]any{"status": "ok"})
 			})
 
 			w := httptest.NewRecorder()
 			req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			router.ServeHTTP(w, req)
+			middleware.Middleware()(router).ServeHTTP(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			if tt.expectedError != "" && w.Code >= 400 {
@@ -761,20 +748,19 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 func TestNoopMCPMiddleware(t *testing.T) {
 	middleware := &middlewares.NoopMCPMiddlewareImpl{}
 
-	router := gin.New()
-	router.Use(middleware.Middleware())
+	router := http.NewServeMux()
 
 	handlerCalled := false
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
+	router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
 		handlerCalled = true
-		c.JSON(http.StatusOK, gin.H{"message": "success"})
+		middlewares.WriteJSON(w, http.StatusOK, map[string]any{"message": "success"})
 	})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	router.ServeHTTP(w, req)
+	middleware.Middleware()(router).ServeHTTP(w, req)
 
 	assert.True(t, handlerCalled, "NoOp middleware should call next handler")
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -960,17 +946,16 @@ func TestMCPMiddleware_PassesThroughUpstreamErrors(t *testing.T) {
 	middleware, err := middlewares.NewMCPMiddleware(mockRegistry, mockClient, mockMCPClient, mcpAgent, mockLogger, cfg)
 	assert.NoError(t, err)
 
-	router := gin.New()
-	router.Use(middleware.Middleware())
-	router.POST("/v1/chat/completions", func(c *gin.Context) {
-		c.JSON(http.StatusBadGateway, gin.H{"error": "upstream provider rejected the request"})
+	router := http.NewServeMux()
+	router.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, r *http.Request) {
+		middlewares.WriteJSON(w, http.StatusBadGateway, map[string]any{"error": "upstream provider rejected the request"})
 	})
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	router.ServeHTTP(w, req)
+	middleware.Middleware()(router).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadGateway, w.Code)
 	assert.Contains(t, w.Body.String(), "upstream provider rejected the request")

@@ -12,7 +12,6 @@ import (
 	"unicode"
 
 	oidc "github.com/coreos/go-oidc/v3/oidc"
-	gin "github.com/gin-gonic/gin"
 
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -38,7 +37,7 @@ const (
 )
 
 type OIDCAuthenticator interface {
-	Middleware() gin.HandlerFunc
+	Middleware() func(http.Handler) http.Handler
 }
 
 type OIDCAuthenticatorImpl struct {
@@ -82,73 +81,71 @@ func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OI
 func isListSeparator(r rune) bool { return r == ',' || unicode.IsSpace(r) }
 
 // Noop implementation of the OIDCAuthenticator interface
-func (a *OIDCAuthenticatorNoop) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Next()
-	}
+func (a *OIDCAuthenticatorNoop) Middleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler { return next }
 }
 
 // Middleware implementation of the OIDCAuthenticator interface
-func (a *OIDCAuthenticatorImpl) Middleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		switch c.Request.URL.Path {
-		case HealthPath, MCPProtectedResourcePath, A2AProtectedResourcePath, A2AAgentCardPath:
-			c.Next()
-			return
-		}
-
-		scheme, token, _ := strings.Cut(c.GetHeader("Authorization"), " ")
-		token = strings.TrimSpace(token)
-		if !strings.EqualFold(scheme, bearerScheme) || token == "" {
-			a.unauthorized(c, wwwAuthenticateMissing)
-			return
-		}
-
-		idToken, err := a.verifier.Verify(c.Request.Context(), token)
-		if err != nil {
-			a.logger.Error("failed to verify bearer token", err)
-			a.unauthorized(c, wwwAuthenticateInvalid)
-			return
-		}
-
-		var claims map[string]any
-		if err := idToken.Claims(&claims); err != nil {
-			a.logger.Error("failed to decode bearer token claims", err)
-			a.unauthorized(c, wwwAuthenticateInvalid)
-			return
-		}
-
-		audiences := idToken.Audience
-		if len(audiences) == 0 {
-			if clientID, _ := claims[clientIDClaim].(string); clientID != "" {
-				audiences = []string{clientID}
+func (a *OIDCAuthenticatorImpl) Middleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case HealthPath, MCPProtectedResourcePath, A2AProtectedResourcePath, A2AAgentCardPath:
+				next.ServeHTTP(w, r)
+				return
 			}
-		}
-		if !slices.ContainsFunc(audiences, func(aud string) bool { return slices.Contains(a.audiences, aud) }) {
-			a.logger.Error("failed to verify bearer token",
-				fmt.Errorf("oidc: expected one of audiences %q got %q", a.audiences, audiences))
-			a.unauthorized(c, wwwAuthenticateInvalid)
-			return
-		}
 
-		ctx := context.WithValue(c.Request.Context(), types.AuthTokenContextKey, token)
-		ctx = context.WithValue(ctx, types.ClaimsContextKey, claims)
-		c.Request = c.Request.WithContext(ctx)
+			scheme, token, _ := strings.Cut(r.Header.Get("Authorization"), " ")
+			token = strings.TrimSpace(token)
+			if !strings.EqualFold(scheme, bearerScheme) || token == "" {
+				a.unauthorized(w, r, wwwAuthenticateMissing)
+				return
+			}
 
-		c.Next()
+			idToken, err := a.verifier.Verify(r.Context(), token)
+			if err != nil {
+				a.logger.Error("failed to verify bearer token", err)
+				a.unauthorized(w, r, wwwAuthenticateInvalid)
+				return
+			}
+
+			var claims map[string]any
+			if err := idToken.Claims(&claims); err != nil {
+				a.logger.Error("failed to decode bearer token claims", err)
+				a.unauthorized(w, r, wwwAuthenticateInvalid)
+				return
+			}
+
+			audiences := idToken.Audience
+			if len(audiences) == 0 {
+				if clientID, _ := claims[clientIDClaim].(string); clientID != "" {
+					audiences = []string{clientID}
+				}
+			}
+			if !slices.ContainsFunc(audiences, func(aud string) bool { return slices.Contains(a.audiences, aud) }) {
+				a.logger.Error("failed to verify bearer token",
+					fmt.Errorf("oidc: expected one of audiences %q got %q", a.audiences, audiences))
+				a.unauthorized(w, r, wwwAuthenticateInvalid)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), types.AuthTokenContextKey, token)
+			ctx = context.WithValue(ctx, types.ClaimsContextKey, claims)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
 	}
 }
 
 // unauthorized answers the 401 challenge. On /mcp and /a2a it also points at
 // the RFC 9728 document, which is how a client that knows only the endpoint
 // URL discovers the authorization server.
-func (a *OIDCAuthenticatorImpl) unauthorized(c *gin.Context, challenge string) {
-	if resource := a.protectedResource(c.Request); resource != "" {
+func (a *OIDCAuthenticatorImpl) unauthorized(w http.ResponseWriter, r *http.Request, challenge string) {
+	if resource := a.protectedResource(r); resource != "" {
 		challenge += fmt.Sprintf(", resource_metadata=%q", ProtectedResourceMetadataURL(resource))
 	}
-	c.Header(wwwAuthenticateHeader, challenge)
-	c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-	c.Abort()
+	w.Header().Set(wwwAuthenticateHeader, challenge)
+	WriteJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 }
 
 // protectedResource is the resource URL a 401 on r should advertise, or ""

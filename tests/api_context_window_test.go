@@ -13,8 +13,6 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -26,7 +24,7 @@ import (
 // newContextWindowRouter builds a models router whose mock client forwards
 // every request to the given test server: self-proxy calls (relative URLs) by
 // path, runtime lookups (absolute URLs pointing at the server) as-is.
-func newContextWindowRouter(t testing.TB, server *httptest.Server, providerCfg map[types.Provider]*registry.ProviderConfig) *gin.Engine {
+func newContextWindowRouter(t testing.TB, server *httptest.Server, providerCfg map[types.Provider]*registry.ProviderConfig) http.Handler {
 	t.Helper()
 
 	ctrl := gomock.NewController(t)
@@ -58,8 +56,8 @@ func newContextWindowRouter(t testing.TB, server *httptest.Server, providerCfg m
 	}
 	router := api.NewRouter(cfg, log, reg, mockClient, nil, nil, nil, nil, nil)
 
-	r := gin.New()
-	r.GET("/v1/models", router.ListModelsHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("GET "+"/v1/models", router.ListModelsHandler)
 	return r
 }
 

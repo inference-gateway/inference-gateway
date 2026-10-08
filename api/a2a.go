@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	gin "github.com/gin-gonic/gin"
-
 	types "github.com/inference-gateway/adk/types"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
@@ -47,25 +45,25 @@ func NewA2AHandler(cfg config.Config, log logger.Logger, registry *a2a.Registry,
 
 // AgentCard serves GET /.well-known/agent-card.json: the merged card of every
 // registered agent, pointing at this gateway's /a2a endpoint.
-func (h *A2AHandler) AgentCard(c *gin.Context) {
-	c.JSON(http.StatusOK, h.registry.Card(middlewares.A2AResourceURL(h.cfg.A2A, c.Request), h.version))
+func (h *A2AHandler) AgentCard(w http.ResponseWriter, r *http.Request) {
+	middlewares.WriteJSON(w, http.StatusOK, h.registry.Card(middlewares.A2AResourceURL(h.cfg.A2A, r), h.version))
 }
 
 // Agents serves GET /a2a/agents, the diagnostic view of the registry.
-func (h *A2AHandler) Agents(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"agents": h.registry.Agents()})
+func (h *A2AHandler) Agents(w http.ResponseWriter, r *http.Request) {
+	middlewares.WriteJSON(w, http.StatusOK, map[string]any{"agents": h.registry.Agents()})
 }
 
 // ProtectedResourceMetadata serves the RFC 9728 document for POST /a2a under
 // the same conditions as the /mcp one: auth enabled and the surface exposed.
-func (h *A2AHandler) ProtectedResourceMetadata(c *gin.Context) {
+func (h *A2AHandler) ProtectedResourceMetadata(w http.ResponseWriter, r *http.Request) {
 	auth := h.cfg.Auth
 	if auth == nil || !auth.Enabled {
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: "Requested route is not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"resource":                 middlewares.A2AResourceURL(h.cfg.A2A, c.Request),
+	middlewares.WriteJSON(w, http.StatusOK, map[string]any{
+		"resource":                 middlewares.A2AResourceURL(h.cfg.A2A, r),
 		"authorization_servers":    []string{auth.OidcIssuer},
 		"bearer_methods_supported": []string{bearerMethodHeader},
 	})
@@ -73,15 +71,15 @@ func (h *A2AHandler) ProtectedResourceMetadata(c *gin.Context) {
 
 // JSONRPC serves POST /a2a. Every method in the ADK enum is relayed to exactly
 // one agent; the two streaming methods pipe the upstream SSE stream through.
-func (h *A2AHandler) JSONRPC(c *gin.Context) {
+func (h *A2AHandler) JSONRPC(w http.ResponseWriter, r *http.Request) {
 	started := time.Now()
-	req, rpcErr := h.readRequest(c)
+	req, rpcErr := h.readRequest(r)
 	if rpcErr != nil {
-		h.respondError(c, nil, rpcErr)
+		h.respondError(w, nil, rpcErr)
 		return
 	}
 	if req.ID == nil {
-		c.Status(http.StatusAccepted)
+		w.WriteHeader(http.StatusAccepted)
 		return
 	}
 
@@ -91,38 +89,38 @@ func (h *A2AHandler) JSONRPC(c *gin.Context) {
 	}
 
 	if a2a.IsStreamingMethod(string(req.Method)) {
-		h.relayStream(c, req, params, started)
+		h.relayStream(w, r, req, params, started)
 		return
 	}
 
-	alias, result, rpcErr := h.registry.Call(c.Request.Context(), req.Method, params)
-	h.record(c, alias, req.Method, rpcErr, started)
+	alias, result, rpcErr := h.registry.Call(r.Context(), req.Method, params)
+	h.record(r, alias, req.Method, rpcErr, started)
 	if rpcErr != nil {
 		h.logger.Error("a2a call failed", nil, "method", string(req.Method), "agent", alias, "code", rpcErr.Code, "message", rpcErr.Message)
-		h.respondError(c, req, rpcErr)
+		h.respondError(w, req, rpcErr)
 		return
 	}
-	c.JSON(http.StatusOK, types.JSONRPCSuccessResponse{ID: *req.ID, JSONRPC: jsonRPCVersion, Result: result})
+	middlewares.WriteJSON(w, http.StatusOK, types.JSONRPCSuccessResponse{ID: *req.ID, JSONRPC: jsonRPCVersion, Result: result})
 }
 
 // relayStream writes each upstream event as an SSE data line under the client's
 // request id, until the upstream closes, the client goes away or the stream
 // stays idle for A2A_STREAM_IDLE_TIMEOUT.
-func (h *A2AHandler) relayStream(c *gin.Context, req *types.JSONRPCRequest, params types.Struct, started time.Time) {
-	ctx, cancel := context.WithCancel(c.Request.Context())
+func (h *A2AHandler) relayStream(w http.ResponseWriter, r *http.Request, req *types.JSONRPCRequest, params types.Struct, started time.Time) {
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
 	alias, events, rpcErr := h.registry.Stream(ctx, req.Method, params)
-	h.record(c, alias, req.Method, rpcErr, started)
+	h.record(r, alias, req.Method, rpcErr, started)
 	if rpcErr != nil {
 		h.logger.Error("a2a stream failed", nil, "method", string(req.Method), "agent", alias, "code", rpcErr.Code, "message", rpcErr.Message)
-		h.respondError(c, req, rpcErr)
+		h.respondError(w, req, rpcErr)
 		return
 	}
 
-	middlewares.SetSSEHeaders(c)
-	c.Status(http.StatusOK)
-	c.Writer.Flush()
+	middlewares.SetSSEHeaders(w)
+	w.WriteHeader(http.StatusOK)
+	_ = http.NewResponseController(w).Flush()
 
 	idle := h.cfg.A2A.StreamIdleTimeout
 	cutoff := time.NewTimer(idleCutoff(idle))
@@ -133,7 +131,7 @@ func (h *A2AHandler) relayStream(c *gin.Context, req *types.JSONRPCRequest, para
 			if !ok {
 				return
 			}
-			if !h.writeEvent(c, types.JSONRPCSuccessResponse{ID: *req.ID, JSONRPC: jsonRPCVersion, Result: result}, idle) {
+			if !h.writeEvent(w, types.JSONRPCSuccessResponse{ID: *req.ID, JSONRPC: jsonRPCVersion, Result: result}, idle) {
 				return
 			}
 			cutoff.Reset(idleCutoff(idle))
@@ -155,25 +153,25 @@ func idleCutoff(idle time.Duration) time.Duration {
 	return idle
 }
 
-func (h *A2AHandler) writeEvent(c *gin.Context, event types.JSONRPCSuccessResponse, idle time.Duration) bool {
+func (h *A2AHandler) writeEvent(w http.ResponseWriter, event types.JSONRPCSuccessResponse, idle time.Duration) bool {
 	payload, err := json.Marshal(event)
 	if err != nil {
 		h.logger.Error("failed to encode a2a stream event", err)
 		return false
 	}
-	middlewares.ResetWriteDeadline(c, idle)
-	if _, err := c.Writer.WriteString("data: " + string(payload) + "\n\n"); err != nil {
+	middlewares.ResetWriteDeadline(w, idle)
+	if _, err := w.Write([]byte("data: " + string(payload) + "\n\n")); err != nil {
 		return false
 	}
-	c.Writer.Flush()
+	_ = http.NewResponseController(w).Flush()
 	return true
 }
 
 // readRequest reads and validates the JSON-RPC envelope; the method must be
 // one of the eleven the ADK enum knows.
-func (h *A2AHandler) readRequest(c *gin.Context) (*types.JSONRPCRequest, *a2a.Error) {
+func (h *A2AHandler) readRequest(r *http.Request) (*types.JSONRPCRequest, *a2a.Error) {
 	maxBodySize := h.cfg.Server.ResolveMaxRequestBodySize()
-	body, err := io.ReadAll(io.LimitReader(c.Request.Body, int64(maxBodySize)+1))
+	body, err := io.ReadAll(io.LimitReader(r.Body, int64(maxBodySize)+1))
 	if err != nil {
 		h.logger.Error("failed to read a2a request body", err)
 		return nil, &a2a.Error{Code: a2a.CodeParseError, Message: errMsgA2AParse}
@@ -197,15 +195,15 @@ func (h *A2AHandler) readRequest(c *gin.Context) (*types.JSONRPCRequest, *a2a.Er
 
 // respondError writes a JSON-RPC error envelope with HTTP 200, the status A2A
 // clients decode the body on; the id echoes the request when it had one.
-func (h *A2AHandler) respondError(c *gin.Context, req *types.JSONRPCRequest, rpcErr *a2a.Error) {
+func (h *A2AHandler) respondError(w http.ResponseWriter, req *types.JSONRPCRequest, rpcErr *a2a.Error) {
 	var id types.Value
 	if req != nil && req.ID != nil {
 		id = *req.ID
 	}
-	c.JSON(http.StatusOK, types.JSONRPCErrorResponse{ID: id, JSONRPC: jsonRPCVersion, Error: *rpcErr})
+	middlewares.WriteJSON(w, http.StatusOK, types.JSONRPCErrorResponse{ID: id, JSONRPC: jsonRPCVersion, Error: *rpcErr})
 }
 
-func (h *A2AHandler) record(c *gin.Context, alias string, method types.A2AMethod, rpcErr *a2a.Error, started time.Time) {
+func (h *A2AHandler) record(r *http.Request, alias string, method types.A2AMethod, rpcErr *a2a.Error, started time.Time) {
 	if h.telemetry == nil {
 		return
 	}
@@ -213,5 +211,5 @@ func (h *A2AHandler) record(c *gin.Context, alias string, method types.A2AMethod
 	if rpcErr != nil {
 		status = strconv.Itoa(rpcErr.Code)
 	}
-	h.telemetry.RecordA2ARequest(c.Request.Context(), alias, string(method), status, time.Since(started).Seconds())
+	h.telemetry.RecordA2ARequest(r.Context(), alias, string(method), status, time.Since(started).Seconds())
 }

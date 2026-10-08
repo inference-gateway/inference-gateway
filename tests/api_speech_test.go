@@ -16,8 +16,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
-	gin "github.com/gin-gonic/gin"
-
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -43,8 +41,8 @@ func TestSpeechHandler_HappyPath(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, false, enableAudio)
-	r := gin.New()
-	r.POST("/v1/audio/speech", router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(`{"model":"openai/tts-1","input":"Hello world","voice":"alloy","speed":1.25}`))
@@ -79,8 +77,8 @@ func TestSpeechHandler_VoiceCloningPassthrough(t *testing.T) {
 	defer server.Close()
 
 	router := newImagesTestRouter(t, server.URL, false, enableAudio)
-	r := gin.New()
-	r.POST("/v1/audio/speech", router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
 
 	sample := base64.StdEncoding.EncodeToString([]byte("RIFF-fake-wav-sample"))
 	w := httptest.NewRecorder()
@@ -98,8 +96,8 @@ func TestSpeechHandler_VoiceCloningPassthrough(t *testing.T) {
 
 func TestSpeechHandler_DisabledByDefault(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", false)
-	r := gin.New()
-	r.POST("/v1/audio/speech", router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(`{"model":"openai/tts-1","input":"Hello","voice":"alloy"}`))
@@ -112,8 +110,8 @@ func TestSpeechHandler_DisabledByDefault(t *testing.T) {
 
 func TestSpeechHandler_UnsupportedProvider(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", false, enableAudio)
-	r := gin.New()
-	r.POST("/v1/audio/speech", router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/audio/speech?provider=cohere", strings.NewReader(`{"model":"tts-1","input":"Hello","voice":"alloy"}`))
@@ -126,8 +124,8 @@ func TestSpeechHandler_UnsupportedProvider(t *testing.T) {
 
 func TestSpeechHandler_NoProvider(t *testing.T) {
 	router := newImagesTestRouter(t, "http://unused", false, enableAudio)
-	r := gin.New()
-	r.POST("/v1/audio/speech", router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(`{"input":"Hello","voice":"alloy"}`))
@@ -188,8 +186,8 @@ done
 printf 'FAKE-LOCAL-WAV' > "$out"
 `)
 	router := newLocalSpeechRouter(t, home)
-	r := gin.New()
-	r.POST("/v1/audio/speech", router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(`{"model":"local/qwen3-tts","input":"Hello there"}`))
@@ -203,8 +201,8 @@ printf 'FAKE-LOCAL-WAV' > "$out"
 
 func TestSpeechHandler_LocalModelNotReadyReturns503(t *testing.T) {
 	router := newLocalSpeechRouter(t, t.TempDir())
-	r := gin.New()
-	r.POST("/v1/audio/speech", router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(`{"model":"local/qwen3-tts","input":"Hello"}`))
@@ -217,8 +215,8 @@ func TestSpeechHandler_LocalModelNotReadyReturns503(t *testing.T) {
 }
 
 func postLocalSpeech(router *api.RouterImpl, body string) *httptest.ResponseRecorder {
-	r := gin.New()
-	r.POST("/v1/audio/speech", router.SpeechHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/audio/speech", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")

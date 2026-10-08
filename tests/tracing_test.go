@@ -17,8 +17,7 @@ import (
 	mcpmocks "github.com/inference-gateway/inference-gateway/tests/mocks/mcp"
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	gin "github.com/gin-gonic/gin"
-	otelgin "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	otelapi "go.opentelemetry.io/otel"
 	attribute "go.opentelemetry.io/otel/attribute"
 	codes "go.opentelemetry.io/otel/codes"
@@ -71,14 +70,13 @@ func TestTracingMessagesHandler(t *testing.T) {
 	defer server.Close()
 
 	router := newMessagesTestRouter(t, server.URL)
-	r := gin.New()
-	r.Use(otelgin.Middleware("inference-gateway"))
-	r.POST("/v1/messages", router.MessagesHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+"/v1/messages", router.MessagesHandler)
 
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest("POST", "/v1/messages", strings.NewReader(`{"model":"anthropic/claude-sonnet-4-5","max_tokens":16,"messages":[{"role":"user","content":"Hello"}]}`))
 	require.NoError(t, err)
-	r.ServeHTTP(w, req)
+	otelhttp.NewHandler(r, "inference-gateway").ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusOK, w.Code)
 	assert.NotEmpty(t, upstreamTraceparent, "upstream request must carry traceparent")
@@ -117,17 +115,17 @@ func TestTracingTelemetryMiddlewareEnrichment(t *testing.T) {
 			require.NoError(t, err)
 			telemetry := middlewares.NewTelemetryMiddleware(config.Config{}, mockOtel, log)
 
-			r := gin.New()
-			r.Use(otelgin.Middleware("inference-gateway"))
-			r.Use(telemetry.Middleware())
-			r.POST("/v1/chat/completions", func(c *gin.Context) {
-				c.Data(tt.statusCode, "application/json", []byte(`{"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`))
+			r := http.NewServeMux()
+			r.HandleFunc("POST "+"/v1/chat/completions", func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.statusCode)
+				_, _ = w.Write([]byte(`{"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1,"total_tokens":2}}`))
 			})
 
 			w := httptest.NewRecorder()
 			req, err := http.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"openai/gpt-4o","messages":[{"role":"user","content":"hi"}]}`))
 			require.NoError(t, err)
-			r.ServeHTTP(w, req)
+			otelhttp.NewHandler(telemetry.Middleware()(r), "inference-gateway").ServeHTTP(w, req)
 
 			spans := sr.Ended()
 			require.Len(t, spans, 1)
@@ -293,9 +291,8 @@ func TestTracingProxyPropagation(t *testing.T) {
 	}
 	router := api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), providers.NewMockClient(ctrl), nil, nil, nil, nil, nil)
 
-	r := gin.New()
-	r.Use(otelgin.Middleware("inference-gateway"))
-	r.Any("/proxy/:provider/*path", router.ProxyHandler)
+	r := http.NewServeMux()
+	r.HandleFunc("/proxy/{provider}/{path...}", router.ProxyHandler)
 
 	gatewayServer := httptest.NewServer(r)
 	defer gatewayServer.Close()
