@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.58.5](https://github.com/inference-gateway/inference-gateway/compare/v0.58.4...v0.58.5) (2026-10-09)
+
+### 📚 Documentation
+
+* align rest endpoints guide with handlers ([#777](https://github.com/inference-gateway/inference-gateway/issues/777)) ([875e51b](https://github.com/inference-gateway/inference-gateway/commit/875e51ba7043681c87809fe8eaa0bdb582ce50b7))
+* **config:** drop unused CLIENT_TIMEOUT, fix two descriptions ([#779](https://github.com/inference-gateway/inference-gateway/issues/779)) ([33b9eea](https://github.com/inference-gateway/inference-gateway/commit/33b9eead2bae61347c4ef3764df6a177733699c7))
+* correct binary size and metrics label claims ([#778](https://github.com/inference-gateway/inference-gateway/issues/778)) ([026b793](https://github.com/inference-gateway/inference-gateway/commit/026b793611afe03855025e17fe9122a482ec23a5))
+* **readme:** use the org profile quick-start terminal as the hero image ([#780](https://github.com/inference-gateway/inference-gateway/issues/780)) ([7cc1736](https://github.com/inference-gateway/inference-gateway/commit/7cc1736baa267002a993ed6417aadd01d41e085f))
+
 ## [0.58.4](https://github.com/inference-gateway/inference-gateway/compare/v0.58.3...v0.58.4) (2026-10-08)
 
 ### ♻️ Improvements
