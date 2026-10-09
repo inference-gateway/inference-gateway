@@ -430,7 +430,6 @@ gateway returns `502`/`504` before the provider answers:
 
 ```bash
 CLIENT_RESPONSE_HEADER_TIMEOUT=600s
-CLIENT_TIMEOUT=600s
 SERVER_READ_TIMEOUT=600s
 SERVER_WRITE_TIMEOUT=600s
 ```

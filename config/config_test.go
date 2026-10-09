@@ -97,7 +97,6 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 			ConfigPath: "",
 		},
 		Client: &client.ClientConfig{
-			ClientTimeout:               30 * time.Second,
 			ClientMaxIdleConns:          20,
 			ClientMaxIdleConnsPerHost:   20,
 			ClientIdleConnTimeout:       30 * time.Second,
@@ -192,13 +191,6 @@ func TestLoad(t *testing.T) {
 				"SERVER_IDLE_TIMEOUT": "invalid",
 			},
 			expectedError: "Server: IdleTimeout: time: invalid duration \"invalid\"",
-		},
-		{
-			name: "Error_InvalidClientTimeout",
-			env: map[string]string{
-				"CLIENT_TIMEOUT": "invalid",
-			},
-			expectedError: "Client: ClientTimeout: time: invalid duration \"invalid\"",
 		},
 		{
 			name: "Error_InvalidClientIdleConnTimeout",
