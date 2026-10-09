@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="950" height="336" viewBox="0 0 950 336" font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="14">
+  <defs>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#2563EB" stop-opacity="0.15"/>
+    </linearGradient>
+    <!-- typed lines: one 14s loop, each clip wipes open over its typing window.
+         Static widths are the full line, so a renderer without SMIL shows everything. -->
+    <clipPath id="l1"><rect x="50" y="94" width="880" height="20"><animate attributeName="width" values="0;0;880;880" keyTimes="0;0.029;0.129;1" dur="14s" repeatCount="indefinite"/></rect></clipPath>
+    <clipPath id="l2"><rect x="50" y="118" width="880" height="20"><animate attributeName="width" values="0;0;880;880" keyTimes="0;0.129;0.214;1" dur="14s" repeatCount="indefinite"/></rect></clipPath>
+    <clipPath id="l3"><rect x="50" y="208" width="880" height="20"><animate attributeName="width" values="0;0;880;880" keyTimes="0;0.307;0.471;1" dur="14s" repeatCount="indefinite"/></rect></clipPath>
+    <clipPath id="l4"><rect x="50" y="234" width="880" height="20"><animate attributeName="width" values="0;0;880;880" keyTimes="0;0.514;0.586;1" dur="14s" repeatCount="indefinite"/></rect></clipPath>
+  </defs>
+  <!-- outer glow frame -->
+  <rect x="2" y="2" width="946" height="332" rx="16" fill="url(#glow)"/>
+  <!-- window -->
+  <rect x="6" y="6" width="938" height="324" rx="14" fill="#0d1117" stroke="#30363d"/>
+  <!-- title bar -->
+  <path d="M6 20 a14 14 0 0 1 14 -14 h910 a14 14 0 0 1 14 14 v26 h-938 z" fill="#161b22"/>
+  <line x1="6" y1="46" x2="944" y2="46" stroke="#30363d"/>
+  <circle cx="34" cy="27" r="6.5" fill="#ff5f57"/>
+  <circle cx="56" cy="27" r="6.5" fill="#febc2e"/>
+  <circle cx="78" cy="27" r="6.5" fill="#28c840"/>
+  <text x="475" y="32" text-anchor="middle" fill="#8b949e" font-size="12">inference-gateway - quick start</text>
+
+  <!-- step 1: run the gateway -->
+  <text x="36" y="82" fill="#8b949e"># 1. Run the gateway</text>
+  <text x="36" y="108" fill="#7ee787">$</text>
+  <g clip-path="url(#l1)">
+    <text x="52" y="108"><tspan fill="#e6edf3">docker run</tspan><tspan fill="#79c0ff" dx="8">-p</tspan><tspan fill="#e6edf3" dx="8">8080:8080</tspan><tspan fill="#79c0ff" dx="8">-e</tspan><tspan fill="#e3b341" dx="8">OPENAI_API_KEY</tspan><tspan fill="#e6edf3">=your-key</tspan><tspan fill="#8b949e" dx="8">\</tspan></text>
+  </g>
+  <g clip-path="url(#l2)">
+    <text x="68" y="132" fill="#a5d6ff">ghcr.io/inference-gateway/inference-gateway:latest</text>
+  </g>
+  <text x="36" y="158"><tspan fill="#7C3AED">&#10003;</tspan><tspan fill="#8b949e" dx="8">gateway listening on</tspan><tspan fill="#a5d6ff" dx="8">:8080</tspan>
+    <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.25;0.26;1" dur="14s" repeatCount="indefinite"/>
+  </text>
+
+  <!-- step 2: install the CLI and chat -->
+  <text x="36" y="196" fill="#8b949e"># 2. Install the CLI and chat
+    <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.285;0.295;1" dur="14s" repeatCount="indefinite"/>
+  </text>
+  <text x="36" y="222" fill="#7ee787">$
+    <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.285;0.295;1" dur="14s" repeatCount="indefinite"/>
+  </text>
+  <g clip-path="url(#l3)">
+    <text x="52" y="222"><tspan fill="#e6edf3">curl</tspan><tspan fill="#79c0ff" dx="8">-fsSL</tspan><tspan fill="#a5d6ff" dx="8">https://raw.githubusercontent.com/inference-gateway/cli/main/install.sh</tspan><tspan fill="#8b949e" dx="8">|</tspan><tspan fill="#e6edf3" dx="8">bash</tspan></text>
+  </g>
+  <text x="36" y="248" fill="#7ee787">$
+    <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.49;0.5;1" dur="14s" repeatCount="indefinite"/>
+  </text>
+  <g clip-path="url(#l4)">
+    <text x="52" y="248"><tspan fill="#a5b4fc">infer</tspan><tspan fill="#e6edf3" dx="8">init</tspan><tspan fill="#8b949e" dx="8">&amp;&amp;</tspan><tspan fill="#a5b4fc" dx="8">infer</tspan><tspan fill="#e6edf3" dx="8">chat</tspan></text>
+  </g>
+  <text x="36" y="274"><tspan fill="#7C3AED">&#10003;</tspan><tspan fill="#8b949e" dx="8">one endpoint, every provider</tspan>
+    <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.621;0.631;1" dur="14s" repeatCount="indefinite"/>
+  </text>
+
+  <g>
+    <animate attributeName="opacity" values="0;0;1;1" keyTimes="0;0.657;0.667;1" dur="14s" repeatCount="indefinite"/>
+    <text x="36" y="304" fill="#7ee787">$</text>
+    <rect x="56" y="292" width="8" height="15" fill="#e6edf3">
+      <animate attributeName="opacity" values="1;1;0;0" dur="1.2s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+</svg>

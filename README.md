@@ -25,8 +25,8 @@ src="https://img.shields.io/github/go-mod/go-version/inference-gateway/inference
 
 <br/>
 
-<img src="./assets/terminal-hero.svg" width="760"
-alt="Run the gateway with Docker, then call one OpenAI-compatible endpoint for every LLM provider" />
+<img src="./assets/terminal-quickstart.svg" width="950"
+alt="Quick start: run the gateway with Docker, then install the CLI and chat" />
 
 </div>
 
