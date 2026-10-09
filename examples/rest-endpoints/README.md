@@ -30,7 +30,10 @@ interact with the Inference Gateway using curl commands.
 Pass `include=context_window` to enrich each model with its effective context
 window. The value is resolved from the serving runtime when possible (llama.cpp
 `/props`, Ollama `/api/show`), falling back to the window the provider publishes
-in its model listing; models the gateway cannot resolve carry an explicit
+in its model listing, and then to the community-maintained
+[models.dev](https://github.com/sst/models.dev) table bundled with the gateway
+(`source: "community"`). Only models absent from all three - local runtimes the
+gateway cannot reach, or models missing from the dataset - carry an explicit
 `null`.
 
 ```bash
@@ -65,6 +68,14 @@ Response:
       "created": 1750000000,
       "owned_by": "openai",
       "served_by": "openai",
+      "context_window": { "tokens": 128000, "source": "community" }
+    },
+    {
+      "id": "ollama/deepseek-r1:1.5b",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "ollama",
+      "served_by": "ollama",
       "context_window": null
     }
   ]
@@ -80,10 +91,12 @@ OpenAI-compatible.
 
 Pass `include=pricing` to enrich each model with its normalized public per-token
 pricing, resolved from rates the upstream provider publishes in its model
-listing. Monetary values are decimal strings to avoid floating-point precision
-loss. Rates the provider does not publish (e.g. zero cache rates) are omitted
-entirely; models whose provider publishes no per-token pricing carry an explicit
-`null`.
+listing, falling back to the community-maintained
+[models.dev](https://github.com/sst/models.dev) table bundled with the gateway
+(`source: "community"`). Monetary values are decimal strings to avoid
+floating-point precision loss. Rates that are not published (e.g. zero cache
+rates) are omitted entirely, and only models absent from both the provider
+listing and the community table carry an explicit `null`.
 
 ```bash
 curl -X GET 'http://localhost:8080/v1/models?include=pricing' | jq .
@@ -129,6 +142,20 @@ Response:
       "created": 1750000000,
       "owned_by": "openai",
       "served_by": "openai",
+      "pricing": {
+        "currency": "USD",
+        "input_per_token": "0.0000025",
+        "output_per_token": "0.00001",
+        "cache_read_per_token": "0.00000125",
+        "source": "community"
+      }
+    },
+    {
+      "id": "ollama/deepseek-r1:1.5b",
+      "object": "model",
+      "created": 1750000000,
+      "owned_by": "ollama",
+      "served_by": "ollama",
       "pricing": null
     }
   ]
@@ -142,9 +169,10 @@ OpenAI-compatible.
 
 ### Modalities
 
-Pass `include=modalities` to enrich each model with the input modalities it
-supports natively, one or more of `text`, `image`, `audio`, and `video`. The
-values are sourced from the community-maintained
+Pass `include=modalities` to enrich each model with the modalities it supports
+natively, as an object with `input` and `output` arrays whose values are
+`text`, `image`, `audio`, or `video`. The values are sourced from the
+community-maintained
 [models.dev](https://github.com/sst/models.dev) dataset; models the gateway
 cannot resolve (local runtimes, or models absent from the dataset) carry an
 explicit `null`.
@@ -165,7 +193,7 @@ Response:
       "created": 1750000000,
       "owned_by": "openai",
       "served_by": "openai",
-      "modalities": ["text", "image"]
+      "modalities": { "input": ["text", "image"], "output": ["text"] }
     },
     {
       "id": "deepseek/deepseek-chat",
@@ -173,7 +201,7 @@ Response:
       "created": 1750000000,
       "owned_by": "deepseek",
       "served_by": "deepseek",
-      "modalities": ["text"]
+      "modalities": { "input": ["text"], "output": ["text"] }
     },
     {
       "id": "ollama/deepseek-r1:1.5b",
@@ -467,15 +495,13 @@ field and `response_format` does not apply. Response (image data elided):
 `quality` takes `low`, `medium`, or `high`. It is the main cost lever at
 1024x1024, `low` is roughly 35x cheaper than `high`.
 
-### Image Edits and Variations
+### Image Edits
 
-Two additional Images endpoints accept `multipart/form-data` uploads and reuse
-the same `ImagesResponse` shape, toggle (`IMAGES_ENABLED`), and provider support
-rules as `/images/generations`:
-
-- `POST /v1/images/edits` - edit or extend a source image. Requires the `image`
-  file and a `prompt`; optional `mask`, `model`, `n` (1-10), `size`, `quality`,
-  and `response_format` (`url` or `b64_json`).
+`POST /v1/images/edits` accepts `multipart/form-data` uploads and reuses the
+same `ImagesResponse` shape, toggle (`IMAGES_ENABLED`), and provider support
+rules as `/images/generations`. It edits or extends a source image: it requires
+the `image` file and a `prompt`, with optional `mask`, `model`, `n` (1-10),
+`size`, `quality`, and `response_format` (`url` or `b64_json`).
 
 The gateway streams the uploaded `image` (and optional `mask`) straight through
 to the provider without buffering the whole payload, so large images stay cheap.
@@ -493,7 +519,7 @@ curl -X POST "http://localhost:8080/v1/images/edits?provider=openai" \
   -F response_format="url"
 ```
 
-Both return an `ImagesResponse`:
+The response is an `ImagesResponse`:
 
 ```json
 {
@@ -979,13 +1005,11 @@ curl -X POST http://localhost:8080/v1/chat/completions \
   }" | jq .
 ```
 
-**Supported vision models:**
-
-- OpenAI: `gpt-4o`, `gpt-4-turbo`, `gpt-4-vision-preview`
-- Anthropic: `claude-3-5-sonnet-*`, `claude-3-opus-*`, `claude-3-sonnet-*`
-- Google: Models with `vision` or `multimodal` in the name
-- Mistral: `pixtral-*` models
-- Groq/DeepSeek/Cohere: Models with `vision` or `multimodal` in the name
+**Supported vision models:** vision support is looked up in the gateway's
+community modalities table (`providers/core/community_modalities.json` and its
+`.overrides.json` companion), not inferred from the model name. See
+[Vision/Multimodal Support](../../README.md#visionmultimodal-support) for how
+the lookup behaves.
 
 **Image detail levels:**
 
@@ -993,6 +1017,8 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 - `low`: Faster processing, lower detail
 - `high`: More detailed analysis, slower processing
 
-**Note:** Attempting to send image content to a non-vision model will result in
-a `400 Bad Request` error with a clear message indicating that the model does
-not support vision capabilities.
+**Note:** The gateway never rejects a request for carrying images. With
+`VISION_ENABLED=false` (the default) image parts are forwarded untouched and
+the provider decides how to handle them. With `VISION_ENABLED=true` image parts
+are stripped only for models the table lists as text-only - models it does not
+cover pass through unchanged.
