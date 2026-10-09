@@ -6,7 +6,6 @@ import (
 )
 
 type ClientConfig struct {
-	ClientTimeout               time.Duration `env:"CLIENT_TIMEOUT, default=30s" description:"Client timeout"`
 	ClientMaxIdleConns          int           `env:"CLIENT_MAX_IDLE_CONNS, default=20" description:"Maximum idle connections"`
 	ClientMaxIdleConnsPerHost   int           `env:"CLIENT_MAX_IDLE_CONNS_PER_HOST, default=20" description:"Maximum idle connections per host"`
 	ClientIdleConnTimeout       time.Duration `env:"CLIENT_IDLE_CONN_TIMEOUT, default=30s" description:"Idle connection timeout"`

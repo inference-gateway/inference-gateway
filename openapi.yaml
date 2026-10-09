@@ -4716,7 +4716,7 @@ components:
                   env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
                   type: bool
                   default: 'true'
-                  description: 'Allow downloading the llama-tts binary and GGUF models on first use. Anything already present is never re-downloaded: the cache is checked first, whether populated by an earlier run, the CLI, a mounted volume, or a pre-baked image layer. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing'
+                  description: 'Allow downloading the llama-tts binary and GGUF models, in the background at startup when the Audio API is enabled. The pinned GGUF models are treated as done once present in the cache, whoever wrote them (an earlier run, the CLI, a mounted volume, a pre-baked image layer), while a cached binary whose sha256 differs from the latest release is replaced. A llama-tts found on PATH is left alone - upgrading it is the operator''s job. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing'
                 - name: audio_local_max_concurrency
                   env: 'AUDIO_LOCAL_MAX_CONCURRENCY'
                   type: int
@@ -4828,7 +4828,7 @@ components:
                   env: 'MCP_REQUEST_TIMEOUT'
                   type: time.Duration
                   default: '5s'
-                  description: 'MCP client request timeout for initialize and tool calls'
+                  description: 'Timeout for one MCP discovery request: the startup server discovery and each tools/list refresh. Tool calls are bounded by MCP_CLIENT_TIMEOUT instead'
                 - name: mcp_max_retries
                   env: 'MCP_MAX_RETRIES'
                   type: int
@@ -4995,11 +4995,6 @@ components:
           - client:
               title: 'Client settings'
               settings:
-                - name: timeout
-                  env: 'CLIENT_TIMEOUT'
-                  type: time.Duration
-                  default: '30s'
-                  description: 'Client timeout'
                 - name: max_idle_conns
                   env: 'CLIENT_MAX_IDLE_CONNS'
                   type: int
