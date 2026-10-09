@@ -68,7 +68,7 @@ use of Mixture of Experts.
 | ☸️ **Kubernetes Ready**          | Deploy with the [Inference Gateway Operator](https://github.com/inference-gateway/operator) and scale horizontally with [HPA](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) |
 | 📊 **OpenTelemetry**             | Prometheus metrics following the GenAI semantic conventions, plus an OTLP push endpoint                                                                                                                   |
 | 🛡️ **Enterprise Ready**          | OIDC authentication, authorization, configurable timeouts, and TLS support                                                                                                                                |
-| 🌿 **Lightweight**               | Essential libraries and runtime only - a ~13MB binary with minimal resource footprint                                                                                                                     |
+| 🌿 **Lightweight**               | Essential libraries and runtime only - a ~10MB compressed download with minimal resource footprint                                                                                                        |
 | 🔒 **Privacy First**             | Self-hosted, zero data collection, Apache 2.0 licensed                                                                                                                                                    |
 | ⌨️ **CLI Tool**                  | An [agentic command-line interface](https://github.com/inference-gateway/cli) for managing and interacting with the gateway                                                                               |
 
@@ -555,8 +555,8 @@ document, which `401` challenges on `/a2a` point at the way they do on `/mcp`
 (`A2A_RESOURCE_URL` sets the canonical URL behind an ingress). The caller's
 bearer token is never forwarded; per-agent credentials go into the agent URL as
 basic auth. With `TELEMETRY_ENABLED=true` every relayed call is counted in
-`a2a_requests_total` and timed in `a2a_request_duration_seconds`, labelled
-`alias`, `method` and `status`.
+`a2a_requests_total`, labelled `alias`, `method` and `status`, and timed in
+`a2a_request_duration_seconds`, labelled `alias` and `method`.
 
 The gateway stays a stateless proxy: no tasks, messages or events are stored,
 no agent is injected as a tool into `/v1/chat/completions`, and no request is
@@ -590,8 +590,9 @@ curl http://localhost:9464/metrics
 ### Available Metrics
 
 Metrics follow the [OpenTelemetry GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/).
-Every series carries a `source` label: `gateway` for gateway-observed traffic, or a client-supplied value
-(e.g. `claude-code-subscription`) for pushed metrics.
+Every `gen_ai_*` and `inference_gateway_*` series carries a `source` label: `gateway` for
+gateway-observed traffic, or a client-supplied value (e.g. `claude-code-subscription`) for pushed
+metrics. The `a2a_*` series carry only their own labels, listed below.
 
 | Metric                                                | Type      | Description                                                             |
 | ----------------------------------------------------- | --------- | ----------------------------------------------------------------------- |
@@ -606,7 +607,7 @@ Every series carries a `source` label: `gateway` for gateway-observed traffic, o
 | `a2a_requests_total`                                  | Counter   | A2A calls relayed to agents; `alias`, `method`, `status` (`ok` or code) |
 | `a2a_request_duration_seconds`                        | Histogram | Relayed A2A call duration (streaming: time to open); `alias`, `method`  |
 
-**Common labels**: `gen_ai_provider_name`, `gen_ai_request_model`, `source`, `team`;
+**Common labels** (`gen_ai_*` and `inference_gateway_*` series): `gen_ai_provider_name`, `gen_ai_request_model`, `source`, `team`;
 tool metrics add `gen_ai_tool_type` and `gen_ai_tool_name`; token usage adds `gen_ai_token_type`;
 `error_type` (HTTP status string) is present only on errors. `gen_ai_operation_name` is set on the
 token usage and request duration metrics, but not on `inference_gateway_tool_calls_total` or
