@@ -4716,7 +4716,7 @@ components:
                   env: 'AUDIO_LOCAL_AUTO_DOWNLOAD'
                   type: bool
                   default: 'true'
-                  description: 'Allow downloading the llama-tts binary and GGUF models, in the background at startup when the Audio API is enabled. The pinned GGUF models are treated as done once present in the cache, whoever wrote them (an earlier run, the CLI, a mounted volume, a pre-baked image layer), while a cached binary whose sha256 differs from the latest release is replaced. A llama-tts found on PATH is left alone - upgrading it is the operator''s job. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing'
+                  description: "Allow downloading the llama-tts binary and GGUF models, in the background at startup when the Audio API is enabled. The pinned GGUF models are treated as done once present in the cache, whoever wrote them (an earlier run, the CLI, a mounted volume, a pre-baked image layer), while a cached binary whose sha256 differs from the latest release is replaced. A llama-tts found on PATH is left alone - upgrading it is the operator's job. When false, the gateway serves only from the existing cache or PATH and returns an actionable error when assets are missing"
                 - name: audio_local_max_concurrency
                   env: 'AUDIO_LOCAL_MAX_CONCURRENCY'
                   type: int
