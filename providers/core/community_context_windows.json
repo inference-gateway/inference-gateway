@@ -15,6 +15,10 @@
     "context": 200000,
     "output": 64000
   },
+  "anthropic/claude-haiku-5-5": {
+    "context": 1000000,
+    "output": 128000
+  },
   "anthropic/claude-opus-4-5": {
     "context": 200000,
     "output": 64000
@@ -44,10 +48,11 @@
     "output": 128000
   },
   "anthropic/claude-sonnet-4-5": {
-    "context": 1000000
+    "context": 200000,
+    "output": 64000
   },
   "anthropic/claude-sonnet-4-5-20250929": {
-    "context": 1000000,
+    "context": 200000,
     "output": 64000
   },
   "anthropic/claude-sonnet-4-6": {
@@ -71,6 +76,10 @@
     "output": 65536
   },
   "cloudflare/@cf/cloudflare/clef-flash": {
+    "context": 65536,
+    "output": 65536
+  },
+  "cloudflare/@cf/cloudflare/clef-omni": {
     "context": 65536,
     "output": 65536
   },
@@ -459,6 +468,9 @@
     "context": 1000000,
     "output": 512000
   },
+  "mistral/codestral-2508": {
+    "context": 256000
+  },
   "mistral/codestral-latest": {
     "context": 256000,
     "output": 4096
@@ -487,20 +499,38 @@
     "context": 128000,
     "output": 128000
   },
+  "mistral/glm-5-2": {
+    "context": 1048576
+  },
   "mistral/labs-devstral-small-2512": {
     "context": 256000,
     "output": 256000
   },
-  "mistral/magistral-medium-latest": {
-    "context": 128000,
-    "output": 16384
-  },
-  "mistral/ministral-3b-latest": {
-    "context": 128000,
+  "mistral/labs-leanstral-1-5-1": {
+    "context": 262144,
     "output": 128000
   },
+  "mistral/magistral-medium-latest": {
+    "context": 262144,
+    "output": 16384
+  },
+  "mistral/ministral-14b-2512": {
+    "context": 262144,
+    "output": 262144
+  },
+  "mistral/ministral-3b-2512": {
+    "context": 131072
+  },
+  "mistral/ministral-3b-latest": {
+    "context": 131072,
+    "output": 128000
+  },
+  "mistral/ministral-8b-2512": {
+    "context": 262144,
+    "output": 262144
+  },
   "mistral/ministral-8b-latest": {
-    "context": 128000,
+    "context": 262144,
     "output": 128000
   },
   "mistral/mistral-embed": {
@@ -513,6 +543,10 @@
   },
   "mistral/mistral-large-2512": {
     "context": 262144,
+    "output": 262144
+  },
+  "mistral/mistral-large-4": {
+    "context": 1048576,
     "output": 262144
   },
   "mistral/mistral-large-latest": {
@@ -544,11 +578,11 @@
     "output": 16384
   },
   "mistral/mistral-small-2603": {
-    "context": 256000,
+    "context": 262144,
     "output": 256000
   },
   "mistral/mistral-small-latest": {
-    "context": 256000,
+    "context": 262144,
     "output": 256000
   },
   "mistral/open-mistral-7b": {
@@ -575,17 +609,19 @@
     "context": 128000,
     "output": 128000
   },
+  "mistral/voxtral-small-2507": {
+    "context": 32768,
+    "output": 32000
+  },
   "mistral/voxtral-small-latest": {
-    "context": 32000,
+    "context": 32768,
     "output": 32000
   },
   "mistral/zai-glm-5-2": {
-    "context": 1000000,
-    "output": 131072
+    "context": 1048576
   },
   "mistral/zai-glm-5-3": {
-    "context": 1000000,
-    "output": 131072
+    "context": 1048576
   },
   "moonshot/kimi-k2.6": {
     "context": 262144,
@@ -1031,6 +1067,10 @@
   },
   "ollama_cloud/mistral-large-3:675b": {
     "context": 262144,
+    "output": 262144
+  },
+  "ollama_cloud/mistral-large-4": {
+    "context": 1048576,
     "output": 262144
   },
   "ollama_cloud/nemotron-3-nano:30b": {

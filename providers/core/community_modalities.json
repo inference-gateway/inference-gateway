@@ -35,6 +35,15 @@
       "text"
     ]
   },
+  "anthropic/claude-haiku-5-5": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "anthropic/claude-opus-4-5": {
     "input": [
       "text",
@@ -169,6 +178,15 @@
       "text"
     ]
   },
+  "cloudflare/@cf/cloudflare/clef-omni": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "cloudflare/@cf/deepseek-ai/deepseek-r1-distill-qwen-32b": {
     "input": [
       "text"
@@ -263,6 +281,15 @@
   "cloudflare/@cf/meta/llama-guard-3-8b": {
     "input": [
       "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cloudflare/@cf/mistralai/mistral-small-3.1-24b-instruct": {
+    "input": [
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -1259,6 +1286,14 @@
       "text"
     ]
   },
+  "mistral/codestral-2508": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "mistral/codestral-latest": {
     "input": [
       "text"
@@ -1315,7 +1350,24 @@
       "text"
     ]
   },
+  "mistral/glm-5-2": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "mistral/labs-devstral-small-2512": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "mistral/labs-leanstral-1-5-1": {
     "input": [
       "text",
       "image"
@@ -1326,7 +1378,26 @@
   },
   "mistral/magistral-medium-latest": {
     "input": [
+      "text",
+      "image"
+    ],
+    "output": [
       "text"
+    ]
+  },
+  "mistral/ministral-14b-2512": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "mistral/ministral-3b-2512": {
+    "input": [
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -1334,7 +1405,17 @@
   },
   "mistral/ministral-3b-latest": {
     "input": [
+      "text",
+      "image"
+    ],
+    "output": [
       "text"
+    ]
+  },
+  "mistral/ministral-8b-2512": {
+    "input": [
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -1342,7 +1423,8 @@
   },
   "mistral/ministral-8b-latest": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -1365,6 +1447,15 @@
     ]
   },
   "mistral/mistral-large-2512": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "mistral/mistral-large-4": {
     "input": [
       "text",
       "image"
@@ -1517,6 +1608,15 @@
     ],
     "output": [
       "audio"
+    ]
+  },
+  "mistral/voxtral-small-2507": {
+    "input": [
+      "text",
+      "audio"
+    ],
+    "output": [
+      "text"
     ]
   },
   "mistral/voxtral-small-latest": {
@@ -3074,6 +3174,15 @@
     ]
   },
   "ollama_cloud/mistral-large-3:675b": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "ollama_cloud/mistral-large-4": {
     "input": [
       "text",
       "image"
