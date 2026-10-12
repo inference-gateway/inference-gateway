@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.58.6](https://github.com/inference-gateway/inference-gateway/compare/v0.58.5...v0.58.6) (2026-10-12)
+
+### 🔧 Miscellaneous
+
+* **deps:** bump the github-actions group with 3 updates ([#782](https://github.com/inference-gateway/inference-gateway/issues/782)) ([30eeabf](https://github.com/inference-gateway/inference-gateway/commit/30eeabf0fe3cdc7d416a280c6381bf91a9c12ee8))
+* **deps:** bump the gomod group with 9 updates ([#781](https://github.com/inference-gateway/inference-gateway/issues/781)) ([e87087c](https://github.com/inference-gateway/inference-gateway/commit/e87087cd0c20a03a1488bad2c6c0d20e6371418a))
+* **pricing,context-window,modalities:** sync community pricing, context-window, and modalities tables from models.dev ([#784](https://github.com/inference-gateway/inference-gateway/issues/784)) ([98f4037](https://github.com/inference-gateway/inference-gateway/commit/98f4037791b23a925b281c383303708fbabb06d5))
+* sync generated types with schemas v1.2.2 ([#783](https://github.com/inference-gateway/inference-gateway/issues/783)) ([14ec752](https://github.com/inference-gateway/inference-gateway/commit/14ec752257327087bb546e5ea3fb7646c6f07efa))
+
 ## [0.58.5](https://github.com/inference-gateway/inference-gateway/compare/v0.58.4...v0.58.5) (2026-10-09)
 
 ### 📚 Documentation
