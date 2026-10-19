@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.58.7](https://github.com/inference-gateway/inference-gateway/compare/v0.58.6...v0.58.7) (2026-10-19)
+
+### 👷 CI
+
+* drop per-repo stale.yml, now swept by the org orchestrator ([#785](https://github.com/inference-gateway/inference-gateway/issues/785)) ([fb5ef2b](https://github.com/inference-gateway/inference-gateway/commit/fb5ef2b9be4d2f5a3d2f61696fde8b5c8ee4839a))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump the github-actions group with 2 updates ([#787](https://github.com/inference-gateway/inference-gateway/issues/787)) ([9601e7e](https://github.com/inference-gateway/inference-gateway/commit/9601e7e0cf0883cc7951321f95f060b3a26da0c3))
+* **deps:** bump the gomod group with 3 updates ([#786](https://github.com/inference-gateway/inference-gateway/issues/786)) ([2e9154f](https://github.com/inference-gateway/inference-gateway/commit/2e9154fcc4664ced5ed065d139011bb8488c0ca5))
+* **pricing,context-window,modalities:** sync community pricing, context-window, and modalities tables from models.dev ([#788](https://github.com/inference-gateway/inference-gateway/issues/788)) ([125b488](https://github.com/inference-gateway/inference-gateway/commit/125b488512ac2599358c87f6078c2fdf1c407782))
+
 ## [0.58.6](https://github.com/inference-gateway/inference-gateway/compare/v0.58.5...v0.58.6) (2026-10-12)
 
 ### 🔧 Miscellaneous
