@@ -1,122 +1,156 @@
 {
   "anthropic/claude-fable-5": {
+    "cache_read_per_token": "0.000001",
+    "cache_write_per_token": "0.0000125",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00001",
+    "output_per_token": "0.00005",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-fable-5-1": {
+    "cache_read_per_token": "0.00000025",
+    "cache_write_per_token": "0.0000125",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.00001",
+    "output_per_token": "0.00005",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-haiku-4-5": {
+    "cache_read_per_token": "0.0000001",
+    "cache_write_per_token": "0.00000125",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000001",
+    "output_per_token": "0.000005",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-haiku-4-5-20251001": {
+    "cache_read_per_token": "0.0000001",
+    "cache_write_per_token": "0.00000125",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000001",
+    "output_per_token": "0.000005",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-haiku-5-5": {
+    "cache_read_per_token": "0.00000001",
+    "cache_write_per_token": "0.000000125",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.0000001",
+    "output_per_token": "0.0000005",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-5": {
+    "cache_read_per_token": "0.0000005",
+    "cache_write_per_token": "0.00000625",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-5-20251101": {
+    "cache_read_per_token": "0.0000005",
+    "cache_write_per_token": "0.00000625",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-6": {
+    "cache_read_per_token": "0.0000005",
+    "cache_write_per_token": "0.00000625",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-7": {
+    "cache_read_per_token": "0.0000005",
+    "cache_write_per_token": "0.00000625",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-8": {
+    "cache_read_per_token": "0.0000005",
+    "cache_write_per_token": "0.00000625",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-5": {
+    "cache_read_per_token": "0.0000005",
+    "cache_write_per_token": "0.00000625",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-5-5": {
+    "cache_read_per_token": "0.0000002",
+    "cache_write_per_token": "0.000005",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.00002",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-4-5": {
+    "cache_read_per_token": "0.0000003",
+    "cache_write_per_token": "0.00000375",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000003",
+    "output_per_token": "0.000015",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-4-5-20250929": {
+    "cache_read_per_token": "0.0000003",
+    "cache_write_per_token": "0.00000375",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000003",
+    "output_per_token": "0.000015",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-4-6": {
+    "cache_read_per_token": "0.0000003",
+    "cache_write_per_token": "0.00000375",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000003",
+    "output_per_token": "0.000015",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-5": {
+    "cache_read_per_token": "0.0000002",
+    "cache_write_per_token": "0.0000025",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.00001",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-5-5": {
+    "cache_read_per_token": "0.0000001",
+    "cache_write_per_token": "0.0000025",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.00001",
     "source": "community",
-    "updated_at": "2026-10-19T11:57:10Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "cloudflare/@cf/aisingapore/gemma-sea-lion-v4-27b-it": {
     "currency": "USD",

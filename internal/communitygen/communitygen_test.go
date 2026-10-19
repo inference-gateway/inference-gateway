@@ -109,6 +109,7 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 		"sst-models.dev-abc/providers/ollama-cloud/models/deepseek-v4-pro.toml": "name = \"deepseek-v4-pro\"\n",
 		"sst-models.dev-abc/providers/ollama-cloud/models/glm-priced.toml":      "[cost]\ninput = 0.15\noutput = 0.5\n",
 		"sst-models.dev-abc/providers/openai/models/gpt-paid.toml":              "[cost]\ninput = 3.0\noutput = 15.0\n",
+		"sst-models.dev-abc/providers/anthropic/models/claude-v2.toml":          "schema = 2\n[cost.text.input]\nprice = 4\ncache = { read = 0.2, write = { \"5m\" = 5, \"1h\" = 8 } }\n[cost.text.output]\nprice = 20\n",
 	})
 
 	output := filepath.Join(t.TempDir(), "pricing.json")
@@ -123,6 +124,20 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 	var table map[string]types.Pricing
 	if err := json.Unmarshal(data, &table); err != nil {
 		t.Fatal(err)
+	}
+
+	schema2, ok := table["anthropic/claude-v2"]
+	if !ok {
+		t.Fatal("schema 2 priced model missing from table")
+	}
+	if schema2.InputPerToken != "0.000004" || schema2.OutputPerToken != "0.00002" {
+		t.Errorf("schema 2 rates = %v/%v, want 0.000004/0.00002", schema2.InputPerToken, schema2.OutputPerToken)
+	}
+	if schema2.CacheReadPerToken == nil || *schema2.CacheReadPerToken != "0.0000002" {
+		t.Errorf("schema 2 cache read = %v, want 0.0000002", schema2.CacheReadPerToken)
+	}
+	if schema2.CacheWritePerToken == nil || *schema2.CacheWritePerToken != "0.000005" {
+		t.Errorf("schema 2 cache write = %v, want 0.000005", schema2.CacheWritePerToken)
 	}
 
 	free, ok := table["nvidia/meta/llama-free"]
