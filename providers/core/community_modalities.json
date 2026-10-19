@@ -1,8 +1,7 @@
 {
   "anthropic/claude-fable-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -10,8 +9,7 @@
   },
   "anthropic/claude-fable-5-1": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -19,8 +17,7 @@
   },
   "anthropic/claude-haiku-4-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -28,8 +25,7 @@
   },
   "anthropic/claude-haiku-4-5-20251001": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -37,8 +33,7 @@
   },
   "anthropic/claude-haiku-5-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -46,8 +41,7 @@
   },
   "anthropic/claude-opus-4-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -55,8 +49,7 @@
   },
   "anthropic/claude-opus-4-5-20251101": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -64,8 +57,7 @@
   },
   "anthropic/claude-opus-4-6": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -73,8 +65,7 @@
   },
   "anthropic/claude-opus-4-7": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -82,8 +73,7 @@
   },
   "anthropic/claude-opus-4-8": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -91,8 +81,7 @@
   },
   "anthropic/claude-opus-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -100,8 +89,7 @@
   },
   "anthropic/claude-opus-5-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -109,8 +97,7 @@
   },
   "anthropic/claude-sonnet-4-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -118,8 +105,7 @@
   },
   "anthropic/claude-sonnet-4-5-20250929": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -127,8 +113,7 @@
   },
   "anthropic/claude-sonnet-4-6": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -136,8 +121,7 @@
   },
   "anthropic/claude-sonnet-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -145,8 +129,7 @@
   },
   "anthropic/claude-sonnet-5-5": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "text"
@@ -897,6 +880,17 @@
       "text"
     ]
   },
+  "google/gemini-4-argon": {
+    "input": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "google/gemini-embedding-001": {
     "input": [
       "text"
@@ -1277,6 +1271,16 @@
     ]
   },
   "minimax/MiniMax-M3": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "minimax/MiniMax-M3.1-Flash": {
     "input": [
       "text",
       "image",
@@ -2570,14 +2574,6 @@
       "text"
     ]
   },
-  "nvidia/nvidia/nemotron-3-super-120b-a12b": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
     "input": [
       "text"
@@ -2597,6 +2593,16 @@
   "nvidia/nvidia/nemotron-3.5-lightning-30b-a3b": {
     "input": [
       "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "nvidia/nvidia/nemotron-3.5-super-vl-120b-a12b": {
+    "input": [
+      "text",
+      "image",
+      "video"
     ],
     "output": [
       "text"
@@ -3045,6 +3051,15 @@
     ]
   },
   "ollama_cloud/deepseek-v4.1-flash": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "ollama_cloud/deepseek-v4.1-flash:1017": {
     "input": [
       "text",
       "image"
