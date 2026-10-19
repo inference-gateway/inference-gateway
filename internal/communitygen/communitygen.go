@@ -68,12 +68,7 @@ var subscriptionProviders = map[string]bool{
 // Cloud models) stays distinguishable from an explicit zero rate, which
 // models.dev uses for free tiers (e.g. nvidia's free NIM endpoints).
 type modelTOML struct {
-	Cost *struct {
-		Input      float64 `toml:"input"`
-		Output     float64 `toml:"output"`
-		CacheRead  float64 `toml:"cache_read"`
-		CacheWrite float64 `toml:"cache_write"`
-	} `toml:"cost"`
+	Cost  *costTOML `toml:"cost"`
 	Limit struct {
 		Context int64 `toml:"context"`
 		Output  int64 `toml:"output"`
@@ -86,6 +81,41 @@ type modelTOML struct {
 	// ("<lab>/<model>") whose sections fill in anything this provider file
 	// omits (models.dev's base_model inheritance).
 	BaseModel string `toml:"base_model"`
+}
+
+// costTOML holds a models.dev cost table in either spelling: schema 1 flat
+// per-MTok rates, or schema 2 nested under [cost.text.input]/[cost.text.output]
+// with cache rates under the input table.
+type costTOML struct {
+	Input      float64 `toml:"input"`
+	Output     float64 `toml:"output"`
+	CacheRead  float64 `toml:"cache_read"`
+	CacheWrite float64 `toml:"cache_write"`
+	Text       *struct {
+		Input struct {
+			Price float64 `toml:"price"`
+			Cache struct {
+				Read  float64            `toml:"read"`
+				Write map[string]float64 `toml:"write"`
+			} `toml:"cache"`
+		} `toml:"input"`
+		Output struct {
+			Price float64 `toml:"price"`
+		} `toml:"output"`
+	} `toml:"text"`
+}
+
+// defaultCacheWriteTTL is the schema 2 cache-write tier equivalent to the
+// single schema 1 cache_write rate.
+const defaultCacheWriteTTL = "5m"
+
+// rates returns input, output, cache read and cache write as USD per million
+// tokens regardless of schema version.
+func (c *costTOML) rates() (input, output, cacheRead, cacheWrite float64) {
+	if c.Text == nil {
+		return c.Input, c.Output, c.CacheRead, c.CacheWrite
+	}
+	return c.Text.Input.Price, c.Text.Output.Price, c.Text.Input.Cache.Read, c.Text.Input.Cache.Write[defaultCacheWriteTTL]
 }
 
 // contextWindowEntry is one row of the community context-window table: the
@@ -167,13 +197,13 @@ func GenerateModalities(output, tarballPath string) error {
 	return writeTable(output, tarballPath, table)
 }
 
-// enumModalities keeps only the values that are members of the gateway's
-// Modality enum, in first-seen order without duplicates.
+// enumModalities maps each value through the Modality enum and keeps the
+// members in first-seen order without duplicates.
 func enumModalities(values []string) []types.Modality {
 	var out []types.Modality
 	seen := make(map[types.Modality]bool)
 	for _, v := range values {
-		m := types.Modality(v)
+		m := toEnumModality(v)
 		if !m.Valid() || seen[m] {
 			continue
 		}
@@ -181,6 +211,18 @@ func enumModalities(values []string) []types.Modality {
 		out = append(out, m)
 	}
 	return out
+}
+
+// toEnumModality maps a models.dev modality spelling onto the gateway's
+// Modality enum: members pass through, MIME-like granular values
+// ("image/jpeg") reduce to their base modality, and values with no enum
+// base (e.g. "text" subtypes' "application/pdf") keep dropping.
+func toEnumModality(value string) types.Modality {
+	if m := types.Modality(value); m.Valid() {
+		return m
+	}
+	base, _, _ := strings.Cut(value, "/")
+	return types.Modality(base)
 }
 
 // forEachModel walks a models.dev repository tarball and calls visit for every
@@ -367,8 +409,9 @@ func pricingEntry(key string, model modelTOML, syncedAt time.Time) (types.Pricin
 			UpdatedAt:      syncedAt,
 		}, true
 	}
-	input := freeOrRate(model.Cost.Input)
-	output := freeOrRate(model.Cost.Output)
+	inputRate, outputRate, cacheRead, cacheWrite := model.Cost.rates()
+	input := freeOrRate(inputRate)
+	output := freeOrRate(outputRate)
 	if input == nil || output == nil {
 		return types.Pricing{}, false
 	}
@@ -376,8 +419,8 @@ func pricingEntry(key string, model modelTOML, syncedAt time.Time) (types.Pricin
 		Currency:           "USD",
 		InputPerToken:      *input,
 		OutputPerToken:     *output,
-		CacheReadPerToken:  perMTokToPerToken(model.Cost.CacheRead),
-		CacheWritePerToken: perMTokToPerToken(model.Cost.CacheWrite),
+		CacheReadPerToken:  perMTokToPerToken(cacheRead),
+		CacheWritePerToken: perMTokToPerToken(cacheWrite),
 		Source:             types.PricingSourceCommunity,
 		Subscription:       subscription,
 		UpdatedAt:          syncedAt,

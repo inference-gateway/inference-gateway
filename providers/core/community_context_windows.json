@@ -76,7 +76,7 @@
     "output": 65536
   },
   "cloudflare/@cf/cloudflare/clef-flash": {
-    "context": 65536,
+    "context": 24576,
     "output": 65536
   },
   "cloudflare/@cf/cloudflare/clef-omni": {
@@ -465,6 +465,10 @@
     "output": 131072
   },
   "minimax/MiniMax-M3": {
+    "context": 1000000,
+    "output": 512000
+  },
+  "minimax/MiniMax-M3.1-Flash": {
     "context": 1000000,
     "output": 512000
   },
@@ -872,10 +876,6 @@
     "context": 256000,
     "output": 65536
   },
-  "nvidia/nvidia/nemotron-3-super-120b-a12b": {
-    "context": 262144,
-    "output": 262144
-  },
   "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
     "context": 1000000,
     "output": 65536
@@ -887,6 +887,10 @@
   "nvidia/nvidia/nemotron-3.5-lightning-30b-a3b": {
     "context": 262144,
     "output": 262144
+  },
+  "nvidia/nvidia/nemotron-3.5-super-vl-120b-a12b": {
+    "context": 1048576,
+    "output": 8192
   },
   "nvidia/nvidia/nemotron-content-safety-reasoning-4b": {
     "context": 128000,
@@ -976,6 +980,10 @@
     "context": 256000,
     "output": 16384
   },
+  "nvidia/stepfun-ai/step-5-preview": {
+    "context": 1048576,
+    "output": 1048576
+  },
   "nvidia/upstage/solar-10.7b-instruct": {
     "context": 128000,
     "output": 8192
@@ -1009,6 +1017,9 @@
     "output": 1048576
   },
   "ollama_cloud/deepseek-v4.1-flash": {
+    "context": 1048576
+  },
+  "ollama_cloud/deepseek-v4.1-flash:1017": {
     "context": 1048576
   },
   "ollama_cloud/gemma4:31b": {
@@ -1072,6 +1083,10 @@
   "ollama_cloud/mistral-large-4": {
     "context": 1048576,
     "output": 262144
+  },
+  "ollama_cloud/muse-spark-open": {
+    "context": 1048576,
+    "output": 131072
   },
   "ollama_cloud/nemotron-3-nano:30b": {
     "context": 1048576,

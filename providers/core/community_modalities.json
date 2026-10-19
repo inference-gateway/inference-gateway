@@ -897,6 +897,17 @@
       "text"
     ]
   },
+  "google/gemini-4-argon": {
+    "input": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "google/gemini-embedding-001": {
     "input": [
       "text"
@@ -1277,6 +1288,16 @@
     ]
   },
   "minimax/MiniMax-M3": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "minimax/MiniMax-M3.1-Flash": {
     "input": [
       "text",
       "image",
@@ -2570,14 +2591,6 @@
       "text"
     ]
   },
-  "nvidia/nvidia/nemotron-3-super-120b-a12b": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
     "input": [
       "text"
@@ -2597,6 +2610,16 @@
   "nvidia/nvidia/nemotron-3.5-lightning-30b-a3b": {
     "input": [
       "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "nvidia/nvidia/nemotron-3.5-super-vl-120b-a12b": {
+    "input": [
+      "text",
+      "image",
+      "video"
     ],
     "output": [
       "text"
@@ -3045,6 +3068,15 @@
     ]
   },
   "ollama_cloud/deepseek-v4.1-flash": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "ollama_cloud/deepseek-v4.1-flash:1017": {
     "input": [
       "text",
       "image"

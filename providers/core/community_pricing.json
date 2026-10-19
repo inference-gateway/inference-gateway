@@ -6,7 +6,7 @@
     "input_per_token": "0.00001",
     "output_per_token": "0.00005",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-fable-5-1": {
     "cache_read_per_token": "0.00000025",
@@ -15,7 +15,7 @@
     "input_per_token": "0.00001",
     "output_per_token": "0.00005",
     "source": "community",
-    "updated_at": "2026-09-03T01:27:55Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-haiku-4-5": {
     "cache_read_per_token": "0.0000001",
@@ -24,7 +24,7 @@
     "input_per_token": "0.000001",
     "output_per_token": "0.000005",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-haiku-4-5-20251001": {
     "cache_read_per_token": "0.0000001",
@@ -33,7 +33,7 @@
     "input_per_token": "0.000001",
     "output_per_token": "0.000005",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-haiku-5-5": {
     "cache_read_per_token": "0.00000001",
@@ -42,7 +42,7 @@
     "input_per_token": "0.0000001",
     "output_per_token": "0.0000005",
     "source": "community",
-    "updated_at": "2026-10-12T14:15:57Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-5": {
     "cache_read_per_token": "0.0000005",
@@ -51,7 +51,7 @@
     "input_per_token": "0.000005",
     "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-5-20251101": {
     "cache_read_per_token": "0.0000005",
@@ -60,7 +60,7 @@
     "input_per_token": "0.000005",
     "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-6": {
     "cache_read_per_token": "0.0000005",
@@ -69,7 +69,7 @@
     "input_per_token": "0.000005",
     "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-7": {
     "cache_read_per_token": "0.0000005",
@@ -78,7 +78,7 @@
     "input_per_token": "0.000005",
     "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-4-8": {
     "cache_read_per_token": "0.0000005",
@@ -87,7 +87,7 @@
     "input_per_token": "0.000005",
     "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-5": {
     "cache_read_per_token": "0.0000005",
@@ -96,7 +96,7 @@
     "input_per_token": "0.000005",
     "output_per_token": "0.000025",
     "source": "community",
-    "updated_at": "2026-07-27T09:42:20Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-opus-5-5": {
     "cache_read_per_token": "0.0000002",
@@ -105,7 +105,7 @@
     "input_per_token": "0.000004",
     "output_per_token": "0.00002",
     "source": "community",
-    "updated_at": "2026-09-28T12:45:24Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-4-5": {
     "cache_read_per_token": "0.0000003",
@@ -114,7 +114,7 @@
     "input_per_token": "0.000003",
     "output_per_token": "0.000015",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-4-5-20250929": {
     "cache_read_per_token": "0.0000003",
@@ -123,7 +123,7 @@
     "input_per_token": "0.000003",
     "output_per_token": "0.000015",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-4-6": {
     "cache_read_per_token": "0.0000003",
@@ -132,7 +132,7 @@
     "input_per_token": "0.000003",
     "output_per_token": "0.000015",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-5": {
     "cache_read_per_token": "0.0000002",
@@ -141,7 +141,7 @@
     "input_per_token": "0.000002",
     "output_per_token": "0.00001",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "anthropic/claude-sonnet-5-5": {
     "cache_read_per_token": "0.0000001",
@@ -150,7 +150,7 @@
     "input_per_token": "0.000002",
     "output_per_token": "0.00001",
     "source": "community",
-    "updated_at": "2026-10-12T14:15:57Z"
+    "updated_at": "2026-10-19T12:20:01Z"
   },
   "cloudflare/@cf/aisingapore/gemma-sea-lion-v4-27b-it": {
     "currency": "USD",
@@ -685,6 +685,14 @@
     "source": "community",
     "updated_at": "2026-09-03T01:27:55Z"
   },
+  "google/gemini-4-argon": {
+    "cache_read_per_token": "0.0000001",
+    "currency": "USD",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-10-19T11:57:10Z"
+  },
   "google/gemini-embedding-001": {
     "currency": "USD",
     "input_per_token": "0.00000015",
@@ -868,6 +876,14 @@
     "output_per_token": "0.0000024",
     "source": "community",
     "updated_at": "2026-08-16T06:15:34Z"
+  },
+  "minimax/MiniMax-M3.1-Flash": {
+    "cache_read_per_token": "0.000000015",
+    "currency": "USD",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000006",
+    "source": "community",
+    "updated_at": "2026-10-19T11:57:10Z"
   },
   "mistral/codestral-2508": {
     "cache_read_per_token": "0.00000003",
@@ -1682,13 +1698,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/nvidia/nemotron-3-super-120b-a12b": {
-    "currency": "USD",
-    "input_per_token": "0.0000002",
-    "output_per_token": "0.0000008",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
     "cache_read_per_token": "0.00000015",
     "currency": "USD",
@@ -1710,6 +1719,13 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-08-17T06:44:00Z"
+  },
+  "nvidia/nvidia/nemotron-3.5-super-vl-120b-a12b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-19T11:57:10Z"
   },
   "nvidia/nvidia/nemotron-content-safety-reasoning-4b": {
     "currency": "USD",
@@ -1907,6 +1923,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "nvidia/stepfun-ai/step-5-preview": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-19T11:57:10Z"
+  },
   "nvidia/thinkingmachines/inkling": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1986,6 +2009,15 @@
     "source": "community",
     "subscription": true,
     "updated_at": "2026-09-22T15:35:00Z"
+  },
+  "ollama_cloud/deepseek-v4.1-flash:1017": {
+    "cache_read_per_token": "0.000000003",
+    "currency": "USD",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000006",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-10-19T11:57:10Z"
   },
   "ollama_cloud/gemma4:31b": {
     "cache_read_per_token": "0.00000005",
@@ -2127,6 +2159,15 @@
     "source": "community",
     "subscription": true,
     "updated_at": "2026-10-12T14:15:57Z"
+  },
+  "ollama_cloud/muse-spark-open": {
+    "cache_read_per_token": "0.00000015",
+    "currency": "USD",
+    "input_per_token": "0.00000125",
+    "output_per_token": "0.00000425",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-10-19T11:57:10Z"
   },
   "ollama_cloud/nemotron-3-nano:30b": {
     "currency": "USD",
@@ -2575,11 +2616,12 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "zai/glm-4.5v": {
+    "cache_read_per_token": "0.00000011",
     "currency": "USD",
     "input_per_token": "0.0000006",
     "output_per_token": "0.0000018",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T11:57:10Z"
   },
   "zai/glm-4.6": {
     "cache_read_per_token": "0.00000011",
@@ -2590,11 +2632,12 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "zai/glm-4.6v": {
+    "cache_read_per_token": "0.00000005",
     "currency": "USD",
     "input_per_token": "0.0000003",
     "output_per_token": "0.0000009",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-19T11:57:10Z"
   },
   "zai/glm-4.6v-flash": {
     "currency": "USD",
