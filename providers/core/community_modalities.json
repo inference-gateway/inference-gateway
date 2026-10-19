@@ -1,7 +1,8 @@
 {
   "anthropic/claude-fable-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -9,7 +10,8 @@
   },
   "anthropic/claude-fable-5-1": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -17,7 +19,8 @@
   },
   "anthropic/claude-haiku-4-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -25,7 +28,8 @@
   },
   "anthropic/claude-haiku-4-5-20251001": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -33,7 +37,8 @@
   },
   "anthropic/claude-haiku-5-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -41,7 +46,8 @@
   },
   "anthropic/claude-opus-4-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -49,7 +55,8 @@
   },
   "anthropic/claude-opus-4-5-20251101": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -57,7 +64,8 @@
   },
   "anthropic/claude-opus-4-6": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -65,7 +73,8 @@
   },
   "anthropic/claude-opus-4-7": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -73,7 +82,8 @@
   },
   "anthropic/claude-opus-4-8": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -81,7 +91,8 @@
   },
   "anthropic/claude-opus-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -89,7 +100,8 @@
   },
   "anthropic/claude-opus-5-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -97,7 +109,8 @@
   },
   "anthropic/claude-sonnet-4-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -105,7 +118,8 @@
   },
   "anthropic/claude-sonnet-4-5-20250929": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -113,7 +127,8 @@
   },
   "anthropic/claude-sonnet-4-6": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -121,7 +136,8 @@
   },
   "anthropic/claude-sonnet-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -129,7 +145,8 @@
   },
   "anthropic/claude-sonnet-5-5": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"

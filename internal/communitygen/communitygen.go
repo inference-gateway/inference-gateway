@@ -167,13 +167,13 @@ func GenerateModalities(output, tarballPath string) error {
 	return writeTable(output, tarballPath, table)
 }
 
-// enumModalities keeps only the values that are members of the gateway's
-// Modality enum, in first-seen order without duplicates.
+// enumModalities maps each value through the Modality enum and keeps the
+// members in first-seen order without duplicates.
 func enumModalities(values []string) []types.Modality {
 	var out []types.Modality
 	seen := make(map[types.Modality]bool)
 	for _, v := range values {
-		m := types.Modality(v)
+		m := toEnumModality(v)
 		if !m.Valid() || seen[m] {
 			continue
 		}
@@ -181,6 +181,18 @@ func enumModalities(values []string) []types.Modality {
 		out = append(out, m)
 	}
 	return out
+}
+
+// toEnumModality maps a models.dev modality spelling onto the gateway's
+// Modality enum: members pass through, MIME-like granular values
+// ("image/jpeg") reduce to their base modality, and values with no enum
+// base (e.g. "text" subtypes' "application/pdf") keep dropping.
+func toEnumModality(value string) types.Modality {
+	if m := types.Modality(value); m.Valid() {
+		return m
+	}
+	base, _, _ := strings.Cut(value, "/")
+	return types.Modality(base)
 }
 
 // forEachModel walks a models.dev repository tarball and calls visit for every

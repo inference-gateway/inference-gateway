@@ -303,19 +303,28 @@ func TestGenerateContextWindows(t *testing.T) {
 }
 
 // TestEnumModalities keeps only known Modality members, in first-seen
-// order without duplicates, dropping values the enum does not carry (e.g.
-// models.dev's "pdf").
+// order without duplicates: MIME-like granular values from models.dev's
+// schema 2 files ("image/jpeg") reduce to their base ("image"), while
+// values with no enum base (e.g. "pdf", "application/pdf") are dropped.
 func TestEnumModalities(t *testing.T) {
-	got := enumModalities([]string{"text", "pdf", "image", "text", "bogus", "audio"})
+	got := enumModalities([]string{
+		"text", "pdf", "image", "text", "bogus", "audio",
+		"image/jpeg", "image/png", "audio/mpeg", "video/mp4",
+		"application/pdf", "image/webp",
+	})
 	want := []types.Modality{
 		types.ModalityText,
 		types.ModalityImage,
 		types.ModalityAudio,
+		types.ModalityVideo,
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("enumModalities() = %v, want %v", got, want)
 	}
 	if got := enumModalities([]string{"pdf", "bogus"}); got != nil {
 		t.Errorf("enumModalities(all-unknown) = %v, want nil", got)
+	}
+	if got := enumModalities([]string{"application/pdf"}); got != nil {
+		t.Errorf("enumModalities(non-modality MIME) = %v, want nil", got)
 	}
 }
