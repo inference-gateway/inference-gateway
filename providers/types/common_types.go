@@ -818,6 +818,7 @@ const (
 	Ollama      Provider = "ollama"
 	OllamaCloud Provider = "ollama_cloud"
 	Openai      Provider = "openai"
+	Webwright   Provider = "webwright"
 	Zai         Provider = "zai"
 )
 
@@ -853,6 +854,8 @@ func (e Provider) Valid() bool {
 	case OllamaCloud:
 		return true
 	case Openai:
+		return true
+	case Webwright:
 		return true
 	case Zai:
 		return true
