@@ -22,7 +22,6 @@ const (
 	OllamaDefaultBaseURL      = "http://ollama:8080/v1"
 	OllamaCloudDefaultBaseURL = "https://ollama.com/v1"
 	OpenaiDefaultBaseURL      = "https://api.openai.com/v1"
-	WebwrightDefaultBaseURL   = "https://webwright.ai/v1"
 	ZaiDefaultBaseURL         = "https://api.z.ai/api/coding/paas/v4"
 )
 
@@ -68,8 +67,6 @@ const (
 	OpenaiImagesEndpoint             = "/images/generations"
 	OpenaiImagesEditsEndpoint        = "/images/edits"
 	OpenaiSpeechEndpoint             = "/audio/speech"
-	WebwrightModelsEndpoint          = "/models"
-	WebwrightChatEndpoint            = "/chat/completions"
 	ZaiModelsEndpoint                = "/models"
 	ZaiChatEndpoint                  = "/chat/completions"
 )
@@ -91,7 +88,6 @@ const (
 	OllamaID      types.Provider = "ollama"
 	OllamaCloudID types.Provider = "ollama_cloud"
 	OpenaiID      types.Provider = "openai"
-	WebwrightID   types.Provider = "webwright"
 	ZaiID         types.Provider = "zai"
 )
 
@@ -112,6 +108,5 @@ const (
 	OllamaDisplayName      = "Ollama"
 	OllamaCloudDisplayName = "OllamaCloud"
 	OpenaiDisplayName      = "Openai"
-	WebwrightDisplayName   = "Webwright"
 	ZaiDisplayName         = "Zai"
 )
