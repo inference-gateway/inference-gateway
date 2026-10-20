@@ -159,6 +159,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "cloudflare/@cf/cloudflare/clairic": {
+    "currency": "USD",
+    "input_per_token": "0.0000001",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "cloudflare/@cf/cloudflare/clef": {
     "currency": "USD",
     "input_per_token": "0.00000024",
@@ -202,6 +209,14 @@
     "output_per_token": "0.00000396",
     "source": "community",
     "updated_at": "2026-08-17T06:44:00Z"
+  },
+  "cloudflare/@cf/deepseek-ai/deepseek-v4.1-flash-1017": {
+    "cache_read_per_token": "0.000000006",
+    "currency": "USD",
+    "input_per_token": "0.0000003",
+    "output_per_token": "0.0000012",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "cloudflare/@cf/google/gemma-4-26b-a4b-it": {
     "cache_read_per_token": "0.00000005",
@@ -371,6 +386,13 @@
     "source": "community",
     "updated_at": "2026-08-31T12:36:08Z"
   },
+  "cohere/c4ai-aya-expanse-32b": {
+    "currency": "USD",
+    "input_per_token": "0.0000005",
+    "output_per_token": "0.0000015",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "cohere/command-a-03-2025": {
     "currency": "USD",
     "input_per_token": "0.0000025",
@@ -433,6 +455,20 @@
     "output_per_token": "0.00000015",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "cohere/embed-v5.0-fast": {
+    "currency": "USD",
+    "input_per_token": "0.00000008",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "cohere/embed-v5.0-pro": {
+    "currency": "USD",
+    "input_per_token": "0.00000012",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "cohere/north-mini-code-1-0": {
     "currency": "USD",
@@ -526,6 +562,13 @@
     "output_per_token": "0.0000004",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "google/gemini-2.5-flash-native-audio-preview-12-2025": {
+    "currency": "USD",
+    "input_per_token": "0.0000005",
+    "output_per_token": "0.000002",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "google/gemini-2.5-flash-preview-tts": {
     "currency": "USD",
@@ -661,6 +704,20 @@
     "source": "community",
     "updated_at": "2026-07-27T09:42:20Z"
   },
+  "google/gemini-3.5-transcribe": {
+    "currency": "USD",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.000012",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "google/gemini-3.5-transcribe-live": {
+    "currency": "USD",
+    "input_per_token": "0.0000035",
+    "output_per_token": "0.000021",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "google/gemini-3.6-flash": {
     "cache_read_per_token": "0.000000075",
     "currency": "USD",
@@ -684,6 +741,34 @@
     "output_per_token": "0.00000375",
     "source": "community",
     "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "google/gemini-3.8-flash-lite-tts": {
+    "currency": "USD",
+    "input_per_token": "0.0000005",
+    "output_per_token": "0.000006",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "google/gemini-3.8-flash-tts": {
+    "currency": "USD",
+    "input_per_token": "0.0000005",
+    "output_per_token": "0.000009",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "google/gemini-3.8-live": {
+    "currency": "USD",
+    "input_per_token": "0.00000075",
+    "output_per_token": "0.0000045",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "google/gemini-3.8-live-extended-thinking": {
+    "currency": "USD",
+    "input_per_token": "0.00000075",
+    "output_per_token": "0.0000045",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "google/gemini-4-argon": {
     "cache_read_per_token": "0.0000001",
@@ -723,12 +808,41 @@
     "source": "community",
     "updated_at": "2026-08-24T06:47:59Z"
   },
+  "google/gemini-nano-banana-2.1": {
+    "currency": "USD",
+    "input_per_token": "0.0000015",
+    "output_per_token": "0.00003",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "google/gemini-omni-1.1-flash": {
+    "currency": "USD",
+    "input_per_token": "0.0000015",
+    "output_per_token": "0.0000175",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "google/gemini-omni-flash-preview": {
     "currency": "USD",
     "input_per_token": "0.0000015",
     "output_per_token": "0.0000175",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "google/gemini-robotics-er-2-preview": {
+    "cache_read_per_token": "0.0000001",
+    "currency": "USD",
+    "input_per_token": "0.000001",
+    "output_per_token": "0.000005",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "google/gemini-robotics-er-2-streaming-preview": {
+    "currency": "USD",
+    "input_per_token": "0.000001",
+    "output_per_token": "0.000005",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "google/lyria-3-clip-preview": {
     "currency": "USD",
@@ -743,6 +857,27 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-07-27T09:42:20Z"
+  },
+  "google/veo-3.1-fast-generate-preview": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "google/veo-3.1-generate-preview": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "google/veo-3.1-lite-generate-preview": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "groq/allam-2-7b": {
     "currency": "USD",
@@ -870,12 +1005,12 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "minimax/MiniMax-M3": {
-    "cache_read_per_token": "0.00000012",
+    "cache_read_per_token": "0.00000006",
     "currency": "USD",
-    "input_per_token": "0.0000006",
-    "output_per_token": "0.0000024",
+    "input_per_token": "0.0000003",
+    "output_per_token": "0.0000012",
     "source": "community",
-    "updated_at": "2026-08-16T06:15:34Z"
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "minimax/MiniMax-M3.1-Flash": {
     "cache_read_per_token": "0.000000015",
@@ -892,6 +1027,13 @@
     "output_per_token": "0.0000009",
     "source": "community",
     "updated_at": "2026-10-12T14:15:57Z"
+  },
+  "mistral/codestral-embed": {
+    "currency": "USD",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "mistral/codestral-latest": {
     "cache_read_per_token": "0.00000003",
@@ -989,11 +1131,12 @@
     "updated_at": "2026-10-12T14:15:57Z"
   },
   "mistral/ministral-3b-latest": {
+    "cache_read_per_token": "0.00000001",
     "currency": "USD",
-    "input_per_token": "0.00000004",
-    "output_per_token": "0.00000004",
+    "input_per_token": "0.0000001",
+    "output_per_token": "0.0000001",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "mistral/ministral-8b-2512": {
     "cache_read_per_token": "0.000000015",
@@ -1004,11 +1147,12 @@
     "updated_at": "2026-10-12T14:15:57Z"
   },
   "mistral/ministral-8b-latest": {
+    "cache_read_per_token": "0.000000015",
     "currency": "USD",
-    "input_per_token": "0.0000001",
-    "output_per_token": "0.0000001",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.00000015",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "mistral/mistral-embed": {
     "currency": "USD",
@@ -1078,6 +1222,13 @@
     "source": "community",
     "updated_at": "2026-10-05T13:26:20Z"
   },
+  "mistral/mistral-moderation-2603": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "mistral/mistral-nemo": {
     "currency": "USD",
     "input_per_token": "0.00000015",
@@ -1108,31 +1259,10 @@
     "source": "community",
     "updated_at": "2026-10-05T13:26:20Z"
   },
-  "mistral/open-mistral-7b": {
-    "currency": "USD",
-    "input_per_token": "0.00000025",
-    "output_per_token": "0.00000025",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "mistral/open-mistral-nemo": {
     "currency": "USD",
     "input_per_token": "0.00000015",
     "output_per_token": "0.00000015",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "mistral/open-mixtral-8x22b": {
-    "currency": "USD",
-    "input_per_token": "0.000002",
-    "output_per_token": "0.000006",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "mistral/open-mixtral-8x7b": {
-    "currency": "USD",
-    "input_per_token": "0.0000007",
-    "output_per_token": "0.0000007",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
@@ -1150,6 +1280,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "mistral/voxtral-mini-transcribe-realtime-2602": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "mistral/voxtral-small-2507": {
     "currency": "USD",
     "input_per_token": "0.0000001",
@@ -1160,9 +1297,9 @@
   "mistral/voxtral-small-latest": {
     "currency": "USD",
     "input_per_token": "0.0000001",
-    "output_per_token": "0.0000003",
+    "output_per_token": "0.0000004",
     "source": "community",
-    "updated_at": "2026-08-03T09:35:28Z"
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "mistral/zai-glm-5-2": {
     "cache_read_per_token": "0.00000014",
@@ -2143,6 +2280,15 @@
     "subscription": true,
     "updated_at": "2026-09-22T15:35:00Z"
   },
+  "ollama_cloud/minimax-m3.1-flash": {
+    "cache_read_per_token": "0.000000015",
+    "currency": "USD",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000006",
+    "source": "community",
+    "subscription": true,
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "ollama_cloud/mistral-large-3:675b": {
     "currency": "USD",
     "input_per_token": "0.0000005",
@@ -2202,6 +2348,14 @@
     "source": "community",
     "subscription": true,
     "updated_at": "2026-09-22T15:35:00Z"
+  },
+  "openai/chat-latest": {
+    "cache_read_per_token": "0.0000005",
+    "currency": "USD",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.00003",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "openai/gpt-3.5-turbo": {
     "currency": "USD",
@@ -2287,6 +2441,34 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "openai/gpt-4o-mini-transcribe": {
+    "currency": "USD",
+    "input_per_token": "0.00000125",
+    "output_per_token": "0.000005",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-4o-mini-tts": {
+    "currency": "USD",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-4o-transcribe": {
+    "currency": "USD",
+    "input_per_token": "0.0000025",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-4o-transcribe-diarize": {
+    "currency": "USD",
+    "input_per_token": "0.0000025",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "openai/gpt-5": {
     "cache_read_per_token": "0.000000125",
     "currency": "USD",
@@ -2318,6 +2500,14 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "openai/gpt-5-search-api": {
+    "cache_read_per_token": "0.000000125",
+    "currency": "USD",
+    "input_per_token": "0.00000125",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "openai/gpt-5.1": {
     "cache_read_per_token": "0.000000125",
     "currency": "USD",
@@ -2334,26 +2524,10 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "openai/gpt-5.2-chat-latest": {
-    "cache_read_per_token": "0.000000175",
-    "currency": "USD",
-    "input_per_token": "0.00000175",
-    "output_per_token": "0.000014",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "openai/gpt-5.2-pro": {
     "currency": "USD",
     "input_per_token": "0.000021",
     "output_per_token": "0.000168",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "openai/gpt-5.3-chat-latest": {
-    "cache_read_per_token": "0.000000175",
-    "currency": "USD",
-    "input_per_token": "0.00000175",
-    "output_per_token": "0.000014",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
@@ -2428,6 +2602,15 @@
     "source": "community",
     "updated_at": "2026-08-31T12:36:08Z"
   },
+  "openai/gpt-5.6-cyber": {
+    "cache_read_per_token": "0.00000125",
+    "cache_write_per_token": "0.000015625",
+    "currency": "USD",
+    "input_per_token": "0.0000125",
+    "output_per_token": "0.000075",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "openai/gpt-5.6-luna": {
     "cache_read_per_token": "0.00000002",
     "cache_write_per_token": "0.00000025",
@@ -2491,6 +2674,27 @@
     "source": "community",
     "updated_at": "2026-10-05T13:26:20Z"
   },
+  "openai/gpt-audio": {
+    "currency": "USD",
+    "input_per_token": "0.0000025",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-audio-1.5": {
+    "currency": "USD",
+    "input_per_token": "0.0000025",
+    "output_per_token": "0.00001",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-audio-mini": {
+    "currency": "USD",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0.0000024",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "openai/gpt-daybreak-blue-latest": {
     "cache_read_per_token": "0.0000004",
     "cache_write_per_token": "0.000005",
@@ -2517,6 +2721,60 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "openai/gpt-image-2.5-flare": {
+    "cache_read_per_token": "0.00000125",
+    "currency": "USD",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.00003",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-image-2.5-sunburst": {
+    "cache_read_per_token": "0.00000125",
+    "currency": "USD",
+    "input_per_token": "0.000005",
+    "output_per_token": "0.00003",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-live-1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-live-transcribe": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-realtime": {
+    "cache_read_per_token": "0.0000004",
+    "currency": "USD",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.000016",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-realtime-1.5": {
+    "cache_read_per_token": "0.0000004",
+    "currency": "USD",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.000016",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-realtime-2": {
+    "cache_read_per_token": "0.0000004",
+    "currency": "USD",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.000024",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "openai/gpt-realtime-2.1": {
     "cache_read_per_token": "0.0000004",
     "currency": "USD",
@@ -2524,6 +2782,43 @@
     "output_per_token": "0.000024",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "openai/gpt-realtime-2.1-mini": {
+    "cache_read_per_token": "0.00000006",
+    "currency": "USD",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0.0000024",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-realtime-mini": {
+    "cache_read_per_token": "0.00000006",
+    "currency": "USD",
+    "input_per_token": "0.0000006",
+    "output_per_token": "0.0000024",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-realtime-translate": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-realtime-whisper": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/gpt-transcribe": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "openai/o1": {
     "cache_read_per_token": "0.0000075",
@@ -2571,6 +2866,13 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "openai/omni-moderation-latest": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "openai/text-embedding-3-large": {
     "currency": "USD",
     "input_per_token": "0.00000013",
@@ -2592,6 +2894,27 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "openai/tts-1": {
+    "currency": "USD",
+    "input_per_token": "0.000015",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/tts-1-hd": {
+    "currency": "USD",
+    "input_per_token": "0.00003",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
+  "openai/whisper-1": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "zai/glm-4.5": {
     "cache_read_per_token": "0.00000011",
     "currency": "USD",
@@ -2608,12 +2931,28 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "zai/glm-4.5-airx": {
+    "cache_read_per_token": "0.00000022",
+    "currency": "USD",
+    "input_per_token": "0.0000011",
+    "output_per_token": "0.0000045",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
+  },
   "zai/glm-4.5-flash": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "zai/glm-4.5-x": {
+    "cache_read_per_token": "0.00000045",
+    "currency": "USD",
+    "input_per_token": "0.0000022",
+    "output_per_token": "0.0000089",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "zai/glm-4.5v": {
     "cache_read_per_token": "0.00000011",
@@ -2645,6 +2984,14 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-09-22T15:35:00Z"
+  },
+  "zai/glm-4.6v-flashx": {
+    "cache_read_per_token": "0.000000004",
+    "currency": "USD",
+    "input_per_token": "0.00000004",
+    "output_per_token": "0.0000004",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   },
   "zai/glm-4.7": {
     "cache_read_per_token": "0.00000011",
@@ -2732,5 +3079,12 @@
     "output_per_token": "0.000004",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "zai/glm-image": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-20T11:41:46Z"
   }
 }

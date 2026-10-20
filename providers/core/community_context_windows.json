@@ -71,6 +71,10 @@
     "context": 128000,
     "output": 128000
   },
+  "cloudflare/@cf/cloudflare/clairic": {
+    "context": 65536,
+    "output": 65536
+  },
   "cloudflare/@cf/cloudflare/clef": {
     "context": 65536,
     "output": 65536
@@ -92,6 +96,10 @@
     "output": 1048576
   },
   "cloudflare/@cf/deepseek-ai/deepseek-v4-pro-0813": {
+    "context": 1048576,
+    "output": 1048576
+  },
+  "cloudflare/@cf/deepseek-ai/deepseek-v4.1-flash-1017": {
     "context": 1048576,
     "output": 1048576
   },
@@ -177,6 +185,12 @@
     "context": 16000,
     "output": 4000
   },
+  "cohere/cohere-transcribe-03-2026": {
+    "context": 32768
+  },
+  "cohere/cohere-transcribe-arabic-07-2026": {
+    "context": 32768
+  },
   "cohere/command-a-03-2025": {
     "context": 256000,
     "output": 8000
@@ -213,11 +227,54 @@
     "context": 128000,
     "output": 4000
   },
+  "cohere/embed-english-light-v3.0": {
+    "context": 512,
+    "output": 384
+  },
+  "cohere/embed-english-v3.0": {
+    "context": 512,
+    "output": 1024
+  },
+  "cohere/embed-multilingual-light-v3.0": {
+    "context": 512,
+    "output": 384
+  },
+  "cohere/embed-multilingual-v3.0": {
+    "context": 512,
+    "output": 1024
+  },
+  "cohere/embed-v4.0": {
+    "context": 128000,
+    "output": 1536
+  },
+  "cohere/embed-v5.0-fast": {
+    "context": 128000,
+    "output": 2048
+  },
+  "cohere/embed-v5.0-pro": {
+    "context": 128000,
+    "output": 2048
+  },
   "cohere/north-mini-code-1-0": {
     "context": 256000,
     "output": 64000
   },
   "cohere/north-small-translate-09-2026": {
+    "context": 32768
+  },
+  "cohere/rerank-english-v3.0": {
+    "context": 4096
+  },
+  "cohere/rerank-multilingual-v3.0": {
+    "context": 4096
+  },
+  "cohere/rerank-v3.5": {
+    "context": 4096
+  },
+  "cohere/rerank-v4.0-fast": {
+    "context": 32768
+  },
+  "cohere/rerank-v4.0-pro": {
     "context": 32768
   },
   "cohere/tiny-aya-earth": {
@@ -236,9 +293,21 @@
     "context": 8000,
     "output": 8000
   },
+  "deepseek/deepseek-flash": {
+    "context": 1048576,
+    "output": 393216
+  },
   "deepseek/deepseek-v4-flash": {
     "context": 1000000,
     "output": 384000
+  },
+  "deepseek/deepseek-v4-flash-vision-exp": {
+    "context": 1048576,
+    "output": 393216
+  },
+  "deepseek/deepseek-v4-pro": {
+    "context": 1048576,
+    "output": 393216
   },
   "google/deep-research-max-preview-04-2026": {
     "context": 131072
@@ -261,6 +330,10 @@
   "google/gemini-2.5-flash-lite": {
     "context": 1048576,
     "output": 65536
+  },
+  "google/gemini-2.5-flash-native-audio-preview-12-2025": {
+    "context": 131072,
+    "output": 8192
   },
   "google/gemini-2.5-flash-preview-tts": {
     "context": 8192,
@@ -333,6 +406,14 @@
     "context": 16384,
     "output": 32768
   },
+  "google/gemini-3.5-transcribe": {
+    "context": 98304,
+    "output": 32768
+  },
+  "google/gemini-3.5-transcribe-live": {
+    "context": 131072,
+    "output": 65536
+  },
   "google/gemini-3.6-flash": {
     "context": 1048576,
     "output": 65536
@@ -343,6 +424,22 @@
   },
   "google/gemini-3.8-flash": {
     "context": 1048576,
+    "output": 65536
+  },
+  "google/gemini-3.8-flash-lite-tts": {
+    "context": 8192,
+    "output": 16384
+  },
+  "google/gemini-3.8-flash-tts": {
+    "context": 8192,
+    "output": 16384
+  },
+  "google/gemini-3.8-live": {
+    "context": 131072,
+    "output": 65536
+  },
+  "google/gemini-3.8-live-extended-thinking": {
+    "context": 131072,
     "output": 65536
   },
   "google/gemini-embedding-001": {
@@ -357,7 +454,23 @@
     "context": 1048576,
     "output": 65536
   },
+  "google/gemini-nano-banana-2.1": {
+    "context": 131072,
+    "output": 32768
+  },
+  "google/gemini-omni-1.1-flash": {
+    "context": 131072,
+    "output": 65536
+  },
   "google/gemini-omni-flash-preview": {
+    "context": 131072,
+    "output": 65536
+  },
+  "google/gemini-robotics-er-2-preview": {
+    "context": 131072,
+    "output": 65536
+  },
+  "google/gemini-robotics-er-2-streaming-preview": {
     "context": 131072,
     "output": 65536
   },
@@ -375,6 +488,9 @@
   "google/lyria-3-pro-preview": {
     "context": 1048576,
     "output": 65536
+  },
+  "google/lyria-3.5": {
+    "context": 1048576
   },
   "google/veo-3.1-fast-generate-preview": {
     "context": 480,
@@ -466,14 +582,14 @@
   },
   "minimax/MiniMax-M3": {
     "context": 1000000,
-    "output": 512000
-  },
-  "minimax/MiniMax-M3.1-Flash": {
-    "context": 1000000,
-    "output": 512000
+    "output": 524288
   },
   "mistral/codestral-2508": {
     "context": 256000
+  },
+  "mistral/codestral-embed": {
+    "context": 8192,
+    "output": 3072
   },
   "mistral/codestral-latest": {
     "context": 256000,
@@ -573,6 +689,9 @@
     "context": 262144,
     "output": 262144
   },
+  "mistral/mistral-moderation-2603": {
+    "context": 131072
+  },
   "mistral/mistral-nemo": {
     "context": 128000,
     "output": 128000
@@ -589,21 +708,9 @@
     "context": 262144,
     "output": 256000
   },
-  "mistral/open-mistral-7b": {
-    "context": 8000,
-    "output": 8000
-  },
   "mistral/open-mistral-nemo": {
     "context": 128000,
     "output": 128000
-  },
-  "mistral/open-mixtral-8x22b": {
-    "context": 64000,
-    "output": 64000
-  },
-  "mistral/open-mixtral-8x7b": {
-    "context": 32000,
-    "output": 32000
   },
   "mistral/pixtral-12b": {
     "context": 128000,
@@ -1076,6 +1183,10 @@
     "context": 512000,
     "output": 131072
   },
+  "ollama_cloud/minimax-m3.1-flash": {
+    "context": 1000000,
+    "output": 512000
+  },
   "ollama_cloud/mistral-large-3:675b": {
     "context": 262144,
     "output": 262144
@@ -1102,6 +1213,10 @@
   "ollama_cloud/qwen3.5:397b": {
     "context": 262144,
     "output": 65536
+  },
+  "openai/chat-latest": {
+    "context": 400000,
+    "output": 128000
   },
   "openai/gpt-3.5-turbo": {
     "context": 16385,
@@ -1147,6 +1262,21 @@
     "context": 128000,
     "output": 16384
   },
+  "openai/gpt-4o-mini-transcribe": {
+    "context": 16000,
+    "output": 2000
+  },
+  "openai/gpt-4o-mini-tts": {
+    "context": 2000
+  },
+  "openai/gpt-4o-transcribe": {
+    "context": 16000,
+    "output": 2000
+  },
+  "openai/gpt-4o-transcribe-diarize": {
+    "context": 16000,
+    "output": 2000
+  },
   "openai/gpt-5": {
     "context": 400000,
     "output": 128000
@@ -1163,6 +1293,10 @@
     "context": 400000,
     "output": 272000
   },
+  "openai/gpt-5-search-api": {
+    "context": 200000,
+    "output": 100000
+  },
   "openai/gpt-5.1": {
     "context": 400000,
     "output": 128000
@@ -1171,17 +1305,9 @@
     "context": 400000,
     "output": 128000
   },
-  "openai/gpt-5.2-chat-latest": {
-    "context": 128000,
-    "output": 16384
-  },
   "openai/gpt-5.2-pro": {
     "context": 400000,
     "output": 128000
-  },
-  "openai/gpt-5.3-chat-latest": {
-    "context": 128000,
-    "output": 16384
   },
   "openai/gpt-5.3-codex": {
     "context": 400000,
@@ -1219,6 +1345,10 @@
     "context": 1050000,
     "output": 128000
   },
+  "openai/gpt-5.6-cyber": {
+    "context": 400000,
+    "output": 128000
+  },
   "openai/gpt-5.6-luna": {
     "context": 1050000,
     "output": 128000
@@ -1247,6 +1377,18 @@
     "context": 1050000,
     "output": 128000
   },
+  "openai/gpt-audio": {
+    "context": 128000,
+    "output": 16384
+  },
+  "openai/gpt-audio-1.5": {
+    "context": 128000,
+    "output": 16384
+  },
+  "openai/gpt-audio-mini": {
+    "context": 128000,
+    "output": 16384
+  },
   "openai/gpt-daybreak-blue-latest": {
     "context": 1050000,
     "output": 128000
@@ -1255,9 +1397,37 @@
     "context": 400000,
     "output": 128000
   },
+  "openai/gpt-realtime": {
+    "context": 32000,
+    "output": 4096
+  },
+  "openai/gpt-realtime-1.5": {
+    "context": 32000,
+    "output": 4096
+  },
+  "openai/gpt-realtime-2": {
+    "context": 128000,
+    "output": 32000
+  },
   "openai/gpt-realtime-2.1": {
     "context": 128000,
     "output": 32000
+  },
+  "openai/gpt-realtime-2.1-mini": {
+    "context": 128000,
+    "output": 32000
+  },
+  "openai/gpt-realtime-mini": {
+    "context": 32000,
+    "output": 4096
+  },
+  "openai/gpt-realtime-translate": {
+    "context": 16000,
+    "output": 2000
+  },
+  "openai/gpt-realtime-whisper": {
+    "context": 16000,
+    "output": 2000
   },
   "openai/o1": {
     "context": 200000,
@@ -1295,6 +1465,9 @@
     "context": 8192,
     "output": 1536
   },
+  "zai/cogvideox-3": {
+    "context": 512
+  },
   "zai/glm-4.5": {
     "context": 131072,
     "output": 98304
@@ -1303,7 +1476,15 @@
     "context": 131072,
     "output": 98304
   },
+  "zai/glm-4.5-airx": {
+    "context": 131072,
+    "output": 98304
+  },
   "zai/glm-4.5-flash": {
+    "context": 131072,
+    "output": 98304
+  },
+  "zai/glm-4.5-x": {
     "context": 131072,
     "output": 98304
   },
@@ -1320,6 +1501,10 @@
     "output": 32768
   },
   "zai/glm-4.6v-flash": {
+    "context": 128000,
+    "output": 32768
+  },
+  "zai/glm-4.6v-flashx": {
     "context": 128000,
     "output": 32768
   },
@@ -1366,5 +1551,8 @@
   "zai/glm-5v-turbo": {
     "context": 200000,
     "output": 131072
+  },
+  "zai/glm-image": {
+    "context": 10240
   }
 }
