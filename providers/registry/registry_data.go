@@ -172,16 +172,6 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Speech:      ptr(constants.OpenaiSpeechEndpoint),
 		},
 	},
-	constants.WebwrightID: {
-		ID:       constants.WebwrightID,
-		Name:     constants.WebwrightDisplayName,
-		URL:      constants.WebwrightDefaultBaseURL,
-		AuthType: constants.AuthTypeBearer,
-		Endpoints: types.Endpoints{
-			Models: constants.WebwrightModelsEndpoint,
-			Chat:   constants.WebwrightChatEndpoint,
-		},
-	},
 	constants.ZaiID: {
 		ID:       constants.ZaiID,
 		Name:     constants.ZaiDisplayName,

@@ -40,8 +40,6 @@ func NewListModelsTransformer(provider types.Provider) constants.ListModelsTrans
 		return &ListModelsResponseOllamaCloud{}
 	case constants.OpenaiID:
 		return &ListModelsResponseOpenai{}
-	case constants.WebwrightID:
-		return &ListModelsResponseWebwright{}
 	case constants.ZaiID:
 		return &ListModelsResponseZai{}
 	default:
