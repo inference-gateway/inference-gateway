@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.59.1](https://github.com/inference-gateway/inference-gateway/compare/v0.59.0...v0.59.1) (2026-10-20)
+
+### ♻️ Improvements
+
+* remove WebWright from the list of providers (sync schema v1.4.1) ([#795](https://github.com/inference-gateway/inference-gateway/issues/795)) ([2a7fae9](https://github.com/inference-gateway/inference-gateway/commit/2a7fae9111cdd17f0af75af46cbd24704d70970b))
+
+### 🐛 Bug Fixes
+
+* **codegen:** remove stale transformer files for dropped providers ([#796](https://github.com/inference-gateway/inference-gateway/issues/796)) ([f37b002](https://github.com/inference-gateway/inference-gateway/commit/f37b002bded888a66c389896fe68aacee30a9f22))
+
 ## [0.59.0](https://github.com/inference-gateway/inference-gateway/compare/v0.58.7...v0.59.0) (2026-10-20)
 
 ### ✨ Features
