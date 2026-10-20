@@ -32,9 +32,9 @@ func TestListModelsHandler_ModalitiesResolution(t *testing.T) {
 	providerCfg := contextWindowProviderConfig(server.URL, constants.OpenaiID, constants.OllamaCloudID)
 	r := newContextWindowRouter(t, server, providerCfg)
 
-	t.Run("include resolves overlay, normalized, and null modalities", func(t *testing.T) {
+	t.Run("include resolves overlay, normalized, and null modalities for deprecated speech models too", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		req, err := http.NewRequest("GET", "/v1/models?include=modalities", nil)
+		req, err := http.NewRequest("GET", "/v1/models?include=modalities,deprecated", nil)
 		require.NoError(t, err)
 		r.ServeHTTP(w, req)
 		require.Equal(t, http.StatusOK, w.Code)

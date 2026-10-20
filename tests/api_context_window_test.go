@@ -127,7 +127,7 @@ func TestListModelsHandler_ContextWindowResolution(t *testing.T) {
 	})
 
 	mux.HandleFunc("/proxy/openai/models", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4","object":"model","created":1750000000,"owned_by":"openai"},{"id":"gpt-nonexistent","object":"model","created":1750000000,"owned_by":"openai"}]}`)
+		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4o","object":"model","created":1750000000,"owned_by":"openai"},{"id":"gpt-nonexistent","object":"model","created":1750000000,"owned_by":"openai"}]}`)
 	})
 
 	server := httptest.NewServer(mux)
@@ -151,7 +151,7 @@ func TestListModelsHandler_ContextWindowResolution(t *testing.T) {
 			"llamacpp/qwen3-coder":   {"tokens": float64(32768), "source": "runtime"},
 			"ollama/llama3":          {"tokens": float64(8192), "source": "runtime"},
 			"mistral/mistral-large":  {"tokens": float64(32768), "source": "provider"},
-			"openai/gpt-4":           {"tokens": float64(8192), "source": "community"},
+			"openai/gpt-4o":          {"tokens": float64(128000), "source": "community"},
 			"openai/gpt-nonexistent": nil,
 		}
 		for id, want := range expected {

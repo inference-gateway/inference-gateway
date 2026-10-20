@@ -1,8 +1,10 @@
 package routing
 
 import (
+	"slices"
 	"strings"
 
+	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -31,8 +33,10 @@ func ModelMatches(set map[string]bool, modelID string) bool {
 }
 
 // FilterModels applies the ALLOWED_MODELS / DISALLOWED_MODELS semantics: a
-// non-empty allow list wins over the deny list; empty lists pass everything.
-func FilterModels(models []types.Model, allowedModels, disallowedModels string) []types.Model {
+// non-empty allow list wins over everything else. Otherwise models the
+// community status table marks as deprecated are dropped unless
+// showDeprecated is set, then the deny list applies. Empty lists pass everything.
+func FilterModels(models []types.Model, allowedModels, disallowedModels string, showDeprecated bool) []types.Model {
 	if allowedModels != "" {
 		allowed := ParseModelSet(allowedModels)
 		if len(allowed) == 0 {
@@ -45,6 +49,12 @@ func FilterModels(models []types.Model, allowedModels, disallowedModels string) 
 			}
 		}
 		return filtered
+	}
+
+	if !showDeprecated {
+		models = slices.DeleteFunc(slices.Clone(models), func(model types.Model) bool {
+			return core.IsDeprecated(model.ID)
+		})
 	}
 
 	if disallowedModels != "" {

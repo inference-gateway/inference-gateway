@@ -603,6 +603,12 @@ func parseIncludeParam(raw string) ([]string, error) {
 	return keys, nil
 }
 
+// includesDeprecated reports whether the request asked to list models the
+// community status table marks as deprecated, which are hidden otherwise.
+func includesDeprecated(includeKeys []string) bool {
+	return slices.Contains(includeKeys, string(types.ListModelsParamsIncludeDeprecated))
+}
+
 // renderModelsResponse writes the models list as JSON. When include keys are
 // present it injects each requested key as an explicit null on every model
 // unless already populated, keeping the requested-but-unavailable state
@@ -652,6 +658,9 @@ func (router *RouterImpl) renderModelsResponse(w http.ResponseWriter, resp types
 				continue
 			}
 			for _, key := range includeKeys {
+				if key == string(types.ListModelsParamsIncludeDeprecated) {
+					continue
+				}
 				if _, exists := model[key]; !exists {
 					model[key] = nil
 				}
@@ -672,9 +681,11 @@ func (router *RouterImpl) renderModelsResponse(w http.ResponseWriter, resp types
 //   - provider (query): Optional. When specified, returns models from only that provider.
 //     If not specified, returns models from all configured providers.
 //   - include (query): Optional. Comma-separated list of extra per-model metadata
-//     fields to include (context_window, pricing). Keys are trimmed and
+//     fields to include (context_window, pricing, modalities). Keys are trimmed and
 //     de-duplicated; an unknown key returns 400. Requested-but-unresolved keys are
 //     returned as explicit null. When omitted, no metadata fields are added.
+//     The `deprecated` key adds no field: it lists models the community status
+//     table marks as deprecated, which are hidden by default.
 //
 // Response format:
 //
@@ -725,7 +736,7 @@ func (router *RouterImpl) ListModelsHandler(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		response.Data = routing.FilterModels(response.Data, router.cfg.AllowedModels, router.cfg.DisallowedModels)
+		response.Data = routing.FilterModels(response.Data, router.cfg.AllowedModels, router.cfg.DisallowedModels, includesDeprecated(includeKeys))
 
 		if slices.Contains(includeKeys, string(types.ListModelsParamsIncludeContextWindow)) {
 			router.resolveContextWindows(ctx, response.Data)
@@ -781,7 +792,7 @@ func (router *RouterImpl) ListModelsHandler(w http.ResponseWriter, r *http.Reque
 			allModels = make([]types.Model, 0)
 		}
 
-		allModels = routing.FilterModels(allModels, router.cfg.AllowedModels, router.cfg.DisallowedModels)
+		allModels = routing.FilterModels(allModels, router.cfg.AllowedModels, router.cfg.DisallowedModels, includesDeprecated(includeKeys))
 
 		if slices.Contains(includeKeys, string(types.ListModelsParamsIncludeContextWindow)) {
 			router.resolveContextWindows(ctx, allModels)

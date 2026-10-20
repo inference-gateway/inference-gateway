@@ -28,7 +28,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 	})
 
 	mux.HandleFunc("/proxy/openai/models", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4","object":"model","created":1750000000,"owned_by":"openai"},{"id":"gpt-nonexistent","object":"model","created":1750000000,"owned_by":"openai"}]}`)
+		writeJSON(w, `{"object":"list","data":[{"id":"gpt-4o","object":"model","created":1750000000,"owned_by":"openai"},{"id":"gpt-nonexistent","object":"model","created":1750000000,"owned_by":"openai"}]}`)
 	})
 
 	mux.HandleFunc("/proxy/anthropic/models", func(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +36,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 	})
 
 	mux.HandleFunc("/proxy/nvidia/models", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, `{"object":"list","data":[{"id":"meta/llama-3.1-8b-instruct","object":"model","created":1750000000,"owned_by":"meta"}]}`)
+		writeJSON(w, `{"object":"list","data":[{"id":"deepseek-ai/deepseek-v4.1-flash","object":"model","created":1750000000,"owned_by":"meta"}]}`)
 	})
 
 	mux.HandleFunc("/proxy/ollama_cloud/models", func(w http.ResponseWriter, r *http.Request) {
@@ -82,7 +82,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		assert.NotContains(t, partial, "cache_read_per_token", "zero cache rates must be omitted, not rendered")
 		assert.NotContains(t, partial, "cache_write_per_token")
 
-		community, ok := models["openai/gpt-4"]["pricing"].(map[string]any)
+		community, ok := models["openai/gpt-4o"]["pricing"].(map[string]any)
 		require.True(t, ok, "models without provider pricing must fall back to the community table")
 		assert.Equal(t, "community", community["source"])
 		assert.Equal(t, "USD", community["currency"])
@@ -97,7 +97,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 		require.True(t, ok, "date-pinned model IDs must resolve in the community table")
 		assert.Equal(t, "community", dated["source"])
 
-		free, ok := models["nvidia/meta/llama-3.1-8b-instruct"]["pricing"].(map[string]any)
+		free, ok := models["nvidia/deepseek-ai/deepseek-v4.1-flash"]["pricing"].(map[string]any)
 		require.True(t, ok, "free-tier models must resolve in the community table")
 		assert.Equal(t, "community", free["source"])
 		assert.Equal(t, "0", free["input_per_token"], `free-tier models carry explicit "0" rates, not null pricing`)

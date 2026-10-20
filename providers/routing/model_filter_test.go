@@ -13,17 +13,35 @@ func TestFilterModels(t *testing.T) {
 		{ID: "openai/gpt-4o"},
 		{ID: "groq/llama-3.3-70b"},
 		{ID: "ollama/phi3"},
+		{ID: "minimax/MiniMax-M2"},
 	}
 
 	tests := []struct {
-		name       string
-		allowed    string
-		disallowed string
-		expected   []string
+		name           string
+		allowed        string
+		disallowed     string
+		showDeprecated bool
+		expected       []string
 	}{
 		{
-			name:     "no filters returns everything",
+			name:     "no filters hides deprecated models",
 			expected: []string{"openai/gpt-4o", "groq/llama-3.3-70b", "ollama/phi3"},
+		},
+		{
+			name:           "show deprecated returns everything",
+			showDeprecated: true,
+			expected:       []string{"openai/gpt-4o", "groq/llama-3.3-70b", "ollama/phi3", "minimax/MiniMax-M2"},
+		},
+		{
+			name:     "allow list keeps a deprecated model",
+			allowed:  "MiniMax-M2",
+			expected: []string{"minimax/MiniMax-M2"},
+		},
+		{
+			name:           "disallow list still applies to shown deprecated models",
+			disallowed:     "MiniMax-M2",
+			showDeprecated: true,
+			expected:       []string{"openai/gpt-4o", "groq/llama-3.3-70b", "ollama/phi3"},
 		},
 		{
 			name:     "allow list by full id",
@@ -47,15 +65,16 @@ func TestFilterModels(t *testing.T) {
 			expected:   []string{"ollama/phi3"},
 		},
 		{
-			name:     "whitespace-only allow list passes everything",
-			allowed:  " , ",
-			expected: []string{"openai/gpt-4o", "groq/llama-3.3-70b", "ollama/phi3"},
+			name:           "whitespace-only allow list passes everything",
+			allowed:        " , ",
+			showDeprecated: true,
+			expected:       []string{"openai/gpt-4o", "groq/llama-3.3-70b", "ollama/phi3", "minimax/MiniMax-M2"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			filtered := FilterModels(models, tt.allowed, tt.disallowed)
+			filtered := FilterModels(models, tt.allowed, tt.disallowed, tt.showDeprecated)
 			ids := make([]string, 0, len(filtered))
 			for _, m := range filtered {
 				ids = append(ids, m.ID)
