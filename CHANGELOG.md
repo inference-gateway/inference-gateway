@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.59.0](https://github.com/inference-gateway/inference-gateway/compare/v0.58.7...v0.59.0) (2026-10-20)
+
+### ✨ Features
+
+* **models:** hide deprecated models unless include=deprecated ([#794](https://github.com/inference-gateway/inference-gateway/issues/794)) ([e0c69c4](https://github.com/inference-gateway/inference-gateway/commit/e0c69c42f83ee34b0de683615c18f9f7a632a558)), closes [#793](https://github.com/inference-gateway/inference-gateway/issues/793), references [#557](https://github.com/inference-gateway/inference-gateway/issues/557)
+* sync generated types with schemas v1.3.0 ([#789](https://github.com/inference-gateway/inference-gateway/issues/789)) ([71f0ecb](https://github.com/inference-gateway/inference-gateway/commit/71f0ecbf91c9a304a280959a7f3ca2e1a647ae46))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump claude-code 2.1.289 -> 2.1.296 ([#790](https://github.com/inference-gateway/inference-gateway/issues/790)) ([4b36837](https://github.com/inference-gateway/inference-gateway/commit/4b368371b7142170e9aff74892ae19b4e6b8caec))
+* **deps:** bump infer CLI v0.226.0 -> v0.231.1 ([#791](https://github.com/inference-gateway/inference-gateway/issues/791)) ([5a9b780](https://github.com/inference-gateway/inference-gateway/commit/5a9b780136ab704598ec3b25bc4b79aa55c5168a))
+
 ## [0.58.7](https://github.com/inference-gateway/inference-gateway/compare/v0.58.6...v0.58.7) (2026-10-19)
 
 ### 👷 CI
