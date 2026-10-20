@@ -160,6 +160,15 @@
       "text"
     ]
   },
+  "cloudflare/@cf/cloudflare/clairic": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "cloudflare/@cf/cloudflare/clef": {
     "input": [
       "text",
@@ -206,6 +215,15 @@
   "cloudflare/@cf/deepseek-ai/deepseek-v4-pro-0813": {
     "input": [
       "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cloudflare/@cf/deepseek-ai/deepseek-v4.1-flash-1017": {
+    "input": [
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -295,6 +313,24 @@
       "text"
     ]
   },
+  "cloudflare/@cf/moonshotai/kimi-k2.6": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cloudflare/@cf/moonshotai/kimi-k2.7-code": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "cloudflare/@cf/nvidia/nemotron-3-120b-a12b": {
     "input": [
       "text"
@@ -335,6 +371,15 @@
       "text"
     ]
   },
+  "cloudflare/@cf/qwen/qwen3.8-27b": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "cloudflare/@cf/qwen/qwq-32b": {
     "input": [
       "text"
@@ -367,6 +412,15 @@
       "text"
     ]
   },
+  "cloudflare/@cf/zai-org/glm-5.3-flash": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "cohere/c4ai-aya-expanse-32b": {
     "input": [
       "text"
@@ -379,6 +433,22 @@
     "input": [
       "text",
       "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cohere/cohere-transcribe-03-2026": {
+    "input": [
+      "audio"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "cohere/cohere-transcribe-arabic-07-2026": {
+    "input": [
+      "audio"
     ],
     "output": [
       "text"
@@ -897,6 +967,46 @@
       "text"
     ]
   },
+  "google/gemini-3.8-flash-lite-tts": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "audio"
+    ]
+  },
+  "google/gemini-3.8-flash-tts": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "audio"
+    ]
+  },
+  "google/gemini-3.8-live": {
+    "input": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "output": [
+      "text",
+      "audio"
+    ]
+  },
+  "google/gemini-3.8-live-extended-thinking": {
+    "input": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "output": [
+      "text",
+      "audio"
+    ]
+  },
   "google/gemini-4-argon": {
     "input": [
       "text",
@@ -911,17 +1021,6 @@
   "google/gemini-embedding-001": {
     "input": [
       "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "google/gemini-embedding-2": {
-    "input": [
-      "text",
-      "image",
-      "audio",
-      "video"
     ],
     "output": [
       "text"
@@ -955,6 +1054,17 @@
     ],
     "output": [
       "text"
+    ]
+  },
+  "google/gemini-nano-banana-2.1": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text",
+      "image"
     ]
   },
   "google/gemini-omni-1.1-flash": {
@@ -1038,6 +1148,16 @@
     ]
   },
   "google/lyria-3-pro-preview": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text",
+      "audio"
+    ]
+  },
+  "google/lyria-3.5": {
     "input": [
       "text",
       "image"
@@ -1530,12 +1650,40 @@
       "text"
     ]
   },
+  "mistral/mistral-moderation-2603": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "mistral/mistral-nemo": {
     "input": [
       "text"
     ],
     "output": [
       "text"
+    ]
+  },
+  "mistral/mistral-ocr-2512": {
+    "input": [
+      "image",
+      "text"
+    ],
+    "output": [
+      "text",
+      "image"
+    ]
+  },
+  "mistral/mistral-ocr-4-1": {
+    "input": [
+      "image",
+      "text"
+    ],
+    "output": [
+      "text",
+      "image"
     ]
   },
   "mistral/mistral-small-2506": {
@@ -1565,31 +1713,7 @@
       "text"
     ]
   },
-  "mistral/open-mistral-7b": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "mistral/open-mistral-nemo": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "mistral/open-mixtral-8x22b": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "mistral/open-mixtral-8x7b": {
     "input": [
       "text"
     ],
@@ -1616,6 +1740,14 @@
     ]
   },
   "mistral/voxtral-mini-latest": {
+    "input": [
+      "audio"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "mistral/voxtral-mini-transcribe-realtime-2602": {
     "input": [
       "audio"
     ],
@@ -3205,6 +3337,16 @@
       "text"
     ]
   },
+  "ollama_cloud/minimax-m3.1-flash": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "ollama_cloud/mistral-large-3:675b": {
     "input": [
       "text",
@@ -3600,15 +3742,6 @@
       "text"
     ]
   },
-  "openai/gpt-5.2-chat-latest": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "openai/gpt-5.2-codex": {
     "input": [
       "text",
@@ -3619,15 +3752,6 @@
     ]
   },
   "openai/gpt-5.2-pro": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "openai/gpt-5.3-chat-latest": {
     "input": [
       "text",
       "image"
@@ -3709,6 +3833,15 @@
     ]
   },
   "openai/gpt-5.6": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "openai/gpt-5.6-cyber": {
     "input": [
       "text",
       "image"
@@ -3864,6 +3997,34 @@
     ],
     "output": [
       "image"
+    ]
+  },
+  "openai/gpt-image-2.5-flare": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "image"
+    ]
+  },
+  "openai/gpt-image-2.5-sunburst": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "image"
+    ]
+  },
+  "openai/gpt-live-1": {
+    "input": [
+      "text",
+      "audio"
+    ],
+    "output": [
+      "text",
+      "audio"
     ]
   },
   "openai/gpt-live-transcribe": {
@@ -4023,6 +4184,15 @@
       "text"
     ]
   },
+  "openai/omni-moderation-latest": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "openai/sora-2": {
     "input": [
       "text",
@@ -4105,6 +4275,15 @@
       "text"
     ]
   },
+  "zai/cogvideox-3": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "video"
+    ]
+  },
   "zai/glm-4.5": {
     "input": [
       "text"
@@ -4121,7 +4300,23 @@
       "text"
     ]
   },
+  "zai/glm-4.5-airx": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "zai/glm-4.5-flash": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "zai/glm-4.5-x": {
     "input": [
       "text"
     ],
@@ -4158,6 +4353,16 @@
     ]
   },
   "zai/glm-4.6v-flash": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "zai/glm-4.6v-flashx": {
     "input": [
       "text",
       "image",
@@ -4259,6 +4464,22 @@
     ],
     "output": [
       "text"
+    ]
+  },
+  "zai/glm-asr-2512": {
+    "input": [
+      "audio"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "zai/glm-image": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "image"
     ]
   }
 }

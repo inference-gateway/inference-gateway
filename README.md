@@ -183,6 +183,12 @@ For streaming the tokens simply add to the request body `stream: true`.
 All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
 from an explicit `?provider=` query parameter.
 
+`/v1/models` hides models that models.dev marks as deprecated
+(`providers/core/community_statuses.json`, synced via `task status:sync`) for
+every provider. `GET /v1/models?include=deprecated` lists them again, and
+`ALLOWED_MODELS` entries are always listed. Requests naming a deprecated model
+are still forwarded.
+
 With `ROUTING_ENABLED=true` and a `ROUTING_CONFIG_PATH` pool file,
 `/v1/chat/completions` first resolves logical model aliases against the
 round-robin deployment pools - only when `?provider=` is absent - and reports

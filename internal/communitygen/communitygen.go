@@ -4,7 +4,8 @@
 // emits the JSON tables embedded by providers/core: model pricing (USD
 // per-million-token rates converted to the gateway's per-token decimal-string
 // format, `task pricing:sync`), context windows (`task contextwindow:sync`),
-// and input modalities (`task modalities:sync`).
+// input modalities (`task modalities:sync`), and lifecycle statuses
+// (`task status:sync`).
 //
 // Each table has a hand-maintained companion, "<table>.overrides.json", for
 // models models.dev does not carry (or carries wrong). Those entries are
@@ -13,6 +14,7 @@ package communitygen
 
 import (
 	"archive/tar"
+	"cmp"
 	"compress/gzip"
 	"encoding/json"
 	"errors"
@@ -68,8 +70,9 @@ var subscriptionProviders = map[string]bool{
 // Cloud models) stays distinguishable from an explicit zero rate, which
 // models.dev uses for free tiers (e.g. nvidia's free NIM endpoints).
 type modelTOML struct {
-	Cost  *costTOML `toml:"cost"`
-	Limit struct {
+	Cost   *costTOML `toml:"cost"`
+	Status string    `toml:"status"`
+	Limit  struct {
 		Context int64 `toml:"context"`
 		Output  int64 `toml:"output"`
 	} `toml:"limit"`
@@ -85,7 +88,8 @@ type modelTOML struct {
 
 // costTOML holds a models.dev cost table in either spelling: schema 1 flat
 // per-MTok rates, or schema 2 nested under [cost.text.input]/[cost.text.output]
-// with cache rates under the input table.
+// with cache rates under the input table. The schema 2 cache-write rate is
+// either one flat number or a map keyed by cache TTL ("5m", "1h").
 type costTOML struct {
 	Input      float64 `toml:"input"`
 	Output     float64 `toml:"output"`
@@ -95,8 +99,8 @@ type costTOML struct {
 		Input struct {
 			Price float64 `toml:"price"`
 			Cache struct {
-				Read  float64            `toml:"read"`
-				Write map[string]float64 `toml:"write"`
+				Read  float64 `toml:"read"`
+				Write any     `toml:"write"`
 			} `toml:"cache"`
 		} `toml:"input"`
 		Output struct {
@@ -115,7 +119,22 @@ func (c *costTOML) rates() (input, output, cacheRead, cacheWrite float64) {
 	if c.Text == nil {
 		return c.Input, c.Output, c.CacheRead, c.CacheWrite
 	}
-	return c.Text.Input.Price, c.Text.Output.Price, c.Text.Input.Cache.Read, c.Text.Input.Cache.Write[defaultCacheWriteTTL]
+	return c.Text.Input.Price, c.Text.Output.Price, c.Text.Input.Cache.Read, cacheWriteRate(c.Text.Input.Cache.Write)
+}
+
+// cacheWriteRate resolves a schema 2 cache-write value to the default TTL
+// rate: a bare number applies to every TTL, a map is read at "5m".
+func cacheWriteRate(value any) float64 {
+	if rates, ok := value.(map[string]any); ok {
+		value = rates[defaultCacheWriteTTL]
+	}
+	switch rate := value.(type) {
+	case float64:
+		return rate
+	case int64:
+		return float64(rate)
+	}
+	return 0
 }
 
 // contextWindowEntry is one row of the community context-window table: the
@@ -190,6 +209,23 @@ func GenerateModalities(output, tarballPath string) error {
 			return
 		}
 		table[key] = entry
+	})
+	if err != nil {
+		return err
+	}
+	return writeTable(output, tarballPath, table)
+}
+
+// GenerateStatuses reads a models.dev repository tarball and writes the
+// community status table keyed by "<provider>/<model>" to output. Only models
+// carrying a lifecycle status ("deprecated", "beta") get an entry.
+func GenerateStatuses(output, tarballPath string) error {
+	table := make(map[string]string)
+	err := forEachModel(tarballPath, func(key string, model modelTOML) {
+		if model.Status == "" {
+			return
+		}
+		table[key] = model.Status
 	})
 	if err != nil {
 		return err
@@ -319,6 +355,7 @@ func mergeBase(m, base modelTOML) modelTOML {
 	if len(m.Modalities.Input) == 0 && len(m.Modalities.Output) == 0 {
 		m.Modalities = base.Modalities
 	}
+	m.Status = cmp.Or(m.Status, base.Status)
 	return m
 }
 

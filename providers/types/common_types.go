@@ -1458,6 +1458,7 @@ func (e CreateImageEditMultipartBodyResponseFormat) Valid() bool {
 // Defines values for ListModelsParamsInclude.
 const (
 	ListModelsParamsIncludeContextWindow ListModelsParamsInclude = "context_window"
+	ListModelsParamsIncludeDeprecated    ListModelsParamsInclude = "deprecated"
 	ListModelsParamsIncludeModalities    ListModelsParamsInclude = "modalities"
 	ListModelsParamsIncludePricing       ListModelsParamsInclude = "pricing"
 )
@@ -1466,6 +1467,8 @@ const (
 func (e ListModelsParamsInclude) Valid() bool {
 	switch e {
 	case ListModelsParamsIncludeContextWindow:
+		return true
+	case ListModelsParamsIncludeDeprecated:
 		return true
 	case ListModelsParamsIncludeModalities:
 		return true
@@ -3664,6 +3667,8 @@ type ListModelsParams struct {
 
 	// Include Comma-separated list of metadata keys to include in the response.
 	// Supported values: `pricing`, `context_window`, `modalities`.
+	// `deprecated` lists models the community tables mark as deprecated,
+	// which are hidden by default, and adds no field.
 	// When omitted, the response remains unchanged (backward compatible).
 	Include *[]ListModelsParamsInclude `form:"include,omitempty" json:"include,omitempty"`
 }

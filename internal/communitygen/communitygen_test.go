@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"encoding/json"
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
@@ -110,6 +111,7 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 		"sst-models.dev-abc/providers/ollama-cloud/models/glm-priced.toml":      "[cost]\ninput = 0.15\noutput = 0.5\n",
 		"sst-models.dev-abc/providers/openai/models/gpt-paid.toml":              "[cost]\ninput = 3.0\noutput = 15.0\n",
 		"sst-models.dev-abc/providers/anthropic/models/claude-v2.toml":          "schema = 2\n[cost.text.input]\nprice = 4\ncache = { read = 0.2, write = { \"5m\" = 5, \"1h\" = 8 } }\n[cost.text.output]\nprice = 20\n",
+		"sst-models.dev-abc/providers/minimax/models/flat-write.toml":           "schema = 2\n[cost.text.input]\nprice = 0.3\ncache = { read = 0.03, write = 0.375 }\n[cost.text.output]\nprice = 1.2\n",
 	})
 
 	output := filepath.Join(t.TempDir(), "pricing.json")
@@ -138,6 +140,14 @@ func TestGenerate_FreeVsUnpublished(t *testing.T) {
 	}
 	if schema2.CacheWritePerToken == nil || *schema2.CacheWritePerToken != "0.000005" {
 		t.Errorf("schema 2 cache write = %v, want 0.000005", schema2.CacheWritePerToken)
+	}
+
+	flatWrite, ok := table["minimax/flat-write"]
+	if !ok {
+		t.Fatal("schema 2 model with a flat cache-write rate missing from table")
+	}
+	if flatWrite.CacheWritePerToken == nil || *flatWrite.CacheWritePerToken != "0.000000375" {
+		t.Errorf("flat cache write = %v, want 0.000000375", flatWrite.CacheWritePerToken)
 	}
 
 	free, ok := table["nvidia/meta/llama-free"]
@@ -314,6 +324,43 @@ func TestGenerateContextWindows(t *testing.T) {
 	}
 	if _, ok := table["ollama_cloud/no-limit"]; ok {
 		t.Error("model without a limit section must not get an entry")
+	}
+}
+
+// TestGenerateStatuses covers the lifecycle states in models.dev files: a
+// status emits an entry, a base-model status is inherited, a model without
+// one gets no entry, and unsupported providers are skipped.
+func TestGenerateStatuses(t *testing.T) {
+	tarball := writeTarball(t, map[string]string{
+		"sst-models.dev-abc/providers/minimax/models/MiniMax-M2.toml":   "status = \"deprecated\"\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-beta.toml":      "status = \"beta\"\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-current.toml":   "name = \"gpt-current\"\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-inherited.toml": "base_model = \"openai/gpt-old\"\n",
+		"sst-models.dev-abc/models/openai/gpt-old.toml":                 "status = \"deprecated\"\n",
+		"sst-models.dev-abc/providers/openrouter/models/skipped.toml":   "status = \"deprecated\"\n",
+	})
+
+	output := filepath.Join(t.TempDir(), "statuses.json")
+	if err := GenerateStatuses(output, tarball); err != nil {
+		t.Fatalf("GenerateStatuses() = %v", err)
+	}
+
+	data, err := os.ReadFile(output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var table map[string]string
+	if err := json.Unmarshal(data, &table); err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]string{
+		"minimax/MiniMax-M2":   "deprecated",
+		"openai/gpt-beta":      "beta",
+		"openai/gpt-inherited": "deprecated",
+	}
+	if !maps.Equal(table, want) {
+		t.Errorf("statuses = %v, want %v", table, want)
 	}
 }
 

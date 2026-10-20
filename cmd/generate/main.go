@@ -19,8 +19,8 @@ var (
 
 func init() {
 	flag.StringVar(&output, "output", "", "Path to the output file")
-	flag.StringVar(&input, "input", "", "Path to the input file (CommunityPricing, CommunityContextWindows, CommunityModalities: a models.dev repository tarball)")
-	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, MCPWrap, CommunityPricing, CommunityContextWindows, or CommunityModalities)")
+	flag.StringVar(&input, "input", "", "Path to the input file (CommunityPricing, CommunityContextWindows, CommunityModalities, CommunityStatuses: a models.dev repository tarball)")
+	flag.StringVar(&_type, "type", "", "The type of the file to generate (Env, MD, Config, Providers, ProviderRegistry, ProvidersClientConfig, ProvidersConstants, MCPWrap, CommunityPricing, CommunityContextWindows, CommunityModalities, or CommunityStatuses)")
 }
 
 func main() {
@@ -105,6 +105,17 @@ func main() {
 		err := communitygen.GenerateModalities(output, input)
 		if err != nil {
 			fmt.Printf("Error generating community modalities table: %v\n", err)
+			os.Exit(1)
+		}
+	case "CommunityStatuses":
+		fmt.Printf("Generating community status table to %s\n", output)
+		if input == "" {
+			fmt.Println("-input must point to a models.dev repository tarball")
+			os.Exit(1)
+		}
+		err := communitygen.GenerateStatuses(output, input)
+		if err != nil {
+			fmt.Printf("Error generating community status table: %v\n", err)
 			os.Exit(1)
 		}
 	case "MCPWrap":
