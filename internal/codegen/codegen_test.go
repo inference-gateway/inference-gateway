@@ -59,3 +59,18 @@ func TestGenerateConfigFromFixture(t *testing.T) {
 	assert.NotContains(t, content, "acme")
 	assert.NotContains(t, content, "ollama")
 }
+
+func TestGenerateProvidersRemovesStaleTransformer(t *testing.T) {
+	dir := t.TempDir()
+	stale := filepath.Join(dir, "gone.go")
+	handwritten := filepath.Join(dir, "custom.go")
+	require.NoError(t, os.WriteFile(stale, []byte("// Code generated from OpenAPI schema. DO NOT EDIT.\npackage transformers\n"), 0o644))
+	require.NoError(t, os.WriteFile(handwritten, []byte("package transformers\n"), 0o644))
+
+	require.NoError(t, GenerateProviders(dir, fixture))
+
+	_, err := os.Stat(stale)
+	assert.True(t, os.IsNotExist(err), "stale generated transformer should be removed")
+	_, err = os.Stat(handwritten)
+	assert.NoError(t, err, "hand-written file without the generated header must be kept")
+}
