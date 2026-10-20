@@ -466,11 +466,11 @@
   },
   "minimax/MiniMax-M3": {
     "context": 1000000,
-    "output": 512000
+    "output": 524288
   },
   "minimax/MiniMax-M3.1-Flash": {
     "context": 1000000,
-    "output": 512000
+    "output": 524288
   },
   "mistral/codestral-2508": {
     "context": 256000

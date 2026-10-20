@@ -725,6 +725,9 @@ func (router *RouterImpl) ListModelsHandler(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
+		if providerID == constants.MinimaxID && router.cfg.AllowedModels == "" {
+			response.Data = core.ActiveMinimaxModels(response.Data)
+		}
 		response.Data = routing.FilterModels(response.Data, router.cfg.AllowedModels, router.cfg.DisallowedModels)
 
 		if slices.Contains(includeKeys, string(types.ListModelsParamsIncludeContextWindow)) {
@@ -764,6 +767,9 @@ func (router *RouterImpl) ListModelsHandler(w http.ResponseWriter, r *http.Reque
 
 				if response.Data == nil {
 					response.Data = make([]types.Model, 0)
+				}
+				if providerID == constants.MinimaxID && router.cfg.AllowedModels == "" {
+					response.Data = core.ActiveMinimaxModels(response.Data)
 				}
 				ch <- response
 			}(providerID)

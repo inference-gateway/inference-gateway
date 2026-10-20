@@ -6,5 +6,13 @@
   "deepseek/deepseek-v4-flash": {
     "context": 1000000,
     "output": 384000
+  },
+  "minimax/MiniMax-M3": {
+    "context": 1000000,
+    "output": 524288
+  },
+  "minimax/MiniMax-M3.1-Flash": {
+    "context": 1000000,
+    "output": 524288
   }
 }

@@ -183,6 +183,19 @@ For streaming the tokens simply add to the request body `stream: true`.
 All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
 from an explicit `?provider=` query parameter.
 
+Default MiniMax discovery lists available `MiniMax-M3.1-Flash` and `MiniMax-M3`
+first and omits legacy M2 text models. Explicit `ALLOWED_MODELS` selections and
+chat requests still accept legacy IDs; `/proxy/minimax/models` exposes the
+original upstream catalog. Other model IDs, including media models, are preserved.
+
+MiniMax's provider-specific `thinking` control is available through
+`/proxy/minimax/chat/completions`. The typed `/v1/chat/completions` schema supports
+`reasoning_effort` but does not expose `thinking`.
+
+The MiniMax-M3 community pricing entry represents Standard pricing for up to
+512k input tokens. Longer inputs and Priority requests have higher rates; see
+[MiniMax pricing](https://platform.minimax.io/docs/pricing/overview#models/text).
+
 With `ROUTING_ENABLED=true` and a `ROUTING_CONFIG_PATH` pool file,
 `/v1/chat/completions` first resolves logical model aliases against the
 round-robin deployment pools - only when `?provider=` is absent - and reports

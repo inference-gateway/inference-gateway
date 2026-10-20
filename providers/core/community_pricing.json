@@ -870,12 +870,12 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "minimax/MiniMax-M3": {
-    "cache_read_per_token": "0.00000012",
+    "cache_read_per_token": "0.00000006",
     "currency": "USD",
-    "input_per_token": "0.0000006",
-    "output_per_token": "0.0000024",
+    "input_per_token": "0.0000003",
+    "output_per_token": "0.0000012",
     "source": "community",
-    "updated_at": "2026-08-16T06:15:34Z"
+    "updated_at": "2026-10-20T00:00:00Z"
   },
   "minimax/MiniMax-M3.1-Flash": {
     "cache_read_per_token": "0.000000015",
