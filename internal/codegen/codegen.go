@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -396,6 +397,44 @@ func readIgnoreFile(ignoreFilePath string) (map[string]bool, error) {
 	return ignored, nil
 }
 
+const generatedHeader = "// Code generated from OpenAPI schema. DO NOT EDIT."
+
+// removeStaleTransformers deletes generated transformer files whose provider
+// is no longer in the schema, so dropping a provider upstream cannot leave a
+// file behind that references constants which no longer exist.
+func removeStaleTransformers(outputDir string, providers map[string]openapi.ProviderConfig, ignored map[string]bool) error {
+	files, err := filepath.Glob(filepath.Join(outputDir, "*.go"))
+	if err != nil {
+		return fmt.Errorf("failed to list transformer files: %w", err)
+	}
+
+	for _, fullPath := range files {
+		providerName := strings.TrimSuffix(filepath.Base(fullPath), ".go")
+		relativePath := fmt.Sprintf("%s/%s.go", strings.TrimPrefix(outputDir, "./"), providerName)
+		if providerName == "transformers" || ignored[relativePath] {
+			continue
+		}
+		if _, exists := providers[providerName]; exists {
+			continue
+		}
+
+		content, err := os.ReadFile(fullPath)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", fullPath, err)
+		}
+		if !strings.HasPrefix(string(content), generatedHeader) {
+			continue
+		}
+
+		if err := os.Remove(fullPath); err != nil {
+			return fmt.Errorf("failed to remove stale %s: %w", fullPath, err)
+		}
+		fmt.Printf("Removed stale %s\n", fullPath)
+	}
+
+	return nil
+}
+
 // GenerateProviders generates individual provider files based on their configuration
 // Only generates files not listed in .openapi-ignore and uses only the OpenAI template
 func GenerateProviders(outputDir string, oas string) error {
@@ -459,6 +498,10 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() types.ListModelsRespon
 	}
 }
 `
+
+	if err := removeStaleTransformers(outputDir, schema.Components.Schemas.Provider.XProviderConfigs, ignored); err != nil {
+		return err
+	}
 
 	for providerName, config := range schema.Components.Schemas.Provider.XProviderConfigs {
 		filename := fmt.Sprintf("%s.go", strings.ToLower(providerName))
