@@ -4,7 +4,7 @@ go 1.26.8
 
 require (
 	github.com/coreos/go-oidc/v3 v3.21.0
-	github.com/go-jose/go-jose/v4 v4.1.5
+	github.com/go-jose/go-jose/v4 v4.1.6
 	github.com/inference-gateway/adk v0.34.0
 	github.com/oapi-codegen/runtime v1.7.0
 	github.com/open-policy-agent/opa v1.21.2
