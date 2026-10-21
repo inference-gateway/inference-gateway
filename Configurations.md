@@ -145,6 +145,8 @@
 | NVIDIA_API_KEY       | `""`                                                            | NVIDIA API Key                                                                                                                                                                                     |
 | ZAI_API_URL          | `https://api.z.ai/api/coding/paas/v4`                           | ZAI API URL - the default is the GLM Coding Plan endpoint, so subscription requests draw on the plan. Users without a Coding Plan must set https://api.z.ai/api/paas/v4 to be billed pay-as-you-go |
 | ZAI_API_KEY          | `""`                                                            | ZAI API Key                                                                                                                                                                                        |
+| WEBWRIGHT_API_URL    | `https://webwright.ai/v1`                                       | WebWright API URL                                                                                                                                                                                  |
+| WEBWRIGHT_API_KEY    | `""`                                                            | WebWright API Key                                                                                                                                                                                  |
 
 ### Routing
 
