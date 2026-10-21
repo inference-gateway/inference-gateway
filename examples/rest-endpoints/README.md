@@ -57,23 +57,23 @@ Response:
       "context_window": { "tokens": 32768, "source": "runtime" }
     },
     {
-      "id": "mistral/mistral-large",
+      "id": "mistral/mistral-large-latest",
       "object": "model",
       "created": 1750000000,
       "owned_by": "mistralai",
       "served_by": "mistral",
-      "context_window": { "tokens": 32768, "source": "provider" }
+      "context_window": { "tokens": 262144, "source": "provider" }
     },
     {
-      "id": "openai/gpt-4o",
+      "id": "openai/gpt-5.6",
       "object": "model",
       "created": 1750000000,
       "owned_by": "openai",
       "served_by": "openai",
-      "context_window": { "tokens": 128000, "source": "community" }
+      "context_window": { "tokens": 1050000, "source": "community" }
     },
     {
-      "id": "ollama/deepseek-r1:1.5b",
+      "id": "ollama/gpt-oss:20b",
       "object": "model",
       "created": 1750000000,
       "owned_by": "ollama",
@@ -111,49 +111,49 @@ Response:
   "object": "list",
   "data": [
     {
-      "id": "deepseek/deepseek-chat",
+      "id": "deepseek/deepseek-v4-pro",
       "object": "model",
       "created": 1750000000,
       "owned_by": "deepseek",
       "served_by": "deepseek",
       "pricing": {
         "currency": "USD",
-        "input_per_token": "0.00000027",
-        "output_per_token": "0.00000110",
-        "cache_read_per_token": "0.00000007",
-        "cache_write_per_token": "0.00000027",
+        "input_per_token": "0.00000066",
+        "output_per_token": "0.00000198",
+        "cache_read_per_token": "0.000000022",
         "source": "provider"
       }
     },
     {
-      "id": "groq/llama-3.3-70b",
+      "id": "groq/openai/gpt-oss-120b",
       "object": "model",
       "created": 1750000000,
       "owned_by": "meta",
       "served_by": "groq",
       "pricing": {
         "currency": "USD",
-        "input_per_token": "0.00000059",
-        "output_per_token": "0.00000079",
+        "input_per_token": "0.00000015",
+        "output_per_token": "0.0000006",
         "source": "provider"
       }
     },
     {
-      "id": "openai/gpt-4o",
+      "id": "openai/gpt-5.6",
       "object": "model",
       "created": 1750000000,
       "owned_by": "openai",
       "served_by": "openai",
       "pricing": {
         "currency": "USD",
-        "input_per_token": "0.0000025",
-        "output_per_token": "0.00001",
-        "cache_read_per_token": "0.00000125",
+        "input_per_token": "0.000004",
+        "output_per_token": "0.00002",
+        "cache_read_per_token": "0.0000004",
+        "cache_write_per_token": "0.000005",
         "source": "community"
       }
     },
     {
-      "id": "ollama/deepseek-r1:1.5b",
+      "id": "ollama/gpt-oss:20b",
       "object": "model",
       "created": 1750000000,
       "owned_by": "ollama",
@@ -190,7 +190,7 @@ Response:
   "object": "list",
   "data": [
     {
-      "id": "openai/gpt-4o",
+      "id": "openai/gpt-5.6",
       "object": "model",
       "created": 1750000000,
       "owned_by": "openai",
@@ -198,7 +198,7 @@ Response:
       "modalities": { "input": ["text", "image"], "output": ["text"] }
     },
     {
-      "id": "deepseek/deepseek-chat",
+      "id": "deepseek/deepseek-v4-pro",
       "object": "model",
       "created": 1750000000,
       "owned_by": "deepseek",
@@ -206,7 +206,7 @@ Response:
       "modalities": { "input": ["text"], "output": ["text"] }
     },
     {
-      "id": "ollama/deepseek-r1:1.5b",
+      "id": "ollama/gpt-oss:20b",
       "object": "model",
       "created": 1750000000,
       "owned_by": "ollama",
@@ -224,31 +224,31 @@ OpenAI-compatible.
 
 ## POST Endpoints
 
-| Domain                            | Curl Command                                                                                                                                                                                                               |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ollama.local                      | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"ollama/deepseek-r1:1.5b","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                   |
-| ollama.com                        | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"ollama_cloud/gpt-oss:20b","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                  |
-| api.groq.com                      | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"groq/llama-3.3-70b-versatile","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`              |
-| api.openai.com                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"openai/gpt-4o-mini","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                        |
-| api.cloudflare.com                | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"cloudflare/@cf/meta/llama-3.1-8b-instruct","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'` |
-| api.cohere.com                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"cohere/command-r","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                          |
-| api.anthropic.com                 | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"anthropic/claude-3-opus-20240229","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`          |
-| api.deepseek.com                  | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"deepseek/deepseek-v4-flash","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                |
-| generativelanguage.googleapis.com | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"google/models/gemini-2.5-flash-lite","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`       |
-| api.mistral.ai                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"mistral/pixtral-large-latest","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`              |
-| api.minimax.io                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"minimax/MiniMax-M3","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                        |
-| api.moonshot.ai                   | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"moonshot/moonshot-v1-8k","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                   |
-| integrate.api.nvidia.com          | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"nvidia/moonshotai/kimi-k2.6","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`               |
-| llamacpp.local                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"llamacpp/Qwen2.5-0.5B-Instruct","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`            |
-| api.z.ai                          | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"zai/glm-4.6","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                               |
-| webwright.ai                      | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"webwright/wren-r1","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                         |
+| Domain                            | Curl Command                                                                                                                                                                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ollama.local                      | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"ollama/gpt-oss:20b","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                            |
+| ollama.com                        | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"ollama_cloud/kimi-k3","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                          |
+| api.groq.com                      | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"groq/openai/gpt-oss-120b","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                      |
+| api.openai.com                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"openai/gpt-5.6","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                                |
+| api.cloudflare.com                | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"cloudflare/@cf/zai-org/glm-5.3","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                |
+| api.cohere.com                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"cohere/command-a-plus-05-2026","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                 |
+| api.anthropic.com                 | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"anthropic/claude-opus-5-5","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                     |
+| api.deepseek.com                  | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"deepseek/deepseek-v4-pro","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                      |
+| generativelanguage.googleapis.com | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"google/models/gemini-4-argon","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                  |
+| api.mistral.ai                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"mistral/mistral-large-latest","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                  |
+| api.minimax.io                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"minimax/MiniMax-M3.1-Flash","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                    |
+| api.moonshot.ai                   | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"moonshot/kimi-k3","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                              |
+| integrate.api.nvidia.com          | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"nvidia/nvidia/nemotron-3.5-super-vl-120b-a12b","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'` |
+| llamacpp.local                    | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"llamacpp/qwen3-coder","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                          |
+| api.z.ai                          | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"zai/glm-5.3","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                                   |
+| webwright.ai                      | `curl -X POST http://localhost:8080/v1/chat/completions -d '{"model":"webwright/wren-r1","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Hi"}]}'`                             |
 
 You can set the stream as an optional flag in the request body to enable
 streaming of tokens. The default value is `false`.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/deepseek-r1-distill-llama-70b",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {
       "role": "system",
@@ -266,24 +266,24 @@ Response:
 
 ```json
 {
-  "id": "chatcmpl-753",
+  "id": "chatcmpl-3f5a1d9e",
   "object": "chat.completion",
-  "created": 1741879542,
-  "model": "deepseek-r1:1.5b",
+  "created": 1792570321,
+  "model": "openai/gpt-oss-120b",
   "choices": [
     {
       "index": 0,
       "message": {
-        "content": "<think>\nOkay, so the user greeted me and said \"Hi, how are you doing today?\" They're just starting to say that. I should respond in a friendly way.\n\nMaybe I can acknowledge their greeting and offer my help with something. Since they mentioned working on math problems or solving puzzles, I'll stick to that.\n\nI want to make sure I'm approaching it the right way. It's not a question yet, but if I see more of them, maybe I can offer more assistance. So responding with an emoji like 😊 would be nice.\n</think>\n\nHello! How are you doing today? 😊",
+        "content": "Hello! I'm doing well, thanks. How can I help you today?",
         "role": "assistant"
       },
-      "finish_reason": "length"
+      "finish_reason": "stop"
     }
   ],
   "usage": {
-    "prompt_tokens": 40,
-    "completion_tokens": 40,
-    "total_tokens": 80
+    "prompt_tokens": 19,
+    "completion_tokens": 12,
+    "total_tokens": 31
   }
 }
 ```
@@ -300,7 +300,7 @@ envelope.
 
 ```bash
 curl -X POST http://localhost:8080/v1/messages -d '{
-  "model": "anthropic/claude-sonnet-4-5",
+  "model": "anthropic/claude-sonnet-5-5",
   "max_tokens": 1024,
   "messages": [
     {"role": "user", "content": "Hi, how are you doing today?"}
@@ -315,7 +315,7 @@ Response:
   "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
   "type": "message",
   "role": "assistant",
-  "model": "claude-sonnet-4-5",
+  "model": "claude-sonnet-5-5",
   "content": [{ "type": "text", "text": "Hi! I'm doing well, thanks." }],
   "stop_reason": "end_turn",
   "usage": {
@@ -332,7 +332,7 @@ Set `"stream": true` to receive the Anthropic SSE event envelope
 
 ```bash
 curl -N -X POST http://localhost:8080/v1/messages -d '{
-  "model": "anthropic/claude-sonnet-4-5",
+  "model": "anthropic/claude-sonnet-5-5",
   "max_tokens": 1024,
   "stream": true,
   "messages": [
@@ -346,7 +346,7 @@ with `cache_control` and read the cache usage from the response:
 
 ```bash
 curl -X POST http://localhost:8080/v1/messages -d '{
-  "model": "anthropic/claude-sonnet-4-5",
+  "model": "anthropic/claude-sonnet-5-5",
   "max_tokens": 1024,
   "system": [
     {
@@ -385,7 +385,7 @@ return `400`.
 
 ```bash
 curl -X POST http://localhost:8080/v1/responses -d '{
-  "model": "openai/gpt-4o",
+  "model": "openai/gpt-5.6",
   "input": "Hi, how are you doing today?",
   "instructions": "You are a helpful assistant."
 }' | jq .
@@ -397,9 +397,9 @@ Response:
 {
   "id": "resp_67b5cf1e3e3481928c7a3b2f1a2b3c4d",
   "object": "response",
-  "created_at": 1741879542,
+  "created_at": 1792570321,
   "status": "completed",
-  "model": "gpt-4o-2024-08-06",
+  "model": "gpt-5.6",
   "output": [
     {
       "type": "message",
@@ -427,7 +427,7 @@ Set `"stream": true` to receive `ResponseStreamEvent` SSE frames verbatim:
 
 ```bash
 curl -N -X POST http://localhost:8080/v1/responses -d '{
-  "model": "openai/gpt-4o",
+  "model": "openai/gpt-5.6",
   "input": "Hi",
   "stream": true
 }'
@@ -516,18 +516,17 @@ curl -X POST "http://localhost:8080/v1/images/edits?provider=openai" \
   -F image="@sunset.png" \
   -F mask="@mask.png" \
   -F prompt="Add a flock of birds to the sky" \
-  -F model="gpt-image-1" \
+  -F model="gpt-image-2" \
   -F n=1 \
-  -F size="1024x1024" \
-  -F response_format="url"
+  -F size="1024x1024"
 ```
 
 The response is an `ImagesResponse`:
 
 ```json
 {
-  "created": 1730000000,
-  "data": [{ "url": "https://.../generated.png" }]
+  "created": 1792570901,
+  "data": [{ "b64_json": "iVBORw0KGgoAAAANSUhEUgAA..." }]
 }
 ```
 
@@ -582,7 +581,7 @@ voice id (not a name like `alloy`), and `response_format` is limited to `mp3`
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech -d '{
-  "model": "elevenlabs/eleven_multilingual_v2",
+  "model": "elevenlabs/eleven_v3",
   "input": "Ahoy! Welcome aboard the Inference Gateway.",
   "voice": "JBFqnCBsd6RMkjVDRZzb",
   "response_format": "mp3"
@@ -710,7 +709,7 @@ omitted lets the provider pick a length that fits the prompt), `instrumental`
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/music -d '{
-  "model": "elevenlabs/music_v2",
+  "model": "elevenlabs/music_v2_5",
   "prompt": "chill lo-fi hip hop beat with a mellow piano loop, 80 bpm",
   "duration_seconds": 15,
   "instrumental": true
@@ -817,7 +816,7 @@ are some examples:
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/deepseek-r1-distill-llama-70b",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "What is the current weather in Toronto?"}
@@ -854,7 +853,6 @@ Then the LLM will respond with a function call request as follow:
       "index": 0,
       "message": {
         "content": "",
-        "reasoning": "Okay, the user is asking about the current weather in Toronto. I need to figure out how to respond using the tools provided. \n\nLooking at the tools section, there's a function called get_current_weather which takes a city name as a parameter. That seems perfect for this query.\n\nSo, I should call this function with \"Toronto\" as the city argument. I'll structure the response in the required XML format, making sure to use the correct tags and JSON structure inside.\n\nI should double-check the function name and parameters to ensure accuracy. The function name is get_current_weather, and the parameter is city as a string. So, the arguments JSON should have \"city\" set to \"Toronto\".\n\nPutting it all together, I'll create the XML tool_call with the function name and the arguments JSON. That should give the user the current weather in Toronto.\n",
         "role": "assistant",
         "tool_calls": [
           {
@@ -862,21 +860,21 @@ Then the LLM will respond with a function call request as follow:
               "arguments": "{\"city\": \"Toronto\"}",
               "name": "get_current_weather"
             },
-            "id": "call_0e2n",
+            "id": "call_gsq01a2b4c9",
             "type": "function"
           }
         ]
       }
     }
   ],
-  "created": 1742314696,
+  "created": 1792570327,
   "id": "chatcmpl-f14e1a5f-0c05-4c94-be1c-6d23f0c1ecb6",
-  "model": "deepseek-r1-distill-llama-70b",
+  "model": "openai/gpt-oss-120b",
   "object": "chat.completion",
   "usage": {
-    "completion_tokens": 202,
-    "prompt_tokens": 150,
-    "total_tokens": 352
+    "completion_tokens": 18,
+    "prompt_tokens": 91,
+    "total_tokens": 109
   }
 }
 ```
@@ -885,12 +883,12 @@ So you can response with the function call content as follow:
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/deepseek-r1-distill-llama-70b",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "What is the current weather in Toronto?"},
-    {"role": "assistant", "content": "Okay, the user is asking about the current weather in Toronto. I need to figure out how to respond. \n\nFirst, I should use the function provided in the tools. The function is called get_current_weather, and it requires a city parameter.\n\nSo, I will call this function with Toronto as the city. I will format the tool_call with the function name and the arguments as a JSON object.\n\nI will make sure the JSON is correctly formatted, using double quotes around the strings. \n\nFinally, I will enclose everything within the <tool_call> tags as specified. \n\nThat should give the user the weather information they are looking for.\n"},
-    {"role": "tool", "content": "89F", "tool_call_id": "call_0e2n"}
+    {"role": "assistant", "tool_calls": [{"type": "function", "id": "call_gsq01a2b4c9", "function": {"name": "get_current_weather", "arguments": "{\"city\": \"Toronto\"}"}}]},
+    {"role": "tool", "content": "89F", "tool_call_id": "call_gsq01a2b4c9"}
   ]
 }' | jq .
 ```
@@ -904,19 +902,19 @@ Then the LLM will respond with the weather information as follow:
       "finish_reason": "stop",
       "index": 0,
       "message": {
-        "content": "<think>\nAlright, so the user previously asked about the current weather in Toronto, and I responded by using the get_current_weather tool. Now, the user has provided a response that seems a bit unclear: \"89F\". I need to figure out what this means and how to proceed.\n\nFirst, I notice that the user's message includes some unusual characters: <｜tool▁outputs▁begin｜>89F<｜tool▁outputs▁end｜>. This looks like some sort of formatting or markup, possibly from a tool or system they're using. The \"89F\" part is likely the temperature they received, which is 89 degrees Fahrenheit. \n\nGiven that, it seems like they might be confirming the weather data or perhaps indicating that they received the information but want more details. Alternatively, they might be testing how I handle such inputs.\n\nI should consider that they might be interested in additional aspects of the weather, such as the conditions, humidity, wind speed, or perhaps the forecast. Since they provided a temperature, maybe they want to know if that's accurate or if there's more to the weather situation.\n\nI also need to make sure my response is helpful and provides value beyond just the temperature. Maybe I can ask if they need more details about the weather in Toronto or if they have specific aspects they're curious about.\n\nIt's important to keep the conversation flowing smoothly, so I should phrase my response in a friendly and open manner, encouraging them to specify what they need.\n</think>\n\nIt seems like you're referring to the current weather in Toronto, where the temperature is 89°F. If you'd like more details about the weather, such as conditions, humidity, or the forecast, feel free to ask!",
+        "content": "The current weather in Toronto is 89°F. Let me know if you'd like conditions or the forecast for another city.",
         "role": "assistant"
       }
     }
   ],
-  "created": 1742314733,
+  "created": 1792570362,
   "id": "chatcmpl-12a36044-74b5-4fd7-973b-b31333d1118e",
-  "model": "deepseek-r1-distill-llama-70b",
+  "model": "openai/gpt-oss-120b",
   "object": "chat.completion",
   "usage": {
-    "completion_tokens": 353,
-    "prompt_tokens": 173,
-    "total_tokens": 526
+    "completion_tokens": 21,
+    "prompt_tokens": 128,
+    "total_tokens": 149
   }
 }
 ```
@@ -932,7 +930,7 @@ images. You can send images using either data URLs or HTTP URLs.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "openai/gpt-4o",
+  "model": "openai/gpt-5.6",
   "messages": [
     {
       "role": "user",
@@ -963,7 +961,7 @@ externally.
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "openai/gpt-4o-mini",
+    "model": "openai/gpt-5.6-luna",
     "messages": [{
       "role": "user",
       "content": [
@@ -991,7 +989,7 @@ IMAGE_BASE64=$(cat image_base64.txt)
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d "{
-    \"model\": \"anthropic/claude-3-5-sonnet-20241022\",
+    \"model\": \"anthropic/claude-sonnet-5-5\",
     \"messages\": [{
       \"role\": \"user\",
       \"content\": [
