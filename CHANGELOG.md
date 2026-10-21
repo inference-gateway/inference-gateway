@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.60.0](https://github.com/inference-gateway/inference-gateway/compare/v0.59.1...v0.60.0) (2026-10-21)
+
+### ✨ Features
+
+* add webwright provider from schemas v1.5.0 ([#799](https://github.com/inference-gateway/inference-gateway/issues/799)) ([8b17d46](https://github.com/inference-gateway/inference-gateway/commit/8b17d468fc3f6bb92236e19f71bdbded9cd2e8a0))
+
+### 📚 Documentation
+
+* add z.ai to rest endpoint examples ([#801](https://github.com/inference-gateway/inference-gateway/issues/801)) ([8e76ece](https://github.com/inference-gateway/inference-gateway/commit/8e76ece4a8c46f5277168acf3a8c3fd8b497c7ec))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump @modelcontextprotocol/express ([#797](https://github.com/inference-gateway/inference-gateway/issues/797)) ([969a8aa](https://github.com/inference-gateway/inference-gateway/commit/969a8aa266a000fdc321e1f272bbeb5014c16fea))
+* **deps:** bump @modelcontextprotocol/server ([#798](https://github.com/inference-gateway/inference-gateway/issues/798)) ([839e254](https://github.com/inference-gateway/inference-gateway/commit/839e254fe2e5c41dd23b760eacf5224ae18ba284))
+* **deps:** bump hono in /examples/docker-compose/mcp/pizza-server ([#800](https://github.com/inference-gateway/inference-gateway/issues/800)) ([b7bbd64](https://github.com/inference-gateway/inference-gateway/commit/b7bbd64a5484e80ce314122c6beb6a549676ecc9))
+
 ## [0.59.1](https://github.com/inference-gateway/inference-gateway/compare/v0.59.0...v0.59.1) (2026-10-20)
 
 ### ♻️ Improvements
