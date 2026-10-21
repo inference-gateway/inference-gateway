@@ -1525,6 +1525,7 @@ components:
         - moonshot
         - nvidia
         - zai
+        - webwright
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -1763,6 +1764,19 @@ components:
         zai:
           id: 'zai'
           url: 'https://api.z.ai/api/coding/paas/v4'
+          auth_type: 'bearer'
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            chat:
+              name: 'chat_completions'
+              method: 'POST'
+              endpoint: '/chat/completions'
+        webwright:
+          id: 'webwright'
+          url: 'https://webwright.ai/v1'
           auth_type: 'bearer'
           endpoints:
             models:
@@ -5195,6 +5209,16 @@ components:
                   env: 'ZAI_API_KEY'
                   type: string
                   description: 'ZAI API Key'
+                  secret: true
+                - name: webwright_api_url
+                  env: 'WEBWRIGHT_API_URL'
+                  type: string
+                  default: 'https://webwright.ai/v1'
+                  description: 'WebWright API URL'
+                - name: webwright_api_key
+                  env: 'WEBWRIGHT_API_KEY'
+                  type: string
+                  description: 'WebWright API Key'
                   secret: true
           - routing:
               title: 'Routing'
