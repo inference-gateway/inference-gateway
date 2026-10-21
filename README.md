@@ -56,7 +56,7 @@ use of Mixture of Experts.
 
 | Feature                          | Description                                                                                                                                                                                               |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 🔀 **Unified API**               | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, llama.cpp, Cloudflare, DeepSeek, ElevenLabs, Google, Mistral, MiniMax, Moonshot, Nvidia, and Z.ai               |
+| 🔀 **Unified API**               | One OpenAI-compatible endpoint for OpenAI, Anthropic, Groq, Cohere, Ollama, Ollama Cloud, llama.cpp, Cloudflare, DeepSeek, ElevenLabs, Google, Mistral, MiniMax, Moonshot, Nvidia, Z.ai, and WebWright    |
 | 🔧 **Tool-use Support**          | Function calling capabilities across supported providers with a unified API                                                                                                                               |
 | 🌐 **MCP Support**               | Full Model Context Protocol integration - tools from MCP servers are discovered and exposed to LLMs automatically, and the gateway itself can serve them as an MCP server on `POST /mcp`                  |
 | 🤝 **A2A Server**                | The gateway as an Agent-to-Agent server: one card and one `POST /a2a` endpoint relaying every call to the registered agent that owns it, through the same auth, guardrails and telemetry                  |
@@ -712,6 +712,7 @@ The included Grafana dashboard provides:
 - [Moonshot](https://platform.moonshot.ai/)
 - [Nvidia](https://build.nvidia.com/)
 - [Z.ai](https://docs.z.ai/)
+- [WebWright](https://webwright.ai/docs)
 
 ## Configuration
 
