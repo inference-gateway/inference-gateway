@@ -40,6 +40,7 @@ use of Mixture of Experts.
 - [Overview](#overview)
 - [API Endpoints](#api-endpoints)
 - [Installation](#installation)
+- [One-Click Deploy](#one-click-deploy)
 - [Middleware Control and Bypass Mechanisms](#middleware-control-and-bypass-mechanisms)
 - [Model Context Protocol (MCP) Integration](#model-context-protocol-mcp-integration)
 - [Agent-to-Agent (A2A) Server](#agent-to-agent-a2a-server)
@@ -344,6 +345,10 @@ inference-gateway
 ```
 
 For detailed configuration options, see the [Configuration](#configuration) section below.
+
+## One-Click Deploy
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/Inference%20Gateway/)
 
 ## Middleware Control and Bypass Mechanisms
 
