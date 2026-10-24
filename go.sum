@@ -96,8 +96,8 @@ github.com/oapi-codegen/nullable v1.1.0 h1:eAh8JVc5430VtYVnq00Hrbpag9PFRGWLjxR1/
 github.com/oapi-codegen/nullable v1.1.0/go.mod h1:KUZ3vUzkmEKY90ksAmit2+5juDIhIZhfDl+0PwOQlFY=
 github.com/oapi-codegen/runtime v1.7.0 h1:t7358VYPvNbWJ9gdAkIK/smVeHpBf6yp8VTsaZsb/7k=
 github.com/oapi-codegen/runtime v1.7.0/go.mod h1:GwV7hC2hviaMzj+ITfHVRESK5J2W/GefVwIND/bMGvU=
-github.com/open-policy-agent/opa v1.21.2 h1:9hXcLNZ5Z4/K2icDsoQwjCuCg6XelMxKOLjR404XDus=
-github.com/open-policy-agent/opa v1.21.2/go.mod h1:mHDS61rXyiZ+9bLINSK634BcbPZcsZChPvSwFVMj88g=
+github.com/open-policy-agent/opa v1.21.3 h1:dLKnsisFIuICZAWDvG3Us2k/TjGkxOCJ7fWINcnwKHM=
+github.com/open-policy-agent/opa v1.21.3/go.mod h1:mHDS61rXyiZ+9bLINSK634BcbPZcsZChPvSwFVMj88g=
 github.com/pelletier/go-toml/v2 v2.4.3 h1:GTRvJQutkOSftxIFD5xw9aepkYNuPWmVJpffdDPYVpY=
 github.com/pelletier/go-toml/v2 v2.4.3/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
