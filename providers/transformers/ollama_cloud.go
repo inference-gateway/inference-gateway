@@ -13,14 +13,9 @@ type ListModelsResponseOllamaCloud struct {
 
 func (l *ListModelsResponseOllamaCloud) Transform() types.ListModelsResponse {
 	provider := constants.OllamaCloudID
-	models := make([]types.Model, len(l.Data))
-	for i, model := range l.Data {
-		models[i] = model.toModel(provider)
-	}
-
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   l.Object,
-		Data:     models,
+		Data:     toModels(provider, l.Data),
 	}
 }

@@ -13,14 +13,9 @@ type ListModelsResponseMinimax struct {
 
 func (l *ListModelsResponseMinimax) Transform() types.ListModelsResponse {
 	provider := constants.MinimaxID
-	models := make([]types.Model, len(l.Data))
-	for i, model := range l.Data {
-		models[i] = model.toModel(provider)
-	}
-
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   l.Object,
-		Data:     models,
+		Data:     toModels(provider, l.Data),
 	}
 }

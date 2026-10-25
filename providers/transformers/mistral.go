@@ -13,14 +13,9 @@ type ListModelsResponseMistral struct {
 
 func (l *ListModelsResponseMistral) Transform() types.ListModelsResponse {
 	provider := constants.MistralID
-	models := make([]types.Model, len(l.Data))
-	for i, model := range l.Data {
-		models[i] = model.toModel(provider)
-	}
-
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   l.Object,
-		Data:     models,
+		Data:     toModels(provider, l.Data),
 	}
 }

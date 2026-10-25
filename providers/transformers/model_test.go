@@ -16,6 +16,9 @@ const (
 	gpt4oCreated          int64 = 1715367049
 	gemini25ProReleased   int64 = 1750118400
 	commandA032025Release int64 = 1741824000
+	gemma312bReleased     int64 = 1741737600
+	glmACreated           int64 = 1789009200
+	glmBCreated           int64 = 1785164400
 
 	groqLlamaContextWindow = 131072
 )
@@ -82,6 +85,26 @@ func TestTransformFillsCreated(t *testing.T) {
 			assert.Equal(t, tt.provider, model.ServedBy)
 		})
 	}
+}
+
+// TestTransformDropsPlaceholderCreated checks a created stamp shared by every
+// entry of a listing (NVIDIA's 1993-04-26) is treated as a placeholder: known
+// models get their models.dev release date, unknown ones stay 0, while a
+// listing with distinct stamps keeps them.
+func TestTransformDropsPlaceholderCreated(t *testing.T) {
+	transformer := NewListModelsTransformer(constants.NvidiaID)
+	require.NoError(t, json.Unmarshal([]byte(`{"object":"list","data":[{"id":"google/gemma-3-12b-it","created":735790403},{"id":"acme/no-such-model","created":735790403}]}`), transformer))
+	placeholder := transformer.Transform().Data
+	require.Len(t, placeholder, 2)
+	assert.Equal(t, gemma312bReleased, placeholder[0].Created)
+	assert.Zero(t, placeholder[1].Created)
+
+	transformer = NewListModelsTransformer(constants.OllamaCloudID)
+	require.NoError(t, json.Unmarshal([]byte(`{"object":"list","data":[{"id":"glm-a","created":1789009200},{"id":"glm-b","created":1785164400}]}`), transformer))
+	distinct := transformer.Transform().Data
+	require.Len(t, distinct, 2)
+	assert.Equal(t, glmACreated, distinct[0].Created)
+	assert.Equal(t, glmBCreated, distinct[1].Created)
 }
 
 // TestTransformPrefersProviderMetadata checks provider-published context

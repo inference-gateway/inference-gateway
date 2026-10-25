@@ -30,6 +30,37 @@ type listedModel struct {
 	ProviderPricing     map[string]any `json:"pricing"`
 }
 
+// toModels renders an OpenAI-shaped listing as gateway models served by
+// provider. A created stamp shared by every entry of a multi-model listing is a
+// placeholder, not a creation date (NVIDIA stamps every model 1993-04-26), so
+// it is dropped and the models.dev release date fills in.
+// ponytail: identical-stamp rule only, add a near-now check if a provider stamps each entry with the request time.
+func toModels(provider types.Provider, listed []listedModel) []types.Model {
+	placeholder := sharedCreated(listed)
+	models := make([]types.Model, len(listed))
+	for i, entry := range listed {
+		if entry.Created == placeholder {
+			entry.Created = 0
+		}
+		models[i] = entry.toModel(provider)
+	}
+	return models
+}
+
+// sharedCreated returns the created stamp every entry carries, or 0 when the
+// listing has fewer than two entries or their stamps differ.
+func sharedCreated(listed []listedModel) int64 {
+	if len(listed) < 2 {
+		return 0
+	}
+	for _, entry := range listed[1:] {
+		if entry.Created != listed[0].Created {
+			return 0
+		}
+	}
+	return listed[0].Created
+}
+
 // toModel renders the entry as a gateway model served by provider. Each field
 // the upstream left empty falls back to the models.dev table, so
 // provider-published values always win.
