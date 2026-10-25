@@ -117,6 +117,11 @@ tasks:
     cmds:
       - '{{.BENCH_CMD}}'
 
+  benchmark:e2e:
+    desc: 'Run end-to-end benchmarks: the built gateway against an in-process tokenless upstream (not part of benchmark:check)'
+    cmds:
+      - go test -tags e2e -run '^$' -bench BenchmarkE2E -benchmem ./tests/
+
   benchmark:check:
     desc: 'Run benchmarks and fail on regression vs tests/benchmarks/baseline.txt'
     vars:

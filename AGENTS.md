@@ -16,6 +16,7 @@ Everyday tasks go through `Taskfile.yml`:
 - `task lint` — `golangci-lint run` + `markdownlint`
 - `task openapi:lint` — Spectral lint of `openapi.yaml`
 - `task benchmark` — benchmarks under `./tests/...`
+- `task benchmark:e2e` — `BenchmarkE2E` (`tests/e2e_bench_test.go`, `e2e` build tag): the built gateway serving `/v1/models`, `/v1/chat/completions` and `/v1/messages` against an in-process tokenless upstream, so the timings cover only the gateway's own code. Not part of `benchmark:check`
 - `task benchmark:check` — benchmarks + `benchstat` gate against `tests/benchmarks/baseline.txt` (tolerances are vars on the task)
 - `task benchmark:baseline` — refresh the baseline; run it on a GitHub-hosted runner (numbers are machine-specific) and commit the file in the same PR as an intentional perf change or a new benchmark
 
