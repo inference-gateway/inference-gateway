@@ -9,6 +9,10 @@ providers/client/config.go linguist-generated=true
 providers/constants/constants.go linguist-generated=true
 providers/registry/registry_data.go linguist-generated=true
 providers/transformers/*.go linguist-generated=true
+providers/transformers/*_test.go linguist-generated=false
+providers/transformers/model.go linguist-generated=false
+providers/transformers/elevenlabs.go linguist-generated=false
+providers/transformers/cloudflare.go linguist-generated=false
 
 internal/mcp/generated_types.go linguist-generated=true
 
