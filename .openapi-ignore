@@ -3,3 +3,4 @@
 # provider needs a hand-customized transformer.
 providers/transformers/cohere.go
 providers/transformers/elevenlabs.go
+providers/transformers/cloudflare.go
