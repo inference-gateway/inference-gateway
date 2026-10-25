@@ -5,8 +5,4 @@ AGENTS.md
 .agents
 .github/workflows/claude.yml
 .github/workflows/infer.yml
-
-# Generated models.dev table (owned by internal/communitygen); its array values
-# reflow under prettier. The hand-maintained models.overrides.json companion
-# stays prettier-formatted.
 providers/modelsdev/models.json
