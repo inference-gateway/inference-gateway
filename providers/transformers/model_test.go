@@ -113,10 +113,10 @@ func TestTransformDropsPlaceholderCreated(t *testing.T) {
 	assert.Equal(t, glmBCreated, distinct[1].Created)
 }
 
-// TestTransformDecodesEveryListingEnvelope checks the generated transformers
-// read each envelope providers answer with: OpenAI data entries keep their id
-// even beside a display name (DeepSeek), Cohere's models envelope and
-// Cloudflare's result envelope name entries by name, never by Cloudflare's UUID.
+// TestTransformDecodesEveryListingEnvelope checks the transformers read each
+// envelope providers answer with: OpenAI data entries keep their id even
+// beside a display name (DeepSeek), Cohere's models envelope and Cloudflare's
+// result envelope name entries by name, never by Cloudflare's UUID.
 func TestTransformDecodesEveryListingEnvelope(t *testing.T) {
 	tests := []struct {
 		name        string

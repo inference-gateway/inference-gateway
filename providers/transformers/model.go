@@ -34,16 +34,14 @@ type listedModel struct {
 	ProviderPricing     map[string]any `json:"pricing"`
 }
 
-// modelListing decodes a models listing in any envelope the providers use:
-// OpenAI {"data":[...]} entries are named by id, while native listings (Cohere
-// {"models":[...]}, Cloudflare {"result":[...]}) name entries by name. A native
-// entry's id, when present, is an opaque UUID and a data entry's name is a
-// display label, so the envelope decides which field identifies the model.
+// modelListing decodes an OpenAI {"data":[...]} listing, whose entries are
+// named by id, or Cohere's native {"models":[...]}, whose entries are named by
+// name. A data entry's name is only a display label, so the envelope decides
+// which field identifies the model.
 type modelListing struct {
 	Object string        `json:"object"`
 	Data   []listedModel `json:"data"`
 	Models []listedModel `json:"models"`
-	Result []listedModel `json:"result"`
 }
 
 // entries returns the listing's models, each identified by its upstream id.
@@ -51,14 +49,10 @@ func (l *modelListing) entries() []listedModel {
 	if l.Data != nil {
 		return l.Data
 	}
-	native := l.Models
-	if native == nil {
-		native = l.Result
+	for i := range l.Models {
+		l.Models[i].ID = cmp.Or(l.Models[i].Name, l.Models[i].ID)
 	}
-	for i := range native {
-		native[i].ID = cmp.Or(native[i].Name, native[i].ID)
-	}
-	return native
+	return l.Models
 }
 
 // models renders the listing as gateway models served by provider. A created
