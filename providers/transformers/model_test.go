@@ -17,8 +17,14 @@ const (
 	gemini25ProReleased   int64 = 1750118400
 	commandA032025Release int64 = 1741824000
 	gemma312bReleased     int64 = 1741737600
-	glmACreated           int64 = 1789009200
-	glmBCreated           int64 = 1785164400
+	deepseekFlashReleased int64 = 1792195200
+
+	cloudflareFinetuneCreated int64 = 1577470279
+
+	deepseekFlashContextWindow        = 1048576
+	commandA032025ContextWindow       = 288000
+	glmACreated                 int64 = 1789009200
+	glmBCreated                 int64 = 1785164400
 
 	groqLlamaContextWindow = 131072
 )
@@ -105,6 +111,67 @@ func TestTransformDropsPlaceholderCreated(t *testing.T) {
 	require.Len(t, distinct, 2)
 	assert.Equal(t, glmACreated, distinct[0].Created)
 	assert.Equal(t, glmBCreated, distinct[1].Created)
+}
+
+// TestTransformDecodesEveryListingEnvelope checks the generated transformers
+// read each envelope providers answer with: OpenAI data entries keep their id
+// even beside a display name (DeepSeek), Cohere's models envelope and
+// Cloudflare's result envelope name entries by name, never by Cloudflare's UUID.
+func TestTransformDecodesEveryListingEnvelope(t *testing.T) {
+	tests := []struct {
+		name        string
+		provider    types.Provider
+		body        string
+		wantID      string
+		wantCreated int64
+		wantContext *types.ContextWindow
+	}{
+		{
+			name:     "openai data envelope with display name",
+			provider: constants.DeepseekID,
+			body:     `{"object":"list","data":[{"id":"deepseek-flash","object":"model","owned_by":"deepseek","name":"DeepSeek-V4.1-Flash","context_window":1048576}]}`,
+			wantID:   "deepseek/deepseek-flash",
+			wantContext: &types.ContextWindow{
+				Tokens: deepseekFlashContextWindow,
+				Source: types.ContextWindowSourceProvider,
+			},
+			wantCreated: deepseekFlashReleased,
+		},
+		{
+			name:     "cohere models envelope",
+			provider: constants.CohereID,
+			body:     `{"models":[{"name":"command-a-03-2025","endpoints":["chat"],"context_length":288000}],"next_page_token":""}`,
+			wantID:   "cohere/command-a-03-2025",
+			wantContext: &types.ContextWindow{
+				Tokens: commandA032025ContextWindow,
+				Source: types.ContextWindowSourceProvider,
+			},
+			wantCreated: commandA032025Release,
+		},
+		{
+			name:        "cloudflare result envelope",
+			provider:    constants.CloudflareID,
+			body:        `{"result":[{"id":"182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e","name":"cf-public-magicoder","model":"@cf/deepseek-ai/deepseek-coder-6.7b-base-awq","created_at":"2019-12-27T18:11:19.117Z","modified_at":"2019-12-27T18:11:19.117Z","public":true}],"success":true,"errors":[],"messages":[]}`,
+			wantID:      "cloudflare/cf-public-magicoder",
+			wantCreated: cloudflareFinetuneCreated,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			model := transformOne(t, tt.provider, tt.body)
+			assert.Equal(t, tt.wantID, model.ID)
+			assert.Equal(t, tt.wantCreated, model.Created)
+			if tt.wantContext != nil {
+				assert.Equal(t, tt.wantContext, model.ContextWindow)
+			}
+			assert.Equal(t, modelObject, model.Object)
+			assert.Equal(t, tt.provider, model.ServedBy)
+		})
+	}
+
+	empty := NewListModelsTransformer(constants.CloudflareID)
+	require.NoError(t, json.Unmarshal([]byte(`{"result":[],"success":true}`), empty))
+	assert.Empty(t, empty.Transform().Data)
 }
 
 // TestTransformPrefersProviderMetadata checks provider-published context

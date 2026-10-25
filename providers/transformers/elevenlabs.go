@@ -94,6 +94,6 @@ func (l *ListModelsResponseElevenlabs) Transform() types.ListModelsResponse {
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   "list",
-		Data:     toModels(provider, listed),
+		Data:     (&modelListing{Data: listed}).models(provider),
 	}
 }

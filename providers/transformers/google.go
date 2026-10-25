@@ -7,8 +7,7 @@ import (
 )
 
 type ListModelsResponseGoogle struct {
-	Object string        `json:"object"`
-	Data   []listedModel `json:"data"`
+	modelListing
 }
 
 func (l *ListModelsResponseGoogle) Transform() types.ListModelsResponse {
@@ -16,6 +15,6 @@ func (l *ListModelsResponseGoogle) Transform() types.ListModelsResponse {
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   l.Object,
-		Data:     toModels(provider, l.Data),
+		Data:     l.models(provider),
 	}
 }

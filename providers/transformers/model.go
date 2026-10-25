@@ -25,6 +25,7 @@ const idSeparator = "/"
 // OpenRouter-style pricing. Its tags shadow the embedded context_window and pricing.
 type listedModel struct {
 	types.Model
+	Name                string         `json:"name"`
 	CreatedAt           string         `json:"created_at"`
 	ContextWindowTokens float64        `json:"context_window"`
 	ContextLength       float64        `json:"context_length"`
@@ -33,12 +34,41 @@ type listedModel struct {
 	ProviderPricing     map[string]any `json:"pricing"`
 }
 
-// toModels renders an OpenAI-shaped listing as gateway models served by
-// provider. A created stamp shared by every entry of a multi-model listing is a
-// placeholder, not a creation date (NVIDIA stamps every model 1993-04-26), so
-// it is dropped and the models.dev release date fills in.
+// modelListing decodes a models listing in any envelope the providers use:
+// OpenAI {"data":[...]} entries are named by id, while native listings (Cohere
+// {"models":[...]}, Cloudflare {"result":[...]}) name entries by name. A native
+// entry's id, when present, is an opaque UUID and a data entry's name is a
+// display label, so the envelope decides which field identifies the model.
+type modelListing struct {
+	Object string        `json:"object"`
+	Data   []listedModel `json:"data"`
+	Models []listedModel `json:"models"`
+	Result []listedModel `json:"result"`
+}
+
+// entries returns the listing's models, each identified by its upstream id.
+func (l *modelListing) entries() []listedModel {
+	if l.Data != nil {
+		return l.Data
+	}
+	native := l.Models
+	if native == nil {
+		native = l.Result
+	}
+	for i := range native {
+		native[i].ID = cmp.Or(native[i].Name, native[i].ID)
+	}
+	return native
+}
+
+// models renders the listing as gateway models served by provider. A created
+// stamp shared by every entry of a multi-model listing is a placeholder, not a
+// creation date (NVIDIA stamps every model 1993-04-26), so it is dropped and
+// the models.dev release date fills in. Keeping the whole render here leaves
+// each generated Transform small enough to inline.
 // ponytail: identical-stamp rule only, add a near-now check if a provider stamps each entry with the request time.
-func toModels(provider types.Provider, listed []listedModel) []types.Model {
+func (l *modelListing) models(provider types.Provider) []types.Model {
+	listed := l.entries()
 	catalog := modelsdev.ForProvider(provider)
 	placeholder := sharedCreated(listed)
 	models := make([]types.Model, len(listed))

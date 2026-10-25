@@ -478,8 +478,7 @@ import (
 )
 
 type ListModelsResponse{{.ProviderName}} struct {
-	Object string        ` + "`json:\"object\"`" + `
-	Data   []listedModel ` + "`json:\"data\"`" + `
+	modelListing
 }
 
 func (l *ListModelsResponse{{.ProviderName}}) Transform() types.ListModelsResponse {
@@ -487,7 +486,7 @@ func (l *ListModelsResponse{{.ProviderName}}) Transform() types.ListModelsRespon
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   l.Object,
-		Data:     toModels(provider, l.Data),
+		Data:     l.models(provider),
 	}
 }
 `
