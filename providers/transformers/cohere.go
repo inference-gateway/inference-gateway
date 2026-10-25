@@ -49,14 +49,14 @@ func (l *ListModelsResponseCohere) UnmarshalJSON(b []byte) error {
 
 func (l *ListModelsResponseCohere) Transform() types.ListModelsResponse {
 	provider := constants.CohereID
-	models := make([]types.Model, len(l.Data))
+	listed := make([]listedModel, len(l.Data))
 	for i, m := range l.Data {
-		models[i] = listedModel{Model: types.Model{ID: m.Name}, ContextLength: m.ContextLength}.toModel(provider)
+		listed[i] = listedModel{Model: types.Model{ID: m.Name}, ContextLength: m.ContextLength}
 	}
 
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   "list",
-		Data:     models,
+		Data:     toModels(provider, listed),
 	}
 }

@@ -53,7 +53,7 @@ func FilterModels(models []types.Model, allowedModels, disallowedModels string, 
 
 	if !showDeprecated {
 		models = slices.DeleteFunc(slices.Clone(models), func(model types.Model) bool {
-			return modelsdev.Lookup(model.ID).Deprecated
+			return modelsdev.Lookup(model.ID).Deprecated()
 		})
 	}
 

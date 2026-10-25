@@ -82,18 +82,18 @@ var unlistedModels = []struct {
 
 func (l *ListModelsResponseElevenlabs) Transform() types.ListModelsResponse {
 	provider := constants.ElevenlabsID
-	models := make([]types.Model, 0, len(l.Data)+len(unlistedModels))
+	listed := make([]listedModel, 0, len(l.Data)+len(unlistedModels))
 	for _, m := range l.Data {
-		models = append(models, listedModel{Model: types.Model{ID: m.ModelID, Modalities: m.modalities()}}.toModel(provider))
+		listed = append(listed, listedModel{Model: types.Model{ID: m.ModelID, Modalities: m.modalities()}})
 	}
 	for _, m := range unlistedModels {
 		mods := m.modalities
-		models = append(models, listedModel{Model: types.Model{ID: m.id, Modalities: &mods}}.toModel(provider))
+		listed = append(listed, listedModel{Model: types.Model{ID: m.id, Modalities: &mods}})
 	}
 
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   "list",
-		Data:     models,
+		Data:     toModels(provider, listed),
 	}
 }

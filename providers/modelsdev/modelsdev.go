@@ -1,6 +1,7 @@
 package modelsdev
 
 import (
+	"cmp"
 	_ "embed"
 	"encoding/json"
 	"math"
@@ -15,6 +16,13 @@ import (
 // deprecatedStatus is the models.dev lifecycle status of a model the vendor
 // has retired from its catalog but may still serve.
 const deprecatedStatus = "deprecated"
+
+// maxVariants is the most name variants modelVariants derives from one model.
+const maxVariants = 6
+
+// maxStackName is the longest model name underscored on the stack. Longer
+// names still resolve, at the cost of one allocation.
+const maxStackName = 128
 
 // modelsJSON is the per-model metadata table synced from the community-maintained
 // models.dev dataset via `task modelsdev:sync` (internal/communitygen), keyed by
@@ -40,131 +48,189 @@ type Entry struct {
 	ReleaseDate   string                 `json:"release_date,omitempty"`
 }
 
-// Metadata is the models.dev view of one gateway model, rendered as API values.
-// Pointer fields are fresh copies, so callers may keep or mutate them freely.
+// Metadata is the models.dev view of one model, rendered as API values once
+// when the table loads. Pointer fields are shared by every lookup and every
+// listing: read them, never mutate them.
 type Metadata struct {
 	Created       int64
 	ContextWindow *types.ContextWindow
 	Pricing       *types.Pricing
 	Modalities    *types.ModelModalities
-	Deprecated    bool
+	status        string
 }
 
-// table lazily parses the embedded table once. The file is generated and
-// committed, so a parse failure is a build defect that degrades to an empty
-// table rather than a runtime error.
-var table = sync.OnceValue(func() map[string]Entry {
-	entries := make(map[string]Entry)
+// Deprecated reports whether models.dev marks the model as deprecated.
+func (m Metadata) Deprecated() bool {
+	return m.status == deprecatedStatus
+}
+
+// Catalog is one provider's share of the table. rows holds the table entries by
+// upstream model name. resolved holds every row name, and its dotted spelling,
+// already merged across its variants, so a listed name costs one map lookup.
+type Catalog struct {
+	rows     map[string]Metadata
+	resolved map[string]Metadata
+}
+
+// catalogs lazily parses the embedded table once into per-provider catalogs.
+// The file is generated and committed, so a parse failure is a build defect
+// that degrades to an empty table rather than a runtime error.
+var catalogs = sync.OnceValue(func() map[types.Provider]Catalog {
+	var entries map[string]Entry
 	_ = json.Unmarshal(modelsJSON, &entries)
-	return entries
+	return group(entries)
 })
 
-// Lookup returns the models.dev metadata of a gateway model ID. Each attribute
-// comes from the most specific ID variant that carries it, so a date-pinned
-// entry without a status still inherits its base model's status. Unknown
-// models yield the zero Metadata.
-func Lookup(id string) Metadata {
-	return lookup(table(), id)
-}
-
-func lookup(entries map[string]Entry, id string) Metadata {
-	var merged Entry
-	for _, key := range lookupKeys(id) {
-		entry, ok := entries[key]
+// group splits "<provider>/<model>" rows into per-provider catalogs of
+// pre-rendered, pre-resolved metadata.
+func group(entries map[string]Entry) map[types.Provider]Catalog {
+	rowsByProvider := make(map[types.Provider]map[string]Metadata)
+	for key, entry := range entries {
+		provider, model, ok := strings.Cut(key, "/")
 		if !ok {
 			continue
 		}
-		if merged.Pricing == nil {
-			merged.Pricing = entry.Pricing
+		rows := rowsByProvider[types.Provider(provider)]
+		if rows == nil {
+			rows = make(map[string]Metadata)
+			rowsByProvider[types.Provider(provider)] = rows
 		}
-		if merged.ContextWindow == nil && usableContextWindow(entry.ContextWindow) {
-			merged.ContextWindow = entry.ContextWindow
-		}
-		if merged.Modalities == nil {
-			merged.Modalities = entry.Modalities
-		}
-		if merged.Status == "" {
-			merged.Status = entry.Status
-		}
-		if merged.ReleaseDate == "" {
-			merged.ReleaseDate = entry.ReleaseDate
-		}
+		rows[model] = entry.metadata()
 	}
-	return merged.metadata()
+	catalogs := make(map[types.Provider]Catalog, len(rowsByProvider))
+	for provider, rows := range rowsByProvider {
+		resolved := make(map[string]Metadata, len(rows))
+		for name := range rows {
+			resolved[name] = resolve(rows, modelVariants(name, nil))
+			if dotted := strings.ReplaceAll(name, "_", "."); dotted != name {
+				resolved[dotted] = resolve(rows, modelVariants(dotted, nil))
+			}
+		}
+		catalogs[provider] = Catalog{rows: rows, resolved: resolved}
+	}
+	return catalogs
+}
+
+// ForProvider returns the provider's catalog, empty for providers models.dev
+// doesn't cover.
+func ForProvider(provider types.Provider) Catalog {
+	return catalogs()[provider]
+}
+
+// Lookup returns the models.dev metadata of a gateway model ID
+// ("<provider>/<model>").
+func Lookup(id string) Metadata {
+	provider, model, ok := strings.Cut(id, "/")
+	if !ok {
+		return Metadata{}
+	}
+	return ForProvider(types.Provider(provider)).Lookup(model)
 }
 
 // AcceptsImages reports whether the model takes image input per the models.dev
 // table. Unknown models return true: stripping images from a request we can't
 // classify silently corrupts it, while a text-only provider rejects the image itself.
 func AcceptsImages(provider types.Provider, model string) bool {
-	modalities := Lookup(string(provider) + "/" + model).Modalities
+	modalities := ForProvider(provider).Lookup(model).Modalities
 	return modalities == nil || slices.Contains(modalities.Input, types.ModalityImage)
 }
 
-// metadata copies the entry into API values, so nothing handed out aliases the
-// shared embedded table.
+// Lookup returns the metadata of an upstream model name. Each attribute comes
+// from the most specific name variant carrying it, so a date-pinned entry
+// without a status still inherits its base model's status. Dotted names also
+// try their underscored file name. Unknown models yield the zero Metadata.
+func (c Catalog) Lookup(model string) Metadata {
+	if len(c.rows) == 0 {
+		return Metadata{}
+	}
+	if known, ok := c.resolved[model]; ok {
+		return known
+	}
+	var stack [maxVariants]string
+	variants := modelVariants(model, stack[:0])
+	if len(variants) == 1 && !strings.Contains(model, "_") {
+		return Metadata{}
+	}
+	return resolve(c.rows, variants)
+}
+
+// resolve merges the rows of every variant in preference order, then the rows
+// of their underscored spellings.
+func resolve(rows map[string]Metadata, variants []string) Metadata {
+	var merged Metadata
+	for _, variant := range variants {
+		merged.fill(rows[variant])
+	}
+	for _, variant := range variants {
+		if strings.Contains(variant, ".") {
+			var name [maxStackName]byte
+			merged.fill(rows[string(underscored(name[:0], variant))])
+		}
+	}
+	return merged
+}
+
+// fill sets each attribute m still lacks from other.
+func (m *Metadata) fill(other Metadata) {
+	m.Created = cmp.Or(m.Created, other.Created)
+	m.ContextWindow = cmp.Or(m.ContextWindow, other.ContextWindow)
+	m.Pricing = cmp.Or(m.Pricing, other.Pricing)
+	m.Modalities = cmp.Or(m.Modalities, other.Modalities)
+	m.status = cmp.Or(m.status, other.status)
+}
+
+// metadata renders the row as API values. Unusable context windows and
+// release dates are dropped so lookups fall through to the next variant.
 func (e Entry) metadata() Metadata {
-	meta := Metadata{Deprecated: e.Status == deprecatedStatus}
+	meta := Metadata{Pricing: e.Pricing, Modalities: e.Modalities, status: e.Status}
 	if released, err := time.Parse(time.DateOnly, e.ReleaseDate); err == nil {
 		meta.Created = released.Unix()
 	}
-	if e.ContextWindow != nil {
+	if e.ContextWindow != nil && e.ContextWindow.Context > 0 && e.ContextWindow.Context <= math.MaxInt {
 		meta.ContextWindow = &types.ContextWindow{
 			Tokens: int(e.ContextWindow.Context),
 			Source: types.ContextWindowSourceCommunity,
 		}
 	}
-	if e.Pricing != nil {
-		pricing := *e.Pricing
-		meta.Pricing = &pricing
-	}
-	if e.Modalities != nil {
-		meta.Modalities = &types.ModelModalities{
-			Input:  slices.Clone(e.Modalities.Input),
-			Output: slices.Clone(e.Modalities.Output),
-		}
-	}
 	return meta
 }
 
-func usableContextWindow(window *ContextWindow) bool {
-	return window != nil && window.Context > 0 && window.Context <= math.MaxInt
-}
-
-// lookupKeys returns candidate table keys for a gateway model ID in preference
-// order: exact, without Ollama's ":tag" suffix, without Google's "models/"
-// prefix, without a "-latest" alias suffix, and without a trailing "-YYYYMMDD"
-// or "-YYYY-MM-DD" date pin. Dotted candidates also get an underscored variant,
-// because models.dev file names replace dots in model ids.
-func lookupKeys(id string) []string {
-	keys := []string{id}
-	provider, model, ok := strings.Cut(id, "/")
-	if !ok {
-		return keys
-	}
+// modelVariants appends the candidate names of an upstream model to variants in
+// preference order: exact, without Ollama's ":tag" suffix, without Google's
+// "models/" prefix, without a "-latest" alias suffix, and without a trailing
+// "-YYYYMMDD" or "-YYYY-MM-DD" date pin. Every variant is a substring of model.
+func modelVariants(model string, variants []string) []string {
+	variants = append(variants, model)
 	if rest, _, found := strings.Cut(model, ":"); found {
 		model = rest
-		keys = append(keys, provider+"/"+model)
+		variants = append(variants, model)
 	}
 	if rest, found := strings.CutPrefix(model, "models/"); found {
 		model = rest
-		keys = append(keys, provider+"/"+model)
+		variants = append(variants, model)
 	}
 	if rest, found := strings.CutSuffix(model, "-latest"); found {
-		keys = append(keys, provider+"/"+rest)
+		variants = append(variants, rest)
 	}
 	if len(model) > 9 && model[len(model)-9] == '-' && isDigits(model[len(model)-8:]) {
-		keys = append(keys, provider+"/"+model[:len(model)-9])
+		variants = append(variants, model[:len(model)-9])
 	}
 	if len(model) > 11 && isDashedDate(model[len(model)-11:]) {
-		keys = append(keys, provider+"/"+model[:len(model)-11])
+		variants = append(variants, model[:len(model)-11])
 	}
-	for _, key := range keys {
-		if strings.Contains(key, ".") {
-			keys = append(keys, strings.ReplaceAll(key, ".", "_"))
+	return variants
+}
+
+// underscored appends name to dst with dots replaced by underscores, the way
+// models.dev file names spell dotted model ids.
+func underscored(dst []byte, name string) []byte {
+	dst = append(dst, name...)
+	for i, b := range dst {
+		if b == '.' {
+			dst[i] = '_'
 		}
 	}
-	return keys
+	return dst
 }
 
 // isDashedDate reports whether s is a "-YYYY-MM-DD" date-pin suffix.

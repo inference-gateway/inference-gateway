@@ -17,29 +17,37 @@ const (
 	commandA032025Released int64 = 1741824000
 )
 
-func TestLookupKeys(t *testing.T) {
+func TestModelVariants(t *testing.T) {
 	tests := []struct {
-		name string
-		id   string
-		want []string
+		name  string
+		model string
+		want  []string
 	}{
-		{"plain", "openai/gpt-4o", []string{"openai/gpt-4o"}},
-		{"google models prefix", "google/models/gemini-2.0-flash", []string{"google/models/gemini-2.0-flash", "google/gemini-2.0-flash", "google/models/gemini-2_0-flash", "google/gemini-2_0-flash"}},
-		{"latest alias", "anthropic/claude-3-5-sonnet-latest", []string{"anthropic/claude-3-5-sonnet-latest", "anthropic/claude-3-5-sonnet"}},
-		{"date pin", "anthropic/claude-sonnet-4-5-20250929", []string{"anthropic/claude-sonnet-4-5-20250929", "anthropic/claude-sonnet-4-5"}},
-		{"dashed date pin", "openai/gpt-5-2025-08-07", []string{"openai/gpt-5-2025-08-07", "openai/gpt-5"}},
-		{"ollama tag", "ollama_cloud/deepseek-v4-pro:0813", []string{"ollama_cloud/deepseek-v4-pro:0813", "ollama_cloud/deepseek-v4-pro"}},
-		{"not a date suffix", "groq/llama-3.3-70b", []string{"groq/llama-3.3-70b", "groq/llama-3_3-70b"}},
-		{"no provider prefix", "gpt-4o", []string{"gpt-4o"}},
-		{"dotted nim id", "nvidia/upstage/solar-10.7b-instruct", []string{"nvidia/upstage/solar-10.7b-instruct", "nvidia/upstage/solar-10_7b-instruct"}},
+		{"plain", "gpt-4o", []string{"gpt-4o"}},
+		{"google models prefix", "models/gemini-2.0-flash", []string{"models/gemini-2.0-flash", "gemini-2.0-flash"}},
+		{"latest alias", "claude-3-5-sonnet-latest", []string{"claude-3-5-sonnet-latest", "claude-3-5-sonnet"}},
+		{"date pin", "claude-sonnet-4-5-20250929", []string{"claude-sonnet-4-5-20250929", "claude-sonnet-4-5"}},
+		{"dashed date pin", "gpt-5-2025-08-07", []string{"gpt-5-2025-08-07", "gpt-5"}},
+		{"ollama tag", "deepseek-v4-pro:0813", []string{"deepseek-v4-pro:0813", "deepseek-v4-pro"}},
+		{"not a date suffix", "llama-3.3-70b", []string{"llama-3.3-70b"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := lookupKeys(tt.id); !slices.Equal(got, tt.want) {
-				t.Fatalf("lookupKeys(%q) = %v, want %v", tt.id, got, tt.want)
+			if got := modelVariants(tt.model, nil); !slices.Equal(got, tt.want) {
+				t.Fatalf("modelVariants(%q) = %v, want %v", tt.model, got, tt.want)
 			}
 		})
 	}
+}
+
+// TestLookupResolvesDottedNames checks a dotted upstream name finds the
+// underscored file name models.dev commits, directly and behind a tag.
+func TestLookupResolvesDottedNames(t *testing.T) {
+	catalog := group(map[string]Entry{"nvidia/upstage/solar-10_7b-instruct": {ReleaseDate: "2024-06-01"}})[types.Provider("nvidia")]
+
+	assert.NotZero(t, catalog.Lookup("upstage/solar-10.7b-instruct").Created)
+	assert.NotZero(t, catalog.Lookup("upstage/solar-10.7b-instruct:latest").Created)
+	assert.Zero(t, catalog.Lookup("upstage/solar-11.7b-instruct").Created)
 }
 
 // TestLookupFallsThroughPerField checks each attribute comes from the most
@@ -58,28 +66,25 @@ func TestLookupFallsThroughPerField(t *testing.T) {
 		},
 	}
 
-	got := lookup(entries, "openai/gpt-x-2025-08-07")
+	catalog := group(entries)[types.Provider("openai")]
+	got := catalog.Lookup("gpt-x-2025-08-07")
 
 	require.NotNil(t, got.Pricing)
 	assert.Equal(t, pinnedPricing.InputPerToken, got.Pricing.InputPerToken)
 	assert.Equal(t, &types.ContextWindow{Tokens: 128000, Source: types.ContextWindowSourceCommunity}, got.ContextWindow)
-	assert.True(t, got.Deprecated)
+	assert.True(t, got.Deprecated())
 	assert.Equal(t, gptXReleased, got.Created)
-	assert.Equal(t, Metadata{}, lookup(entries, "openai/gpt-unknown"))
+	assert.Equal(t, Metadata{}, catalog.Lookup("gpt-unknown"))
 }
 
-// TestLookupReturnsCopies guards the shared embedded table: mutating what one
-// Lookup returned must not leak into the next.
-func TestLookupReturnsCopies(t *testing.T) {
-	first := Lookup("openai/gpt-4o")
-	require.NotNil(t, first.Pricing)
-	require.NotNil(t, first.Modalities)
-	first.Pricing.InputPerToken = "mutated"
-	first.Modalities.Input[0] = types.ModalityVideo
-
-	second := Lookup("openai/gpt-4o")
-	assert.NotEqual(t, "mutated", second.Pricing.InputPerToken)
-	assert.NotEqual(t, types.ModalityVideo, second.Modalities.Input[0])
+// TestLookupMatchesUnresolvedPath checks the names pre-resolved at load return
+// exactly what resolving their variants on the fly returns.
+func TestLookupMatchesUnresolvedPath(t *testing.T) {
+	for provider, catalog := range catalogs() {
+		for name, known := range catalog.resolved {
+			require.Equal(t, resolve(catalog.rows, modelVariants(name, nil)), known, "%s/%s", provider, name)
+		}
+	}
 }
 
 // TestLookupEmbeddedTable spot-checks the synced table through ID variants:
@@ -87,8 +92,8 @@ func TestLookupReturnsCopies(t *testing.T) {
 // without text-out, and the hand-curated speech overrides survive the sync.
 func TestLookupEmbeddedTable(t *testing.T) {
 	assert.NotNil(t, Lookup("anthropic/claude-sonnet-4-5-19990101").ContextWindow, "date-pinned ID must resolve")
-	assert.True(t, Lookup("minimax/MiniMax-M2:latest").Deprecated, "tagged deprecated ID must resolve")
-	assert.False(t, Lookup("openai/gpt-nonexistent").Deprecated)
+	assert.True(t, Lookup("minimax/MiniMax-M2:latest").Deprecated(), "tagged deprecated ID must resolve")
+	assert.False(t, Lookup("openai/gpt-nonexistent").Deprecated())
 	assert.Equal(t, commandA032025Released, Lookup("cohere/command-a-03-2025").Created)
 
 	imageGen := Lookup("openai/gpt-image-2").Modalities
@@ -137,7 +142,8 @@ func TestOverridesMatchEmbeddedTable(t *testing.T) {
 	var overrides map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(data, &overrides))
 
-	entries := table()
+	var entries map[string]Entry
+	require.NoError(t, json.Unmarshal(modelsJSON, &entries))
 	for key, override := range overrides {
 		committed, err := json.Marshal(entries[key])
 		require.NoError(t, err)
