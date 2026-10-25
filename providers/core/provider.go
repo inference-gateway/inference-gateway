@@ -205,11 +205,6 @@ func (p *ProviderImpl) ListModels(ctx context.Context) (types.ListModelsResponse
 
 	resp := transformer.Transform()
 	resp.Object = cmp.Or(resp.Object, "list")
-	applyProviderContextWindows(body, resp.Data)
-	applyCommunityContextWindows(resp.Data)
-	applyProviderPricing(body, resp.Data)
-	applyCommunityPricing(resp.Data)
-	applyCommunityModalities(resp.Data)
 	return resp, nil
 }
 

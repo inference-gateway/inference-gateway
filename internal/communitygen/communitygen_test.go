@@ -9,7 +9,9 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
+	modelsdev "github.com/inference-gateway/inference-gateway/providers/modelsdev"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -97,181 +99,17 @@ func writeTarball(t *testing.T, files map[string]string) string {
 	return tarball
 }
 
-// TestGenerate_FreeVsUnpublished distinguishes the cost states in
-// models.dev files: an explicit zero cost is a free tier and must emit "0"
-// rates, an absent cost section means no per-token price and must emit no
-// entry unless the model belongs to a subscription-gated provider (then it
-// emits a zero-rate entry with subscription=true), and a priced model
-// converts as usual.
-func TestGenerate_FreeVsUnpublished(t *testing.T) {
-	tarball := writeTarball(t, map[string]string{
-		"sst-models.dev-abc/providers/nvidia/models/meta/llama-free.toml":       "[cost]\ninput = 0.0\noutput = 0.0\n",
-		"sst-models.dev-abc/providers/ollama-cloud/models/kimi-sub.toml":        "name = \"kimi-sub\"\n",
-		"sst-models.dev-abc/providers/ollama-cloud/models/deepseek-v4-pro.toml": "name = \"deepseek-v4-pro\"\n",
-		"sst-models.dev-abc/providers/ollama-cloud/models/glm-priced.toml":      "[cost]\ninput = 0.15\noutput = 0.5\n",
-		"sst-models.dev-abc/providers/openai/models/gpt-paid.toml":              "[cost]\ninput = 3.0\noutput = 15.0\n",
-		"sst-models.dev-abc/providers/anthropic/models/claude-v2.toml":          "schema = 2\n[cost.text.input]\nprice = 4\ncache = { read = 0.2, write = { \"5m\" = 5, \"1h\" = 8 } }\n[cost.text.output]\nprice = 20\n",
-		"sst-models.dev-abc/providers/minimax/models/flat-write.toml":           "schema = 2\n[cost.text.input]\nprice = 0.3\ncache = { read = 0.03, write = 0.375 }\n[cost.text.output]\nprice = 1.2\n",
-	})
+// syncModels runs GenerateModels over a tarball of the given files into output
+// and returns the decoded table.
+func syncModels(t *testing.T, output string, files map[string]string) map[string]modelsdev.Entry {
+	t.Helper()
 
-	output := filepath.Join(t.TempDir(), "pricing.json")
-	if err := Generate(output, tarball); err != nil {
-		t.Fatalf("Generate() = %v", err)
+	if err := GenerateModels(output, writeTarball(t, files)); err != nil {
+		t.Fatalf("GenerateModels() = %v", err)
 	}
-
-	data, err := os.ReadFile(output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var table map[string]types.Pricing
-	if err := json.Unmarshal(data, &table); err != nil {
-		t.Fatal(err)
-	}
-
-	schema2, ok := table["anthropic/claude-v2"]
-	if !ok {
-		t.Fatal("schema 2 priced model missing from table")
-	}
-	if schema2.InputPerToken != "0.000004" || schema2.OutputPerToken != "0.00002" {
-		t.Errorf("schema 2 rates = %v/%v, want 0.000004/0.00002", schema2.InputPerToken, schema2.OutputPerToken)
-	}
-	if schema2.CacheReadPerToken == nil || *schema2.CacheReadPerToken != "0.0000002" {
-		t.Errorf("schema 2 cache read = %v, want 0.0000002", schema2.CacheReadPerToken)
-	}
-	if schema2.CacheWritePerToken == nil || *schema2.CacheWritePerToken != "0.000005" {
-		t.Errorf("schema 2 cache write = %v, want 0.000005", schema2.CacheWritePerToken)
-	}
-
-	flatWrite, ok := table["minimax/flat-write"]
-	if !ok {
-		t.Fatal("schema 2 model with a flat cache-write rate missing from table")
-	}
-	if flatWrite.CacheWritePerToken == nil || *flatWrite.CacheWritePerToken != "0.000000375" {
-		t.Errorf("flat cache write = %v, want 0.000000375", flatWrite.CacheWritePerToken)
-	}
-
-	free, ok := table["nvidia/meta/llama-free"]
-	if !ok {
-		t.Fatal("free-tier model with explicit zero cost missing from table")
-	}
-	if free.InputPerToken != "0" || free.OutputPerToken != "0" {
-		t.Errorf("free-tier rates = %v/%v, want \"0\"/\"0\"", free.InputPerToken, free.OutputPerToken)
-	}
-	for _, key := range []string{"ollama_cloud/kimi-sub", "ollama_cloud/deepseek-v4-pro"} {
-		sub, ok := table[key]
-		if !ok {
-			t.Fatalf("subscription-gated provider model %q missing from table", key)
-		}
-		if sub.InputPerToken != "0" || sub.OutputPerToken != "0" {
-			t.Errorf("%s subscription rates = %v/%v, want \"0\"/\"0\"", key, sub.InputPerToken, sub.OutputPerToken)
-		}
-		if sub.Subscription == nil || !*sub.Subscription {
-			t.Errorf("%s must have subscription=true", key)
-		}
-	}
-	pricedSub, ok := table["ollama_cloud/glm-priced"]
-	if !ok || pricedSub.InputPerToken != "0.00000015" {
-		t.Errorf("priced subscription model entry = %+v, want input_per_token 0.00000015", pricedSub)
-	}
-	if pricedSub.Subscription == nil || !*pricedSub.Subscription {
-		t.Error("priced subscription-provider model must keep subscription=true")
-	}
-	paid, ok := table["openai/gpt-paid"]
-	if !ok || paid.InputPerToken != "0.000003" {
-		t.Errorf("paid model entry = %+v, want input_per_token 0.000003", paid)
-	}
-}
-
-// TestGenerate_PreservesTimestampsForUnchangedRates re-syncs over an existing
-// table: entries whose rates did not change keep their prior updated_at, while
-// changed entries get a fresh stamp.
-func TestGenerate_PreservesTimestampsForUnchangedRates(t *testing.T) {
-	tarball := writeTarball(t, map[string]string{
-		"sst-models.dev-abc/providers/openai/models/gpt-same.toml":    "[cost]\ninput = 3.0\noutput = 15.0\n",
-		"sst-models.dev-abc/providers/openai/models/gpt-changed.toml": "[cost]\ninput = 4.0\noutput = 15.0\n",
-	})
-
-	output := filepath.Join(t.TempDir(), "pricing.json")
-	prior := `{
-		"openai/gpt-same": {"currency":"USD","input_per_token":"0.000003","output_per_token":"0.000015","source":"community","updated_at":"2020-01-02T03:04:05Z"},
-		"openai/gpt-changed": {"currency":"USD","input_per_token":"0.000003","output_per_token":"0.000015","source":"community","updated_at":"2020-01-02T03:04:05Z"}
-	}`
-	if err := os.WriteFile(output, []byte(prior), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := Generate(output, tarball); err != nil {
-		t.Fatalf("Generate() = %v", err)
-	}
-
-	data, err := os.ReadFile(output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var table map[string]types.Pricing
-	if err := json.Unmarshal(data, &table); err != nil {
-		t.Fatal(err)
-	}
-
-	if got := table["openai/gpt-same"].UpdatedAt.Format("2006-01-02T15:04:05Z"); got != "2020-01-02T03:04:05Z" {
-		t.Errorf("unchanged entry updated_at = %s, want prior timestamp preserved", got)
-	}
-	if got := table["openai/gpt-changed"].UpdatedAt.Year(); got == 2020 {
-		t.Error("changed entry must get a fresh updated_at, kept the prior one")
-	}
-}
-
-// TestGenerate_Overrides checks the hand-maintained companion file: entries
-// models.dev does not carry are added, and entries it carries differently are
-// replaced.
-func TestGenerate_Overrides(t *testing.T) {
-	tarball := writeTarball(t, map[string]string{
-		"sst-models.dev-abc/providers/openai/models/gpt-paid.toml":      "[cost]\ninput = 3.0\noutput = 15.0\n[limit]\ncontext = 128000\n",
-		"sst-models.dev-abc/providers/anthropic/models/claude-ctx.toml": "[cost]\ninput = 5.0\noutput = 25.0\n[limit]\ncontext = 200000\n",
-	})
-	dir := t.TempDir()
-
-	pricingOut := filepath.Join(dir, "pricing.json")
-	pricingOverrides := `{
-		"anthropic/claude-opus-5": {"currency":"USD","input_per_token":"0.000005","output_per_token":"0.000025","source":"community","updated_at":"2026-07-27T09:42:20Z"},
-		"openai/gpt-paid": {"currency":"USD","input_per_token":"0.000009","output_per_token":"0.000015","source":"community","updated_at":"2026-07-27T09:42:20Z"}
-	}`
-	if err := os.WriteFile(filepath.Join(dir, "pricing"+overridesSuffix), []byte(pricingOverrides), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := Generate(pricingOut, tarball); err != nil {
-		t.Fatalf("Generate() = %v", err)
-	}
-	var pricing map[string]types.Pricing
-	readJSON(t, pricingOut, &pricing)
-
-	if _, ok := pricing["anthropic/claude-opus-5"]; !ok {
-		t.Error("override-only model missing from pricing table")
-	}
-	if got := pricing["openai/gpt-paid"].InputPerToken; got != "0.000009" {
-		t.Errorf("overridden rate = %q, want the override to win", got)
-	}
-	if _, ok := pricing["anthropic/claude-ctx"]; !ok {
-		t.Error("synced model dropped by the override merge")
-	}
-
-	ctxOut := filepath.Join(dir, "context_windows.json")
-	ctxOverrides := `{"deepseek/deepseek-v4-flash": {"context": 1000000, "output": 384000}}`
-	if err := os.WriteFile(filepath.Join(dir, "context_windows"+overridesSuffix), []byte(ctxOverrides), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	if err := GenerateContextWindows(ctxOut, tarball); err != nil {
-		t.Fatalf("GenerateContextWindows() = %v", err)
-	}
-	var windows map[string]contextWindowEntry
-	readJSON(t, ctxOut, &windows)
-
-	if got := windows["deepseek/deepseek-v4-flash"]; got.Context != 1000000 || got.Output != 384000 {
-		t.Errorf("override-only context window = %+v, want context 1000000 output 384000", got)
-	}
-	if got := windows["openai/gpt-paid"]; got.Context != 128000 {
-		t.Errorf("synced context window = %+v, want context 128000", got)
-	}
+	var table map[string]modelsdev.Entry
+	readJSON(t, output, &table)
+	return table
 }
 
 // readJSON decodes a generated table file into v.
@@ -287,80 +125,181 @@ func readJSON(t *testing.T, path string, v any) {
 	}
 }
 
-// TestGenerateContextWindows covers the limit states in models.dev files: a
-// published context limit emits an entry (with output tokens when present),
-// an absent limit section emits no entry, and unsupported providers are
-// skipped.
-func TestGenerateContextWindows(t *testing.T) {
-	tarball := writeTarball(t, map[string]string{
-		"sst-models.dev-abc/providers/openai/models/gpt-full.toml":       "[limit]\ncontext = 128000\noutput = 16384\n",
-		"sst-models.dev-abc/providers/anthropic/models/claude-ctx.toml":  "[limit]\ncontext = 200000\n",
-		"sst-models.dev-abc/providers/ollama-cloud/models/no-limit.toml": "name = \"no-limit\"\n",
-		"sst-models.dev-abc/providers/openrouter/models/skipped.toml":    "[limit]\ncontext = 4096\n",
+// TestGenerateModels_FreeVsUnpublished distinguishes the cost states in
+// models.dev files: an explicit zero cost is a free tier and must emit "0"
+// rates, an absent cost section means no per-token price unless the model
+// belongs to a subscription-gated provider (then it gets a zero-rate pricing
+// with subscription=true), and a priced model converts as usual.
+func TestGenerateModels_FreeVsUnpublished(t *testing.T) {
+	table := syncModels(t, filepath.Join(t.TempDir(), "models.json"), map[string]string{
+		"sst-models.dev-abc/providers/nvidia/models/meta/llama-free.toml":       "[cost]\ninput = 0.0\noutput = 0.0\n",
+		"sst-models.dev-abc/providers/ollama-cloud/models/kimi-sub.toml":        "name = \"kimi-sub\"\n",
+		"sst-models.dev-abc/providers/ollama-cloud/models/deepseek-v4-pro.toml": "name = \"deepseek-v4-pro\"\n",
+		"sst-models.dev-abc/providers/ollama-cloud/models/glm-priced.toml":      "[cost]\ninput = 0.15\noutput = 0.5\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-paid.toml":              "[cost]\ninput = 3.0\noutput = 15.0\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-unpriced.toml":          "[limit]\ncontext = 8192\n",
+		"sst-models.dev-abc/providers/anthropic/models/claude-v2.toml":          "schema = 2\n[cost.text.input]\nprice = 4\ncache = { read = 0.2, write = { \"5m\" = 5, \"1h\" = 8 } }\n[cost.text.output]\nprice = 20\n",
+		"sst-models.dev-abc/providers/minimax/models/flat-write.toml":           "schema = 2\n[cost.text.input]\nprice = 0.3\ncache = { read = 0.03, write = 0.375 }\n[cost.text.output]\nprice = 1.2\n",
 	})
 
-	output := filepath.Join(t.TempDir(), "context_windows.json")
-	if err := GenerateContextWindows(output, tarball); err != nil {
-		t.Fatalf("GenerateContextWindows() = %v", err)
+	schema2 := table["anthropic/claude-v2"].Pricing
+	if schema2 == nil {
+		t.Fatal("schema 2 priced model missing pricing")
+	}
+	if schema2.InputPerToken != "0.000004" || schema2.OutputPerToken != "0.00002" {
+		t.Errorf("schema 2 rates = %v/%v, want 0.000004/0.00002", schema2.InputPerToken, schema2.OutputPerToken)
+	}
+	if schema2.CacheReadPerToken == nil || *schema2.CacheReadPerToken != "0.0000002" {
+		t.Errorf("schema 2 cache read = %v, want 0.0000002", schema2.CacheReadPerToken)
+	}
+	if schema2.CacheWritePerToken == nil || *schema2.CacheWritePerToken != "0.000005" {
+		t.Errorf("schema 2 cache write = %v, want 0.000005", schema2.CacheWritePerToken)
 	}
 
-	data, err := os.ReadFile(output)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var table map[string]contextWindowEntry
-	if err := json.Unmarshal(data, &table); err != nil {
-		t.Fatal(err)
+	flatWrite := table["minimax/flat-write"].Pricing
+	if flatWrite == nil || flatWrite.CacheWritePerToken == nil || *flatWrite.CacheWritePerToken != "0.000000375" {
+		t.Errorf("flat cache write pricing = %+v, want cache write 0.000000375", flatWrite)
 	}
 
-	if len(table) != 2 {
-		t.Errorf("table has %d entries, want 2: %+v", len(table), table)
+	free := table["nvidia/meta/llama-free"].Pricing
+	if free == nil || free.InputPerToken != "0" || free.OutputPerToken != "0" {
+		t.Errorf("free-tier pricing = %+v, want \"0\"/\"0\"", free)
 	}
-	if got := table["openai/gpt-full"]; got.Context != 128000 || got.Output != 16384 {
-		t.Errorf("openai/gpt-full = %+v, want context 128000 output 16384", got)
+	for _, key := range []string{"ollama_cloud/kimi-sub", "ollama_cloud/deepseek-v4-pro"} {
+		sub := table[key].Pricing
+		if sub == nil {
+			t.Fatalf("subscription-gated provider model %q missing pricing", key)
+		}
+		if sub.InputPerToken != "0" || sub.OutputPerToken != "0" {
+			t.Errorf("%s subscription rates = %v/%v, want \"0\"/\"0\"", key, sub.InputPerToken, sub.OutputPerToken)
+		}
+		if sub.Subscription == nil || !*sub.Subscription {
+			t.Errorf("%s must have subscription=true", key)
+		}
 	}
-	if got := table["anthropic/claude-ctx"]; got.Context != 200000 || got.Output != 0 {
-		t.Errorf("anthropic/claude-ctx = %+v, want context 200000 output 0", got)
+	pricedSub := table["ollama_cloud/glm-priced"].Pricing
+	if pricedSub == nil || pricedSub.InputPerToken != "0.00000015" {
+		t.Errorf("priced subscription model pricing = %+v, want input_per_token 0.00000015", pricedSub)
 	}
-	if _, ok := table["ollama_cloud/no-limit"]; ok {
-		t.Error("model without a limit section must not get an entry")
+	if pricedSub == nil || pricedSub.Subscription == nil || !*pricedSub.Subscription {
+		t.Error("priced subscription-provider model must keep subscription=true")
+	}
+	if paid := table["openai/gpt-paid"].Pricing; paid == nil || paid.InputPerToken != "0.000003" {
+		t.Errorf("paid model pricing = %+v, want input_per_token 0.000003", paid)
+	}
+	if unpriced := table["openai/gpt-unpriced"]; unpriced.Pricing != nil || unpriced.ContextWindow == nil {
+		t.Errorf("model without a cost section = %+v, want a context window and no pricing", unpriced)
 	}
 }
 
-// TestGenerateStatuses covers the lifecycle states in models.dev files: a
-// status emits an entry, a base-model status is inherited, a model without
-// one gets no entry, and unsupported providers are skipped.
-func TestGenerateStatuses(t *testing.T) {
-	tarball := writeTarball(t, map[string]string{
-		"sst-models.dev-abc/providers/minimax/models/MiniMax-M2.toml":   "status = \"deprecated\"\n",
-		"sst-models.dev-abc/providers/openai/models/gpt-beta.toml":      "status = \"beta\"\n",
-		"sst-models.dev-abc/providers/openai/models/gpt-current.toml":   "name = \"gpt-current\"\n",
-		"sst-models.dev-abc/providers/openai/models/gpt-inherited.toml": "base_model = \"openai/gpt-old\"\n",
-		"sst-models.dev-abc/models/openai/gpt-old.toml":                 "status = \"deprecated\"\n",
-		"sst-models.dev-abc/providers/openrouter/models/skipped.toml":   "status = \"deprecated\"\n",
+// TestGenerateModels_PreservesTimestampsForUnchangedRates re-syncs over an
+// existing table: pricing whose rates did not change keeps its prior
+// updated_at, while changed pricing gets a fresh stamp.
+func TestGenerateModels_PreservesTimestampsForUnchangedRates(t *testing.T) {
+	output := filepath.Join(t.TempDir(), "models.json")
+	prior := `{
+		"openai/gpt-same": {"pricing": {"currency":"USD","input_per_token":"0.000003","output_per_token":"0.000015","source":"community","updated_at":"2020-01-02T03:04:05Z"}},
+		"openai/gpt-changed": {"pricing": {"currency":"USD","input_per_token":"0.000003","output_per_token":"0.000015","source":"community","updated_at":"2020-01-02T03:04:05Z"}}
+	}`
+	if err := os.WriteFile(output, []byte(prior), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	table := syncModels(t, output, map[string]string{
+		"sst-models.dev-abc/providers/openai/models/gpt-same.toml":    "[cost]\ninput = 3.0\noutput = 15.0\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-changed.toml": "[cost]\ninput = 4.0\noutput = 15.0\n",
 	})
 
-	output := filepath.Join(t.TempDir(), "statuses.json")
-	if err := GenerateStatuses(output, tarball); err != nil {
-		t.Fatalf("GenerateStatuses() = %v", err)
+	if got := table["openai/gpt-same"].Pricing.UpdatedAt.Format(time.RFC3339); got != "2020-01-02T03:04:05Z" {
+		t.Errorf("unchanged pricing updated_at = %s, want prior timestamp preserved", got)
 	}
+	if got := table["openai/gpt-changed"].Pricing.UpdatedAt.Year(); got == 2020 {
+		t.Error("changed pricing must get a fresh updated_at, kept the prior one")
+	}
+}
 
-	data, err := os.ReadFile(output)
-	if err != nil {
+// TestGenerateModels_Overrides checks the hand-maintained companion file is
+// merged field by field: models models.dev does not carry are added, an
+// overridden attribute wins, and the row's other synced attributes survive.
+func TestGenerateModels_Overrides(t *testing.T) {
+	dir := t.TempDir()
+	output := filepath.Join(dir, "models.json")
+	overrides := `{
+		"anthropic/claude-opus-5": {"context_window": {"context": 1000000, "output": 128000}},
+		"openai/gpt-paid": {"pricing": {"currency":"USD","input_per_token":"0.000009","output_per_token":"0.000015","source":"community","updated_at":"2026-07-27T09:42:20Z"}},
+		"openai/tts-1": {"modalities": {"input": ["text"], "output": ["audio"]}}
+	}`
+	if err := os.WriteFile(filepath.Join(dir, "models"+overridesSuffix), []byte(overrides), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	var table map[string]string
-	if err := json.Unmarshal(data, &table); err != nil {
-		t.Fatal(err)
-	}
 
-	want := map[string]string{
-		"minimax/MiniMax-M2":   "deprecated",
-		"openai/gpt-beta":      "beta",
-		"openai/gpt-inherited": "deprecated",
+	table := syncModels(t, output, map[string]string{
+		"sst-models.dev-abc/providers/openai/models/gpt-paid.toml":      "[cost]\ninput = 3.0\noutput = 15.0\n[limit]\ncontext = 128000\n",
+		"sst-models.dev-abc/providers/anthropic/models/claude-ctx.toml": "[cost]\ninput = 5.0\noutput = 25.0\n[limit]\ncontext = 200000\n",
+	})
+
+	if got := table["anthropic/claude-opus-5"].ContextWindow; got == nil || got.Context != 1000000 || got.Output != 128000 {
+		t.Errorf("override-only context window = %+v, want context 1000000 output 128000", got)
+	}
+	paid := table["openai/gpt-paid"]
+	if paid.Pricing == nil || paid.Pricing.InputPerToken != "0.000009" {
+		t.Errorf("overridden pricing = %+v, want the override to win", paid.Pricing)
+	}
+	if paid.ContextWindow == nil || paid.ContextWindow.Context != 128000 {
+		t.Errorf("synced context window of an overridden row = %+v, want it kept", paid.ContextWindow)
+	}
+	if got := table["openai/tts-1"].Modalities; got == nil || !slices.Equal(got.Output, []types.Modality{types.ModalityAudio}) {
+		t.Errorf("override-only modalities = %+v, want audio output", got)
+	}
+	if table["anthropic/claude-ctx"].Pricing == nil {
+		t.Error("synced model dropped by the override merge")
+	}
+}
+
+// TestGenerateModels_ContextWindows covers the limit states in models.dev
+// files: a published context limit emits a context window (with output tokens
+// when present), and an absent limit section emits none.
+func TestGenerateModels_ContextWindows(t *testing.T) {
+	table := syncModels(t, filepath.Join(t.TempDir(), "models.json"), map[string]string{
+		"sst-models.dev-abc/providers/openai/models/gpt-full.toml":       "[limit]\ncontext = 128000\noutput = 16384\n",
+		"sst-models.dev-abc/providers/anthropic/models/claude-ctx.toml":  "[limit]\ncontext = 200000\n",
+		"sst-models.dev-abc/providers/ollama-cloud/models/no-limit.toml": "name = \"no-limit\"\n",
+	})
+
+	if got := table["openai/gpt-full"].ContextWindow; got == nil || got.Context != 128000 || got.Output != 16384 {
+		t.Errorf("openai/gpt-full context window = %+v, want context 128000 output 16384", got)
+	}
+	if got := table["anthropic/claude-ctx"].ContextWindow; got == nil || got.Context != 200000 || got.Output != 0 {
+		t.Errorf("anthropic/claude-ctx context window = %+v, want context 200000 output 0", got)
+	}
+	if got := table["ollama_cloud/no-limit"].ContextWindow; got != nil {
+		t.Errorf("model without a limit section must have no context window, got %+v", got)
+	}
+}
+
+// TestGenerateModels_StatusesAndReleaseDates covers the lifecycle and
+// release-date fields: values emit, base-model values are inherited, a
+// malformed date is dropped, a model with no usable attribute gets no entry,
+// and unsupported providers are skipped.
+func TestGenerateModels_StatusesAndReleaseDates(t *testing.T) {
+	table := syncModels(t, filepath.Join(t.TempDir(), "models.json"), map[string]string{
+		"sst-models.dev-abc/providers/minimax/models/MiniMax-M2.toml":   "status = \"deprecated\"\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-beta.toml":      "status = \"beta\"\nrelease_date = \"2025-03\"\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-current.toml":   "name = \"gpt-current\"\n",
+		"sst-models.dev-abc/providers/openai/models/gpt-inherited.toml": "base_model = \"openai/gpt-old\"\n",
+		"sst-models.dev-abc/models/openai/gpt-old.toml":                 "status = \"deprecated\"\nrelease_date = \"2023-03-01\"\n",
+		"sst-models.dev-abc/providers/cohere/models/command-a.toml":     "release_date = \"2025-03-13\"\n",
+		"sst-models.dev-abc/providers/openrouter/models/skipped.toml":   "status = \"deprecated\"\nrelease_date = \"2025-03-13\"\n",
+	})
+
+	want := map[string]modelsdev.Entry{
+		"minimax/MiniMax-M2":   {Status: "deprecated"},
+		"openai/gpt-beta":      {Status: "beta"},
+		"openai/gpt-inherited": {Status: "deprecated", ReleaseDate: "2023-03-01"},
+		"cohere/command-a":     {ReleaseDate: "2025-03-13"},
 	}
 	if !maps.Equal(table, want) {
-		t.Errorf("statuses = %v, want %v", table, want)
+		t.Errorf("table = %+v, want %+v", table, want)
 	}
 }
 

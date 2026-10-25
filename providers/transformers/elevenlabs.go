@@ -21,7 +21,7 @@ type elevenlabsModel struct {
 // modalities derives the model's modalities from ElevenLabs' capability
 // flags: text-to-speech models take text and return audio, speech-to-speech
 // (voice conversion) models take audio and return audio. Models with neither
-// flag stay nil so the community table can fill them in.
+// flag stay nil so the models.dev table can fill them in.
 func (m elevenlabsModel) modalities() *types.ModelModalities {
 	switch {
 	case m.CanDoTextToSpeech:
@@ -84,23 +84,11 @@ func (l *ListModelsResponseElevenlabs) Transform() types.ListModelsResponse {
 	provider := constants.ElevenlabsID
 	models := make([]types.Model, 0, len(l.Data)+len(unlistedModels))
 	for _, m := range l.Data {
-		models = append(models, types.Model{
-			ID:         string(provider) + "/" + m.ModelID,
-			Object:     "model",
-			OwnedBy:    string(provider),
-			ServedBy:   provider,
-			Modalities: m.modalities(),
-		})
+		models = append(models, listedModel{Model: types.Model{ID: m.ModelID, Modalities: m.modalities()}}.toModel(provider))
 	}
 	for _, m := range unlistedModels {
 		mods := m.modalities
-		models = append(models, types.Model{
-			ID:         string(provider) + "/" + m.id,
-			Object:     "model",
-			OwnedBy:    string(provider),
-			ServedBy:   provider,
-			Modalities: &mods,
-		})
+		models = append(models, listedModel{Model: types.Model{ID: m.id, Modalities: &mods}}.toModel(provider))
 	}
 
 	return types.ListModelsResponse{

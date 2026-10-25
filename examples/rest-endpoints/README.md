@@ -98,7 +98,7 @@ listing, falling back to the community-maintained
 (`source: "community"`). Monetary values are decimal strings to avoid
 floating-point precision loss. Rates that are not published (e.g. zero cache
 rates) are omitted entirely, and only models absent from both the provider
-listing and the community table carry an explicit `null`.
+listing and the models.dev table carry an explicit `null`.
 
 ```bash
 curl -X GET 'http://localhost:8080/v1/models?include=pricing' | jq .
@@ -1007,8 +1007,8 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 ```
 
 **Supported vision models:** vision support is looked up in the gateway's
-community modalities table (`providers/core/community_modalities.json` and its
-`.overrides.json` companion), not inferred from the model name. See
+models.dev table (`providers/modelsdev/models.json` and its `.overrides.json`
+companion), not inferred from the model name. See
 [Vision/Multimodal Support](../../README.md#visionmultimodal-support) for how
 the lookup behaves.
 

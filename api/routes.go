@@ -37,6 +37,7 @@ import (
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
+	modelsdev "github.com/inference-gateway/inference-gateway/providers/modelsdev"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -604,7 +605,7 @@ func parseIncludeParam(raw string) ([]string, error) {
 }
 
 // includesDeprecated reports whether the request asked to list models the
-// community status table marks as deprecated, which are hidden otherwise.
+// models.dev table marks as deprecated, which are hidden otherwise.
 func includesDeprecated(includeKeys []string) bool {
 	return slices.Contains(includeKeys, string(types.ListModelsParamsIncludeDeprecated))
 }
@@ -960,7 +961,7 @@ func (router *RouterImpl) ChatCompletionsHandler(w http.ResponseWriter, r *http.
 		}
 
 		if hasImageContent {
-			if !core.ModelAcceptsImages(providerID, req.Model) {
+			if !modelsdev.AcceptsImages(providerID, req.Model) {
 				router.logger.Info("filtering images from non-vision model request",
 					"provider", providerID,
 					"model", req.Model,

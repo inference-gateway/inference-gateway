@@ -8,16 +8,14 @@ import (
 
 type ListModelsResponseAnthropic struct {
 	Object string        `json:"object"`
-	Data   []types.Model `json:"data"`
+	Data   []listedModel `json:"data"`
 }
 
 func (l *ListModelsResponseAnthropic) Transform() types.ListModelsResponse {
 	provider := constants.AnthropicID
 	models := make([]types.Model, len(l.Data))
 	for i, model := range l.Data {
-		model.ServedBy = provider
-		model.ID = string(provider) + "/" + model.ID
-		models[i] = model
+		models[i] = model.toModel(provider)
 	}
 
 	return types.ListModelsResponse{

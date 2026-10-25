@@ -479,16 +479,14 @@ import (
 
 type ListModelsResponse{{.ProviderName}} struct {
 	Object string        ` + "`json:\"object\"`" + `
-	Data   []types.Model ` + "`json:\"data\"`" + `
+	Data   []listedModel ` + "`json:\"data\"`" + `
 }
 
 func (l *ListModelsResponse{{.ProviderName}}) Transform() types.ListModelsResponse {
 	provider := constants.{{.ProviderName}}ID
 	models := make([]types.Model, len(l.Data))
 	for i, model := range l.Data {
-		model.ServedBy = provider
-		model.ID = string(provider) + "/" + model.ID
-		models[i] = model
+		models[i] = model.toModel(provider)
 	}
 
 	return types.ListModelsResponse{

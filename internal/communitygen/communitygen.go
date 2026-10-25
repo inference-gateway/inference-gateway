@@ -1,15 +1,15 @@
-// Package communitygen syncs the community fallback tables from the models.dev
+// Package communitygen syncs the models.dev metadata table from the models.dev
 // dataset (https://github.com/sst/models.dev). It reads a GitHub tarball of
 // that repository, filters it to the gateway's supported cloud providers, and
-// emits the JSON tables embedded by providers/core: model pricing (USD
-// per-million-token rates converted to the gateway's per-token decimal-string
-// format, `task pricing:sync`), context windows (`task contextwindow:sync`),
-// input modalities (`task modalities:sync`), and lifecycle statuses
-// (`task status:sync`).
+// emits one JSON table embedded by providers/modelsdev (`task modelsdev:sync`):
+// per model, its pricing (USD per-million-token rates converted to the
+// gateway's per-token decimal-string format), context window, input and output
+// modalities, lifecycle status, and release date.
 //
-// Each table has a hand-maintained companion, "<table>.overrides.json", for
-// models models.dev does not carry (or carries wrong). Those entries are
-// merged last, so they win over the synced values and survive every re-sync.
+// The table has a hand-maintained companion, "models.overrides.json", for
+// models models.dev does not carry (or carries wrong). Its entries are merged
+// last, field by field, so they win over the synced values and survive every
+// re-sync.
 package communitygen
 
 import (
@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"maps"
 	"os"
 	"strconv"
 	"strings"
@@ -29,11 +28,12 @@ import (
 
 	toml "github.com/pelletier/go-toml/v2"
 
+	modelsdev "github.com/inference-gateway/inference-gateway/providers/modelsdev"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// overridesSuffix names the hand-maintained companion file of a community
-// table: "community_pricing.json" -> "community_pricing.overrides.json".
+// overridesSuffix names the hand-maintained companion file of the table:
+// "models.json" -> "models.overrides.json".
 const overridesSuffix = ".overrides.json"
 
 // providerDirs maps a models.dev provider directory to the gateway provider
@@ -70,9 +70,10 @@ var subscriptionProviders = map[string]bool{
 // Cloud models) stays distinguishable from an explicit zero rate, which
 // models.dev uses for free tiers (e.g. nvidia's free NIM endpoints).
 type modelTOML struct {
-	Cost   *costTOML `toml:"cost"`
-	Status string    `toml:"status"`
-	Limit  struct {
+	Cost        *costTOML `toml:"cost"`
+	Status      string    `toml:"status"`
+	ReleaseDate string    `toml:"release_date"`
+	Limit       struct {
 		Context int64 `toml:"context"`
 		Output  int64 `toml:"output"`
 	} `toml:"limit"`
@@ -137,33 +138,26 @@ func cacheWriteRate(value any) float64 {
 	return 0
 }
 
-// contextWindowEntry is one row of the community context-window table: the
-// model's context window in tokens and, when published, its maximum output
-// tokens.
-type contextWindowEntry struct {
-	Context int64 `json:"context"`
-	Output  int64 `json:"output,omitempty"`
-}
-
-// Generate reads a models.dev repository tarball (as served by
-// `gh api repos/sst/models.dev/tarball`) and writes the community pricing
-// table keyed by "<provider>/<model>" to output.
-func Generate(output, tarballPath string) error {
-	table := make(map[string]types.Pricing)
+// GenerateModels reads a models.dev repository tarball (as served by
+// `gh api repos/sst/models.dev/tarball`) and writes the per-model metadata
+// table keyed by "<provider>/<model>" to output. Models without any usable
+// attribute get no entry. Pricing whose rates did not change keeps the prior
+// file's updated_at, so re-syncs don't rewrite the whole committed table.
+func GenerateModels(output, tarballPath string) error {
 	syncedAt := time.Now().UTC().Truncate(time.Second)
-	prior := make(map[string]types.Pricing)
+	prior := make(map[string]modelsdev.Entry)
 	if data, err := os.ReadFile(output); err == nil {
 		_ = json.Unmarshal(data, &prior)
 	}
+	table := make(map[string]modelsdev.Entry)
 	err := forEachModel(tarballPath, func(key string, model modelTOML) {
-		entry, ok := pricingEntry(key, model, syncedAt)
-		if !ok {
-			return
+		entry := modelEntry(key, model, syncedAt)
+		if old := prior[key].Pricing; old != nil && entry.Pricing != nil && sameRates(*old, *entry.Pricing) {
+			entry.Pricing.UpdatedAt = old.UpdatedAt
 		}
-		if old, ok := prior[key]; ok && sameRates(old, entry) {
-			entry.UpdatedAt = old.UpdatedAt
+		if entry != (modelsdev.Entry{}) {
+			table[key] = entry
 		}
-		table[key] = entry
 	})
 	if err != nil {
 		return err
@@ -171,66 +165,30 @@ func Generate(output, tarballPath string) error {
 	return writeTable(output, tarballPath, table)
 }
 
-// GenerateContextWindows reads a models.dev repository tarball and writes the
-// community context-window table keyed by "<provider>/<model>" to output.
-// Models without a published context limit get no entry and keep rendering as
-// explicit nulls.
-func GenerateContextWindows(output, tarballPath string) error {
-	table := make(map[string]contextWindowEntry)
-	err := forEachModel(tarballPath, func(key string, model modelTOML) {
-		if model.Limit.Context <= 0 {
-			return
-		}
-		table[key] = contextWindowEntry{
+// modelEntry maps one models.dev model file to its table row. Each attribute
+// is set only when models.dev publishes a usable value for it.
+func modelEntry(key string, model modelTOML, syncedAt time.Time) modelsdev.Entry {
+	entry := modelsdev.Entry{Status: model.Status}
+	if pricing, ok := pricingEntry(key, model, syncedAt); ok {
+		entry.Pricing = &pricing
+	}
+	if model.Limit.Context > 0 {
+		entry.ContextWindow = &modelsdev.ContextWindow{
 			Context: model.Limit.Context,
 			Output:  max(model.Limit.Output, 0),
 		}
-	})
-	if err != nil {
-		return err
 	}
-	return writeTable(output, tarballPath, table)
-}
-
-// GenerateModalities reads a models.dev repository tarball and writes the
-// community modalities table keyed by "<provider>/<model>" to output. It maps
-// each model's input and output modalities to the gateway's Modality enum,
-// dropping values the enum does not carry (e.g. models.dev's "pdf"). Models
-// with no recognized input or output modality get no entry and render as
-// explicit nulls.
-func GenerateModalities(output, tarballPath string) error {
-	table := make(map[string]types.ModelModalities)
-	err := forEachModel(tarballPath, func(key string, model modelTOML) {
-		entry := types.ModelModalities{
-			Input:  enumModalities(model.Modalities.Input),
-			Output: enumModalities(model.Modalities.Output),
-		}
-		if len(entry.Input) == 0 || len(entry.Output) == 0 {
-			return
-		}
-		table[key] = entry
-	})
-	if err != nil {
-		return err
+	modalities := types.ModelModalities{
+		Input:  enumModalities(model.Modalities.Input),
+		Output: enumModalities(model.Modalities.Output),
 	}
-	return writeTable(output, tarballPath, table)
-}
-
-// GenerateStatuses reads a models.dev repository tarball and writes the
-// community status table keyed by "<provider>/<model>" to output. Only models
-// carrying a lifecycle status ("deprecated", "beta") get an entry.
-func GenerateStatuses(output, tarballPath string) error {
-	table := make(map[string]string)
-	err := forEachModel(tarballPath, func(key string, model modelTOML) {
-		if model.Status == "" {
-			return
-		}
-		table[key] = model.Status
-	})
-	if err != nil {
-		return err
+	if len(modalities.Input) > 0 && len(modalities.Output) > 0 {
+		entry.Modalities = &modalities
 	}
-	return writeTable(output, tarballPath, table)
+	if _, err := time.Parse(time.DateOnly, model.ReleaseDate); err == nil {
+		entry.ReleaseDate = model.ReleaseDate
+	}
+	return entry
 }
 
 // enumModalities maps each value through the Modality enum and keeps the
@@ -356,46 +314,52 @@ func mergeBase(m, base modelTOML) modelTOML {
 		m.Modalities = base.Modalities
 	}
 	m.Status = cmp.Or(m.Status, base.Status)
+	m.ReleaseDate = cmp.Or(m.ReleaseDate, base.ReleaseDate)
 	return m
 }
 
 // writeTable merges the hand-maintained overrides over the synced table and
 // writes it as indented JSON, refusing to emit an empty table (that means the
 // tarball was not a models.dev checkout).
-func writeTable[V any](output, tarballPath string, table map[string]V) error {
+func writeTable(output, tarballPath string, table map[string]modelsdev.Entry) error {
 	if len(table) == 0 {
 		return fmt.Errorf("no supported provider models found in %s", tarballPath)
 	}
-	overrides, err := readOverrides[V](output)
-	if err != nil {
+	if err := mergeOverrides(output, table); err != nil {
 		return err
 	}
-	maps.Copy(table, overrides)
 	data, err := json.MarshalIndent(table, "", "  ")
 	if err != nil {
-		return fmt.Errorf("encoding community table: %w", err)
+		return fmt.Errorf("encoding models.dev table: %w", err)
 	}
 	return os.WriteFile(output, append(data, '\n'), 0o644)
 }
 
-// readOverrides reads the hand-maintained companion of a community table
-// ("<table>.overrides.json"), which holds entries models.dev does not carry or
-// gets wrong. Its entries win over the synced ones and survive every re-sync;
-// an absent file means no overrides.
-func readOverrides[V any](output string) (map[string]V, error) {
+// mergeOverrides applies the hand-maintained companion of the table
+// ("<table>.overrides.json") field by field. Each override decodes onto the
+// synced row, so it replaces only the attributes it names. An absent file
+// means no overrides.
+func mergeOverrides(output string, table map[string]modelsdev.Entry) error {
 	path := strings.TrimSuffix(output, ".json") + overridesSuffix
 	data, err := os.ReadFile(path)
 	if errors.Is(err, fs.ErrNotExist) {
-		return nil, nil
+		return nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("reading %s: %w", path, err)
+		return fmt.Errorf("reading %s: %w", path, err)
 	}
-	table := make(map[string]V)
-	if err := json.Unmarshal(data, &table); err != nil {
-		return nil, fmt.Errorf("parsing %s: %w", path, err)
+	var overrides map[string]json.RawMessage
+	if err := json.Unmarshal(data, &overrides); err != nil {
+		return fmt.Errorf("parsing %s: %w", path, err)
 	}
-	return table, nil
+	for key, override := range overrides {
+		entry := table[key]
+		if err := json.Unmarshal(override, &entry); err != nil {
+			return fmt.Errorf("parsing override %q in %s: %w", key, path, err)
+		}
+		table[key] = entry
+	}
+	return nil
 }
 
 // tableKey maps a tarball entry like

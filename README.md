@@ -86,7 +86,7 @@ environment variables (`MCP_ENABLED`) or bypassed per-request using headers
 
 **Note**: Vision/multimodal handling is disabled by default. With
 `VISION_ENABLED=true` the gateway strips image content only from requests
-targeting models its community modalities table lists as text-only input;
+targeting models its models.dev table lists as text-only input;
 models the table does not cover pass images through untouched. With it
 disabled, image content is forwarded to the provider untouched.
 
@@ -184,7 +184,7 @@ All `/v1` endpoints resolve the provider from the `provider/model` prefix, or
 from an explicit `?provider=` query parameter.
 
 `/v1/models` hides models that models.dev marks as deprecated
-(`providers/core/community_statuses.json`, synced via `task status:sync`) for
+(`providers/modelsdev/models.json`, synced via `task modelsdev:sync`) for
 every provider. `GET /v1/models?include=deprecated` lists them again, and
 `ALLOWED_MODELS` entries are always listed. Requests naming a deprecated model
 are still forwarded.
@@ -728,8 +728,8 @@ VISION_ENABLED=true
 ```
 
 **Note**: Vision handling is disabled by default. When `VISION_ENABLED=true`,
-the gateway looks the target model up in its community modalities table
-(`providers/core/community_modalities.json`, synced from models.dev): image
+the gateway looks the target model up in its models.dev table
+(`providers/modelsdev/models.json`, synced via `task modelsdev:sync`): image
 content parts are stripped from the request (leaving text only) only when the
 table says the model accepts text-only input. Everything else - vision models
 in the table and any model the table does not cover - is passed through

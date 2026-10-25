@@ -4,7 +4,6 @@ package transformers
 
 import (
 	"encoding/json"
-	"math"
 
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -50,21 +49,9 @@ func (l *ListModelsResponseCohere) UnmarshalJSON(b []byte) error {
 
 func (l *ListModelsResponseCohere) Transform() types.ListModelsResponse {
 	provider := constants.CohereID
-	models := make([]types.Model, 0, len(l.Data))
-	for _, m := range l.Data {
-		model := types.Model{
-			ID:       string(provider) + "/" + m.Name,
-			Object:   "model",
-			OwnedBy:  string(provider),
-			ServedBy: provider,
-		}
-		if m.ContextLength > 0 && m.ContextLength < math.MaxInt {
-			model.ContextWindow = &types.ContextWindow{
-				Tokens: int(m.ContextLength),
-				Source: types.ContextWindowSourceProvider,
-			}
-		}
-		models = append(models, model)
+	models := make([]types.Model, len(l.Data))
+	for i, m := range l.Data {
+		models[i] = listedModel{Model: types.Model{ID: m.Name}, ContextLength: m.ContextLength}.toModel(provider)
 	}
 
 	return types.ListModelsResponse{
