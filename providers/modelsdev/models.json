@@ -446,6 +446,79 @@
     },
     "release_date": "2025-09-23"
   },
+  "cloudflare/@cf/black-forest-labs/flux-1-schnell": {
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2024-08-01"
+  },
+  "cloudflare/@cf/black-forest-labs/flux-2-dev": {
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2025-11-25"
+  },
+  "cloudflare/@cf/black-forest-labs/flux-2-klein-4b": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2026-01-15"
+  },
+  "cloudflare/@cf/black-forest-labs/flux-2-klein-9b": {
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2026-01-15"
+  },
+  "cloudflare/@cf/bytedance/stable-diffusion-xl-lightning": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "status": "beta",
+    "release_date": "2024-02-21"
+  },
   "cloudflare/@cf/cloudflare/clairic": {
     "pricing": {
       "currency": "USD",
@@ -675,6 +748,40 @@
       ]
     },
     "release_date": "2025-10-02"
+  },
+  "cloudflare/@cf/leonardo/lucid-origin": {
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2025-08-05"
+  },
+  "cloudflare/@cf/leonardo/phoenix-1.0": {
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2024-12-18"
+  },
+  "cloudflare/@cf/lykon/dreamshaper-8-lcm": {
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2023-12-06"
   },
   "cloudflare/@cf/meta/llama-3.1-8b-instruct-fp8": {
     "pricing": {
@@ -1041,6 +1148,25 @@
       ]
     },
     "release_date": "2025-03-05"
+  },
+  "cloudflare/@cf/stabilityai/stable-diffusion-xl-base-1.0": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "status": "beta",
+    "release_date": "2023-07-26"
   },
   "cloudflare/@cf/zai-org/glm-4.7-flash": {
     "pricing": {
@@ -2791,6 +2917,32 @@
       ]
     }
   },
+  "google/gemini-pro-latest": {
+    "pricing": {
+      "cache_read_per_token": "0.0000002",
+      "currency": "USD",
+      "input_per_token": "0.000002",
+      "output_per_token": "0.000012",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 65536
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video",
+        "audio"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-02-19"
+  },
   "google/gemini-robotics-er-2-preview": {
     "pricing": {
       "cache_read_per_token": "0.0000001",
@@ -2936,6 +3088,10 @@
     "release_date": "2026-09-03"
   },
   "google/lyria-realtime-exp": {
+    "context_window": {
+      "context": 1048576,
+      "output": 65536
+    },
     "modalities": {
       "input": [
         "text"
@@ -2944,6 +3100,7 @@
         "audio"
       ]
     },
+    "status": "alpha",
     "release_date": "2025-05-20"
   },
   "google/nano-banana-pro-preview": {
@@ -2955,74 +3112,6 @@
       "output": [
         "text",
         "image"
-      ]
-    }
-  },
-  "google/veo-3.1-fast-generate-preview": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-10-20T11:41:46Z"
-    },
-    "context_window": {
-      "context": 480,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video"
-      ],
-      "output": [
-        "video"
-      ]
-    }
-  },
-  "google/veo-3.1-generate-preview": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-10-20T11:41:46Z"
-    },
-    "context_window": {
-      "context": 480,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "video"
-      ]
-    },
-    "status": "beta"
-  },
-  "google/veo-3.1-lite-generate-preview": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-10-20T11:41:46Z"
-    },
-    "context_window": {
-      "context": 480,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "video"
       ]
     }
   },
@@ -3049,6 +3138,13 @@
     "release_date": "2025-01-23"
   },
   "groq/canopylabs/orpheus-arabic-saudi": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.00004",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
     "context_window": {
       "context": 4000,
       "output": 50000
@@ -3065,6 +3161,13 @@
     "release_date": "2025-12-16"
   },
   "groq/canopylabs/orpheus-v1-english": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.000022",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
     "context_window": {
       "context": 4000,
       "output": 50000
@@ -3079,34 +3182,6 @@
     },
     "status": "beta",
     "release_date": "2025-12-19"
-  },
-  "groq/groq/compound": {
-    "context_window": {
-      "context": 131072,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
-  },
-  "groq/groq/compound-mini": {
-    "context_window": {
-      "context": 131072,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
   },
   "groq/llama-3.1-8b-instant": {
     "pricing": {
@@ -3128,6 +3203,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2024-07-23"
   },
   "groq/llama-3.3-70b-versatile": {
@@ -3150,6 +3226,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2024-12-06"
   },
   "groq/meta-llama/llama-prompt-guard-2-22m": {
@@ -3226,10 +3303,6 @@
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
     },
-    "context_window": {
-      "context": 131072,
-      "output": 65536
-    },
     "modalities": {
       "input": [
         "text"
@@ -3242,15 +3315,12 @@
   },
   "groq/openai/gpt-oss-safeguard-20b": {
     "pricing": {
+      "cache_read_per_token": "0.0000000375",
       "currency": "USD",
       "input_per_token": "0.000000075",
       "output_per_token": "0.0000003",
       "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 131072,
-      "output": 65536
+      "updated_at": "2026-10-26T12:12:31Z"
     },
     "modalities": {
       "input": [
@@ -3305,6 +3375,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-04-22"
   },
   "groq/qwen/qwen3.8-27b": {
@@ -3316,7 +3387,7 @@
       "updated_at": "2026-09-03T01:27:55Z"
     },
     "context_window": {
-      "context": 131042,
+      "context": 131072,
       "output": 16384
     },
     "modalities": {
@@ -3328,9 +3399,17 @@
         "text"
       ]
     },
+    "status": "beta",
     "release_date": "2026-08-14"
   },
   "groq/whisper-large-v3": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
     "modalities": {
       "input": [
         "audio"
@@ -3342,6 +3421,17 @@
     "release_date": "2023-11-06"
   },
   "groq/whisper-large-v3-turbo": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "context_window": {
+      "context": 448,
+      "output": 448
+    },
     "modalities": {
       "input": [
         "audio"
@@ -3651,28 +3741,6 @@
     "status": "deprecated",
     "release_date": "2025-12-09"
   },
-  "mistral/devstral-medium-2507": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0.0000004",
-      "output_per_token": "0.000002",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 128000
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "mistral/devstral-medium-latest": {
     "pricing": {
       "currency": "USD",
@@ -3695,50 +3763,6 @@
     },
     "status": "deprecated",
     "release_date": "2025-12-02"
-  },
-  "mistral/devstral-small-2505": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0.0000001",
-      "output_per_token": "0.0000003",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 128000
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "mistral/devstral-small-2507": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0.0000001",
-      "output_per_token": "0.0000003",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 128000
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "mistral/glm-5-2": {
     "pricing": {
@@ -3976,28 +4000,6 @@
     },
     "release_date": "2023-12-11"
   },
-  "mistral/mistral-large-2411": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0.000002",
-      "output_per_token": "0.000006",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 131072,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "mistral/mistral-large-2512": {
     "pricing": {
       "cache_read_per_token": "0.00000005",
@@ -4024,12 +4026,12 @@
   },
   "mistral/mistral-large-4": {
     "pricing": {
-      "cache_read_per_token": "0.00000007",
+      "cache_read_per_token": "0.00000014",
       "currency": "USD",
-      "input_per_token": "0.00000068",
-      "output_per_token": "0.00000209",
+      "input_per_token": "0.00000136",
+      "output_per_token": "0.00000418",
       "source": "community",
-      "updated_at": "2026-10-12T14:15:57Z"
+      "updated_at": "2026-10-26T12:12:31Z"
     },
     "context_window": {
       "context": 1048576,
@@ -4188,28 +4190,6 @@
     },
     "release_date": "2026-03-01"
   },
-  "mistral/mistral-nemo": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0.00000015",
-      "output_per_token": "0.00000015",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 128000
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "mistral/mistral-ocr-2512": {
     "modalities": {
       "input": [
@@ -4355,30 +4335,14 @@
     "status": "deprecated",
     "release_date": "2024-09-01"
   },
-  "mistral/pixtral-large-latest": {
+  "mistral/voxtral-mini-latest": {
     "pricing": {
       "currency": "USD",
-      "input_per_token": "0.000002",
-      "output_per_token": "0.000006",
+      "input_per_token": "0",
+      "output_per_token": "0",
       "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
+      "updated_at": "2026-10-26T12:12:31Z"
     },
-    "context_window": {
-      "context": 128000,
-      "output": 128000
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "mistral/voxtral-mini-latest": {
     "modalities": {
       "input": [
         "audio"
@@ -4509,6 +4473,30 @@
     },
     "release_date": "2026-08-14"
   },
+  "mistral/zai-glm-5-3-flash": {
+    "pricing": {
+      "cache_read_per_token": "0.00000003",
+      "currency": "USD",
+      "input_per_token": "0.00000015",
+      "output_per_token": "0.0000005",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "context_window": {
+      "context": 1048576
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-08-26"
+  },
   "moonshot/kimi-k2.6": {
     "pricing": {
       "cache_read_per_token": "0.00000016",
@@ -4606,6 +4594,50 @@
     },
     "release_date": "2026-07-16"
   },
+  "moonshot/kimi-k3.1-pro": {
+    "pricing": {
+      "cache_read_per_token": "0.0000002",
+      "cache_write_per_token": "0.000002",
+      "currency": "USD",
+      "input_per_token": "0.000002",
+      "output_per_token": "0.00001",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-10-23"
+  },
+  "moonshot/kimi-k3.1-pro-highspeed": {
+    "pricing": {
+      "cache_read_per_token": "0.0000002",
+      "cache_write_per_token": "0.000004",
+      "currency": "USD",
+      "input_per_token": "0.000004",
+      "output_per_token": "0.00002",
+      "source": "community",
+      "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-10-23"
+  },
   "nvidia/01-ai/yi-large": {
     "modalities": {
       "input": [
@@ -4615,28 +4647,6 @@
         "text"
       ]
     }
-  },
-  "nvidia/abacusai/dracarys-llama-3.1-70b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/adept/fuyu-8b": {
     "modalities": {
@@ -4669,27 +4679,6 @@
       ]
     }
   },
-  "nvidia/baai/bge-m3": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 8192,
-      "output": 1024
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
-  },
   "nvidia/bigcode/starcoder2-15b": {
     "modalities": {
       "input": [
@@ -4708,9 +4697,6 @@
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
     },
-    "context_window": {
-      "context": 4096
-    },
     "modalities": {
       "input": [
         "text"
@@ -4728,10 +4714,6 @@
       "output_per_token": "0",
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 40960,
-      "output": 40960
     },
     "modalities": {
       "input": [
@@ -4752,9 +4734,6 @@
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
     },
-    "context_window": {
-      "context": 77
-    },
     "modalities": {
       "input": [
         "text"
@@ -4773,42 +4752,16 @@
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
     },
-    "context_window": {
-      "context": 40960,
-      "output": 40960
-    },
     "modalities": {
       "input": [
-        "image",
-        "text"
+        "text",
+        "image"
       ],
       "output": [
         "image"
       ]
     },
     "release_date": "2026-01-15"
-  },
-  "nvidia/bytedance/seed-oss-36b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 262000,
-      "output": 262000
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/databricks/dbrx-instruct": {
     "modalities": {
@@ -4829,96 +4782,6 @@
         "text"
       ]
     }
-  },
-  "nvidia/deepseek-ai/deepseek-v4-flash": {
-    "pricing": {
-      "cache_read_per_token": "0.0000000028",
-      "currency": "USD",
-      "input_per_token": "0.00000014",
-      "output_per_token": "0.00000028",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 1048576,
-      "output": 393216
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/deepseek-ai/deepseek-v4-flash-0731": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-08-24T06:47:59Z"
-    },
-    "context_window": {
-      "context": 1000000,
-      "output": 384000
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/deepseek-ai/deepseek-v4-pro": {
-    "pricing": {
-      "cache_read_per_token": "0.000000003625",
-      "currency": "USD",
-      "input_per_token": "0.000000435",
-      "output_per_token": "0.00000087",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 1048576,
-      "output": 393216
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/deepseek-ai/deepseek-v4-pro-0813": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-08-31T12:36:08Z"
-    },
-    "context_window": {
-      "context": 1000000,
-      "output": 384000
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/deepseek-ai/deepseek-v4.1-flash": {
     "pricing": {
@@ -4995,28 +4858,6 @@
     },
     "release_date": "2026-06-09"
   },
-  "nvidia/google/gemma-2-2b-it": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/google/gemma-2b": {
     "modalities": {
       "input": [
@@ -5035,10 +4876,6 @@
       "source": "community",
       "updated_at": "2026-07-28T16:05:20Z"
     },
-    "context_window": {
-      "context": 131072,
-      "output": 16384
-    },
     "modalities": {
       "input": [
         "text",
@@ -5048,6 +4885,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-03-12"
   },
   "nvidia/google/gemma-3-4b-it": {
@@ -5058,10 +4896,6 @@
       "source": "community",
       "updated_at": "2026-07-28T16:05:20Z"
     },
-    "context_window": {
-      "context": 131072,
-      "output": 16384
-    },
     "modalities": {
       "input": [
         "text",
@@ -5071,53 +4905,8 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-03-12"
-  },
-  "nvidia/google/gemma-3n-e2b-it": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/google/gemma-3n-e4b-it": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/google/gemma-4-31b-it": {
     "pricing": {
@@ -5226,92 +5015,6 @@
       ]
     }
   },
-  "nvidia/meta/esm2-650m": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
-  },
-  "nvidia/meta/esmfold": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
-  },
-  "nvidia/meta/llama-3.1-70b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/meta/llama-3.1-8b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 16000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/meta/llama-3.2-11b-vision-instruct": {
     "pricing": {
       "currency": "USD",
@@ -5335,50 +5038,6 @@
     },
     "release_date": "2024-09-25"
   },
-  "nvidia/meta/llama-3.2-1b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/meta/llama-3.2-3b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 32768,
-      "output": 32000
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/meta/llama-3.2-90b-vision-instruct": {
     "pricing": {
       "currency": "USD",
@@ -5386,10 +5045,6 @@
       "output_per_token": "0",
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
     },
     "modalities": {
       "input": [
@@ -5402,51 +5057,6 @@
     },
     "release_date": "2024-09-25"
   },
-  "nvidia/meta/llama-3.3-70b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/meta/llama-4-maverick-17b-128e-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/meta/llama-guard-4-12b": {
     "pricing": {
       "currency": "USD",
@@ -5454,10 +5064,6 @@
       "output_per_token": "0",
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 16384
     },
     "modalities": {
       "input": [
@@ -5535,83 +5141,17 @@
       ]
     }
   },
-  "nvidia/microsoft/phi-4-mini-instruct": {
+  "nvidia/minimaxai/minimax-m3.1-flash": {
     "pricing": {
       "currency": "USD",
       "input_per_token": "0",
       "output_per_token": "0",
       "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
+      "updated_at": "2026-10-26T12:12:31Z"
     },
     "context_window": {
-      "context": 131072,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/microsoft/phi-4-multimodal-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/minimaxai/minimax-m2.7": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 204800,
-      "output": 131072
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/minimaxai/minimax-m3": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 1000000,
-      "output": 16384
+      "context": 262144,
+      "output": 262144
     },
     "modalities": {
       "input": [
@@ -5623,7 +5163,7 @@
         "text"
       ]
     },
-    "status": "deprecated"
+    "release_date": "2026-10-19"
   },
   "nvidia/mistralai/codestral-22b-instruct-v0.1": {
     "modalities": {
@@ -5655,30 +5195,8 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-06-10"
-  },
-  "nvidia/mistralai/ministral-14b-instruct-2512": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "context_window": {
-      "context": 262144,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/mistralai/mistral-7b-instruct-v0.3": {
     "pricing": {
@@ -5700,6 +5218,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2024-05-22"
   },
   "nvidia/mistralai/mistral-large": {
@@ -5722,29 +5241,6 @@
       ]
     }
   },
-  "nvidia/mistralai/mistral-large-3-675b-instruct-2512": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 262144,
-      "output": 262144
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/mistralai/mistral-medium-3-instruct": {
     "pricing": {
       "currency": "USD",
@@ -5753,10 +5249,6 @@
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
     },
-    "context_window": {
-      "context": 131072,
-      "output": 32768
-    },
     "modalities": {
       "input": [
         "text",
@@ -5766,93 +5258,8 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-05-07"
-  },
-  "nvidia/mistralai/mistral-medium-3.5-128b": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/mistralai/mistral-nemotron": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/mistralai/mistral-small-4-119b-2603": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/mistralai/mixtral-8x22b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 65536,
-      "output": 13108
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/mistralai/mixtral-8x22b-v0.1": {
     "modalities": {
@@ -5863,28 +5270,6 @@
         "text"
       ]
     }
-  },
-  "nvidia/mistralai/mixtral-8x7b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 32768,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/moonshotai/kimi-k2.6": {
     "pricing": {
@@ -5933,6 +5318,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-07-16"
   },
   "nvidia/nv-mistralai/mistral-nemo-12b-instruct": {
@@ -5995,25 +5381,6 @@
     },
     "release_date": "2025-03-18"
   },
-  "nvidia/nvidia/cosmos-predict1-5b": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video"
-      ],
-      "output": [
-        "video"
-      ]
-    }
-  },
   "nvidia/nvidia/cosmos-reason2-8b": {
     "pricing": {
       "currency": "USD",
@@ -6036,26 +5403,8 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-12-01"
-  },
-  "nvidia/nvidia/cosmos-transfer1-7b": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video"
-      ],
-      "output": [
-        "video"
-      ]
-    }
   },
   "nvidia/nvidia/cosmos-transfer2_5-2b": {
     "pricing": {
@@ -6086,28 +5435,6 @@
         "text"
       ]
     }
-  },
-  "nvidia/nvidia/gliner-pii": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/nvidia/llama-3.1-nemoguard-8b-content-safety": {
     "modalities": {
@@ -6159,52 +5486,8 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-04-15"
-  },
-  "nvidia/nvidia/llama-3.1-nemotron-nano-8b-v1": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "context_window": {
-      "context": 131072,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "context_window": {
-      "context": 32768,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/nvidia/llama-3.1-nemotron-safety-guard-8b-v3": {
     "pricing": {
@@ -6244,6 +5527,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-04-07"
   },
   "nvidia/nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1": {
@@ -6267,63 +5551,6 @@
       ]
     }
   },
-  "nvidia/nvidia/llama-3.3-nemotron-super-49b-v1": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/nvidia/llama-3.3-nemotron-super-49b-v1.5": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/nvidia/llama-3_2-nemoretriever-300m-embed-v1": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 32768,
-      "output": 2048
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
-  },
   "nvidia/nvidia/llama-nemotron-embed-vl-1b-v2": {
     "pricing": {
       "currency": "USD",
@@ -6333,17 +5560,7 @@
       "updated_at": "2026-07-20T22:04:30Z"
     },
     "context_window": {
-      "context": 32768,
-      "output": 2048
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
+      "context": 8192
     },
     "release_date": "2025-12-18"
   },
@@ -6356,17 +5573,8 @@
       "updated_at": "2026-07-20T22:04:30Z"
     },
     "context_window": {
-      "context": 128000,
+      "context": 10240,
       "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
     },
     "release_date": "2025-12-18"
   },
@@ -6409,28 +5617,6 @@
       ]
     }
   },
-  "nvidia/nvidia/nemotron-3-content-safety": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/nvidia/nemotron-3-embed-1b": {
     "modalities": {
       "input": [
@@ -6440,28 +5626,6 @@
         "text"
       ]
     }
-  },
-  "nvidia/nvidia/nemotron-3-nano-30b-a3b": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 131072,
-      "output": 131072
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
     "pricing": {
@@ -6490,16 +5654,11 @@
   },
   "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
     "pricing": {
-      "cache_read_per_token": "0.00000015",
       "currency": "USD",
-      "input_per_token": "0.0000005",
-      "output_per_token": "0.0000025",
+      "input_per_token": "0",
+      "output_per_token": "0",
       "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 1000000,
-      "output": 65536
+      "updated_at": "2026-10-26T12:12:31Z"
     },
     "modalities": {
       "input": [
@@ -6599,74 +5758,6 @@
       ]
     }
   },
-  "nvidia/nvidia/nemotron-content-safety-reasoning-4b": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/nvidia/nemotron-mini-4b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/nvidia/nemotron-nano-12b-v2-vl": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 128000
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/nvidia/nemotron-nano-3-30b-a3b": {
     "modalities": {
       "input": [
@@ -6721,48 +5812,6 @@
       ]
     }
   },
-  "nvidia/nvidia/nv-embed-v1": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 32768,
-      "output": 2048
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
-  },
-  "nvidia/nvidia/nv-embedcode-7b-v1": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 32768,
-      "output": 2048
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
-  },
   "nvidia/nvidia/nv-embedqa-mistral-7b-v2": {
     "modalities": {
       "input": [
@@ -6784,28 +5833,6 @@
       ]
     }
   },
-  "nvidia/nvidia/nvidia-nemotron-nano-9b-v2": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 131072,
-      "output": 131072
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/nvidia/rerank-qa-mistral-4b": {
     "pricing": {
       "currency": "USD",
@@ -6818,14 +5845,7 @@
       "context": 128000,
       "output": 4096
     },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
+    "status": "deprecated",
     "release_date": "2024-03-17"
   },
   "nvidia/nvidia/riva-translate-4b-instruct": {
@@ -6858,6 +5878,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-12-12"
   },
   "nvidia/nvidia/riva-translate-4b-instruct-v2": {
@@ -6922,16 +5943,12 @@
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
     },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
     "modalities": {
       "input": [
-        "text"
+        "audio"
       ],
       "output": [
-        "text"
+        "audio"
       ]
     },
     "release_date": "2024-10-03"
@@ -6974,6 +5991,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-01-01"
   },
   "nvidia/nvidia/usdvalidate": {
@@ -6992,6 +6010,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2024-07-24"
   },
   "nvidia/nvidia/vila": {
@@ -7036,6 +6055,10 @@
       "source": "community",
       "updated_at": "2026-07-20T22:04:30Z"
     },
+    "context_window": {
+      "context": 448,
+      "output": 4096
+    },
     "modalities": {
       "input": [
         "audio"
@@ -7074,8 +6097,7 @@
     },
     "modalities": {
       "input": [
-        "text",
-        "image"
+        "text"
       ],
       "output": [
         "image"
@@ -7102,142 +6124,6 @@
     },
     "release_date": "2025-08-19"
   },
-  "nvidia/qwen/qwen2.5-coder-32b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 4096
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/qwen/qwen3-coder-480b-a35b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 262144,
-      "output": 66536
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/qwen/qwen3-next-80b-a3b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 262144,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/qwen/qwen3.5-122b-a10b": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 262144,
-      "output": 65536
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image",
-        "video",
-        "audio"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/qwen/qwen3.5-397b-a17b": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 262144,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/sarvamai/sarvam-m": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/snowflake/arctic-embed-l": {
     "modalities": {
       "input": [
@@ -7247,51 +6133,6 @@
         "text"
       ]
     }
-  },
-  "nvidia/stepfun-ai/step-3.5-flash": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 256000,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
-  "nvidia/stepfun-ai/step-3.7-flash": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 256000,
-      "output": 16384
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
   },
   "nvidia/stepfun-ai/step-5-preview": {
     "pricing": {
@@ -7305,49 +6146,16 @@
       "context": 1048576,
       "output": 1048576
     },
-    "release_date": "2026-09-16"
-  },
-  "nvidia/thinkingmachines/inkling": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
     "modalities": {
       "input": [
         "text",
-        "image",
-        "audio"
+        "image"
       ],
       "output": [
         "text"
       ]
     },
-    "status": "deprecated"
-  },
-  "nvidia/upstage/solar-10.7b-instruct": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-28T16:05:20Z"
-    },
-    "context_window": {
-      "context": 128000,
-      "output": 8192
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
+    "release_date": "2026-09-16"
   },
   "nvidia/writer/palmyra-creative-122b": {
     "modalities": {
@@ -7389,28 +6197,6 @@
       ]
     }
   },
-  "nvidia/z-ai/glm-5.2": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
-    },
-    "context_window": {
-      "context": 1000000,
-      "output": 131072
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    },
-    "status": "deprecated"
-  },
   "nvidia/z-ai/glm-5.3": {
     "pricing": {
       "currency": "USD",
@@ -7448,8 +6234,7 @@
     "modalities": {
       "input": [
         "text",
-        "image",
-        "video"
+        "image"
       ],
       "output": [
         "text"
@@ -7467,19 +6252,18 @@
       ]
     }
   },
-  "ollama_cloud/deepseek-v4-flash": {
+  "ollama_cloud/beam": {
     "pricing": {
-      "cache_read_per_token": "0.000000007",
       "currency": "USD",
-      "input_per_token": "0.00000022",
-      "output_per_token": "0.00000066",
+      "input_per_token": "0",
+      "output_per_token": "0",
       "source": "community",
       "subscription": true,
-      "updated_at": "2026-09-22T15:35:00Z"
+      "updated_at": "2026-10-26T12:12:31Z"
     },
     "context_window": {
       "context": 1048576,
-      "output": 1048576
+      "output": 131072
     },
     "modalities": {
       "input": [
@@ -7488,30 +6272,31 @@
       "output": [
         "text"
       ]
-    }
+    },
+    "release_date": "2026-10-05"
   },
-  "ollama_cloud/deepseek-v4-flash:0731": {
+  "ollama_cloud/clef:27b": {
     "pricing": {
-      "cache_read_per_token": "0.000000007",
       "currency": "USD",
-      "input_per_token": "0.00000022",
-      "output_per_token": "0.00000066",
+      "input_per_token": "0.00000024",
+      "output_per_token": "0",
       "source": "community",
       "subscription": true,
-      "updated_at": "2026-09-22T15:35:00Z"
+      "updated_at": "2026-10-26T12:12:31Z"
     },
     "context_window": {
-      "context": 1048576,
-      "output": 1048576
+      "context": 65536
     },
     "modalities": {
       "input": [
-        "text"
+        "text",
+        "image"
       ],
       "output": [
         "text"
       ]
-    }
+    },
+    "release_date": "2026-10-01"
   },
   "ollama_cloud/deepseek-v4-pro": {
     "pricing": {
@@ -7619,10 +6404,6 @@
       "subscription": true,
       "updated_at": "2026-09-22T15:35:00Z"
     },
-    "context_window": {
-      "context": 262144,
-      "output": 262144
-    },
     "modalities": {
       "input": [
         "text",
@@ -7633,29 +6414,6 @@
       ]
     },
     "release_date": "2026-04-02"
-  },
-  "ollama_cloud/glm-5.1": {
-    "pricing": {
-      "cache_read_per_token": "0.0000002",
-      "currency": "USD",
-      "input_per_token": "0.000001",
-      "output_per_token": "0.0000032",
-      "source": "community",
-      "subscription": true,
-      "updated_at": "2026-09-22T15:35:00Z"
-    },
-    "context_window": {
-      "context": 202752,
-      "output": 131072
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
   },
   "ollama_cloud/glm-5.2": {
     "pricing": {
@@ -7777,29 +6535,6 @@
     },
     "release_date": "2025-08-05"
   },
-  "ollama_cloud/kimi-k2.5": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "subscription": true,
-      "updated_at": "2026-09-03T01:27:55Z"
-    },
-    "context_window": {
-      "context": 262144,
-      "output": 262144
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    }
-  },
   "ollama_cloud/kimi-k2.6": {
     "pricing": {
       "cache_read_per_token": "0.00000016",
@@ -7873,28 +6608,6 @@
       ]
     },
     "release_date": "2026-07-16"
-  },
-  "ollama_cloud/minimax-m2.5": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0",
-      "output_per_token": "0",
-      "source": "community",
-      "subscription": true,
-      "updated_at": "2026-09-03T01:27:55Z"
-    },
-    "context_window": {
-      "context": 204800,
-      "output": 131072
-    },
-    "modalities": {
-      "input": [
-        "text"
-      ],
-      "output": [
-        "text"
-      ]
-    }
   },
   "ollama_cloud/minimax-m2.7": {
     "pricing": {
@@ -7998,13 +6711,13 @@
   },
   "ollama_cloud/mistral-large-4": {
     "pricing": {
-      "cache_read_per_token": "0.00000014",
+      "cache_read_per_token": "0.00000007",
       "currency": "USD",
-      "input_per_token": "0.00000136",
-      "output_per_token": "0.00000418",
+      "input_per_token": "0.00000068",
+      "output_per_token": "0.00000209",
       "source": "community",
       "subscription": true,
-      "updated_at": "2026-10-12T14:15:57Z"
+      "updated_at": "2026-10-26T12:12:31Z"
     },
     "context_window": {
       "context": 1048576,
@@ -8034,6 +6747,15 @@
     "context_window": {
       "context": 1048576,
       "output": 131072
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
     },
     "release_date": "2026-10-15"
   },
@@ -8070,10 +6792,6 @@
       "subscription": true,
       "updated_at": "2026-09-22T15:35:00Z"
     },
-    "context_window": {
-      "context": 262144,
-      "output": 65536
-    },
     "modalities": {
       "input": [
         "text"
@@ -8106,29 +6824,6 @@
       ]
     },
     "release_date": "2026-06-04"
-  },
-  "ollama_cloud/qwen3.5:397b": {
-    "pricing": {
-      "currency": "USD",
-      "input_per_token": "0.0000006",
-      "output_per_token": "0.0000036",
-      "source": "community",
-      "subscription": true,
-      "updated_at": "2026-09-22T15:35:00Z"
-    },
-    "context_window": {
-      "context": 262144,
-      "output": 65536
-    },
-    "modalities": {
-      "input": [
-        "text",
-        "image"
-      ],
-      "output": [
-        "text"
-      ]
-    }
   },
   "openai/babbage-002": {
     "modalities": {
