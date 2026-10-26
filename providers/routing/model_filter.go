@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	core "github.com/inference-gateway/inference-gateway/providers/core"
+	modelsdev "github.com/inference-gateway/inference-gateway/providers/modelsdev"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -34,7 +34,7 @@ func ModelMatches(set map[string]bool, modelID string) bool {
 
 // FilterModels applies the ALLOWED_MODELS / DISALLOWED_MODELS semantics: a
 // non-empty allow list wins over everything else. Otherwise models the
-// community status table marks as deprecated are dropped unless
+// models.dev table marks as deprecated are dropped unless
 // showDeprecated is set, then the deny list applies. Empty lists pass everything.
 func FilterModels(models []types.Model, allowedModels, disallowedModels string, showDeprecated bool) []types.Model {
 	if allowedModels != "" {
@@ -53,7 +53,7 @@ func FilterModels(models []types.Model, allowedModels, disallowedModels string, 
 
 	if !showDeprecated {
 		models = slices.DeleteFunc(slices.Clone(models), func(model types.Model) bool {
-			return core.IsDeprecated(model.ID)
+			return modelsdev.Lookup(model.ID).Deprecated()
 		})
 	}
 

@@ -7,22 +7,14 @@ import (
 )
 
 type ListModelsResponseLlamacpp struct {
-	Object string        `json:"object"`
-	Data   []types.Model `json:"data"`
+	modelListing
 }
 
 func (l *ListModelsResponseLlamacpp) Transform() types.ListModelsResponse {
 	provider := constants.LlamacppID
-	models := make([]types.Model, len(l.Data))
-	for i, model := range l.Data {
-		model.ServedBy = provider
-		model.ID = string(provider) + "/" + model.ID
-		models[i] = model
-	}
-
 	return types.ListModelsResponse{
 		Provider: &provider,
 		Object:   l.Object,
-		Data:     models,
+		Data:     l.models(provider),
 	}
 }

@@ -5,9 +5,4 @@ AGENTS.md
 .agents
 .github/workflows/claude.yml
 .github/workflows/infer.yml
-
-# Generated community fallback tables (owned by internal/communitygen); their
-# array values reflow under prettier. The hand-maintained *.overrides.json
-# companions stay prettier-formatted.
-providers/core/community_*.json
-!providers/core/community_*.overrides.json
+providers/modelsdev/models.json

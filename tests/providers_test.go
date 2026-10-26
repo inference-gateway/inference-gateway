@@ -640,27 +640,14 @@ func BenchmarkListModels(b *testing.B) {
 }
 
 func BenchmarkProviderTransformations(b *testing.B) {
-	ollamaData := &transformers.ListModelsResponseOllama{
-		Data: []types.Model{
-			{ID: "openai/gpt-3.5-turbo"},
-			{ID: "openai/gpt-4"},
-		},
-	}
+	ollamaData := &transformers.ListModelsResponseOllama{}
+	require.NoError(b, json.Unmarshal([]byte(`{"data":[{"id":"openai/gpt-3.5-turbo"},{"id":"openai/gpt-4"}]}`), ollamaData))
 
-	openaiData := &transformers.ListModelsResponseOpenai{
-		Data: []types.Model{
-			{ID: "openai/gpt-4"},
-			{ID: "openai/gpt-3.5-turbo"},
-		},
-	}
+	openaiData := &transformers.ListModelsResponseOpenai{}
+	require.NoError(b, json.Unmarshal([]byte(`{"data":[{"id":"openai/gpt-4"},{"id":"openai/gpt-3.5-turbo"}]}`), openaiData))
 
-	mistralData := &transformers.ListModelsResponseMistral{
-		Object: "list",
-		Data: []types.Model{
-			{ID: "mistral-large-latest"},
-			{ID: "mistral-small-latest"},
-		},
-	}
+	mistralData := &transformers.ListModelsResponseMistral{}
+	require.NoError(b, json.Unmarshal([]byte(`{"object":"list","data":[{"id":"mistral-large-latest"},{"id":"mistral-small-latest"}]}`), mistralData))
 
 	b.Run("OllamaTransform", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

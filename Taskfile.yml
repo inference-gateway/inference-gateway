@@ -46,32 +46,11 @@ tasks:
       - task: format
       - echo "✅ Codegen completed successfully!"
 
-  pricing:sync:
-    desc: 'Sync the community model-pricing fallback table from models.dev (needs network + gh); commit the regenerated JSON'
+  modelsdev:sync:
+    desc: 'Sync the models.dev metadata table (pricing, context windows, modalities, statuses, release dates) from models.dev (needs network + gh); commit the regenerated JSON'
     cmds:
       - gh api repos/sst/models.dev/tarball > /tmp/models.dev.tar.gz
-      - go run cmd/generate/main.go -type CommunityPricing -input /tmp/models.dev.tar.gz -output providers/core/community_pricing.json
-      - rm -f /tmp/models.dev.tar.gz
-
-  contextwindow:sync:
-    desc: 'Sync the community context-window fallback table from models.dev (needs network + gh); commit the regenerated JSON'
-    cmds:
-      - gh api repos/sst/models.dev/tarball > /tmp/models.dev.tar.gz
-      - go run cmd/generate/main.go -type CommunityContextWindows -input /tmp/models.dev.tar.gz -output providers/core/community_context_windows.json
-      - rm -f /tmp/models.dev.tar.gz
-
-  modalities:sync:
-    desc: 'Sync the community modalities fallback table from models.dev (needs network + gh); commit the regenerated JSON'
-    cmds:
-      - gh api repos/sst/models.dev/tarball > /tmp/models.dev.tar.gz
-      - go run cmd/generate/main.go -type CommunityModalities -input /tmp/models.dev.tar.gz -output providers/core/community_modalities.json
-      - rm -f /tmp/models.dev.tar.gz
-
-  status:sync:
-    desc: 'Sync the community model-status fallback table from models.dev (needs network + gh); commit the regenerated JSON'
-    cmds:
-      - gh api repos/sst/models.dev/tarball > /tmp/models.dev.tar.gz
-      - go run cmd/generate/main.go -type CommunityStatuses -input /tmp/models.dev.tar.gz -output providers/core/community_statuses.json
+      - go run cmd/generate/main.go -type ModelsDev -input /tmp/models.dev.tar.gz -output providers/modelsdev/models.json
       - rm -f /tmp/models.dev.tar.gz
 
   tidy:
@@ -138,6 +117,11 @@ tasks:
     cmds:
       - '{{.BENCH_CMD}}'
 
+  benchmark:e2e:
+    desc: 'Run end-to-end benchmarks: the built gateway against an in-process tokenless upstream (not part of benchmark:check)'
+    cmds:
+      - go test -tags e2e -run '^$' -bench BenchmarkE2E -benchmem ./tests/
+
   benchmark:check:
     desc: 'Run benchmarks and fail on regression vs tests/benchmarks/baseline.txt'
     vars:
@@ -148,15 +132,28 @@ tasks:
       - 'set -o pipefail; {{.BENCH_CMD}} | tee bin/benchmark.txt'
       - '{{.BENCHSTAT}} tests/benchmarks/baseline.txt bin/benchmark.txt'
       - |
-        {{.BENCHSTAT}} -format csv tests/benchmarks/baseline.txt bin/benchmark.txt 2>/dev/null |
-        awk -F, -v t_time={{.TIME_TOLERANCE_PCT}} -v t_allocs={{.ALLOCS_TOLERANCE_PCT}} '
-          $3 == "CI" { unit = $2; limit = (unit == "sec/op") ? t_time : (unit == "allocs/op") ? t_allocs : 0; next }
-          limit && $1 != "geomean" && $6 ~ /^\+/ && substr($6, 2) + 0 > limit {
-            printf "REGRESSION: %s %s %s vs baseline (limit +%d%%)\n", $1, unit, $6, limit
-            failed = 1
-          }
-          END { if (failed) exit 1; print "benchmark:check: no regression beyond tolerance" }
-        '
+        gate() {
+          want=$1; limit=$2; shift 2
+          {{.BENCHSTAT}} -format csv "$@" tests/benchmarks/baseline.txt bin/benchmark.txt 2>/dev/null |
+          awk -F, -v want="$want" -v limit="$limit" '
+            $3 == "CI" { unit = $2; next }
+            unit == want && $1 != "geomean" && $6 ~ /^\+/ && substr($6, 2) + 0 > limit {
+              printf "REGRESSION: %s %s %s vs baseline (limit +%d%%)\n", $1, unit, $6, limit
+              failed = 1
+            }
+            END { exit failed }
+          '
+        }
+        failed=0
+        gate allocs/op {{.ALLOCS_TOLERANCE_PCT}} -ignore cpu || failed=1
+        cpu=$(grep -m1 '^cpu:' bin/benchmark.txt)
+        if grep -qxF "$cpu" tests/benchmarks/baseline.txt; then
+          gate sec/op {{.TIME_TOLERANCE_PCT}} || failed=1
+        else
+          echo "benchmark:check: no sec/op baseline for '${cpu#cpu: }', compared allocs/op only (add a block with task benchmark:baseline)"
+        fi
+        if [ "$failed" -ne 0 ]; then exit 1; fi
+        echo "benchmark:check: no regression beyond tolerance"
 
   benchmark:baseline:
     desc: 'Refresh tests/benchmarks/baseline.txt (run on a GitHub-hosted runner, commit the result)'
