@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.60.1](https://github.com/inference-gateway/inference-gateway/compare/v0.60.0...v0.60.1) (2026-10-26)
+
+### 🐛 Bug Fixes
+
+* **providers:** consolidate models.dev metadata and fix /v1/models listings ([#809](https://github.com/inference-gateway/inference-gateway/issues/809)) ([ae8ecec](https://github.com/inference-gateway/inference-gateway/commit/ae8ececde293406fd242f1e92cc209ff31142503))
+* **providers:** decode Cohere's native models listing ([#807](https://github.com/inference-gateway/inference-gateway/issues/807)) ([1233c09](https://github.com/inference-gateway/inference-gateway/commit/1233c0961ee49309135a5fa3a92b4a2c1535e387))
+
+### 📚 Documentation
+
+* **examples:** use current provider flagships in rest endpoint examples ([#802](https://github.com/inference-gateway/inference-gateway/issues/802)) ([3be3a9e](https://github.com/inference-gateway/inference-gateway/commit/3be3a9e4d62883d1f382e6435326d0341000fd64))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump body-parser ([#806](https://github.com/inference-gateway/inference-gateway/issues/806)) ([a47056b](https://github.com/inference-gateway/inference-gateway/commit/a47056b2a28c6142d3eb845bd1d00eefcace098d))
+* **deps:** bump github.com/go-jose/go-jose/v4 ([#803](https://github.com/inference-gateway/inference-gateway/issues/803)) ([c93039e](https://github.com/inference-gateway/inference-gateway/commit/c93039e030f5359ac02ea232f57b99d08f6dce75))
+* **deps:** bump github.com/open-policy-agent/opa ([#805](https://github.com/inference-gateway/inference-gateway/issues/805)) ([6b932c9](https://github.com/inference-gateway/inference-gateway/commit/6b932c9b7a5fa9194c16fe067585a24b172382b5))
+* **modelsdev:** sync the models.dev metadata table ([#811](https://github.com/inference-gateway/inference-gateway/issues/811)) ([f2f1d52](https://github.com/inference-gateway/inference-gateway/commit/f2f1d52024f08bb59189b4311cdfc98a4c9ee62f))
+
 ## [0.60.0](https://github.com/inference-gateway/inference-gateway/compare/v0.59.1...v0.60.0) (2026-10-21)
 
 ### ✨ Features
