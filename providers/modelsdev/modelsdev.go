@@ -148,7 +148,7 @@ func (c Catalog) Lookup(model string) Metadata {
 	}
 	var stack [maxVariants]string
 	variants := modelVariants(model, stack[:0])
-	if len(variants) == 1 && !strings.Contains(model, "_") {
+	if len(variants) == 1 && !strings.Contains(model, ".") {
 		return Metadata{}
 	}
 	return resolve(c.rows, variants)

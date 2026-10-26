@@ -23,6 +23,7 @@ const (
 	e2eListedModels    = 100
 	e2eStartupTimeout  = 30 * time.Second
 	e2eHealthPoll      = 50 * time.Millisecond
+	e2eHealthTimeout   = 2 * time.Second
 	e2eAPIKey          = "e2e"
 	e2eGatewaySource   = "../cmd/gateway"
 	e2eAssistantReply  = "Hello from the e2e upstream."
@@ -158,9 +159,10 @@ func e2eFreePort(b *testing.B) string {
 func e2eWaitHealthy(b *testing.B, url string) {
 	b.Helper()
 
+	client := &http.Client{Timeout: e2eHealthTimeout}
 	deadline := time.Now().Add(e2eStartupTimeout)
 	for time.Now().Before(deadline) {
-		if resp, err := http.Get(url); err == nil {
+		if resp, err := client.Get(url); err == nil {
 			_ = resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
 				return
