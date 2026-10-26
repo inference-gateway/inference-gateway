@@ -159,6 +159,20 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "cloudflare/@cf/black-forest-labs/flux-2-klein-4b": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
+  },
+  "cloudflare/@cf/bytedance/stable-diffusion-xl-lightning": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
+  },
   "cloudflare/@cf/cloudflare/clairic": {
     "currency": "USD",
     "input_per_token": "0.0000001",
@@ -354,6 +368,13 @@
     "output_per_token": "0.000001",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
+  },
+  "cloudflare/@cf/stabilityai/stable-diffusion-xl-base-1.0": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "cloudflare/@cf/zai-org/glm-4.7-flash": {
     "currency": "USD",
@@ -829,6 +850,14 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
+  "google/gemini-pro-latest": {
+    "cache_read_per_token": "0.0000002",
+    "currency": "USD",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.000012",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
+  },
   "google/gemini-robotics-er-2-preview": {
     "cache_read_per_token": "0.0000001",
     "currency": "USD",
@@ -858,33 +887,26 @@
     "source": "community",
     "updated_at": "2026-07-27T09:42:20Z"
   },
-  "google/veo-3.1-fast-generate-preview": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-10-20T11:41:46Z"
-  },
-  "google/veo-3.1-generate-preview": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-10-20T11:41:46Z"
-  },
-  "google/veo-3.1-lite-generate-preview": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-10-20T11:41:46Z"
-  },
   "groq/allam-2-7b": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-08-05T16:53:50Z"
+  },
+  "groq/canopylabs/orpheus-arabic-saudi": {
+    "currency": "USD",
+    "input_per_token": "0.00004",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
+  },
+  "groq/canopylabs/orpheus-v1-english": {
+    "currency": "USD",
+    "input_per_token": "0.000022",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "groq/llama-3.1-8b-instant": {
     "currency": "USD",
@@ -931,11 +953,12 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "groq/openai/gpt-oss-safeguard-20b": {
+    "cache_read_per_token": "0.0000000375",
     "currency": "USD",
     "input_per_token": "0.000000075",
     "output_per_token": "0.0000003",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "groq/qwen/qwen3.6-27b": {
     "cache_read_per_token": "0.0000003",
@@ -951,6 +974,20 @@
     "output_per_token": "0.000004",
     "source": "community",
     "updated_at": "2026-09-03T01:27:55Z"
+  },
+  "groq/whisper-large-v3": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
+  },
+  "groq/whisper-large-v3-turbo": {
+    "currency": "USD",
+    "input_per_token": "0",
+    "output_per_token": "0",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "minimax/MiniMax-M2": {
     "currency": "USD",
@@ -1057,31 +1094,10 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "mistral/devstral-medium-2507": {
-    "currency": "USD",
-    "input_per_token": "0.0000004",
-    "output_per_token": "0.000002",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "mistral/devstral-medium-latest": {
     "currency": "USD",
     "input_per_token": "0.0000004",
     "output_per_token": "0.000002",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "mistral/devstral-small-2505": {
-    "currency": "USD",
-    "input_per_token": "0.0000001",
-    "output_per_token": "0.0000003",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "mistral/devstral-small-2507": {
-    "currency": "USD",
-    "input_per_token": "0.0000001",
-    "output_per_token": "0.0000003",
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
@@ -1161,13 +1177,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "mistral/mistral-large-2411": {
-    "currency": "USD",
-    "input_per_token": "0.000002",
-    "output_per_token": "0.000006",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "mistral/mistral-large-2512": {
     "cache_read_per_token": "0.00000005",
     "currency": "USD",
@@ -1177,12 +1186,12 @@
     "updated_at": "2026-10-05T13:26:20Z"
   },
   "mistral/mistral-large-4": {
-    "cache_read_per_token": "0.00000007",
+    "cache_read_per_token": "0.00000014",
     "currency": "USD",
-    "input_per_token": "0.00000068",
-    "output_per_token": "0.00000209",
+    "input_per_token": "0.00000136",
+    "output_per_token": "0.00000418",
     "source": "community",
-    "updated_at": "2026-10-12T14:15:57Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "mistral/mistral-large-latest": {
     "cache_read_per_token": "0.00000005",
@@ -1229,13 +1238,6 @@
     "source": "community",
     "updated_at": "2026-10-20T11:41:46Z"
   },
-  "mistral/mistral-nemo": {
-    "currency": "USD",
-    "input_per_token": "0.00000015",
-    "output_per_token": "0.00000015",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "mistral/mistral-small-2506": {
     "currency": "USD",
     "input_per_token": "0.0000001",
@@ -1273,12 +1275,12 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "mistral/pixtral-large-latest": {
+  "mistral/voxtral-mini-latest": {
     "currency": "USD",
-    "input_per_token": "0.000002",
-    "output_per_token": "0.000006",
+    "input_per_token": "0",
+    "output_per_token": "0",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "mistral/voxtral-mini-transcribe-realtime-2602": {
     "currency": "USD",
@@ -1317,6 +1319,14 @@
     "source": "community",
     "updated_at": "2026-09-21T11:50:17Z"
   },
+  "mistral/zai-glm-5-3-flash": {
+    "cache_read_per_token": "0.00000003",
+    "currency": "USD",
+    "input_per_token": "0.00000015",
+    "output_per_token": "0.0000005",
+    "source": "community",
+    "updated_at": "2026-10-26T12:09:08Z"
+  },
   "moonshot/kimi-k2.6": {
     "cache_read_per_token": "0.00000016",
     "currency": "USD",
@@ -1350,19 +1360,23 @@
     "source": "community",
     "updated_at": "2026-10-12T14:15:57Z"
   },
-  "nvidia/abacusai/dracarys-llama-3.1-70b-instruct": {
+  "moonshot/kimi-k3.1-pro": {
+    "cache_read_per_token": "0.0000002",
+    "cache_write_per_token": "0.000002",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000002",
+    "output_per_token": "0.00001",
     "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
-  "nvidia/baai/bge-m3": {
+  "moonshot/kimi-k3.1-pro-highspeed": {
+    "cache_read_per_token": "0.0000002",
+    "cache_write_per_token": "0.000004",
     "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
+    "input_per_token": "0.000004",
+    "output_per_token": "0.00002",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "nvidia/black-forest-labs/flux.1-dev": {
     "currency": "USD",
@@ -1392,43 +1406,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/bytedance/seed-oss-36b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/deepseek-ai/deepseek-v4-flash": {
-    "cache_read_per_token": "0.0000000028",
-    "currency": "USD",
-    "input_per_token": "0.00000014",
-    "output_per_token": "0.00000028",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/deepseek-ai/deepseek-v4-flash-0731": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-08-24T06:47:59Z"
-  },
-  "nvidia/deepseek-ai/deepseek-v4-pro": {
-    "cache_read_per_token": "0.000000003625",
-    "currency": "USD",
-    "input_per_token": "0.000000435",
-    "output_per_token": "0.00000087",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/deepseek-ai/deepseek-v4-pro-0813": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-08-31T12:36:08Z"
-  },
   "nvidia/deepseek-ai/deepseek-v4.1-flash": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1442,13 +1419,6 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-10-05T13:26:20Z"
-  },
-  "nvidia/google/gemma-2-2b-it": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
   },
   "nvidia/google/gemma-3-12b-it": {
     "currency": "USD",
@@ -1464,20 +1434,6 @@
     "source": "community",
     "updated_at": "2026-07-28T16:05:20Z"
   },
-  "nvidia/google/gemma-3n-e2b-it": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/google/gemma-3n-e4b-it": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/google/gemma-4-31b-it": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1492,34 +1448,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/meta/esm2-650m": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/meta/esmfold": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/meta/llama-3.1-70b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/meta/llama-3.1-8b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/meta/llama-3.2-11b-vision-instruct": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1527,35 +1455,7 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/meta/llama-3.2-1b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/meta/llama-3.2-3b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/meta/llama-3.2-90b-vision-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/meta/llama-3.3-70b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/meta/llama-4-maverick-17b-128e-instruct": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
@@ -1576,33 +1476,12 @@
     "source": "community",
     "updated_at": "2026-08-17T06:44:00Z"
   },
-  "nvidia/microsoft/phi-4-mini-instruct": {
+  "nvidia/minimaxai/minimax-m3.1-flash": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/microsoft/phi-4-multimodal-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/minimaxai/minimax-m2.7": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/minimaxai/minimax-m3": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "nvidia/mistralai/magistral-small-2506": {
     "currency": "USD",
@@ -1611,13 +1490,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/mistralai/ministral-14b-instruct-2512": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
   "nvidia/mistralai/mistral-7b-instruct-v0.3": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1625,49 +1497,7 @@
     "source": "community",
     "updated_at": "2026-07-28T16:05:20Z"
   },
-  "nvidia/mistralai/mistral-large-3-675b-instruct-2512": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/mistralai/mistral-medium-3-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/mistralai/mistral-medium-3.5-128b": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/mistralai/mistral-nemotron": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/mistralai/mistral-small-4-119b-2603": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/mistralai/mixtral-8x22b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/mistralai/mixtral-8x7b-instruct": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
@@ -1702,26 +1532,12 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/nvidia/cosmos-predict1-5b": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/nvidia/cosmos-reason2-8b": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/nvidia/cosmos-transfer1-7b": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
   },
   "nvidia/nvidia/cosmos-transfer2_5-2b": {
     "currency": "USD",
@@ -1730,28 +1546,7 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/nvidia/gliner-pii": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/nvidia/llama-3.1-nemotron-70b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/nvidia/llama-3.1-nemotron-nano-8b-v1": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
@@ -1771,27 +1566,6 @@
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/nvidia/llama-3.3-nemotron-super-49b-v1": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/nvidia/llama-3.3-nemotron-super-49b-v1.5": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/nvidia/llama-3_2-nemoretriever-300m-embed-v1": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
   },
   "nvidia/nvidia/llama-nemotron-embed-vl-1b-v2": {
     "currency": "USD",
@@ -1814,20 +1588,6 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/nvidia/nemotron-3-content-safety": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/nvidia/nemotron-3-nano-30b-a3b": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
     "currency": "USD",
     "input_per_token": "0",
@@ -1836,12 +1596,11 @@
     "updated_at": "2026-07-20T22:04:30Z"
   },
   "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
-    "cache_read_per_token": "0.00000015",
     "currency": "USD",
-    "input_per_token": "0.0000005",
-    "output_per_token": "0.0000025",
+    "input_per_token": "0",
+    "output_per_token": "0",
     "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "nvidia/nvidia/nemotron-3.5-content-safety": {
     "currency": "USD",
@@ -1864,49 +1623,7 @@
     "source": "community",
     "updated_at": "2026-10-19T11:57:10Z"
   },
-  "nvidia/nvidia/nemotron-content-safety-reasoning-4b": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/nvidia/nemotron-mini-4b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/nvidia/nemotron-nano-12b-v2-vl": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
   "nvidia/nvidia/nemotron-voicechat": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/nvidia/nv-embed-v1": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/nvidia/nv-embedcode-7b-v1": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/nvidia/nvidia-nemotron-nano-9b-v2": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
@@ -2004,89 +1721,12 @@
     "source": "community",
     "updated_at": "2026-07-20T22:04:30Z"
   },
-  "nvidia/qwen/qwen2.5-coder-32b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/qwen/qwen3-coder-480b-a35b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/qwen/qwen3-next-80b-a3b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/qwen/qwen3.5-122b-a10b": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/qwen/qwen3.5-397b-a17b": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/sarvamai/sarvam-m": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/stepfun-ai/step-3.5-flash": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
-  "nvidia/stepfun-ai/step-3.7-flash": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
-  },
   "nvidia/stepfun-ai/step-5-preview": {
     "currency": "USD",
     "input_per_token": "0",
     "output_per_token": "0",
     "source": "community",
     "updated_at": "2026-10-19T11:57:10Z"
-  },
-  "nvidia/thinkingmachines/inkling": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/upstage/solar-10.7b-instruct": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-28T16:05:20Z"
-  },
-  "nvidia/z-ai/glm-5.2": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "updated_at": "2026-07-20T22:04:30Z"
   },
   "nvidia/z-ai/glm-5.3": {
     "currency": "USD",
@@ -2102,23 +1742,21 @@
     "source": "community",
     "updated_at": "2026-09-14T11:37:00Z"
   },
-  "ollama_cloud/deepseek-v4-flash": {
-    "cache_read_per_token": "0.000000007",
+  "ollama_cloud/beam": {
     "currency": "USD",
-    "input_per_token": "0.00000022",
-    "output_per_token": "0.00000066",
+    "input_per_token": "0",
+    "output_per_token": "0",
     "source": "community",
     "subscription": true,
-    "updated_at": "2026-09-22T15:35:00Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
-  "ollama_cloud/deepseek-v4-flash:0731": {
-    "cache_read_per_token": "0.000000007",
+  "ollama_cloud/clef:27b": {
     "currency": "USD",
-    "input_per_token": "0.00000022",
-    "output_per_token": "0.00000066",
+    "input_per_token": "0.00000024",
+    "output_per_token": "0",
     "source": "community",
     "subscription": true,
-    "updated_at": "2026-09-22T15:35:00Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "ollama_cloud/deepseek-v4-pro": {
     "cache_read_per_token": "0.000000022",
@@ -2161,15 +1799,6 @@
     "currency": "USD",
     "input_per_token": "0.00000014",
     "output_per_token": "0.0000004",
-    "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-22T15:35:00Z"
-  },
-  "ollama_cloud/glm-5.1": {
-    "cache_read_per_token": "0.0000002",
-    "currency": "USD",
-    "input_per_token": "0.000001",
-    "output_per_token": "0.0000032",
     "source": "community",
     "subscription": true,
     "updated_at": "2026-09-22T15:35:00Z"
@@ -2219,14 +1848,6 @@
     "subscription": true,
     "updated_at": "2026-09-22T15:35:00Z"
   },
-  "ollama_cloud/kimi-k2.5": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
-  },
   "ollama_cloud/kimi-k2.6": {
     "cache_read_per_token": "0.00000016",
     "currency": "USD",
@@ -2253,14 +1874,6 @@
     "source": "community",
     "subscription": true,
     "updated_at": "2026-09-22T15:35:00Z"
-  },
-  "ollama_cloud/minimax-m2.5": {
-    "currency": "USD",
-    "input_per_token": "0",
-    "output_per_token": "0",
-    "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-03T01:27:55Z"
   },
   "ollama_cloud/minimax-m2.7": {
     "cache_read_per_token": "0.00000006",
@@ -2298,13 +1911,13 @@
     "updated_at": "2026-09-22T15:35:00Z"
   },
   "ollama_cloud/mistral-large-4": {
-    "cache_read_per_token": "0.00000014",
+    "cache_read_per_token": "0.00000007",
     "currency": "USD",
-    "input_per_token": "0.00000136",
-    "output_per_token": "0.00000418",
+    "input_per_token": "0.00000068",
+    "output_per_token": "0.00000209",
     "source": "community",
     "subscription": true,
-    "updated_at": "2026-10-12T14:15:57Z"
+    "updated_at": "2026-10-26T12:09:08Z"
   },
   "ollama_cloud/muse-spark-open": {
     "cache_read_per_token": "0.00000015",
@@ -2337,14 +1950,6 @@
     "currency": "USD",
     "input_per_token": "0.0000001",
     "output_per_token": "0.000003",
-    "source": "community",
-    "subscription": true,
-    "updated_at": "2026-09-22T15:35:00Z"
-  },
-  "ollama_cloud/qwen3.5:397b": {
-    "currency": "USD",
-    "input_per_token": "0.0000006",
-    "output_per_token": "0.0000036",
     "source": "community",
     "subscription": true,
     "updated_at": "2026-09-22T15:35:00Z"

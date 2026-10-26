@@ -160,6 +160,49 @@
       "text"
     ]
   },
+  "cloudflare/@cf/black-forest-labs/flux-1-schnell": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "image"
+    ]
+  },
+  "cloudflare/@cf/black-forest-labs/flux-2-dev": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "image"
+    ]
+  },
+  "cloudflare/@cf/black-forest-labs/flux-2-klein-4b": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "image"
+    ]
+  },
+  "cloudflare/@cf/black-forest-labs/flux-2-klein-9b": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "image"
+    ]
+  },
+  "cloudflare/@cf/bytedance/stable-diffusion-xl-lightning": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "image"
+    ]
+  },
   "cloudflare/@cf/cloudflare/clairic": {
     "input": [
       "text",
@@ -244,6 +287,31 @@
     ],
     "output": [
       "text"
+    ]
+  },
+  "cloudflare/@cf/leonardo/lucid-origin": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "image"
+    ]
+  },
+  "cloudflare/@cf/leonardo/phoenix-1.0": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "image"
+    ]
+  },
+  "cloudflare/@cf/lykon/dreamshaper-8-lcm": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "image"
     ]
   },
   "cloudflare/@cf/meta/llama-3.1-8b-instruct-fp8": {
@@ -386,6 +454,14 @@
     ],
     "output": [
       "text"
+    ]
+  },
+  "cloudflare/@cf/stabilityai/stable-diffusion-xl-base-1.0": {
+    "input": [
+      "text"
+    ],
+    "output": [
+      "image"
     ]
   },
   "cloudflare/@cf/zai-org/glm-4.7-flash": {
@@ -1099,6 +1175,17 @@
       "text"
     ]
   },
+  "google/gemini-pro-latest": {
+    "input": [
+      "text",
+      "image",
+      "video",
+      "audio"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "google/gemini-robotics-er-2-preview": {
     "input": [
       "text",
@@ -1185,34 +1272,6 @@
       "image"
     ]
   },
-  "google/veo-3.1-fast-generate-preview": {
-    "input": [
-      "text",
-      "image",
-      "video"
-    ],
-    "output": [
-      "video"
-    ]
-  },
-  "google/veo-3.1-generate-preview": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "video"
-    ]
-  },
-  "google/veo-3.1-lite-generate-preview": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "video"
-    ]
-  },
   "groq/allam-2-7b": {
     "input": [
       "text"
@@ -1235,22 +1294,6 @@
     ],
     "output": [
       "audio"
-    ]
-  },
-  "groq/groq/compound": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "groq/groq/compound-mini": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
     ]
   },
   "groq/llama-3.1-8b-instant": {
@@ -1459,31 +1502,7 @@
       "text"
     ]
   },
-  "mistral/devstral-medium-2507": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "mistral/devstral-medium-latest": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "mistral/devstral-small-2505": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "mistral/devstral-small-2507": {
     "input": [
       "text"
     ],
@@ -1579,14 +1598,6 @@
       "text"
     ]
   },
-  "mistral/mistral-large-2411": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "mistral/mistral-large-2512": {
     "input": [
       "text",
@@ -1658,14 +1669,6 @@
       "text"
     ]
   },
-  "mistral/mistral-nemo": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "mistral/mistral-ocr-2512": {
     "input": [
       "image",
@@ -1722,15 +1725,6 @@
     ]
   },
   "mistral/pixtral-12b": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "mistral/pixtral-large-latest": {
     "input": [
       "text",
       "image"
@@ -1797,6 +1791,16 @@
       "text"
     ]
   },
+  "mistral/zai-glm-5-3-flash": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "moonshot/kimi-k2.6": {
     "input": [
       "text",
@@ -1837,15 +1841,27 @@
       "text"
     ]
   },
-  "nvidia/01-ai/yi-large": {
+  "moonshot/kimi-k3.1-pro": {
     "input": [
-      "text"
+      "text",
+      "image",
+      "video"
     ],
     "output": [
       "text"
     ]
   },
-  "nvidia/abacusai/dracarys-llama-3.1-70b-instruct": {
+  "moonshot/kimi-k3.1-pro-highspeed": {
+    "input": [
+      "text",
+      "image",
+      "video"
+    ],
+    "output": [
+      "text"
+    ]
+  },
+  "nvidia/01-ai/yi-large": {
     "input": [
       "text"
     ],
@@ -1871,14 +1887,6 @@
     ]
   },
   "nvidia/aisingapore/sea-lion-7b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/baai/bge-m3": {
     "input": [
       "text"
     ],
@@ -1921,19 +1929,11 @@
   },
   "nvidia/black-forest-labs/flux_2-klein-4b": {
     "input": [
-      "image",
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "image"
-    ]
-  },
-  "nvidia/bytedance/seed-oss-36b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
     ]
   },
   "nvidia/databricks/dbrx-instruct": {
@@ -1945,38 +1945,6 @@
     ]
   },
   "nvidia/deepseek-ai/deepseek-coder-6.7b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/deepseek-ai/deepseek-v4-flash": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/deepseek-ai/deepseek-v4-flash-0731": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/deepseek-ai/deepseek-v4-pro": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/deepseek-ai/deepseek-v4-pro-0813": {
     "input": [
       "text"
     ],
@@ -2026,14 +1994,6 @@
       "text"
     ]
   },
-  "nvidia/google/gemma-2-2b-it": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/google/gemma-2b": {
     "input": [
       "text"
@@ -2052,24 +2012,6 @@
     ]
   },
   "nvidia/google/gemma-3-4b-it": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/google/gemma-3n-e2b-it": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/google/gemma-3n-e4b-it": {
     "input": [
       "text",
       "image"
@@ -2145,38 +2087,6 @@
       "text"
     ]
   },
-  "nvidia/meta/esm2-650m": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/meta/esmfold": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/meta/llama-3.1-70b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/meta/llama-3.1-8b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/meta/llama-3.2-11b-vision-instruct": {
     "input": [
       "text",
@@ -2186,40 +2096,7 @@
       "text"
     ]
   },
-  "nvidia/meta/llama-3.2-1b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/meta/llama-3.2-3b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/meta/llama-3.2-90b-vision-instruct": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/meta/llama-3.3-70b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/meta/llama-4-maverick-17b-128e-instruct": {
     "input": [
       "text",
       "image"
@@ -2280,31 +2157,7 @@
       "text"
     ]
   },
-  "nvidia/microsoft/phi-4-mini-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/microsoft/phi-4-multimodal-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/minimaxai/minimax-m2.7": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/minimaxai/minimax-m3": {
+  "nvidia/minimaxai/minimax-m3.1-flash": {
     "input": [
       "text",
       "image",
@@ -2325,15 +2178,6 @@
   "nvidia/mistralai/magistral-small-2506": {
     "input": [
       "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/mistralai/ministral-14b-instruct-2512": {
-    "input": [
-      "text",
-      "image"
     ],
     "output": [
       "text"
@@ -2363,15 +2207,6 @@
       "text"
     ]
   },
-  "nvidia/mistralai/mistral-large-3-675b-instruct-2512": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/mistralai/mistral-medium-3-instruct": {
     "input": [
       "text",
@@ -2381,49 +2216,7 @@
       "text"
     ]
   },
-  "nvidia/mistralai/mistral-medium-3.5-128b": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/mistralai/mistral-nemotron": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/mistralai/mistral-small-4-119b-2603": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/mistralai/mixtral-8x22b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/mistralai/mixtral-8x22b-v0.1": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/mistralai/mixtral-8x7b-instruct": {
     "input": [
       "text"
     ],
@@ -2483,16 +2276,6 @@
       "text"
     ]
   },
-  "nvidia/nvidia/cosmos-predict1-5b": {
-    "input": [
-      "text",
-      "image",
-      "video"
-    ],
-    "output": [
-      "video"
-    ]
-  },
   "nvidia/nvidia/cosmos-reason2-8b": {
     "input": [
       "text",
@@ -2501,16 +2284,6 @@
     ],
     "output": [
       "text"
-    ]
-  },
-  "nvidia/nvidia/cosmos-transfer1-7b": {
-    "input": [
-      "text",
-      "image",
-      "video"
-    ],
-    "output": [
-      "video"
     ]
   },
   "nvidia/nvidia/cosmos-transfer2_5-2b": {
@@ -2524,14 +2297,6 @@
     ]
   },
   "nvidia/nvidia/embed-qa-4": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/gliner-pii": {
     "input": [
       "text"
     ],
@@ -2571,23 +2336,6 @@
       "text"
     ]
   },
-  "nvidia/nvidia/llama-3.1-nemotron-nano-8b-v1": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/nvidia/llama-3.1-nemotron-safety-guard-8b-v3": {
     "input": [
       "text"
@@ -2621,48 +2369,6 @@
       "text"
     ]
   },
-  "nvidia/nvidia/llama-3.3-nemotron-super-49b-v1": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/llama-3.3-nemotron-super-49b-v1.5": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/llama-3_2-nemoretriever-300m-embed-v1": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/llama-nemotron-embed-vl-1b-v2": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/llama-nemotron-rerank-vl-1b-v2": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/nvidia/llama3-chatqa-1.5-70b": {
     "input": [
       "text"
@@ -2688,23 +2394,7 @@
       "text"
     ]
   },
-  "nvidia/nvidia/nemotron-3-content-safety": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/nvidia/nemotron-3-embed-1b": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/nemotron-3-nano-30b-a3b": {
     "input": [
       "text"
     ],
@@ -2773,32 +2463,6 @@
       "text"
     ]
   },
-  "nvidia/nvidia/nemotron-content-safety-reasoning-4b": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/nemotron-mini-4b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/nemotron-nano-12b-v2-vl": {
-    "input": [
-      "text",
-      "image",
-      "video"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/nvidia/nemotron-nano-3-30b-a3b": {
     "input": [
       "text"
@@ -2833,22 +2497,6 @@
       "text"
     ]
   },
-  "nvidia/nvidia/nv-embed-v1": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/nv-embedcode-7b-v1": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/nvidia/nv-embedqa-mistral-7b-v2": {
     "input": [
       "text"
@@ -2861,22 +2509,6 @@
     "input": [
       "text",
       "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/nvidia-nemotron-nano-9b-v2": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/nvidia/rerank-qa-mistral-4b": {
-    "input": [
-      "text"
     ],
     "output": [
       "text"
@@ -2924,10 +2556,10 @@
   },
   "nvidia/nvidia/studiovoice": {
     "input": [
-      "text"
+      "audio"
     ],
     "output": [
-      "text"
+      "audio"
     ]
   },
   "nvidia/nvidia/synthetic-video-detector": {
@@ -2990,8 +2622,7 @@
   },
   "nvidia/qwen/qwen-image": {
     "input": [
-      "text",
-      "image"
+      "text"
     ],
     "output": [
       "image"
@@ -3006,58 +2637,6 @@
       "image"
     ]
   },
-  "nvidia/qwen/qwen2.5-coder-32b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/qwen/qwen3-coder-480b-a35b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/qwen/qwen3-next-80b-a3b-instruct": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/qwen/qwen3.5-122b-a10b": {
-    "input": [
-      "text",
-      "image",
-      "video",
-      "audio"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/qwen/qwen3.5-397b-a17b": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/sarvamai/sarvam-m": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/snowflake/arctic-embed-l": {
     "input": [
       "text"
@@ -3066,36 +2645,10 @@
       "text"
     ]
   },
-  "nvidia/stepfun-ai/step-3.5-flash": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/stepfun-ai/step-3.7-flash": {
+  "nvidia/stepfun-ai/step-5-preview": {
     "input": [
       "text",
       "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/thinkingmachines/inkling": {
-    "input": [
-      "text",
-      "image",
-      "audio"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "nvidia/upstage/solar-10.7b-instruct": {
-    "input": [
-      "text"
     ],
     "output": [
       "text"
@@ -3133,14 +2686,6 @@
       "text"
     ]
   },
-  "nvidia/z-ai/glm-5.2": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "nvidia/z-ai/glm-5.3": {
     "input": [
       "text"
@@ -3152,8 +2697,7 @@
   "nvidia/z-ai/glm-5.3-flash": {
     "input": [
       "text",
-      "image",
-      "video"
+      "image"
     ],
     "output": [
       "text"
@@ -3167,7 +2711,7 @@
       "text"
     ]
   },
-  "ollama_cloud/deepseek-v4-flash": {
+  "ollama_cloud/beam": {
     "input": [
       "text"
     ],
@@ -3175,9 +2719,10 @@
       "text"
     ]
   },
-  "ollama_cloud/deepseek-v4-flash:0731": {
+  "ollama_cloud/clef:27b": {
     "input": [
-      "text"
+      "text",
+      "image"
     ],
     "output": [
       "text"
@@ -3226,14 +2771,6 @@
       "text"
     ]
   },
-  "ollama_cloud/glm-5.1": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "ollama_cloud/glm-5.2": {
     "input": [
       "text"
@@ -3276,15 +2813,6 @@
       "text"
     ]
   },
-  "ollama_cloud/kimi-k2.5": {
-    "input": [
-      "text",
-      "image"
-    ],
-    "output": [
-      "text"
-    ]
-  },
   "ollama_cloud/kimi-k2.6": {
     "input": [
       "text",
@@ -3304,14 +2832,6 @@
     ]
   },
   "ollama_cloud/kimi-k3": {
-    "input": [
-      "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "ollama_cloud/minimax-m2.5": {
     "input": [
       "text"
     ],
@@ -3365,6 +2885,15 @@
       "text"
     ]
   },
+  "ollama_cloud/muse-spark-open": {
+    "input": [
+      "text",
+      "image"
+    ],
+    "output": [
+      "text"
+    ]
+  },
   "ollama_cloud/nemotron-3-nano:30b": {
     "input": [
       "text"
@@ -3384,15 +2913,6 @@
   "ollama_cloud/nemotron-3-ultra": {
     "input": [
       "text"
-    ],
-    "output": [
-      "text"
-    ]
-  },
-  "ollama_cloud/qwen3.5:397b": {
-    "input": [
-      "text",
-      "image"
     ],
     "output": [
       "text"

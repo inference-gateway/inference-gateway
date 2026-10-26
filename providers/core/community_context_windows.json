@@ -466,6 +466,10 @@
     "context": 131072,
     "output": 65536
   },
+  "google/gemini-pro-latest": {
+    "context": 1048576,
+    "output": 65536
+  },
   "google/gemini-robotics-er-2-preview": {
     "context": 131072,
     "output": 65536
@@ -492,17 +496,9 @@
   "google/lyria-3.5": {
     "context": 1048576
   },
-  "google/veo-3.1-fast-generate-preview": {
-    "context": 480,
-    "output": 8192
-  },
-  "google/veo-3.1-generate-preview": {
-    "context": 480,
-    "output": 8192
-  },
-  "google/veo-3.1-lite-generate-preview": {
-    "context": 480,
-    "output": 8192
+  "google/lyria-realtime-exp": {
+    "context": 1048576,
+    "output": 65536
   },
   "groq/allam-2-7b": {
     "context": 4096,
@@ -515,14 +511,6 @@
   "groq/canopylabs/orpheus-v1-english": {
     "context": 4000,
     "output": 50000
-  },
-  "groq/groq/compound": {
-    "context": 131072,
-    "output": 8192
-  },
-  "groq/groq/compound-mini": {
-    "context": 131072,
-    "output": 8192
   },
   "groq/llama-3.1-8b-instant": {
     "context": 131072,
@@ -540,21 +528,17 @@
     "context": 512,
     "output": 512
   },
-  "groq/openai/gpt-oss-20b": {
-    "context": 131072,
-    "output": 65536
-  },
-  "groq/openai/gpt-oss-safeguard-20b": {
-    "context": 131072,
-    "output": 65536
-  },
   "groq/qwen/qwen3.6-27b": {
     "context": 131072,
     "output": 16384
   },
   "groq/qwen/qwen3.8-27b": {
-    "context": 131042,
+    "context": 131072,
     "output": 16384
+  },
+  "groq/whisper-large-v3-turbo": {
+    "context": 448,
+    "output": 448
   },
   "minimax/MiniMax-M2": {
     "context": 204800,
@@ -603,21 +587,9 @@
     "context": 262144,
     "output": 262144
   },
-  "mistral/devstral-medium-2507": {
-    "context": 128000,
-    "output": 128000
-  },
   "mistral/devstral-medium-latest": {
     "context": 262144,
     "output": 262144
-  },
-  "mistral/devstral-small-2505": {
-    "context": 128000,
-    "output": 128000
-  },
-  "mistral/devstral-small-2507": {
-    "context": 128000,
-    "output": 128000
   },
   "mistral/glm-5-2": {
     "context": 1048576
@@ -657,10 +629,6 @@
     "context": 8000,
     "output": 3072
   },
-  "mistral/mistral-large-2411": {
-    "context": 131072,
-    "output": 16384
-  },
   "mistral/mistral-large-2512": {
     "context": 262144,
     "output": 262144
@@ -692,10 +660,6 @@
   "mistral/mistral-moderation-2603": {
     "context": 131072
   },
-  "mistral/mistral-nemo": {
-    "context": 128000,
-    "output": 128000
-  },
   "mistral/mistral-small-2506": {
     "context": 128000,
     "output": 16384
@@ -716,10 +680,6 @@
     "context": 128000,
     "output": 128000
   },
-  "mistral/pixtral-large-latest": {
-    "context": 128000,
-    "output": 128000
-  },
   "mistral/voxtral-small-2507": {
     "context": 32768,
     "output": 32000
@@ -734,6 +694,9 @@
   "mistral/zai-glm-5-3": {
     "context": 1048576
   },
+  "mistral/zai-glm-5-3-flash": {
+    "context": 1048576
+  },
   "moonshot/kimi-k2.6": {
     "context": 262144,
     "output": 262144
@@ -746,74 +709,12 @@
     "context": 262144,
     "output": 262144
   },
-  "nvidia/abacusai/dracarys-llama-3.1-70b-instruct": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/baai/bge-m3": {
-    "context": 8192,
-    "output": 1024
-  },
-  "nvidia/black-forest-labs/flux.1-dev": {
-    "context": 4096
-  },
-  "nvidia/black-forest-labs/flux_1-kontext-dev": {
-    "context": 40960,
-    "output": 40960
-  },
-  "nvidia/black-forest-labs/flux_1-schnell": {
-    "context": 77
-  },
-  "nvidia/black-forest-labs/flux_2-klein-4b": {
-    "context": 40960,
-    "output": 40960
-  },
-  "nvidia/bytedance/seed-oss-36b-instruct": {
-    "context": 262000,
-    "output": 262000
-  },
-  "nvidia/deepseek-ai/deepseek-v4-flash": {
-    "context": 1048576,
-    "output": 393216
-  },
-  "nvidia/deepseek-ai/deepseek-v4-flash-0731": {
-    "context": 1000000,
-    "output": 384000
-  },
-  "nvidia/deepseek-ai/deepseek-v4-pro": {
-    "context": 1048576,
-    "output": 393216
-  },
-  "nvidia/deepseek-ai/deepseek-v4-pro-0813": {
-    "context": 1000000,
-    "output": 384000
-  },
   "nvidia/deepseek-ai/deepseek-v4.1-flash": {
     "context": 1000000,
     "output": 384000
   },
   "nvidia/google/diffusiongemma-26b-a4b-it": {
     "context": 250000
-  },
-  "nvidia/google/gemma-2-2b-it": {
-    "context": 128000,
-    "output": 4096
-  },
-  "nvidia/google/gemma-3-12b-it": {
-    "context": 131072,
-    "output": 16384
-  },
-  "nvidia/google/gemma-3-4b-it": {
-    "context": 131072,
-    "output": 16384
-  },
-  "nvidia/google/gemma-3n-e2b-it": {
-    "context": 128000,
-    "output": 4096
-  },
-  "nvidia/google/gemma-3n-e4b-it": {
-    "context": 128000,
-    "output": 4096
   },
   "nvidia/google/gemma-4-31b-it": {
     "context": 256000,
@@ -823,105 +724,25 @@
     "context": 128000,
     "output": 8192
   },
-  "nvidia/meta/esm2-650m": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/meta/esmfold": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/meta/llama-3.1-70b-instruct": {
-    "context": 128000,
-    "output": 4096
-  },
-  "nvidia/meta/llama-3.1-8b-instruct": {
-    "context": 16000,
-    "output": 4096
-  },
   "nvidia/meta/llama-3.2-11b-vision-instruct": {
     "context": 128000,
     "output": 4096
-  },
-  "nvidia/meta/llama-3.2-1b-instruct": {
-    "context": 128000,
-    "output": 4096
-  },
-  "nvidia/meta/llama-3.2-3b-instruct": {
-    "context": 32768,
-    "output": 32000
-  },
-  "nvidia/meta/llama-3.2-90b-vision-instruct": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/meta/llama-3.3-70b-instruct": {
-    "context": 128000,
-    "output": 4096
-  },
-  "nvidia/meta/llama-4-maverick-17b-128e-instruct": {
-    "context": 128000,
-    "output": 4096
-  },
-  "nvidia/meta/llama-guard-4-12b": {
-    "context": 128000,
-    "output": 16384
   },
   "nvidia/meta/muse-glimmer-30b": {
     "context": 131072,
     "output": 131072
   },
-  "nvidia/microsoft/phi-4-mini-instruct": {
-    "context": 131072,
-    "output": 8192
-  },
-  "nvidia/microsoft/phi-4-multimodal-instruct": {
-    "context": 128000,
-    "output": 16384
-  },
-  "nvidia/minimaxai/minimax-m2.7": {
-    "context": 204800,
-    "output": 131072
-  },
-  "nvidia/minimaxai/minimax-m3": {
-    "context": 1000000,
-    "output": 16384
+  "nvidia/minimaxai/minimax-m3.1-flash": {
+    "context": 262144,
+    "output": 262144
   },
   "nvidia/mistralai/magistral-small-2506": {
     "context": 32768,
     "output": 32768
   },
-  "nvidia/mistralai/ministral-14b-instruct-2512": {
-    "context": 262144,
-    "output": 16384
-  },
   "nvidia/mistralai/mistral-7b-instruct-v0.3": {
     "context": 65536,
     "output": 65536
-  },
-  "nvidia/mistralai/mistral-large-3-675b-instruct-2512": {
-    "context": 262144,
-    "output": 262144
-  },
-  "nvidia/mistralai/mistral-medium-3-instruct": {
-    "context": 131072,
-    "output": 32768
-  },
-  "nvidia/mistralai/mistral-nemotron": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/mistralai/mistral-small-4-119b-2603": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/mistralai/mixtral-8x22b-instruct": {
-    "context": 65536,
-    "output": 13108
-  },
-  "nvidia/mistralai/mixtral-8x7b-instruct": {
-    "context": 32768,
-    "output": 16384
   },
   "nvidia/moonshotai/kimi-k2.6": {
     "context": 262144,
@@ -939,52 +760,23 @@
     "context": 131072,
     "output": 16384
   },
-  "nvidia/nvidia/gliner-pii": {
-    "context": 128000,
-    "output": 4096
-  },
   "nvidia/nvidia/llama-3.1-nemotron-70b-instruct": {
     "context": 128000,
     "output": 8192
-  },
-  "nvidia/nvidia/llama-3.1-nemotron-nano-8b-v1": {
-    "context": 131072,
-    "output": 16384
-  },
-  "nvidia/nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
-    "context": 32768,
-    "output": 16384
   },
   "nvidia/nvidia/llama-3.1-nemotron-safety-guard-8b-v3": {
     "context": 128000,
     "output": 4096
   },
-  "nvidia/nvidia/llama-3_2-nemoretriever-300m-embed-v1": {
-    "context": 32768,
-    "output": 2048
-  },
   "nvidia/nvidia/llama-nemotron-embed-vl-1b-v2": {
-    "context": 32768,
-    "output": 2048
+    "context": 8192
   },
   "nvidia/nvidia/llama-nemotron-rerank-vl-1b-v2": {
-    "context": 128000,
+    "context": 10240,
     "output": 4096
-  },
-  "nvidia/nvidia/nemotron-3-content-safety": {
-    "context": 128000,
-    "output": 4096
-  },
-  "nvidia/nvidia/nemotron-3-nano-30b-a3b": {
-    "context": 131072,
-    "output": 131072
   },
   "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
     "context": 256000,
-    "output": 65536
-  },
-  "nvidia/nvidia/nemotron-3-ultra-550b-a55b": {
-    "context": 1000000,
     "output": 65536
   },
   "nvidia/nvidia/nemotron-3.5-content-safety": {
@@ -999,33 +791,9 @@
     "context": 1048576,
     "output": 8192
   },
-  "nvidia/nvidia/nemotron-content-safety-reasoning-4b": {
-    "context": 128000,
-    "output": 4096
-  },
-  "nvidia/nvidia/nemotron-mini-4b-instruct": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/nvidia/nemotron-nano-12b-v2-vl": {
-    "context": 128000,
-    "output": 128000
-  },
   "nvidia/nvidia/nemotron-voicechat": {
     "context": 128000,
     "output": 8192
-  },
-  "nvidia/nvidia/nv-embed-v1": {
-    "context": 32768,
-    "output": 2048
-  },
-  "nvidia/nvidia/nv-embedcode-7b-v1": {
-    "context": 32768,
-    "output": 2048
-  },
-  "nvidia/nvidia/nvidia-nemotron-nano-9b-v2": {
-    "context": 131072,
-    "output": 131072
   },
   "nvidia/nvidia/rerank-qa-mistral-4b": {
     "context": 128000,
@@ -1043,10 +811,6 @@
     "context": 128000,
     "output": 8192
   },
-  "nvidia/nvidia/studiovoice": {
-    "context": 128000,
-    "output": 8192
-  },
   "nvidia/nvidia/usdcode": {
     "context": 128000,
     "output": 4096
@@ -1055,49 +819,13 @@
     "context": 131072,
     "output": 32768
   },
-  "nvidia/qwen/qwen2.5-coder-32b-instruct": {
-    "context": 128000,
+  "nvidia/openai/whisper-large-v3": {
+    "context": 448,
     "output": 4096
-  },
-  "nvidia/qwen/qwen3-coder-480b-a35b-instruct": {
-    "context": 262144,
-    "output": 66536
-  },
-  "nvidia/qwen/qwen3-next-80b-a3b-instruct": {
-    "context": 262144,
-    "output": 16384
-  },
-  "nvidia/qwen/qwen3.5-122b-a10b": {
-    "context": 262144,
-    "output": 65536
-  },
-  "nvidia/qwen/qwen3.5-397b-a17b": {
-    "context": 262144,
-    "output": 8192
-  },
-  "nvidia/sarvamai/sarvam-m": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/stepfun-ai/step-3.5-flash": {
-    "context": 256000,
-    "output": 16384
-  },
-  "nvidia/stepfun-ai/step-3.7-flash": {
-    "context": 256000,
-    "output": 16384
   },
   "nvidia/stepfun-ai/step-5-preview": {
     "context": 1048576,
     "output": 1048576
-  },
-  "nvidia/upstage/solar-10.7b-instruct": {
-    "context": 128000,
-    "output": 8192
-  },
-  "nvidia/z-ai/glm-5.2": {
-    "context": 1000000,
-    "output": 131072
   },
   "nvidia/z-ai/glm-5.3": {
     "context": 1000000,
@@ -1107,13 +835,12 @@
     "context": 1000000,
     "output": 131072
   },
-  "ollama_cloud/deepseek-v4-flash": {
+  "ollama_cloud/beam": {
     "context": 1048576,
-    "output": 1048576
+    "output": 131072
   },
-  "ollama_cloud/deepseek-v4-flash:0731": {
-    "context": 1048576,
-    "output": 1048576
+  "ollama_cloud/clef:27b": {
+    "context": 65536
   },
   "ollama_cloud/deepseek-v4-pro": {
     "context": 1048576,
@@ -1128,14 +855,6 @@
   },
   "ollama_cloud/deepseek-v4.1-flash:1017": {
     "context": 1048576
-  },
-  "ollama_cloud/gemma4:31b": {
-    "context": 262144,
-    "output": 262144
-  },
-  "ollama_cloud/glm-5.1": {
-    "context": 202752,
-    "output": 131072
   },
   "ollama_cloud/glm-5.2": {
     "context": 976000
@@ -1155,10 +874,6 @@
     "context": 131072,
     "output": 32768
   },
-  "ollama_cloud/kimi-k2.5": {
-    "context": 262144,
-    "output": 262144
-  },
   "ollama_cloud/kimi-k2.6": {
     "context": 262144,
     "output": 262144
@@ -1169,10 +884,6 @@
   },
   "ollama_cloud/kimi-k3": {
     "context": 1048576,
-    "output": 131072
-  },
-  "ollama_cloud/minimax-m2.5": {
-    "context": 204800,
     "output": 131072
   },
   "ollama_cloud/minimax-m2.7": {
@@ -1203,16 +914,8 @@
     "context": 1048576,
     "output": 131072
   },
-  "ollama_cloud/nemotron-3-super": {
-    "context": 262144,
-    "output": 65536
-  },
   "ollama_cloud/nemotron-3-ultra": {
     "context": 262144
-  },
-  "ollama_cloud/qwen3.5:397b": {
-    "context": 262144,
-    "output": 65536
   },
   "openai/chat-latest": {
     "context": 400000,
