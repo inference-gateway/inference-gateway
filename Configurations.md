@@ -86,28 +86,32 @@
 
 ### Server settings
 
-| Environment Variable         | Default Value | Description                                 |
-| ---------------------------- | ------------- | ------------------------------------------- |
-| SERVER_HOST                  | `127.0.0.1`   | Server host                                 |
-| SERVER_PORT                  | `8080`        | Server port                                 |
-| SERVER_READ_TIMEOUT          | `30s`         | Read timeout                                |
-| SERVER_WRITE_TIMEOUT         | `30s`         | Write timeout                               |
-| SERVER_IDLE_TIMEOUT          | `120s`        | Idle timeout                                |
-| SERVER_MAX_REQUEST_BODY_SIZE | `10485760`    | Maximum request body size in bytes (10 MiB) |
-| SERVER_TLS_CERT_PATH         | `""`          | TLS certificate path                        |
-| SERVER_TLS_KEY_PATH          | `""`          | TLS key path                                |
+| Environment Variable         | Default Value | Description                                                                                                                             |
+| ---------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| SERVER_HOST                  | `127.0.0.1`   | Server host                                                                                                                             |
+| SERVER_PORT                  | `8080`        | Server port                                                                                                                             |
+| SERVER_READ_TIMEOUT          | `30s`         | Read timeout                                                                                                                            |
+| SERVER_WRITE_TIMEOUT         | `30s`         | Write timeout                                                                                                                           |
+| SERVER_IDLE_TIMEOUT          | `120s`        | Idle timeout                                                                                                                            |
+| SERVER_MAX_REQUEST_BODY_SIZE | `10485760`    | Maximum request body size in bytes (10 MiB)                                                                                             |
+| SERVER_TLS_CERT_PATH         | `""`          | TLS certificate path                                                                                                                    |
+| SERVER_TLS_KEY_PATH          | `""`          | TLS key path                                                                                                                            |
+| SERVER_TLS_CLIENT_CA_PATH    | `""`          | CA bundle that signs accepted client certificates. Set it to require and verify a client certificate (mutual TLS) - requires server TLS |
 
 ### Client settings
 
-| Environment Variable           | Default Value | Description                              |
-| ------------------------------ | ------------- | ---------------------------------------- |
-| CLIENT_MAX_IDLE_CONNS          | `20`          | Maximum idle connections                 |
-| CLIENT_MAX_IDLE_CONNS_PER_HOST | `20`          | Maximum idle connections per host        |
-| CLIENT_IDLE_CONN_TIMEOUT       | `30s`         | Idle connection timeout                  |
-| CLIENT_TLS_MIN_VERSION         | `TLS12`       | Minimum TLS version                      |
-| CLIENT_DISABLE_COMPRESSION     | `true`        | Disable compression for faster streaming |
-| CLIENT_RESPONSE_HEADER_TIMEOUT | `10s`         | Response header timeout                  |
-| CLIENT_EXPECT_CONTINUE_TIMEOUT | `1s`          | Expect continue timeout                  |
+| Environment Variable           | Default Value | Description                                                                  |
+| ------------------------------ | ------------- | ---------------------------------------------------------------------------- |
+| CLIENT_MAX_IDLE_CONNS          | `20`          | Maximum idle connections                                                     |
+| CLIENT_MAX_IDLE_CONNS_PER_HOST | `20`          | Maximum idle connections per host                                            |
+| CLIENT_IDLE_CONN_TIMEOUT       | `30s`         | Idle connection timeout                                                      |
+| CLIENT_TLS_MIN_VERSION         | `TLS12`       | Minimum TLS version                                                          |
+| CLIENT_DISABLE_COMPRESSION     | `true`        | Disable compression for faster streaming                                     |
+| CLIENT_RESPONSE_HEADER_TIMEOUT | `10s`         | Response header timeout                                                      |
+| CLIENT_EXPECT_CONTINUE_TIMEOUT | `1s`          | Expect continue timeout                                                      |
+| CLIENT_TLS_CA_PATH             | `""`          | Extra CA bundle trusted for provider calls, added on top of the system roots |
+| CLIENT_TLS_CERT_PATH           | `""`          | Client certificate presented to providers that require mutual TLS            |
+| CLIENT_TLS_KEY_PATH            | `""`          | Private key for CLIENT_TLS_CERT_PATH                                         |
 
 ### Providers
 

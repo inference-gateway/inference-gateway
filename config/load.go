@@ -62,6 +62,10 @@ func (cfg *Config) Load(lookuper envconfig.Lookuper) (Config, error) {
 		}
 	}
 
+	if err := cfg.Server.ValidateTLS(); err != nil {
+		return Config{}, err
+	}
+
 	if cfg.Providers == nil {
 		cfg.Providers = make(map[types.Provider]*registry.ProviderConfig)
 	}

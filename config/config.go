@@ -117,6 +117,7 @@ type ServerConfig struct {
 	MaxRequestBodySize int           `env:"MAX_REQUEST_BODY_SIZE, default=10485760" description:"Maximum request body size in bytes (10 MiB)"`
 	TlsCertPath        string        `env:"TLS_CERT_PATH" description:"TLS certificate path"`
 	TlsKeyPath         string        `env:"TLS_KEY_PATH" description:"TLS key path"`
+	TlsClientCaPath    string        `env:"TLS_CLIENT_CA_PATH" description:"CA bundle that signs accepted client certificates. Set it to require and verify a client certificate (mutual TLS) - requires server TLS"`
 }
 
 // Routing configuration

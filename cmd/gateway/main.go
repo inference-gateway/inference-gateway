@@ -195,11 +195,15 @@ func main() {
 	}
 
 	scheme := "http"
-	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
+	if cfg.Server.TLSEnabled() {
 		scheme = "https"
 	}
 
-	httpClient := client.NewHTTPClient(cfg.Client, scheme, cfg.Server.Host, cfg.Server.Port)
+	httpClient, err := client.NewHTTPClient(cfg.Client, scheme, cfg.Server.Host, cfg.Server.Port)
+	if err != nil {
+		appLogger.Error("failed to configure provider http client", err)
+		return
+	}
 	providerRegistry := registry.NewProviderRegistry(cfg.Providers, appLogger)
 
 	// Log registered providers
@@ -394,11 +398,17 @@ func main() {
 		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
 
-	if cfg.Server.TlsCertPath != "" && cfg.Server.TlsKeyPath != "" {
-		go func() {
-			appLogger.Info("starting inference gateway with tls", "port", cfg.Server.Port)
+	if cfg.Server.TLSEnabled() {
+		server.TLSConfig, err = cfg.Server.TLSConfig()
+		if err != nil {
+			appLogger.Error("failed to configure server tls", err)
+			return
+		}
 
-			if err := server.ListenAndServeTLS(cfg.Server.TlsCertPath, cfg.Server.TlsKeyPath); err != nil && err != http.ErrServerClosed {
+		go func() {
+			appLogger.Info("starting inference gateway with tls", "port", cfg.Server.Port, "mutual_tls", cfg.Server.TlsClientCaPath != "")
+
+			if err := server.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
 				appLogger.Error("listen and serve tls error", err)
 			}
 		}()
