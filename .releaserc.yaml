@@ -73,7 +73,7 @@ plugins:
         - path: dist/inference-gateway_Windows_arm64.zip
         - path: dist/checksums.txt
         - path: dist/checksums.txt.sigstore.json
-      releasedLabels: ['released']
+      releasedLabels: ["<%= nextRelease.channel === 'rc' ? 'rc' : 'released' %>"]
       releaseNameTemplate: '🚀 Version ${nextRelease.version}'
       releaseBodyTemplate: |
         ${nextRelease.notes}
@@ -129,8 +129,7 @@ plugins:
         For more installation options and documentation, visit the [README](https://github.com/inference-gateway/inference-gateway#installation).
       successCommentCondition: 'false'
       labels:
-        - "<%= nextRelease.channel === 'rc' ? 'prerelease' : 'release' %>"
-        - "<%= nextRelease.channel === 'rc' ? 'rc' : '' %>"
+        - bug
 
   - - '@semantic-release/git'
     - assets:
