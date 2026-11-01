@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.61.1](https://github.com/inference-gateway/inference-gateway/compare/v0.61.0...v0.61.1) (2026-11-01)
+
+### 🐛 Bug Fixes
+
+* **providers:** reach the gateway's own /proxy route in process ([#823](https://github.com/inference-gateway/inference-gateway/issues/823)) ([dc4b0e9](https://github.com/inference-gateway/inference-gateway/commit/dc4b0e9fe73e22c47fd533678cd9f572b7d4f50f)), closes [#822](https://github.com/inference-gateway/inference-gateway/issues/822)
+
 ## [0.61.0](https://github.com/inference-gateway/inference-gateway/compare/v0.60.1...v0.61.0) (2026-11-01)
 
 ### ✨ Features
