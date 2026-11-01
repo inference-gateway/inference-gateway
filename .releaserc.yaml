@@ -73,7 +73,8 @@ plugins:
         - path: dist/inference-gateway_Windows_arm64.zip
         - path: dist/checksums.txt
         - path: dist/checksums.txt.sigstore.json
-      releasedLabels: ["<%= nextRelease.channel === 'rc' ? 'rc' : 'released' %>"]
+      releasedLabels:
+        ["<%= nextRelease.channel === 'rc' ? 'rc' : 'released' %>"]
       releaseNameTemplate: '🚀 Version ${nextRelease.version}'
       releaseBodyTemplate: |
         ${nextRelease.notes}

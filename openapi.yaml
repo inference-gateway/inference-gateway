@@ -5009,6 +5009,10 @@ components:
                   env: 'SERVER_TLS_KEY_PATH'
                   type: string
                   description: 'TLS key path'
+                - name: tls_client_ca_path
+                  env: 'SERVER_TLS_CLIENT_CA_PATH'
+                  type: string
+                  description: 'CA bundle that signs accepted client certificates. Set it to require and verify a client certificate (mutual TLS) - requires server TLS'
           - client:
               title: 'Client settings'
               settings:
@@ -5047,6 +5051,18 @@ components:
                   type: time.Duration
                   default: '1s'
                   description: 'Expect continue timeout'
+                - name: tls_ca_path
+                  env: 'CLIENT_TLS_CA_PATH'
+                  type: string
+                  description: 'Extra CA bundle trusted for provider calls, added on top of the system roots'
+                - name: tls_cert_path
+                  env: 'CLIENT_TLS_CERT_PATH'
+                  type: string
+                  description: 'Client certificate presented to providers that require mutual TLS'
+                - name: tls_key_path
+                  env: 'CLIENT_TLS_KEY_PATH'
+                  type: string
+                  description: 'Private key for CLIENT_TLS_CERT_PATH'
           - providers:
               title: 'Providers'
               settings:
