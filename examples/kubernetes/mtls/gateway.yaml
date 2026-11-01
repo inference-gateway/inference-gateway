@@ -5,7 +5,9 @@ metadata:
   name: inference-gateway
 ---
 # A plain Deployment rather than a Gateway custom resource: the operator's
-# spec.server.tls has no client CA field yet (inference-gateway/operator#310).
+# spec.server.tls has no client CA field and no outbound client certificate
+# (inference-gateway/operator#311), and its probes cannot pass mutual TLS
+# (inference-gateway/operator#310).
 apiVersion: apps/v1
 kind: Deployment
 metadata:

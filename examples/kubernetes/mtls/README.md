@@ -17,8 +17,12 @@ presents one to a provider that demands it.
 
 - **inference-gateway**: serves HTTPS on 8443 and requires a client certificate signed by the
   example CA (`SERVER_TLS_CLIENT_CA_PATH`). A plain `Deployment`, not a `Gateway` custom resource:
-  the operator's `spec.server.tls` has no client CA field yet
-  ([operator#310](https://github.com/inference-gateway/operator/issues/310)).
+  the operator's `spec.server.tls` has no client CA field and no outbound client certificate
+  ([operator#311](https://github.com/inference-gateway/operator/issues/311)), and the probes it
+  generates cannot pass mutual TLS
+  ([operator#310](https://github.com/inference-gateway/operator/issues/310)). The example moves to a
+  `Gateway` resource once both land - the
+  [tls example](../tls/README.md) is the operator-managed one meanwhile.
 - **mock-provider**: nginx with `ssl_verify_client on`, standing in for a provider behind mutual
   TLS. The gateway reaches it with `CLIENT_TLS_CA_PATH` plus
   `CLIENT_TLS_CERT_PATH`/`CLIENT_TLS_KEY_PATH`.
