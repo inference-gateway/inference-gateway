@@ -15,14 +15,14 @@ presents one to a provider that demands it.
 
 ## Architecture
 
-- **inference-gateway**: serves HTTPS on 8443 and requires a client certificate signed by the
-  example CA (`SERVER_TLS_CLIENT_CA_PATH`). A plain `Deployment`, not a `Gateway` custom resource:
-  the operator's `spec.server.tls` has no client CA field and no outbound client certificate
-  ([operator#311](https://github.com/inference-gateway/operator/issues/311)), and the probes it
-  generates cannot pass mutual TLS
-  ([operator#310](https://github.com/inference-gateway/operator/issues/310)). The example moves to a
-  `Gateway` resource once both land - the
-  [tls example](../tls/README.md) is the operator-managed one meanwhile.
+- **inference-gateway**: a `Gateway` custom resource reconciled by the
+  [operator](https://github.com/inference-gateway/operator) (v0.31.0 or newer, the first release
+  that can express mutual TLS in both directions). `spec.server.tls.clientCARef` makes the gateway
+  require a client certificate signed by the example CA (`SERVER_TLS_CLIENT_CA_PATH`) and switches
+  the probes to `tcpSocket`, since kubelet has no certificate to present. `spec.client.tls` is the
+  material the gateway uses when calling providers (`CLIENT_TLS_CA_PATH`,
+  `CLIENT_TLS_CERT_PATH`/`CLIENT_TLS_KEY_PATH`). The operator mounts every referenced secret key
+  and sets the paths, so the CR names no file paths.
 - **mock-provider**: nginx with `ssl_verify_client on`, standing in for a provider behind mutual
   TLS. The gateway reaches it with `CLIENT_TLS_CA_PATH` plus
   `CLIENT_TLS_CERT_PATH`/`CLIENT_TLS_KEY_PATH`.
@@ -32,10 +32,10 @@ presents one to a provider that demands it.
   `ClusterIssuer` bootstraps the example CA (`cert-manager/issuers.yaml`), a namespaced `Issuer`
   signs from it, and three `Certificate` resources (`cert-manager/certificates.yaml`) produce the
   gateway's server certificate, the gateway's client certificate for provider calls, and the mock
-  provider's server certificate. Each `Secret` holds `tls.crt`, `tls.key` and `ca.crt`, projected
-  into the pods under the file names the gateway environment and the nginx config use. In
-  production, replace the self-signed CA with your own PKI or an ACME issuer - nothing else about
-  the example changes.
+  provider's server certificate. Each `Secret` holds `tls.crt`, `tls.key` and `ca.crt`, which the
+  `Gateway` resource references by key and the other pods project under the file names the nginx
+  config uses. In production, replace the self-signed CA with your own PKI or an ACME issuer -
+  nothing else about the example changes.
 - The provider's nginx config is shared with
   [the docker-compose example](../../docker-compose/mtls/README.md), which issues the same
   certificates with openssl and documents what each one is for.
@@ -59,7 +59,7 @@ imported into the cluster.
 
 ## Quick Start
 
-1. Create the cluster, install cert-manager and import the gateway image:
+1. Create the cluster, install cert-manager and the operator, and import the gateway image:
 
    ```bash
    task deploy-infrastructure
@@ -93,7 +93,8 @@ kubectl -n inference-gateway exec deployment/client -- \
 
 ## Configuration
 
-The gateway environment lives in `gateway.yaml`. Every variable is documented in the
+The gateway's `spec.server.tls` and `spec.client.tls` live in `gateway.yaml`. Every variable the
+operator derives from them is documented in the
 [docker-compose example](../../docker-compose/mtls/README.md#configuration) and in the
 [Configuration Guide](../../../Configurations.md).
 

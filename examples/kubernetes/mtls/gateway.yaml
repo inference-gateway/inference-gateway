@@ -3,98 +3,58 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: inference-gateway
+  labels:
+    inference-gateway.com/managed: 'true'
 ---
-# A plain Deployment rather than a Gateway custom resource: the operator's
-# spec.server.tls has no client CA field and no outbound client certificate
-# (inference-gateway/operator#311), and its probes cannot pass mutual TLS
-# (inference-gateway/operator#310).
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: core.inference-gateway.com/v1alpha1
+kind: Gateway
 metadata:
   name: inference-gateway
   namespace: inference-gateway
   labels:
     app.kubernetes.io/name: inference-gateway
+    app.kubernetes.io/instance: inference-gateway
+    app.kubernetes.io/component: api-gateway
+    app.kubernetes.io/part-of: inference-gateway
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: inference-gateway
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: inference-gateway
-    spec:
-      containers:
-        - name: inference-gateway
-          image: inference-gateway:mtls
-          imagePullPolicy: Never
-          ports:
-            - containerPort: 8443
-          env:
-            - name: ENVIRONMENT
-              value: development
-            - name: SERVER_PORT
-              value: '8443'
-            - name: SERVER_TLS_CERT_PATH
-              value: /certs/server.crt
-            - name: SERVER_TLS_KEY_PATH
-              value: /certs/server.key
-            - name: SERVER_TLS_CLIENT_CA_PATH
-              value: /certs/ca.crt
-            - name: CLIENT_TLS_CA_PATH
-              value: /certs/ca.crt
-            - name: CLIENT_TLS_CERT_PATH
-              value: /certs/client.crt
-            - name: CLIENT_TLS_KEY_PATH
-              value: /certs/client.key
-            - name: OPENAI_API_URL
-              value: https://mock-provider/v1
-            - name: OPENAI_API_KEY
-              value: mock
-          # A readiness probe would need a client certificate, which kubelet
-          # cannot present, so the port being open is as far as it goes.
-          readinessProbe:
-            tcpSocket:
-              port: 8443
-          volumeMounts:
-            - name: certs
-              mountPath: /certs
-              readOnly: true
-      # cert-manager writes tls.crt/tls.key/ca.crt into each Secret, projected
-      # here under the file names the example and its nginx config use.
-      volumes:
-        - name: certs
-          projected:
-            sources:
-              - secret:
-                  name: gateway-server-tls
-                  items:
-                    - key: ca.crt
-                      path: ca.crt
-                    - key: tls.crt
-                      path: server.crt
-                    - key: tls.key
-                      path: server.key
-              - secret:
-                  name: gateway-client-tls
-                  items:
-                    - key: tls.crt
-                      path: client.crt
-                    - key: tls.key
-                      path: client.key
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: inference-gateway
-  namespace: inference-gateway
-spec:
-  selector:
-    app.kubernetes.io/name: inference-gateway
-  ports:
-    - port: 8443
-      targetPort: 8443
+  environment: development
+  # Mutual TLS is newer than the published image, so the example builds it.
+  image: 'inference-gateway:mtls'
+  server:
+    host: '0.0.0.0'
+    port: 8443
+    tls:
+      enabled: true
+      certificateRef:
+        name: gateway-server-tls
+        key: tls.crt
+      keyRef:
+        name: gateway-server-tls
+        key: tls.key
+      # Requires a client certificate signed by the example CA. The operator
+      # also switches the probes to tcpSocket, since kubelet has no certificate.
+      clientCARef:
+        name: gateway-server-tls
+        key: ca.crt
+  client:
+    tls:
+      caRef:
+        name: gateway-client-tls
+        key: ca.crt
+      certificateRef:
+        name: gateway-client-tls
+        key: tls.crt
+      keyRef:
+        name: gateway-client-tls
+        key: tls.key
+  providers:
+    - name: OpenAI
+      enabled: true
+      env:
+        - name: OPENAI_API_URL
+          value: https://mock-provider/v1
+        - name: OPENAI_API_KEY
+          value: mock
 ---
 # A client with the certificates mounted, so `task test` can call the gateway
 # the way a workload in the cluster would.
