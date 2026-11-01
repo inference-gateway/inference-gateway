@@ -24,6 +24,7 @@ import (
 	a2a "github.com/inference-gateway/inference-gateway/internal/a2a"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
+	inprocess "github.com/inference-gateway/inference-gateway/internal/platform/inprocess"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
@@ -194,12 +195,8 @@ func main() {
 		return
 	}
 
-	scheme := "http"
-	if cfg.Server.TLSEnabled() {
-		scheme = "https"
-	}
-
-	httpClient, err := client.NewHTTPClient(cfg.Client, scheme, cfg.Server.Host, cfg.Server.Port)
+	selfListener := inprocess.NewListener()
+	httpClient, err := client.NewHTTPClient(cfg.Client, selfListener, cfg.Server.Host, cfg.Server.Port)
 	if err != nil {
 		appLogger.Error("failed to configure provider http client", err)
 		return
@@ -397,6 +394,12 @@ func main() {
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,
 	}
+	selfServer := &http.Server{
+		Handler:      chain,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
+	}
 
 	if cfg.Server.TLSEnabled() {
 		server.TLSConfig, err = cfg.Server.TLSConfig()
@@ -421,6 +424,12 @@ func main() {
 			}
 		}()
 	}
+
+	go func() {
+		if err := selfServer.Serve(selfListener); err != nil && err != http.ErrServerClosed {
+			appLogger.Error("in-process serve error", err)
+		}
+	}()
 
 	go func() {
 		time.Sleep(providerProbeStartDelay)
@@ -469,5 +478,8 @@ func main() {
 		appLogger.Error("server shutdown error", err)
 	} else {
 		appLogger.Info("server gracefully stopped")
+	}
+	if err := selfServer.Shutdown(ctxShutdown); err != nil {
+		appLogger.Error("in-process server shutdown error", err)
 	}
 }

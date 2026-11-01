@@ -22,6 +22,7 @@ import (
 
 	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
+	inprocess "github.com/inference-gateway/inference-gateway/internal/platform/inprocess"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
@@ -211,7 +212,7 @@ func TestProviderBehindMutualTLS(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient, err := client.NewHTTPClient(tt.cfg, "https", testCertHost, "0")
+			httpClient, err := client.NewHTTPClient(tt.cfg, inprocess.NewListener(), testCertHost, "0")
 			require.NoError(t, err)
 
 			req, err := http.NewRequest(http.MethodGet, provider.URL, nil)
@@ -308,6 +309,63 @@ func TestProxyToProviderBehindMutualTLS(t *testing.T) {
 	}
 }
 
+// TestProviderCallsSkipTheServerTLS points the provider client at the gateway's
+// own mTLS listener, with a server certificate and client settings that could
+// never pass that listener's handshake. The /proxy hop still lists the models,
+// because it reaches the gateway in process.
+func TestProviderCallsSkipTheServerTLS(t *testing.T) {
+	dir := t.TempDir()
+	clientsCA := newTestCA(t, dir, "clients")
+	serverCA := newTestCA(t, dir, "server")
+	_, serverCertPath, serverKeyPath := serverCA.issue(t, dir, "server", x509.ExtKeyUsageServerAuth)
+
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"object":"list","data":[{"id":"gpt-4o","object":"model","created":0,"owned_by":"openai"}]}`))
+	}))
+	defer upstream.Close()
+
+	log, err := logger.NewLogger("test")
+	require.NoError(t, err)
+	providerCfg := map[types.Provider]*registry.ProviderConfig{
+		constants.OpenaiID: {
+			ID:       constants.OpenaiID,
+			Name:     constants.OpenaiDisplayName,
+			URL:      upstream.URL,
+			Token:    "test-key",
+			AuthType: constants.AuthTypeBearer,
+		},
+	}
+	serverCfg := &config.ServerConfig{TlsCertPath: serverCertPath, TlsKeyPath: serverKeyPath, TlsClientCaPath: clientsCA.pemPath}
+	cfg := config.Config{Server: serverCfg, Client: &client.ClientConfig{}, Providers: providerCfg}
+	providers := registry.NewProviderRegistry(providerCfg, log)
+
+	selfListener := inprocess.NewListener()
+	mux := http.NewServeMux()
+	gateway := httptest.NewUnstartedServer(mux)
+	gateway.TLS, err = serverCfg.TLSConfig()
+	require.NoError(t, err)
+	gateway.StartTLS()
+	defer gateway.Close()
+	selfServer := &http.Server{Handler: mux}
+	defer selfServer.Close()
+	go func() { _ = selfServer.Serve(selfListener) }()
+
+	host, port, err := net.SplitHostPort(gateway.Listener.Addr().String())
+	require.NoError(t, err)
+	httpClient, err := client.NewHTTPClient(cfg.Client, selfListener, host, port)
+	require.NoError(t, err)
+	router := api.NewRouter(cfg, log, providers, httpClient, nil, nil, nil, nil, nil)
+	mux.HandleFunc("/proxy/{provider}/{path...}", router.ProxyHandler)
+
+	provider, err := providers.BuildProvider(constants.OpenaiID, httpClient)
+	require.NoError(t, err)
+	models, err := provider.ListModels(t.Context())
+	require.NoError(t, err)
+	require.Len(t, models.Data, 1)
+	assert.Equal(t, "openai/gpt-4o", models.Data[0].ID)
+}
+
 // TestClientTLSConfigErrors covers the startup validation of the outbound
 // settings, which happens when the provider http client is built.
 func TestClientTLSConfigErrors(t *testing.T) {
@@ -346,7 +404,7 @@ func TestClientTLSConfigErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			httpClient, err := client.NewHTTPClient(tt.cfg, "https", testCertHost, "0")
+			httpClient, err := client.NewHTTPClient(tt.cfg, inprocess.NewListener(), testCertHost, "0")
 			require.Error(t, err)
 			assert.Nil(t, httpClient)
 			assert.Contains(t, err.Error(), tt.errContains)

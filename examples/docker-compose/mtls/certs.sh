@@ -32,10 +32,8 @@ issue() {
 }
 
 # One server certificate for both TLS servers in the example: the gateway and
-# the provider in front of it. IP:0.0.0.0 is needed because a provider call
-# loops back through the gateway's own /proxy endpoint at SERVER_HOST, so the
-# gateway verifies its own certificate for the address it binds.
-issue server serverAuth 'DNS:localhost,DNS:inference-gateway,DNS:mock-provider,IP:127.0.0.1,IP:0.0.0.0'
+# the provider in front of it.
+issue server serverAuth 'DNS:localhost,DNS:inference-gateway,DNS:mock-provider,IP:127.0.0.1'
 issue client clientAuth 'DNS:inference-gateway-client'
 
 chmod 644 "$DIR"/*.key
