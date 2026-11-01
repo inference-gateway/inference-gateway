@@ -20,8 +20,13 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
+	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
+	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
+	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 const (
@@ -220,6 +225,85 @@ func TestProviderBehindMutualTLS(t *testing.T) {
 			require.NoError(t, err)
 			defer resp.Body.Close()
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
+		})
+	}
+}
+
+// TestProxyToProviderBehindMutualTLS covers the path a provider call actually
+// takes out of the gateway: the reverse proxy behind /proxy/{provider}.
+func TestProxyToProviderBehindMutualTLS(t *testing.T) {
+	dir := t.TempDir()
+	providersCA := newTestCA(t, dir, "providers")
+	providerCert, _, _ := providersCA.issue(t, dir, "provider", x509.ExtKeyUsageServerAuth)
+	_, clientCertPath, clientKeyPath := providersCA.issue(t, dir, "gateway-client", x509.ExtKeyUsageClientAuth)
+
+	clientCAs := x509.NewCertPool()
+	clientCAs.AddCert(providersCA.certificate)
+
+	provider := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	provider.TLS = &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		Certificates: []tls.Certificate{providerCert},
+		ClientCAs:    clientCAs,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+	}
+	provider.StartTLS()
+	defer provider.Close()
+
+	tests := []struct {
+		name       string
+		cfg        *client.ClientConfig
+		statusCode int
+	}{
+		{
+			name: "extra ca and client certificate reach the provider",
+			cfg: &client.ClientConfig{
+				ClientTlsCaPath:   providersCA.pemPath,
+				ClientTlsCertPath: clientCertPath,
+				ClientTlsKeyPath:  clientKeyPath,
+			},
+			statusCode: http.StatusOK,
+		},
+		{
+			name:       "without a client certificate the provider rejects the handshake",
+			cfg:        &client.ClientConfig{ClientTlsCaPath: providersCA.pemPath},
+			statusCode: http.StatusBadGateway,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			log, err := logger.NewLogger("test")
+			require.NoError(t, err)
+
+			providerCfg := map[types.Provider]*registry.ProviderConfig{
+				constants.OpenaiID: {
+					ID:       constants.OpenaiID,
+					Name:     constants.OpenaiDisplayName,
+					URL:      provider.URL,
+					Token:    "test-key",
+					AuthType: constants.AuthTypeBearer,
+				},
+			}
+			cfg := config.Config{
+				Server:    &config.ServerConfig{},
+				Client:    tt.cfg,
+				Providers: providerCfg,
+			}
+			router := api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), nil, nil, nil, nil, nil, nil)
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("/proxy/{provider}/{path...}", router.ProxyHandler)
+			gateway := httptest.NewServer(mux)
+			defer gateway.Close()
+
+			resp, err := http.Get(gateway.URL + "/proxy/openai/models")
+			require.NoError(t, err)
+			defer resp.Body.Close()
+			assert.Equal(t, tt.statusCode, resp.StatusCode)
 		})
 	}
 }

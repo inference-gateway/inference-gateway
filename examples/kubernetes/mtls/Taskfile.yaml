@@ -1,0 +1,96 @@
+version: '3'
+
+# The certificates and the provider's nginx config are shared with the
+# docker-compose example of the same name.
+vars:
+  EXAMPLE: ../../docker-compose/mtls
+  CERTS: ../../docker-compose/mtls/certs
+  CLUSTER: mtls
+  IMAGE: inference-gateway:mtls
+  NAMESPACE: inference-gateway
+  GATEWAY: https://inference-gateway:8443
+  CURL: kubectl -n inference-gateway exec deployment/client -- curl
+  MTLS: --cacert /certs/ca.crt --cert /certs/client.crt --key /certs/client.key
+  BODY: '{"model":"openai/mock","messages":[{"role":"user","content":"hi"}]}'
+
+tasks:
+  default:
+    desc: 'Show available tasks'
+    cmds:
+      - task --list
+
+  deploy-infrastructure:
+    desc: 'Create the cluster and load the gateway image into it'
+    cmds:
+      - task: create-cluster
+      - task: load-image
+      - echo "🛠️ Infrastructure deployed successfully!"
+
+  create-cluster:
+    desc: 'Create a Kubernetes cluster using ctlptl'
+    cmds:
+      - ctlptl apply -f Cluster.yaml
+
+  load-image:
+    desc: 'Build the gateway from this checkout and import it into the cluster'
+    cmds:
+      # Mutual TLS is newer than the published image, so the example builds it.
+      - docker build -t {{.IMAGE}} ../../..
+      - k3d image import {{.IMAGE}} -c {{.CLUSTER}}
+
+  certs:
+    desc: 'Issue the example CA, server and client certificates'
+    cmds:
+      - sh {{.EXAMPLE}}/certs.sh
+
+  deploy-inference-gateway:
+    desc: 'Deploy the gateway and the provider behind mutual TLS'
+    deps: [certs]
+    cmds:
+      - kubectl create namespace {{.NAMESPACE}} --dry-run=client -o yaml | kubectl apply -f -
+      - |
+        kubectl -n {{.NAMESPACE}} create secret generic mtls-certs \
+          --from-file=ca.crt={{.CERTS}}/ca.crt \
+          --from-file=server.crt={{.CERTS}}/server.crt \
+          --from-file=server.key={{.CERTS}}/server.key \
+          --from-file=client.crt={{.CERTS}}/client.crt \
+          --from-file=client.key={{.CERTS}}/client.key \
+          --dry-run=client -o yaml | kubectl apply -f -
+      - |
+        kubectl -n {{.NAMESPACE}} create configmap mock-provider-conf \
+          --from-file=default.conf={{.EXAMPLE}}/nginx.conf \
+          --dry-run=client -o yaml | kubectl apply -f -
+      - kubectl apply -f gateway.yaml
+      # Every pod reads the certificates once at startup, so a reissued set only
+      # takes effect on a new pod.
+      - kubectl -n {{.NAMESPACE}} rollout restart deployment/inference-gateway deployment/mock-provider deployment/client
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/mock-provider --timeout=180s
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/client --timeout=180s
+      - kubectl -n {{.NAMESPACE}} rollout status deployment/inference-gateway --timeout=180s
+      - echo "🔐 Inference Gateway with mutual TLS deployed successfully!"
+
+  test:
+    desc: 'Run every case from the client pod'
+    silent: true
+    cmds:
+      - |
+        printf '\n=== with a client certificate (expected 200 and the provider reply)\n'
+        {{.CURL}} -sS -w '\n[HTTP %{http_code}]\n' {{.MTLS}} {{.GATEWAY}}/v1/chat/completions \
+          -H 'Content-Type: application/json' -d '{{.BODY}}'
+
+        printf '\n=== without a client certificate (expected a TLS handshake failure)\n'
+        if {{.CURL}} -sS --cacert /certs/ca.crt {{.GATEWAY}}/v1/chat/completions \
+          -H 'Content-Type: application/json' -d '{{.BODY}}'; then
+          echo '[unexpectedly accepted]'
+          exit 1
+        fi
+        echo '[rejected]'
+
+        printf '\n=== models (expected 200 and the mock model)\n'
+        {{.CURL}} -sS -w '\n[HTTP %{http_code}]\n' {{.MTLS}} {{.GATEWAY}}/v1/models
+
+  clean:
+    desc: 'Clean up the cluster'
+    cmds:
+      - ctlptl delete -f Cluster.yaml
+      - echo "🧹 Cluster cleaned up successfully!"

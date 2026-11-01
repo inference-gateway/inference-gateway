@@ -72,10 +72,28 @@ func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) (Client, er
 	}, nil
 }
 
+// NewProxyTransport builds the round tripper the reverse proxy uses to reach a
+// provider, so a provider call carries the same outbound TLS settings as a
+// request made through NewHTTPClient.
+func NewProxyTransport(cfg *ClientConfig) (http.RoundTripper, error) {
+	tlsConfig, err := newTLSConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = tlsConfig
+
+	return otelhttp.NewTransport(transport, SpanNameFormatter()), nil
+}
+
 // newTLSConfig builds the TLS config for provider calls: an extra CA trusted on
 // top of the system roots, and a client certificate for providers behind mTLS.
 func newTLSConfig(cfg *ClientConfig) (*tls.Config, error) {
 	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+	if cfg == nil {
+		return tlsConfig, nil
+	}
 	if cfg.ClientTlsMinVersion == tlsVersion13 {
 		tlsConfig.MinVersion = tls.VersionTLS13
 	}

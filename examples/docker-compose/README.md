@@ -28,6 +28,8 @@ This directory contains examples that demonstrate how to use the Inference Gatew
 - [Monitoring](monitoring/README.md) - Metrics collection and visualization with
   Prometheus and Grafana
 - [Guardrails](guardrails/README.md) - OPA/Rego policy enforcement on requests
+- [Mutual TLS](mtls/README.md) - A client certificate required by the gateway,
+  and one presented to a provider that requires it
 
 ## Quick Start
 

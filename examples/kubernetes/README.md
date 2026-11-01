@@ -10,6 +10,7 @@ This directory contains examples that demonstrate how to deploy the Inference Ga
 - [Basic](basic/README.md)
 - [Hybrid Environment](hybrid/README.md)
 - [TLS](tls/README.md)
+- [Mutual TLS](mtls/README.md) - the one example without the operator, which has no client CA field yet
 - [Keycloak](auth-keycloak/README.md)
 - [Entra ID](auth-entra/README.md), [Google Cloud](auth-gcp/README.md) and [Amazon Cognito](auth-cognito/README.md)
 - [Agent Building](agent/README.md)

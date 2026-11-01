@@ -19,7 +19,6 @@ import (
 	"sync"
 	"time"
 
-	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	otelapi "go.opentelemetry.io/otel"
 	codes "go.opentelemetry.io/otel/codes"
 	propagation "go.opentelemetry.io/otel/propagation"
@@ -44,15 +43,19 @@ import (
 )
 
 type RouterImpl struct {
-	cfg       config.Config
-	logger    logger.Logger
-	registry  registry.ProviderRegistry
-	client    client.Client
-	mcpClient mcp.MCPClientInterface
-	mcpAgent  *mcp.Agent
-	telemetry otel.OpenTelemetry
-	selector  *routing.Selector
-	tts       *tts.Engine
+	cfg            config.Config
+	logger         logger.Logger
+	registry       registry.ProviderRegistry
+	client         client.Client
+	mcpClient      mcp.MCPClientInterface
+	mcpAgent       *mcp.Agent
+	telemetry      otel.OpenTelemetry
+	selector       *routing.Selector
+	tts            *tts.Engine
+	proxyTransport http.RoundTripper
+	// proxyTransportErr is reported per request: the same outbound TLS settings
+	// already fail startup in NewHTTPClient, and NewRouter cannot return it.
+	proxyTransportErr error
 }
 
 type ErrorResponse struct {
@@ -74,16 +77,20 @@ func NewRouter(
 	selector *routing.Selector,
 	localTTS *tts.Engine,
 ) *RouterImpl {
+	proxyTransport, proxyTransportErr := client.NewProxyTransport(cfg.Client)
+
 	return &RouterImpl{
-		cfg,
-		logger,
-		providerRegistry,
-		httpClient,
-		mcpClient,
-		mcpAgent,
-		telemetry,
-		selector,
-		localTTS,
+		cfg:               cfg,
+		logger:            logger,
+		registry:          providerRegistry,
+		client:            httpClient,
+		mcpClient:         mcpClient,
+		mcpAgent:          mcpAgent,
+		telemetry:         telemetry,
+		selector:          selector,
+		tts:               localTTS,
+		proxyTransport:    proxyTransport,
+		proxyTransportErr: proxyTransportErr,
 	}
 }
 
@@ -460,6 +467,12 @@ func acceptHeaderFor(streaming bool) string {
 }
 
 func handleProxyRequest(w http.ResponseWriter, r *http.Request, provider core.IProvider, router *RouterImpl) {
+	if router.proxyTransportErr != nil {
+		router.logger.Error("proxy transport unavailable", router.proxyTransportErr)
+		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to configure outbound tls"})
+		return
+	}
+
 	fullURL, err := constructProviderURL(provider, r.PathValue("path"), r.URL.RawQuery)
 	if err != nil {
 		router.logger.Error("failed to construct provider url", err, "provider", provider.GetName())
@@ -467,7 +480,7 @@ func handleProxyRequest(w http.ResponseWriter, r *http.Request, provider core.IP
 		return
 	}
 	reverseProxy := &httputil.ReverseProxy{
-		Transport: proxyTransport,
+		Transport: router.proxyTransport,
 	}
 
 	reverseProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
@@ -1630,10 +1643,6 @@ const (
 	// memory; parts above it spill to temp files instead.
 	multipartMaxMemory = 1 << 20
 )
-
-// proxyTransport wraps http.DefaultTransport with OpenTelemetry instrumentation
-// so that every non-streaming reverse proxy call emits a distinct client span.
-var proxyTransport = otelhttp.NewTransport(http.DefaultTransport, client.SpanNameFormatter())
 
 // ImagesEditsHandler implements POST /v1/images/edits (multipart/form-data).
 func (router *RouterImpl) ImagesEditsHandler(w http.ResponseWriter, r *http.Request) {

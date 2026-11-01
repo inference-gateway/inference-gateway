@@ -1,0 +1,35 @@
+---
+# The gateway is built from this checkout: mutual TLS is newer than the
+# published image.
+services:
+  inference-gateway:
+    build:
+      context: ../../..
+    image: inference-gateway:mtls
+    ports:
+      - '8443:8443'
+    environment:
+      ENVIRONMENT: development
+      SERVER_PORT: '8443'
+      # As a server: serve HTTPS and require a client certificate signed by the
+      # example CA.
+      SERVER_TLS_CERT_PATH: /certs/server.crt
+      SERVER_TLS_KEY_PATH: /certs/server.key
+      SERVER_TLS_CLIENT_CA_PATH: /certs/ca.crt
+      # As a client of its providers: trust the example CA on top of the system
+      # roots and present a certificate to the provider that demands one.
+      CLIENT_TLS_CA_PATH: /certs/ca.crt
+      CLIENT_TLS_CERT_PATH: /certs/client.crt
+      CLIENT_TLS_KEY_PATH: /certs/client.key
+      OPENAI_API_URL: https://mock-provider/v1
+      OPENAI_API_KEY: mock
+    volumes:
+      - ./certs:/certs:ro
+    depends_on:
+      - mock-provider
+
+  mock-provider:
+    image: nginx:1.29-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/certs:ro

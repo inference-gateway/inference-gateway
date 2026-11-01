@@ -1,0 +1,75 @@
+version: '3'
+
+vars:
+  GATEWAY: https://localhost:8443
+  MTLS: --cacert certs/ca.crt --cert certs/client.crt --key certs/client.key
+  BODY: '{"model":"openai/mock","messages":[{"role":"user","content":"hi"}]}'
+
+tasks:
+  default:
+    desc: 'Show available tasks'
+    cmds:
+      - task --list
+
+  certs:
+    desc: 'Issue the example CA, server and client certificates'
+    cmds:
+      - sh certs.sh
+
+  up:
+    desc: 'Issue the certificates, build the gateway from this checkout and start the stack'
+    deps: [certs]
+    cmds:
+      # --force-recreate: both containers hold their certificates in memory, so
+      # a reissued set only takes effect on a new container.
+      - docker compose up -d --build --force-recreate
+      - |
+        attempts=0
+        until curl -sf {{.MTLS}} {{.GATEWAY}}/health >/dev/null; do
+          attempts=$((attempts + 1))
+          [ "$attempts" -lt 60 ] || { echo "gateway did not become healthy"; exit 1; }
+          sleep 2
+        done
+      - echo "🔐 gateway serving mutual TLS on {{.GATEWAY}}"
+
+  test:
+    desc: 'Run every case'
+    cmds:
+      - task: with-client-cert
+      - task: without-client-cert
+      - task: models
+
+  with-client-cert:
+    desc: 'Chat completion with a client certificate, answered by the provider behind mutual TLS'
+    silent: true
+    cmds:
+      - |
+        printf '\n=== with a client certificate (expected 200 and the provider reply)\n'
+        curl -sS -w '\n[HTTP %{http_code}]\n' {{.MTLS}} {{.GATEWAY}}/v1/chat/completions \
+          -H 'Content-Type: application/json' -d '{{.BODY}}'
+
+  without-client-cert:
+    desc: 'Control: the same request without a client certificate fails the handshake'
+    silent: true
+    cmds:
+      - |
+        printf '\n=== without a client certificate (expected a TLS handshake failure)\n'
+        if curl -sS --cacert certs/ca.crt {{.GATEWAY}}/v1/chat/completions \
+          -H 'Content-Type: application/json' -d '{{.BODY}}'; then
+          echo '[unexpectedly accepted]'
+          exit 1
+        fi
+        echo '[rejected]'
+
+  models:
+    desc: 'List the models of the provider behind mutual TLS'
+    silent: true
+    cmds:
+      - |
+        printf '\n=== models (expected 200 and the mock model)\n'
+        curl -sS -w '\n[HTTP %{http_code}]\n' {{.MTLS}} {{.GATEWAY}}/v1/models
+
+  down:
+    desc: 'Stop the stack'
+    cmds:
+      - docker compose down
