@@ -2,9 +2,19 @@ package client
 
 import (
 	"crypto/tls"
+	"fmt"
 	"net/http"
 
 	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
+	mtls "github.com/inference-gateway/inference-gateway/internal/platform/mtls"
+)
+
+const (
+	tlsVersion13         = "TLS13"
+	envClientTLSCaPath   = "CLIENT_TLS_CA_PATH"
+	envClientTLSCertPath = "CLIENT_TLS_CERT_PATH"
+	envClientTLSKeyPath  = "CLIENT_TLS_KEY_PATH"
 )
 
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/providers/client.go -package=providersmocks
@@ -33,19 +43,17 @@ type ClientImpl struct {
 	client   *http.Client
 }
 
-func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
-	var tlsMinVersion uint16 = tls.VersionTLS12
-	if cfg.ClientTlsMinVersion == "TLS13" {
-		tlsMinVersion = tls.VersionTLS13
+func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) (Client, error) {
+	tlsConfig, err := newTLSConfig(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	httpTransport := &http.Transport{
-		MaxIdleConns:        cfg.ClientMaxIdleConns,
-		MaxIdleConnsPerHost: cfg.ClientMaxIdleConnsPerHost,
-		IdleConnTimeout:     cfg.ClientIdleConnTimeout,
-		TLSClientConfig: &tls.Config{
-			MinVersion: tlsMinVersion,
-		},
+		MaxIdleConns:          cfg.ClientMaxIdleConns,
+		MaxIdleConnsPerHost:   cfg.ClientMaxIdleConnsPerHost,
+		IdleConnTimeout:       cfg.ClientIdleConnTimeout,
+		TLSClientConfig:       tlsConfig,
 		ForceAttemptHTTP2:     true,
 		DisableCompression:    cfg.ClientDisableCompression,
 		ResponseHeaderTimeout: cfg.ClientResponseHeaderTimeout,
@@ -61,7 +69,52 @@ func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) Client {
 		hostname: hostname,
 		port:     port,
 		client:   httpClient,
+	}, nil
+}
+
+// NewProxyTransport builds the round tripper the reverse proxy uses to reach a
+// provider, so a provider call carries the same outbound TLS settings as a
+// request made through NewHTTPClient.
+func NewProxyTransport(cfg *ClientConfig) (http.RoundTripper, error) {
+	tlsConfig, err := newTLSConfig(cfg)
+	if err != nil {
+		return nil, err
 	}
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.TLSClientConfig = tlsConfig
+
+	return otelhttp.NewTransport(transport, SpanNameFormatter()), nil
+}
+
+// newTLSConfig builds the TLS config for provider calls: an extra CA trusted on
+// top of the system roots, and a client certificate for providers behind mTLS.
+func newTLSConfig(cfg *ClientConfig) (*tls.Config, error) {
+	tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+	if cfg == nil {
+		return tlsConfig, nil
+	}
+	if cfg.ClientTlsMinVersion == tlsVersion13 {
+		tlsConfig.MinVersion = tls.VersionTLS13
+	}
+
+	if cfg.ClientTlsCaPath != "" {
+		roots, err := mtls.SystemCertPoolWith(cfg.ClientTlsCaPath)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", envClientTLSCaPath, err)
+		}
+		tlsConfig.RootCAs = roots
+	}
+
+	certificate, err := mtls.KeyPair(cfg.ClientTlsCertPath, cfg.ClientTlsKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("%s/%s: %w", envClientTLSCertPath, envClientTLSKeyPath, err)
+	}
+	if certificate != nil {
+		tlsConfig.Certificates = []tls.Certificate{*certificate}
+	}
+
+	return tlsConfig, nil
 }
 
 func (c *ClientImpl) Do(req *http.Request) (*http.Response, error) {

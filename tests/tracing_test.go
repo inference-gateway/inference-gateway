@@ -241,7 +241,8 @@ func TestTracingOutboundClientSpanNames(t *testing.T) {
 			}))
 			defer server.Close()
 
-			httpClient := client.NewHTTPClient(&client.ClientConfig{}, "http", "", "")
+			httpClient, err := client.NewHTTPClient(&client.ClientConfig{}, "http", "", "")
+			require.NoError(t, err)
 			req, err := http.NewRequest(tt.method, server.URL+tt.path, nil)
 			require.NoError(t, err)
 
