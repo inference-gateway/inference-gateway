@@ -24,10 +24,23 @@ presents one to a provider that demands it.
   `CLIENT_TLS_CERT_PATH`/`CLIENT_TLS_KEY_PATH`.
 - **client**: a curl pod with the same certificates mounted, so the example can call the gateway
   the way a workload in the cluster would.
-- **Certificates**: a `Secret` built from the files `certs.sh` issues. The script and the provider's
-  nginx config are shared with [the docker-compose example](../../docker-compose/mtls/README.md),
-  which documents the certificates themselves. Swap in cert-manager (see the
-  [TLS example](../tls/README.md)) for anything beyond a demo.
+- **Certificates**: issued by [cert-manager](https://cert-manager.io). A self-signed
+  `ClusterIssuer` bootstraps the example CA (`cert-manager/issuers.yaml`), a namespaced `Issuer`
+  signs from it, and three `Certificate` resources (`cert-manager/certificates.yaml`) produce the
+  gateway's server certificate, the gateway's client certificate for provider calls, and the mock
+  provider's server certificate. Each `Secret` holds `tls.crt`, `tls.key` and `ca.crt`, projected
+  into the pods under the file names the gateway environment and the nginx config use. In
+  production, replace the self-signed CA with your own PKI or an ACME issuer - nothing else about
+  the example changes.
+- The provider's nginx config is shared with
+  [the docker-compose example](../../docker-compose/mtls/README.md), which issues the same
+  certificates with openssl and documents what each one is for.
+
+The gateway's server certificate carries an `IP:0.0.0.0` SAN. A provider call loops back through the
+gateway's own `/proxy/{provider}` endpoint at `SERVER_HOST`, so the gateway verifies its own
+certificate for the address it binds. Certificates are read once at startup, so `renewBefore`
+renewals only take effect on a new pod - restart the deployment, or mount them through a sidecar
+that reloads.
 
 Mutual TLS is newer than the published image, so the gateway is built from this checkout and
 imported into the cluster.
@@ -37,17 +50,18 @@ imported into the cluster.
 - [Task](https://taskfile.dev/installation/)
 - kubectl
 - ctlptl and k3d (for cluster management)
-- Docker and openssl
+- Helm (cert-manager is installed from its chart)
+- Docker
 
 ## Quick Start
 
-1. Create the cluster and import the gateway image:
+1. Create the cluster, install cert-manager and import the gateway image:
 
    ```bash
    task deploy-infrastructure
    ```
 
-2. Issue the certificates and deploy everything:
+2. Issue the certificates with cert-manager and deploy everything:
 
    ```bash
    task deploy-inference-gateway

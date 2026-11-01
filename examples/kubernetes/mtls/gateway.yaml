@@ -59,10 +59,28 @@ spec:
             - name: certs
               mountPath: /certs
               readOnly: true
+      # cert-manager writes tls.crt/tls.key/ca.crt into each Secret, projected
+      # here under the file names the example and its nginx config use.
       volumes:
         - name: certs
-          secret:
-            secretName: mtls-certs
+          projected:
+            sources:
+              - secret:
+                  name: gateway-server-tls
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+                    - key: tls.crt
+                      path: server.crt
+                    - key: tls.key
+                      path: server.key
+              - secret:
+                  name: gateway-client-tls
+                  items:
+                    - key: tls.crt
+                      path: client.crt
+                    - key: tls.key
+                      path: client.key
 ---
 apiVersion: v1
 kind: Service
@@ -105,8 +123,17 @@ spec:
               readOnly: true
       volumes:
         - name: certs
-          secret:
-            secretName: mtls-certs
+          projected:
+            sources:
+              - secret:
+                  name: gateway-client-tls
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+                    - key: tls.crt
+                      path: client.crt
+                    - key: tls.key
+                      path: client.key
 ---
 # Stands in for a provider that only answers clients presenting a certificate.
 apiVersion: apps/v1
@@ -143,8 +170,17 @@ spec:
           configMap:
             name: mock-provider-conf
         - name: certs
-          secret:
-            secretName: mtls-certs
+          projected:
+            sources:
+              - secret:
+                  name: mock-provider-tls
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+                    - key: tls.crt
+                      path: server.crt
+                    - key: tls.key
+                      path: server.key
 ---
 apiVersion: v1
 kind: Service

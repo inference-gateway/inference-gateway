@@ -1,0 +1,66 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gateway-server
+  namespace: inference-gateway
+spec:
+  secretName: gateway-server-tls
+  duration: 2160h
+  renewBefore: 360h
+  commonName: inference-gateway
+  dnsNames:
+    - inference-gateway
+    - inference-gateway.inference-gateway.svc
+    - inference-gateway.inference-gateway.svc.cluster.local
+    - localhost
+  # 0.0.0.0 is needed because a provider call loops back through the gateway's
+  # own /proxy endpoint at SERVER_HOST, so the gateway verifies its own
+  # certificate for the address it binds.
+  ipAddresses:
+    - 0.0.0.0
+    - 127.0.0.1
+  usages:
+    - server auth
+  issuerRef:
+    name: example-ca-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: gateway-client
+  namespace: inference-gateway
+spec:
+  secretName: gateway-client-tls
+  duration: 2160h
+  renewBefore: 360h
+  commonName: inference-gateway-client
+  usages:
+    - client auth
+  issuerRef:
+    name: example-ca-issuer
+    kind: Issuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mock-provider-server
+  namespace: inference-gateway
+spec:
+  secretName: mock-provider-tls
+  duration: 2160h
+  renewBefore: 360h
+  commonName: mock-provider
+  dnsNames:
+    - mock-provider
+    - mock-provider.inference-gateway.svc
+    - mock-provider.inference-gateway.svc.cluster.local
+  usages:
+    - server auth
+  issuerRef:
+    name: example-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

@@ -1,0 +1,37 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+# The example CA. In production this would be an intermediate issued by your own
+# PKI, or an ACME ClusterIssuer for the server side plus a private CA for the
+# client certificates.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: example-ca
+  namespace: inference-gateway
+spec:
+  isCA: true
+  commonName: inference-gateway-example-ca
+  secretName: example-ca
+  duration: 8760h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: example-ca-issuer
+  namespace: inference-gateway
+spec:
+  ca:
+    secretName: example-ca

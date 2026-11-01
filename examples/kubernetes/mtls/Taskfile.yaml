@@ -1,10 +1,10 @@
 version: '3'
 
-# The certificates and the provider's nginx config are shared with the
-# docker-compose example of the same name.
+# The provider's nginx config is shared with the docker-compose example of the
+# same name. The certificates come from cert-manager.
 vars:
   EXAMPLE: ../../docker-compose/mtls
-  CERTS: ../../docker-compose/mtls/certs
+  CERT_MANAGER_VERSION: v1.20.2
   CLUSTER: mtls
   IMAGE: inference-gateway:mtls
   NAMESPACE: inference-gateway
@@ -20,9 +20,10 @@ tasks:
       - task --list
 
   deploy-infrastructure:
-    desc: 'Create the cluster and load the gateway image into it'
+    desc: 'Create the cluster, install cert-manager and load the gateway image into it'
     cmds:
       - task: create-cluster
+      - task: deploy-cert-manager
       - task: load-image
       - echo "🛠️ Infrastructure deployed successfully!"
 
@@ -38,24 +39,35 @@ tasks:
       - docker build -t {{.IMAGE}} ../../..
       - k3d image import {{.IMAGE}} -c {{.CLUSTER}}
 
-  certs:
-    desc: 'Issue the example CA, server and client certificates'
+  deploy-cert-manager:
+    desc: 'Install cert-manager'
     cmds:
-      - sh {{.EXAMPLE}}/certs.sh
+      - helm repo add jetstack https://charts.jetstack.io
+      - helm repo update
+      - |
+        helm upgrade --install cert-manager jetstack/cert-manager \
+          --create-namespace \
+          --namespace cert-manager \
+          --version {{.CERT_MANAGER_VERSION}} \
+          --set crds.enabled=true \
+          --wait
+      - echo "🔐 Cert-manager deployed successfully!"
+
+  certs:
+    desc: 'Have cert-manager issue the example CA, server and client certificates'
+    cmds:
+      - kubectl create namespace {{.NAMESPACE}} --dry-run=client -o yaml | kubectl apply -f -
+      - kubectl apply -f cert-manager/issuers.yaml
+      - kubectl -n {{.NAMESPACE}} wait --for=condition=Ready --timeout=120s certificate/example-ca
+      - kubectl apply -f cert-manager/certificates.yaml
+      - |
+        kubectl -n {{.NAMESPACE}} wait --for=condition=Ready --timeout=120s \
+          certificate/gateway-server certificate/gateway-client certificate/mock-provider-server
 
   deploy-inference-gateway:
     desc: 'Deploy the gateway and the provider behind mutual TLS'
     deps: [certs]
     cmds:
-      - kubectl create namespace {{.NAMESPACE}} --dry-run=client -o yaml | kubectl apply -f -
-      - |
-        kubectl -n {{.NAMESPACE}} create secret generic mtls-certs \
-          --from-file=ca.crt={{.CERTS}}/ca.crt \
-          --from-file=server.crt={{.CERTS}}/server.crt \
-          --from-file=server.key={{.CERTS}}/server.key \
-          --from-file=client.crt={{.CERTS}}/client.crt \
-          --from-file=client.key={{.CERTS}}/client.key \
-          --dry-run=client -o yaml | kubectl apply -f -
       - |
         kubectl -n {{.NAMESPACE}} create configmap mock-provider-conf \
           --from-file=default.conf={{.EXAMPLE}}/nginx.conf \
