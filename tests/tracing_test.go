@@ -30,6 +30,7 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
+	inprocess "github.com/inference-gateway/inference-gateway/internal/platform/inprocess"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
@@ -241,7 +242,7 @@ func TestTracingOutboundClientSpanNames(t *testing.T) {
 			}))
 			defer server.Close()
 
-			httpClient, err := client.NewHTTPClient(&client.ClientConfig{}, "http", "", "")
+			httpClient, err := client.NewHTTPClient(&client.ClientConfig{}, inprocess.NewListener(), "", "")
 			require.NoError(t, err)
 			req, err := http.NewRequest(tt.method, server.URL+tt.path, nil)
 			require.NoError(t, err)

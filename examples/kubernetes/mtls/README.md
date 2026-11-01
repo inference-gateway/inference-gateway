@@ -40,11 +40,8 @@ presents one to a provider that demands it.
   [the docker-compose example](../../docker-compose/mtls/README.md), which issues the same
   certificates with openssl and documents what each one is for.
 
-The gateway's server certificate carries an `IP:0.0.0.0` SAN. A provider call loops back through the
-gateway's own `/proxy/{provider}` endpoint at `SERVER_HOST`, so the gateway verifies its own
-certificate for the address it binds. Certificates are read once at startup, so `renewBefore`
-renewals only take effect on a new pod - restart the deployment, or mount them through a sidecar
-that reloads.
+Certificates are read once at startup, so `renewBefore` renewals only take effect on a new pod -
+restart the deployment, or mount them through a sidecar that reloads.
 
 Mutual TLS is newer than the published image, so the gateway is built from this checkout and
 imported into the cluster.

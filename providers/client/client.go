@@ -7,10 +7,12 @@ import (
 
 	otelhttp "go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
+	inprocess "github.com/inference-gateway/inference-gateway/internal/platform/inprocess"
 	mtls "github.com/inference-gateway/inference-gateway/internal/platform/mtls"
 )
 
 const (
+	selfScheme           = "http"
 	tlsVersion13         = "TLS13"
 	envClientTLSCaPath   = "CLIENT_TLS_CA_PATH"
 	envClientTLSCertPath = "CLIENT_TLS_CERT_PATH"
@@ -37,13 +39,17 @@ func SpanNameFormatter() otelhttp.Option {
 }
 
 type ClientImpl struct {
-	scheme   string
 	hostname string
 	port     string
-	client   *http.Client
+	self     *http.Client
+	upstream *http.Client
 }
 
-func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) (Client, error) {
+// NewHTTPClient builds the client for provider calls. A request with a host goes
+// to it with the outbound TLS settings. A request without one is the gateway
+// calling its own /proxy route, which reaches gateway in process, so the server's
+// TLS and client certificates never apply to it. hostname and port only name it.
+func NewHTTPClient(cfg *ClientConfig, gateway *inprocess.Listener, hostname, port string) (Client, error) {
 	tlsConfig, err := newTLSConfig(cfg)
 	if err != nil {
 		return nil, err
@@ -60,15 +66,14 @@ func NewHTTPClient(cfg *ClientConfig, scheme, hostname, port string) (Client, er
 		ExpectContinueTimeout: cfg.ClientExpectContinueTimeout,
 	}
 
-	httpClient := &http.Client{
-		Transport: otelhttp.NewTransport(httpTransport, SpanNameFormatter()),
-	}
+	selfTransport := httpTransport.Clone()
+	selfTransport.DialContext = gateway.DialContext
 
 	return &ClientImpl{
-		scheme:   scheme,
 		hostname: hostname,
 		port:     port,
-		client:   httpClient,
+		self:     &http.Client{Transport: otelhttp.NewTransport(selfTransport, SpanNameFormatter())},
+		upstream: &http.Client{Transport: otelhttp.NewTransport(httpTransport, SpanNameFormatter())},
 	}, nil
 }
 
@@ -118,12 +123,11 @@ func newTLSConfig(cfg *ClientConfig) (*tls.Config, error) {
 }
 
 func (c *ClientImpl) Do(req *http.Request) (*http.Response, error) {
-	if req.URL.Scheme == "" {
-		req.URL.Scheme = c.scheme
+	if req.URL.Host != "" {
+		return c.upstream.Do(req)
 	}
-	if req.URL.Host == "" {
-		req.URL.Host = c.hostname + ":" + c.port
-	}
+	req.URL.Scheme = selfScheme
+	req.URL.Host = c.hostname + ":" + c.port
 
-	return c.client.Do(req)
+	return c.self.Do(req)
 }

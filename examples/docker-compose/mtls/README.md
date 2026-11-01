@@ -63,9 +63,7 @@ A certificate without its key, or a client CA without server TLS, is rejected at
 ## Certificates
 
 `certs.sh` issues one CA, one server certificate shared by the gateway and the provider, and one
-client certificate used by both curl and the gateway. The server certificate carries an
-`IP:0.0.0.0` SAN on purpose: a provider call loops back through the gateway's own `/proxy`
-endpoint at `SERVER_HOST`, so the gateway verifies its own certificate for the address it binds.
+client certificate used by both curl and the gateway.
 
 Example-only shortcuts: a single self-signed CA, one certificate for two servers, and
 world-readable keys. Use separate certificates and a real CA in production.
