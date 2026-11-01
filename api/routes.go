@@ -43,16 +43,16 @@ import (
 )
 
 type RouterImpl struct {
-	cfg            config.Config
-	logger         logger.Logger
-	registry       registry.ProviderRegistry
-	client         client.Client
-	mcpClient      mcp.MCPClientInterface
-	mcpAgent       *mcp.Agent
-	telemetry      otel.OpenTelemetry
-	selector       *routing.Selector
-	tts            *tts.Engine
-	proxyTransport http.RoundTripper
+	cfg               config.Config
+	logger            logger.Logger
+	registry          registry.ProviderRegistry
+	client            client.Client
+	mcpClient         mcp.MCPClientInterface
+	mcpAgent          *mcp.Agent
+	telemetry         otel.OpenTelemetry
+	selector          *routing.Selector
+	tts               *tts.Engine
+	proxyTransport    http.RoundTripper
 	proxyTransportErr error
 }
 
