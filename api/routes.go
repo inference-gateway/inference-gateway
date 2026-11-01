@@ -53,8 +53,6 @@ type RouterImpl struct {
 	selector       *routing.Selector
 	tts            *tts.Engine
 	proxyTransport http.RoundTripper
-	// proxyTransportErr is reported per request: the same outbound TLS settings
-	// already fail startup in NewHTTPClient, and NewRouter cannot return it.
 	proxyTransportErr error
 }
 
