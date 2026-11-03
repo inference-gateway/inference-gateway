@@ -25,15 +25,17 @@ const idSeparator = "/"
 // OpenRouter-style pricing. Its tags shadow the embedded context_window and pricing.
 type listedModel struct {
 	types.Model
-	Name                string           `json:"name"`
-	CreatedAt           string           `json:"created_at"`
-	ContextWindowTokens float64          `json:"context_window"`
-	ContextLength       float64          `json:"context_length"`
-	MaxContextLength    float64          `json:"max_context_length"`
-	MaxModelLen         float64          `json:"max_model_len"`
-	ProviderPricing     map[string]any   `json:"pricing"`
-	InputModalities     []types.Modality `json:"input_modalities"`
-	OutputModalities    []types.Modality `json:"output_modalities"`
+	Name                string         `json:"name"`
+	CreatedAt           string         `json:"created_at"`
+	ContextWindowTokens float64        `json:"context_window"`
+	ContextLength       float64        `json:"context_length"`
+	MaxContextLength    float64        `json:"max_context_length"`
+	MaxModelLen         float64        `json:"max_model_len"`
+	ProviderPricing     map[string]any `json:"pricing"`
+	Architecture        struct {
+		InputModalities  []types.Modality `json:"input_modalities"`
+		OutputModalities []types.Modality `json:"output_modalities"`
+	} `json:"architecture"`
 }
 
 // modelListing decodes an OpenAI {"data":[...]} listing, whose entries are
@@ -108,14 +110,15 @@ func (m *listedModel) render(model *types.Model, provider types.Provider, catalo
 	model.Modalities = cmp.Or(model.Modalities, m.providerModalities(), known.Modalities)
 }
 
-// providerModalities returns the modalities a listing publishes as flat
-// input_modalities / output_modalities fields, the way llama.cpp advertises
-// its decision models, or nil when it publishes neither.
+// providerModalities returns the modalities a listing publishes under its
+// architecture object, the way llama.cpp advertises its decision models
+// (output_modalities: ["decisions"]), or nil when it publishes none.
 func (m *listedModel) providerModalities() *types.ModelModalities {
-	if len(m.InputModalities) == 0 && len(m.OutputModalities) == 0 {
+	arch := m.Architecture
+	if len(arch.InputModalities) == 0 && len(arch.OutputModalities) == 0 {
 		return nil
 	}
-	return &types.ModelModalities{Input: m.InputModalities, Output: m.OutputModalities}
+	return &types.ModelModalities{Input: arch.InputModalities, Output: arch.OutputModalities}
 }
 
 // providerContextWindow returns the first usable context window the provider

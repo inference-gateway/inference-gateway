@@ -212,8 +212,8 @@ func transformOne(t *testing.T, provider types.Provider, body string) types.Mode
 }
 
 func TestTransformResolvesOutputModalities(t *testing.T) {
-	advertised := transformOne(t, constants.LlamacppID, `{"data":[{"id":"laya","input_modalities":["text"],"output_modalities":["decisions"]}]}`)
-	assert.Equal(t, &types.ModelModalities{Input: []types.Modality{types.ModalityText}, Output: []types.Modality{types.ModalityDecisions}}, advertised.Modalities, "a listing's flat modality fields must win over the table")
+	advertised := transformOne(t, constants.LlamacppID, `{"data":[{"id":"laya","architecture":{"input_modalities":["text"],"output_modalities":["decisions"]}}]}`)
+	assert.Equal(t, &types.ModelModalities{Input: []types.Modality{types.ModalityText}, Output: []types.Modality{types.ModalityDecisions}}, advertised.Modalities, "a listing's architecture modalities must win over the table")
 
 	overridden := transformOne(t, constants.OpenaiID, `{"data":[{"id":"gpt-6-luna"}]}`)
 	require.NotNil(t, overridden.Modalities)
