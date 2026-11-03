@@ -1293,13 +1293,21 @@ func (router *RouterImpl) ImagesHandler(w http.ResponseWriter, r *http.Request) 
 // endpoint: https://developers.openai.com/api/docs/guides/decisions
 //
 // The request body is forwarded byte-for-byte (only the `model` prefix is
-// stripped); providers without a decisions endpoint receive a 400.
+// stripped); providers without a decisions endpoint receive a 400. Opt-in via
+// DECISIONS_ENABLED while the upstream decision APIs are in preview.
 func (router *RouterImpl) DecisionsHandler(w http.ResponseWriter, r *http.Request) {
+	if !router.cfg.DecisionsEnabled {
+		router.logger.Error("decisions api not enabled", nil)
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: "The Decisions API is not enabled. Set DECISIONS_ENABLED=true to enable it."})
+		return
+	}
+
 	router.proxyJSONBody(w, r, jsonProxy{
-		apiName:      "Decisions API",
-		exampleModel: "openai/gpt-6-luna",
-		accept:       contentTypeJSON,
-		endpointOf:   func(e types.Endpoints) *string { return e.Decisions },
+		apiName:        "Decisions API",
+		exampleModel:   "openai/gpt-6-luna",
+		accept:         contentTypeJSON,
+		endpointOf:     func(e types.Endpoints) *string { return e.Decisions },
+		outputModality: types.ModalityDecisions,
 	})
 }
 
@@ -1311,15 +1319,32 @@ type jsonTranslator func(endpoint, model string, body []byte) (path, query strin
 
 // jsonProxy describes a JSON pass-through to a provider endpoint. apiName
 // appears in client-facing errors, exampleModel in routing hints, accept sets
-// the upstream Accept header when non-empty and endpointOf picks the endpoint
-// off the resolved provider.
+// the upstream Accept header when non-empty, endpointOf picks the endpoint
+// off the resolved provider and outputModality, when set, is the output
+// modality a model must list in the models.dev table to be forwarded.
 type jsonProxy struct {
-	apiName      string
-	exampleModel string
-	accept       string
-	endpointOf   func(types.Endpoints) *string
-	notSupported string
-	translators  map[types.Provider]jsonTranslator
+	apiName        string
+	exampleModel   string
+	accept         string
+	endpointOf     func(types.Endpoints) *string
+	notSupported   string
+	translators    map[types.Provider]jsonTranslator
+	outputModality types.Modality
+}
+
+// modelLacksModality returns the client-facing error when the model's known
+// output modalities exclude p.outputModality, and "" when the model qualifies
+// or is unknown to the table: an unknown model is relayed so the upstream
+// decides, exactly as before the gate.
+func (p jsonProxy) modelLacksModality(providerID types.Provider, model string) string {
+	if p.outputModality == "" {
+		return ""
+	}
+	known := modelsdev.ForProvider(providerID).Lookup(model).Modalities
+	if known == nil || slices.Contains(known.Output, p.outputModality) {
+		return ""
+	}
+	return fmt.Sprintf("Model %s/%s is not supported by the %s: its output modalities are %v, not %s.", providerID, model, p.apiName, known.Output, p.outputModality)
 }
 
 // proxyJSONBody forwards an OpenAI-style JSON request byte-for-byte to the
@@ -1373,6 +1398,11 @@ func (router *RouterImpl) proxyJSONBody(w http.ResponseWriter, r *http.Request, 
 
 	endpoint, msg := router.providerEndpoint(provider, p.endpointOf, p.apiName, p.notSupported)
 	if msg != "" {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
+	}
+
+	if msg := p.modelLacksModality(providerID, model); msg != "" {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}

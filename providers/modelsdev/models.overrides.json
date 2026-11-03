@@ -581,6 +581,12 @@
       "output": ["text"]
     }
   },
+  "openai/gpt-6-luna": {
+    "modalities": {
+      "input": ["text", "image"],
+      "output": ["text", "decisions"]
+    }
+  },
   "openai/gpt-audio": {
     "modalities": {
       "input": ["text", "audio"],
