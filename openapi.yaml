@@ -1595,6 +1595,10 @@ components:
               name: 'chat_completions'
               method: 'POST'
               endpoint: '/chat/completions'
+            decisions:
+              name: 'create_decision'
+              method: 'POST'
+              endpoint: '/systemone'
         ollama_cloud:
           id: 'ollama_cloud'
           url: 'https://ollama.com/v1'
@@ -1608,6 +1612,10 @@ components:
               name: 'chat_completions'
               method: 'POST'
               endpoint: '/chat/completions'
+            decisions:
+              name: 'create_decision'
+              method: 'POST'
+              endpoint: '/systemone'
         anthropic:
           id: 'anthropic'
           url: 'https://api.anthropic.com/v1'
@@ -1662,6 +1670,10 @@ components:
               name: 'chat_completions'
               method: 'POST'
               endpoint: '/chat/completions'
+            decisions:
+              name: 'create_decision'
+              method: 'POST'
+              endpoint: '/systemone'
             speech:
               name: 'create_speech'
               method: 'POST'

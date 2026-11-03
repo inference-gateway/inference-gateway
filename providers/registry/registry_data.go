@@ -93,9 +93,10 @@ var Registry = map[types.Provider]*ProviderConfig{
 		URL:      constants.LlamacppDefaultBaseURL,
 		AuthType: constants.AuthTypeBearer,
 		Endpoints: types.Endpoints{
-			Models: constants.LlamacppModelsEndpoint,
-			Chat:   constants.LlamacppChatEndpoint,
-			Speech: ptr(constants.LlamacppSpeechEndpoint),
+			Models:    constants.LlamacppModelsEndpoint,
+			Chat:      constants.LlamacppChatEndpoint,
+			Decisions: ptr(constants.LlamacppDecisionsEndpoint),
+			Speech:    ptr(constants.LlamacppSpeechEndpoint),
 		},
 	},
 	constants.MinimaxID: {
@@ -144,8 +145,9 @@ var Registry = map[types.Provider]*ProviderConfig{
 		URL:      constants.OllamaDefaultBaseURL,
 		AuthType: constants.AuthTypeNone,
 		Endpoints: types.Endpoints{
-			Models: constants.OllamaModelsEndpoint,
-			Chat:   constants.OllamaChatEndpoint,
+			Models:    constants.OllamaModelsEndpoint,
+			Chat:      constants.OllamaChatEndpoint,
+			Decisions: ptr(constants.OllamaDecisionsEndpoint),
 		},
 	},
 	constants.OllamaCloudID: {
@@ -154,8 +156,9 @@ var Registry = map[types.Provider]*ProviderConfig{
 		URL:      constants.OllamaCloudDefaultBaseURL,
 		AuthType: constants.AuthTypeBearer,
 		Endpoints: types.Endpoints{
-			Models: constants.OllamaCloudModelsEndpoint,
-			Chat:   constants.OllamaCloudChatEndpoint,
+			Models:    constants.OllamaCloudModelsEndpoint,
+			Chat:      constants.OllamaCloudChatEndpoint,
+			Decisions: ptr(constants.OllamaCloudDecisionsEndpoint),
 		},
 	},
 	constants.OpenaiID: {
