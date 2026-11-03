@@ -6327,7 +6327,8 @@
         "image"
       ],
       "output": [
-        "text"
+        "text",
+        "decisions"
       ]
     },
     "release_date": "2026-10-01"

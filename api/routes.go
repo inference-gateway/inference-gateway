@@ -32,6 +32,7 @@ import (
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	proxy "github.com/inference-gateway/inference-gateway/internal/proxy"
+	systemone "github.com/inference-gateway/inference-gateway/internal/systemone"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
@@ -1308,6 +1309,16 @@ func (router *RouterImpl) DecisionsHandler(w http.ResponseWriter, r *http.Reques
 		accept:         contentTypeJSON,
 		endpointOf:     func(e types.Endpoints) *string { return e.Decisions },
 		outputModality: types.ModalityDecisions,
+		translators: map[types.Provider]jsonTranslator{
+			constants.OllamaID:      systemOneDecisions,
+			constants.OllamaCloudID: systemOneDecisions,
+			constants.LlamacppID:    systemOneDecisions,
+		},
+		responseTranslators: map[types.Provider]jsonResponseTranslator{
+			constants.OllamaID:      systemone.Response,
+			constants.OllamaCloudID: systemone.Response,
+			constants.LlamacppID:    systemone.Response,
+		},
 	})
 }
 
@@ -1317,19 +1328,24 @@ func (router *RouterImpl) DecisionsHandler(w http.ResponseWriter, r *http.Reques
 // the upstream path, its query string ("" for none) and the upstream body.
 type jsonTranslator func(endpoint, model string, body []byte) (path, query string, out []byte, err error)
 
+// jsonResponseTranslator rewrites a provider's successful JSON response body
+// into the gateway's own shape. Error responses are relayed untouched.
+type jsonResponseTranslator func(body []byte) ([]byte, error)
+
 // jsonProxy describes a JSON pass-through to a provider endpoint. apiName
 // appears in client-facing errors, exampleModel in routing hints, accept sets
 // the upstream Accept header when non-empty, endpointOf picks the endpoint
 // off the resolved provider and outputModality, when set, is the output
 // modality a model must list in the models.dev table to be forwarded.
 type jsonProxy struct {
-	apiName        string
-	exampleModel   string
-	accept         string
-	endpointOf     func(types.Endpoints) *string
-	notSupported   string
-	translators    map[types.Provider]jsonTranslator
-	outputModality types.Modality
+	apiName             string
+	exampleModel        string
+	accept              string
+	endpointOf          func(types.Endpoints) *string
+	notSupported        string
+	translators         map[types.Provider]jsonTranslator
+	responseTranslators map[types.Provider]jsonResponseTranslator
+	outputModality      types.Modality
 }
 
 // modelLacksModality returns the client-facing error when the model's known
@@ -1420,15 +1436,61 @@ func (router *RouterImpl) proxyJSONBody(w http.ResponseWriter, r *http.Request, 
 		}
 	}
 
-	if f := router.forwardUpstream(w, r, provider, upstreamRequest{
+	upstream := upstreamRequest{
 		endpointPath: path,
 		query:        query,
 		body:         bytes.NewReader(body),
 		contentType:  contentTypeJSON,
 		accept:       p.accept,
-	}); f != nil {
+	}
+	if translate := p.responseTranslators[providerID]; translate != nil {
+		router.forwardTranslated(w, r, provider, upstream, translate)
+		return
+	}
+	if f := router.forwardUpstream(w, r, provider, upstream); f != nil {
 		middlewares.WriteJSON(w, f.status, ErrorResponse{Error: f.message})
 	}
+}
+
+// forwardTranslated relays req and rewrites a successful JSON response with
+// translate before writing it. Upstream errors are relayed byte-for-byte so
+// the provider's own message reaches the client.
+func (router *RouterImpl) forwardTranslated(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest, translate jsonResponseTranslator) {
+	resp, done, failure := router.callUpstream(r, provider, req)
+	if failure != nil {
+		middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
+		return
+	}
+	defer done()
+	defer resp.Body.Close()
+
+	upstream, err := io.ReadAll(resp.Body)
+	if err != nil {
+		router.logger.Error("failed to read upstream response", err)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read upstream response"})
+		return
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		writeDataFromReader(w, resp.StatusCode, int64(len(upstream)), resp.Header.Get("Content-Type"), bytes.NewReader(upstream))
+		return
+	}
+	out, err := translate(upstream)
+	if err != nil {
+		router.logger.Error("failed to translate upstream response", err, "provider", provider.GetName())
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
+		return
+	}
+	writeDataFromReader(w, resp.StatusCode, int64(len(out)), contentTypeJSON, bytes.NewReader(out))
+}
+
+// systemOneDecisions rewrites a CreateDecisionRequest into the System One
+// request Ollama and llama.cpp serve at /systemone.
+func systemOneDecisions(endpoint, model string, body []byte) (string, string, []byte, error) {
+	out, err := systemone.Request(model, body)
+	if err != nil {
+		return "", "", nil, err
+	}
+	return endpoint, "", out, nil
 }
 
 // providerEndpoint resolves an optional endpoint off the provider's registry

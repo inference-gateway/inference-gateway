@@ -53,6 +53,7 @@ func newDecisionsRouter(t *testing.T, upstreamURL string, enabled bool) *api.Rou
 	require.NoError(t, err)
 
 	decisionsEndpoint := constants.OpenaiDecisionsEndpoint
+	systemOneEndpoint := systemOneEndpoint
 	providerCfg := map[types.Provider]*registry.ProviderConfig{
 		constants.OpenaiID: {
 			ID:        constants.OpenaiID,
@@ -68,6 +69,13 @@ func newDecisionsRouter(t *testing.T, upstreamURL string, enabled bool) *api.Rou
 			URL:      upstreamURL,
 			Token:    "test-anthropic-key",
 			AuthType: constants.AuthTypeXheader,
+		},
+		constants.OllamaID: {
+			ID:        constants.OllamaID,
+			Name:      constants.OllamaDisplayName,
+			URL:       upstreamURL,
+			AuthType:  constants.AuthTypeNone,
+			Endpoints: types.Endpoints{Decisions: &systemOneEndpoint},
 		},
 	}
 
@@ -238,4 +246,51 @@ func TestDecisionsHandler_Disabled(t *testing.T) {
 	var response api.ErrorResponse
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 	assert.Equal(t, "The Decisions API is not enabled. Set DECISIONS_ENABLED=true to enable it.", response.Error)
+}
+
+const (
+	systemOneEndpoint = "/systemone"
+	systemOneModel    = "nimble"
+	systemOneResponse = `{"model":"nimble","answers":{"is_spam":{"type":"noul","noul":0.97}},"usage":{"input_tokens":12,"output_tokens":0}}`
+)
+
+func TestDecisionsHandler_SystemOneTranslation(t *testing.T) {
+	var upstreamBody map[string]any
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, systemOneEndpoint, r.URL.Path)
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&upstreamBody))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(systemOneResponse))
+	}))
+	defer server.Close()
+
+	reqBody := `{"model":"ollama/` + systemOneModel + `","input":"Buy now!!!","questions":[{"type":"predicate","name":"is_spam","instructions":"Is this spam?"}]}`
+	w := serveDecisions(t, newDecisionsTestRouter(t, server.URL), middlewares.DecisionsPath, reqBody)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, systemOneModel, upstreamBody["model"])
+	assert.Equal(t, "Buy now!!!", upstreamBody["state"])
+	questions, ok := upstreamBody["questions"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "noul", questions["is_spam"].(map[string]any)["type"])
+	assert.JSONEq(t, `{"answers":[{"name":"is_spam","type":"predicate","probability":0.97}],"usage":{"input_tokens":12}}`, w.Body.String())
+}
+
+func TestDecisionsHandler_SystemOneErrorsRelayed(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"error":"model 'nimble' not found"}`))
+	}))
+	defer server.Close()
+
+	reqBody := `{"model":"ollama/` + systemOneModel + `","input":"x","questions":[{"type":"predicate","name":"q","instructions":"?"}]}`
+	w := serveDecisions(t, newDecisionsTestRouter(t, server.URL), middlewares.DecisionsPath, reqBody)
+
+	require.Equal(t, http.StatusNotFound, w.Code)
+	assert.JSONEq(t, `{"error":"model 'nimble' not found"}`, w.Body.String())
+
+	w = serveDecisions(t, newDecisionsTestRouter(t, server.URL), middlewares.DecisionsPath, `{"model":"ollama/`+systemOneModel+`","input":"x","questions":[]}`)
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "at least one question")
 }
