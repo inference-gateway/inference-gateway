@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.62.0](https://github.com/inference-gateway/inference-gateway/compare/v0.61.1...v0.62.0) (2026-11-03)
+
+### ✨ Features
+
+* **api:** relay POST /v1/decisions to the OpenAI Decisions API ([#827](https://github.com/inference-gateway/inference-gateway/issues/827)) ([80ea529](https://github.com/inference-gateway/inference-gateway/commit/80ea529f8ceb6731d021c94b00cbaa3059d3099a)), closes [#816](https://github.com/inference-gateway/inference-gateway/issues/816)
+* sync generated types with schemas v1.7.0 ([#828](https://github.com/inference-gateway/inference-gateway/issues/828)) ([a254cd5](https://github.com/inference-gateway/inference-gateway/commit/a254cd5b2d60ff5edeb294e82915caa906217b72))
+
+### 🔧 Miscellaneous
+
+* **modelsdev:** sync the models.dev metadata table ([#824](https://github.com/inference-gateway/inference-gateway/issues/824)) ([8fccbca](https://github.com/inference-gateway/inference-gateway/commit/8fccbca3de199f2383f8402c783b1a60cf9019ad))
+
 ## [0.61.1](https://github.com/inference-gateway/inference-gateway/compare/v0.61.0...v0.61.1) (2026-11-01)
 
 ### 🐛 Bug Fixes
