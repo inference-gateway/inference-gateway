@@ -167,6 +167,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Models:      constants.OpenaiModelsEndpoint,
 			Chat:        constants.OpenaiChatEndpoint,
 			Responses:   ptr(constants.OpenaiResponsesEndpoint),
+			Decisions:   ptr(constants.OpenaiDecisionsEndpoint),
 			Images:      ptr(constants.OpenaiImagesEndpoint),
 			ImagesEdits: ptr(constants.OpenaiImagesEditsEndpoint),
 			Speech:      ptr(constants.OpenaiSpeechEndpoint),

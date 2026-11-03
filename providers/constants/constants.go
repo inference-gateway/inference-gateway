@@ -65,6 +65,7 @@ const (
 	OpenaiModelsEndpoint             = "/models"
 	OpenaiChatEndpoint               = "/chat/completions"
 	OpenaiResponsesEndpoint          = "/responses"
+	OpenaiDecisionsEndpoint          = "/decisions"
 	OpenaiImagesEndpoint             = "/images/generations"
 	OpenaiImagesEditsEndpoint        = "/images/edits"
 	OpenaiSpeechEndpoint             = "/audio/speech"

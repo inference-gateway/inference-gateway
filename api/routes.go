@@ -1289,6 +1289,20 @@ func (router *RouterImpl) ImagesHandler(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
+// DecisionsHandler implements an OpenAI-compatible POST /v1/decisions
+// endpoint: https://developers.openai.com/api/docs/guides/decisions
+//
+// The request body is forwarded byte-for-byte (only the `model` prefix is
+// stripped); providers without a decisions endpoint receive a 400.
+func (router *RouterImpl) DecisionsHandler(w http.ResponseWriter, r *http.Request) {
+	router.proxyJSONBody(w, r, jsonProxy{
+		apiName:      "Decisions API",
+		exampleModel: "openai/gpt-6-luna",
+		accept:       contentTypeJSON,
+		endpointOf:   func(e types.Endpoints) *string { return e.Decisions },
+	})
+}
+
 // jsonTranslator rewrites an OpenAI-style JSON request into a provider's own
 // request shape. endpoint is the provider's registry endpoint template and
 // model the request model with the provider prefix already stripped; it returns
