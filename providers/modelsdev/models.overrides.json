@@ -581,6 +581,12 @@
       "output": ["text"]
     }
   },
+  "ollama_cloud/clef:27b": {
+    "modalities": {
+      "input": ["text", "image"],
+      "output": ["text", "decisions"]
+    }
+  },
   "openai/gpt-6-luna": {
     "modalities": {
       "input": ["text", "image"],
