@@ -356,6 +356,7 @@ func main() {
 	mux.HandleFunc("POST "+middlewares.MetricsIngestPath, api.MetricsIngestionHandler)
 	mux.HandleFunc("POST "+middlewares.ChatCompletionsPath, api.ChatCompletionsHandler)
 	mux.HandleFunc("POST "+middlewares.ResponsesPath, api.ResponsesHandler)
+	mux.HandleFunc("POST "+middlewares.DecisionsPath, api.DecisionsHandler)
 	mux.HandleFunc("/proxy/{provider}/{path...}", api.ProxyHandler)
 	mux.HandleFunc("GET /v1/models", api.ListModelsHandler)
 	mux.HandleFunc("POST /v1/messages", api.MessagesHandler)

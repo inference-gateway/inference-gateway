@@ -15,6 +15,7 @@ import (
 const (
 	ChatCompletionsPath      = "/v1/chat/completions"
 	ResponsesPath            = "/v1/responses"
+	DecisionsPath            = "/v1/decisions"
 	MetricsIngestPath        = "/v1/metrics"
 	HealthPath               = "/health"
 	MCPPath                  = "/mcp"

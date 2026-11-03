@@ -222,6 +222,9 @@ const (
     {{- with (index $config.Endpoints "responses").Endpoint }}
     {{pascalCase $name}}ResponsesEndpoint = "{{.}}"
     {{- end }}
+    {{- with (index $config.Endpoints "decisions").Endpoint }}
+    {{pascalCase $name}}DecisionsEndpoint = "{{.}}"
+    {{- end }}
     {{- with (index $config.Endpoints "images").Endpoint }}
     {{pascalCase $name}}ImagesEndpoint = "{{.}}"
     {{- end }}
@@ -670,6 +673,9 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.{{pascalCase $name}}ChatEndpoint,
 			{{- if (index $config.Endpoints "responses").Endpoint }}
 			Responses: ptr(constants.{{pascalCase $name}}ResponsesEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "decisions").Endpoint }}
+			Decisions: ptr(constants.{{pascalCase $name}}DecisionsEndpoint),
 			{{- end }}
 			{{- if (index $config.Endpoints "images").Endpoint }}
 			Images: ptr(constants.{{pascalCase $name}}ImagesEndpoint),
