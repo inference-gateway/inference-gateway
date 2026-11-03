@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.63.0](https://github.com/inference-gateway/inference-gateway/compare/v0.62.0...v0.63.0) (2026-11-03)
+
+### ✨ Features
+
+* **api:** gate /v1/decisions on the decisions modality and DECISIONS_ENABLED (schemas v1.9.0) ([#831](https://github.com/inference-gateway/inference-gateway/issues/831)) ([f963c2e](https://github.com/inference-gateway/inference-gateway/commit/f963c2ead09c99c2f1f24f6b881cc10316091ac2))
+* **api:** serve /v1/decisions from Ollama and llama.cpp decision models ([#832](https://github.com/inference-gateway/inference-gateway/issues/832)) ([8a6cc0e](https://github.com/inference-gateway/inference-gateway/commit/8a6cc0e71c69447eb4897a1c02e852cc515a2111))
+* sync generated types with schemas v1.10.0 ([#833](https://github.com/inference-gateway/inference-gateway/issues/833)) ([06a4a8b](https://github.com/inference-gateway/inference-gateway/commit/06a4a8b9c3448f249eb682d0279819176c8b61b6))
+
 ## [0.62.0](https://github.com/inference-gateway/inference-gateway/compare/v0.61.1...v0.62.0) (2026-11-03)
 
 ### ✨ Features
