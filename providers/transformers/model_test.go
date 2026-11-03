@@ -210,3 +210,16 @@ func transformOne(t *testing.T, provider types.Provider, body string) types.Mode
 	require.Len(t, resp.Data, 1)
 	return resp.Data[0]
 }
+
+func TestTransformResolvesOutputModalities(t *testing.T) {
+	advertised := transformOne(t, constants.LlamacppID, `{"data":[{"id":"laya","input_modalities":["text"],"output_modalities":["decisions"]}]}`)
+	assert.Equal(t, &types.ModelModalities{Input: []types.Modality{types.ModalityText}, Output: []types.Modality{types.ModalityDecisions}}, advertised.Modalities, "a listing's flat modality fields must win over the table")
+
+	overridden := transformOne(t, constants.OpenaiID, `{"data":[{"id":"gpt-6-luna"}]}`)
+	require.NotNil(t, overridden.Modalities)
+	assert.Contains(t, overridden.Modalities.Output, types.ModalityDecisions, "the overrides table marks gpt-6-luna as a decision model")
+
+	chat := transformOne(t, constants.OpenaiID, `{"data":[{"id":"gpt-6-sol"}]}`)
+	require.NotNil(t, chat.Modalities)
+	assert.NotContains(t, chat.Modalities.Output, types.ModalityDecisions)
+}

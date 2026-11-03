@@ -24,9 +24,11 @@ import (
 )
 
 const (
-	decisionsTestBodyLimit = 512
-	decisionsTestModel     = "gpt-6-luna"
-	decisionsTestResponse  = `{"answers":[{"type":"predicate","name":"is_spam","probability":0.9}],"usage":{"input_tokens":12,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0}}}`
+	decisionsTestBodyLimit    = 512
+	decisionsTestModel        = "gpt-6-luna"
+	decisionsTestChatModel    = "gpt-6-sol"
+	decisionsTestUnknownModel = "gpt-6-nonexistent"
+	decisionsTestResponse     = `{"answers":[{"type":"predicate","name":"is_spam","probability":0.9}],"usage":{"input_tokens":12,"input_tokens_details":{"cached_tokens":0,"cache_write_tokens":0}}}`
 )
 
 func newDecisionsTestRouter(t *testing.T, upstreamURL string) *api.RouterImpl {
@@ -170,6 +172,54 @@ func TestDecisionsHandler_Errors(t *testing.T) {
 			var response api.ErrorResponse
 			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 			assert.Contains(t, response.Error, tt.expectedMsg)
+		})
+	}
+}
+
+func TestDecisionsHandler_OutputModalityGate(t *testing.T) {
+	tests := []struct {
+		name           string
+		model          string
+		expectedStatus int
+		expectedMsg    string
+	}{
+		{
+			name:           "Decision model is forwarded",
+			model:          decisionsTestModel,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Chat model with known modalities is rejected before any upstream call",
+			model:          decisionsTestChatModel,
+			expectedStatus: http.StatusBadRequest,
+			expectedMsg:    "Model openai/" + decisionsTestChatModel + " is not supported by the Decisions API: its output modalities are [text], not decisions.",
+		},
+		{
+			name:           "Model unknown to the table is forwarded so the upstream decides",
+			model:          decisionsTestUnknownModel,
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var upstreamBody map[string]any
+			var upstreamHeaders http.Header
+			server := newDecisionsUpstream(t, &upstreamBody, &upstreamHeaders)
+			defer server.Close()
+
+			reqBody := `{"model":"openai/` + tt.model + `","input":"x","questions":[]}`
+			w := serveDecisions(t, newDecisionsTestRouter(t, server.URL), middlewares.DecisionsPath, reqBody)
+
+			require.Equal(t, tt.expectedStatus, w.Code)
+			if tt.expectedMsg == "" {
+				assert.Equal(t, tt.model, upstreamBody["model"])
+				return
+			}
+			assert.Nil(t, upstreamBody, "a rejected model must not reach the upstream")
+			var response api.ErrorResponse
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+			assert.Equal(t, tt.expectedMsg, response.Error)
 		})
 	}
 }
