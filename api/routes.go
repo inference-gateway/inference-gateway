@@ -28,6 +28,7 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
+	llamacpp "github.com/inference-gateway/inference-gateway/internal/llamacpp"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
@@ -52,6 +53,7 @@ type RouterImpl struct {
 	telemetry         otel.OpenTelemetry
 	selector          *routing.Selector
 	tts               *tts.Engine
+	local             *llamacpp.Runtime
 	proxyTransport    http.RoundTripper
 	proxyTransportErr error
 }
@@ -74,6 +76,7 @@ func NewRouter(
 	telemetry otel.OpenTelemetry,
 	selector *routing.Selector,
 	localTTS *tts.Engine,
+	localModels *llamacpp.Runtime,
 ) *RouterImpl {
 	proxyTransport, proxyTransportErr := client.NewProxyTransport(cfg.Client)
 
@@ -87,6 +90,7 @@ func NewRouter(
 		telemetry:         telemetry,
 		selector:          selector,
 		tts:               localTTS,
+		local:             localModels,
 		proxyTransport:    proxyTransport,
 		proxyTransportErr: proxyTransportErr,
 	}
@@ -163,6 +167,10 @@ func (router *RouterImpl) resolveProvider(r *http.Request, model, exampleModel s
 }
 
 func (router *RouterImpl) ProxyHandler(w http.ResponseWriter, r *http.Request) {
+	if types.Provider(r.PathValue("provider")) == constants.LocalID {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Local models have no upstream to proxy to. Use POST /v1/chat/completions with a local/ model."})
+		return
+	}
 	provider, msg, err := router.buildProvider(types.Provider(r.PathValue("provider")))
 	if err != nil {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
@@ -726,6 +734,13 @@ func (router *RouterImpl) ListModelsHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	providerID := types.Provider(r.URL.Query().Get("provider"))
+	if providerID == constants.LocalID {
+		router.renderModelsResponse(w, types.ListModelsResponse{
+			Object: "list",
+			Data:   routing.FilterModels(router.localModels(), router.cfg.AllowedModels, router.cfg.DisallowedModels, includesDeprecated(includeKeys)),
+		}, includeKeys)
+		return
+	}
 	if providerID != "" {
 		provider, msg, err := router.buildProvider(providerID)
 		if err != nil {
@@ -799,6 +814,7 @@ func (router *RouterImpl) ListModelsHandler(w http.ResponseWriter, r *http.Reque
 		for response := range ch {
 			allModels = append(allModels, response.Data...)
 		}
+		allModels = append(allModels, router.localModels()...)
 
 		if allModels == nil {
 			allModels = make([]types.Model, 0)

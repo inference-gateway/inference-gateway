@@ -128,7 +128,7 @@ func newMCPEngine(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterf
 // way main.go hands the router the guardrails- and telemetry-configured agent.
 func newMCPEngineWithAgent(t *testing.T, cfg config.Config, mcpClient mcp.MCPClientInterface, agent *mcp.Agent) http.Handler {
 	t.Helper()
-	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, agent, nil, nil, nil)
+	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, mcpClient, agent, nil, nil, nil, nil)
 	r := http.NewServeMux()
 	r.HandleFunc("POST "+middlewares.MCPPath, router.MCPJSONRPCHandler)
 	return r
@@ -631,7 +631,7 @@ func TestMCPJSONRPCHandler_PreCallBlockEnvelope(t *testing.T) {
 	cfg := mcpEnabledConfig()
 	cfg.Guardrails = &config.GuardrailsConfig{Enabled: true, FailMode: guardrails.FailModeClosed}
 
-	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
+	router := NewRouter(cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil, nil)
 	engine := http.NewServeMux()
 	engine.HandleFunc("POST "+middlewares.MCPPath, router.MCPJSONRPCHandler)
 
@@ -778,7 +778,7 @@ func TestMCPProtectedResourceMetadataHandler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			router := NewRouter(tt.cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
+			router := NewRouter(tt.cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil, nil)
 			engine := http.NewServeMux()
 			engine.HandleFunc("GET "+middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
 

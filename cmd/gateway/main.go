@@ -23,6 +23,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	a2a "github.com/inference-gateway/inference-gateway/internal/a2a"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
+	llamacpp "github.com/inference-gateway/inference-gateway/internal/llamacpp"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	inprocess "github.com/inference-gateway/inference-gateway/internal/platform/inprocess"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
@@ -201,7 +202,35 @@ func main() {
 		appLogger.Error("failed to configure provider http client", err)
 		return
 	}
-	providerRegistry := registry.NewProviderRegistry(cfg.Providers, appLogger)
+	home, homeErr := os.UserHomeDir()
+	if homeErr != nil {
+		appLogger.Warn("cannot resolve home dir; local engine cache paths resolve relative to the working directory (.infer/bin/tools, .infer/models)", "error", homeErr.Error())
+	}
+
+	localModels := llamacpp.NewRuntime(appLogger, llamacpp.Config{
+		AutoDownload: cfg.LlamacppLocalAutoDownload,
+		MaxModels:    cfg.LlamacppLocalMaxModels,
+		IdleTimeout:  cfg.LlamacppLocalIdleTimeout,
+		Home:         home,
+		HubToken:     cfg.HfToken,
+		Load: llamacpp.LoadOptions{
+			ContextSize:    cfg.LlamacppLocalCtxSize,
+			GPULayers:      cfg.LlamacppLocalGpuLayers,
+			Threads:        cfg.LlamacppLocalThreads,
+			BatchSize:      cfg.LlamacppLocalBatchSize,
+			Parallel:       cfg.LlamacppLocalParallel,
+			FlashAttention: cfg.LlamacppLocalFlashAttn,
+			Jinja:          cfg.LlamacppLocalJinja,
+			ExtraArgs:      cfg.LlamacppLocalExtraArgs,
+		},
+	})
+	warmModels, err := llamacpp.ParseModels(cfg.LlamacppLocalModels)
+	if err != nil {
+		appLogger.Error("invalid LLAMACPP_LOCAL_MODELS configuration", err)
+		return
+	}
+	localModels.Warmup(warmModels)
+	providerRegistry := api.WithLocalModels(registry.NewProviderRegistry(cfg.Providers, appLogger), localModels, appLogger)
 
 	// Log registered providers
 	var providerNames []string
@@ -320,10 +349,6 @@ func main() {
 
 	var localTTS *tts.Engine
 	if cfg.AudioEnabled {
-		home, homeErr := os.UserHomeDir()
-		if homeErr != nil {
-			appLogger.Warn("audio: cannot resolve home dir; local speech cache paths resolve relative to the working directory (.infer/bin/tools, .infer/models/tts)", "error", homeErr.Error())
-		}
 		localTTS = tts.NewEngine(appLogger, tts.Config{
 			AutoDownload:   cfg.AudioLocalAutoDownload,
 			MaxConcurrency: cfg.AudioLocalMaxConcurrency,
@@ -339,7 +364,7 @@ func main() {
 	}
 
 	mcp.GatewayInfo.Version = version
-	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, mcpAgent, telemetryImpl, selector, localTTS)
+	api := api.NewRouter(cfg, appLogger, providerRegistry, httpClient, mcpClient, mcpAgent, telemetryImpl, selector, localTTS, localModels)
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+middlewares.HealthPath, api.HealthcheckHandler)
 	mux.HandleFunc("GET "+middlewares.MCPProtectedResourcePath, api.MCPProtectedResourceMetadataHandler)
@@ -481,5 +506,8 @@ func main() {
 	}
 	if err := selfServer.Shutdown(ctxShutdown); err != nil {
 		appLogger.Error("in-process server shutdown error", err)
+	}
+	if err := localModels.Shutdown(ctxShutdown); err != nil {
+		appLogger.Error("local model runtime shutdown error", err)
 	}
 }

@@ -3,6 +3,7 @@ package routing
 import (
 	"strings"
 
+	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
@@ -32,6 +33,7 @@ func ResolveProvider(queryParam, model string) (provider types.Provider, modelNa
 // and the model name (which might be modified to strip provider prefixes).
 //
 // It only checks for explicit provider prefixes like "ollama/", "groq/", etc.
+// plus the reserved "local/" prefix of the gateway's built-in engines.
 // Implicit model name-based routing (like "gpt-" -> OpenAI) is not supported.
 //
 // Returns nil provider if no explicit provider prefix is found.
@@ -43,7 +45,7 @@ func DetermineProviderAndModelName(model string) (provider *types.Provider, mode
 	}
 
 	id := types.Provider(strings.ToLower(prefix))
-	if _, exists := registry.Registry[id]; !exists {
+	if _, exists := registry.Registry[id]; !exists && id != constants.LocalID {
 		return nil, model
 	}
 

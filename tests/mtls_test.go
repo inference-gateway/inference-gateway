@@ -294,7 +294,7 @@ func TestProxyToProviderBehindMutualTLS(t *testing.T) {
 				Client:    tt.cfg,
 				Providers: providerCfg,
 			}
-			router := api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), nil, nil, nil, nil, nil, nil)
+			router := api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), nil, nil, nil, nil, nil, nil, nil)
 
 			mux := http.NewServeMux()
 			mux.HandleFunc("/proxy/{provider}/{path...}", router.ProxyHandler)
@@ -355,7 +355,7 @@ func TestProviderCallsSkipTheServerTLS(t *testing.T) {
 	require.NoError(t, err)
 	httpClient, err := client.NewHTTPClient(cfg.Client, selfListener, host, port)
 	require.NoError(t, err)
-	router := api.NewRouter(cfg, log, providers, httpClient, nil, nil, nil, nil, nil)
+	router := api.NewRouter(cfg, log, providers, httpClient, nil, nil, nil, nil, nil, nil)
 	mux.HandleFunc("/proxy/{provider}/{path...}", router.ProxyHandler)
 
 	provider, err := providers.BuildProvider(constants.OpenaiID, httpClient)

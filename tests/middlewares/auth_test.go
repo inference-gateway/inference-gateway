@@ -113,7 +113,7 @@ func newAuthEngine(t *testing.T, auth config.AuthConfig, mcp *config.MCPConfig) 
 	cfg := config.Config{Auth: &auth, MCP: mcp}
 	mw, err := middlewares.NewOIDCAuthenticatorMiddleware(logger.NewNoopLogger(), cfg)
 	require.NoError(t, err)
-	router := api.NewRouter(cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil)
+	router := api.NewRouter(cfg, logger.NewNoopLogger(), nil, nil, nil, nil, nil, nil, nil, nil)
 
 	r := http.NewServeMux()
 	echo := func(w http.ResponseWriter, r *http.Request) {

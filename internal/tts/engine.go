@@ -4,33 +4,25 @@
 // (ggml-org/llama.cpp#21956, mtmd_gen work) this package can be removed in
 // favor of proxying to llama-server.
 //
-// The asset cache is shared with the Inference Gateway CLI in fixed
-// well-known locations (never configurable): binaries in ~/.infer/bin/tools
-// (falling back to the legacy ~/.infer/bin) and GGUF weights in
-// ~/.infer/models/tts. Downloads write to a temp file and rename atomically,
-// so a concurrently running CLI and gateway never corrupt the cache. A cached
-// llama-tts is replaced when its sha256 differs from the latest release's
-// checksums.txt, mirroring the binaries repo's install.sh; pinned GGUF weights
-// never change under a filename, so an existing one is treated as done.
+// Assets live in the shared ~/.infer cache managed by internal/platform/assets
+// (binaries in ~/.infer/bin/tools, GGUF weights in ~/.infer/models/tts).
+// Pinned GGUF weights never change under a filename, so an existing one is
+// treated as done.
 package tts
 
 import (
 	"cmp"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	assets "github.com/inference-gateway/inference-gateway/internal/platform/assets"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
@@ -47,10 +39,9 @@ const (
 
 	// Shared cache layout, adopted from the CLI (fixed, not configurable).
 	// Exported because the 503 guidance and manual pre-download docs name them.
-	CacheToolsDir  = ".infer/bin/tools"
-	CacheBinDir    = ".infer/bin"
-	CacheModelsDir = ".infer/models/tts"
-	checksumsName  = "checksums.txt"
+	CacheToolsDir  = assets.ToolsDir
+	CacheBinDir    = assets.LegacyBinDir
+	CacheModelsDir = assets.ModelsDir + "/tts"
 	referenceName  = "reference.wav"
 	outputName     = "speech.wav"
 
@@ -65,7 +56,6 @@ const (
 	// defaultTimeout is the belt-and-braces fallback for Timeout.
 	defaultTimeout = 300 * time.Second
 
-	downloadBufSize = 256 << 10
 	stderrTailBytes = 500
 )
 
@@ -74,12 +64,9 @@ const (
 // of these (see llama.cpp tools/tts/README.md).
 var SupportedLanguages = []string{"zh", "en", "de", "it", "pt", "es", "ja", "ko", "fr", "ru"}
 
-var (
-	// Package vars (not consts) so tests can aim them at an httptest server
-	// instead of the real release / model hosts.
-	binaryRepoBase = "https://github.com/inference-gateway/binaries/releases/latest/download"
-	modelRepoBase  = "https://huggingface.co/ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF/resolve/main"
-)
+// modelRepoBase is a package var (not a const) so tests can aim it at an
+// httptest server instead of the real model host.
+var modelRepoBase = "https://huggingface.co/ggml-org/Qwen3-TTS-12Hz-1.7B-Base-GGUF/resolve/main"
 
 // BackboneGGUF / MmprojGGUF are the Qwen3-TTS weights (backbone + vision
 // Tower) that llama-tts runs via -m / -mm.
@@ -138,7 +125,7 @@ type Config struct {
 type Engine struct {
 	cfg    Config
 	logger logger.Logger
-	http   *http.Client
+	dl     *assets.Downloader
 	sem    chan struct{}
 
 	mu          sync.Mutex
@@ -153,12 +140,13 @@ func NewEngine(logger logger.Logger, cfg Config) *Engine {
 	if cfg.Timeout <= 0 {
 		cfg.Timeout = defaultTimeout
 	}
-	return &Engine{
+	e := &Engine{
 		cfg:    cfg,
 		logger: logger,
-		http:   &http.Client{},
 		sem:    make(chan struct{}, cfg.MaxConcurrency),
 	}
+	e.dl = &assets.Downloader{HTTP: &http.Client{}, Logger: logger, Status: e.setStatus}
+	return e
 }
 
 // Warmup ensures the binary and GGUF weights exist, downloading the missing
@@ -302,7 +290,7 @@ func (e *Engine) readiness() (ok bool, detail string) {
 // ensure verifies every asset and downloads the ones that are missing.
 // Callers must ensure only one runs at a time (Warmup dedups).
 func (e *Engine) ensure(ctx context.Context) error {
-	if err := e.ensureBinary(ctx); err != nil {
+	if err := e.dl.EnsureBinary(ctx, e.cfg.Home, BinaryName); err != nil {
 		return fmt.Errorf("obtaining llama-tts binary: %w", err)
 	}
 	for _, gguf := range []string{BackboneGGUF, MmprojGGUF} {
@@ -310,174 +298,22 @@ func (e *Engine) ensure(ctx context.Context) error {
 		if _, err := os.Stat(dest); err == nil {
 			continue // an existing file is treated as done, whoever wrote it (CLI or gateway)
 		}
-		if err := e.download(ctx, modelRepoBase+"/"+gguf, dest, modelSHA256[gguf], 0o644); err != nil {
+		if err := e.dl.Download(ctx, modelRepoBase+"/"+gguf, dest, modelSHA256[gguf], 0o644); err != nil {
 			return fmt.Errorf("downloading %s: %w", gguf, err)
 		}
 	}
 	return nil
 }
 
-// ensureBinary downloads llama-tts when it is missing and replaces a cached one
-// whose sha256 differs from the latest release, following the binaries repo's
-// install.sh. An unreachable checksums.txt keeps whatever is already cached.
-func (e *Engine) ensureBinary(ctx context.Context) error {
-	if p, err := exec.LookPath(BinaryName); err == nil {
-		e.logger.Debug("audio: using llama-tts from PATH; upgrades are the operator's", "binary", p)
-		return nil
-	}
-
-	dest, cached := e.cachedBinary()
-	asset := binaryAsset()
-	base := strings.TrimSuffix(binaryRepoBase, "/")
-	sums, err := e.fetchChecksums(ctx, base+"/"+checksumsName)
-	if err != nil {
-		if cached {
-			e.logger.Warn("audio: cannot check llama-tts for a newer release; keeping the cached binary",
-				"binary", dest, "error", err.Error())
-			return nil
-		}
-		return fmt.Errorf("fetching %s: %w", checksumsName, err)
-	}
-	want, ok := sums[asset]
-	if !ok {
-		return fmt.Errorf("%s has no entry for %s", checksumsName, asset)
-	}
-
-	if cached {
-		got, err := fileSHA256(dest)
-		if err == nil && got == want {
-			return nil
-		}
-		e.logger.Info("audio: llama-tts is stale; downloading the latest release", "binary", dest)
-	}
-	return e.download(ctx, base+"/"+asset, dest, want, 0o755)
-}
-
-// cachedBinary returns the cached llama-tts and whether it exists; when it does
-// not, the path is where a download lands.
-func (e *Engine) cachedBinary() (path string, exists bool) {
-	for _, p := range []string{e.binPath(), e.legacyBinPath()} {
-		if info, err := os.Stat(p); err == nil && !info.IsDir() {
-			return p, true
-		}
-	}
-	return e.binPath(), false
-}
-
-// download fetches rawURL into dest atomically (temp file in the same
-// directory, then rename), verifying the sha256 when wantSum is non-empty.
-func (e *Engine) download(ctx context.Context, rawURL, dest, wantSHA string, mode os.FileMode) error {
-	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-		return err
-	}
-	name := filepath.Base(dest)
-	e.setStatus("starting download of " + name)
-	tmp, err := os.CreateTemp(filepath.Dir(dest), "."+name+".part")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmp.Name()) // no-op once renamed into place
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
-	if err != nil {
-		return err
-	}
-	resp, err := e.http.Do(httpReq)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("%s responded %s", rawURL, resp.Status)
-	}
-
-	hash := sha256.New()
-	var got int64
-	buf := make([]byte, downloadBufSize)
-	for {
-		n, rerr := resp.Body.Read(buf)
-		if n > 0 {
-			if _, werr := tmp.Write(buf[:n]); werr != nil {
-				return fmt.Errorf("writing %s: %w", tmp.Name(), werr)
-			}
-			_, _ = hash.Write(buf[:n])
-			got += int64(n)
-			e.setStatus(downloadProgress(name, got, resp.ContentLength))
-		}
-		if rerr != nil {
-			if rerr == io.EOF {
-				break
-			}
-			return rerr
-		}
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-
-	if wantSHA != "" {
-		if gotSum := hex.EncodeToString(hash.Sum(nil)); gotSum != wantSHA {
-			return fmt.Errorf("sha256 mismatch for %s: want %s got %s", name, wantSHA, gotSum)
-		}
-	}
-	if err := os.Chmod(tmp.Name(), mode); err != nil {
-		return err
-	}
-	if err := os.Rename(tmp.Name(), dest); err != nil {
-		return fmt.Errorf("moving %s into place: %w", name, err)
-	}
-	e.logger.Info("audio: downloaded speech asset", "file", dest, "bytes", got)
-	return nil
-}
-
-// fetchChecksums parses a checksums.txt ("sha256  filename" per line).
-func (e *Engine) fetchChecksums(ctx context.Context, url string) (map[string]string, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := e.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%s responded %s", url, resp.Status)
-	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if err != nil {
-		return nil, err
-	}
-	sums := make(map[string]string)
-	for line := range strings.SplitSeq(string(body), "\n") {
-		fields := strings.Fields(line)
-		if len(fields) >= 2 {
-			sums[fields[1]] = strings.ToLower(fields[0])
-		}
-	}
-	return sums, nil
-}
-
 // resolveBinary returns the llama-tts binary to exec: PATH wins, then the
 // shared cache.
 func (e *Engine) resolveBinary() (string, bool) {
-	if p, err := exec.LookPath(BinaryName); err == nil {
-		return p, true
-	}
-	if p, exists := e.cachedBinary(); exists {
-		return p, true
-	}
-	return "", false
+	return assets.ResolveBinary(e.cfg.Home, BinaryName)
 }
 
 // binPath is the CLI's tools install dir, where gateway downloads land too.
 func (e *Engine) binPath() string {
-	return filepath.Join(e.cfg.Home, CacheToolsDir, binaryFileName())
-}
-
-// legacyBinPath is the flat pre-tools cache location, still honored for reads.
-func (e *Engine) legacyBinPath() string {
-	return filepath.Join(e.cfg.Home, CacheBinDir, binaryFileName())
+	return assets.BinPath(e.cfg.Home, BinaryName)
 }
 
 func (e *Engine) modelDir() string {
@@ -492,52 +328,10 @@ func (e *Engine) mmprojPath() string {
 	return filepath.Join(e.cfg.Home, CacheModelsDir, MmprojGGUF)
 }
 
-func fileSHA256(path string) (string, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	hash := sha256.New()
-	if _, err := io.Copy(hash, f); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-// binaryAsset is the per-platform asset name on binaries releases,
-// following the whisper-cli and ffmpeg naming.
-func binaryAsset() string {
-	name := fmt.Sprintf("%s-%s-%s", BinaryName, runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
-		name += ".exe"
-	}
-	return name
-}
-
-// binaryFileName is the cached binary's file name.
-func binaryFileName() string {
-	if runtime.GOOS == "windows" {
-		return BinaryName + ".exe"
-	}
-	return BinaryName
-}
-
 func (e *Engine) setStatus(s string) {
 	e.mu.Lock()
 	e.progress = s
 	e.mu.Unlock()
-}
-
-func downloadProgress(name string, got, total int64) string {
-	if total <= 0 {
-		return fmt.Sprintf("downloading %s (%s done)", name, humanBytes(got))
-	}
-	return fmt.Sprintf("downloading %s (%d%%)", name, got*100/total)
-}
-
-func humanBytes(n int64) string {
-	return strconv.FormatFloat(float64(n)/(1<<20), 'f', 1, 64) + " MB"
 }
 
 // stderrTail returns the last stderrTailBytes of process output.

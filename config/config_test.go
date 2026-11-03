@@ -35,6 +35,10 @@ func defaultConfig(mutate func(*config.Config)) config.Config {
 		AudioLocalAutoDownload:    true,
 		AudioLocalMaxConcurrency:  2,
 		AudioLocalTimeout:         300,
+		LlamacppLocalAutoDownload: true,
+		LlamacppLocalMaxModels:    1,
+		LlamacppLocalIdleTimeout:  10 * time.Minute,
+		LlamacppLocalJinja:        true,
 		DebugContentTruncateWords: 10,
 		DebugMaxMessages:          100,
 		Telemetry: &config.TelemetryConfig{

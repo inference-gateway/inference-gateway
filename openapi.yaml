@@ -4744,6 +4744,67 @@ components:
                   type: int
                   default: '300'
                   description: 'Timeout in seconds for a single local speech synthesis'
+                - name: llamacpp_local_auto_download
+                  env: 'LLAMACPP_LOCAL_AUTO_DOWNLOAD'
+                  type: bool
+                  default: 'true'
+                  description: 'Allow downloading llama-server and the GGUFs that local/<owner>/<repo>[:<quant>] chat models name from Hugging Face into the shared ~/.infer cache, in the background on first request. A cached GGUF is treated as done once present, while a cached llama-server whose sha256 differs from the latest release is replaced. A llama-server found on PATH is left alone. When false, the gateway serves only from the existing cache or PATH and returns an actionable error naming the cache path when assets are missing'
+                - name: llamacpp_local_models
+                  env: 'LLAMACPP_LOCAL_MODELS'
+                  type: string
+                  description: 'Comma-separated local/<owner>/<repo>[:<quant>] references to download and start at boot, in the background, so the first request does not wait'
+                - name: llamacpp_local_max_models
+                  env: 'LLAMACPP_LOCAL_MAX_MODELS'
+                  type: int
+                  default: '1'
+                  description: 'Maximum llama-server processes (local/ chat models) loaded at once; the least recently used idle one is stopped to make room'
+                - name: llamacpp_local_idle_timeout
+                  env: 'LLAMACPP_LOCAL_IDLE_TIMEOUT'
+                  type: time.Duration
+                  default: '10m'
+                  description: 'Stop the llama-server of a local/ chat model after this long without requests; 0 keeps loaded models running'
+                - name: llamacpp_local_ctx_size
+                  env: 'LLAMACPP_LOCAL_CTX_SIZE'
+                  type: int
+                  default: '0'
+                  description: 'Context size (llama-server -c) for local/ chat models; 0 leaves the llama-server default'
+                - name: llamacpp_local_gpu_layers
+                  env: 'LLAMACPP_LOCAL_GPU_LAYERS'
+                  type: int
+                  default: '0'
+                  description: 'Layers to offload to the GPU (llama-server -ngl) for local/ chat models; 0 leaves the llama-server default. Needs a GPU build of llama-server on PATH'
+                - name: llamacpp_local_threads
+                  env: 'LLAMACPP_LOCAL_THREADS'
+                  type: int
+                  default: '0'
+                  description: 'CPU threads (llama-server -t) for local/ chat models; 0 leaves the llama-server default'
+                - name: llamacpp_local_batch_size
+                  env: 'LLAMACPP_LOCAL_BATCH_SIZE'
+                  type: int
+                  default: '0'
+                  description: 'Logical batch size (llama-server -b) for local/ chat models; 0 leaves the llama-server default'
+                - name: llamacpp_local_flash_attn
+                  env: 'LLAMACPP_LOCAL_FLASH_ATTN'
+                  type: string
+                  description: 'Flash attention mode (llama-server -fa: on, off or auto) for local/ chat models; empty leaves the llama-server default'
+                - name: llamacpp_local_jinja
+                  env: 'LLAMACPP_LOCAL_JINJA'
+                  type: bool
+                  default: 'true'
+                  description: 'Pass --jinja to llama-server so local/ chat models use the chat template of their GGUF, which tool calling needs'
+                - name: llamacpp_local_parallel
+                  env: 'LLAMACPP_LOCAL_PARALLEL'
+                  type: int
+                  default: '0'
+                  description: 'Parallel request slots (llama-server -np) for local/ chat models; 0 leaves the llama-server default'
+                - name: llamacpp_local_extra_args
+                  env: 'LLAMACPP_LOCAL_EXTRA_ARGS'
+                  type: string
+                  description: 'Extra whitespace-separated llama-server arguments appended as-is when a local/ chat model is loaded'
+                - name: hf_token
+                  env: 'HF_TOKEN'
+                  type: string
+                  description: 'Hugging Face access token sent as a bearer when downloading local/ chat models, so gated repos resolve and rate limits are higher'
                 - name: debug_content_truncate_words
                   env: 'DEBUG_CONTENT_TRUNCATE_WORDS'
                   type: int

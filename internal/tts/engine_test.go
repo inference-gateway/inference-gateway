@@ -17,6 +17,7 @@ import (
 
 	require "github.com/stretchr/testify/require"
 
+	assets "github.com/inference-gateway/inference-gateway/internal/platform/assets"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 )
 
@@ -185,16 +186,16 @@ func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 		}
 	}
 	mux := http.NewServeMux()
-	mux.Handle("/"+checksumsName, asset(checksumsName, hex.EncodeToString(sum[:])+"  "+binaryAsset()+"\n"))
-	mux.Handle("/"+binaryAsset(), asset(binaryFileName(), content))
+	mux.Handle("/"+assets.ChecksumsName, asset(assets.ChecksumsName, hex.EncodeToString(sum[:])+"  "+assets.BinaryAsset(BinaryName)+"\n"))
+	mux.Handle("/"+assets.BinaryAsset(BinaryName), asset(assets.BinaryFileName(BinaryName), content))
 	mux.Handle("/"+BackboneGGUF, asset(BackboneGGUF, "backbone"))
 	mux.Handle("/"+MmprojGGUF, asset(MmprojGGUF, "mmproj"))
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	oldBinary, oldModel := binaryRepoBase, modelRepoBase
-	binaryRepoBase, modelRepoBase = server.URL, server.URL
-	t.Cleanup(func() { binaryRepoBase, modelRepoBase = oldBinary, oldModel })
+	oldBinary, oldModel := assets.ReleaseBase, modelRepoBase
+	assets.ReleaseBase, modelRepoBase = server.URL, server.URL
+	t.Cleanup(func() { assets.ReleaseBase, modelRepoBase = oldBinary, oldModel })
 	overrideModelSums(t, map[string]string{
 		BackboneGGUF: sha256Hex("backbone"),
 		MmprojGGUF:   sha256Hex("mmproj"),
@@ -227,7 +228,7 @@ func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 	defer mu.Unlock()
 	for name, n := range hits {
 		want := 1
-		if name == checksumsName {
+		if name == assets.ChecksumsName {
 			want = 2 // re-read every warmup to spot a newer release
 		}
 		require.Equal(t, want, n, "asset %s downloaded %d times; cache was not reused", name, n)
@@ -241,20 +242,30 @@ func releaseServer(t *testing.T, body string) *atomic.Int64 {
 	t.Helper()
 	var assetHits atomic.Int64
 	mux := http.NewServeMux()
-	mux.HandleFunc("/"+checksumsName, func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(sha256Hex(body) + "  " + binaryAsset() + "\n"))
+	mux.HandleFunc("/"+assets.ChecksumsName, func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(sha256Hex(body) + "  " + assets.BinaryAsset(BinaryName) + "\n"))
 	})
-	mux.HandleFunc("/"+binaryAsset(), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/"+assets.BinaryAsset(BinaryName), func(w http.ResponseWriter, r *http.Request) {
 		assetHits.Add(1)
 		_, _ = w.Write([]byte(body))
 	})
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
-	old := binaryRepoBase
-	binaryRepoBase = server.URL
-	t.Cleanup(func() { binaryRepoBase = old })
+	old := assets.ReleaseBase
+	assets.ReleaseBase = server.URL
+	t.Cleanup(func() { assets.ReleaseBase = old })
 	return &assetHits
+}
+
+// ensureBinary is the engine's binary step on its own, for the upgrade tests.
+func (e *Engine) ensureBinary(ctx context.Context) error {
+	return e.dl.EnsureBinary(ctx, e.cfg.Home, BinaryName)
+}
+
+// legacyBinPath is the flat pre-tools cache location, still honored for reads.
+func (e *Engine) legacyBinPath() string {
+	return assets.LegacyBinPath(e.cfg.Home, BinaryName)
 }
 
 func TestEnsureBinaryUpgradesStaleBinary(t *testing.T) {
@@ -292,9 +303,9 @@ func TestEnsureBinaryUpgradesStaleBinary(t *testing.T) {
 	})
 
 	t.Run("keeps the cached binary when checksums.txt is unreachable", func(t *testing.T) {
-		old := binaryRepoBase
-		binaryRepoBase = "http://127.0.0.1:1"
-		t.Cleanup(func() { binaryRepoBase = old })
+		old := assets.ReleaseBase
+		assets.ReleaseBase = "http://127.0.0.1:1"
+		t.Cleanup(func() { assets.ReleaseBase = old })
 		t.Setenv("PATH", t.TempDir())
 		e := testEngine(t, Config{AutoDownload: true, Home: t.TempDir()})
 		writeBinary(t, e.binPath(), "#!/bin/sh\necho offline\n")
@@ -305,9 +316,9 @@ func TestEnsureBinaryUpgradesStaleBinary(t *testing.T) {
 
 	t.Run("leaves a PATH binary alone", func(t *testing.T) {
 		installFakeBinary(t, "exit 0\n")
-		old := binaryRepoBase
-		binaryRepoBase = "http://127.0.0.1:1"
-		t.Cleanup(func() { binaryRepoBase = old })
+		old := assets.ReleaseBase
+		assets.ReleaseBase = "http://127.0.0.1:1"
+		t.Cleanup(func() { assets.ReleaseBase = old })
 		e := testEngine(t, Config{AutoDownload: true, Home: t.TempDir()})
 
 		require.NoError(t, e.ensureBinary(context.Background()))

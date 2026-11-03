@@ -36,7 +36,7 @@ func newMetricsTestRouter(t *testing.T, telemetryEnabled, pushEnabled bool, tele
 		},
 	}
 
-	router := api.NewRouter(cfg, log, nil, nil, nil, nil, telemetry, nil, nil)
+	router := api.NewRouter(cfg, log, nil, nil, nil, nil, telemetry, nil, nil, nil)
 
 	r := http.NewServeMux()
 	r.HandleFunc("POST "+"/v1/metrics", router.MetricsIngestionHandler)
