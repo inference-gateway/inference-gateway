@@ -1293,8 +1293,15 @@ func (router *RouterImpl) ImagesHandler(w http.ResponseWriter, r *http.Request) 
 // endpoint: https://developers.openai.com/api/docs/guides/decisions
 //
 // The request body is forwarded byte-for-byte (only the `model` prefix is
-// stripped); providers without a decisions endpoint receive a 400.
+// stripped); providers without a decisions endpoint receive a 400. Opt-in via
+// DECISIONS_ENABLED while the upstream decision APIs are in preview.
 func (router *RouterImpl) DecisionsHandler(w http.ResponseWriter, r *http.Request) {
+	if !router.cfg.DecisionsEnabled {
+		router.logger.Error("decisions api not enabled", nil)
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: "The Decisions API is not enabled. Set DECISIONS_ENABLED=true to enable it."})
+		return
+	}
+
 	router.proxyJSONBody(w, r, jsonProxy{
 		apiName:        "Decisions API",
 		exampleModel:   "openai/gpt-6-luna",

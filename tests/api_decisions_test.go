@@ -33,6 +33,11 @@ const (
 
 func newDecisionsTestRouter(t *testing.T, upstreamURL string) *api.RouterImpl {
 	t.Helper()
+	return newDecisionsRouter(t, upstreamURL, true)
+}
+
+func newDecisionsRouter(t *testing.T, upstreamURL string, enabled bool) *api.RouterImpl {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(ctrl.Finish)
 
@@ -72,7 +77,8 @@ func newDecisionsTestRouter(t *testing.T, upstreamURL string) *api.RouterImpl {
 			WriteTimeout:       5 * time.Second,
 			MaxRequestBodySize: decisionsTestBodyLimit,
 		},
-		Providers: providerCfg,
+		Providers:        providerCfg,
+		DecisionsEnabled: enabled,
 	}
 
 	return api.NewRouter(cfg, log, registry.NewProviderRegistry(providerCfg, log), mockClient, nil, nil, nil, nil, nil)
@@ -222,4 +228,14 @@ func TestDecisionsHandler_OutputModalityGate(t *testing.T) {
 			assert.Equal(t, tt.expectedMsg, response.Error)
 		})
 	}
+}
+
+func TestDecisionsHandler_Disabled(t *testing.T) {
+	reqBody := `{"model":"openai/` + decisionsTestModel + `","input":"x","questions":[]}`
+	w := serveDecisions(t, newDecisionsRouter(t, "http://localhost:0", false), middlewares.DecisionsPath, reqBody)
+
+	require.Equal(t, http.StatusNotFound, w.Code)
+	var response api.ErrorResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
+	assert.Equal(t, "The Decisions API is not enabled. Set DECISIONS_ENABLED=true to enable it.", response.Error)
 }
