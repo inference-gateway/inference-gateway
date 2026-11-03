@@ -255,6 +255,27 @@ func (e CreateSpeechRequestResponseFormat) Valid() bool {
 	}
 }
 
+// Defines values for DecisionQuestionType.
+const (
+	Choice    DecisionQuestionType = "choice"
+	Predicate DecisionQuestionType = "predicate"
+	Score     DecisionQuestionType = "score"
+)
+
+// Valid indicates whether the value is a known member of the DecisionQuestionType enum.
+func (e DecisionQuestionType) Valid() bool {
+	switch e {
+	case Choice:
+		return true
+	case Predicate:
+		return true
+	case Score:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FinishReason.
 const (
 	ContentFilter FinishReason = "content_filter"
@@ -1867,6 +1888,33 @@ type CreateChatCompletionStreamResponse struct {
 	Usage *CompletionUsage `json:"usage,omitempty"`
 }
 
+// CreateDecisionRequest Request body for the OpenAI Decisions API, relayed unchanged.
+type CreateDecisionRequest struct {
+	// Input Shared evidence, a string or an ordered array of message and tool items.
+	Input CreateDecisionRequest_Input `json:"input"`
+
+	// Model Model to use, optionally prefixed with the provider (`openai/gpt-6-luna`).
+	Model                 string  `json:"model"`
+	PromptCacheBreakpoint *string `json:"prompt_cache_breakpoint,omitempty"`
+	PromptCacheKey        *string `json:"prompt_cache_key,omitempty"`
+	PromptCacheOptions    *struct {
+		Mode *string `json:"mode,omitempty"`
+	} `json:"prompt_cache_options,omitempty"`
+	Questions            []DecisionQuestion `json:"questions"`
+	AdditionalProperties map[string]any     `json:"-"`
+}
+
+// CreateDecisionRequestInput0 defines model for CreateDecisionRequest.Input.0.
+type CreateDecisionRequestInput0 = string
+
+// CreateDecisionRequestInput1 defines model for CreateDecisionRequest.Input.1.
+type CreateDecisionRequestInput1 = []map[string]any
+
+// CreateDecisionRequest_Input Shared evidence, a string or an ordered array of message and tool items.
+type CreateDecisionRequest_Input struct {
+	union json.RawMessage
+}
+
 // CreateImageRequest Request body for creating an image via the OpenAI-compatible Images API.
 type CreateImageRequest struct {
 	// Model Model ID to use for image generation.
@@ -2179,9 +2227,42 @@ type CreateVideoRequest struct {
 	Size *string `json:"size,omitempty"`
 }
 
+// Decision Response of the OpenAI Decisions API, relayed unchanged.
+type Decision struct {
+	Answers *[]map[string]any `json:"answers,omitempty"`
+	Usage   *struct {
+		InputTokens        *int `json:"input_tokens,omitempty"`
+		InputTokensDetails *struct {
+			CacheWriteTokens *int `json:"cache_write_tokens,omitempty"`
+			CachedTokens     *int `json:"cached_tokens,omitempty"`
+		} `json:"input_tokens_details,omitempty"`
+	} `json:"usage,omitempty"`
+	AdditionalProperties map[string]any `json:"-"`
+}
+
+// DecisionQuestion defines model for DecisionQuestion.
+type DecisionQuestion struct {
+	Choices *[]struct {
+		Description *string `json:"description,omitempty"`
+		Value       *string `json:"value,omitempty"`
+	} `json:"choices,omitempty"`
+	Instructions string `json:"instructions"`
+	Levels       *[]struct {
+		Description *string `json:"description,omitempty"`
+		Label       *string `json:"label,omitempty"`
+	} `json:"levels,omitempty"`
+	Name                 string               `json:"name"`
+	Type                 DecisionQuestionType `json:"type"`
+	AdditionalProperties map[string]any       `json:"-"`
+}
+
+// DecisionQuestionType defines model for DecisionQuestion.Type.
+type DecisionQuestionType string
+
 // Endpoints defines model for Endpoints.
 type Endpoints struct {
 	Chat           string  `json:"chat"`
+	Decisions      *string `json:"decisions,omitempty"`
 	Images         *string `json:"images,omitempty"`
 	ImagesEdits    *string `json:"images_edits,omitempty"`
 	Models         string  `json:"models"`
@@ -3479,6 +3560,9 @@ type VideoJobStatus string
 // BadRequest defines model for BadRequest.
 type BadRequest = Error
 
+// DecisionsNotSupported defines model for DecisionsNotSupported.
+type DecisionsNotSupported = Error
+
 // ImagesNotSupported defines model for ImagesNotSupported.
 type ImagesNotSupported = Error
 
@@ -3583,6 +3667,12 @@ type CreateSpeechParams struct {
 
 // CreateChatCompletionParams defines parameters for CreateChatCompletion.
 type CreateChatCompletionParams struct {
+	// Provider Specific provider to use (default determined by model)
+	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
+}
+
+// CreateDecisionParams defines parameters for CreateDecision.
+type CreateDecisionParams struct {
 	// Provider Specific provider to use (default determined by model)
 	Provider *Provider `form:"provider,omitempty" json:"provider,omitempty"`
 }
@@ -3742,6 +3832,9 @@ type CreateSpeechJSONRequestBody = CreateSpeechRequest
 // CreateChatCompletionJSONRequestBody defines body for CreateChatCompletion for application/json ContentType.
 type CreateChatCompletionJSONRequestBody = CreateChatCompletionRequest
 
+// CreateDecisionJSONRequestBody defines body for CreateDecision for application/json ContentType.
+type CreateDecisionJSONRequestBody = CreateDecisionRequest
+
 // CreateImageEditMultipartRequestBody defines body for CreateImageEdit for multipart/form-data ContentType.
 type CreateImageEditMultipartRequestBody CreateImageEditMultipartBody
 
@@ -3771,6 +3864,350 @@ type CreateResponseJSONRequestBody = CreateResponseRequest
 
 // CreateVideoMultipartRequestBody defines body for CreateVideo for multipart/form-data ContentType.
 type CreateVideoMultipartRequestBody = CreateVideoRequest
+
+// Getter for additional properties for CreateDecisionRequest. Returns the specified
+// element and whether it was found
+func (a CreateDecisionRequest) Get(fieldName string) (value any, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for CreateDecisionRequest
+func (a *CreateDecisionRequest) Set(fieldName string, value any) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]any)
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for CreateDecisionRequest to handle AdditionalProperties
+func (a *CreateDecisionRequest) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["input"]; found {
+		err = json.Unmarshal(raw, &a.Input)
+		if err != nil {
+			return fmt.Errorf("error reading 'input': %w", err)
+		}
+		delete(object, "input")
+	}
+
+	if raw, found := object["model"]; found {
+		err = json.Unmarshal(raw, &a.Model)
+		if err != nil {
+			return fmt.Errorf("error reading 'model': %w", err)
+		}
+		delete(object, "model")
+	}
+
+	if raw, found := object["prompt_cache_breakpoint"]; found {
+		err = json.Unmarshal(raw, &a.PromptCacheBreakpoint)
+		if err != nil {
+			return fmt.Errorf("error reading 'prompt_cache_breakpoint': %w", err)
+		}
+		delete(object, "prompt_cache_breakpoint")
+	}
+
+	if raw, found := object["prompt_cache_key"]; found {
+		err = json.Unmarshal(raw, &a.PromptCacheKey)
+		if err != nil {
+			return fmt.Errorf("error reading 'prompt_cache_key': %w", err)
+		}
+		delete(object, "prompt_cache_key")
+	}
+
+	if raw, found := object["prompt_cache_options"]; found {
+		err = json.Unmarshal(raw, &a.PromptCacheOptions)
+		if err != nil {
+			return fmt.Errorf("error reading 'prompt_cache_options': %w", err)
+		}
+		delete(object, "prompt_cache_options")
+	}
+
+	if raw, found := object["questions"]; found {
+		err = json.Unmarshal(raw, &a.Questions)
+		if err != nil {
+			return fmt.Errorf("error reading 'questions': %w", err)
+		}
+		delete(object, "questions")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]any)
+		for fieldName, fieldBuf := range object {
+			var fieldVal any
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for CreateDecisionRequest to handle AdditionalProperties
+func (a CreateDecisionRequest) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	object["input"], err = json.Marshal(a.Input)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'input': %w", err)
+	}
+
+	object["model"], err = json.Marshal(a.Model)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'model': %w", err)
+	}
+
+	if a.PromptCacheBreakpoint != nil {
+		object["prompt_cache_breakpoint"], err = json.Marshal(a.PromptCacheBreakpoint)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'prompt_cache_breakpoint': %w", err)
+		}
+	}
+
+	if a.PromptCacheKey != nil {
+		object["prompt_cache_key"], err = json.Marshal(a.PromptCacheKey)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'prompt_cache_key': %w", err)
+		}
+	}
+
+	if a.PromptCacheOptions != nil {
+		object["prompt_cache_options"], err = json.Marshal(a.PromptCacheOptions)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'prompt_cache_options': %w", err)
+		}
+	}
+
+	if a.Questions != nil {
+		object["questions"], err = json.Marshal(a.Questions)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'questions': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for Decision. Returns the specified
+// element and whether it was found
+func (a Decision) Get(fieldName string) (value any, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for Decision
+func (a *Decision) Set(fieldName string, value any) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]any)
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for Decision to handle AdditionalProperties
+func (a *Decision) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["answers"]; found {
+		err = json.Unmarshal(raw, &a.Answers)
+		if err != nil {
+			return fmt.Errorf("error reading 'answers': %w", err)
+		}
+		delete(object, "answers")
+	}
+
+	if raw, found := object["usage"]; found {
+		err = json.Unmarshal(raw, &a.Usage)
+		if err != nil {
+			return fmt.Errorf("error reading 'usage': %w", err)
+		}
+		delete(object, "usage")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]any)
+		for fieldName, fieldBuf := range object {
+			var fieldVal any
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for Decision to handle AdditionalProperties
+func (a Decision) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Answers != nil {
+		object["answers"], err = json.Marshal(a.Answers)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'answers': %w", err)
+		}
+	}
+
+	if a.Usage != nil {
+		object["usage"], err = json.Marshal(a.Usage)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'usage': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for DecisionQuestion. Returns the specified
+// element and whether it was found
+func (a DecisionQuestion) Get(fieldName string) (value any, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for DecisionQuestion
+func (a *DecisionQuestion) Set(fieldName string, value any) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]any)
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for DecisionQuestion to handle AdditionalProperties
+func (a *DecisionQuestion) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["choices"]; found {
+		err = json.Unmarshal(raw, &a.Choices)
+		if err != nil {
+			return fmt.Errorf("error reading 'choices': %w", err)
+		}
+		delete(object, "choices")
+	}
+
+	if raw, found := object["instructions"]; found {
+		err = json.Unmarshal(raw, &a.Instructions)
+		if err != nil {
+			return fmt.Errorf("error reading 'instructions': %w", err)
+		}
+		delete(object, "instructions")
+	}
+
+	if raw, found := object["levels"]; found {
+		err = json.Unmarshal(raw, &a.Levels)
+		if err != nil {
+			return fmt.Errorf("error reading 'levels': %w", err)
+		}
+		delete(object, "levels")
+	}
+
+	if raw, found := object["name"]; found {
+		err = json.Unmarshal(raw, &a.Name)
+		if err != nil {
+			return fmt.Errorf("error reading 'name': %w", err)
+		}
+		delete(object, "name")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]any)
+		for fieldName, fieldBuf := range object {
+			var fieldVal any
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for DecisionQuestion to handle AdditionalProperties
+func (a DecisionQuestion) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Choices != nil {
+		object["choices"], err = json.Marshal(a.Choices)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'choices': %w", err)
+		}
+	}
+
+	object["instructions"], err = json.Marshal(a.Instructions)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'instructions': %w", err)
+	}
+
+	if a.Levels != nil {
+		object["levels"], err = json.Marshal(a.Levels)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'levels': %w", err)
+		}
+	}
+
+	object["name"], err = json.Marshal(a.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'name': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
 
 // Getter for additional properties for ToolCallExtraContent_Google. Returns the specified
 // element and whether it was found
@@ -4110,6 +4547,68 @@ func (t CreateChatCompletionRequest_Stop) MarshalJSON() ([]byte, error) {
 }
 
 func (t *CreateChatCompletionRequest_Stop) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsCreateDecisionRequestInput0 returns the union data inside the CreateDecisionRequest_Input as a CreateDecisionRequestInput0
+func (t CreateDecisionRequest_Input) AsCreateDecisionRequestInput0() (CreateDecisionRequestInput0, error) {
+	var body CreateDecisionRequestInput0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCreateDecisionRequestInput0 overwrites any union data inside the CreateDecisionRequest_Input as the provided CreateDecisionRequestInput0
+func (t *CreateDecisionRequest_Input) FromCreateDecisionRequestInput0(v CreateDecisionRequestInput0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCreateDecisionRequestInput0 performs a merge with any union data inside the CreateDecisionRequest_Input, using the provided CreateDecisionRequestInput0
+func (t *CreateDecisionRequest_Input) MergeCreateDecisionRequestInput0(v CreateDecisionRequestInput0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsCreateDecisionRequestInput1 returns the union data inside the CreateDecisionRequest_Input as a CreateDecisionRequestInput1
+func (t CreateDecisionRequest_Input) AsCreateDecisionRequestInput1() (CreateDecisionRequestInput1, error) {
+	var body CreateDecisionRequestInput1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromCreateDecisionRequestInput1 overwrites any union data inside the CreateDecisionRequest_Input as the provided CreateDecisionRequestInput1
+func (t *CreateDecisionRequest_Input) FromCreateDecisionRequestInput1(v CreateDecisionRequestInput1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeCreateDecisionRequestInput1 performs a merge with any union data inside the CreateDecisionRequest_Input, using the provided CreateDecisionRequestInput1
+func (t *CreateDecisionRequest_Input) MergeCreateDecisionRequestInput1(v CreateDecisionRequestInput1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t CreateDecisionRequest_Input) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *CreateDecisionRequest_Input) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
