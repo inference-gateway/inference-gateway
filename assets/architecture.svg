@@ -50,11 +50,12 @@
       <text x="26" y="146">/v1/messages · responses</text>
       <text x="26" y="161">/v1/images/* · audio/*</text>
       <text x="26" y="176">/v1/videos · models</text>
-      <text x="26" y="191">/proxy/{provider}</text>
+      <text x="26" y="191">/v1/decisions</text>
+      <text x="26" y="206">/proxy/{provider}</text>
     </g>
-    <text x="26" y="206" fill="#d2a8ff">POST /mcp</text>
-    <text x="26" y="221" fill="#ffa657">POST /a2a</text>
-    <text x="26" y="236" fill="#56d4dd">POST /v1/metrics (OTLP)</text>
+    <text x="26" y="221" fill="#d2a8ff">POST /mcp</text>
+    <text x="26" y="236" fill="#ffa657">POST /a2a</text>
+    <text x="26" y="251" fill="#56d4dd">POST /v1/metrics (OTLP)</text>
   </g>
 
   <!-- gateway panel -->
