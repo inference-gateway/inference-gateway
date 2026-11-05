@@ -53,6 +53,9 @@ func Request(model string, body []byte) ([]byte, error) {
 		if q.Name == "" {
 			return nil, fmt.Errorf("every question needs a 'name'")
 		}
+		if _, ok := out.Questions[q.Name]; ok {
+			return nil, fmt.Errorf("every question needs a unique 'name', %q is repeated", q.Name)
+		}
 		translated, err := translateQuestion(q)
 		if err != nil {
 			return nil, err
@@ -72,7 +75,11 @@ func translateQuestion(q types.DecisionQuestion) (question, error) {
 		}
 		criteria := make(map[string]string, len(*q.Choices))
 		for _, c := range *q.Choices {
-			criteria[deref(c.Value)] = deref(c.Description)
+			value := deref(c.Value)
+			if _, ok := criteria[value]; ok {
+				return question{}, fmt.Errorf("every choice in question %q needs a unique 'value', %q is repeated", q.Name, value)
+			}
+			criteria[value] = deref(c.Description)
 		}
 		return question{Type: typeChoice, Instructions: q.Instructions, Criteria: criteria}, nil
 	case types.Score:

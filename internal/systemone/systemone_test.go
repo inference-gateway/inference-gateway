@@ -56,6 +56,9 @@ func TestRequestErrors(t *testing.T) {
 		{"choice without choices", `{"model":"nimble","input":"x","questions":[{"type":"choice","name":"c","instructions":"?"}]}`, "needs 'choices'"},
 		{"score without levels", `{"model":"nimble","input":"x","questions":[{"type":"score","name":"s","instructions":"?"}]}`, "needs 'levels'"},
 		{"unknown type", `{"model":"nimble","input":"x","questions":[{"type":"rank","name":"r","instructions":"?"}]}`, "unsupported type"},
+		{"duplicate question name", `{"model":"nimble","input":"x","questions":[{"type":"predicate","name":"q","instructions":"?"},{"type":"predicate","name":"q","instructions":"?"}]}`, "unique 'name'"},
+		{"duplicate choice value", `{"model":"nimble","input":"x","questions":[{"type":"choice","name":"c","instructions":"?","choices":[{"value":"a","description":"A"},{"value":"a","description":"B"}]}]}`, "unique 'value'"},
+		{"duplicate choice value when both are missing", `{"model":"nimble","input":"x","questions":[{"type":"choice","name":"c","instructions":"?","choices":[{"description":"A"},{"description":"B"}]}]}`, "unique 'value'"},
 		{"bad json", `{nope`, "failed to decode"},
 	}
 	for _, tt := range tests {
