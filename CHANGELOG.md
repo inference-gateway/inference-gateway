@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.63.1](https://github.com/inference-gateway/inference-gateway/compare/v0.63.0...v0.63.1) (2026-11-05)
+
+### 🐛 Bug Fixes
+
+* **systemone:** reject duplicate question names and choice values ([#835](https://github.com/inference-gateway/inference-gateway/issues/835)) ([8bc6228](https://github.com/inference-gateway/inference-gateway/commit/8bc6228842e486bce1e5ba17efd2957995843845))
+
+### 📚 Documentation
+
+* list /v1/decisions in the architecture diagram ([#834](https://github.com/inference-gateway/inference-gateway/issues/834)) ([c7b40a4](https://github.com/inference-gateway/inference-gateway/commit/c7b40a4cf77dffe74cac103cf3b932e1c4f987e4))
+
 ## [0.63.0](https://github.com/inference-gateway/inference-gateway/compare/v0.62.0...v0.63.0) (2026-11-03)
 
 ### ✨ Features
