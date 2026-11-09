@@ -160,7 +160,7 @@ func TestParse(t *testing.T) {
 
 ## Use current Go, not 2018 Go
 
-This repo targets **Go 1.26** - reach for the modern stdlib before any third-party
+This repo targets **Go 1.27** - reach for the modern stdlib before any third-party
 helper or hand-rolled loop:
 
 | Instead of | Use |

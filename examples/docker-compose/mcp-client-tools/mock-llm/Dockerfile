@@ -1,4 +1,4 @@
-FROM golang:1.26.8-alpine
+FROM golang:1.27.3-alpine
 WORKDIR /app
 COPY . /app
 RUN go build -o mock-llm main.go
