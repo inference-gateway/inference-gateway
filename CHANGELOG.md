@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.63.3](https://github.com/inference-gateway/inference-gateway/compare/v0.63.2...v0.63.3) (2026-11-09)
+
+### 🔧 Miscellaneous
+
+* **modelsdev:** sync the models.dev metadata table ([#841](https://github.com/inference-gateway/inference-gateway/issues/841)) ([091ebcf](https://github.com/inference-gateway/inference-gateway/commit/091ebcf4c3e1c0045b61b5784222e44f6732fda8))
+
 ## [0.63.2](https://github.com/inference-gateway/inference-gateway/compare/v0.63.1...v0.63.2) (2026-11-09)
 
 ### ♻️ Improvements
