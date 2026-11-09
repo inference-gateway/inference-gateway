@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.63.2](https://github.com/inference-gateway/inference-gateway/compare/v0.63.1...v0.63.2) (2026-11-09)
+
+### ♻️ Improvements
+
+* bump go toolchain to 1.27.3 ([#838](https://github.com/inference-gateway/inference-gateway/issues/838)) ([7c8da27](https://github.com/inference-gateway/inference-gateway/commit/7c8da27823ca5f6b33a3ba82023aaaddeafac414))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump sigstore/cosign-installer ([#836](https://github.com/inference-gateway/inference-gateway/issues/836)) ([7c5d36e](https://github.com/inference-gateway/inference-gateway/commit/7c5d36e4321ab74508549c544b4bcc5768b3c0eb))
+* **deps:** bump the github-actions group with 2 updates ([#840](https://github.com/inference-gateway/inference-gateway/issues/840)) ([1421c30](https://github.com/inference-gateway/inference-gateway/commit/1421c30a201ccf1df9470bf176fae8c58d7cdd6f))
+* **deps:** bump the gomod group with 2 updates ([#839](https://github.com/inference-gateway/inference-gateway/issues/839)) ([0a10b97](https://github.com/inference-gateway/inference-gateway/commit/0a10b97799aa35e3cabe7d2faaa6ac0da3f3515d))
+* **deps:** bump the gomod group with 3 updates ([#837](https://github.com/inference-gateway/inference-gateway/issues/837)) ([0feac1f](https://github.com/inference-gateway/inference-gateway/commit/0feac1f45e4df08b303fedaf0ef65e923cae3971))
+
 ## [0.63.1](https://github.com/inference-gateway/inference-gateway/compare/v0.63.0...v0.63.1) (2026-11-05)
 
 ### 🐛 Bug Fixes
