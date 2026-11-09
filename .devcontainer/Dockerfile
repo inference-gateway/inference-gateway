@@ -1,5 +1,5 @@
 # Multi-stage build for better caching and smaller final image
-FROM mcr.microsoft.com/devcontainers/go:2-1.26-bookworm AS base
+FROM mcr.microsoft.com/devcontainers/go:2-1.27-bookworm AS base
 
 ENV TASK_VERSION=v3.53.1 \
     CTLPTL_VERSION=0.9.5 \
@@ -7,7 +7,7 @@ ENV TASK_VERSION=v3.53.1 \
     KUBECTL_VERSION=v1.37.0 \
     HELM_VERSION=v4.2.4 \
     GORELEASER_VERSION=v2.18.1 \
-    GOLANGCI_LINT_VERSION=v2.13.2 \
+    GOLANGCI_LINT_VERSION=v2.15.0 \
     GITHUB_CLI_VERSION=2.100.0 \
     NODE_VERSION=lts \
     SEMANTIC_RELEASE_VERSION=v25.0.9 \

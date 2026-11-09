@@ -20,7 +20,7 @@ Everyday tasks go through `Taskfile.yml`:
 - `task benchmark:check` — benchmarks + `benchstat` gate against `tests/benchmarks/baseline.txt` (tolerances are vars on the task)
 - `task benchmark:baseline` — refresh the baseline; run it on a GitHub-hosted runner (numbers are machine-specific) and commit the file in the same PR as an intentional perf change or a new benchmark. GitHub-hosted runners come with different CPUs (AMD EPYC 7763, 9V74, 9V45). `benchmark:check` always compares allocs/op across CPUs (`benchstat -ignore cpu`), but compares sec/op only against a block whose `cpu:` line matches the runner and prints a notice otherwise. `tests/benchmarks/baseline.txt` therefore keeps one block per runner CPU: replace the block of the CPU you measured on and keep the others
 
-Single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 1.26.8, golangci-lint, mockgen, Spectral) is declared in `.flox/env/manifest.toml`; `flox activate` brings it in.
+Single test: `go test -v -run TestName ./path/to/pkg`. The pinned toolchain (Go 1.27.3, golangci-lint, mockgen, Spectral) is declared in `.flox/env/manifest.toml`; `flox activate` brings it in.
 
 ## Code generation
 
