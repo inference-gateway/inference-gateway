@@ -446,6 +446,58 @@
     },
     "release_date": "2025-09-23"
   },
+  "cloudflare/@cf/baai/bge-base-en-v1.5": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000000666",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 512
+    },
+    "release_date": "2023-09-12"
+  },
+  "cloudflare/@cf/baai/bge-large-en-v1.5": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.000000204",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 512
+    },
+    "release_date": "2023-09-12"
+  },
+  "cloudflare/@cf/baai/bge-m3": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000000118",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 8192
+    },
+    "release_date": "2024-01-30"
+  },
+  "cloudflare/@cf/baai/bge-small-en-v1.5": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000000202",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 512
+    },
+    "release_date": "2023-09-12"
+  },
   "cloudflare/@cf/black-forest-labs/flux-1-schnell": {
     "modalities": {
       "input": [
@@ -516,7 +568,7 @@
         "image"
       ]
     },
-    "status": "beta",
+    "status": "deprecated",
     "release_date": "2024-02-21"
   },
   "cloudflare/@cf/cloudflare/clairic": {
@@ -633,6 +685,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-01-20"
   },
   "cloudflare/@cf/deepseek-ai/deepseek-v4-flash-0731": {
@@ -656,6 +709,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-07-31"
   },
   "cloudflare/@cf/deepseek-ai/deepseek-v4-pro-0813": {
@@ -679,6 +733,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-08-13"
   },
   "cloudflare/@cf/deepseek-ai/deepseek-v4.1-flash-1017": {
@@ -783,6 +838,7 @@
         "image"
       ]
     },
+    "status": "deprecated",
     "release_date": "2023-12-06"
   },
   "cloudflare/@cf/meta/llama-3.1-8b-instruct-fp8": {
@@ -805,6 +861,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2024-07-23"
   },
   "cloudflare/@cf/meta/llama-3.2-11b-vision-instruct": {
@@ -846,6 +903,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2024-09-25"
   },
   "cloudflare/@cf/meta/llama-3.2-3b-instruct": {
@@ -868,6 +926,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2024-09-25"
   },
   "cloudflare/@cf/meta/llama-3.3-70b-instruct-fp8-fast": {
@@ -973,6 +1032,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-04-20"
   },
   "cloudflare/@cf/moonshotai/kimi-k2.7-code": {
@@ -997,6 +1057,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-06-12"
   },
   "cloudflare/@cf/nvidia/nemotron-3-120b-a12b": {
@@ -1019,6 +1080,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-03-11"
   },
   "cloudflare/@cf/openai/gpt-oss-120b": {
@@ -1065,6 +1127,19 @@
     },
     "release_date": "2025-08-05"
   },
+  "cloudflare/@cf/pfnet/plamo-embedding-1b": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000000186",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 4096
+    },
+    "release_date": "2025-04-11"
+  },
   "cloudflare/@cf/qwen/qwen2.5-coder-32b-instruct": {
     "pricing": {
       "currency": "USD",
@@ -1107,7 +1182,21 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-04-28"
+  },
+  "cloudflare/@cf/qwen/qwen3-embedding-0.6b": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000000118",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 8192
+    },
+    "release_date": "2025-06-05"
   },
   "cloudflare/@cf/qwen/qwen3.8-27b": {
     "pricing": {
@@ -1149,6 +1238,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-03-05"
   },
   "cloudflare/@cf/stabilityai/stable-diffusion-xl-base-1.0": {
@@ -1167,7 +1257,7 @@
         "image"
       ]
     },
-    "status": "beta",
+    "status": "deprecated",
     "release_date": "2023-07-26"
   },
   "cloudflare/@cf/zai-org/glm-4.7-flash": {
@@ -1212,6 +1302,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-06-13"
   },
   "cloudflare/@cf/zai-org/glm-5.3": {
@@ -1259,6 +1350,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-08-26"
   },
   "cohere/c4ai-aya-expanse-32b": {
@@ -5651,6 +5743,16 @@
     }
   },
   "nvidia/nvidia/nemotron-3-embed-1b": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 32768
+    },
     "modalities": {
       "input": [
         "text"
@@ -5658,7 +5760,8 @@
       "output": [
         "text"
       ]
-    }
+    },
+    "release_date": "2026-07-16"
   },
   "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": {
     "pricing": {
@@ -5724,6 +5827,32 @@
       ]
     },
     "release_date": "2026-06-02"
+  },
+  "nvidia/nvidia/nemotron-3.5-embed-1b": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 32768
+    },
+    "release_date": "2026-10-20"
+  },
+  "nvidia/nvidia/nemotron-3.5-embed-8b": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 32768
+    },
+    "release_date": "2026-10-19"
   },
   "nvidia/nvidia/nemotron-3.5-lightning-30b-a3b": {
     "pricing": {
@@ -6643,6 +6772,31 @@
       ]
     },
     "release_date": "2026-07-16"
+  },
+  "ollama_cloud/kimi-k3.1-pro": {
+    "pricing": {
+      "cache_read_per_token": "0.0000002",
+      "currency": "USD",
+      "input_per_token": "0.000002",
+      "output_per_token": "0.00001",
+      "source": "community",
+      "subscription": true,
+      "updated_at": "2026-11-09T14:59:29Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 131072
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-10-23"
   },
   "ollama_cloud/mimo-v2.6-flash": {
     "pricing": {
