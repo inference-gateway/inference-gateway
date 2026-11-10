@@ -49,6 +49,31 @@
     },
     "release_date": "2026-09-01"
   },
+  "anthropic/claude-fable-5-2": {
+    "pricing": {
+      "cache_read_per_token": "0.0000002",
+      "cache_write_per_token": "0.00001",
+      "currency": "USD",
+      "input_per_token": "0.000008",
+      "output_per_token": "0.00004",
+      "source": "community",
+      "updated_at": "2026-11-10T00:33:29Z"
+    },
+    "context_window": {
+      "context": 1000000,
+      "output": 128000
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-09"
+  },
   "anthropic/claude-haiku-4-5": {
     "pricing": {
       "cache_read_per_token": "0.0000001",
@@ -1943,7 +1968,8 @@
       "updated_at": "2026-07-27T09:42:20Z"
     },
     "context_window": {
-      "context": 131072
+      "context": 1048576,
+      "output": 65536
     },
     "modalities": {
       "input": [
@@ -1969,7 +1995,8 @@
       "updated_at": "2026-07-27T09:42:20Z"
     },
     "context_window": {
-      "context": 131072
+      "context": 1048576,
+      "output": 65536
     },
     "modalities": {
       "input": [
@@ -4316,6 +4343,9 @@
     "release_date": "2026-03-01"
   },
   "mistral/mistral-ocr-2512": {
+    "context_window": {
+      "context": 16384
+    },
     "modalities": {
       "input": [
         "image",
@@ -4329,6 +4359,9 @@
     "release_date": "2025-12-18"
   },
   "mistral/mistral-ocr-4-1": {
+    "context_window": {
+      "context": 16384
+    },
     "modalities": {
       "input": [
         "image",
