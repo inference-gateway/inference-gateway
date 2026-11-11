@@ -139,6 +139,19 @@ func TestJob(t *testing.T) {
 		}
 	})
 
+	t.Run("a partially succeeded job relays the variant it rendered", func(t *testing.T) {
+		job, err := ParseJob([]byte(`{"id":"` + testJobID + `","status":"partially_succeeded","errors":[{"code":"render_failed","message":"variant 0 failed"}],"result":{"output":{"variants":[
+			{"index":0,"status":"failed","files":null},
+			{"index":1,"status":"succeeded","files":{"audio":{"url":"` + testAudioURL + `","format":"mp3_128"}}}
+		]}}}`))
+		require.NoError(t, err)
+
+		audioURL, contentType, err := job.Audio()
+		require.NoError(t, err)
+		assert.Equal(t, testAudioURL, audioURL)
+		assert.Equal(t, "audio/mpeg", contentType)
+	})
+
 	t.Run("a succeeded job without a file is an error", func(t *testing.T) {
 		job, err := ParseJob([]byte(`{"id":"` + testJobID + `","status":"succeeded","result":{"output":{"variants":[]}}}`))
 		require.NoError(t, err)

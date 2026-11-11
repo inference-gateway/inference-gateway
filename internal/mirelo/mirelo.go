@@ -49,7 +49,6 @@ var contentTypes = map[string]string{
 	"mp3":  "audio/mpeg",
 	"wav":  "audio/wav",
 	"flac": "audio/flac",
-	"m4a":  "audio/mp4",
 }
 
 // OutputFormat maps a gateway response_format onto a Mirelo output.format. An
@@ -170,12 +169,10 @@ func (j Job) Pending() bool {
 	return !finalStatuses[j.Status]
 }
 
-// Audio returns the download URL and Content-Type of a succeeded job's first
-// audio file. Any other final state is an error carrying Mirelo's own message.
+// Audio returns the download URL and Content-Type of the first audio file the
+// job rendered, so a partially_succeeded job still relays what it produced. A
+// job without a file is an error carrying Mirelo's own message.
 func (j Job) Audio() (audioURL, contentType string, err error) {
-	if j.Status != statusSucceeded {
-		return "", "", fmt.Errorf("mirelo sound effect generation %s: %s", j.Status, j.errorMessage())
-	}
 	if j.Result != nil {
 		for _, variant := range j.Result.Output.Variants {
 			if variant.Files != nil && variant.Files.Audio != nil && variant.Files.Audio.URL != "" {
@@ -183,6 +180,9 @@ func (j Job) Audio() (audioURL, contentType string, err error) {
 				return variant.Files.Audio.URL, contentTypes[container], nil
 			}
 		}
+	}
+	if j.Status != statusSucceeded {
+		return "", "", fmt.Errorf("mirelo sound effect generation %s: %s", j.Status, j.errorMessage())
 	}
 	return "", "", fmt.Errorf("mirelo sound effect generation succeeded without an audio file")
 }

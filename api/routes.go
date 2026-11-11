@@ -1601,15 +1601,15 @@ func mireloSFX(endpoint, model string, body []byte) (string, string, []byte, err
 }
 
 const (
-	audioMedia              = "audio"
-	mireloNotReadyMessage   = "The sound effect was not ready in time. Retry the request or ask for a shorter clip."
-	mireloJobMaxResponseLen = 1 << 20
+	audioMedia            = "audio"
+	mireloNotReadyMessage = "The sound effect was not ready in time. Retry the request or ask for a shorter clip."
 )
 
 // relayMireloAudio turns Mirelo's asynchronous job into the raw audio bytes
 // /v1/audio/sfx answers with: it creates the job, long-polls it to a final
 // state and streams the audio file the job links to.
 // shortcut: no sleep between polls, it relies on Mirelo holding ?wait= open - add a Retry-After sleep if it ever answers early.
+// shortcut: a poll failure is terminal and the client re-requests - add in-budget retries only if transient poll failures show up in practice.
 func (router *RouterImpl) relayMireloAudio(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) {
 	createPath := req.endpointPath
 	req.query = mirelo.WaitQuery(router.cfg.Server.ReadTimeout)
@@ -1658,7 +1658,7 @@ func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, prov
 	defer done()
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, mireloJobMaxResponseLen))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
 	if err != nil {
 		router.logger.Error("failed to read mirelo job response", err)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
@@ -2059,9 +2059,9 @@ const (
 	// videoMedia names the media kind in download errors.
 	videoMedia = "video"
 
-	// videoJobMaxResponseSize caps how much of a provider's job payload is read
-	// before mapping it onto a VideoJob.
-	videoJobMaxResponseSize = 1 << 20
+	// jobMaxResponseSize caps how much of a provider's asynchronous job payload
+	// is read before it is decoded.
+	jobMaxResponseSize = 1 << 20
 
 	// videoIDPlaceholder is the token registry video endpoints carry for the
 	// upstream job id.
@@ -2338,7 +2338,7 @@ func (router *RouterImpl) videoJob(w http.ResponseWriter, r *http.Request, provi
 	defer done()
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, videoJobMaxResponseSize))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
 	if err != nil {
 		router.logger.Error("failed to read video job response", err, "provider", providerID)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
