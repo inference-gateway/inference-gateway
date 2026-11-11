@@ -75,6 +75,14 @@ func newImagesTestRouter(t *testing.T, upstreamURL string, enableImages bool, op
 			AuthHeader: registry.Registry[constants.ElevenlabsID].AuthHeader,
 			Endpoints:  registry.Registry[constants.ElevenlabsID].Endpoints,
 		},
+		constants.MireloID: {
+			ID:        constants.MireloID,
+			Name:      constants.MireloDisplayName,
+			URL:       upstreamURL,
+			Token:     mireloTestKey,
+			AuthType:  constants.AuthTypeBearer,
+			Endpoints: registry.Registry[constants.MireloID].Endpoints,
+		},
 	}
 
 	cfg := config.Config{

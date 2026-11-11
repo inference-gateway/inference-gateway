@@ -26,6 +26,7 @@ interact with the Inference Gateway using curl commands.
 | List ElevenLabs models   | `curl -X GET http://localhost:8080/v1/models?provider=elevenlabs`   |
 | List Z.ai models         | `curl -X GET http://localhost:8080/v1/models?provider=zai`          |
 | List WebWright models    | `curl -X GET http://localhost:8080/v1/models?provider=webwright`    |
+| List Mirelo models       | `curl -X GET http://localhost:8080/v1/models?provider=mirelo`       |
 
 ### Context Windows
 
@@ -671,12 +672,12 @@ Errors use the standard envelope, e.g. when the Audio API is not enabled:
 `POST /v1/audio/sfx` is a gateway extension with no OpenAI counterpart: it
 generates a non-speech clip - a sound effect or ambience - from a text prompt.
 JSON in, raw audio out, same as `/audio/speech`. It shares the `AUDIO_ENABLED`
-toggle and is currently served by the `elevenlabs` provider only; other
+toggle and is served by the `elevenlabs` and `mirelo` providers; other
 providers return `400`.
 
 `prompt` is required. Optional fields: `duration_seconds`, `prompt_influence`
 (0-1, how closely to follow the prompt), `loop` (seamless loop), and
-`response_format` (`mp3` default, `opus`, or `pcm`).
+`response_format` (`mp3` default, `opus`, or `pcm` on elevenlabs).
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/sfx -d '{
@@ -685,6 +686,31 @@ curl -X POST http://localhost:8080/v1/audio/sfx -d '{
   "duration_seconds": 5,
   "loop": true
 }' -o thunder.mp3
+```
+
+### Mirelo
+
+Mirelo generates sound effects as an asynchronous job, so the gateway creates
+the job, waits for it and answers with the finished audio - the request can
+take longer than an ElevenLabs one. `duration_seconds` defaults to 5 because
+Mirelo requires a length. `response_format` is `mp3` (default) or `flac`, and
+`prompt_influence` is rejected because Mirelo has no equivalent.
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/sfx -d '{
+  "model": "mirelo/sfx-2.0",
+  "prompt": "gravel footsteps, heavy and slow, in a stone corridor",
+  "duration_seconds": 5
+}' -o footsteps.mp3
+```
+
+A job that fails upstream answers `502` with Mirelo's message, and one that is
+still running after the gateway stops waiting answers `504`:
+
+```json
+{
+  "error": "The sound effect was not ready in time. Retry the request or ask for a shorter clip."
+}
 ```
 
 For a provider without sound-effect support:
