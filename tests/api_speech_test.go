@@ -199,6 +199,42 @@ printf 'FAKE-LOCAL-WAV' > "$out"
 	assert.Equal(t, "FAKE-LOCAL-WAV", w.Body.String())
 }
 
+// TestSpeechHandler_LocalSynthesisOutlivesTheWriteTimeout runs a synthesis
+// that takes longer than the server's write timeout on a real connection,
+// which a recorder cannot show: the response must still arrive.
+func TestSpeechHandler_LocalSynthesisOutlivesTheWriteTimeout(t *testing.T) {
+	const writeTimeout = 200 * time.Millisecond
+	home := t.TempDir()
+	seedLocalSpeechModels(t, home)
+	installFakeLlamaTTS(t, `out=""; prev=""
+for a in "$@"; do
+  [ "$prev" = "--output" ] && out="$a"
+  prev="$a"
+done
+sleep 1
+printf 'FAKE-LOCAL-WAV' > "$out"
+`)
+	router := newLocalSpeechRouter(t, home, func(c *config.Config) {
+		c.Server.WriteTimeout = writeTimeout
+		c.AudioLocalTimeout = 30
+	})
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST "+"/v1/audio/speech", router.SpeechHandler)
+	server := httptest.NewUnstartedServer(mux)
+	server.Config.WriteTimeout = writeTimeout
+	server.Start()
+	defer server.Close()
+
+	resp, err := http.Post(server.URL+"/v1/audio/speech", "application/json", strings.NewReader(`{"model":"local/qwen3-tts","input":"Hello there"}`))
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	require.Equal(t, http.StatusOK, resp.StatusCode, string(body))
+	assert.Equal(t, "FAKE-LOCAL-WAV", string(body))
+}
+
 func TestSpeechHandler_LocalModelNotReadyReturns503(t *testing.T) {
 	router := newLocalSpeechRouter(t, t.TempDir())
 	r := http.NewServeMux()

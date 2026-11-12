@@ -1708,6 +1708,7 @@ func (router *RouterImpl) serveLocalSpeech(w http.ResponseWriter, r *http.Reques
 		return true
 	}
 
+	middlewares.ResetWriteDeadline(w, router.localSpeechWriteWindow())
 	audio, err := router.tts.Synthesize(r.Context(), tts.Request{
 		Input:          req.Input,
 		ReferenceAudio: req.ReferenceAudio,
@@ -1732,6 +1733,13 @@ func (router *RouterImpl) serveLocalSpeech(w http.ResponseWriter, r *http.Reques
 
 	writeData(w, http.StatusOK, "audio/wav", audio)
 	return true
+}
+
+// localSpeechWriteWindow is how long a local speech response may take: the
+// longest a synthesis runs, then the usual time to write the answer. Without
+// it the server's write timeout closes the connection mid-synthesis.
+func (router *RouterImpl) localSpeechWriteWindow() time.Duration {
+	return time.Duration(router.cfg.AudioLocalTimeout)*time.Second + router.cfg.Server.WriteTimeout
 }
 
 // Multipart form field names used by the /images/edits endpoint.
