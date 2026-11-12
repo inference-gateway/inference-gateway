@@ -286,6 +286,28 @@ jobs:
           fi
           ls -la
 
+      - name: Retry git pushes that GitHub drops
+        run: |
+          dir="$RUNNER_TEMP/git-push-retry"
+          mkdir -p "$dir"
+          {
+            echo '#!/usr/bin/env bash'
+            echo "real_git='$(command -v git)'"
+            cat <<'EOF'
+          if [ "$1" != push ] || [[ " $* " == *" --dry-run "* ]]; then
+            exec "$real_git" "$@"
+          fi
+          for delay in 15 30 45; do
+            "$real_git" "$@" && exit 0
+            echo "git push failed, retrying in ${delay}s" >&2
+            sleep "$delay"
+          done
+          exec "$real_git" "$@"
+          EOF
+          } > "$dir/git"
+          chmod +x "$dir/git"
+          echo "$dir" >> "$GITHUB_PATH"
+
       - name: Semantic Release
         env:
           CI: true
