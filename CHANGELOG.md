@@ -2,16 +2,6 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.63.5](https://github.com/inference-gateway/inference-gateway/compare/v0.63.4...v0.63.5) (2026-11-12)
-
-### 🐛 Bug Fixes
-
-* **audio:** keep the response open while a local synthesis runs ([#846](https://github.com/inference-gateway/inference-gateway/issues/846)) ([9534899](https://github.com/inference-gateway/inference-gateway/commit/953489913862d08ecf957467b9d77d35991586d4))
-
-### 🔧 Miscellaneous
-
-* **deps:** bump claude-code 2.1.308 -> 2.1.318 ([#843](https://github.com/inference-gateway/inference-gateway/issues/843)) ([1c94770](https://github.com/inference-gateway/inference-gateway/commit/1c947701a4b66f5906913fbd63f589430abf19c0))
-
 ## [0.63.4](https://github.com/inference-gateway/inference-gateway/compare/v0.63.3...v0.63.4) (2026-11-10)
 
 ### 🔧 Miscellaneous
