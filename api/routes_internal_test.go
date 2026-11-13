@@ -90,3 +90,16 @@ func TestApplyProviderAuth_StripsCallerAuthorization(t *testing.T) {
 		})
 	}
 }
+
+// TestEveryVideoProviderIsWired fails when a provider gains a Videos endpoint in
+// the registry without the request translator and job mapper VideosHandler
+// calls for it.
+func TestEveryVideoProviderIsWired(t *testing.T) {
+	for id, cfg := range registry.Registry {
+		if cfg.Endpoints.Videos == nil {
+			continue
+		}
+		assert.Contains(t, videoRequestTranslators, id, "request translator")
+		assert.Contains(t, videoJobMappers, id, "job mapper")
+	}
+}

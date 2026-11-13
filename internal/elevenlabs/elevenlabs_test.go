@@ -341,3 +341,20 @@ func TestVideoReferenceImages(t *testing.T) {
 		})
 	}
 }
+
+// TestVideoRejectsDrivingAudioForPromptModels proves a prompt-driven model is
+// never sent the avatar payload, which carries no prompt.
+func TestVideoRejectsDrivingAudioForPromptModels(t *testing.T) {
+	for model := range referenceImageLimits {
+		t.Run(model, func(t *testing.T) {
+			form := newForm(t,
+				map[string]string{videoFieldPrompt: testPrompt},
+				map[string]int{videoFieldReference: 1, videoFieldAudio: 1})
+
+			_, err := Video(model, form)
+
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "does not lip-sync")
+		})
+	}
+}
