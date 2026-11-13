@@ -57,7 +57,7 @@ tags:
   - name: Audio
     description: Generate speech audio from text using the OpenAI-compatible Speech API.
   - name: Videos
-    description: Generate videos using the OpenAI-compatible Videos API.
+    description: Generate videos as jobs shaped like the Videos API OpenAI retired.
   - name: MCP
     description: |
       Model Context Protocol surface. The gateway aggregates every server in
@@ -888,6 +888,13 @@ paths:
         Not every provider implements the Images API. Requests routed to a
         provider that does not support it return `400 Bad Request` with an
         explanatory error message; use `/chat/completions` for those providers.
+
+        ElevenLabs has no OpenAI-shaped Images API, so the gateway translates
+        the request into an ElevenLabs image generation and waits for it to
+        finish. `image`, `mask`, `prompt`, `size`, `quality` and
+        `response_format` are honored. A generation yields one image, so `n`
+        above 1 is rejected, and `size` has to be `auto` or one of the aspect
+        ratios the model accepts.
       summary: Create an image edit or extension
       security:
         - bearerAuth: []
@@ -1051,8 +1058,9 @@ paths:
       tags:
         - Videos
       description: |
-        Creates a video generation job using the OpenAI-compatible Videos API.
-        Mirrors the OpenAI `POST /v1/videos` request body. Video generation is
+        Creates a video generation job. The request and the `VideoJob` keep the
+        shape of the Videos API OpenAI retired in September 2026, which stays
+        the gateway's contract for every provider. Video generation is
         asynchronous at every provider: this operation returns a `VideoJob`
         immediately, the client polls `GET /videos/{video_id}` until `status`
         is `completed`, then downloads the bytes from
@@ -1062,6 +1070,8 @@ paths:
         uploaded as binary. The non-standard `audio` field drives a
         talking-avatar render: when present, the model lip-syncs
         `input_reference` to the clip and the video lasts as long as the audio.
+        A model known to render from a prompt takes no `audio` and the request
+        returns `400 Bad Request`.
 
         Not every provider implements the Videos API. Requests routed to a
         provider that does not support it return `400 Bad Request` with an
@@ -1775,6 +1785,14 @@ components:
               name: 'create_voice'
               method: 'POST'
               endpoint: '/voices/add'
+            images_edits:
+              name: 'create_image_edit'
+              method: 'POST'
+              endpoint: '/flows/image'
+            images_retrieve:
+              name: 'retrieve_image'
+              method: 'GET'
+              endpoint: '/flows/image/{generation_id}'
         google:
           id: 'google'
           url: 'https://generativelanguage.googleapis.com/v1beta/openai'
@@ -1944,6 +1962,8 @@ components:
         images:
           type: string
         images_edits:
+          type: string
+        images_retrieve:
           type: string
         speech:
           type: string
@@ -3486,8 +3506,8 @@ components:
     CreateVideoRequest:
       type: object
       description: |
-        Request body for creating a video generation job via the
-        OpenAI-compatible Videos API. Sent as `multipart/form-data`.
+        Request body for creating a video generation job, shaped like the
+        Videos API OpenAI retired. Sent as `multipart/form-data`.
       properties:
         model:
           type: string
@@ -3527,9 +3547,9 @@ components:
             an audio clip - `audio/wav` or `audio/mpeg` - that drives the
             render. When present, the model lip-syncs `input_reference` to it
             and the generated video lasts as long as the clip, so `seconds` is
-            ignored. Forwarded to the provider as-is; only providers with
-            talking-avatar support honor it (e.g. ElevenLabs
-            `creatify-aurora`), others ignore or reject it.
+            ignored. Only models with talking-avatar support honor it (e.g.
+            ElevenLabs `creatify-aurora`). A model known to render from a
+            prompt is refused with `400 Bad Request`.
         seconds:
           type: string
           description: |-

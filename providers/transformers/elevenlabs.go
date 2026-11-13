@@ -59,10 +59,10 @@ func (l *ListModelsResponseElevenlabs) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// unlistedModels are the sound-effect, music and video models the gateway can
-// route to but ElevenLabs does not include in GET /v1/models. They are
-// appended to the listing so clients can discover them and filter on their
-// modalities. Kept in step with the video create endpoint's model_id enum:
+// unlistedModels are the sound-effect, music, video and image models the
+// gateway can route to but ElevenLabs does not include in GET /v1/models. They
+// are appended to the listing so clients can discover them and filter on their
+// modalities. Kept in step with the model_id enums of the flows endpoints:
 // https://elevenlabs.io/docs/api-reference/flows/video/create
 var unlistedModels = []struct {
 	id         string
@@ -78,6 +78,17 @@ var unlistedModels = []struct {
 	{"bytedance-seedance-v2-fast", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
 	{"bytedance-seedance-v2-mini", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
 	{"bytedance-seedance-v2.5", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityVideo}}},
+	{"bytedance-seedream-5-lite", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"bytedance-seedream-5-pro", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gemini-2.5-flash-image", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gemini-3-pro-image", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gemini-3.1-flash-image", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gemini-3.1-flash-lite-image", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gpt-image-1", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gpt-image-1.5", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gpt-image-2", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gpt-image-2.5-flare", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
+	{"gpt-image-2.5-sunburst", types.ModelModalities{Input: []types.Modality{types.ModalityText, types.ModalityImage}, Output: []types.Modality{types.ModalityImage}}},
 }
 
 func (l *ListModelsResponseElevenlabs) Transform() types.ListModelsResponse {
