@@ -55,6 +55,7 @@ type RouterImpl struct {
 	tts               *tts.Engine
 	proxyTransport    http.RoundTripper
 	proxyTransportErr error
+	voiceCloning      sync.Mutex
 }
 
 type ErrorResponse struct {
@@ -1332,6 +1333,11 @@ type jsonTranslator func(endpoint, model string, body []byte) (path, query strin
 // into the gateway's own shape. Error responses are relayed untouched.
 type jsonResponseTranslator func(body []byte) ([]byte, error)
 
+// jsonPreparer rewrites a request body with provider calls of its own, before
+// the translator runs. It serves what one upstream call cannot, such as
+// cloning a voice before speaking in it.
+type jsonPreparer func(r *http.Request, provider core.IProvider, body []byte) ([]byte, *upstreamFailure)
+
 // jsonProxy describes a JSON pass-through to a provider endpoint. apiName
 // appears in client-facing errors, exampleModel in routing hints, accept sets
 // the upstream Accept header when non-empty, endpointOf picks the endpoint
@@ -1343,6 +1349,7 @@ type jsonProxy struct {
 	accept              string
 	endpointOf          func(types.Endpoints) *string
 	notSupported        string
+	preparers           map[types.Provider]jsonPreparer
 	translators         map[types.Provider]jsonTranslator
 	responseTranslators map[types.Provider]jsonResponseTranslator
 	outputModality      types.Modality
@@ -1421,6 +1428,15 @@ func (router *RouterImpl) proxyJSONBody(w http.ResponseWriter, r *http.Request, 
 	if msg := p.modelLacksModality(providerID, model); msg != "" {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
+	}
+
+	if prepare := p.preparers[providerID]; prepare != nil {
+		prepared, failure := prepare(r, provider, body)
+		if failure != nil {
+			middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
+			return
+		}
+		body = prepared
 	}
 
 	path, query := endpoint, ""
@@ -1545,6 +1561,7 @@ func (router *RouterImpl) SpeechHandler(w http.ResponseWriter, r *http.Request) 
 		apiName:      "Audio API",
 		exampleModel: "openai/tts-1",
 		endpointOf:   func(e types.Endpoints) *string { return e.Speech },
+		preparers:    map[types.Provider]jsonPreparer{constants.ElevenlabsID: router.elevenlabsSampleVoice},
 		translators:  map[types.Provider]jsonTranslator{constants.ElevenlabsID: elevenlabsSpeech},
 	})
 }

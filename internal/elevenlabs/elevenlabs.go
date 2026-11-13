@@ -73,7 +73,7 @@ type voiceSettings struct {
 // already stripped.
 func Speech(endpoint, model string, req types.CreateSpeechRequest) (path, query string, body []byte, err error) {
 	if strings.TrimSpace(req.Voice) == "" {
-		return "", "", nil, fmt.Errorf("the 'voice' field is required for elevenlabs and must be an elevenlabs voice id")
+		return "", "", nil, fmt.Errorf("elevenlabs needs a voice: set 'voice' to an elevenlabs voice id or send a 'reference_audio' sample")
 	}
 
 	format, err := speechFormat(derefFormat(req.ResponseFormat))

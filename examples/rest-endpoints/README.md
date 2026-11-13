@@ -575,9 +575,10 @@ curl -X POST http://localhost:8080/v1/audio/speech -d '{
 ### ElevenLabs
 
 ElevenLabs' speech API is not OpenAI-compatible, so the gateway rewrites the
-request instead of proxying it. `voice` is required and must be an ElevenLabs
-voice id (not a name like `alloy`), and `response_format` is limited to `mp3`
-(default), `opus`, `pcm`, or `wav` (48 kHz). `speed` and `language` are forwarded.
+request instead of proxying it. `voice` must be an ElevenLabs voice id (not a
+name like `alloy`) unless the request brings a `reference_audio` sample, and
+`response_format` is limited to `mp3` (default), `opus`, `pcm`, or `wav`
+(48 kHz). `speed` and `language` are forwarded.
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech -d '{
@@ -605,6 +606,13 @@ The field is forwarded as-is, so it works with providers whose speech backend
 supports audio-conditioned cloning, such as a self-hosted Qwen3-TTS-compatible
 server configured as the `llamacpp` provider via `LLAMACPP_API_URL`. OpenAI's
 Speech API does not support cloning and only accepts its built-in voices.
+
+ElevenLabs takes no sample with a speech request, so the gateway turns the
+sample into an instant voice clone first. The clone is stored in the account of
+`ELEVENLABS_API_KEY` under a name derived from the sample (`infer-<hash>`),
+created once per sample, and the request speaks in it instead of `voice`. The
+key needs permission to read and create voices, and the voice stays in the
+account until it is deleted there.
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech -d "{
