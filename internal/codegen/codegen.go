@@ -246,6 +246,12 @@ const (
     {{- with (index $config.Endpoints "videos_retrieve").Endpoint }}
     {{pascalCase $name}}VideosRetrieveEndpoint = "{{.}}"
     {{- end }}
+    {{- with (index $config.Endpoints "voices").Endpoint }}
+    {{pascalCase $name}}VoicesEndpoint = "{{.}}"
+    {{- end }}
+    {{- with (index $config.Endpoints "voices_create").Endpoint }}
+    {{pascalCase $name}}VoicesCreateEndpoint = "{{.}}"
+    {{- end }}
     {{- end }}
 )
 
@@ -697,6 +703,12 @@ var Registry = map[types.Provider]*ProviderConfig{
 			{{- end }}
 			{{- if (index $config.Endpoints "videos_retrieve").Endpoint }}
 			VideosRetrieve: ptr(constants.{{pascalCase $name}}VideosRetrieveEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "voices").Endpoint }}
+			Voices: ptr(constants.{{pascalCase $name}}VoicesEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "voices_create").Endpoint }}
+			VoicesCreate: ptr(constants.{{pascalCase $name}}VoicesCreateEndpoint),
 			{{- end }}
 		},
 	},

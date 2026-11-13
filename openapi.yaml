@@ -1767,6 +1767,14 @@ components:
               name: 'retrieve_video'
               method: 'GET'
               endpoint: '/flows/video/{generation_id}'
+            voices:
+              name: 'list_voices'
+              method: 'GET'
+              endpoint: '/voices'
+            voices_create:
+              name: 'create_voice'
+              method: 'POST'
+              endpoint: '/voices/add'
         google:
           id: 'google'
           url: 'https://generativelanguage.googleapis.com/v1beta/openai'
@@ -1947,6 +1955,10 @@ components:
         videos:
           type: string
         videos_retrieve:
+          type: string
+        voices:
+          type: string
+        voices_create:
           type: string
       required:
         - models
@@ -3386,6 +3398,9 @@ components:
             container. Forwarded to the provider as-is - only providers with
             voice-cloning support honor it (e.g. Qwen3-TTS-compatible
             backends); others ignore or reject it. Not supported by OpenAI.
+            ElevenLabs has no per-request sample, so the gateway adds the
+            sample to the account of the API key as an instant voice clone,
+            once per sample, and speaks in that voice instead of `voice`.
       required:
         - model
         - input

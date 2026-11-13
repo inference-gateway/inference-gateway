@@ -65,6 +65,8 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Music:          ptr(constants.ElevenlabsMusicEndpoint),
 			Videos:         ptr(constants.ElevenlabsVideosEndpoint),
 			VideosRetrieve: ptr(constants.ElevenlabsVideosRetrieveEndpoint),
+			Voices:         ptr(constants.ElevenlabsVoicesEndpoint),
+			VoicesCreate:   ptr(constants.ElevenlabsVoicesCreateEndpoint),
 		},
 	},
 	constants.GoogleID: {
