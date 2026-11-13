@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.65.0](https://github.com/inference-gateway/inference-gateway/compare/v0.64.0...v0.65.0) (2026-11-13)
+
+### ✨ Features
+
+* **elevenlabs:** speak in a voice sample by cloning it once per sample ([#852](https://github.com/inference-gateway/inference-gateway/issues/852)) ([1e80db9](https://github.com/inference-gateway/inference-gateway/commit/1e80db9e8497501debe5f6e3656c7f652b386c46))
+
 ## [0.64.0](https://github.com/inference-gateway/inference-gateway/compare/v0.63.5...v0.64.0) (2026-11-13)
 
 ### ✨ Features
