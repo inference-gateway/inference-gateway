@@ -109,9 +109,20 @@ func TestSpeech(t *testing.T) {
 		_, _, _, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
 			Input:          "Hello",
 			Voice:          testVoice,
-			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatWav),
+			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatFlac),
 		})
 		require.Error(t, err)
+		assert.Contains(t, err.Error(), "wav", "the error must list wav, which speech can serve")
+	})
+
+	t.Run("asks for a wav container when the caller wants wav", func(t *testing.T) {
+		_, query, _, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
+			Input:          "Hello",
+			Voice:          testVoice,
+			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatWav),
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "output_format="+SpeechWavFormat, query)
 	})
 
 	t.Run("a crafted voice cannot rewrite the upstream path", func(t *testing.T) {

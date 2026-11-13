@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.64.0](https://github.com/inference-gateway/inference-gateway/compare/v0.63.5...v0.64.0) (2026-11-13)
+
+### ✨ Features
+
+* **elevenlabs:** serve wav for speech ([#851](https://github.com/inference-gateway/inference-gateway/issues/851)) ([2e470a2](https://github.com/inference-gateway/inference-gateway/commit/2e470a2e5e91fc9984ee5de492f9caddda0e6075))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump @hono/node-server ([#849](https://github.com/inference-gateway/inference-gateway/issues/849)) ([f376111](https://github.com/inference-gateway/inference-gateway/commit/f376111c27056c50eb2a4e547d2669bd29edf49a))
+* **deps:** bump hono in /examples/docker-compose/mcp/pizza-server ([#850](https://github.com/inference-gateway/inference-gateway/issues/850)) ([5c41f05](https://github.com/inference-gateway/inference-gateway/commit/5c41f056a22abf514330e1b96f1ec96bd598883c))
+
 ## [0.63.5](https://github.com/inference-gateway/inference-gateway/compare/v0.63.4...v0.63.5) (2026-11-12)
 
 ### 🐛 Bug Fixes
@@ -11,6 +22,7 @@ All notable changes to this project will be documented in this file.
 ### 🔧 Miscellaneous
 
 * **deps:** bump claude-code 2.1.308 -> 2.1.318 ([#843](https://github.com/inference-gateway/inference-gateway/issues/843)) ([1c94770](https://github.com/inference-gateway/inference-gateway/commit/1c947701a4b66f5906913fbd63f589430abf19c0))
+* **release:** 🔖 0.63.5 [skip ci] ([e41f22a](https://github.com/inference-gateway/inference-gateway/commit/e41f22affa502f5225de75886d31b072e18b06d0))
 
 ## [0.63.4](https://github.com/inference-gateway/inference-gateway/compare/v0.63.3...v0.63.4) (2026-11-10)
 

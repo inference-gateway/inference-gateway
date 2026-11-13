@@ -56,6 +56,7 @@ type RouterImpl struct {
 	tts               *tts.Engine
 	proxyTransport    http.RoundTripper
 	proxyTransportErr error
+	elevenlabsVoices  elevenlabs.VoiceLibrary
 }
 
 type ErrorResponse struct {
@@ -340,6 +341,8 @@ type upstreamFailure struct {
 	status  int
 	message string
 }
+
+func (f *upstreamFailure) Error() string { return f.message }
 
 // upstreamRequest describes a raw pass-through request to a provider endpoint.
 // An empty method means POST, an empty contentType leaves the upstream
@@ -1338,6 +1341,11 @@ type jsonResponseTranslator func(body []byte) ([]byte, error)
 // gateway relays (an asynchronous job, say).
 type upstreamResponder func(router *RouterImpl, w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest)
 
+// jsonPreparer rewrites a request body with provider calls of its own, before
+// the translator runs. It serves what one upstream call cannot, such as
+// cloning a voice before speaking in it.
+type jsonPreparer func(r *http.Request, provider core.IProvider, body []byte) ([]byte, *upstreamFailure)
+
 // jsonProxy describes a JSON pass-through to a provider endpoint. apiName
 // appears in client-facing errors, exampleModel in routing hints, accept sets
 // the upstream Accept header when non-empty, endpointOf picks the endpoint
@@ -1350,6 +1358,7 @@ type jsonProxy struct {
 	accept              string
 	endpointOf          func(types.Endpoints) *string
 	notSupported        string
+	preparers           map[types.Provider]jsonPreparer
 	translators         map[types.Provider]jsonTranslator
 	responseTranslators map[types.Provider]jsonResponseTranslator
 	outputModality      types.Modality
@@ -1428,6 +1437,15 @@ func (router *RouterImpl) proxyJSONBody(w http.ResponseWriter, r *http.Request, 
 	if msg := p.modelLacksModality(providerID, model); msg != "" {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
+	}
+
+	if prepare := p.preparers[providerID]; prepare != nil {
+		prepared, failure := prepare(r, provider, body)
+		if failure != nil {
+			middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
+			return
+		}
+		body = prepared
 	}
 
 	path, query := endpoint, ""
@@ -1556,6 +1574,7 @@ func (router *RouterImpl) SpeechHandler(w http.ResponseWriter, r *http.Request) 
 		apiName:      "Audio API",
 		exampleModel: "openai/tts-1",
 		endpointOf:   func(e types.Endpoints) *string { return e.Speech },
+		preparers:    map[types.Provider]jsonPreparer{constants.ElevenlabsID: router.elevenlabsSampleVoice},
 		translators:  map[types.Provider]jsonTranslator{constants.ElevenlabsID: elevenlabsSpeech},
 	})
 }
@@ -1719,6 +1738,93 @@ func elevenlabsSpeech(endpoint, model string, body []byte) (string, string, []by
 		return "", "", nil, fmt.Errorf("failed to decode request: %w", err)
 	}
 	return elevenlabs.Speech(endpoint, model, req)
+}
+
+const (
+	// voicesAPIName labels ElevenLabs' voices endpoints in logs and errors.
+	voicesAPIName = "Voices API"
+
+	// voicesMaxResponseSize caps how much of an ElevenLabs voices response is
+	// read. A voice list carries every voice of the account.
+	voicesMaxResponseSize = 8 << 20
+)
+
+// elevenlabsSampleVoice has a speech request that brings a voice sample speak
+// in the ElevenLabs voice cloned from it.
+func (router *RouterImpl) elevenlabsSampleVoice(r *http.Request, provider core.IProvider, body []byte) ([]byte, *upstreamFailure) {
+	var req types.CreateSpeechRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		router.logger.Error("failed to decode speech request", err)
+		return nil, &upstreamFailure{http.StatusBadRequest, "Failed to decode request"}
+	}
+
+	account := elevenlabsAccount{router: router, request: r, provider: provider}
+	req, err := router.elevenlabsVoices.InSampleVoice(r.Context(), account, req)
+	if err != nil {
+		router.logger.Error("failed to speak in the voice sample", err)
+		return nil, voiceFailure(err)
+	}
+
+	prepared, err := json.Marshal(req)
+	if err != nil {
+		router.logger.Error("failed to encode speech request", err)
+		return nil, &upstreamFailure{http.StatusInternalServerError, "Failed to encode request"}
+	}
+	return prepared, nil
+}
+
+// voiceFailure renders a voice library error for the caller: a failure of the
+// gateway's own, a refusal with ElevenLabs' status, or a bad gateway.
+func voiceFailure(err error) *upstreamFailure {
+	var failure *upstreamFailure
+	if errors.As(err, &failure) {
+		return failure
+	}
+	var refusal *elevenlabs.Refusal
+	if errors.As(err, &refusal) {
+		return &upstreamFailure{refusal.Status, err.Error()}
+	}
+	return &upstreamFailure{http.StatusBadGateway, err.Error()}
+}
+
+// elevenlabsAccount reaches the ElevenLabs account of the gateway's key for
+// one speech request, with the provider's auth and the request's tracing.
+type elevenlabsAccount struct {
+	router   *RouterImpl
+	request  *http.Request
+	provider core.IProvider
+}
+
+func (a elevenlabsAccount) ListVoices(ctx context.Context) ([]byte, error) {
+	return a.call(ctx, func(e types.Endpoints) *string { return e.Voices }, upstreamRequest{method: http.MethodGet})
+}
+
+func (a elevenlabsAccount) CreateVoice(ctx context.Context, contentType string, form []byte) ([]byte, error) {
+	return a.call(ctx, func(e types.Endpoints) *string { return e.VoicesCreate }, upstreamRequest{body: bytes.NewReader(form), contentType: contentType})
+}
+
+func (a elevenlabsAccount) call(ctx context.Context, endpointOf func(types.Endpoints) *string, req upstreamRequest) ([]byte, error) {
+	endpoint, msg := a.router.providerEndpoint(a.provider, endpointOf, voicesAPIName, "")
+	if msg != "" {
+		return nil, &upstreamFailure{http.StatusBadRequest, msg}
+	}
+	req.endpointPath = endpoint
+
+	resp, done, failure := a.router.callUpstream(a.request.WithContext(ctx), a.provider, req)
+	if failure != nil {
+		return nil, failure
+	}
+	defer done()
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, voicesMaxResponseSize))
+	if err != nil {
+		return nil, fmt.Errorf("reading the elevenlabs response: %w", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, elevenlabs.NewRefusal(resp.StatusCode, body)
+	}
+	return body, nil
 }
 
 // elevenlabsSFX rewrites a gateway CreateSFXRequest into the ElevenLabs

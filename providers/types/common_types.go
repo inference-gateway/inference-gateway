@@ -2167,6 +2167,9 @@ type CreateSpeechRequest struct {
 	// container. Forwarded to the provider as-is - only providers with
 	// voice-cloning support honor it (e.g. Qwen3-TTS-compatible
 	// backends); others ignore or reject it. Not supported by OpenAI.
+	// ElevenLabs has no per-request sample, so the gateway adds the
+	// sample to the account of the API key as an instant voice clone,
+	// once per sample, and speaks in that voice instead of `voice`.
 	ReferenceAudio *[]byte `json:"reference_audio,omitempty"`
 
 	// ResponseFormat The audio format of the response.
@@ -2278,6 +2281,8 @@ type Endpoints struct {
 	Speech         *string `json:"speech,omitempty"`
 	Videos         *string `json:"videos,omitempty"`
 	VideosRetrieve *string `json:"videos_retrieve,omitempty"`
+	Voices         *string `json:"voices,omitempty"`
+	VoicesCreate   *string `json:"voices_create,omitempty"`
 }
 
 // Error defines model for Error.
