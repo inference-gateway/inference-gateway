@@ -63,6 +63,33 @@ func TestOutputFormat(t *testing.T) {
 	}
 }
 
+func TestSpeechOutputFormat(t *testing.T) {
+	tests := []struct {
+		name           string
+		responseFormat string
+		want           string
+		wantErr        bool
+	}{
+		{name: "empty defaults to mp3", responseFormat: "", want: "mp3_44100_128"},
+		{name: "wav is a native container for speech", responseFormat: "wav", want: SpeechWavFormat},
+		{name: "pcm", responseFormat: "pcm", want: "pcm_24000"},
+		{name: "flac is rejected rather than downgraded", responseFormat: "flac", wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := SpeechOutputFormat(tt.responseFormat)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), SpeechSupportedFormats, "the error must list what ElevenLabs speech can serve")
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestSpeech(t *testing.T) {
 	t.Run("rewrites the request into the text-to-speech shape", func(t *testing.T) {
 		path, query, body, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
@@ -109,9 +136,19 @@ func TestSpeech(t *testing.T) {
 		_, _, _, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
 			Input:          "Hello",
 			Voice:          testVoice,
-			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatWav),
+			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatFlac),
 		})
 		require.Error(t, err)
+	})
+
+	t.Run("asks for a wav container when the caller wants wav", func(t *testing.T) {
+		_, query, _, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
+			Input:          "Hello",
+			Voice:          testVoice,
+			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatWav),
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "output_format="+SpeechWavFormat, query)
 	})
 
 	t.Run("a crafted voice cannot rewrite the upstream path", func(t *testing.T) {

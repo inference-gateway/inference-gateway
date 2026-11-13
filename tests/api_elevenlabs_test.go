@@ -12,7 +12,9 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
+	api "github.com/inference-gateway/inference-gateway/api"
 	config "github.com/inference-gateway/inference-gateway/config"
+	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 )
 
 // Fixtures shared by the ElevenLabs audio and video handler tests.
@@ -98,12 +100,129 @@ func TestSpeechHandler_ElevenlabsRejectsUnsupportedFormat(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", speechPath, strings.NewReader(
-		`{"model":"elevenlabs/`+elevenlabsTTSModel+`","input":"Hello","voice":"`+elevenlabsVoice+`","response_format":"wav"}`))
+		`{"model":"elevenlabs/`+elevenlabsTTSModel+`","input":"Hello","voice":"`+elevenlabsVoice+`","response_format":"flac"}`))
 	req.Header.Set("Content-Type", contentTypeJSONVal)
 	r.ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "response_format", "the caller must learn which formats are servable")
+}
+
+const (
+	elevenlabsVoiceSample   = "RIFF-fake-wav-sample"
+	elevenlabsClonedVoice   = "cloned-voice-id"
+	elevenlabsVoicesPath    = "/voices"
+	elevenlabsAddVoicePath  = "/voices/add"
+	elevenlabsVoicesRefusal = "The API key you used is missing the permission voices_read to execute this operation."
+)
+
+// elevenlabsCloneUpstream fakes the ElevenLabs calls behind a speech request
+// that brings a voice sample, and records what each one carried.
+type elevenlabsCloneUpstream struct {
+	listed      string
+	lists       int
+	adds        int
+	addedName   string
+	addedSample string
+	speechPaths []string
+	speechBody  map[string]any
+}
+
+func (u *elevenlabsCloneUpstream) serve(t *testing.T) *httptest.Server {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, elevenlabsTestKey, r.Header.Get(elevenlabsAPIKey), "every call carries the provider key")
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == elevenlabsVoicesPath:
+			u.lists++
+			_, _ = w.Write([]byte(u.listed))
+		case r.Method == http.MethodPost && r.URL.Path == elevenlabsAddVoicePath:
+			u.adds++
+			require.NoError(t, r.ParseMultipartForm(1<<20))
+			u.addedName = r.FormValue("name")
+			file, _, err := r.FormFile("files")
+			require.NoError(t, err)
+			sample, err := io.ReadAll(file)
+			require.NoError(t, err)
+			u.addedSample = string(sample)
+			_, _ = w.Write([]byte(`{"voice_id":"` + elevenlabsClonedVoice + `"}`))
+		default:
+			u.speechPaths = append(u.speechPaths, r.URL.Path)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			require.NoError(t, json.Unmarshal(body, &u.speechBody))
+			w.Header().Set("Content-Type", "audio/wav")
+			_, _ = w.Write([]byte("FAKE-AUDIO-BYTES"))
+		}
+	}))
+	t.Cleanup(server.Close)
+	return server
+}
+
+func speakWithVoiceSample(t *testing.T, upstreamURL string) *httptest.ResponseRecorder {
+	t.Helper()
+	router := newImagesTestRouter(t, upstreamURL, false, enableAudio)
+	return speakWithVoiceSampleOn(router)
+}
+
+func speakWithVoiceSampleOn(router *api.RouterImpl) *httptest.ResponseRecorder {
+	r := http.NewServeMux()
+	r.HandleFunc("POST "+speechPath, router.SpeechHandler)
+
+	sample := base64.StdEncoding.EncodeToString([]byte(elevenlabsVoiceSample))
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", speechPath, strings.NewReader(
+		`{"model":"elevenlabs/`+elevenlabsTTSModel+`","input":"Hello","voice":"`+elevenlabsVoice+`","response_format":"wav","reference_audio":"`+sample+`"}`))
+	req.Header.Set("Content-Type", contentTypeJSONVal)
+	r.ServeHTTP(w, req)
+	return w
+}
+
+// TestSpeechHandler_ElevenlabsClonesAVoiceSample proves a sample becomes one
+// ElevenLabs voice: cloned on first use, then spoken in without asking again.
+func TestSpeechHandler_ElevenlabsClonesAVoiceSample(t *testing.T) {
+	upstream := &elevenlabsCloneUpstream{listed: `{"voices":[]}`}
+	server := upstream.serve(t)
+	router := newImagesTestRouter(t, server.URL, false, enableAudio)
+
+	first := speakWithVoiceSampleOn(router)
+	second := speakWithVoiceSampleOn(router)
+
+	require.Equal(t, http.StatusOK, first.Code, first.Body.String())
+	require.Equal(t, http.StatusOK, second.Code, second.Body.String())
+	assert.Equal(t, 1, upstream.lists, "the voice is looked up once")
+	assert.Equal(t, 1, upstream.adds, "the sample is cloned once")
+	assert.Equal(t, elevenlabs.ClonedVoiceName([]byte(elevenlabsVoiceSample)), upstream.addedName)
+	assert.Equal(t, elevenlabsVoiceSample, upstream.addedSample, "the sample reaches elevenlabs byte for byte")
+	assert.Equal(t, []string{"/text-to-speech/" + elevenlabsClonedVoice, "/text-to-speech/" + elevenlabsClonedVoice}, upstream.speechPaths,
+		"the sample's voice wins over the voice the request named")
+	assert.NotContains(t, upstream.speechBody, "reference_audio", "the sample is not sent with the speech call")
+}
+
+func TestSpeechHandler_ElevenlabsReusesAClonedVoice(t *testing.T) {
+	name := elevenlabs.ClonedVoiceName([]byte(elevenlabsVoiceSample))
+	upstream := &elevenlabsCloneUpstream{listed: `{"voices":[{"voice_id":"` + elevenlabsClonedVoice + `","name":"` + name + `"}]}`}
+	server := upstream.serve(t)
+
+	w := speakWithVoiceSample(t, server.URL)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Zero(t, upstream.adds, "a sample cloned before is not cloned again")
+	assert.Equal(t, []string{"/text-to-speech/" + elevenlabsClonedVoice}, upstream.speechPaths)
+}
+
+func TestSpeechHandler_ElevenlabsRelaysAVoicesRefusal(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, elevenlabsVoicesPath, r.URL.Path, "nothing is cloned or spoken once the lookup is refused")
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"detail":{"status":"missing_permissions","message":"` + elevenlabsVoicesRefusal + `"}}`))
+	}))
+	defer server.Close()
+
+	w := speakWithVoiceSample(t, server.URL)
+
+	require.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), elevenlabsVoicesRefusal, "the caller learns which permission the key lacks")
 }
 
 func TestSFXHandler_HappyPath(t *testing.T) {
