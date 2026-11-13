@@ -38,23 +38,20 @@ func OutputFormat(responseFormat string) (string, error) {
 	return format, nil
 }
 
-// SpeechWavFormat is the ElevenLabs output_format served for response_format
-// wav. Only the text-to-speech endpoint is given it here.
+// SpeechWavFormat is the ElevenLabs output_format served for response_format wav.
 const SpeechWavFormat = "wav_48000"
 
-const SpeechSupportedFormats = SupportedFormats + ", wav"
-
-// SpeechOutputFormat maps an OpenAI response_format onto an ElevenLabs
-// text-to-speech output_format, which unlike music can be a WAV container.
-func SpeechOutputFormat(responseFormat string) (string, error) {
+// speechFormat maps an OpenAI response_format onto an ElevenLabs
+// text-to-speech output_format. Unlike sound effects and music, speech can be
+// a WAV.
+func speechFormat(responseFormat string) (string, error) {
 	if responseFormat == string(types.CreateSpeechRequestResponseFormatWav) {
 		return SpeechWavFormat, nil
 	}
-	format, err := OutputFormat(responseFormat)
-	if err != nil {
-		return "", fmt.Errorf("elevenlabs does not support response_format %q for speech, supported formats: %s", responseFormat, SpeechSupportedFormats)
+	if format, err := OutputFormat(responseFormat); err == nil {
+		return format, nil
 	}
-	return format, nil
+	return "", fmt.Errorf("elevenlabs does not support response_format %q for speech, supported formats: %s, wav", responseFormat, SupportedFormats)
 }
 
 // speechBody is the ElevenLabs POST /text-to-speech/{voice_id} payload.
@@ -79,7 +76,7 @@ func Speech(endpoint, model string, req types.CreateSpeechRequest) (path, query 
 		return "", "", nil, fmt.Errorf("the 'voice' field is required for elevenlabs and must be an elevenlabs voice id")
 	}
 
-	format, err := SpeechOutputFormat(derefFormat(req.ResponseFormat))
+	format, err := speechFormat(derefFormat(req.ResponseFormat))
 	if err != nil {
 		return "", "", nil, err
 	}

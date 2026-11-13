@@ -616,22 +616,6 @@ curl -X POST http://localhost:8080/v1/audio/speech -d "{
 }" -o cloned.wav
 ```
 
-ElevenLabs clones too. The gateway turns the sample into an ElevenLabs instant
-voice clone named `infer-<hash of the sample>` the first time it is used, and
-speaks in that voice from then on - the sample then wins over `voice`, which
-may be left empty. The API key needs the Voices read and write permissions, and
-every distinct sample takes one voice slot of the ElevenLabs plan.
-
-```bash
-curl -X POST http://localhost:8080/v1/audio/speech -d "{
-  \"model\": \"elevenlabs/eleven_v4_turbo\",
-  \"input\": \"This is my cloned voice speaking.\",
-  \"voice\": \"\",
-  \"response_format\": \"wav\",
-  \"reference_audio\": \"$(base64 < my-voice-sample.wav)\"
-}" -o cloned.wav
-```
-
 ### Language
 
 The optional `language` field is an ISO 639-1 code (default `en`) hinting at  
