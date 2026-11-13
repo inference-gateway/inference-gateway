@@ -577,7 +577,7 @@ curl -X POST http://localhost:8080/v1/audio/speech -d '{
 ElevenLabs' speech API is not OpenAI-compatible, so the gateway rewrites the
 request instead of proxying it. `voice` is required and must be an ElevenLabs
 voice id (not a name like `alloy`), and `response_format` is limited to `mp3`
-(default), `opus`, or `pcm`. `speed` and `language` are forwarded.
+(default), `opus`, `pcm`, or `wav` (48 kHz). `speed` and `language` are forwarded.
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech -d '{
@@ -592,7 +592,7 @@ An unsupported format returns `400`:
 
 ```json
 {
-  "error": "elevenlabs does not support response_format \"wav\", supported formats: mp3, opus, pcm"
+  "error": "elevenlabs does not support response_format \"flac\" for speech, supported formats: mp3, opus, pcm, wav"
 }
 ```
 

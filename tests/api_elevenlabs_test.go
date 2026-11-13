@@ -98,7 +98,7 @@ func TestSpeechHandler_ElevenlabsRejectsUnsupportedFormat(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", speechPath, strings.NewReader(
-		`{"model":"elevenlabs/`+elevenlabsTTSModel+`","input":"Hello","voice":"`+elevenlabsVoice+`","response_format":"wav"}`))
+		`{"model":"elevenlabs/`+elevenlabsTTSModel+`","input":"Hello","voice":"`+elevenlabsVoice+`","response_format":"flac"}`))
 	req.Header.Set("Content-Type", contentTypeJSONVal)
 	r.ServeHTTP(w, req)
 
