@@ -109,15 +109,23 @@ func TestSpeechHandler_ElevenlabsRejectsUnsupportedFormat(t *testing.T) {
 const (
 	elevenlabsVoiceSample   = "RIFF-fake-wav-sample"
 	elevenlabsClonedVoice   = "cloned-voice-id"
+	elevenlabsPremadeName   = "Rachel"
 	elevenlabsVoicesPath    = "/voices"
 	elevenlabsAddVoicePath  = "/voices/add"
+	elevenlabsSpeechPrefix  = "/text-to-speech/"
+	elevenlabsVoiceIDField  = "voice_id"
+	elevenlabsVoiceName     = "name"
+	elevenlabsVoiceFiles    = "files"
 	elevenlabsVoicesRefusal = "The API key you used is missing the permission voices_read to execute this operation."
+	elevenlabsSpokenAudio   = "FAKE-AUDIO-BYTES"
+	elevenlabsClonedOnce    = 1
 )
 
 // elevenlabsAccount stands in for an ElevenLabs account: it lists the voices
 // it holds, keeps a voice it is asked to create, and records speech calls.
 type elevenlabsAccount struct {
 	voices      []map[string]string
+	clones      int
 	addedSample string
 	speechPaths []string
 	speechBody  map[string]any
@@ -131,20 +139,21 @@ func (a *elevenlabsAccount) serve(t *testing.T) *httptest.Server {
 		case r.Method == http.MethodGet && r.URL.Path == elevenlabsVoicesPath:
 			require.NoError(t, json.NewEncoder(w).Encode(map[string]any{"voices": a.voices}))
 		case r.Method == http.MethodPost && r.URL.Path == elevenlabsAddVoicePath:
-			file, _, err := r.FormFile("files")
+			file, _, err := r.FormFile(elevenlabsVoiceFiles)
 			require.NoError(t, err)
 			sample, err := io.ReadAll(file)
 			require.NoError(t, err)
 			a.addedSample = string(sample)
-			a.voices = append(a.voices, map[string]string{"voice_id": elevenlabsClonedVoice, "name": r.FormValue("name")})
-			_, _ = w.Write([]byte(`{"voice_id":"` + elevenlabsClonedVoice + `"}`))
+			a.clones++
+			a.voices = append(a.voices, map[string]string{elevenlabsVoiceIDField: elevenlabsClonedVoice, elevenlabsVoiceName: r.FormValue(elevenlabsVoiceName)})
+			require.NoError(t, json.NewEncoder(w).Encode(map[string]string{elevenlabsVoiceIDField: elevenlabsClonedVoice}))
 		default:
 			a.speechPaths = append(a.speechPaths, r.URL.Path)
 			body, err := io.ReadAll(r.Body)
 			require.NoError(t, err)
 			require.NoError(t, json.Unmarshal(body, &a.speechBody))
 			w.Header().Set("Content-Type", "audio/wav")
-			_, _ = w.Write([]byte("FAKE-AUDIO-BYTES"))
+			_, _ = w.Write([]byte(elevenlabsSpokenAudio))
 		}
 	}))
 	t.Cleanup(server.Close)
@@ -170,7 +179,8 @@ func speakWithVoiceSample(t *testing.T, upstreamURL string) *httptest.ResponseRe
 // ElevenLabs voice: cloned on first use and found in the account afterwards,
 // by a gateway that has only just started too.
 func TestSpeechHandler_ElevenlabsSpeaksInAVoiceSample(t *testing.T) {
-	account := &elevenlabsAccount{voices: []map[string]string{{"voice_id": elevenlabsVoice, "name": "Rachel"}}}
+	premade := map[string]string{elevenlabsVoiceIDField: elevenlabsVoice, elevenlabsVoiceName: elevenlabsPremadeName}
+	account := &elevenlabsAccount{voices: []map[string]string{premade}}
 	server := account.serve(t)
 
 	first := speakWithVoiceSample(t, server.URL)
@@ -178,9 +188,9 @@ func TestSpeechHandler_ElevenlabsSpeaksInAVoiceSample(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, first.Code, first.Body.String())
 	require.Equal(t, http.StatusOK, second.Code, second.Body.String())
-	assert.Len(t, account.voices, 2, "the sample is cloned once, not once per request")
+	assert.Equal(t, elevenlabsClonedOnce, account.clones, "the sample is cloned once, not once per request")
 	assert.Equal(t, elevenlabsVoiceSample, account.addedSample, "the sample reaches elevenlabs byte for byte")
-	spokenInTheClone := "/text-to-speech/" + elevenlabsClonedVoice
+	spokenInTheClone := elevenlabsSpeechPrefix + elevenlabsClonedVoice
 	assert.Equal(t, []string{spokenInTheClone, spokenInTheClone}, account.speechPaths)
 	assert.NotContains(t, account.speechBody, "reference_audio", "the sample is not sent with the speech call")
 }
