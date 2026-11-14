@@ -240,6 +240,12 @@ const (
     {{- with (index $config.Endpoints "sfx").Endpoint }}
     {{pascalCase $name}}SFXEndpoint = "{{.}}"
     {{- end }}
+    {{- with (index $config.Endpoints "sfx_video").Endpoint }}
+    {{pascalCase $name}}SFXVideoEndpoint = "{{.}}"
+    {{- end }}
+    {{- with (index $config.Endpoints "assets").Endpoint }}
+    {{pascalCase $name}}AssetsEndpoint = "{{.}}"
+    {{- end }}
     {{- with (index $config.Endpoints "music").Endpoint }}
     {{pascalCase $name}}MusicEndpoint = "{{.}}"
     {{- end }}
@@ -700,6 +706,12 @@ var Registry = map[types.Provider]*ProviderConfig{
 			{{- end }}
 			{{- if (index $config.Endpoints "sfx").Endpoint }}
 			SFX: ptr(constants.{{pascalCase $name}}SFXEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "sfx_video").Endpoint }}
+			SFXVideo: ptr(constants.{{pascalCase $name}}SFXVideoEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "assets").Endpoint }}
+			Assets: ptr(constants.{{pascalCase $name}}AssetsEndpoint),
 			{{- end }}
 			{{- if (index $config.Endpoints "music").Endpoint }}
 			Music: ptr(constants.{{pascalCase $name}}MusicEndpoint),

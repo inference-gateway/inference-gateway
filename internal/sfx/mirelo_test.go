@@ -2,6 +2,7 @@ package sfx
 
 import (
 	"encoding/json"
+	"mime/multipart"
 	"testing"
 	"time"
 
@@ -93,11 +94,11 @@ func TestSFX(t *testing.T) {
 	})
 }
 
-func TestWaitQuery(t *testing.T) {
-	assert.Equal(t, "wait=25", WaitQuery(30*time.Second))
-	assert.Equal(t, "wait=25", WaitQuery(5*time.Minute))
-	assert.Equal(t, "wait=5", WaitQuery(10*time.Second))
-	assert.Equal(t, "wait=1", WaitQuery(2*time.Second))
+func TestPlan(t *testing.T) {
+	assert.Equal(t, Polling{Query: "wait=25", Requests: 6}, Plan(30*time.Second, 0))
+	assert.Equal(t, Polling{Query: "wait=25", Requests: 6}, Plan(5*time.Minute, time.Minute))
+	assert.Equal(t, Polling{Query: "wait=5", Requests: 30}, Plan(30*time.Second, 10*time.Second), "the transport's header timeout caps the wait, the budget stays")
+	assert.Equal(t, Polling{Query: "wait=1", Requests: 150}, Plan(2*time.Second, 0))
 }
 
 func TestJobPath(t *testing.T) {
@@ -124,7 +125,7 @@ func TestJob(t *testing.T) {
 				require.NoError(t, err)
 				assert.False(t, job.Pending())
 
-				audioURL, contentType, err := job.Audio()
+				audioURL, contentType, err := job.Audio("")
 				require.NoError(t, err)
 				assert.Equal(t, testAudioURL, audioURL)
 				assert.Equal(t, tt.wantContentType, contentType, "an unknown format leaves the Content-Type to the download response")
@@ -146,7 +147,7 @@ func TestJob(t *testing.T) {
 			require.NoError(t, err)
 			assert.False(t, job.Pending(), status)
 
-			_, _, err = job.Audio()
+			_, _, err = job.Audio("")
 			require.ErrorContains(t, err, status)
 			require.ErrorContains(t, err, "the prompt was blocked")
 		}
@@ -159,7 +160,7 @@ func TestJob(t *testing.T) {
 		]}}}`))
 		require.NoError(t, err)
 
-		audioURL, contentType, err := job.Audio()
+		audioURL, contentType, err := job.Audio("")
 		require.NoError(t, err)
 		assert.Equal(t, testAudioURL, audioURL)
 		assert.Equal(t, "audio/mpeg", contentType)
@@ -168,7 +169,7 @@ func TestJob(t *testing.T) {
 	t.Run("a succeeded job without a file is an error", func(t *testing.T) {
 		job, err := ParseJob([]byte(`{"id":"` + testJobID + `","status":"succeeded","result":{"output":{"variants":[]}}}`))
 		require.NoError(t, err)
-		_, _, err = job.Audio()
+		_, _, err = job.Audio("")
 		require.Error(t, err)
 	})
 
@@ -178,4 +179,92 @@ func TestJob(t *testing.T) {
 		_, err = ParseJob([]byte(`not json`))
 		require.Error(t, err)
 	})
+}
+
+func videoForm(values map[string]string) *multipart.Form {
+	form := &multipart.Form{Value: map[string][]string{}}
+	for key, value := range values {
+		form.Value[key] = []string{value}
+	}
+	return form
+}
+
+func TestFromVideo(t *testing.T) {
+	t.Run("scores the uploaded asset for the rest of the clip", func(t *testing.T) {
+		out, err := FromVideo(testModel, videoForm(map[string]string{"prompt": "office ambience"}), "ast_1")
+		require.NoError(t, err)
+
+		var body map[string]any
+		require.NoError(t, json.Unmarshal(out, &body))
+		assert.Equal(t, testModel, body["model"])
+		assert.Equal(t, map[string]any{"video": map[string]any{"type": "asset", "id": "ast_1"}, "prompt": "office ambience"}, body["input"])
+		assert.Equal(t, map[string]any{"format": "mp3_128"}, body["output"])
+		assert.NotContains(t, body, "duration_ms", "an omitted duration scores the rest of the clip")
+		assert.NotContains(t, body, "start_offset_ms")
+		assert.NotContains(t, body, "controls", "the mix with the provider's speech default needs no controls")
+	})
+
+	t.Run("passes the window and the speech choice through", func(t *testing.T) {
+		out, err := FromVideo(testModel, videoForm(map[string]string{
+			"duration_seconds": "12.5", "start_offset_seconds": "3", "preserve_speech": "true", "output": OutputSpeech, "response_format": "flac",
+		}), "ast_1")
+		require.NoError(t, err)
+
+		var body map[string]any
+		require.NoError(t, json.Unmarshal(out, &body))
+		assert.Equal(t, float64(12500), body["duration_ms"])
+		assert.Equal(t, float64(3000), body["start_offset_ms"])
+		assert.Equal(t, map[string]any{"preserve_speech": true, "separate_speech": true}, body["controls"])
+		assert.Equal(t, map[string]any{"format": "flac"}, body["output"])
+	})
+
+	t.Run("the sfx track turns speech preservation off unless asked", func(t *testing.T) {
+		out, err := FromVideo(testModel, videoForm(map[string]string{"output": OutputSFX}), "ast_1")
+		require.NoError(t, err)
+
+		var body map[string]any
+		require.NoError(t, json.Unmarshal(out, &body))
+		assert.Equal(t, map[string]any{"preserve_speech": false, "separate_speech": true}, body["controls"])
+	})
+
+	tests := []struct {
+		name    string
+		values  map[string]string
+		wantErr string
+	}{
+		{"an unknown track", map[string]string{"output": "music"}, "'output' field must be one of"},
+		{"a window shorter than a second", map[string]string{"duration_seconds": "0.5"}, "'duration_seconds' field must be a number of at least 1"},
+		{"a negative offset", map[string]string{"start_offset_seconds": "-1"}, "'start_offset_seconds'"},
+		{"a non-boolean preserve_speech", map[string]string{"preserve_speech": "maybe"}, "'preserve_speech' field must be true or false"},
+		{"an unsupported format", map[string]string{"response_format": "pcm"}, supportedFormats},
+	}
+	for _, tt := range tests {
+		t.Run("rejects "+tt.name, func(t *testing.T) {
+			_, err := FromVideo(testModel, videoForm(tt.values), "ast_1")
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+		})
+	}
+}
+
+func TestAudioPicksTheWantedTrack(t *testing.T) {
+	job, err := ParseJob([]byte(`{"id":"` + testJobID + `","status":"succeeded","errors":[],"result":{"outputs":[
+		{"index":0,"type":"mix","variants":[{"index":0,"status":"succeeded","files":{"audio":{"url":"https://cdn/mix.mp3","format":"mp3_128"}}}]},
+		{"index":1,"type":"speech","variants":[{"index":0,"status":"succeeded","files":{"audio":{"url":"https://cdn/speech.wav","format":"wav"}}}]}
+	]}}`))
+	require.NoError(t, err)
+
+	mixURL, mixType, err := job.Audio(OutputMix)
+	require.NoError(t, err)
+	assert.Equal(t, "https://cdn/mix.mp3", mixURL)
+	assert.Equal(t, "audio/mpeg", mixType)
+
+	speechURL, speechType, err := job.Audio(OutputSpeech)
+	require.NoError(t, err)
+	assert.Equal(t, "https://cdn/speech.wav", speechURL)
+	assert.Equal(t, "audio/wav", speechType)
+
+	_, _, err = job.Audio(OutputSFX)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "without a sfx track")
 }

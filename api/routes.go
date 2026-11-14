@@ -1596,11 +1596,16 @@ func (router *RouterImpl) SFXHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if strings.HasPrefix(r.Header.Get("Content-Type"), contentTypeMultipart) {
+		router.serveSFXFromVideo(w, r)
+		return
+	}
+
 	router.proxyJSONBody(w, r, jsonProxy{
-		apiName:      "Sound effect generation",
+		apiName:      sfxAPIName,
 		exampleModel: "elevenlabs/eleven_text_to_sound_v2",
 		endpointOf:   func(e types.Endpoints) *string { return e.SFX },
-		notSupported: "Sound effect generation is not supported by this provider yet.",
+		notSupported: sfxNotSupportedMessage,
 		translators: map[types.Provider]jsonTranslator{
 			constants.ElevenlabsID: elevenlabsSFX,
 			constants.MireloID:     mireloSFX,
@@ -1623,33 +1628,62 @@ func mireloSFX(endpoint, model string, body []byte) (string, string, []byte, err
 	return endpoint, "", out, nil
 }
 
+// Sound-effect constants.
 const (
-	audioMedia            = "audio"
-	mireloNotReadyMessage = "The sound effect was not ready in time. Retry the request or ask for a shorter clip."
+	audioMedia                  = "audio"
+	sfxAPIName                  = "Sound effect generation"
+	sfxNotSupportedMessage      = "Sound effect generation is not supported by this provider yet."
+	sfxVideoNotSupportedMessage = "Video scoring is not supported by this provider yet."
+	sfxVideoExampleModel        = "mirelo/sfx-2.0"
+	sfxFormFieldVideo           = "video"
+	contentTypeMultipart        = "multipart/form-data"
+	mireloNotReadyMessage       = "The sound effect was not ready in time. Retry the request or ask for a shorter clip."
+	uploadFailedMessage         = "Failed to upload the video to the provider"
 )
 
-// relayMireloAudio turns Mirelo's asynchronous job into the raw audio bytes
+// relayMireloAudio answers a text-to-sfx request with the mix of its job.
+func (router *RouterImpl) relayMireloAudio(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) {
+	router.relaySFXJob(w, r, provider, req, sfx.OutputMix)
+}
+
+// relaySFXJob turns Mirelo's asynchronous job into the raw audio bytes
 // /v1/audio/sfx answers with: it creates the job, long-polls it to a final
-// state and streams the audio file the job links to.
+// state and streams the wanted track of it. A create refused because the
+// uploaded asset is still settling is retried within the same budget.
 // shortcut: no sleep between polls, it relies on Mirelo holding ?wait= open - add a Retry-After sleep if it ever answers early.
 // shortcut: a poll failure is terminal and the client re-requests - add in-budget retries only if transient poll failures show up in practice.
-func (router *RouterImpl) relayMireloAudio(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) {
+func (router *RouterImpl) relaySFXJob(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest, output string) {
 	createPath := req.endpointPath
-	req.query = sfx.WaitQuery(router.cfg.Server.ReadTimeout)
+	plan := sfx.Plan(router.cfg.Server.ReadTimeout, router.responseHeaderTimeout())
+	req.query = plan.Query
 	req.accept = contentTypeJSON
+	payload, err := io.ReadAll(req.body)
+	if err != nil {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read request body"})
+		return
+	}
+	req.body = bytes.NewReader(payload)
 
-	for range sfx.MaxJobRequests {
+	for range plan.Requests {
 		router.extendWriteDeadline(w)
-		job, ok := router.mireloJob(w, r, provider, req)
-		if !ok {
+		job, outcome, wait := router.mireloJob(w, r, provider, req)
+		switch outcome {
+		case jobAnswered:
 			return
+		case jobAssetNotReady:
+			if !pause(r, wait) {
+				return
+			}
+			req.body = bytes.NewReader(payload)
+			continue
+		case jobReady:
 		}
 		if job.Pending() {
 			req = upstreamRequest{method: http.MethodGet, endpointPath: sfx.JobPath(createPath, job.ID), query: req.query, accept: contentTypeJSON}
 			continue
 		}
 
-		audioURL, contentType, err := job.Audio()
+		audioURL, contentType, err := job.Audio(output)
 		if err != nil {
 			router.logger.Error("mirelo job did not produce audio", err, "job_id", job.ID)
 			middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
@@ -1660,8 +1694,17 @@ func (router *RouterImpl) relayMireloAudio(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	router.logger.Error("mirelo job still pending after the last poll", nil, "requests", sfx.MaxJobRequests)
+	router.logger.Error("mirelo job still pending after the last poll", nil, "requests", plan.Requests)
 	middlewares.WriteJSON(w, http.StatusGatewayTimeout, ErrorResponse{Error: mireloNotReadyMessage})
+}
+
+// responseHeaderTimeout is how long the provider client waits for response
+// headers, the ceiling a long-poll must stay under. Zero when not configured.
+func (router *RouterImpl) responseHeaderTimeout() time.Duration {
+	if router.cfg.Client == nil {
+		return 0
+	}
+	return router.cfg.Client.ClientResponseHeaderTimeout
 }
 
 // extendWriteDeadline gives the response one more upstream round trip plus the
@@ -1670,13 +1713,24 @@ func (router *RouterImpl) extendWriteDeadline(w http.ResponseWriter) {
 	middlewares.ResetWriteDeadline(w, router.cfg.Server.ReadTimeout+router.cfg.Server.WriteTimeout)
 }
 
+// jobOutcome says what mireloJob did with the client response.
+type jobOutcome int
+
+const (
+	jobReady jobOutcome = iota
+	jobAnswered
+	jobAssetNotReady
+)
+
 // mireloJob sends req to Mirelo and decodes the job it answers with. Failures
-// and upstream error responses are already written to w, reported by a false ok.
-func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) (sfx.Job, bool) {
+// and upstream error responses are already written to w (jobAnswered), except
+// a refusal because the uploaded asset is still settling, which is reported
+// with the pause Mirelo asks for so the caller can retry.
+func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) (sfx.Job, jobOutcome, time.Duration) {
 	resp, done, failure := router.callUpstream(r, provider, req)
 	if failure != nil {
 		middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
-		return sfx.Job{}, false
+		return sfx.Job{}, jobAnswered, 0
 	}
 	defer done()
 	defer resp.Body.Close()
@@ -1685,20 +1739,177 @@ func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, prov
 	if err != nil {
 		router.logger.Error("failed to read mirelo job response", err)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
-		return sfx.Job{}, false
+		return sfx.Job{}, jobAnswered, 0
+	}
+	if sfx.AssetNotReady(resp.StatusCode, body) {
+		return sfx.Job{}, jobAssetNotReady, sfx.RetryAfter(resp.Header.Get("Retry-After"))
 	}
 	if resp.StatusCode >= http.StatusBadRequest {
 		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
-		return sfx.Job{}, false
+		return sfx.Job{}, jobAnswered, 0
 	}
 
 	job, err := sfx.ParseJob(body)
 	if err != nil {
 		router.logger.Error("failed to decode mirelo job response", err)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
-		return sfx.Job{}, false
+		return sfx.Job{}, jobAnswered, 0
 	}
-	return job, true
+	return job, jobReady, 0
+}
+
+// pause waits for d unless the client leaves first.
+func pause(r *http.Request, d time.Duration) bool {
+	select {
+	case <-time.After(d):
+		return true
+	case <-r.Context().Done():
+		return false
+	}
+}
+
+// serveSFXFromVideo answers a multipart /v1/audio/sfx request: the uploaded
+// video is stored with the provider as an asset, scored, and the wanted track
+// is streamed back as raw audio.
+func (router *RouterImpl) serveSFXFromVideo(w http.ResponseWriter, r *http.Request) {
+	form, ok := router.parseBoundedMultipart(w, r)
+	if !ok {
+		return
+	}
+	defer func() {
+		if r.MultipartForm != nil {
+			_ = r.MultipartForm.RemoveAll()
+		}
+	}()
+
+	originalModel := imagesFormValue(form, imageFormFieldModel)
+	providerID, model, msg := router.resolveProvider(r, originalModel, sfxVideoExampleModel)
+	if msg != "" {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
+	}
+	if reason := router.modelDenied(originalModel); reason != "" {
+		middlewares.WriteJSON(w, http.StatusForbidden, ErrorResponse{Error: reason})
+		return
+	}
+	provider, msg, err := router.buildProvider(providerID)
+	if err != nil {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
+	}
+	createPath, msg := router.providerEndpoint(provider, func(e types.Endpoints) *string { return e.SFXVideo }, sfxAPIName, sfxVideoNotSupportedMessage)
+	if msg != "" {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
+	}
+	assetsPath, msg := router.providerEndpoint(provider, func(e types.Endpoints) *string { return e.Assets }, sfxAPIName, sfxVideoNotSupportedMessage)
+	if msg != "" {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
+		return
+	}
+	videos := form.File[sfxFormFieldVideo]
+	if len(videos) == 0 {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("The '%s' file is required to score a video.", sfxFormFieldVideo)})
+		return
+	}
+
+	assetID, ok := router.uploadAsset(w, r, provider, assetsPath, videos[0])
+	if !ok {
+		return
+	}
+	body, err := sfx.FromVideo(model, form, assetID)
+	if err != nil {
+		router.logger.Error("failed to translate request for provider", err, "api", sfxAPIName, "provider", providerID)
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+	router.relaySFXJob(w, r, provider, upstreamRequest{endpointPath: createPath, body: bytes.NewReader(body), contentType: contentTypeJSON}, imagesFormValue(form, sfx.FieldOutput))
+}
+
+// uploadAsset stores the uploaded video with the provider and returns the
+// asset id a generation can reference. The bytes go to the signed URL the
+// provider's upload ticket names, without the API key.
+func (router *RouterImpl) uploadAsset(w http.ResponseWriter, r *http.Request, provider core.IProvider, assetsPath string, video *multipart.FileHeader) (string, bool) {
+	content, contentType, file, err := openFormFile(video)
+	if err != nil {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read the uploaded video"})
+		return "", false
+	}
+	defer file.Close()
+	contentType = sfx.VideoContentType(video.Filename, contentType)
+
+	ticket, ok := router.assetTicket(w, r, provider, assetsPath, contentType)
+	if !ok {
+		return "", false
+	}
+	target, usable := downloadURL(ticket.UploadURL)
+	if !usable {
+		router.logger.Error("provider returned an unusable upload url", nil, "url", ticket.UploadURL)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "The provider returned an unusable upload URL."})
+		return "", false
+	}
+
+	router.extendWriteDeadline(w)
+	ctx, cancel := context.WithTimeout(r.Context(), router.cfg.Server.ReadTimeout)
+	defer cancel()
+
+	body, formType, length, err := sfx.UploadBody(ticket, video.Filename, contentType, content, video.Size)
+	if err != nil {
+		router.logger.Error("failed to build the upload form", err)
+		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
+		return "", false
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, target.String(), body)
+	if err != nil {
+		router.logger.Error("failed to create upload request", err, "url", ticket.UploadURL)
+		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
+		return "", false
+	}
+	req.Header.Set("Content-Type", formType)
+	req.ContentLength = length
+	resp, err := router.client.Do(req)
+	if err != nil {
+		router.logger.Error("failed to upload the video to the provider", err, "url", ticket.UploadURL)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: uploadFailedMessage})
+		return "", false
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= http.StatusMultipleChoices {
+		router.logger.Error("the provider refused the video upload", nil, "status", resp.StatusCode, "url", ticket.UploadURL)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: uploadFailedMessage})
+		return "", false
+	}
+	return ticket.ID, true
+}
+
+// assetTicket asks the provider where to upload a file of contentType.
+// Failures are already written to w, reported by a false ok.
+func (router *RouterImpl) assetTicket(w http.ResponseWriter, r *http.Request, provider core.IProvider, assetsPath, contentType string) (sfx.AssetTicket, bool) {
+	resp, done, failure := router.callUpstream(r, provider, upstreamRequest{endpointPath: assetsPath, body: bytes.NewReader(sfx.AssetRequest(contentType)), contentType: contentTypeJSON, accept: contentTypeJSON})
+	if failure != nil {
+		middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
+		return sfx.AssetTicket{}, false
+	}
+	defer done()
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
+	if err != nil {
+		router.logger.Error("failed to read mirelo upload ticket", err)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+		return sfx.AssetTicket{}, false
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
+		return sfx.AssetTicket{}, false
+	}
+	ticket, err := sfx.ParseAssetTicket(body)
+	if err != nil {
+		router.logger.Error("failed to decode mirelo upload ticket", err)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
+		return sfx.AssetTicket{}, false
+	}
+	return ticket, true
 }
 
 // MusicHandler implements POST /v1/audio/music, the gateway extension that
@@ -2260,11 +2471,22 @@ const (
 // clients send) is labelled from its leading bytes, because providers such as
 // OpenAI's /images/edits reject octet-stream uploads; an explicit type is kept.
 func copyFormFile(mw *multipart.Writer, field string, fh *multipart.FileHeader) error {
-	src, err := fh.Open()
+	body, contentType, file, err := openFormFile(fh)
 	if err != nil {
 		return err
 	}
-	defer src.Close()
+	defer file.Close()
+	return writeFilePart(mw, field, fh.Filename, contentType, body)
+}
+
+// openFormFile opens an uploaded part and settles its media type, sniffing
+// the leading bytes when the client sent none or octet-stream. The caller
+// closes the returned file once the reader is drained.
+func openFormFile(fh *multipart.FileHeader) (io.Reader, string, io.Closer, error) {
+	src, err := fh.Open()
+	if err != nil {
+		return nil, "", nil, err
+	}
 
 	var body io.Reader = src
 	ct := fh.Header.Get("Content-Type")
@@ -2272,18 +2494,23 @@ func copyFormFile(mw *multipart.Writer, field string, fh *multipart.FileHeader) 
 		head := make([]byte, contentSniffLen)
 		n, err := io.ReadFull(src, head)
 		if err != nil && !errors.Is(err, io.EOF) && !errors.Is(err, io.ErrUnexpectedEOF) {
-			return err
+			_ = src.Close()
+			return nil, "", nil, err
 		}
 		if n > 0 {
 			ct = http.DetectContentType(head[:n])
 		}
 		body = io.MultiReader(bytes.NewReader(head[:n]), src)
 	}
+	return body, ct, src, nil
+}
 
+// writeFilePart adds body to mw as the file part named field.
+func writeFilePart(mw *multipart.Writer, field, filename, contentType string, body io.Reader) error {
 	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, field, fh.Filename))
-	if ct != "" {
-		h.Set("Content-Type", ct)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, field, filename))
+	if contentType != "" {
+		h.Set("Content-Type", contentType)
 	}
 	dst, err := mw.CreatePart(h)
 	if err != nil {

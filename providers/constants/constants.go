@@ -61,6 +61,8 @@ const (
 	MireloModelsEndpoint             = "/models"
 	MireloChatEndpoint               = ""
 	MireloSFXEndpoint                = "/text-to-sfx/generations"
+	MireloSFXVideoEndpoint           = "/video-to-sfx/generations"
+	MireloAssetsEndpoint             = "/assets"
 	MistralModelsEndpoint            = "/models"
 	MistralChatEndpoint              = "/chat/completions"
 	MoonshotModelsEndpoint           = "/models"
