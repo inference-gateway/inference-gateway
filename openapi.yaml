@@ -970,17 +970,26 @@ paths:
         - Audio
       description: |
         Generates a non-speech audio clip - a sound effect or ambience - from
-        a text prompt. Gateway extension: OpenAI has no sound-effects
-        endpoint, so this mirrors the shape of `POST /audio/speech` (JSON in,
-        raw audio bytes out) rather than an upstream OpenAI operation. The
-        response is the generated audio as raw binary bytes; the actual
-        `Content-Type` header of the response reflects the requested
-        `response_format` (e.g. `audio/mpeg` for `mp3`).
+        a text prompt, or scores a video with the sound it shows. Gateway
+        extension: OpenAI has no sound-effects endpoint, so this mirrors the
+        shape of `POST /audio/speech` (raw audio bytes out) rather than an
+        upstream OpenAI operation. The response is the generated audio as raw
+        binary bytes; the actual `Content-Type` header of the response
+        reflects the requested `response_format` (e.g. `audio/mpeg` for
+        `mp3`).
 
-        Not every provider implements sound-effect generation. Requests routed
-        to a provider that does not support it return `400 Bad Request` with an
+        A JSON body is text-to-sfx. A `multipart/form-data` body carrying a
+        `video` part is video-to-sfx: the provider watches the clip and
+        generates the sound that fits it, optionally keeping or separating the
+        speech already in the clip. The request stays open until the audio is
+        ready, and a video larger than the gateway's request body limit
+        returns `413`.
+
+        Not every provider implements sound-effect generation, and fewer
+        implement video-to-sfx. Requests routed to a provider that does not
+        support the requested form return `400 Bad Request` with an
         explanatory error message.
-      summary: Generate a sound effect from a text prompt
+      summary: Generate a sound effect from a text prompt or a video
       security:
         - bearerAuth: []
       parameters:
@@ -1006,6 +1015,12 @@ paths:
           $ref: '#/components/responses/SFXNotSupported'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: The uploaded video exceeds the gateway's request body limit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/InternalError'
   /audio/music:
@@ -1358,11 +1373,19 @@ components:
     CreateSFXRequest:
       required: true
       description: |
-        Request payload for generating a sound effect from a text prompt.
+        Request payload for generating a sound effect. JSON describes the
+        sound in a text prompt. `multipart/form-data` uploads a video to score
+        instead.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/CreateSFXRequest'
+        multipart/form-data:
+          schema:
+            $ref: '#/components/schemas/CreateSFXFromVideoRequest'
+          encoding:
+            video:
+              contentType: video/*
     CreateMusicRequest:
       required: true
       description: |
@@ -1898,6 +1921,14 @@ components:
               name: 'create_sfx'
               method: 'POST'
               endpoint: '/text-to-sfx/generations'
+            sfx_video:
+              name: 'create_sfx_from_video'
+              method: 'POST'
+              endpoint: '/video-to-sfx/generations'
+            assets:
+              name: 'create_asset'
+              method: 'POST'
+              endpoint: '/assets'
     ProviderSpecificResponse:
       type: object
       description: |
@@ -1986,6 +2017,11 @@ components:
         sfx:
           type: string
           x-go-name: SFX
+        sfx_video:
+          type: string
+          x-go-name: SFXVideo
+        assets:
+          type: string
         videos:
           type: string
         videos_retrieve:
@@ -3482,6 +3518,65 @@ components:
       required:
         - model
         - prompt
+    CreateSFXFromVideoRequest:
+      type: object
+      description: |
+        Multipart request body for scoring a video: the provider watches the
+        clip and generates the sound that fits it. Speech already in the clip
+        can be kept under the new sound or returned on its own.
+      properties:
+        model:
+          type: string
+          description: Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`).
+        video:
+          type: string
+          format: binary
+          description: The video to score. Its container type is passed on to the provider.
+        prompt:
+          type: string
+          description: Optional guidance on the sound to generate. The video itself drives the result.
+        duration_seconds:
+          type: number
+          minimum: 1
+          description: |-
+            Length of the scored window in seconds, counted from
+            `start_offset_seconds`. Omit to score the rest of the clip, up to
+            the provider's ceiling.
+        start_offset_seconds:
+          type: number
+          minimum: 0
+          default: 0
+          description: Where in the clip the scored window starts, in seconds.
+        preserve_speech:
+          type: boolean
+          description: |-
+            Keep the speech already in the clip under the generated sound.
+            Omit to use the provider default.
+        output:
+          type: string
+          enum:
+            - mix
+            - sfx
+            - speech
+          default: mix
+          description: |-
+            Which track to return. `mix` is the generated sound with any
+            preserved speech, `sfx` is the generated sound alone and `speech`
+            is the clip's own speech separated out. A clip without speech has
+            no `speech` track.
+        response_format:
+          type: string
+          enum:
+            - mp3
+            - opus
+            - aac
+            - flac
+            - pcm
+          default: mp3
+          description: The audio format of the response.
+      required:
+        - model
+        - video
     CreateMusicRequest:
       type: object
       description: |

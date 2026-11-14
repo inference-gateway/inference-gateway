@@ -746,6 +746,38 @@ curl -X POST http://localhost:8080/v1/audio/sfx -d '{
 }' -o footsteps.mp3
 ```
 
+#### Scoring a video
+
+The same endpoint scores a video when the body is `multipart/form-data` with
+a `video` part: Mirelo watches the clip and generates the sound that fits it.
+The gateway uploads the clip to Mirelo as an asset, so the request body limit
+(`SERVER_MAX_REQUEST_BODY_SIZE`, 10 MiB by default) has to cover the file. Omit
+`duration_seconds` to score the whole clip, which is also what Mirelo bills
+(`duration × variants`, same rate as text-to-sfx).
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/sfx \
+  -F model="mirelo/sfx-2.0" \
+  -F video="@scene.mov" \
+  -F prompt="soft keyboard taps, gentle office ambience" \
+  -o scored.mp3
+```
+
+Optional fields: `prompt`, `duration_seconds` and `start_offset_seconds`
+(the window to score), `response_format` (`mp3` or `flac`),
+`preserve_speech` (keep the clip's own dialogue under the sound) and `output`,
+which picks the track that comes back: `mix` (default), `sfx` (the generated
+sound alone, which turns `preserve_speech` off unless set) or `speech` (the
+clip's dialogue separated out). A clip without dialogue has no `speech` track
+and answers `502`.
+
+Mirelo does not synthesize speech. For narration, generate the voice with
+`POST /v1/audio/speech` and mix the two files:
+
+```bash
+ffmpeg -i scored.mp3 -i narration.wav -filter_complex amix=inputs=2:duration=first narrated.mp3
+```
+
 A job that fails upstream answers `502` with Mirelo's message, and one that is
 still running after the gateway stops waiting answers `504`:
 

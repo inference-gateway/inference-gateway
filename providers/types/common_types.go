@@ -198,6 +198,54 @@ func (e CreateMusicRequestResponseFormat) Valid() bool {
 	}
 }
 
+// Defines values for CreateSFXFromVideoRequestOutput.
+const (
+	Mix    CreateSFXFromVideoRequestOutput = "mix"
+	Sfx    CreateSFXFromVideoRequestOutput = "sfx"
+	Speech CreateSFXFromVideoRequestOutput = "speech"
+)
+
+// Valid indicates whether the value is a known member of the CreateSFXFromVideoRequestOutput enum.
+func (e CreateSFXFromVideoRequestOutput) Valid() bool {
+	switch e {
+	case Mix:
+		return true
+	case Sfx:
+		return true
+	case Speech:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CreateSFXFromVideoRequestResponseFormat.
+const (
+	CreateSFXFromVideoRequestResponseFormatAac  CreateSFXFromVideoRequestResponseFormat = "aac"
+	CreateSFXFromVideoRequestResponseFormatFlac CreateSFXFromVideoRequestResponseFormat = "flac"
+	CreateSFXFromVideoRequestResponseFormatMp3  CreateSFXFromVideoRequestResponseFormat = "mp3"
+	CreateSFXFromVideoRequestResponseFormatOpus CreateSFXFromVideoRequestResponseFormat = "opus"
+	CreateSFXFromVideoRequestResponseFormatPcm  CreateSFXFromVideoRequestResponseFormat = "pcm"
+)
+
+// Valid indicates whether the value is a known member of the CreateSFXFromVideoRequestResponseFormat enum.
+func (e CreateSFXFromVideoRequestResponseFormat) Valid() bool {
+	switch e {
+	case CreateSFXFromVideoRequestResponseFormatAac:
+		return true
+	case CreateSFXFromVideoRequestResponseFormatFlac:
+		return true
+	case CreateSFXFromVideoRequestResponseFormatMp3:
+		return true
+	case CreateSFXFromVideoRequestResponseFormatOpus:
+		return true
+	case CreateSFXFromVideoRequestResponseFormatPcm:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CreateSFXRequestResponseFormat.
 const (
 	CreateSFXRequestResponseFormatAac  CreateSFXRequestResponseFormat = "aac"
@@ -2113,6 +2161,50 @@ type CreateResponseRequest struct {
 	User *string `json:"user,omitempty"`
 }
 
+// CreateSFXFromVideoRequest Multipart request body for scoring a video: the provider watches the
+// clip and generates the sound that fits it. Speech already in the clip
+// can be kept under the new sound or returned on its own.
+type CreateSFXFromVideoRequest struct {
+	// DurationSeconds Length of the scored window in seconds, counted from
+	// `start_offset_seconds`. Omit to score the rest of the clip, up to
+	// the provider's ceiling.
+	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
+
+	// Model Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`).
+	Model string `json:"model"`
+
+	// Output Which track to return. `mix` is the generated sound with any
+	// preserved speech, `sfx` is the generated sound alone and `speech`
+	// is the clip's own speech separated out. A clip without speech has
+	// no `speech` track.
+	Output *CreateSFXFromVideoRequestOutput `json:"output,omitempty"`
+
+	// PreserveSpeech Keep the speech already in the clip under the generated sound.
+	// Omit to use the provider default.
+	PreserveSpeech *bool `json:"preserve_speech,omitempty"`
+
+	// Prompt Optional guidance on the sound to generate. The video itself drives the result.
+	Prompt *string `json:"prompt,omitempty"`
+
+	// ResponseFormat The audio format of the response.
+	ResponseFormat *CreateSFXFromVideoRequestResponseFormat `json:"response_format,omitempty"`
+
+	// StartOffsetSeconds Where in the clip the scored window starts, in seconds.
+	StartOffsetSeconds *float32 `json:"start_offset_seconds,omitempty"`
+
+	// Video The video to score. Its container type is passed on to the provider.
+	Video openapi_types.File `json:"video"`
+}
+
+// CreateSFXFromVideoRequestOutput Which track to return. `mix` is the generated sound with any
+// preserved speech, `sfx` is the generated sound alone and `speech`
+// is the clip's own speech separated out. A clip without speech has
+// no `speech` track.
+type CreateSFXFromVideoRequestOutput string
+
+// CreateSFXFromVideoRequestResponseFormat The audio format of the response.
+type CreateSFXFromVideoRequestResponseFormat string
+
 // CreateSFXRequest Request body for generating a non-speech audio clip - a sound effect
 // or ambience - from a text prompt.
 type CreateSFXRequest struct {
@@ -2270,6 +2362,7 @@ type DecisionQuestionType string
 
 // Endpoints defines model for Endpoints.
 type Endpoints struct {
+	Assets         *string `json:"assets,omitempty"`
 	Chat           string  `json:"chat"`
 	Decisions      *string `json:"decisions,omitempty"`
 	Images         *string `json:"images,omitempty"`
@@ -2279,6 +2372,7 @@ type Endpoints struct {
 	Music          *string `json:"music,omitempty"`
 	Responses      *string `json:"responses,omitempty"`
 	SFX            *string `json:"sfx,omitempty"`
+	SFXVideo       *string `json:"sfx_video,omitempty"`
 	Speech         *string `json:"speech,omitempty"`
 	Videos         *string `json:"videos,omitempty"`
 	VideosRetrieve *string `json:"videos_retrieve,omitempty"`
@@ -3837,6 +3931,9 @@ type CreateMusicJSONRequestBody = CreateMusicRequest
 
 // CreateSFXJSONRequestBody defines body for CreateSFX for application/json ContentType.
 type CreateSFXJSONRequestBody = CreateSFXRequest
+
+// CreateSFXMultipartRequestBody defines body for CreateSFX for multipart/form-data ContentType.
+type CreateSFXMultipartRequestBody = CreateSFXFromVideoRequest
 
 // CreateSpeechJSONRequestBody defines body for CreateSpeech for application/json ContentType.
 type CreateSpeechJSONRequestBody = CreateSpeechRequest
