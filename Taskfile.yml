@@ -127,7 +127,6 @@ tasks:
     vars:
       TIME_TOLERANCE_PCT: 15
       ALLOCS_TOLERANCE_PCT: 5
-      # ~300ns ops x 100 iterations swing +-45% between runs on one CPU, the 1000-model ListModelsContextWindow benchmarks time Transform() instead
       TIME_FILTER: '-.name:ProviderTransformations'
     cmds:
       - mkdir -p bin
