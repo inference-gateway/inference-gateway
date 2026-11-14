@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,6 +29,7 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
+	lipsync "github.com/inference-gateway/inference-gateway/internal/lipsync"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
@@ -54,6 +56,7 @@ type RouterImpl struct {
 	telemetry         otel.OpenTelemetry
 	selector          *routing.Selector
 	tts               *tts.Engine
+	lipsync           *lipsync.Engine
 	proxyTransport    http.RoundTripper
 	proxyTransportErr error
 	elevenlabsVoices  elevenlabs.VoiceLibrary
@@ -90,6 +93,7 @@ func NewRouter(
 		telemetry:         telemetry,
 		selector:          selector,
 		tts:               localTTS,
+		lipsync:           lipsync.NewEngine(logger),
 		proxyTransport:    proxyTransport,
 		proxyTransportErr: proxyTransportErr,
 	}
@@ -1744,9 +1748,9 @@ const (
 	// voicesAPIName labels ElevenLabs' voices endpoints in logs and errors.
 	voicesAPIName = "Voices API"
 
-	// voicesMaxResponseSize caps how much of an ElevenLabs voices response is
-	// read. A voice list carries every voice of the account.
-	voicesMaxResponseSize = 8 << 20
+	// elevenlabsMaxResponseSize caps how much of an ElevenLabs account response
+	// is read. A voice list carries every voice of the account.
+	elevenlabsMaxResponseSize = 8 << 20
 )
 
 // elevenlabsSampleVoice has a speech request that brings a voice sample speak
@@ -1762,7 +1766,7 @@ func (router *RouterImpl) elevenlabsSampleVoice(r *http.Request, provider core.I
 	req, err := router.elevenlabsVoices.InSampleVoice(r.Context(), account, req)
 	if err != nil {
 		router.logger.Error("failed to speak in the voice sample", err)
-		return nil, voiceFailure(err)
+		return nil, elevenlabsFailure(err)
 	}
 
 	prepared, err := json.Marshal(req)
@@ -1773,9 +1777,10 @@ func (router *RouterImpl) elevenlabsSampleVoice(r *http.Request, provider core.I
 	return prepared, nil
 }
 
-// voiceFailure renders a voice library error for the caller: a failure of the
-// gateway's own, a refusal with ElevenLabs' status, or a bad gateway.
-func voiceFailure(err error) *upstreamFailure {
+// elevenlabsFailure renders an ElevenLabs error for the caller: a failure of
+// the gateway's own, a refusal with ElevenLabs' status, a generation it turned
+// down or ran out of time for, or a bad gateway.
+func elevenlabsFailure(err error) *upstreamFailure {
 	var failure *upstreamFailure
 	if errors.As(err, &failure) {
 		return failure
@@ -1784,11 +1789,18 @@ func voiceFailure(err error) *upstreamFailure {
 	if errors.As(err, &refusal) {
 		return &upstreamFailure{refusal.Status, err.Error()}
 	}
+	var generation *elevenlabs.GenerationFailure
+	if errors.As(err, &generation) && generation.Rejected() {
+		return &upstreamFailure{http.StatusBadRequest, err.Error()}
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return &upstreamFailure{http.StatusGatewayTimeout, "The provider did not finish in time."}
+	}
 	return &upstreamFailure{http.StatusBadGateway, err.Error()}
 }
 
 // elevenlabsAccount reaches the ElevenLabs account of the gateway's key for
-// one speech request, with the provider's auth and the request's tracing.
+// one request, with the provider's auth and the request's tracing.
 type elevenlabsAccount struct {
 	router   *RouterImpl
 	request  *http.Request
@@ -1796,15 +1808,30 @@ type elevenlabsAccount struct {
 }
 
 func (a elevenlabsAccount) ListVoices(ctx context.Context) ([]byte, error) {
-	return a.call(ctx, func(e types.Endpoints) *string { return e.Voices }, upstreamRequest{method: http.MethodGet})
+	return a.call(ctx, voicesAPIName, func(e types.Endpoints) *string { return e.Voices }, upstreamRequest{method: http.MethodGet})
 }
 
 func (a elevenlabsAccount) CreateVoice(ctx context.Context, contentType string, form []byte) ([]byte, error) {
-	return a.call(ctx, func(e types.Endpoints) *string { return e.VoicesCreate }, upstreamRequest{body: bytes.NewReader(form), contentType: contentType})
+	return a.call(ctx, voicesAPIName, func(e types.Endpoints) *string { return e.VoicesCreate }, upstreamRequest{body: bytes.NewReader(form), contentType: contentType})
 }
 
-func (a elevenlabsAccount) call(ctx context.Context, endpointOf func(types.Endpoints) *string, req upstreamRequest) ([]byte, error) {
-	endpoint, msg := a.router.providerEndpoint(a.provider, endpointOf, voicesAPIName, "")
+func (a elevenlabsAccount) CreateImage(ctx context.Context, generation []byte) ([]byte, error) {
+	return a.call(ctx, imagesAPIName, func(e types.Endpoints) *string { return e.ImagesEdits }, upstreamRequest{body: bytes.NewReader(generation), contentType: contentTypeJSON, accept: contentTypeJSON})
+}
+
+func (a elevenlabsAccount) Image(ctx context.Context, generationID string) ([]byte, error) {
+	generationOf := func(e types.Endpoints) *string {
+		if e.ImagesRetrieve == nil {
+			return nil
+		}
+		endpoint := strings.ReplaceAll(*e.ImagesRetrieve, imageIDPlaceholder, url.PathEscape(generationID))
+		return &endpoint
+	}
+	return a.call(ctx, imagesAPIName, generationOf, upstreamRequest{method: http.MethodGet, accept: contentTypeJSON})
+}
+
+func (a elevenlabsAccount) call(ctx context.Context, apiName string, endpointOf func(types.Endpoints) *string, req upstreamRequest) ([]byte, error) {
+	endpoint, msg := a.router.providerEndpoint(a.provider, endpointOf, apiName, "")
 	if msg != "" {
 		return nil, &upstreamFailure{http.StatusBadRequest, msg}
 	}
@@ -1817,7 +1844,7 @@ func (a elevenlabsAccount) call(ctx context.Context, endpointOf func(types.Endpo
 	defer done()
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, voicesMaxResponseSize))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, elevenlabsMaxResponseSize))
 	if err != nil {
 		return nil, fmt.Errorf("reading the elevenlabs response: %w", err)
 	}
@@ -1964,6 +1991,24 @@ const (
 	imageFormFieldPrompt     = "prompt"
 	imageFormFieldModel      = "model"
 
+	imageFormFieldResponseFormat = "response_format"
+	imageResponseFormatBase64    = "b64_json"
+
+	// imagesAPIName labels the Images API in logs and errors.
+	imagesAPIName = "Images API"
+
+	// imageIDPlaceholder is the token registry image endpoints carry for the
+	// upstream generation id.
+	imageIDPlaceholder = "{generation_id}"
+
+	// imageGenerationWindow is how long a provider that renders an image as a
+	// job may take before the request gives up.
+	imageGenerationWindow = 5 * time.Minute
+
+	// imageMaxDownloadSize caps how much of a generated image is read to
+	// answer with it as base64.
+	imageMaxDownloadSize = 64 << 20
+
 	// multipartMaxMemory caps how much of a multipart upload is kept in
 	// memory; parts above it spill to temp files instead.
 	multipartMaxMemory = 1 << 20
@@ -2039,6 +2084,11 @@ func (router *RouterImpl) handleImagesMultipart(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	if edit, translated := imageEditors[providerID]; translated {
+		edit(router, w, r, provider, model, form)
+		return
+	}
+
 	if model != originalModel {
 		form.Value[imageFormFieldModel] = []string{model}
 	}
@@ -2059,6 +2109,90 @@ func (router *RouterImpl) handleImagesMultipart(w http.ResponseWriter, r *http.R
 		middlewares.WriteJSON(w, f.status, ErrorResponse{Error: f.message})
 		return
 	}
+}
+
+// imageEditors serve an image edit for the providers that have no OpenAI-shaped
+// Images API, in place of the multipart passthrough.
+var imageEditors = map[types.Provider]func(router *RouterImpl, w http.ResponseWriter, r *http.Request, provider core.IProvider, model string, form *multipart.Form){
+	constants.ElevenlabsID: (*RouterImpl).elevenlabsImageEdit,
+}
+
+// elevenlabsImageEdit serves an image edit through an ElevenLabs image
+// generation and answers in the OpenAI Images shape. The request stays open
+// while ElevenLabs renders, so the write deadline covers that wait.
+func (router *RouterImpl) elevenlabsImageEdit(w http.ResponseWriter, r *http.Request, provider core.IProvider, model string, form *multipart.Form) {
+	generation, err := elevenlabs.ImageEdit(model, form)
+	if err != nil {
+		router.logger.Error("failed to translate request for provider", err, "api", imagesAPIName, "provider", provider.GetName())
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	middlewares.ResetWriteDeadline(w, imageGenerationWindow+router.cfg.Server.WriteTimeout)
+	ctx, cancel := context.WithTimeout(r.Context(), imageGenerationWindow)
+	defer cancel()
+
+	account := elevenlabsAccount{router: router, request: r, provider: provider}
+	generated, err := elevenlabs.GenerateImage(ctx, account, generation)
+	if err != nil {
+		router.logger.Error("failed to generate the image", err, "api", imagesAPIName, "provider", provider.GetName())
+		failure := elevenlabsFailure(err)
+		middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
+		return
+	}
+
+	image := types.Image{URL: &generated.URL}
+	if imagesFormValue(form, imageFormFieldResponseFormat) == imageResponseFormatBase64 {
+		encoded, failure := router.base64Image(ctx, generated.URL)
+		if failure != nil {
+			middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
+			return
+		}
+		image = types.Image{B64Json: &encoded}
+	}
+	middlewares.WriteJSON(w, http.StatusOK, types.ImagesResponse{Created: time.Now().Unix(), Data: []types.Image{image}})
+}
+
+// base64Image downloads a generated image from the provider-supplied URL and
+// returns it base64-encoded. The URL is already signed, so no credential is
+// attached.
+func (router *RouterImpl) base64Image(ctx context.Context, imageURL string) (string, *upstreamFailure) {
+	parsed, usable := downloadURL(imageURL)
+	if !usable {
+		router.logger.Error("provider returned an unusable image download url", nil, "url", imageURL)
+		return "", &upstreamFailure{http.StatusBadGateway, "The provider returned an unusable image download URL."}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, parsed.String(), nil)
+	if err != nil {
+		router.logger.Error("failed to create image download request", err, "url", imageURL)
+		return "", &upstreamFailure{http.StatusInternalServerError, "Failed to create upstream request"}
+	}
+
+	resp, err := router.client.Do(req)
+	if err != nil {
+		router.logger.Error("failed to download generated image", err, "url", imageURL)
+		return "", &upstreamFailure{http.StatusBadGateway, "Failed to download the generated image"}
+	}
+	defer resp.Body.Close()
+
+	image, err := io.ReadAll(io.LimitReader(resp.Body, imageMaxDownloadSize))
+	if err != nil || resp.StatusCode != http.StatusOK {
+		router.logger.Error("failed to read generated image", err, "url", imageURL, "status", resp.StatusCode)
+		return "", &upstreamFailure{http.StatusBadGateway, "Failed to download the generated image"}
+	}
+	return base64.StdEncoding.EncodeToString(image), nil
+}
+
+// downloadURL parses a provider-supplied download URL. It has to be an absolute
+// HTTP(S) URL, so a malformed payload cannot make the gateway fetch a file://
+// or other non-HTTP address.
+func downloadURL(raw string) (*url.URL, bool) {
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return nil, false
+	}
+	return parsed, true
 }
 
 // parseBoundedMultipart parses the request's multipart/form-data body within the
@@ -2247,6 +2381,11 @@ func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) 
 	model := imagesFormValue(form, imageFormFieldModel)
 	originalModel := model
 
+	if strings.HasPrefix(model, tts.ModelPrefix) {
+		router.serveLocalVideo(w, model, form)
+		return
+	}
+
 	providerID, model, msg := router.resolveProvider(r, model, videosExampleModel)
 	if msg != "" {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
@@ -2296,6 +2435,11 @@ func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) 
 // id (or named by ?provider=) and the upstream payload is mapped back onto a
 // VideoJob.
 func (router *RouterImpl) RetrieveVideoHandler(w http.ResponseWriter, r *http.Request) {
+	if id, local := strings.CutPrefix(r.PathValue("video_id"), localVideoIDPrefix); local {
+		router.serveLocalVideoJob(w, id)
+		return
+	}
+
 	provider, providerID, videoID, endpoint, ok := router.resolveVideoTarget(w, r, func(e types.Endpoints) *string { return e.VideosRetrieve })
 	if !ok {
 		return
@@ -2320,6 +2464,11 @@ func (router *RouterImpl) RetrieveVideoHandler(w http.ResponseWriter, r *http.Re
 // the download URL it carries. A job that is still queued, in progress or failed
 // has no bytes to serve and returns 404, as the schema requires.
 func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *http.Request) {
+	if id, local := strings.CutPrefix(r.PathValue("video_id"), localVideoIDPrefix); local {
+		router.serveLocalVideoContent(w, r, id)
+		return
+	}
+
 	provider, providerID, videoID, endpoint, ok := router.resolveVideoTarget(w, r, func(e types.Endpoints) *string { return e.VideosRetrieve })
 	if !ok {
 		return
@@ -2336,7 +2485,7 @@ func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *
 
 	if job.Status != types.VideoJobStatusCompleted || downloadURL == "" {
 		router.logger.Warn("rendered video not available", "video_id", videoID, "status", job.Status)
-		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: "The rendered video is not available yet. Poll GET /v1/videos/{video_id} until the status is completed."})
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: videoNotReadyMessage})
 		return
 	}
 
@@ -2348,10 +2497,10 @@ func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *
 // The URL must be absolute HTTP(S) so a malformed payload cannot make the
 // gateway fetch a file:// address. A non-empty contentType overrides the
 // download's own on success.
-func (router *RouterImpl) streamDownload(w http.ResponseWriter, r *http.Request, downloadURL, media, contentType string) {
-	parsed, err := url.Parse(downloadURL)
-	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
-		router.logger.Error("provider returned an unusable download url", err, "media", media, "url", downloadURL)
+func (router *RouterImpl) streamDownload(w http.ResponseWriter, r *http.Request, raw, media, contentType string) {
+	parsed, usable := downloadURL(raw)
+	if !usable {
+		router.logger.Error("provider returned an unusable download url", nil, "media", media, "url", raw)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "The provider returned an unusable " + media + " download URL."})
 		return
 	}
@@ -2361,14 +2510,14 @@ func (router *RouterImpl) streamDownload(w http.ResponseWriter, r *http.Request,
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, parsed.String(), nil)
 	if err != nil {
-		router.logger.Error("failed to create download request", err, "media", media, "url", downloadURL)
+		router.logger.Error("failed to create download request", err, "media", media, "url", raw)
 		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
 		return
 	}
 
 	resp, err := router.client.Do(req)
 	if err != nil {
-		router.logger.Error("failed to download rendered media", err, "media", media, "url", downloadURL)
+		router.logger.Error("failed to download rendered media", err, "media", media, "url", raw)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to download the rendered " + media})
 		return
 	}
@@ -2481,6 +2630,105 @@ func (router *RouterImpl) videoJob(w http.ResponseWriter, r *http.Request, provi
 	}
 
 	return job, downloadURL, true
+}
+
+// Local video constants.
+const (
+	// localVideoIDPrefix marks the video id of a render the built-in engine
+	// holds, where a provider's id carries the provider.
+	localVideoIDPrefix = "local" + videoJobIDSeparator
+
+	videoFormFieldReference = "input_reference"
+	videoFormFieldAudio     = "audio"
+
+	videoNotReadyMessage = "The rendered video is not available yet. Poll GET /v1/videos/{video_id} until the status is completed."
+)
+
+// serveLocalVideo queues a lip-sync render on the built-in engine for a
+// request that names a local/ model, and answers with its job.
+func (router *RouterImpl) serveLocalVideo(w http.ResponseWriter, model string, form *multipart.Form) {
+	if model != lipsync.ReservedModelID {
+		router.logger.Error("unknown local video model", nil, "model", model)
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Unknown local video model %q. %q is the only local video model.", model, lipsync.ReservedModelID)})
+		return
+	}
+	if reason := router.modelDenied(model); reason != "" {
+		middlewares.WriteJSON(w, http.StatusForbidden, ErrorResponse{Error: reason})
+		return
+	}
+
+	portraits, clips := form.File[videoFormFieldReference], form.File[videoFormFieldAudio]
+	if len(portraits) == 0 || len(clips) == 0 {
+		router.logger.Error("local video request missing its portrait or clip", nil)
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("%s lip-syncs a portrait to a clip: the '%s' image and the '%s' clip are both required.", lipsync.ReservedModelID, videoFormFieldReference, videoFormFieldAudio)})
+		return
+	}
+	portrait, err := portraits[0].Open()
+	if err != nil {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read the uploaded portrait"})
+		return
+	}
+	defer portrait.Close()
+	clip, err := clips[0].Open()
+	if err != nil {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read the uploaded clip"})
+		return
+	}
+	defer clip.Close()
+
+	job, err := router.lipsync.Submit(
+		lipsync.Upload{Name: portraits[0].Filename, Data: portrait},
+		lipsync.Upload{Name: clips[0].Filename, Data: clip},
+	)
+	if err != nil {
+		var notReady *lipsync.NotReadyError
+		if errors.As(err, &notReady) {
+			router.logger.Warn("local lip-sync engine not ready", nil, "detail", notReady.Error())
+			w.Header().Set("Retry-After", strconv.Itoa(lipsync.RetryAfterSeconds))
+			middlewares.WriteJSON(w, http.StatusServiceUnavailable, ErrorResponse{Error: notReady.Error()})
+			return
+		}
+		router.logger.Error("failed to queue the local render", err)
+		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to queue the local render"})
+		return
+	}
+
+	job.ID = localVideoIDPrefix + job.ID
+	middlewares.WriteJSON(w, http.StatusOK, job)
+}
+
+// localVideo returns a job the built-in engine holds with the path of its
+// video, writing the 404 for an id it does not know. The engine keeps its jobs
+// in memory, so a restart forgets them.
+func (router *RouterImpl) localVideo(w http.ResponseWriter, id string) (types.VideoJob, string, bool) {
+	if !router.videosEnabled(w) {
+		return types.VideoJob{}, "", false
+	}
+	job, clip, known := router.lipsync.Job(id)
+	if !known {
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: "Unknown local video id. Local renders are kept in memory, so a gateway restart forgets them."})
+		return types.VideoJob{}, "", false
+	}
+	job.ID = localVideoIDPrefix + job.ID
+	return job, clip, true
+}
+
+func (router *RouterImpl) serveLocalVideoJob(w http.ResponseWriter, id string) {
+	if job, _, ok := router.localVideo(w, id); ok {
+		middlewares.WriteJSON(w, http.StatusOK, job)
+	}
+}
+
+func (router *RouterImpl) serveLocalVideoContent(w http.ResponseWriter, r *http.Request, id string) {
+	job, clip, ok := router.localVideo(w, id)
+	if !ok {
+		return
+	}
+	if job.Status != types.VideoJobStatusCompleted || clip == "" {
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: videoNotReadyMessage})
+		return
+	}
+	http.ServeFile(w, r, clip)
 }
 
 // videosEnabled reports whether the Videos API is switched on, writing the 404

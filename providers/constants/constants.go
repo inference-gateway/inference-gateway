@@ -39,6 +39,8 @@ const (
 	DeepseekChatEndpoint             = "/chat/completions"
 	ElevenlabsModelsEndpoint         = "/models"
 	ElevenlabsChatEndpoint           = ""
+	ElevenlabsImagesEditsEndpoint    = "/flows/image"
+	ElevenlabsImagesRetrieveEndpoint = "/flows/image/{generation_id}"
 	ElevenlabsSpeechEndpoint         = "/text-to-speech/{voice}"
 	ElevenlabsSFXEndpoint            = "/sound-generation"
 	ElevenlabsMusicEndpoint          = "/music"

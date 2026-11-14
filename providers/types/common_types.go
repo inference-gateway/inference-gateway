@@ -2189,16 +2189,16 @@ type CreateSpeechRequest struct {
 // CreateSpeechRequestResponseFormat The audio format of the response.
 type CreateSpeechRequestResponseFormat string
 
-// CreateVideoRequest Request body for creating a video generation job via the
-// OpenAI-compatible Videos API. Sent as `multipart/form-data`.
+// CreateVideoRequest Request body for creating a video generation job, shaped like the
+// Videos API OpenAI retired. Sent as `multipart/form-data`.
 type CreateVideoRequest struct {
 	// Audio Non-standard extension (OpenAI's Videos API has no audio field):
 	// an audio clip - `audio/wav` or `audio/mpeg` - that drives the
 	// render. When present, the model lip-syncs `input_reference` to it
 	// and the generated video lasts as long as the clip, so `seconds` is
-	// ignored. Forwarded to the provider as-is; only providers with
-	// talking-avatar support honor it (e.g. ElevenLabs
-	// `creatify-aurora`), others ignore or reject it.
+	// ignored. Only models with talking-avatar support honor it (e.g.
+	// ElevenLabs `creatify-aurora`). A model known to render from a
+	// prompt is refused with `400 Bad Request`.
 	Audio *openapi_types.File `json:"audio,omitempty"`
 
 	// InputReference Optional image used as the first frame or, for avatar models, the
@@ -2274,6 +2274,7 @@ type Endpoints struct {
 	Decisions      *string `json:"decisions,omitempty"`
 	Images         *string `json:"images,omitempty"`
 	ImagesEdits    *string `json:"images_edits,omitempty"`
+	ImagesRetrieve *string `json:"images_retrieve,omitempty"`
 	Models         string  `json:"models"`
 	Music          *string `json:"music,omitempty"`
 	Responses      *string `json:"responses,omitempty"`

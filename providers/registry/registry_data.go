@@ -60,6 +60,8 @@ var Registry = map[types.Provider]*ProviderConfig{
 		Endpoints: types.Endpoints{
 			Models:         constants.ElevenlabsModelsEndpoint,
 			Chat:           constants.ElevenlabsChatEndpoint,
+			ImagesEdits:    ptr(constants.ElevenlabsImagesEditsEndpoint),
+			ImagesRetrieve: ptr(constants.ElevenlabsImagesRetrieveEndpoint),
 			Speech:         ptr(constants.ElevenlabsSpeechEndpoint),
 			SFX:            ptr(constants.ElevenlabsSFXEndpoint),
 			Music:          ptr(constants.ElevenlabsMusicEndpoint),
