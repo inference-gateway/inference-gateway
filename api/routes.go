@@ -30,6 +30,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
+	musetalk "github.com/inference-gateway/inference-gateway/internal/musetalk"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	proxy "github.com/inference-gateway/inference-gateway/internal/proxy"
@@ -54,6 +55,7 @@ type RouterImpl struct {
 	telemetry         otel.OpenTelemetry
 	selector          *routing.Selector
 	tts               *tts.Engine
+	lipsync           *musetalk.Engine
 	proxyTransport    http.RoundTripper
 	proxyTransportErr error
 	elevenlabsVoices  elevenlabs.VoiceLibrary
@@ -90,6 +92,7 @@ func NewRouter(
 		telemetry:         telemetry,
 		selector:          selector,
 		tts:               localTTS,
+		lipsync:           musetalk.NewEngine(logger),
 		proxyTransport:    proxyTransport,
 		proxyTransportErr: proxyTransportErr,
 	}
@@ -2268,6 +2271,11 @@ func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) 
 	model := imagesFormValue(form, imageFormFieldModel)
 	originalModel := model
 
+	if strings.HasPrefix(model, musetalk.ModelPrefix) {
+		router.serveLocalVideo(w, model, form)
+		return
+	}
+
 	providerID, model, msg := router.resolveProvider(r, model, videosExampleModel)
 	if msg != "" {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
@@ -2317,6 +2325,11 @@ func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) 
 // id (or named by ?provider=) and the upstream payload is mapped back onto a
 // VideoJob.
 func (router *RouterImpl) RetrieveVideoHandler(w http.ResponseWriter, r *http.Request) {
+	if id, local := strings.CutPrefix(r.PathValue("video_id"), localVideoIDPrefix); local {
+		router.serveLocalVideoJob(w, id)
+		return
+	}
+
 	provider, providerID, videoID, endpoint, ok := router.resolveVideoTarget(w, r, func(e types.Endpoints) *string { return e.VideosRetrieve })
 	if !ok {
 		return
@@ -2341,6 +2354,11 @@ func (router *RouterImpl) RetrieveVideoHandler(w http.ResponseWriter, r *http.Re
 // the download URL it carries. A job that is still queued, in progress or failed
 // has no bytes to serve and returns 404, as the schema requires.
 func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *http.Request) {
+	if id, local := strings.CutPrefix(r.PathValue("video_id"), localVideoIDPrefix); local {
+		router.serveLocalVideoContent(w, r, id)
+		return
+	}
+
 	provider, providerID, videoID, endpoint, ok := router.resolveVideoTarget(w, r, func(e types.Endpoints) *string { return e.VideosRetrieve })
 	if !ok {
 		return
@@ -2357,7 +2375,7 @@ func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *
 
 	if job.Status != types.VideoJobStatusCompleted || downloadURL == "" {
 		router.logger.Warn("rendered video not available", "video_id", videoID, "status", job.Status)
-		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: "The rendered video is not available yet. Poll GET /v1/videos/{video_id} until the status is completed."})
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: videoNotReadyMessage})
 		return
 	}
 
@@ -2497,6 +2515,101 @@ func (router *RouterImpl) videoJob(w http.ResponseWriter, r *http.Request, provi
 	}
 
 	return job, downloadURL, true
+}
+
+// Local video constants.
+const (
+	// localVideoIDPrefix marks the video id of a render the built-in engine
+	// holds, where a provider's id carries the provider.
+	localVideoIDPrefix = "local" + videoJobIDSeparator
+
+	videoFormFieldReference = "input_reference"
+	videoFormFieldAudio     = "audio"
+
+	videoNotReadyMessage = "The rendered video is not available yet. Poll GET /v1/videos/{video_id} until the status is completed."
+)
+
+// serveLocalVideo queues a lip-sync render on the built-in engine for a
+// request that names a local/ model, and answers with its job.
+func (router *RouterImpl) serveLocalVideo(w http.ResponseWriter, model string, form *multipart.Form) {
+	if model != musetalk.ReservedModelID {
+		router.logger.Error("unknown local video model", nil, "model", model)
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Unknown local video model %q. %q is the only local video model.", model, musetalk.ReservedModelID)})
+		return
+	}
+
+	portraits, clips := form.File[videoFormFieldReference], form.File[videoFormFieldAudio]
+	if len(portraits) == 0 || len(clips) == 0 {
+		router.logger.Error("local video request missing its portrait or clip", nil)
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("%s lip-syncs a portrait to a clip: the '%s' image and the '%s' clip are both required.", musetalk.ReservedModelID, videoFormFieldReference, videoFormFieldAudio)})
+		return
+	}
+	portrait, err := portraits[0].Open()
+	if err != nil {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read the uploaded portrait"})
+		return
+	}
+	defer portrait.Close()
+	clip, err := clips[0].Open()
+	if err != nil {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read the uploaded clip"})
+		return
+	}
+	defer clip.Close()
+
+	job, err := router.lipsync.Submit(
+		musetalk.Upload{Name: portraits[0].Filename, Data: portrait},
+		musetalk.Upload{Name: clips[0].Filename, Data: clip},
+	)
+	if err != nil {
+		var notReady *musetalk.NotReadyError
+		if errors.As(err, &notReady) {
+			router.logger.Warn("local lip-sync engine not ready", nil, "detail", notReady.Error())
+			w.Header().Set("Retry-After", strconv.Itoa(musetalk.RetryAfterSeconds))
+			middlewares.WriteJSON(w, http.StatusServiceUnavailable, ErrorResponse{Error: notReady.Error()})
+			return
+		}
+		router.logger.Error("failed to queue the local render", err)
+		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to queue the local render"})
+		return
+	}
+
+	job.ID = localVideoIDPrefix + job.ID
+	middlewares.WriteJSON(w, http.StatusOK, job)
+}
+
+// localVideo returns a job the built-in engine holds with the path of its
+// video, writing the 404 for an id it does not know. The engine keeps its jobs
+// in memory, so a restart forgets them.
+func (router *RouterImpl) localVideo(w http.ResponseWriter, id string) (types.VideoJob, string, bool) {
+	if !router.videosEnabled(w) {
+		return types.VideoJob{}, "", false
+	}
+	job, clip, known := router.lipsync.Job(id)
+	if !known {
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: "Unknown local video id. Local renders are kept in memory, so a gateway restart forgets them."})
+		return types.VideoJob{}, "", false
+	}
+	job.ID = localVideoIDPrefix + job.ID
+	return job, clip, true
+}
+
+func (router *RouterImpl) serveLocalVideoJob(w http.ResponseWriter, id string) {
+	if job, _, ok := router.localVideo(w, id); ok {
+		middlewares.WriteJSON(w, http.StatusOK, job)
+	}
+}
+
+func (router *RouterImpl) serveLocalVideoContent(w http.ResponseWriter, r *http.Request, id string) {
+	job, clip, ok := router.localVideo(w, id)
+	if !ok {
+		return
+	}
+	if job.Status != types.VideoJobStatusCompleted || clip == "" {
+		middlewares.WriteJSON(w, http.StatusNotFound, ErrorResponse{Error: videoNotReadyMessage})
+		return
+	}
+	http.ServeFile(w, r, clip)
 }
 
 // videosEnabled reports whether the Videos API is switched on, writing the 404
