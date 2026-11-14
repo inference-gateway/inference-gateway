@@ -29,10 +29,10 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
-	mirelo "github.com/inference-gateway/inference-gateway/internal/mirelo"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	proxy "github.com/inference-gateway/inference-gateway/internal/proxy"
+	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
 	systemone "github.com/inference-gateway/inference-gateway/internal/systemone"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
@@ -1612,7 +1612,7 @@ func mireloSFX(endpoint, model string, body []byte) (string, string, []byte, err
 	if err := json.Unmarshal(body, &req); err != nil {
 		return "", "", nil, fmt.Errorf("failed to decode request: %w", err)
 	}
-	out, err := mirelo.SFX(model, req)
+	out, err := sfx.FromText(model, req)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -1631,17 +1631,17 @@ const (
 // shortcut: a poll failure is terminal and the client re-requests - add in-budget retries only if transient poll failures show up in practice.
 func (router *RouterImpl) relayMireloAudio(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) {
 	createPath := req.endpointPath
-	req.query = mirelo.WaitQuery(router.cfg.Server.ReadTimeout)
+	req.query = sfx.WaitQuery(router.cfg.Server.ReadTimeout)
 	req.accept = contentTypeJSON
 
-	for range mirelo.MaxJobRequests {
+	for range sfx.MaxJobRequests {
 		router.extendWriteDeadline(w)
 		job, ok := router.mireloJob(w, r, provider, req)
 		if !ok {
 			return
 		}
 		if job.Pending() {
-			req = upstreamRequest{method: http.MethodGet, endpointPath: mirelo.JobPath(createPath, job.ID), query: req.query, accept: contentTypeJSON}
+			req = upstreamRequest{method: http.MethodGet, endpointPath: sfx.JobPath(createPath, job.ID), query: req.query, accept: contentTypeJSON}
 			continue
 		}
 
@@ -1656,7 +1656,7 @@ func (router *RouterImpl) relayMireloAudio(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	router.logger.Error("mirelo job still pending after the last poll", nil, "requests", mirelo.MaxJobRequests)
+	router.logger.Error("mirelo job still pending after the last poll", nil, "requests", sfx.MaxJobRequests)
 	middlewares.WriteJSON(w, http.StatusGatewayTimeout, ErrorResponse{Error: mireloNotReadyMessage})
 }
 
@@ -1668,11 +1668,11 @@ func (router *RouterImpl) extendWriteDeadline(w http.ResponseWriter) {
 
 // mireloJob sends req to Mirelo and decodes the job it answers with. Failures
 // and upstream error responses are already written to w, reported by a false ok.
-func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) (mirelo.Job, bool) {
+func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) (sfx.Job, bool) {
 	resp, done, failure := router.callUpstream(r, provider, req)
 	if failure != nil {
 		middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
-		return mirelo.Job{}, false
+		return sfx.Job{}, false
 	}
 	defer done()
 	defer resp.Body.Close()
@@ -1681,18 +1681,18 @@ func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, prov
 	if err != nil {
 		router.logger.Error("failed to read mirelo job response", err)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
-		return mirelo.Job{}, false
+		return sfx.Job{}, false
 	}
 	if resp.StatusCode >= http.StatusBadRequest {
 		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
-		return mirelo.Job{}, false
+		return sfx.Job{}, false
 	}
 
-	job, err := mirelo.ParseJob(body)
+	job, err := sfx.ParseJob(body)
 	if err != nil {
 		router.logger.Error("failed to decode mirelo job response", err)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
-		return mirelo.Job{}, false
+		return sfx.Job{}, false
 	}
 	return job, true
 }

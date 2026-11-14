@@ -1,4 +1,6 @@
-package mirelo
+// Package sfx translates a gateway sound-effect request into the job a
+// provider's text-to-sfx API takes, Mirelo today, and reads the job back.
+package sfx
 
 import (
 	"encoding/json"
@@ -84,9 +86,9 @@ type sfxOutput struct {
 	Format string `json:"format"`
 }
 
-// SFX rewrites a gateway CreateSFXRequest into the Mirelo text-to-sfx shape.
+// FromText rewrites a gateway CreateSFXRequest into the Mirelo text-to-sfx shape.
 // model is the request model with the provider prefix already stripped.
-func SFX(model string, req types.CreateSFXRequest) ([]byte, error) {
+func FromText(model string, req types.CreateSFXRequest) ([]byte, error) {
 	if strings.TrimSpace(req.Prompt) == "" {
 		return nil, fmt.Errorf("the 'prompt' field is required")
 	}

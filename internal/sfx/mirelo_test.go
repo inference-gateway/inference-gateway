@@ -1,4 +1,4 @@
-package mirelo
+package sfx
 
 import (
 	"encoding/json"
@@ -51,7 +51,7 @@ func TestOutputFormat(t *testing.T) {
 
 func TestSFX(t *testing.T) {
 	t.Run("rewrites the request into the text-to-sfx shape", func(t *testing.T) {
-		body, err := SFX(testModel, types.CreateSFXRequest{
+		body, err := FromText(testModel, types.CreateSFXRequest{
 			Prompt:          testPrompt,
 			DurationSeconds: ptr(float32(2.5)),
 			Loop:            ptr(true),
@@ -68,7 +68,7 @@ func TestSFX(t *testing.T) {
 	})
 
 	t.Run("defaults the duration Mirelo requires", func(t *testing.T) {
-		body, err := SFX(testModel, types.CreateSFXRequest{Prompt: testPrompt})
+		body, err := FromText(testModel, types.CreateSFXRequest{Prompt: testPrompt})
 		require.NoError(t, err)
 
 		var got sfxBody
@@ -78,17 +78,17 @@ func TestSFX(t *testing.T) {
 	})
 
 	t.Run("rejects an empty prompt", func(t *testing.T) {
-		_, err := SFX(testModel, types.CreateSFXRequest{Prompt: " "})
+		_, err := FromText(testModel, types.CreateSFXRequest{Prompt: " "})
 		require.Error(t, err)
 	})
 
 	t.Run("rejects prompt_influence", func(t *testing.T) {
-		_, err := SFX(testModel, types.CreateSFXRequest{Prompt: testPrompt, PromptInfluence: ptr(float32(0.5))})
+		_, err := FromText(testModel, types.CreateSFXRequest{Prompt: testPrompt, PromptInfluence: ptr(float32(0.5))})
 		require.ErrorContains(t, err, "prompt_influence")
 	})
 
 	t.Run("rejects an unsupported format", func(t *testing.T) {
-		_, err := SFX(testModel, types.CreateSFXRequest{Prompt: testPrompt, ResponseFormat: ptr(types.CreateSFXRequestResponseFormatPcm)})
+		_, err := FromText(testModel, types.CreateSFXRequest{Prompt: testPrompt, ResponseFormat: ptr(types.CreateSFXRequestResponseFormatPcm)})
 		require.ErrorContains(t, err, SupportedFormats)
 	})
 }

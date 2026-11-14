@@ -11,7 +11,7 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
-	mirelo "github.com/inference-gateway/inference-gateway/internal/mirelo"
+	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )
 
@@ -122,7 +122,7 @@ func TestSFXHandler_MireloJobNeverFinishes(t *testing.T) {
 	w := postMireloSFX(t, server.URL, mireloSFXRequest)
 
 	require.Equal(t, http.StatusGatewayTimeout, w.Code)
-	assert.Equal(t, mirelo.MaxJobRequests, requests, "polling must be bounded")
+	assert.Equal(t, sfx.MaxJobRequests, requests, "polling must be bounded")
 }
 
 func TestSFXHandler_MireloRelaysUpstreamError(t *testing.T) {
