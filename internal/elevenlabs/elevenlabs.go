@@ -304,10 +304,10 @@ type veoImage struct {
 }
 
 // Video rewrites an OpenAI Videos multipart form into the ElevenLabs flows
-// JSON shape. A form carrying `audio` is treated as an avatar (lip-sync)
-// request: the reference image becomes `image`, the clip becomes `audio`,
-// and prompt/seconds/reference_images are dropped because those models reject
-// them. model is the request model with the provider prefix already stripped.
+// JSON shape. A form carrying `audio` is an avatar (lip-sync) request: the
+// reference image becomes `image`, the clip becomes `audio`, and prompt,
+// seconds and reference_images are dropped. Prompt-driven models refuse it.
+// model is the request model with the provider prefix already stripped.
 func Video(model string, form *multipart.Form) ([]byte, error) {
 	out := videoBody{ModelID: model}
 
@@ -327,6 +327,9 @@ func Video(model string, form *multipart.Form) ([]byte, error) {
 	}
 
 	if audio != nil {
+		if rendersFromPrompt(model) {
+			return nil, fmt.Errorf("model %q does not lip-sync to 'audio': it renders from a prompt", model)
+		}
 		if image == nil {
 			return nil, fmt.Errorf("the 'input_reference' image is required when 'audio' is provided")
 		}
@@ -354,6 +357,13 @@ func Video(model string, form *multipart.Form) ([]byte, error) {
 		out.DurationSecs = &n
 	}
 	return json.Marshal(out)
+}
+
+// rendersFromPrompt reports whether model is a known prompt-driven video model,
+// which takes no driving audio. Unknown models are left to ElevenLabs.
+func rendersFromPrompt(model string) bool {
+	_, known := referenceImageLimits[model]
+	return known
 }
 
 // parseSize turns an OpenAI `size` ("720x1280") into an ElevenLabs
