@@ -978,17 +978,19 @@ paths:
         reflects the requested `response_format` (e.g. `audio/mpeg` for
         `mp3`).
 
-        A JSON body is text-to-sfx. A `multipart/form-data` body carrying a
-        `video` part is video-to-sfx: the provider watches the clip and
-        generates the sound that fits it, optionally keeping or separating the
-        speech already in the clip. The request stays open until the audio is
-        ready, and a video larger than the gateway's request body limit
-        returns `413`.
+        One JSON body covers both inputs. Without `video` the request is
+        text-to-sfx, describing the sound in `prompt`. With `video` the
+        provider watches the clip and generates the sound that fits it,
+        optionally keeping or separating the speech already in the clip -
+        see `video` for the forms it takes.
 
-        Not every provider implements sound-effect generation, and fewer
-        implement video-to-sfx. Requests routed to a provider that does not
-        support the requested form return `400 Bad Request` with an
-        explanatory error message.
+        The request stays open until the audio is ready, and a body larger
+        than the gateway's request body limit returns `413`.
+
+        Not every provider implements sound-effect generation, fewer
+        implement video-to-sfx, and a provider or model that cannot honor a
+        field (e.g. `prompt_influence`) rejects the request with
+        `400 Bad Request` and an explanatory error message.
       summary: Generate a sound effect from a text prompt or a video
       security:
         - bearerAuth: []
@@ -1016,7 +1018,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '413':
-          description: The uploaded video exceeds the gateway's request body limit.
+          description: The request body exceeds the gateway's request body limit - send a large clip as a URL.
           content:
             application/json:
               schema:
@@ -1086,7 +1088,10 @@ paths:
         talking-avatar render: when present, the model lip-syncs
         `input_reference` to the clip and the video lasts as long as the audio.
         A model known to render from a prompt takes no `audio` and the request
-        returns `400 Bad Request`.
+        returns `400 Bad Request`. The non-standard `video` field dubs a clip:
+        the job returns the clip with generated sound in place of its
+        soundtrack - see `video` for the providers that support it and their
+        limits.
 
         Not every provider implements the Videos API. Requests routed to a
         provider that does not support it return `400 Bad Request` with an
@@ -1373,19 +1378,12 @@ components:
     CreateSFXRequest:
       required: true
       description: |
-        Request payload for generating a sound effect. JSON describes the
-        sound in a text prompt. `multipart/form-data` uploads a video to score
-        instead.
+        Request payload for generating a sound effect, from a text prompt or
+        from a video set as an https URL or a base64 data URI.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/CreateSFXRequest'
-        multipart/form-data:
-          schema:
-            $ref: '#/components/schemas/CreateSFXFromVideoRequest'
-          encoding:
-            video:
-              contentType: video/*
     CreateMusicRequest:
       required: true
       description: |
@@ -1504,9 +1502,11 @@ components:
             error: 'The Audio API is not supported by this provider yet.'
     SFXNotSupported:
       description: |
-        The selected provider does not implement sound-effect generation. The
-        gateway returns this when a request is routed to a provider without
-        text-to-sound-effect support.
+        The selected provider does not implement the requested form of
+        sound-effect generation - text-to-sfx or video-to-sfx - or cannot
+        honor a field in the request (e.g. `prompt_influence`). The
+        gateway returns this when such a request is routed to a provider
+        that does not support it.
       content:
         application/json:
           schema:
@@ -3493,93 +3493,84 @@ components:
       type: object
       description: |
         Request body for generating a non-speech audio clip - a sound effect
-        or ambience - from a text prompt.
+        or ambience - from a text prompt, or from a video when `video` is
+        set.
       properties:
         model:
           type: string
-          description: Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`, `mirelo/sfx-2.0`).
+          description: Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`, `mirelo/sfx-2.0`, or `elevenlabs/music_v2_5` to score a video).
         prompt:
           type: string
-          description: Description of the sound to generate (e.g. `distant thunder rolling over a valley`).
+          x-go-type-skip-optional-pointer: true
+          description: |-
+            Description of the sound to generate (e.g. `distant thunder
+            rolling over a valley`). Required unless `video` is given:
+            without a video the prompt drives the result, with a video the
+            clip drives it and the prompt is only optional guidance on the
+            sound to generate.
+        video:
+          type: string
+          description: |-
+            Optional video to score: the provider watches the clip and
+            generates the sound that fits it. Either an https URL or a
+            base64 data URI (`data:video/...`). Prefer a URL for large
+            clips: a data URI is about a third larger than the file and
+            counts against the gateway's request body limit. A provider
+            that cannot take the given form answers `400 Bad Request`. The
+            gateway never downloads the URL itself.
         duration_seconds:
           type: number
           minimum: 0.5
-          maximum: 30
           description: |-
-            Length of the generated clip in seconds. Omit to let the provider
-            pick a length that fits the prompt.
-        prompt_influence:
-          type: number
-          minimum: 0
-          maximum: 1
-          description: |-
-            How closely the generation follows the prompt. Higher values stay
-            closer to the prompt, lower values allow more variation. Omit to
-            use the provider default.
-        loop:
-          type: boolean
-          description: Whether to generate a clip that loops seamlessly.
-        response_format:
-          type: string
-          enum:
-            - mp3
-            - opus
-            - aac
-            - flac
-            - pcm
-          default: mp3
-          description: The audio format of the response.
-      required:
-        - model
-        - prompt
-    CreateSFXFromVideoRequest:
-      type: object
-      description: |
-        Multipart request body for scoring a video: the provider watches the
-        clip and generates the sound that fits it. Speech already in the clip
-        can be kept under the new sound or returned on its own. Not every
-        provider implements every field - one it cannot serve answers `400`
-        naming the field rather than being ignored.
-      properties:
-        model:
-          type: string
-          description: Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`, `elevenlabs/music_v2_5`).
-        video:
-          type: string
-          format: binary
-          description: The video to score. Its container type is passed on to the provider.
-        prompt:
-          type: string
-          description: Optional guidance on the sound to generate. The video itself drives the result.
-        duration_seconds:
-          type: number
-          minimum: 1
-          description: |-
-            Length of the scored window in seconds, counted from
-            `start_offset_seconds`. Omit to score the rest of the clip, up to
-            the provider's ceiling.
+            Length of the generated audio in seconds - at least 0.5 for a
+            text prompt and at least 1 for a video. The ceiling depends on
+            the model (30 for ElevenLabs text-to-sfx), and a longer value is
+            rejected with `400 Bad Request`. For a text prompt it is the
+            length of the generated clip. With a video it is the length of
+            the scored window, counted from `start_offset_seconds`. Omit to
+            let the provider pick a length that fits the prompt or the
+            clip, up to its ceiling.
         start_offset_seconds:
           type: number
           minimum: 0
           default: 0
-          description: Where in the clip the scored window starts, in seconds.
+          description: |-
+            Video input only. Where in the clip the scored window starts,
+            in seconds.
         preserve_speech:
           type: boolean
           description: |-
-            Keep the speech already in the clip under the generated sound.
-            Omit to use the provider default.
+            Video input only. Keep the speech already in the clip under the
+            generated sound. Omit to use the provider default.
         output:
           type: string
           enum:
             - mix
             - sfx
             - speech
+          x-enum-varnames:
+            - CreateSFXRequestOutputMix
+            - CreateSFXRequestOutputSFX
+            - CreateSFXRequestOutputSpeech
           default: mix
           description: |-
-            Which track to return. `mix` is the generated sound with any
-            preserved speech, `sfx` is the generated sound alone and `speech`
-            is the clip's own speech separated out. A clip without speech has
-            no `speech` track.
+            Video input only. Which track to return. `mix` is the generated
+            sound with any preserved speech, `sfx` is the generated sound
+            alone and `speech` is the clip's own speech separated out. A
+            clip without speech has no `speech` track.
+        prompt_influence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: |-
+            Text prompt only. How closely the generation follows the prompt.
+            Higher values stay closer to the prompt, lower values allow more
+            variation. Omit to use the provider default. Only models with
+            prompt-influence support honor it - a model that cannot honor it
+            rejects the request with `400 Bad Request`.
+        loop:
+          type: boolean
+          description: Text prompt only. Whether to generate a clip that loops seamlessly.
         response_format:
           type: string
           enum:
@@ -3592,7 +3583,6 @@ components:
           description: The audio format of the response.
       required:
         - model
-        - video
     CreateMusicRequest:
       type: object
       description: |
@@ -3689,12 +3679,26 @@ components:
             the generated mix is laid onto the clip - the separated tracks come
             back as audio from `POST /audio/sfx` - and `sfx-1.6` with
             `preserve_speech` caps the scored window at 60 seconds.
+        start_offset_seconds:
+          type: number
+          minimum: 0
+          default: 0
+          description: |-
+            Video input only. Where in the clip the dubbed window starts, in
+            seconds.
+        preserve_speech:
+          type: boolean
+          description: |-
+            Video input only. Keep the speech already in the clip under the
+            generated sound. Omit to use the provider default.
         seconds:
           type: string
           description: |-
             Requested duration of the generated video in seconds, as a string
             (e.g. `4`, `8`, `12`). Providers accept a limited set of values;
             omit to use the provider default. Ignored when `audio` is present.
+            With `video` it is the length of the dubbed window, at least 1,
+            counted from `start_offset_seconds`.
         size:
           type: string
           description: |-
