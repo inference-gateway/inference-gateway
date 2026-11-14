@@ -2,7 +2,6 @@ package sfx
 
 import (
 	"encoding/json"
-	"mime/multipart"
 	"testing"
 	"time"
 
@@ -181,37 +180,47 @@ func TestJob(t *testing.T) {
 	})
 }
 
-func videoForm(values map[string]string) *multipart.Form {
-	form := &multipart.Form{Value: map[string][]string{}}
-	for key, value := range values {
-		form.Value[key] = []string{value}
-	}
-	return form
+const (
+	testAssetID  = "ast_1"
+	testVideoURL = "https://cdn.example.com/scene.mov"
+)
+
+func videoJobBody(t *testing.T, req types.CreateSFXRequest, video MediaRef) map[string]any {
+	t.Helper()
+	score, err := FromVideo(testModel, req)
+	require.NoError(t, err)
+	var body map[string]any
+	require.NoError(t, json.Unmarshal(score.Body(video), &body))
+	return body
 }
 
 func TestFromVideo(t *testing.T) {
 	t.Run("scores the uploaded asset for the rest of the clip", func(t *testing.T) {
-		out, err := FromVideo(testModel, videoForm(map[string]string{"prompt": "office ambience"}), "ast_1")
-		require.NoError(t, err)
+		body := videoJobBody(t, types.CreateSFXRequest{Prompt: "office ambience"}, AssetRef(testAssetID))
 
-		var body map[string]any
-		require.NoError(t, json.Unmarshal(out, &body))
 		assert.Equal(t, testModel, body["model"])
-		assert.Equal(t, map[string]any{"video": map[string]any{"type": "asset", "id": "ast_1"}, "prompt": "office ambience"}, body["input"])
+		assert.Equal(t, map[string]any{"video": map[string]any{"type": "asset", "id": testAssetID}, "prompt": "office ambience"}, body["input"])
 		assert.Equal(t, map[string]any{"format": "mp3_128"}, body["output"])
 		assert.NotContains(t, body, "duration_ms", "an omitted duration scores the rest of the clip")
 		assert.NotContains(t, body, "start_offset_ms")
 		assert.NotContains(t, body, "controls", "the mix with the provider's speech default needs no controls")
 	})
 
-	t.Run("passes the window and the speech choice through", func(t *testing.T) {
-		out, err := FromVideo(testModel, videoForm(map[string]string{
-			"duration_seconds": "12.5", "start_offset_seconds": "3", "preserve_speech": "true", "output": OutputSpeech, "response_format": "flac",
-		}), "ast_1")
-		require.NoError(t, err)
+	t.Run("references a URL for Mirelo to fetch", func(t *testing.T) {
+		body := videoJobBody(t, types.CreateSFXRequest{}, URLRef(testVideoURL))
 
-		var body map[string]any
-		require.NoError(t, json.Unmarshal(out, &body))
+		assert.Equal(t, map[string]any{"video": map[string]any{"type": "url", "url": testVideoURL}}, body["input"])
+	})
+
+	t.Run("passes the window and the speech choice through", func(t *testing.T) {
+		body := videoJobBody(t, types.CreateSFXRequest{
+			DurationSeconds:    ptr(float32(12.5)),
+			StartOffsetSeconds: ptr(float32(3)),
+			PreserveSpeech:     ptr(true),
+			Output:             ptr(types.CreateSFXRequestOutputSpeech),
+			ResponseFormat:     ptr(types.CreateSFXRequestResponseFormatFlac),
+		}, AssetRef(testAssetID))
+
 		assert.Equal(t, float64(12500), body["duration_ms"])
 		assert.Equal(t, float64(3000), body["start_offset_ms"])
 		assert.Equal(t, map[string]any{"preserve_speech": true, "separate_speech": true}, body["controls"])
@@ -219,28 +228,26 @@ func TestFromVideo(t *testing.T) {
 	})
 
 	t.Run("the sfx track turns speech preservation off unless asked", func(t *testing.T) {
-		out, err := FromVideo(testModel, videoForm(map[string]string{"output": OutputSFX}), "ast_1")
-		require.NoError(t, err)
+		body := videoJobBody(t, types.CreateSFXRequest{Output: ptr(types.CreateSFXRequestOutputSFX)}, AssetRef(testAssetID))
 
-		var body map[string]any
-		require.NoError(t, json.Unmarshal(out, &body))
 		assert.Equal(t, map[string]any{"preserve_speech": false, "separate_speech": true}, body["controls"])
 	})
 
 	tests := []struct {
 		name    string
-		values  map[string]string
+		req     types.CreateSFXRequest
 		wantErr string
 	}{
-		{"an unknown track", map[string]string{"output": "music"}, "'output' field must be one of"},
-		{"a window shorter than a second", map[string]string{"duration_seconds": "0.5"}, "'duration_seconds' field must be a number of at least 1"},
-		{"a negative offset", map[string]string{"start_offset_seconds": "-1"}, "'start_offset_seconds'"},
-		{"a non-boolean preserve_speech", map[string]string{"preserve_speech": "maybe"}, "'preserve_speech' field must be true or false"},
-		{"an unsupported format", map[string]string{"response_format": "pcm"}, supportedFormats},
+		{"an unknown track", types.CreateSFXRequest{Output: ptr(types.CreateSFXRequestOutput("music"))}, "'output' field must be one of"},
+		{"a window shorter than a second", types.CreateSFXRequest{DurationSeconds: ptr(float32(0.5))}, "'duration_seconds' field must be a number of at least 1"},
+		{"a negative offset", types.CreateSFXRequest{StartOffsetSeconds: ptr(float32(-1))}, "'start_offset_seconds'"},
+		{"loop, a text prompt field", types.CreateSFXRequest{Loop: ptr(true)}, "'loop'"},
+		{"prompt_influence, a text prompt field", types.CreateSFXRequest{PromptInfluence: ptr(float32(0.5))}, "'prompt_influence'"},
+		{"an unsupported format", types.CreateSFXRequest{ResponseFormat: ptr(types.CreateSFXRequestResponseFormatPcm)}, supportedFormats},
 	}
 	for _, tt := range tests {
 		t.Run("rejects "+tt.name, func(t *testing.T) {
-			_, err := FromVideo(testModel, videoForm(tt.values), "ast_1")
+			_, err := FromVideo(testModel, tt.req)
 			require.Error(t, err)
 			assert.Contains(t, err.Error(), tt.wantErr)
 		})

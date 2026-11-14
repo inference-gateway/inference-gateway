@@ -6,7 +6,6 @@ import (
 	"cmp"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"strings"
 
 	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
@@ -29,11 +28,6 @@ const (
 	maxTrackBytes = 64 << 20
 )
 
-// unscorableFields are the gateway video-to-sfx fields ElevenLabs'
-// video-to-music request has no counterpart for. They are refused rather than
-// dropped, so a caller never gets audio that ignores what it asked for.
-var unscorableFields = []string{sfx.FieldPreserveSpeech, sfx.FieldStartOffsetSeconds, sfx.FieldDurationSeconds}
-
 var trackContentTypes = map[string]string{
 	string(types.CreateSFXRequestResponseFormatMp3):  "audio/mpeg",
 	string(types.CreateSFXRequestResponseFormatOpus): "audio/ogg",
@@ -51,23 +45,25 @@ type VideoMusic struct {
 	SeparateTracks bool
 }
 
-// SFXFromVideo rewrites a gateway video-to-sfx form into the ElevenLabs
-// video-to-music request: the clip is scored with the sound effects it cues
-// layered in, and the `sfx` track alone is asked for as a separate track.
-// model is the request model with the provider prefix already stripped.
-func SFXFromVideo(model string, form *multipart.Form) (VideoMusic, error) {
-	for _, field := range unscorableFields {
-		if formValue(form, field) != "" {
-			return VideoMusic{}, fmt.Errorf("elevenlabs does not support '%s' when scoring a video, omit the field", field)
-		}
+// SFXFromVideo rewrites a gateway CreateSFXRequest that sets `video` into the
+// ElevenLabs video-to-music request: the clip is scored with the sound effects
+// it cues layered in, and the `sfx` track alone is asked for as a separate
+// track. The endpoint takes uploaded clips only, so a URL is refused. model is
+// the request model with the provider prefix already stripped.
+func SFXFromVideo(model string, req types.CreateSFXRequest, video sfx.Video) (VideoMusic, error) {
+	if video.URL != "" {
+		return VideoMusic{}, fmt.Errorf("elevenlabs takes the '%s' field as a base64 data:video/... URI, not a URL", sfx.FieldVideo)
+	}
+	if field := unscorableField(req); field != "" {
+		return VideoMusic{}, fmt.Errorf("elevenlabs does not support '%s' when scoring a video, omit the field", field)
 	}
 
-	output := cmp.Or(formValue(form, sfx.FieldOutput), sfx.OutputMix)
+	output := sfx.Output(req)
 	if output != sfx.OutputMix && output != sfx.OutputSFX {
 		return VideoMusic{}, fmt.Errorf("elevenlabs does not support '%s' %q when scoring a video, supported outputs: %s, %s", sfx.FieldOutput, output, sfx.OutputMix, sfx.OutputSFX)
 	}
 
-	responseFormat := cmp.Or(formValue(form, sfx.FieldResponseFormat), string(types.CreateSFXRequestResponseFormatMp3))
+	responseFormat := cmp.Or(derefSFXFormat(req.ResponseFormat), string(types.CreateSFXRequestResponseFormatMp3))
 	format, err := OutputFormat(responseFormat)
 	if err != nil {
 		return VideoMusic{}, err
@@ -79,13 +75,28 @@ func SFXFromVideo(model string, form *multipart.Form) (VideoMusic, error) {
 		ContentType:    trackContentTypes[responseFormat],
 		SeparateTracks: output == sfx.OutputSFX,
 	}
-	if prompt := formValue(form, sfx.FieldPrompt); prompt != "" {
-		music.Fields[fieldDescription] = prompt
+	if req.Prompt != "" {
+		music.Fields[fieldDescription] = req.Prompt
 	}
 	if music.SeparateTracks {
 		music.Fields[fieldSeparateTracks] = enabled
 	}
 	return music, nil
+}
+
+// unscorableField names the first field the request sets that ElevenLabs'
+// video-to-music request has no counterpart for, "" when none. It is refused
+// rather than dropped, so a caller never gets audio that ignores it.
+func unscorableField(req types.CreateSFXRequest) string {
+	switch {
+	case req.PreserveSpeech != nil:
+		return sfx.FieldPreserveSpeech
+	case req.StartOffsetSeconds != nil:
+		return sfx.FieldStartOffsetSeconds
+	case req.DurationSeconds != nil:
+		return sfx.FieldDurationSeconds
+	}
+	return sfx.TextOnlyField(req)
 }
 
 // EffectsTrack unpacks the sound-effects track from the archive ElevenLabs

@@ -8,7 +8,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"strings"
 	"time"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
@@ -19,24 +18,32 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// SFXHandler implements POST /v1/audio/sfx, the gateway extension that
-// generates a non-speech audio clip - a sound effect or ambience - from a text
-// prompt. OpenAI has no sound-effects endpoint, so the request mirrors
-// /audio/speech (JSON in, raw audio bytes out) and only providers that carry an
-// Sfx endpoint (currently elevenlabs and mirelo) can serve it; the rest receive
-// a 400, mirroring the schema's SFXNotSupported response.
-//
-// The endpoint shares the AUDIO_ENABLED toggle with /audio/speech.
+// SFXHandler implements POST /v1/audio/sfx, the gateway extension that turns a
+// text prompt, or the clip set in `video`, into a non-speech audio clip, shaped
+// like /audio/speech (JSON in, raw audio bytes out). Only providers with an SFX
+// endpoint (elevenlabs and mirelo) serve it and the rest answer 400. It shares
+// the AUDIO_ENABLED toggle with /audio/speech.
 func (router *RouterImpl) SFXHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.audioEnabled(w) {
 		return
 	}
 
-	if strings.HasPrefix(r.Header.Get("Content-Type"), contentTypeMultipart) {
-		router.serveSFXFromVideo(w, r)
+	body, ok := router.readBodyOrRespond(w, r)
+	if !ok {
+		return
+	}
+	var req types.CreateSFXRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		router.logger.Error("failed to decode request", err)
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to decode request"})
+		return
+	}
+	if req.Video != nil {
+		router.serveSFXFromVideo(w, r, req)
 		return
 	}
 
+	r.Body = io.NopCloser(bytes.NewReader(body))
 	router.proxyJSONBody(w, r, jsonProxy{
 		apiName:      sfxAPIName,
 		exampleModel: "elevenlabs/eleven_text_to_sound_v2",
@@ -72,7 +79,6 @@ const (
 	sfxVideoNotSupportedMessage = "Video scoring is not supported by this provider yet."
 	sfxVideoExampleModel        = "mirelo/sfx-2.0"
 
-	contentTypeMultipart  = "multipart/form-data"
 	mireloNotReadyMessage = "The sound effect was not ready in time. Retry the request or ask for a shorter clip."
 	uploadFailedMessage   = "Failed to upload the video to the provider"
 
@@ -208,28 +214,17 @@ func pause(r *http.Request, d time.Duration) bool {
 	}
 }
 
-// serveSFXFromVideo answers a multipart /v1/audio/sfx request: the uploaded
-// video is scored by the provider and the wanted track is streamed back as raw
+// serveSFXFromVideo answers a /v1/audio/sfx request that sets `video`: the
+// clip is scored by the provider and the wanted track is streamed back as raw
 // audio. Providers without an asset-and-job flow are served by their own
 // scorer.
-func (router *RouterImpl) serveSFXFromVideo(w http.ResponseWriter, r *http.Request) {
-	form, ok := router.parseBoundedMultipart(w, r)
-	if !ok {
-		return
-	}
-	defer func() {
-		if r.MultipartForm != nil {
-			_ = r.MultipartForm.RemoveAll()
-		}
-	}()
-
-	originalModel := formValue(form, formFieldModel)
-	providerID, model, msg := router.resolveProvider(r, originalModel, sfxVideoExampleModel)
+func (router *RouterImpl) serveSFXFromVideo(w http.ResponseWriter, r *http.Request, req types.CreateSFXRequest) {
+	providerID, model, msg := router.resolveProvider(r, req.Model, sfxVideoExampleModel)
 	if msg != "" {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
-	if reason := router.modelDenied(originalModel); reason != "" {
+	if reason := router.modelDenied(req.Model); reason != "" {
 		middlewares.WriteJSON(w, http.StatusForbidden, ErrorResponse{Error: reason})
 		return
 	}
@@ -243,38 +238,48 @@ func (router *RouterImpl) serveSFXFromVideo(w http.ResponseWriter, r *http.Reque
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
-	videos := form.File[formFieldVideo]
-	if len(videos) == 0 {
-		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("The '%s' file is required to score a video.", formFieldVideo)})
+	video, err := sfx.ParseVideo(*req.Video)
+	if err != nil {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
 	if score, translated := sfxVideoScorers[providerID]; translated {
-		score(router, w, r, provider, model, createPath, form)
+		score(router, w, r, provider, model, createPath, req, video)
 		return
 	}
 
-	assetsPath, msg := router.providerEndpoint(provider, func(e types.Endpoints) *string { return e.Assets }, sfxAPIName, sfxVideoNotSupportedMessage)
-	if msg != "" {
-		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
-		return
-	}
-
-	assetID, ok := router.uploadAsset(w, r, provider, assetsPath, videos[0])
-	if !ok {
-		return
-	}
-	body, err := sfx.FromVideo(model, form, assetID)
+	score, err := sfx.FromVideo(model, req)
 	if err != nil {
 		router.logger.Error("failed to translate request for provider", err, "api", sfxAPIName, "provider", providerID)
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return
 	}
-	router.relaySFXJob(w, r, provider, upstreamRequest{endpointPath: createPath, body: bytes.NewReader(body), contentType: contentTypeJSON}, formValue(form, sfx.FieldOutput))
+	ref, ok := router.videoRef(w, r, provider, video)
+	if !ok {
+		return
+	}
+	router.relaySFXJob(w, r, provider, upstreamRequest{endpointPath: createPath, body: bytes.NewReader(score.Body(ref)), contentType: contentTypeJSON}, sfx.Output(req))
+}
+
+// videoRef points the provider at the clip: a URL is passed on as is, with no
+// upload, and inline bytes are uploaded as an asset first. Failures are
+// already written to w, reported by a false ok.
+func (router *RouterImpl) videoRef(w http.ResponseWriter, r *http.Request, provider core.IProvider, video sfx.Video) (sfx.MediaRef, bool) {
+	if video.URL != "" {
+		return sfx.URLRef(video.URL), true
+	}
+	assetsPath, msg := router.providerEndpoint(provider, func(e types.Endpoints) *string { return e.Assets }, sfxAPIName, sfxVideoNotSupportedMessage)
+	if msg != "" {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
+		return sfx.MediaRef{}, false
+	}
+	assetID, ok := router.storeAsset(w, r, provider, assetsPath, video.Filename(), video.ContentType, bytes.NewReader(video.Content), int64(len(video.Content)))
+	return sfx.AssetRef(assetID), ok
 }
 
 // sfxVideoScorers score a video for the providers whose video-to-sfx API is
 // not an asset upload followed by a job, in place of the default flow.
-var sfxVideoScorers = map[types.Provider]func(router *RouterImpl, w http.ResponseWriter, r *http.Request, provider core.IProvider, model, endpointPath string, form *multipart.Form){
+var sfxVideoScorers = map[types.Provider]func(router *RouterImpl, w http.ResponseWriter, r *http.Request, provider core.IProvider, model, endpointPath string, req types.CreateSFXRequest, video sfx.Video){
 	constants.ElevenlabsID: (*RouterImpl).elevenlabsSFXFromVideo,
 }
 
@@ -283,8 +288,8 @@ var sfxVideoScorers = map[types.Provider]func(router *RouterImpl, w http.Respons
 // Asking for the sound effects alone answers an archive of separate tracks,
 // which the music track is dropped from here.
 // shortcut: the score must finish inside SERVER_READ_TIMEOUT, which the operator raises for long clips - give the call its own window if that proves too coarse.
-func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.Request, provider core.IProvider, model, endpointPath string, form *multipart.Form) {
-	music, err := elevenlabs.SFXFromVideo(model, form)
+func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.Request, provider core.IProvider, model, endpointPath string, req types.CreateSFXRequest, video sfx.Video) {
+	music, err := elevenlabs.SFXFromVideo(model, req, video)
 	if err != nil {
 		router.logger.Error("failed to translate request for provider", err, "api", sfxAPIName, "provider", provider.GetName())
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -294,7 +299,7 @@ func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
 	go func() {
-		pw.CloseWithError(writeVideoMusicForm(mw, music.Fields, form.File[formFieldVideo]))
+		pw.CloseWithError(writeVideoMusicForm(mw, music.Fields, video))
 	}()
 
 	router.extendWriteDeadline(w)
@@ -338,31 +343,22 @@ func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.
 }
 
 // writeVideoMusicForm writes the video-to-music upload: the request's fields,
-// then every clip to score as a repeated part, announced with the container
-// type the provider needs to decode it.
-func writeVideoMusicForm(mw *multipart.Writer, fields map[string]string, videos []*multipart.FileHeader) error {
+// then the clip to score, announced with the container type the provider needs
+// to decode it.
+func writeVideoMusicForm(mw *multipart.Writer, fields map[string]string, video sfx.Video) error {
 	for name, value := range fields {
 		if err := mw.WriteField(name, value); err != nil {
 			return err
 		}
 	}
-	for _, video := range videos {
-		content, contentType, file, err := openFormFile(video)
-		if err != nil {
-			return err
-		}
-		err = writeFilePart(mw, elevenlabs.VideoClipPart, video.Filename, sfx.VideoContentType(video.Filename, contentType), content)
-		_ = file.Close()
-		if err != nil {
-			return err
-		}
+	if err := writeFilePart(mw, elevenlabs.VideoClipPart, video.Filename(), video.ContentType, bytes.NewReader(video.Content)); err != nil {
+		return err
 	}
 	return mw.Close()
 }
 
-// uploadAsset stores the uploaded video with the provider and returns the
-// asset id a generation can reference. The bytes go to the signed URL the
-// provider's upload ticket names, without the API key.
+// uploadAsset stores an uploaded multipart video with the provider and returns
+// the asset id a generation can reference, as storeAsset does.
 func (router *RouterImpl) uploadAsset(w http.ResponseWriter, r *http.Request, provider core.IProvider, assetsPath string, video *multipart.FileHeader) (string, bool) {
 	content, contentType, file, err := openFormFile(video)
 	if err != nil {
@@ -370,8 +366,13 @@ func (router *RouterImpl) uploadAsset(w http.ResponseWriter, r *http.Request, pr
 		return "", false
 	}
 	defer file.Close()
-	contentType = sfx.VideoContentType(video.Filename, contentType)
+	return router.storeAsset(w, r, provider, assetsPath, video.Filename, sfx.VideoContentType(video.Filename, contentType), content, video.Size)
+}
 
+// storeAsset stores a clip of size bytes with the provider and returns the
+// asset id a generation can reference. The bytes go to the signed URL the
+// provider's upload ticket names, without the API key.
+func (router *RouterImpl) storeAsset(w http.ResponseWriter, r *http.Request, provider core.IProvider, assetsPath, filename, contentType string, content io.Reader, size int64) (string, bool) {
 	ticket, ok := router.assetTicket(w, r, provider, assetsPath, contentType)
 	if !ok {
 		return "", false
@@ -387,7 +388,7 @@ func (router *RouterImpl) uploadAsset(w http.ResponseWriter, r *http.Request, pr
 	ctx, cancel := context.WithTimeout(r.Context(), router.cfg.Server.ReadTimeout)
 	defer cancel()
 
-	body, formType, length, err := sfx.UploadBody(ticket, video.Filename, contentType, content, video.Size)
+	body, formType, length, err := sfx.UploadBody(ticket, filename, contentType, content, size)
 	if err != nil {
 		router.logger.Error("failed to build the upload form", err)
 		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})

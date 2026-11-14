@@ -37,7 +37,7 @@ var videoJobStatuses = map[string]types.VideoJobStatus{
 func Dub(model string, form *multipart.Form, assetID string) ([]byte, error) {
 	body := videoBody{
 		Model:  model,
-		Input:  videoInput{Video: mediaRef{Type: mediaTypeAsset, ID: assetID}, Prompt: formValue(form, FieldPrompt)},
+		Input:  videoInput{Video: AssetRef(assetID), Prompt: formValue(form, FieldPrompt)},
 		Output: sfxOutput{Media: mediaVideo},
 	}
 

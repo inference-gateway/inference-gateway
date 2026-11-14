@@ -322,6 +322,23 @@ func (router *RouterImpl) readBoundedBody(r *http.Request) (body []byte, tooLarg
 	return body, len(body) > maxBodySize, nil
 }
 
+// readBodyOrRespond reads the request body as readBoundedBody does, answering
+// 400 when it cannot be read and 413 when it exceeds the limit, which a false
+// ok reports.
+func (router *RouterImpl) readBodyOrRespond(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
+	body, tooLarge, err := router.readBoundedBody(r)
+	if err != nil {
+		router.logger.Error("failed to read request body", err)
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
+		return nil, false
+	}
+	if tooLarge {
+		middlewares.WriteJSON(w, http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+		return nil, false
+	}
+	return body, true
+}
+
 // modelDenied reports whether model is blocked by ALLOWED_MODELS /
 // DISALLOWED_MODELS, returning the client-facing reason ("" when permitted).
 // ALLOWED_MODELS takes precedence: when it is set, DISALLOWED_MODELS is ignored.

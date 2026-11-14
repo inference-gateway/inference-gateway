@@ -19,7 +19,7 @@ import (
 // Fixtures for the ElevenLabs video-to-music tests.
 const (
 	elevenlabsVideoMusicModel = "music_v2_5"
-	elevenlabsVideoName       = "clip.mov"
+	elevenlabsVideoName       = "video.mov"
 	elevenlabsVideoType       = "video/quicktime"
 	elevenlabsVideoBytes      = "FAKE-VIDEO-BYTES"
 	elevenlabsMixBytes        = "FAKE-SCORED-MIX"
@@ -99,22 +99,18 @@ func elevenlabsTrackArchive(t *testing.T) []byte {
 	return archive.Bytes()
 }
 
-func elevenlabsVideoFields(extra ...imagesMultipartField) []imagesMultipartField {
-	return append([]imagesMultipartField{
-		{name: "model", value: "elevenlabs/" + elevenlabsVideoMusicModel},
-		{name: "video", filename: elevenlabsVideoName, value: elevenlabsVideoBytes},
-	}, extra...)
+func elevenlabsVideoRequest(t *testing.T, extra map[string]any) string {
+	t.Helper()
+	return sfxVideoRequest(t, "elevenlabs/"+elevenlabsVideoMusicModel, inlineVideo(elevenlabsVideoType, elevenlabsVideoBytes), extra)
 }
 
-// TestSFXHandler_ElevenlabsScoresAVideo proves the clip reaches ElevenLabs'
-// video-to-music endpoint with the sfx cues enabled and the mixed audio comes
-// back as raw bytes.
+// TestSFXHandler_ElevenlabsScoresAVideo proves the decoded clip reaches
+// ElevenLabs' video-to-music endpoint with the sfx cues enabled and the mixed
+// audio comes back as raw bytes.
 func TestSFXHandler_ElevenlabsScoresAVideo(t *testing.T) {
 	u := newElevenlabsVideoUpstream(t)
 
-	w := postSFXVideo(t, u.server.URL, elevenlabsVideoFields(
-		imagesMultipartField{name: "prompt", value: "soft keyboard taps"},
-	))
+	w := postSFX(t, u.server.URL, elevenlabsVideoRequest(t, map[string]any{"prompt": "soft keyboard taps"}))
 
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 	assert.Equal(t, elevenlabsMixBytes, w.Body.String())
@@ -126,9 +122,9 @@ func TestSFXHandler_ElevenlabsScoresAVideo(t *testing.T) {
 	assert.Equal(t, "soft keyboard taps", u.fields["description"], "the prompt guides the score")
 	assert.NotContains(t, u.fields, elevenlabsSeparateTracks, "the mix is one file")
 	assert.Equal(t, 1, u.clips)
-	assert.Equal(t, elevenlabsVideoName, u.clipName)
-	assert.Equal(t, elevenlabsVideoType, u.clipType, "a .mov is announced as QuickTime even when sniffing cannot tell")
-	assert.Equal(t, elevenlabsVideoBytes, u.clipBytes)
+	assert.Equal(t, elevenlabsVideoName, u.clipName, "an inline clip is named after its media type")
+	assert.Equal(t, elevenlabsVideoType, u.clipType, "the data URI's media type is announced")
+	assert.Equal(t, elevenlabsVideoBytes, u.clipBytes, "the clip is decoded before it is sent")
 }
 
 // TestSFXHandler_ElevenlabsAnswersTheEffectsTrack proves asking for the sound
@@ -137,9 +133,7 @@ func TestSFXHandler_ElevenlabsScoresAVideo(t *testing.T) {
 func TestSFXHandler_ElevenlabsAnswersTheEffectsTrack(t *testing.T) {
 	u := newElevenlabsVideoUpstream(t)
 
-	w := postSFXVideo(t, u.server.URL, elevenlabsVideoFields(
-		imagesMultipartField{name: sfx.FieldOutput, value: sfx.OutputSFX},
-	))
+	w := postSFX(t, u.server.URL, elevenlabsVideoRequest(t, map[string]any{sfx.FieldOutput: sfx.OutputSFX}))
 
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 	assert.Equal(t, "true", u.fields[elevenlabsSeparateTracks])
@@ -150,23 +144,40 @@ func TestSFXHandler_ElevenlabsAnswersTheEffectsTrack(t *testing.T) {
 // TestSFXHandler_ElevenlabsRefusesUnservableFields proves a field ElevenLabs
 // has no counterpart for is refused by name instead of being dropped.
 func TestSFXHandler_ElevenlabsRefusesUnservableFields(t *testing.T) {
-	for _, field := range []imagesMultipartField{
-		{name: sfx.FieldPreserveSpeech, value: "true"},
-		{name: sfx.FieldStartOffsetSeconds, value: "3"},
-		{name: sfx.FieldDurationSeconds, value: "5"},
-		{name: sfx.FieldOutput, value: sfx.OutputSpeech},
-		{name: sfx.FieldResponseFormat, value: "flac"},
+	for field, value := range map[string]any{
+		sfx.FieldPreserveSpeech:     true,
+		sfx.FieldStartOffsetSeconds: 3,
+		sfx.FieldDurationSeconds:    5,
+		sfx.FieldOutput:             sfx.OutputSpeech,
+		sfx.FieldResponseFormat:     "flac",
+		sfx.FieldLoop:               true,
+		sfx.FieldPromptInfluence:    0.5,
 	} {
-		t.Run(field.name+"="+field.value, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				t.Error("the request must be rejected before it reaches the provider")
-			}))
-			defer server.Close()
-
-			w := postSFXVideo(t, server.URL, elevenlabsVideoFields(field))
+		t.Run(field, func(t *testing.T) {
+			w := postSFX(t, unreachableUpstream(t), elevenlabsVideoRequest(t, map[string]any{field: value}))
 
 			require.Equal(t, http.StatusBadRequest, w.Code)
-			assert.Contains(t, w.Body.String(), field.name, "the caller must learn which field was refused")
+			assert.Contains(t, w.Body.String(), field, "the caller must learn which field was refused")
 		})
 	}
+}
+
+// TestSFXHandler_ElevenlabsRefusesAVideoURL proves a URL is refused, since
+// ElevenLabs' video-to-music endpoint takes uploaded clips only and the gateway
+// never downloads a client URL itself.
+func TestSFXHandler_ElevenlabsRefusesAVideoURL(t *testing.T) {
+	w := postSFX(t, unreachableUpstream(t), sfxVideoRequest(t, "elevenlabs/"+elevenlabsVideoMusicModel, mireloVideoURL, nil))
+
+	require.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "not a URL")
+}
+
+// unreachableUpstream fails the test if the gateway calls it.
+func unreachableUpstream(t *testing.T) string {
+	t.Helper()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("the request must be rejected before it reaches the provider")
+	}))
+	t.Cleanup(server.Close)
+	return server.URL
 }

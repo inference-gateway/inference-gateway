@@ -131,8 +131,7 @@ const (
 	// formFieldModel is the model field of a multipart upload.
 	formFieldModel = "model"
 
-	// formFieldVideo is the uploaded video part served to /audio/sfx and
-	// /videos.
+	// formFieldVideo is the uploaded video part a /videos dub renders from.
 	formFieldVideo = "video"
 
 	// multipartMaxMemory caps how much of a multipart upload is kept in

@@ -748,19 +748,32 @@ curl -X POST http://localhost:8080/v1/audio/sfx -d '{
 
 #### Scoring a video
 
-The same endpoint scores a video when the body is `multipart/form-data` with
-a `video` part: Mirelo watches the clip and generates the sound that fits it.
-The gateway uploads the clip to Mirelo as an asset, so the request body limit
-(`SERVER_MAX_REQUEST_BODY_SIZE`, 10 MiB by default) has to cover the file. Omit
-`duration_seconds` to score the whole clip, which is also what Mirelo bills
-(`duration × variants`, same rate as text-to-sfx).
+The same endpoint scores a video when the JSON body sets `video`: Mirelo
+watches the clip and generates the sound that fits it. `video` is an https URL
+or a base64 `data:video/...` URI. A URL is handed to Mirelo, which downloads the
+clip itself, so the gateway's request body limit does not apply. A data URI is
+decoded and uploaded to Mirelo as an asset. It is about a third larger than the
+file and has to fit `SERVER_MAX_REQUEST_BODY_SIZE` (10 MiB by default), so send
+large clips as a URL. Omit `duration_seconds` to score the whole clip, which is
+also what Mirelo bills (`duration × variants`, same rate as text-to-sfx).
 
 ```bash
 curl -X POST http://localhost:8080/v1/audio/sfx \
-  -F model="mirelo/sfx-2.0" \
-  -F video="@scene.mov" \
-  -F prompt="soft keyboard taps, gentle office ambience" \
-  -o scored.mp3
+  -H "Content-Type: application/json" \
+  -d '{
+  "model": "mirelo/sfx-2.0",
+  "video": "https://example.com/scene.mov",
+  "prompt": "soft keyboard taps, gentle office ambience"
+}' -o scored.mp3
+```
+
+A local clip goes inline as a data URI:
+
+```bash
+jq -n --rawfile clip <(base64 < scene.mov | tr -d '\n') \
+  '{model: "mirelo/sfx-2.0", video: ("data:video/quicktime;base64," + $clip)}' |
+  curl -X POST http://localhost:8080/v1/audio/sfx \
+    -H "Content-Type: application/json" -d @- -o scored.mp3
 ```
 
 Optional fields: `prompt`, `duration_seconds` and `start_offset_seconds`
@@ -769,7 +782,8 @@ Optional fields: `prompt`, `duration_seconds` and `start_offset_seconds`
 which picks the track that comes back: `mix` (default), `sfx` (the generated
 sound alone, which turns `preserve_speech` off unless set) or `speech` (the
 clip's dialogue separated out). A clip without dialogue has no `speech` track
-and answers `502`.
+and answers `502`. `loop` and `prompt_influence` only apply to a text prompt and
+answer `400` with a video.
 
 Mirelo does not synthesize speech. For narration, generate the voice with
 `POST /v1/audio/speech` and mix the two files:
@@ -790,25 +804,26 @@ still running after the gateway stops waiting answers `504`:
 ### Scoring a video with ElevenLabs
 
 ElevenLabs scores a video through its video-to-music API, which answers in one
-call instead of as a job: the gateway streams the clip up with the sound-effect
-cues enabled and relays the finished audio. It takes a music model and a paid
-plan, and `response_format` is `mp3` (default), `opus` or `pcm`.
+call instead of as a job: the gateway uploads the clip with the sound-effect
+cues enabled and relays the finished audio. The API takes uploaded files only,
+so `video` has to be a data URI and a URL answers `400`. It takes a music model
+and a paid plan, and `response_format` is `mp3` (default), `opus` or `pcm`.
 
 ```bash
-curl -X POST http://localhost:8080/v1/audio/sfx \
-  -F model="elevenlabs/music_v2_5" \
-  -F video="@scene.mov" \
-  -F prompt="soft keyboard taps, gentle office ambience" \
-  -o scored.mp3
+jq -n --rawfile clip <(base64 < scene.mov | tr -d '\n') \
+  '{model: "elevenlabs/music_v2_5", video: ("data:video/quicktime;base64," + $clip),
+    prompt: "soft keyboard taps, gentle office ambience"}' |
+  curl -X POST http://localhost:8080/v1/audio/sfx \
+    -H "Content-Type: application/json" -d @- -o scored.mp3
 ```
 
-`output=sfx` asks ElevenLabs for separate tracks and answers with the effects
-file unpacked from the archive it returns, leaving the music track behind.
-`preserve_speech`, `output=speech`, `start_offset_seconds` and
-`duration_seconds` have no counterpart there and answer `400` naming the field -
-the whole clip is always scored, dialogue and all. Repeating the `video` part
-scores several clips as one timeline, up to the 10 clips, 200 MB and 600 seconds
-ElevenLabs allows combined, within `SERVER_MAX_REQUEST_BODY_SIZE`.
+`"output": "sfx"` asks ElevenLabs for separate tracks and answers with the
+effects file unpacked from the archive it returns, leaving the music track
+behind. `preserve_speech`, `"output": "speech"`, `start_offset_seconds`,
+`duration_seconds`, `loop` and `prompt_influence` have no counterpart there and
+answer `400` naming the field - the whole clip is always scored, dialogue and
+all. The clip has to fit `SERVER_MAX_REQUEST_BODY_SIZE` as a data URI, and
+ElevenLabs' own limits of 200 MB and 600 seconds.
 
 For a provider without sound-effect support:
 

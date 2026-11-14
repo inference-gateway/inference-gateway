@@ -1,8 +1,10 @@
 package tests
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
+	"maps"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -40,9 +42,9 @@ func mireloSucceededJob(audioURL string) string {
 		`{"index":0,"status":"succeeded","files":{"audio":{"url":"` + audioURL + `","format":"` + mireloAudioFormat + `"}}}]}}}`
 }
 
-func postMireloSFX(t *testing.T, upstreamURL, body string) *httptest.ResponseRecorder {
+func postSFX(t *testing.T, upstreamURL, body string, opts ...func(*config.Config)) *httptest.ResponseRecorder {
 	t.Helper()
-	router := newImagesTestRouter(t, upstreamURL, false, enableAudio)
+	router := newImagesTestRouter(t, upstreamURL, false, append([]func(*config.Config){enableAudio}, opts...)...)
 	r := http.NewServeMux()
 	r.HandleFunc("POST "+sfxPath, router.SFXHandler)
 
@@ -86,7 +88,7 @@ func TestSFXHandler_Mirelo(t *testing.T) {
 	}))
 	defer server.Close()
 
-	w := postMireloSFX(t, server.URL, mireloSFXRequest)
+	w := postSFX(t, server.URL, mireloSFXRequest)
 
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 	assert.Equal(t, mireloAudioBytes, w.Body.String())
@@ -110,7 +112,7 @@ func TestSFXHandler_MireloFailedJob(t *testing.T) {
 	}))
 	defer server.Close()
 
-	w := postMireloSFX(t, server.URL, mireloSFXRequest)
+	w := postSFX(t, server.URL, mireloSFXRequest)
 
 	require.Equal(t, http.StatusBadGateway, w.Code)
 	assert.Contains(t, w.Body.String(), "the prompt was blocked")
@@ -125,7 +127,7 @@ func TestSFXHandler_MireloJobNeverFinishes(t *testing.T) {
 	}))
 	defer server.Close()
 
-	w := postMireloSFX(t, server.URL, mireloSFXRequest)
+	w := postSFX(t, server.URL, mireloSFXRequest)
 
 	require.Equal(t, http.StatusGatewayTimeout, w.Code)
 	assert.Equal(t, sfx.Plan(mireloTestReadTimeout, 0).Requests, requests, "polling must be bounded")
@@ -140,7 +142,7 @@ func TestSFXHandler_MireloRelaysUpstreamError(t *testing.T) {
 	}))
 	defer server.Close()
 
-	w := postMireloSFX(t, server.URL, mireloSFXRequest)
+	w := postSFX(t, server.URL, mireloSFXRequest)
 
 	require.Equal(t, http.StatusPaymentRequired, w.Code)
 	assert.JSONEq(t, upstreamError, w.Body.String())
@@ -156,7 +158,7 @@ func TestSFXHandler_MireloRejectsUntranslatableRequests(t *testing.T) {
 		"response_format":  `{"model":"mirelo/` + mireloSFXModel + `","prompt":"thunder","response_format":"pcm"}`,
 		"prompt_influence": `{"model":"mirelo/` + mireloSFXModel + `","prompt":"thunder","prompt_influence":0.5}`,
 	} {
-		w := postMireloSFX(t, server.URL, body)
+		w := postSFX(t, server.URL, body)
 		require.Equal(t, http.StatusBadRequest, w.Code, field)
 		assert.Contains(t, w.Body.String(), field)
 	}
@@ -174,6 +176,7 @@ const (
 	mireloVideoBytes    = "FAKE-VIDEO-BYTES"
 	mireloVideoName     = "clip.mov"
 	mireloVideoType     = "video/quicktime"
+	mireloVideoURL      = "https://cdn.example.com/scene.mov"
 	mireloAssetNotReady = `{"error":{"code":"asset_not_ready","message":"the upload is still settling"}}`
 )
 
@@ -196,6 +199,7 @@ type mireloVideoUpstream struct {
 	uploadLength   int64
 	uploadOrder    []string
 	uploadFileType string
+	uploadContent  string
 	createBody     map[string]any
 	creates        int
 	refuseCreates  int
@@ -264,52 +268,56 @@ func (u *mireloVideoUpstream) recordUpload(t *testing.T, r *http.Request) {
 		u.uploadOrder = append(u.uploadOrder, part.FormName())
 		if part.FormName() == sfx.UploadFilePart {
 			u.uploadFileType = part.Header.Get("Content-Type")
+			content, err := io.ReadAll(part)
+			require.NoError(t, err)
+			u.uploadContent = string(content)
 		}
 	}
 }
 
-func postSFXVideo(t *testing.T, upstreamURL string, fields []imagesMultipartField, opts ...func(*config.Config)) *httptest.ResponseRecorder {
+// inlineVideo is a clip sent inline as a base64 data URI.
+func inlineVideo(contentType, content string) string {
+	return "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString([]byte(content))
+}
+
+// sfxVideoRequest is a /v1/audio/sfx JSON body scoring video with model, plus
+// any extra fields.
+func sfxVideoRequest(t *testing.T, model, video string, extra map[string]any) string {
 	t.Helper()
-	router := newImagesTestRouter(t, upstreamURL, false, append([]func(*config.Config){enableAudio}, opts...)...)
-	r := http.NewServeMux()
-	r.HandleFunc("POST "+sfxPath, router.SFXHandler)
-
-	body, contentType := buildImagesMultipart(t, fields)
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", sfxPath, body)
-	req.Header.Set("Content-Type", contentType)
-	r.ServeHTTP(w, req)
-	return w
+	body := map[string]any{"model": model, "video": video}
+	maps.Copy(body, extra)
+	raw, err := json.Marshal(body)
+	require.NoError(t, err)
+	return string(raw)
 }
 
-func mireloVideoFields(extra ...imagesMultipartField) []imagesMultipartField {
-	return append([]imagesMultipartField{
-		{name: "model", value: "mirelo/" + mireloSFXModel},
-		{name: "video", filename: mireloVideoName, value: mireloVideoBytes},
-	}, extra...)
+func mireloVideoRequest(t *testing.T, extra map[string]any) string {
+	t.Helper()
+	return sfxVideoRequest(t, "mirelo/"+mireloSFXModel, inlineVideo(mireloVideoType, mireloVideoBytes), extra)
 }
 
-// TestSFXHandler_MireloScoresAVideo proves the upload goes through Mirelo's
-// ticket without the API key, the job scores the asset for the rest of the
-// clip, and the wanted track comes back as raw audio.
+// TestSFXHandler_MireloScoresAVideo proves an inline clip is decoded and
+// uploaded through Mirelo's ticket without the API key, the job scores the
+// asset for the rest of the clip, and the wanted track comes back as raw audio.
 func TestSFXHandler_MireloScoresAVideo(t *testing.T) {
 	u := newMireloVideoUpstream(t)
 
-	w := postSFXVideo(t, u.server.URL, mireloVideoFields(
-		imagesMultipartField{name: "prompt", value: "soft keyboard taps"},
-		imagesMultipartField{name: "preserve_speech", value: "true"},
-		imagesMultipartField{name: "output", value: sfx.OutputSpeech},
-	))
+	w := postSFX(t, u.server.URL, mireloVideoRequest(t, map[string]any{
+		"prompt":          "soft keyboard taps",
+		"preserve_speech": true,
+		"output":          sfx.OutputSpeech,
+	}))
 
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 	assert.Equal(t, mireloSpeechBytes, w.Body.String(), "the speech track was asked for")
 	assert.Equal(t, "audio/wav", w.Header().Get("Content-Type"))
 
-	assert.Equal(t, mireloVideoType, u.ticketType, "a .mov is announced as QuickTime even when sniffing cannot tell")
+	assert.Equal(t, mireloVideoType, u.ticketType, "the data URI's media type is announced to the ticket")
 	assert.Empty(t, u.uploadAuth, "the signed upload must not receive the provider key")
 	assert.Equal(t, []string{"Policy", "key", sfx.UploadFilePart}, u.uploadOrder, "ticket fields go before the file")
 	assert.Positive(t, u.uploadLength, "the upload must announce its length, S3 refuses a chunked post")
 	assert.Equal(t, mireloVideoType, u.uploadFileType)
+	assert.Equal(t, mireloVideoBytes, u.uploadContent, "the clip is decoded before it is uploaded")
 
 	assert.Equal(t, 1, u.creates)
 	assert.Equal(t, mireloSFXModel, u.createBody["model"])
@@ -318,31 +326,58 @@ func TestSFXHandler_MireloScoresAVideo(t *testing.T) {
 	assert.NotContains(t, u.createBody, "duration_ms", "no duration scores the rest of the clip")
 }
 
+// TestSFXHandler_MireloScoresAVideoURL proves a URL reaches Mirelo as a URL
+// media reference, with no asset ticket and no upload.
+func TestSFXHandler_MireloScoresAVideoURL(t *testing.T) {
+	u := newMireloVideoUpstream(t)
+
+	w := postSFX(t, u.server.URL, sfxVideoRequest(t, "mirelo/"+mireloSFXModel, mireloVideoURL, nil))
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Equal(t, mireloMixBytes, w.Body.String(), "the mix is the default track")
+	assert.Empty(t, u.ticketType, "a URL needs no asset ticket")
+	assert.Empty(t, u.uploadOrder, "a URL is never uploaded")
+	assert.Equal(t, map[string]any{"video": map[string]any{"type": "url", "url": mireloVideoURL}}, u.createBody["input"])
+}
+
 func TestSFXHandler_MireloRetriesWhileTheAssetSettles(t *testing.T) {
 	u := newMireloVideoUpstream(t)
 	u.refuseCreates = 1
 
-	w := postSFXVideo(t, u.server.URL, mireloVideoFields())
+	w := postSFX(t, u.server.URL, mireloVideoRequest(t, nil))
 
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 	assert.Equal(t, mireloMixBytes, w.Body.String(), "the mix is the default track")
 	assert.Equal(t, 2, u.creates, "the create is retried once the asset is ready")
 }
 
+// TestSFXHandler_MireloRefusesBeforeUploading proves a field Mirelo cannot
+// serve with a video is refused before the clip is uploaded.
+func TestSFXHandler_MireloRefusesBeforeUploading(t *testing.T) {
+	u := newMireloVideoUpstream(t)
+
+	w := postSFX(t, u.server.URL, mireloVideoRequest(t, map[string]any{sfx.FieldLoop: true}))
+
+	require.Equal(t, http.StatusBadRequest, w.Code, w.Body.String())
+	assert.Contains(t, w.Body.String(), sfx.FieldLoop)
+	assert.Empty(t, u.ticketType, "nothing is uploaded for a request that is refused")
+	assert.Zero(t, u.creates)
+}
+
 func TestSFXHandler_MireloVideoRejections(t *testing.T) {
 	tests := []struct {
 		name       string
-		fields     []imagesMultipartField
+		body       string
 		opts       []func(*config.Config)
 		refuse     bool
 		wantStatus int
 		wantBody   string
 	}{
-		{"a refused upload", mireloVideoFields(), nil, true, http.StatusBadGateway, "upload the video"},
-		{"a missing video", []imagesMultipartField{{name: "model", value: "mirelo/" + mireloSFXModel}}, nil, false, http.StatusBadRequest, "'video' file is required"},
-		{"a provider without video scoring", []imagesMultipartField{{name: "model", value: "openai/gpt-4o-mini-tts"}, {name: "video", filename: mireloVideoName, value: mireloVideoBytes}}, nil, false, http.StatusBadRequest, "Video scoring is not supported"},
-		{"a track that is not there", mireloVideoFields(imagesMultipartField{name: "output", value: sfx.OutputSFX}), nil, false, http.StatusBadGateway, "without a sfx track"},
-		{"a video over the body limit", mireloVideoFields(), []func(*config.Config){func(c *config.Config) { c.Server.MaxRequestBodySize = 16 }}, false, http.StatusRequestEntityTooLarge, "too large"},
+		{"a refused upload", mireloVideoRequest(t, nil), nil, true, http.StatusBadGateway, "upload the video"},
+		{"a plain http URL", sfxVideoRequest(t, "mirelo/"+mireloSFXModel, "http://cdn.example.com/scene.mov", nil), nil, false, http.StatusBadRequest, "must be an https URL or a base64 data:video"},
+		{"a provider without video scoring", sfxVideoRequest(t, "openai/gpt-4o-mini-tts", inlineVideo(mireloVideoType, mireloVideoBytes), nil), nil, false, http.StatusBadRequest, "Video scoring is not supported"},
+		{"a track that is not there", mireloVideoRequest(t, map[string]any{"output": sfx.OutputSFX}), nil, false, http.StatusBadGateway, "without a sfx track"},
+		{"a video over the body limit", mireloVideoRequest(t, nil), []func(*config.Config){func(c *config.Config) { c.Server.MaxRequestBodySize = 16 }}, false, http.StatusRequestEntityTooLarge, "too large"},
 	}
 
 	for _, tt := range tests {
@@ -350,7 +385,7 @@ func TestSFXHandler_MireloVideoRejections(t *testing.T) {
 			u := newMireloVideoUpstream(t)
 			u.refuseUpload = tt.refuse
 
-			w := postSFXVideo(t, u.server.URL, tt.fields, tt.opts...)
+			w := postSFX(t, u.server.URL, tt.body, tt.opts...)
 
 			require.Equal(t, tt.wantStatus, w.Code, w.Body.String())
 			assert.Contains(t, w.Body.String(), tt.wantBody)
