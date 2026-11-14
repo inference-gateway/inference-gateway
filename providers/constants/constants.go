@@ -43,6 +43,7 @@ const (
 	ElevenlabsImagesRetrieveEndpoint = "/flows/image/{generation_id}"
 	ElevenlabsSpeechEndpoint         = "/text-to-speech/{voice}"
 	ElevenlabsSFXEndpoint            = "/sound-generation"
+	ElevenlabsSFXVideoEndpoint       = "/music/video-to-music"
 	ElevenlabsMusicEndpoint          = "/music"
 	ElevenlabsVideosEndpoint         = "/flows/video"
 	ElevenlabsVideosRetrieveEndpoint = "/flows/video/{generation_id}"

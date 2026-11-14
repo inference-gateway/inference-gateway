@@ -1793,6 +1793,10 @@ components:
               name: 'create_music'
               method: 'POST'
               endpoint: '/music'
+            sfx_video:
+              name: 'create_sfx_from_video'
+              method: 'POST'
+              endpoint: '/music/video-to-music'
             videos:
               name: 'create_video'
               method: 'POST'
@@ -3523,11 +3527,13 @@ components:
       description: |
         Multipart request body for scoring a video: the provider watches the
         clip and generates the sound that fits it. Speech already in the clip
-        can be kept under the new sound or returned on its own.
+        can be kept under the new sound or returned on its own. Not every
+        provider implements every field - one it cannot serve answers `400`
+        naming the field rather than being ignored.
       properties:
         model:
           type: string
-          description: Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`).
+          description: Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`, `elevenlabs/music_v2_5`).
         video:
           type: string
           format: binary

@@ -1639,6 +1639,10 @@ const (
 	contentTypeMultipart        = "multipart/form-data"
 	mireloNotReadyMessage       = "The sound effect was not ready in time. Retry the request or ask for a shorter clip."
 	uploadFailedMessage         = "Failed to upload the video to the provider"
+
+	// trackArchiveMaxSize caps how much of an archive of separated audio
+	// tracks is read to answer with one of them.
+	trackArchiveMaxSize = 256 << 20
 )
 
 // relayMireloAudio answers a text-to-sfx request with the mix of its job.
@@ -1769,8 +1773,9 @@ func pause(r *http.Request, d time.Duration) bool {
 }
 
 // serveSFXFromVideo answers a multipart /v1/audio/sfx request: the uploaded
-// video is stored with the provider as an asset, scored, and the wanted track
-// is streamed back as raw audio.
+// video is scored by the provider and the wanted track is streamed back as raw
+// audio. Providers without an asset-and-job flow are served by their own
+// scorer.
 func (router *RouterImpl) serveSFXFromVideo(w http.ResponseWriter, r *http.Request) {
 	form, ok := router.parseBoundedMultipart(w, r)
 	if !ok {
@@ -1802,14 +1807,19 @@ func (router *RouterImpl) serveSFXFromVideo(w http.ResponseWriter, r *http.Reque
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
-	assetsPath, msg := router.providerEndpoint(provider, func(e types.Endpoints) *string { return e.Assets }, sfxAPIName, sfxVideoNotSupportedMessage)
-	if msg != "" {
-		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
-		return
-	}
 	videos := form.File[sfxFormFieldVideo]
 	if len(videos) == 0 {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("The '%s' file is required to score a video.", sfxFormFieldVideo)})
+		return
+	}
+	if score, translated := sfxVideoScorers[providerID]; translated {
+		score(router, w, r, provider, model, createPath, form)
+		return
+	}
+
+	assetsPath, msg := router.providerEndpoint(provider, func(e types.Endpoints) *string { return e.Assets }, sfxAPIName, sfxVideoNotSupportedMessage)
+	if msg != "" {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
 		return
 	}
 
@@ -1824,6 +1834,94 @@ func (router *RouterImpl) serveSFXFromVideo(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	router.relaySFXJob(w, r, provider, upstreamRequest{endpointPath: createPath, body: bytes.NewReader(body), contentType: contentTypeJSON}, imagesFormValue(form, sfx.FieldOutput))
+}
+
+// sfxVideoScorers score a video for the providers whose video-to-sfx API is
+// not an asset upload followed by a job, in place of the default flow.
+var sfxVideoScorers = map[types.Provider]func(router *RouterImpl, w http.ResponseWriter, r *http.Request, provider core.IProvider, model, endpointPath string, form *multipart.Form){
+	constants.ElevenlabsID: (*RouterImpl).elevenlabsSFXFromVideo,
+}
+
+// elevenlabsSFXFromVideo scores a video through ElevenLabs' video-to-music
+// endpoint, which takes the clips and answers the finished audio in one call.
+// Asking for the sound effects alone answers an archive of separate tracks,
+// which the music track is dropped from here.
+// shortcut: the score must finish inside SERVER_READ_TIMEOUT, which the operator raises for long clips - give the call its own window if that proves too coarse.
+func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.Request, provider core.IProvider, model, endpointPath string, form *multipart.Form) {
+	music, err := elevenlabs.SFXFromVideo(model, form)
+	if err != nil {
+		router.logger.Error("failed to translate request for provider", err, "api", sfxAPIName, "provider", provider.GetName())
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	pr, pw := io.Pipe()
+	mw := multipart.NewWriter(pw)
+	go func() {
+		pw.CloseWithError(writeVideoMusicForm(mw, music.Fields, form.File[sfxFormFieldVideo]))
+	}()
+
+	router.extendWriteDeadline(w)
+	resp, done, failure := router.callUpstream(r, provider, upstreamRequest{endpointPath: endpointPath, query: music.Query, body: pr, contentType: mw.FormDataContentType()})
+	if failure != nil {
+		_ = pr.CloseWithError(io.ErrClosedPipe)
+		middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
+		return
+	}
+	defer done()
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		body, readErr := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
+		if readErr != nil {
+			router.logger.Error("failed to read the elevenlabs video-to-music response", readErr)
+			middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+			return
+		}
+		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
+		return
+	}
+	if !music.SeparateTracks {
+		writeDataFromReader(w, resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body)
+		return
+	}
+
+	archive, err := io.ReadAll(io.LimitReader(resp.Body, trackArchiveMaxSize))
+	if err != nil {
+		router.logger.Error("failed to read the elevenlabs track archive", err)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+		return
+	}
+	track, err := elevenlabs.EffectsTrack(archive)
+	if err != nil {
+		router.logger.Error("failed to unpack the elevenlabs sound-effects track", err)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
+		return
+	}
+	writeData(w, http.StatusOK, music.ContentType, track)
+}
+
+// writeVideoMusicForm writes the video-to-music upload: the request's fields,
+// then every clip to score as a repeated part, announced with the container
+// type the provider needs to decode it.
+func writeVideoMusicForm(mw *multipart.Writer, fields map[string]string, videos []*multipart.FileHeader) error {
+	for name, value := range fields {
+		if err := mw.WriteField(name, value); err != nil {
+			return err
+		}
+	}
+	for _, video := range videos {
+		content, contentType, file, err := openFormFile(video)
+		if err != nil {
+			return err
+		}
+		err = writeFilePart(mw, elevenlabs.VideoClipPart, video.Filename, sfx.VideoContentType(video.Filename, contentType), content)
+		_ = file.Close()
+		if err != nil {
+			return err
+		}
+	}
+	return mw.Close()
 }
 
 // uploadAsset stores the uploaded video with the provider and returns the

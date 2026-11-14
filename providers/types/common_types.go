@@ -2163,14 +2163,16 @@ type CreateResponseRequest struct {
 
 // CreateSFXFromVideoRequest Multipart request body for scoring a video: the provider watches the
 // clip and generates the sound that fits it. Speech already in the clip
-// can be kept under the new sound or returned on its own.
+// can be kept under the new sound or returned on its own. Not every
+// provider implements every field - one it cannot serve answers `400`
+// naming the field rather than being ignored.
 type CreateSFXFromVideoRequest struct {
 	// DurationSeconds Length of the scored window in seconds, counted from
 	// `start_offset_seconds`. Omit to score the rest of the clip, up to
 	// the provider's ceiling.
 	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
 
-	// Model Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`).
+	// Model Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`, `elevenlabs/music_v2_5`).
 	Model string `json:"model"`
 
 	// Output Which track to return. `mix` is the generated sound with any
