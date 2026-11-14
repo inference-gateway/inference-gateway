@@ -73,14 +73,8 @@ func (p jsonProxy) modelLacksModality(providerID types.Provider, model string) s
 // response with its Content-Type. Providers listed in p.translators get their
 // request rewritten into the provider's own shape instead.
 func (router *RouterImpl) proxyJSONBody(w http.ResponseWriter, r *http.Request, p jsonProxy) {
-	body, tooLarge, err := router.readBoundedBody(r)
-	if err != nil {
-		router.logger.Error("failed to read request body", err)
-		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
-		return
-	}
-	if tooLarge {
-		middlewares.WriteJSON(w, http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+	body, ok := router.readBodyOrRespond(w, r)
+	if !ok {
 		return
 	}
 

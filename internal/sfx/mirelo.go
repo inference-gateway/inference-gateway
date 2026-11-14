@@ -37,20 +37,24 @@ const (
 	statusSucceeded   = "succeeded"
 	unknownJobError   = "no error was reported"
 	mediaTypeAsset    = "asset"
+	mediaTypeURL      = "url"
 	minVideoSeconds   = 1
 	minOffsetSeconds  = 0
 
-	// FieldOutput is the multipart field naming the track a video-to-sfx
+	// FieldOutput is the request field naming the track a video-to-sfx
 	// request wants back, one of OutputMix, OutputSFX or OutputSpeech.
 	FieldOutput = "output"
 
-	// The remaining multipart fields of a video-to-sfx request, shared with
+	// The remaining fields of a sound-effect request, named in the errors of
 	// the provider translators that live outside this package.
 	FieldPrompt             = "prompt"
+	FieldVideo              = "video"
 	FieldDurationSeconds    = "duration_seconds"
 	FieldStartOffsetSeconds = "start_offset_seconds"
 	FieldPreserveSpeech     = "preserve_speech"
 	FieldResponseFormat     = "response_format"
+	FieldLoop               = "loop"
+	FieldPromptInfluence    = "prompt_influence"
 
 	OutputMix    = "mix"
 	OutputSFX    = "sfx"
@@ -126,13 +130,26 @@ type videoBody struct {
 }
 
 type videoInput struct {
-	Video  mediaRef `json:"video"`
+	Video  MediaRef `json:"video"`
 	Prompt string   `json:"prompt,omitempty"`
 }
 
-type mediaRef struct {
+// MediaRef points Mirelo at the clip to score: an asset uploaded through a
+// ticket, or a public URL Mirelo fetches itself.
+type MediaRef struct {
 	Type string `json:"type"`
-	ID   string `json:"id"`
+	ID   string `json:"id,omitempty"`
+	URL  string `json:"url,omitempty"`
+}
+
+// AssetRef references a clip uploaded as the asset id.
+func AssetRef(id string) MediaRef {
+	return MediaRef{Type: mediaTypeAsset, ID: id}
+}
+
+// URLRef references a clip Mirelo downloads from u, with no upload.
+func URLRef(u string) MediaRef {
+	return MediaRef{Type: mediaTypeURL, URL: u}
 }
 
 type videoControls struct {
@@ -150,11 +167,7 @@ func FromText(model string, req types.CreateSFXRequest) ([]byte, error) {
 		return nil, fmt.Errorf("mirelo does not support 'prompt_influence', omit the field")
 	}
 
-	responseFormat := ""
-	if req.ResponseFormat != nil {
-		responseFormat = string(*req.ResponseFormat)
-	}
-	format, err := outputFormat(responseFormat)
+	format, err := outputFormat(responseFormatOf(req))
 	if err != nil {
 		return nil, err
 	}
@@ -176,70 +189,140 @@ func FromText(model string, req types.CreateSFXRequest) ([]byte, error) {
 	return json.Marshal(body)
 }
 
-// FromVideo rewrites the multipart video-to-sfx form into the Mirelo shape,
-// scoring the asset the upload produced. Omitting the duration scores the rest
-// of the clip. model is the request model with the provider prefix stripped.
-func FromVideo(model string, form *multipart.Form, assetID string) ([]byte, error) {
-	format, err := outputFormat(formValue(form, FieldResponseFormat))
-	if err != nil {
-		return nil, err
+// VideoScore is a validated Mirelo video-to-sfx job still missing the clip it
+// scores, so a request Mirelo cannot serve is refused before any upload.
+type VideoScore struct {
+	body videoBody
+}
+
+// FromVideo validates a gateway CreateSFXRequest that sets `video` and maps it
+// onto the Mirelo video-to-sfx shape. Omitting the duration scores the rest of
+// the clip. model is the request model with the provider prefix stripped.
+func FromVideo(model string, req types.CreateSFXRequest) (VideoScore, error) {
+	if field := TextOnlyField(req); field != "" {
+		return VideoScore{}, fmt.Errorf("mirelo does not support '%s' when scoring a video, omit the field", field)
 	}
-	output := cmp.Or(formValue(form, FieldOutput), OutputMix)
+	format, err := outputFormat(responseFormatOf(req))
+	if err != nil {
+		return VideoScore{}, err
+	}
+	output := Output(req)
 	if !outputs[output] {
-		return nil, fmt.Errorf("the '%s' field must be one of: %s", FieldOutput, supportedOutputs)
+		return VideoScore{}, fmt.Errorf("the '%s' field must be one of: %s", FieldOutput, supportedOutputs)
 	}
 
 	body := videoBody{
-		Model:  model,
-		Input:  videoInput{Video: mediaRef{Type: mediaTypeAsset, ID: assetID}, Prompt: formValue(form, FieldPrompt)},
-		Output: sfxOutput{Format: format},
+		Model:    model,
+		Input:    videoInput{Prompt: req.Prompt},
+		Controls: videoControlsFor(req.PreserveSpeech, output),
+		Output:   sfxOutput{Format: format},
 	}
-	if body.DurationMs, err = optionalMillis(form, FieldDurationSeconds, minVideoSeconds); err != nil {
-		return nil, err
+	if body.DurationMs, err = windowMillis(FieldDurationSeconds, req.DurationSeconds, minVideoSeconds); err != nil {
+		return VideoScore{}, err
 	}
-	if body.StartOffsetMs, err = optionalMillis(form, FieldStartOffsetSeconds, minOffsetSeconds); err != nil {
-		return nil, err
+	if body.StartOffsetMs, err = windowMillis(FieldStartOffsetSeconds, req.StartOffsetSeconds, minOffsetSeconds); err != nil {
+		return VideoScore{}, err
 	}
-	if body.Controls, err = videoControlsFrom(form, output); err != nil {
-		return nil, err
-	}
-	return json.Marshal(body)
+	return VideoScore{body: body}, nil
 }
 
-// optionalMillis reads a seconds field into milliseconds, nil when absent.
+// Body is the job request scoring the clip video points at.
+func (s VideoScore) Body(video MediaRef) []byte {
+	s.body.Input.Video = video
+	out, _ := json.Marshal(s.body)
+	return out
+}
+
+// Output is the track a video-to-sfx request wants back, the mix when unset.
+func Output(req types.CreateSFXRequest) string {
+	if req.Output == nil {
+		return OutputMix
+	}
+	return string(*req.Output)
+}
+
+// TextOnlyField names the first text-to-sfx field a video request sets, ""
+// when none. Scoring a video has no counterpart for them, so they are refused
+// rather than dropped and the caller never gets audio that ignores them.
+func TextOnlyField(req types.CreateSFXRequest) string {
+	switch {
+	case req.Loop != nil:
+		return FieldLoop
+	case req.PromptInfluence != nil:
+		return FieldPromptInfluence
+	}
+	return ""
+}
+
+func responseFormatOf(req types.CreateSFXRequest) string {
+	if req.ResponseFormat == nil {
+		return ""
+	}
+	return string(*req.ResponseFormat)
+}
+
+// windowMillis converts an optional window bound in seconds to milliseconds,
+// nil when absent.
+func windowMillis(field string, seconds *float32, minSeconds float64) (*int, error) {
+	if seconds == nil {
+		return nil, nil
+	}
+	return millisAtLeast(field, float64(*seconds), minSeconds)
+}
+
+// optionalMillis reads a multipart seconds field into milliseconds, nil when
+// absent.
 func optionalMillis(form *multipart.Form, field string, minSeconds float64) (*int, error) {
 	raw := formValue(form, field)
 	if raw == "" {
 		return nil, nil
 	}
 	seconds, err := strconv.ParseFloat(raw, 64)
-	if err != nil || seconds < minSeconds {
-		return nil, fmt.Errorf("the '%s' field must be a number of at least %g", field, minSeconds)
+	if err != nil {
+		return nil, windowError(field, minSeconds)
+	}
+	return millisAtLeast(field, seconds, minSeconds)
+}
+
+func millisAtLeast(field string, seconds, minSeconds float64) (*int, error) {
+	if seconds < minSeconds {
+		return nil, windowError(field, minSeconds)
 	}
 	millis := int(math.Round(seconds * millisPerSecond))
 	return &millis, nil
 }
 
-// videoControlsFrom derives Mirelo's speech controls from the wanted track:
+func windowError(field string, minSeconds float64) error {
+	return fmt.Errorf("the '%s' field must be a number of at least %g", field, minSeconds)
+}
+
+// videoControlsFor derives Mirelo's speech controls from the wanted track:
 // any track but the mix needs the speech separated, and the sfx track only
 // exists when speech is not preserved, so that is the default for it.
-func videoControlsFrom(form *multipart.Form, output string) (*videoControls, error) {
-	controls := &videoControls{SeparateSpeech: output != OutputMix}
-	if raw := formValue(form, FieldPreserveSpeech); raw != "" {
-		preserve, err := strconv.ParseBool(raw)
-		if err != nil {
-			return nil, fmt.Errorf("the '%s' field must be true or false", FieldPreserveSpeech)
-		}
-		controls.PreserveSpeech = &preserve
-	}
+func videoControlsFor(preserve *bool, output string) *videoControls {
+	controls := &videoControls{PreserveSpeech: preserve, SeparateSpeech: output != OutputMix}
 	if output == OutputSFX && controls.PreserveSpeech == nil {
-		preserve := false
-		controls.PreserveSpeech = &preserve
+		keep := false
+		controls.PreserveSpeech = &keep
 	}
 	if controls.PreserveSpeech == nil && !controls.SeparateSpeech {
-		return nil, nil
+		return nil
 	}
-	return controls, nil
+	return controls
+}
+
+// videoControlsFrom reads the speech choice off a multipart form and derives
+// the controls for the wanted track as videoControlsFor does.
+func videoControlsFrom(form *multipart.Form, output string) (*videoControls, error) {
+	raw := formValue(form, FieldPreserveSpeech)
+	if raw == "" {
+		return videoControlsFor(nil, output), nil
+	}
+	preserve, err := strconv.ParseBool(raw)
+	if err != nil {
+		return nil, fmt.Errorf("the '%s' field must be true or false", FieldPreserveSpeech)
+	}
+	return videoControlsFor(&preserve, output), nil
 }
 
 func formValue(form *multipart.Form, key string) string {
