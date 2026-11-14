@@ -3,7 +3,7 @@ version: '3'
 
 vars:
   BENCH_CMD: go test -bench=. -run=^$ -benchmem -benchtime=100x -count=20 ./tests/...
-  BENCHSTAT: go run golang.org/x/perf/cmd/benchstat@v0.0.0-20260825160852-19be9d8e6c70 -row .name
+  BENCHSTAT: go run golang.org/x/perf/cmd/benchstat@v0.0.0-20260825160852-19be9d8e6c70 -row .fullname
 
 tasks:
   default:
@@ -132,7 +132,7 @@ tasks:
     cmds:
       - mkdir -p bin
       - 'set -o pipefail; {{.BENCH_CMD}} | tee bin/benchmark.txt'
-      - '{{.BENCHSTAT}} tests/benchmarks/baseline.txt bin/benchmark.txt'
+      - '{{.BENCHSTAT}} -ignore /gomaxprocs tests/benchmarks/baseline.txt bin/benchmark.txt'
       - |
         gate() {
           want=$1; limit=$2; shift 2
@@ -147,10 +147,10 @@ tasks:
           '
         }
         failed=0
-        gate allocs/op {{.ALLOCS_TOLERANCE_PCT}} -ignore cpu || failed=1
+        gate allocs/op {{.ALLOCS_TOLERANCE_PCT}} -ignore cpu,/gomaxprocs || failed=1
         cpu=$(grep -m1 '^cpu:' bin/benchmark.txt)
         if grep -qxF "$cpu" tests/benchmarks/baseline.txt; then
-          gate sec/op {{.TIME_TOLERANCE_PCT}} -filter '{{.TIME_FILTER}}' || failed=1
+          gate sec/op {{.TIME_TOLERANCE_PCT}} -ignore /gomaxprocs -filter '{{.TIME_FILTER}}' || failed=1
         else
           echo "benchmark:check: no sec/op baseline for '${cpu#cpu: }', compared allocs/op only (add a block with task benchmark:baseline)"
         fi
