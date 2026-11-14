@@ -13,7 +13,7 @@ type ErrorResponse struct {
 }
 
 // writeData writes body as the response with the given status. Content-Type
-// is set only when the response has no value.
+// is set only when the response does not already carry one.
 func writeData(w http.ResponseWriter, status int, contentType string, body []byte) {
 	if contentType != "" && len(w.Header()["Content-Type"]) == 0 {
 		w.Header().Set("Content-Type", contentType)

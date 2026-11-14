@@ -16,11 +16,7 @@ import (
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
 )
 
-// RouterImpl serves every capability of the gateway: handlers live in files
-// named for their capability (chat.go, messages.go, responses.go, decisions.go,
-// models.go, images.go, speech.go, sfx.go, music.go, videos.go, proxy.go,
-// health.go) and the shared plumbing in upstream.go, jsonproxy.go, sse.go,
-// multipart.go and respond.go.
+// RouterImpl serves every gateway capability, one file per capability.
 type RouterImpl struct {
 	cfg               config.Config
 	logger            logger.Logger

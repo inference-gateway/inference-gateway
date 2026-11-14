@@ -389,7 +389,6 @@ func (router *RouterImpl) streamDownload(w http.ResponseWriter, r *http.Request,
 	writeDataFromReader(w, resp.StatusCode, resp.ContentLength, contentType, resp.Body)
 }
 
-// Upstream response and addressing limits.
 const (
 	// jobMaxResponseSize caps how much of a provider's asynchronous job
 	// payload is read before it is decoded.
