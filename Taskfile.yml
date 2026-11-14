@@ -127,6 +127,8 @@ tasks:
     vars:
       TIME_TOLERANCE_PCT: 15
       ALLOCS_TOLERANCE_PCT: 5
+      # ~300ns ops x 100 iterations swing +-45% between runs on one CPU, the 1000-model ListModelsContextWindow benchmarks time Transform() instead
+      TIME_FILTER: '-.name:ProviderTransformations'
     cmds:
       - mkdir -p bin
       - 'set -o pipefail; {{.BENCH_CMD}} | tee bin/benchmark.txt'
@@ -148,7 +150,7 @@ tasks:
         gate allocs/op {{.ALLOCS_TOLERANCE_PCT}} -ignore cpu || failed=1
         cpu=$(grep -m1 '^cpu:' bin/benchmark.txt)
         if grep -qxF "$cpu" tests/benchmarks/baseline.txt; then
-          gate sec/op {{.TIME_TOLERANCE_PCT}} || failed=1
+          gate sec/op {{.TIME_TOLERANCE_PCT}} -filter '{{.TIME_FILTER}}' || failed=1
         else
           echo "benchmark:check: no sec/op baseline for '${cpu#cpu: }', compared allocs/op only (add a block with task benchmark:baseline)"
         fi
