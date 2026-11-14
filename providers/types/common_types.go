@@ -198,48 +198,21 @@ func (e CreateMusicRequestResponseFormat) Valid() bool {
 	}
 }
 
-// Defines values for CreateSFXFromVideoRequestOutput.
+// Defines values for CreateSFXRequestOutput.
 const (
-	Mix    CreateSFXFromVideoRequestOutput = "mix"
-	Sfx    CreateSFXFromVideoRequestOutput = "sfx"
-	Speech CreateSFXFromVideoRequestOutput = "speech"
+	CreateSFXRequestOutputMix    CreateSFXRequestOutput = "mix"
+	CreateSFXRequestOutputSFX    CreateSFXRequestOutput = "sfx"
+	CreateSFXRequestOutputSpeech CreateSFXRequestOutput = "speech"
 )
 
-// Valid indicates whether the value is a known member of the CreateSFXFromVideoRequestOutput enum.
-func (e CreateSFXFromVideoRequestOutput) Valid() bool {
+// Valid indicates whether the value is a known member of the CreateSFXRequestOutput enum.
+func (e CreateSFXRequestOutput) Valid() bool {
 	switch e {
-	case Mix:
+	case CreateSFXRequestOutputMix:
 		return true
-	case Sfx:
+	case CreateSFXRequestOutputSFX:
 		return true
-	case Speech:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for CreateSFXFromVideoRequestResponseFormat.
-const (
-	CreateSFXFromVideoRequestResponseFormatAac  CreateSFXFromVideoRequestResponseFormat = "aac"
-	CreateSFXFromVideoRequestResponseFormatFlac CreateSFXFromVideoRequestResponseFormat = "flac"
-	CreateSFXFromVideoRequestResponseFormatMp3  CreateSFXFromVideoRequestResponseFormat = "mp3"
-	CreateSFXFromVideoRequestResponseFormatOpus CreateSFXFromVideoRequestResponseFormat = "opus"
-	CreateSFXFromVideoRequestResponseFormatPcm  CreateSFXFromVideoRequestResponseFormat = "pcm"
-)
-
-// Valid indicates whether the value is a known member of the CreateSFXFromVideoRequestResponseFormat enum.
-func (e CreateSFXFromVideoRequestResponseFormat) Valid() bool {
-	switch e {
-	case CreateSFXFromVideoRequestResponseFormatAac:
-		return true
-	case CreateSFXFromVideoRequestResponseFormatFlac:
-		return true
-	case CreateSFXFromVideoRequestResponseFormatMp3:
-		return true
-	case CreateSFXFromVideoRequestResponseFormatOpus:
-		return true
-	case CreateSFXFromVideoRequestResponseFormatPcm:
+	case CreateSFXRequestOutputSpeech:
 		return true
 	default:
 		return false
@@ -2161,76 +2134,72 @@ type CreateResponseRequest struct {
 	User *string `json:"user,omitempty"`
 }
 
-// CreateSFXFromVideoRequest Multipart request body for scoring a video: the provider watches the
-// clip and generates the sound that fits it. Speech already in the clip
-// can be kept under the new sound or returned on its own. Not every
-// provider implements every field - one it cannot serve answers `400`
-// naming the field rather than being ignored.
-type CreateSFXFromVideoRequest struct {
-	// DurationSeconds Length of the scored window in seconds, counted from
-	// `start_offset_seconds`. Omit to score the rest of the clip, up to
-	// the provider's ceiling.
-	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
-
-	// Model Model ID to use for video-to-sfx (e.g. `mirelo/sfx-2.0`, `elevenlabs/music_v2_5`).
-	Model string `json:"model"`
-
-	// Output Which track to return. `mix` is the generated sound with any
-	// preserved speech, `sfx` is the generated sound alone and `speech`
-	// is the clip's own speech separated out. A clip without speech has
-	// no `speech` track.
-	Output *CreateSFXFromVideoRequestOutput `json:"output,omitempty"`
-
-	// PreserveSpeech Keep the speech already in the clip under the generated sound.
-	// Omit to use the provider default.
-	PreserveSpeech *bool `json:"preserve_speech,omitempty"`
-
-	// Prompt Optional guidance on the sound to generate. The video itself drives the result.
-	Prompt *string `json:"prompt,omitempty"`
-
-	// ResponseFormat The audio format of the response.
-	ResponseFormat *CreateSFXFromVideoRequestResponseFormat `json:"response_format,omitempty"`
-
-	// StartOffsetSeconds Where in the clip the scored window starts, in seconds.
-	StartOffsetSeconds *float32 `json:"start_offset_seconds,omitempty"`
-
-	// Video The video to score. Its container type is passed on to the provider.
-	Video openapi_types.File `json:"video"`
-}
-
-// CreateSFXFromVideoRequestOutput Which track to return. `mix` is the generated sound with any
-// preserved speech, `sfx` is the generated sound alone and `speech`
-// is the clip's own speech separated out. A clip without speech has
-// no `speech` track.
-type CreateSFXFromVideoRequestOutput string
-
-// CreateSFXFromVideoRequestResponseFormat The audio format of the response.
-type CreateSFXFromVideoRequestResponseFormat string
-
 // CreateSFXRequest Request body for generating a non-speech audio clip - a sound effect
-// or ambience - from a text prompt.
+// or ambience - from a text prompt, or from a video when `video` is
+// set.
 type CreateSFXRequest struct {
-	// DurationSeconds Length of the generated clip in seconds. Omit to let the provider
-	// pick a length that fits the prompt.
+	// DurationSeconds Length of the generated audio in seconds - at least 0.5 for a
+	// text prompt and at least 1 for a video. The ceiling depends on
+	// the model (30 for ElevenLabs text-to-sfx), and a longer value is
+	// rejected with `400 Bad Request`. For a text prompt it is the
+	// length of the generated clip. With a video it is the length of
+	// the scored window, counted from `start_offset_seconds`. Omit to
+	// let the provider pick a length that fits the prompt or the
+	// clip, up to its ceiling.
 	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
 
-	// Loop Whether to generate a clip that loops seamlessly.
+	// Loop Text prompt only. Whether to generate a clip that loops seamlessly.
 	Loop *bool `json:"loop,omitempty"`
 
-	// Model Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`, `mirelo/sfx-2.0`).
+	// Model Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`, `mirelo/sfx-2.0`, or `elevenlabs/music_v2_5` to score a video).
 	Model string `json:"model"`
 
-	// Prompt Description of the sound to generate (e.g. `distant thunder rolling over a valley`).
-	Prompt string `json:"prompt"`
+	// Output Video input only. Which track to return. `mix` is the generated
+	// sound with any preserved speech, `sfx` is the generated sound
+	// alone and `speech` is the clip's own speech separated out. A
+	// clip without speech has no `speech` track.
+	Output *CreateSFXRequestOutput `json:"output,omitempty"`
 
-	// PromptInfluence How closely the generation follows the prompt. Higher values stay
-	// closer to the prompt, lower values allow more variation. Omit to
-	// use the provider default.
+	// PreserveSpeech Video input only. Keep the speech already in the clip under the
+	// generated sound. Omit to use the provider default.
+	PreserveSpeech *bool `json:"preserve_speech,omitempty"`
+
+	// Prompt Description of the sound to generate (e.g. `distant thunder
+	// rolling over a valley`). Required unless `video` is given:
+	// without a video the prompt drives the result, with a video the
+	// clip drives it and the prompt is only optional guidance on the
+	// sound to generate.
+	Prompt string `json:"prompt,omitempty"`
+
+	// PromptInfluence Text prompt only. How closely the generation follows the prompt.
+	// Higher values stay closer to the prompt, lower values allow more
+	// variation. Omit to use the provider default. Only models with
+	// prompt-influence support honor it - a model that cannot honor it
+	// rejects the request with `400 Bad Request`.
 	PromptInfluence *float32 `json:"prompt_influence,omitempty"`
 
 	// ResponseFormat The audio format of the response.
 	ResponseFormat *CreateSFXRequestResponseFormat `json:"response_format,omitempty"`
+
+	// StartOffsetSeconds Video input only. Where in the clip the scored window starts,
+	// in seconds.
+	StartOffsetSeconds *float32 `json:"start_offset_seconds,omitempty"`
+
+	// Video Optional video to score: the provider watches the clip and
+	// generates the sound that fits it. Either an https URL or a
+	// base64 data URI (`data:video/...`). Prefer a URL for large
+	// clips: a data URI is about a third larger than the file and
+	// counts against the gateway's request body limit. A provider
+	// that cannot take the given form answers `400 Bad Request`. The
+	// gateway never downloads the URL itself.
+	Video *string `json:"video,omitempty"`
 }
+
+// CreateSFXRequestOutput Video input only. Which track to return. `mix` is the generated
+// sound with any preserved speech, `sfx` is the generated sound
+// alone and `speech` is the clip's own speech separated out. A
+// clip without speech has no `speech` track.
+type CreateSFXRequestOutput string
 
 // CreateSFXRequestResponseFormat The audio format of the response.
 type CreateSFXRequestResponseFormat string
@@ -2302,6 +2271,10 @@ type CreateVideoRequest struct {
 	// Model Model ID to use for video generation (e.g. `elevenlabs/creatify-aurora`).
 	Model string `json:"model"`
 
+	// PreserveSpeech Video input only. Keep the speech already in the clip under the
+	// generated sound. Omit to use the provider default.
+	PreserveSpeech *bool `json:"preserve_speech,omitempty"`
+
 	// Prompt Text description of the video to generate. Optional for
 	// audio-driven avatar models, where the dialogue comes from `audio`
 	// and the prompt only describes framing, never the spoken words.
@@ -2321,6 +2294,8 @@ type CreateVideoRequest struct {
 	// Seconds Requested duration of the generated video in seconds, as a string
 	// (e.g. `4`, `8`, `12`). Providers accept a limited set of values;
 	// omit to use the provider default. Ignored when `audio` is present.
+	// With `video` it is the length of the dubbed window, at least 1,
+	// counted from `start_offset_seconds`.
 	Seconds *string `json:"seconds,omitempty"`
 
 	// Size Requested output resolution as `widthxheight` (e.g. `720x1280`).
@@ -2328,6 +2303,10 @@ type CreateVideoRequest struct {
 	// `creatify-aurora` maps to `480p` and `720p`. Omit to use the
 	// provider default.
 	Size *string `json:"size,omitempty"`
+
+	// StartOffsetSeconds Video input only. Where in the clip the dubbed window starts, in
+	// seconds.
+	StartOffsetSeconds *float32 `json:"start_offset_seconds,omitempty"`
 
 	// Video Non-standard extension (OpenAI's Videos API has no video field):
 	// a clip to dub - the provider generates the sound that fits it and
@@ -3945,9 +3924,6 @@ type CreateMusicJSONRequestBody = CreateMusicRequest
 
 // CreateSFXJSONRequestBody defines body for CreateSFX for application/json ContentType.
 type CreateSFXJSONRequestBody = CreateSFXRequest
-
-// CreateSFXMultipartRequestBody defines body for CreateSFX for multipart/form-data ContentType.
-type CreateSFXMultipartRequestBody = CreateSFXFromVideoRequest
 
 // CreateSpeechJSONRequestBody defines body for CreateSpeech for application/json ContentType.
 type CreateSpeechJSONRequestBody = CreateSpeechRequest
