@@ -447,7 +447,23 @@ func inlineHeader(fh *multipart.FileHeader, field string) (*inlineMedia, error) 
 	if mimeType == "" || mimeType == "application/octet-stream" {
 		mimeType = http.DetectContentType(data)
 	}
-	return &inlineMedia{Type: inlineMediaType, ContentBase64: base64.StdEncoding.EncodeToString(data), MimeType: mimeType}, nil
+	return &inlineMedia{Type: inlineMediaType, ContentBase64: base64.StdEncoding.EncodeToString(data), MimeType: acceptedMimeType(mimeType)}, nil
+}
+
+// acceptedMimeTypes maps the other common names of an audio type onto the one
+// ElevenLabs accepts. Go sniffs a WAV as audio/wave, which it refuses.
+var acceptedMimeTypes = map[string]string{
+	"audio/wave":     "audio/wav",
+	"audio/x-wav":    "audio/wav",
+	"audio/vnd.wave": "audio/wav",
+	"audio/mp3":      "audio/mpeg",
+}
+
+func acceptedMimeType(mimeType string) string {
+	if accepted, renamed := acceptedMimeTypes[mimeType]; renamed {
+		return accepted
+	}
+	return mimeType
 }
 
 func formValue(form *multipart.Form, key string) string {

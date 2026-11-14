@@ -589,3 +589,152 @@ func TestDownloadVideoContentHandler_RejectsNonHTTPDownloadURL(t *testing.T) {
 	require.Equal(t, http.StatusBadGateway, w.Code)
 	assert.Contains(t, w.Body.String(), "unusable video download URL")
 }
+
+const (
+	imagesEditsPath           = "/v1/images/edits"
+	elevenlabsImageModel      = "gpt-image-2"
+	elevenlabsImageJobID      = "gen-image-123"
+	elevenlabsFlowsImagePath  = "/flows/image"
+	elevenlabsSignedImagePath = "/signed/portrait.png"
+	elevenlabsFrontPhoto      = "JPEG-FRONT-PHOTO"
+	elevenlabsGeneratedImage  = "PNG-GENERATED-PORTRAIT"
+	elevenlabsEditPrompt      = "the same person seen from the left"
+	elevenlabsModerated       = "The image was blocked by moderation."
+	elevenlabsPlanRefusal     = "This request requires a paid plan."
+)
+
+// imageStudio stands in for ElevenLabs image generation: it accepts a
+// generation, reports it finished or failed, and serves the image from a
+// signed URL that takes no key.
+type imageStudio struct {
+	refusal     string
+	failure     string
+	created     map[string]any
+	createKey   string
+	lookedAt    string
+	downloadKey string
+}
+
+func (s *imageStudio) serve(t *testing.T) *httptest.Server {
+	t.Helper()
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+
+	mux.HandleFunc("POST "+elevenlabsFlowsImagePath, func(w http.ResponseWriter, r *http.Request) {
+		s.createKey = r.Header.Get(elevenlabsAPIKey)
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&s.created))
+		w.Header().Set("Content-Type", contentTypeJSONVal)
+		if s.refusal != "" {
+			w.WriteHeader(http.StatusPaymentRequired)
+			_, _ = w.Write([]byte(`{"detail":{"status":"paid_plan_required","message":"` + s.refusal + `"}}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"id":"` + elevenlabsImageJobID + `","status":"pending"}`))
+	})
+	mux.HandleFunc("GET "+elevenlabsFlowsImagePath+"/{generation_id}", func(w http.ResponseWriter, r *http.Request) {
+		s.lookedAt = r.PathValue("generation_id")
+		w.Header().Set("Content-Type", contentTypeJSONVal)
+		if s.failure != "" {
+			_, _ = w.Write([]byte(`{"id":"` + elevenlabsImageJobID + `","status":"failed","failure_reason":"moderated","error_message":"` + s.failure + `"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"id":"` + elevenlabsImageJobID + `","status":"completed","content_url":"` + server.URL + elevenlabsSignedImagePath + `","content_mime_type":"image/png"}`))
+	})
+	mux.HandleFunc("GET "+elevenlabsSignedImagePath, func(w http.ResponseWriter, r *http.Request) {
+		s.downloadKey = r.Header.Get(elevenlabsAPIKey)
+		_, _ = w.Write([]byte(elevenlabsGeneratedImage))
+	})
+	return server
+}
+
+func editImageWithElevenlabs(t *testing.T, upstreamURL string, extra ...imagesMultipartField) *httptest.ResponseRecorder {
+	t.Helper()
+	body, contentType := buildImagesMultipart(t, append([]imagesMultipartField{
+		{name: "model", value: "elevenlabs/" + elevenlabsImageModel},
+		{name: "image", filename: "front.jpg", value: elevenlabsFrontPhoto},
+		{name: "prompt", value: elevenlabsEditPrompt},
+		{name: "size", value: "1024x1536"},
+		{name: "quality", value: "high"},
+	}, extra...))
+
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", imagesEditsPath, body)
+	req.Header.Set("Content-Type", contentType)
+	newImagesTestRouter(t, upstreamURL, true).ImagesEditsHandler(w, req)
+	return w
+}
+
+func TestImagesEditsHandler_ElevenlabsAnswersWithTheImageURL(t *testing.T) {
+	studio := &imageStudio{}
+	server := studio.serve(t)
+
+	w := editImageWithElevenlabs(t, server.URL)
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	assert.Equal(t, elevenlabsTestKey, studio.createKey)
+	assert.Equal(t, elevenlabsImageModel, studio.created["model_id"], "the provider prefix must be stripped")
+	assert.Equal(t, elevenlabsEditPrompt, studio.created["prompt"])
+	assert.Equal(t, "2:3", studio.created["aspect_ratio"])
+	assert.Equal(t, "high", studio.created["quality"])
+	photo := studio.created["images"].([]any)[0].(map[string]any)
+	assert.Equal(t, base64.StdEncoding.EncodeToString([]byte(elevenlabsFrontPhoto)), photo["content_base64"], "the photo must reach the provider inline")
+	assert.Equal(t, elevenlabsImageJobID, studio.lookedAt)
+
+	var answer struct {
+		Created int64            `json:"created"`
+		Data    []map[string]any `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &answer))
+	assert.NotZero(t, answer.Created)
+	require.Len(t, answer.Data, 1)
+	assert.Equal(t, map[string]any{"url": server.URL + elevenlabsSignedImagePath}, answer.Data[0])
+}
+
+func TestImagesEditsHandler_ElevenlabsAnswersWithBase64WhenAsked(t *testing.T) {
+	studio := &imageStudio{}
+	server := studio.serve(t)
+
+	w := editImageWithElevenlabs(t, server.URL, imagesMultipartField{name: "response_format", value: "b64_json"})
+
+	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
+	var answer struct {
+		Data []map[string]any `json:"data"`
+	}
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &answer))
+	require.Len(t, answer.Data, 1)
+	assert.Equal(t, map[string]any{"b64_json": base64.StdEncoding.EncodeToString([]byte(elevenlabsGeneratedImage))}, answer.Data[0])
+	assert.Empty(t, studio.downloadKey, "the signed URL must not be sent the provider key")
+}
+
+func TestImagesEditsHandler_ElevenlabsRelaysARejectedGeneration(t *testing.T) {
+	studio := &imageStudio{failure: elevenlabsModerated}
+	server := studio.serve(t)
+
+	w := editImageWithElevenlabs(t, server.URL)
+
+	require.Equal(t, http.StatusBadRequest, w.Code, w.Body.String())
+	assert.Contains(t, w.Body.String(), elevenlabsModerated)
+}
+
+func TestImagesEditsHandler_ElevenlabsRelaysARefusal(t *testing.T) {
+	studio := &imageStudio{refusal: elevenlabsPlanRefusal}
+	server := studio.serve(t)
+
+	w := editImageWithElevenlabs(t, server.URL)
+
+	require.Equal(t, http.StatusPaymentRequired, w.Code, w.Body.String())
+	assert.Contains(t, w.Body.String(), elevenlabsPlanRefusal)
+}
+
+func TestImagesEditsHandler_ElevenlabsRefusesMoreThanOneImage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("a request elevenlabs cannot serve must never be sent")
+	}))
+	defer server.Close()
+
+	w := editImageWithElevenlabs(t, server.URL, imagesMultipartField{name: "n", value: "2"})
+
+	require.Equal(t, http.StatusBadRequest, w.Code, w.Body.String())
+	assert.Contains(t, w.Body.String(), "'n' must be 1")
+}

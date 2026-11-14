@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
+	"net/textproto"
 	"testing"
 
 	assert "github.com/stretchr/testify/assert"
@@ -342,19 +344,64 @@ func TestVideoReferenceImages(t *testing.T) {
 	}
 }
 
-// TestVideoRejectsDrivingAudioForPromptModels proves a prompt-driven model is
-// never sent the avatar payload, which carries no prompt.
-func TestVideoRejectsDrivingAudioForPromptModels(t *testing.T) {
-	for model := range referenceImageLimits {
-		t.Run(model, func(t *testing.T) {
-			form := newForm(t,
-				map[string]string{videoFieldPrompt: testPrompt},
-				map[string]int{videoFieldReference: 1, videoFieldAudio: 1})
+// TestVideoLabelsAudioAsElevenlabsNamesIt proves a driving clip reaches
+// ElevenLabs under a mime type it accepts: Go sniffs a WAV as audio/wave,
+// which ElevenLabs refuses.
+func TestVideoLabelsAudioAsElevenlabsNamesIt(t *testing.T) {
+	const (
+		wavBytes      = "RIFF\x24\x00\x00\x00WAVEfmt "
+		mp3Bytes      = "ID3\x03\x00\x00\x00\x00\x00\x0a"
+		octetStream   = "application/octet-stream"
+		acceptedWav   = "audio/wav"
+		acceptedMpeg  = "audio/mpeg"
+		contentHeader = "Content-Type"
+	)
 
-			_, err := Video(model, form)
+	tests := []struct {
+		name        string
+		contentType string
+		audio       string
+		want        string
+	}{
+		{"an untyped wav is sniffed", octetStream, wavBytes, acceptedWav},
+		{"an untyped mp3 is sniffed", octetStream, mp3Bytes, acceptedMpeg},
+		{"a wav the client calls audio/wave", "audio/wave", wavBytes, acceptedWav},
+		{"a wav the client calls audio/x-wav", "audio/x-wav", wavBytes, acceptedWav},
+		{"an mp3 the client calls audio/mp3", "audio/mp3", mp3Bytes, acceptedMpeg},
+		{"a type elevenlabs accepts is kept", acceptedWav, wavBytes, acceptedWav},
+	}
 
-			require.Error(t, err)
-			assert.Contains(t, err.Error(), "does not lip-sync")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			mw := multipart.NewWriter(&buf)
+			for _, part := range []struct{ field, file, contentType, content string }{
+				{videoFieldReference, "portrait.png", "image/png", testImageBytes},
+				{videoFieldAudio, "line.wav", tt.contentType, tt.audio},
+			} {
+				header := textproto.MIMEHeader{}
+				header.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, part.field, part.file))
+				header.Set(contentHeader, part.contentType)
+				pw, err := mw.CreatePart(header)
+				require.NoError(t, err)
+				_, err = pw.Write([]byte(part.content))
+				require.NoError(t, err)
+			}
+			require.NoError(t, mw.Close())
+			form, err := multipart.NewReader(&buf, mw.Boundary()).ReadForm(testFormMaxMemory)
+			require.NoError(t, err)
+			t.Cleanup(func() { _ = form.RemoveAll() })
+
+			raw, err := Video(testAvatarModel, form)
+
+			require.NoError(t, err)
+			var body struct {
+				Audio struct {
+					MimeType string `json:"mime_type"`
+				} `json:"audio"`
+			}
+			require.NoError(t, json.Unmarshal(raw, &body))
+			assert.Equal(t, tt.want, body.Audio.MimeType)
 		})
 	}
 }

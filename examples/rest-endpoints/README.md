@@ -547,6 +547,40 @@ Or for a provider without native Images API support:
 }
 ```
 
+#### Image Edits with ElevenLabs
+
+ElevenLabs has no OpenAI-shaped Images API. It edits an image as a generation
+job, so the gateway translates the request, waits for the job and answers with
+the same `ImagesResponse`. One ElevenLabs key then covers a portrait, its voice
+and the lip-synced video.
+
+```bash
+# Generate a three-quarter view of the person in a photo
+curl -X POST "http://localhost:8080/v1/images/edits" \
+  -H "Authorization: Bearer $TOKEN" \
+  -F image="@front.jpg" \
+  -F prompt="The same person seen from a three-quarter left view" \
+  -F model="elevenlabs/gpt-image-2" \
+  -F size="1024x1536" \
+  -F quality="high"
+```
+
+```json
+{
+  "created": 1792570901,
+  "data": [{ "url": "https://.../signed/portrait.png" }]
+}
+```
+
+- The answer carries a signed `url` that expires after about an hour. Send
+  `response_format=b64_json` to get the image inline instead.
+- `size` becomes an aspect ratio (`1024x1536` is `2:3`), and `auto` lets the
+  model follow the photo. The model has to accept the ratio.
+- `quality` is passed on for `low`, `medium` and `high`.
+- A generation yields one image, so `n` above 1 answers `400`.
+- The request stays open while ElevenLabs renders, up to five minutes.
+- The image generation API needs an ElevenLabs plan and key that allow it.
+
 ## Text to Speech
 
 The gateway exposes an OpenAI-compatible `POST /v1/audio/speech` endpoint for

@@ -231,6 +231,9 @@ const (
     {{- with (index $config.Endpoints "images_edits").Endpoint }}
     {{pascalCase $name}}ImagesEditsEndpoint = "{{.}}"
     {{- end }}
+    {{- with (index $config.Endpoints "images_retrieve").Endpoint }}
+    {{pascalCase $name}}ImagesRetrieveEndpoint = "{{.}}"
+    {{- end }}
     {{- with (index $config.Endpoints "speech").Endpoint }}
     {{pascalCase $name}}SpeechEndpoint = "{{.}}"
     {{- end }}
@@ -688,6 +691,9 @@ var Registry = map[types.Provider]*ProviderConfig{
 			{{- end }}
 			{{- if (index $config.Endpoints "images_edits").Endpoint }}
 			ImagesEdits: ptr(constants.{{pascalCase $name}}ImagesEditsEndpoint),
+			{{- end }}
+			{{- if (index $config.Endpoints "images_retrieve").Endpoint }}
+			ImagesRetrieve: ptr(constants.{{pascalCase $name}}ImagesRetrieveEndpoint),
 			{{- end }}
 			{{- if (index $config.Endpoints "speech").Endpoint }}
 			Speech: ptr(constants.{{pascalCase $name}}SpeechEndpoint),
