@@ -836,6 +836,7 @@ const (
 	Groq        Provider = "groq"
 	Llamacpp    Provider = "llamacpp"
 	Minimax     Provider = "minimax"
+	Mirelo      Provider = "mirelo"
 	Mistral     Provider = "mistral"
 	Moonshot    Provider = "moonshot"
 	Nvidia      Provider = "nvidia"
@@ -866,6 +867,8 @@ func (e Provider) Valid() bool {
 	case Llamacpp:
 		return true
 	case Minimax:
+		return true
+	case Mirelo:
 		return true
 	case Mistral:
 		return true
@@ -2120,7 +2123,7 @@ type CreateSFXRequest struct {
 	// Loop Whether to generate a clip that loops seamlessly.
 	Loop *bool `json:"loop,omitempty"`
 
-	// Model Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`).
+	// Model Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`, `mirelo/sfx-2.0`).
 	Model string `json:"model"`
 
 	// Prompt Description of the sound to generate (e.g. `distant thunder rolling over a valley`).

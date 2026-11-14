@@ -34,6 +34,7 @@ import (
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	proxy "github.com/inference-gateway/inference-gateway/internal/proxy"
+	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
 	systemone "github.com/inference-gateway/inference-gateway/internal/systemone"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
@@ -1339,6 +1340,11 @@ type jsonTranslator func(endpoint, model string, body []byte) (path, query strin
 // into the gateway's own shape. Error responses are relayed untouched.
 type jsonResponseTranslator func(body []byte) ([]byte, error)
 
+// upstreamResponder sends the translated request itself and writes the whole
+// client response, for providers whose answer is not the response body the
+// gateway relays (an asynchronous job, say).
+type upstreamResponder func(router *RouterImpl, w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest)
+
 // jsonPreparer rewrites a request body with provider calls of its own, before
 // the translator runs. It serves what one upstream call cannot, such as
 // cloning a voice before speaking in it.
@@ -1350,6 +1356,7 @@ type jsonPreparer func(r *http.Request, provider core.IProvider, body []byte) ([
 // off the resolved provider and outputModality, when set, is the output
 // modality a model must list in the models.dev table to be forwarded.
 type jsonProxy struct {
+	responders          map[types.Provider]upstreamResponder
 	apiName             string
 	exampleModel        string
 	accept              string
@@ -1469,6 +1476,10 @@ func (router *RouterImpl) proxyJSONBody(w http.ResponseWriter, r *http.Request, 
 		router.forwardTranslated(w, r, provider, upstream, translate)
 		return
 	}
+	if respond := p.responders[providerID]; respond != nil {
+		respond(router, w, r, provider, upstream)
+		return
+	}
 	if f := router.forwardUpstream(w, r, provider, upstream); f != nil {
 		middlewares.WriteJSON(w, f.status, ErrorResponse{Error: f.message})
 	}
@@ -1576,8 +1587,8 @@ func (router *RouterImpl) SpeechHandler(w http.ResponseWriter, r *http.Request) 
 // generates a non-speech audio clip - a sound effect or ambience - from a text
 // prompt. OpenAI has no sound-effects endpoint, so the request mirrors
 // /audio/speech (JSON in, raw audio bytes out) and only providers that carry an
-// Sfx endpoint (currently elevenlabs) can serve it; the rest receive a 400,
-// mirroring the schema's SFXNotSupported response.
+// Sfx endpoint (currently elevenlabs and mirelo) can serve it; the rest receive
+// a 400, mirroring the schema's SFXNotSupported response.
 //
 // The endpoint shares the AUDIO_ENABLED toggle with /audio/speech.
 func (router *RouterImpl) SFXHandler(w http.ResponseWriter, r *http.Request) {
@@ -1590,8 +1601,104 @@ func (router *RouterImpl) SFXHandler(w http.ResponseWriter, r *http.Request) {
 		exampleModel: "elevenlabs/eleven_text_to_sound_v2",
 		endpointOf:   func(e types.Endpoints) *string { return e.SFX },
 		notSupported: "Sound effect generation is not supported by this provider yet.",
-		translators:  map[types.Provider]jsonTranslator{constants.ElevenlabsID: elevenlabsSFX},
+		translators: map[types.Provider]jsonTranslator{
+			constants.ElevenlabsID: elevenlabsSFX,
+			constants.MireloID:     mireloSFX,
+		},
+		responders: map[types.Provider]upstreamResponder{constants.MireloID: (*RouterImpl).relayMireloAudio},
 	})
+}
+
+// mireloSFX rewrites a gateway CreateSFXRequest into the Mirelo text-to-sfx
+// shape.
+func mireloSFX(endpoint, model string, body []byte) (string, string, []byte, error) {
+	var req types.CreateSFXRequest
+	if err := json.Unmarshal(body, &req); err != nil {
+		return "", "", nil, fmt.Errorf("failed to decode request: %w", err)
+	}
+	out, err := sfx.FromText(model, req)
+	if err != nil {
+		return "", "", nil, err
+	}
+	return endpoint, "", out, nil
+}
+
+const (
+	audioMedia            = "audio"
+	mireloNotReadyMessage = "The sound effect was not ready in time. Retry the request or ask for a shorter clip."
+)
+
+// relayMireloAudio turns Mirelo's asynchronous job into the raw audio bytes
+// /v1/audio/sfx answers with: it creates the job, long-polls it to a final
+// state and streams the audio file the job links to.
+// shortcut: no sleep between polls, it relies on Mirelo holding ?wait= open - add a Retry-After sleep if it ever answers early.
+// shortcut: a poll failure is terminal and the client re-requests - add in-budget retries only if transient poll failures show up in practice.
+func (router *RouterImpl) relayMireloAudio(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) {
+	createPath := req.endpointPath
+	req.query = sfx.WaitQuery(router.cfg.Server.ReadTimeout)
+	req.accept = contentTypeJSON
+
+	for range sfx.MaxJobRequests {
+		router.extendWriteDeadline(w)
+		job, ok := router.mireloJob(w, r, provider, req)
+		if !ok {
+			return
+		}
+		if job.Pending() {
+			req = upstreamRequest{method: http.MethodGet, endpointPath: sfx.JobPath(createPath, job.ID), query: req.query, accept: contentTypeJSON}
+			continue
+		}
+
+		audioURL, contentType, err := job.Audio()
+		if err != nil {
+			router.logger.Error("mirelo job did not produce audio", err, "job_id", job.ID)
+			middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
+			return
+		}
+		router.extendWriteDeadline(w)
+		router.streamDownload(w, r, audioURL, audioMedia, contentType)
+		return
+	}
+
+	router.logger.Error("mirelo job still pending after the last poll", nil, "requests", sfx.MaxJobRequests)
+	middlewares.WriteJSON(w, http.StatusGatewayTimeout, ErrorResponse{Error: mireloNotReadyMessage})
+}
+
+// extendWriteDeadline gives the response one more upstream round trip plus the
+// time to write it, so a job polled over several requests outlives WRITE_TIMEOUT.
+func (router *RouterImpl) extendWriteDeadline(w http.ResponseWriter) {
+	middlewares.ResetWriteDeadline(w, router.cfg.Server.ReadTimeout+router.cfg.Server.WriteTimeout)
+}
+
+// mireloJob sends req to Mirelo and decodes the job it answers with. Failures
+// and upstream error responses are already written to w, reported by a false ok.
+func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) (sfx.Job, bool) {
+	resp, done, failure := router.callUpstream(r, provider, req)
+	if failure != nil {
+		middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
+		return sfx.Job{}, false
+	}
+	defer done()
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
+	if err != nil {
+		router.logger.Error("failed to read mirelo job response", err)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+		return sfx.Job{}, false
+	}
+	if resp.StatusCode >= http.StatusBadRequest {
+		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
+		return sfx.Job{}, false
+	}
+
+	job, err := sfx.ParseJob(body)
+	if err != nil {
+		router.logger.Error("failed to decode mirelo job response", err)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
+		return sfx.Job{}, false
+	}
+	return job, true
 }
 
 // MusicHandler implements POST /v1/audio/music, the gateway extension that
@@ -2197,9 +2304,12 @@ const (
 	// videosAPIName labels the Videos API in logs and errors.
 	videosAPIName = "Videos API"
 
-	// videoJobMaxResponseSize caps how much of a provider's job payload is read
-	// before mapping it onto a VideoJob.
-	videoJobMaxResponseSize = 1 << 20
+	// videoMedia names the media kind in download errors.
+	videoMedia = "video"
+
+	// jobMaxResponseSize caps how much of a provider's asynchronous job payload
+	// is read before it is decoded.
+	jobMaxResponseSize = 1 << 20
 
 	// videoIDPlaceholder is the token registry video endpoints carry for the
 	// upstream job id.
@@ -2379,17 +2489,19 @@ func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *
 		return
 	}
 
-	router.streamRenderedVideo(w, r, downloadURL)
+	router.streamDownload(w, r, downloadURL, videoMedia, "")
 }
 
-// streamRenderedVideo relays the rendered video from the provider-supplied
-// download URL. The URL comes from the provider's own authenticated response and
-// is already signed, so no gateway or provider credential is attached.
-func (router *RouterImpl) streamRenderedVideo(w http.ResponseWriter, r *http.Request, videoURL string) {
-	parsed, usable := downloadURL(videoURL)
+// streamDownload relays rendered media (a "video" or "audio" file) from the
+// provider-supplied, already signed download URL, so no credential is attached.
+// The URL must be absolute HTTP(S) so a malformed payload cannot make the
+// gateway fetch a file:// address. A non-empty contentType overrides the
+// download's own on success.
+func (router *RouterImpl) streamDownload(w http.ResponseWriter, r *http.Request, raw, media, contentType string) {
+	parsed, usable := downloadURL(raw)
 	if !usable {
-		router.logger.Error("provider returned an unusable video download url", nil, "url", videoURL)
-		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "The provider returned an unusable video download URL."})
+		router.logger.Error("provider returned an unusable download url", nil, "media", media, "url", raw)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "The provider returned an unusable " + media + " download URL."})
 		return
 	}
 
@@ -2398,21 +2510,24 @@ func (router *RouterImpl) streamRenderedVideo(w http.ResponseWriter, r *http.Req
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, parsed.String(), nil)
 	if err != nil {
-		router.logger.Error("failed to create video download request", err, "url", videoURL)
+		router.logger.Error("failed to create download request", err, "media", media, "url", raw)
 		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to create upstream request"})
 		return
 	}
 
 	resp, err := router.client.Do(req)
 	if err != nil {
-		router.logger.Error("failed to download rendered video", err, "url", videoURL)
-		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to download the rendered video"})
+		router.logger.Error("failed to download rendered media", err, "media", media, "url", raw)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to download the rendered " + media})
 		return
 	}
 	defer resp.Body.Close()
 
 	markUpstreamError(r, resp)
-	writeDataFromReader(w, resp.StatusCode, resp.ContentLength, resp.Header.Get("Content-Type"), resp.Body)
+	if contentType == "" || resp.StatusCode >= http.StatusBadRequest {
+		contentType = resp.Header.Get("Content-Type")
+	}
+	writeDataFromReader(w, resp.StatusCode, resp.ContentLength, contentType, resp.Body)
 }
 
 // resolveVideoTarget resolves the provider, upstream job id and endpoint for a
@@ -2486,7 +2601,7 @@ func (router *RouterImpl) videoJob(w http.ResponseWriter, r *http.Request, provi
 	defer done()
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, videoJobMaxResponseSize))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
 	if err != nil {
 		router.logger.Error("failed to read video job response", err, "provider", providerID)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})

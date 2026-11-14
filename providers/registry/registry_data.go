@@ -113,6 +113,17 @@ var Registry = map[types.Provider]*ProviderConfig{
 			Chat:   constants.MinimaxChatEndpoint,
 		},
 	},
+	constants.MireloID: {
+		ID:       constants.MireloID,
+		Name:     constants.MireloDisplayName,
+		URL:      constants.MireloDefaultBaseURL,
+		AuthType: constants.AuthTypeBearer,
+		Endpoints: types.Endpoints{
+			Models: constants.MireloModelsEndpoint,
+			Chat:   constants.MireloChatEndpoint,
+			SFX:    ptr(constants.MireloSFXEndpoint),
+		},
+	},
 	constants.MistralID: {
 		ID:       constants.MistralID,
 		Name:     constants.MistralDisplayName,

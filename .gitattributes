@@ -13,6 +13,7 @@ providers/transformers/*_test.go linguist-generated=false
 providers/transformers/model.go linguist-generated=false
 providers/transformers/elevenlabs.go linguist-generated=false
 providers/transformers/cloudflare.go linguist-generated=false
+providers/transformers/mirelo.go linguist-generated=false
 
 internal/mcp/generated_types.go linguist-generated=true
 

@@ -28,6 +28,8 @@ func NewListModelsTransformer(provider types.Provider) constants.ListModelsTrans
 		return &ListModelsResponseLlamacpp{}
 	case constants.MinimaxID:
 		return &ListModelsResponseMinimax{}
+	case constants.MireloID:
+		return &ListModelsResponseMirelo{}
 	case constants.MistralID:
 		return &ListModelsResponseMistral{}
 	case constants.MoonshotID:

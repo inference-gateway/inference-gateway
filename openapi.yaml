@@ -1591,6 +1591,7 @@ components:
         - nvidia
         - zai
         - webwright
+        - mirelo
       x-provider-configs:
         ollama:
           id: 'ollama'
@@ -1884,6 +1885,19 @@ components:
               name: 'chat_completions'
               method: 'POST'
               endpoint: '/chat/completions'
+        mirelo:
+          id: 'mirelo'
+          url: 'https://api.mirelo.ai/v3'
+          auth_type: 'bearer'
+          endpoints:
+            models:
+              name: 'list_models'
+              method: 'GET'
+              endpoint: '/models'
+            sfx:
+              name: 'create_sfx'
+              method: 'POST'
+              endpoint: '/text-to-sfx/generations'
     ProviderSpecificResponse:
       type: object
       description: |
@@ -3433,7 +3447,7 @@ components:
       properties:
         model:
           type: string
-          description: Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`).
+          description: Model ID to use for sound-effect generation (e.g. `elevenlabs/eleven_text_to_sound_v2`, `mirelo/sfx-2.0`).
         prompt:
           type: string
           description: Description of the sound to generate (e.g. `distant thunder rolling over a valley`).
@@ -4930,7 +4944,7 @@ components:
                   env: 'AUDIO_ENABLED'
                   type: bool
                   default: 'false'
-                  description: 'Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx, POST /v1/audio/music). When disabled, the endpoints return a 404. Served by providers with speech, sound-effect or music support (currently openai and elevenlabs) or by the local llama-tts engine'
+                  description: 'Enable the Audio API (POST /v1/audio/speech, POST /v1/audio/sfx, POST /v1/audio/music). When disabled, the endpoints return a 404. Served by providers with speech, sound-effect or music support (currently openai, elevenlabs and mirelo) or by the local llama-tts engine'
                 - name: decisions_enabled
                   env: 'DECISIONS_ENABLED'
                   type: bool
@@ -5447,6 +5461,16 @@ components:
                   env: 'WEBWRIGHT_API_KEY'
                   type: string
                   description: 'WebWright API Key'
+                  secret: true
+                - name: mirelo_api_url
+                  env: 'MIRELO_API_URL'
+                  type: string
+                  default: 'https://api.mirelo.ai/v3'
+                  description: 'Mirelo API URL'
+                - name: mirelo_api_key
+                  env: 'MIRELO_API_KEY'
+                  type: string
+                  description: 'Mirelo API Key'
                   secret: true
           - routing:
               title: 'Routing'
