@@ -44,11 +44,13 @@ const (
 	// request wants back, one of OutputMix, OutputSFX or OutputSpeech.
 	FieldOutput = "output"
 
-	fieldPrompt             = "prompt"
-	fieldDurationSeconds    = "duration_seconds"
-	fieldStartOffsetSeconds = "start_offset_seconds"
-	fieldPreserveSpeech     = "preserve_speech"
-	fieldResponseFormat     = "response_format"
+	// The remaining multipart fields of a video-to-sfx request, shared with
+	// the provider translators that live outside this package.
+	FieldPrompt             = "prompt"
+	FieldDurationSeconds    = "duration_seconds"
+	FieldStartOffsetSeconds = "start_offset_seconds"
+	FieldPreserveSpeech     = "preserve_speech"
+	FieldResponseFormat     = "response_format"
 
 	OutputMix    = "mix"
 	OutputSFX    = "sfx"
@@ -178,7 +180,7 @@ func FromText(model string, req types.CreateSFXRequest) ([]byte, error) {
 // scoring the asset the upload produced. Omitting the duration scores the rest
 // of the clip. model is the request model with the provider prefix stripped.
 func FromVideo(model string, form *multipart.Form, assetID string) ([]byte, error) {
-	format, err := outputFormat(formValue(form, fieldResponseFormat))
+	format, err := outputFormat(formValue(form, FieldResponseFormat))
 	if err != nil {
 		return nil, err
 	}
@@ -189,13 +191,13 @@ func FromVideo(model string, form *multipart.Form, assetID string) ([]byte, erro
 
 	body := videoBody{
 		Model:  model,
-		Input:  videoInput{Video: mediaRef{Type: mediaTypeAsset, ID: assetID}, Prompt: formValue(form, fieldPrompt)},
+		Input:  videoInput{Video: mediaRef{Type: mediaTypeAsset, ID: assetID}, Prompt: formValue(form, FieldPrompt)},
 		Output: sfxOutput{Format: format},
 	}
-	if body.DurationMs, err = optionalMillis(form, fieldDurationSeconds, minVideoSeconds); err != nil {
+	if body.DurationMs, err = optionalMillis(form, FieldDurationSeconds, minVideoSeconds); err != nil {
 		return nil, err
 	}
-	if body.StartOffsetMs, err = optionalMillis(form, fieldStartOffsetSeconds, minOffsetSeconds); err != nil {
+	if body.StartOffsetMs, err = optionalMillis(form, FieldStartOffsetSeconds, minOffsetSeconds); err != nil {
 		return nil, err
 	}
 	if body.Controls, err = videoControlsFrom(form, output); err != nil {
@@ -223,10 +225,10 @@ func optionalMillis(form *multipart.Form, field string, minSeconds float64) (*in
 // exists when speech is not preserved, so that is the default for it.
 func videoControlsFrom(form *multipart.Form, output string) (*videoControls, error) {
 	controls := &videoControls{SeparateSpeech: output != OutputMix}
-	if raw := formValue(form, fieldPreserveSpeech); raw != "" {
+	if raw := formValue(form, FieldPreserveSpeech); raw != "" {
 		preserve, err := strconv.ParseBool(raw)
 		if err != nil {
-			return nil, fmt.Errorf("the '%s' field must be true or false", fieldPreserveSpeech)
+			return nil, fmt.Errorf("the '%s' field must be true or false", FieldPreserveSpeech)
 		}
 		controls.PreserveSpeech = &preserve
 	}

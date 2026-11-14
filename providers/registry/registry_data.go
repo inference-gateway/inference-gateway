@@ -64,6 +64,7 @@ var Registry = map[types.Provider]*ProviderConfig{
 			ImagesRetrieve: ptr(constants.ElevenlabsImagesRetrieveEndpoint),
 			Speech:         ptr(constants.ElevenlabsSpeechEndpoint),
 			SFX:            ptr(constants.ElevenlabsSFXEndpoint),
+			SFXVideo:       ptr(constants.ElevenlabsSFXVideoEndpoint),
 			Music:          ptr(constants.ElevenlabsMusicEndpoint),
 			Videos:         ptr(constants.ElevenlabsVideosEndpoint),
 			VideosRetrieve: ptr(constants.ElevenlabsVideosRetrieveEndpoint),

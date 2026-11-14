@@ -787,6 +787,29 @@ still running after the gateway stops waiting answers `504`:
 }
 ```
 
+### Scoring a video with ElevenLabs
+
+ElevenLabs scores a video through its video-to-music API, which answers in one
+call instead of as a job: the gateway streams the clip up with the sound-effect
+cues enabled and relays the finished audio. It takes a music model and a paid
+plan, and `response_format` is `mp3` (default), `opus` or `pcm`.
+
+```bash
+curl -X POST http://localhost:8080/v1/audio/sfx \
+  -F model="elevenlabs/music_v2_5" \
+  -F video="@scene.mov" \
+  -F prompt="soft keyboard taps, gentle office ambience" \
+  -o scored.mp3
+```
+
+`output=sfx` asks ElevenLabs for separate tracks and answers with the effects
+file unpacked from the archive it returns, leaving the music track behind.
+`preserve_speech`, `output=speech`, `start_offset_seconds` and
+`duration_seconds` have no counterpart there and answer `400` naming the field -
+the whole clip is always scored, dialogue and all. Repeating the `video` part
+scores several clips as one timeline, up to the 10 clips, 200 MB and 600 seconds
+ElevenLabs allows combined, within `SERVER_MAX_REQUEST_BODY_SIZE`.
+
 For a provider without sound-effect support:
 
 ```json
