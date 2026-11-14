@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.66.0](https://github.com/inference-gateway/inference-gateway/compare/v0.65.0...v0.66.0) (2026-11-14)
+
+### ✨ Features
+
+* **audio:** score a video on the sfx endpoint ([#864](https://github.com/inference-gateway/inference-gateway/issues/864)) ([0918529](https://github.com/inference-gateway/inference-gateway/commit/0918529e36f93178d8dbc9f9662d1a3765598b4b))
+* **audio:** score a video with elevenlabs on the sfx endpoint ([#871](https://github.com/inference-gateway/inference-gateway/issues/871)) ([14f06ff](https://github.com/inference-gateway/inference-gateway/commit/14f06ff3b64d0f1bf70e86f8522243d2f3f4f6ec))
+* **elevenlabs:** serve image edits through an elevenlabs image generation ([#856](https://github.com/inference-gateway/inference-gateway/issues/856)) ([ad8312c](https://github.com/inference-gateway/inference-gateway/commit/ad8312cbd4d831082633c7a83d3a0c3b4ff10da2)), closes [#855](https://github.com/inference-gateway/inference-gateway/issues/855)
+* **providers:** add mirelo for sound-effect generation ([#845](https://github.com/inference-gateway/inference-gateway/issues/845)) ([749626d](https://github.com/inference-gateway/inference-gateway/commit/749626da2ed600cd7388b2649affe13aed02053f))
+* **videos:** dub a video with mirelo's generated sound ([#870](https://github.com/inference-gateway/inference-gateway/issues/870)) ([07007b7](https://github.com/inference-gateway/inference-gateway/commit/07007b7f8a29f9049d4b5a6efbdc4a1a77520746)), closes [#868](https://github.com/inference-gateway/inference-gateway/issues/868)
+* **videos:** lip-sync locally with local/musetalk ([#860](https://github.com/inference-gateway/inference-gateway/issues/860)) ([1442a30](https://github.com/inference-gateway/inference-gateway/commit/1442a3013ec3ac9ca5fc03059887354e539641be))
+
+### ♻️ Improvements
+
+* **api:** split routes.go into capability files with pure moves ([#873](https://github.com/inference-gateway/inference-gateway/issues/873)) ([f0841b4](https://github.com/inference-gateway/inference-gateway/commit/f0841b4d65a86afd002eebdf518a0c0db3e830f9)), references [#869](https://github.com/inference-gateway/inference-gateway/issues/869)
+
+### 🐛 Bug Fixes
+
+* **elevenlabs:** send a driving wav as audio/wav ([#859](https://github.com/inference-gateway/inference-gateway/issues/859)) ([f699c77](https://github.com/inference-gateway/inference-gateway/commit/f699c777369ab86960e7f3b46879c6e04fdb139b)), closes [#858](https://github.com/inference-gateway/inference-gateway/issues/858)
+* **sfx:** use the exported video field constants in Dub ([#872](https://github.com/inference-gateway/inference-gateway/issues/872)) ([7f7b6a7](https://github.com/inference-gateway/inference-gateway/commit/7f7b6a7eadeaede81a79d0b94bf9f2182da99b7c))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump peter-evans/create-pull-request ([#861](https://github.com/inference-gateway/inference-gateway/issues/861)) ([a347131](https://github.com/inference-gateway/inference-gateway/commit/a3471310131ed95f2be6f94ff4f4bf855c29a448))
+* **deps:** bump the gomod group with 6 updates ([#862](https://github.com/inference-gateway/inference-gateway/issues/862)) ([8823fbc](https://github.com/inference-gateway/inference-gateway/commit/8823fbc91d58aaab9a5b1ba9d7d902c940b613ff))
+
+### ✅ Miscellaneous
+
+* **videos:** fail when a video provider has no translator or job mapper ([#854](https://github.com/inference-gateway/inference-gateway/issues/854)) ([6eb3757](https://github.com/inference-gateway/inference-gateway/commit/6eb3757491d46a6072d2d2596cddb0f1b9b0b869))
+
 ## [0.65.0](https://github.com/inference-gateway/inference-gateway/compare/v0.64.0...v0.65.0) (2026-11-13)
 
 ### ✨ Features
