@@ -29,8 +29,8 @@ import (
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
 	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
+	lipsync "github.com/inference-gateway/inference-gateway/internal/lipsync"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
-	musetalk "github.com/inference-gateway/inference-gateway/internal/musetalk"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	proxy "github.com/inference-gateway/inference-gateway/internal/proxy"
@@ -55,7 +55,7 @@ type RouterImpl struct {
 	telemetry         otel.OpenTelemetry
 	selector          *routing.Selector
 	tts               *tts.Engine
-	lipsync           *musetalk.Engine
+	lipsync           *lipsync.Engine
 	proxyTransport    http.RoundTripper
 	proxyTransportErr error
 	elevenlabsVoices  elevenlabs.VoiceLibrary
@@ -92,7 +92,7 @@ func NewRouter(
 		telemetry:         telemetry,
 		selector:          selector,
 		tts:               localTTS,
-		lipsync:           musetalk.NewEngine(logger),
+		lipsync:           lipsync.NewEngine(logger),
 		proxyTransport:    proxyTransport,
 		proxyTransportErr: proxyTransportErr,
 	}
@@ -2271,7 +2271,7 @@ func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) 
 	model := imagesFormValue(form, imageFormFieldModel)
 	originalModel := model
 
-	if strings.HasPrefix(model, musetalk.ModelPrefix) {
+	if strings.HasPrefix(model, tts.ModelPrefix) {
 		router.serveLocalVideo(w, model, form)
 		return
 	}
@@ -2532,16 +2532,20 @@ const (
 // serveLocalVideo queues a lip-sync render on the built-in engine for a
 // request that names a local/ model, and answers with its job.
 func (router *RouterImpl) serveLocalVideo(w http.ResponseWriter, model string, form *multipart.Form) {
-	if model != musetalk.ReservedModelID {
+	if model != lipsync.ReservedModelID {
 		router.logger.Error("unknown local video model", nil, "model", model)
-		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Unknown local video model %q. %q is the only local video model.", model, musetalk.ReservedModelID)})
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("Unknown local video model %q. %q is the only local video model.", model, lipsync.ReservedModelID)})
+		return
+	}
+	if reason := router.modelDenied(model); reason != "" {
+		middlewares.WriteJSON(w, http.StatusForbidden, ErrorResponse{Error: reason})
 		return
 	}
 
 	portraits, clips := form.File[videoFormFieldReference], form.File[videoFormFieldAudio]
 	if len(portraits) == 0 || len(clips) == 0 {
 		router.logger.Error("local video request missing its portrait or clip", nil)
-		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("%s lip-syncs a portrait to a clip: the '%s' image and the '%s' clip are both required.", musetalk.ReservedModelID, videoFormFieldReference, videoFormFieldAudio)})
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("%s lip-syncs a portrait to a clip: the '%s' image and the '%s' clip are both required.", lipsync.ReservedModelID, videoFormFieldReference, videoFormFieldAudio)})
 		return
 	}
 	portrait, err := portraits[0].Open()
@@ -2558,14 +2562,14 @@ func (router *RouterImpl) serveLocalVideo(w http.ResponseWriter, model string, f
 	defer clip.Close()
 
 	job, err := router.lipsync.Submit(
-		musetalk.Upload{Name: portraits[0].Filename, Data: portrait},
-		musetalk.Upload{Name: clips[0].Filename, Data: clip},
+		lipsync.Upload{Name: portraits[0].Filename, Data: portrait},
+		lipsync.Upload{Name: clips[0].Filename, Data: clip},
 	)
 	if err != nil {
-		var notReady *musetalk.NotReadyError
+		var notReady *lipsync.NotReadyError
 		if errors.As(err, &notReady) {
 			router.logger.Warn("local lip-sync engine not ready", nil, "detail", notReady.Error())
-			w.Header().Set("Retry-After", strconv.Itoa(musetalk.RetryAfterSeconds))
+			w.Header().Set("Retry-After", strconv.Itoa(lipsync.RetryAfterSeconds))
 			middlewares.WriteJSON(w, http.StatusServiceUnavailable, ErrorResponse{Error: notReady.Error()})
 			return
 		}

@@ -1,4 +1,4 @@
-package musetalk
+package lipsync
 
 import (
 	"os"
@@ -57,7 +57,7 @@ func home(t *testing.T, engine string, weights bool) {
 	if weights {
 		model := filepath.Join(dir, filepath.FromSlash(CacheModelDir))
 		require.NoError(t, os.MkdirAll(model, 0o755))
-		require.NoError(t, os.WriteFile(filepath.Join(model, weightsFile), []byte("weights"), 0o644))
+		require.NoError(t, os.WriteFile(filepath.Join(model, WeightsFile), []byte("weights"), 0o644))
 	}
 }
 

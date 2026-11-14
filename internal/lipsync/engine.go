@@ -1,8 +1,8 @@
-// Package musetalk lip-syncs a portrait to an audio clip on this machine by
+// Package lipsync lip-syncs a portrait to an audio clip on this machine by
 // running a MuseTalk engine as a one-shot process per render. The engine is an
 // executable with a fixed command line, so the runtime behind it can change
 // without the gateway noticing.
-package musetalk
+package lipsync
 
 import (
 	"context"
@@ -25,9 +25,6 @@ const (
 	// ReservedModelID is the gateway model id routed to the built-in local
 	// engine instead of a provider.
 	ReservedModelID = "local/musetalk"
-
-	// ModelPrefix reserves the local/ namespace for built-in engines.
-	ModelPrefix = "local/"
 
 	// BinaryName is the engine executable. It is run as
 	// `musetalk --model-dir <dir> --image <portrait> --audio <clip> --out <mp4>`.
@@ -53,7 +50,7 @@ const (
 	clipName        = "clip.mp4"
 	defaultImageExt = ".png"
 	defaultAudioExt = ".wav"
-	weightsFile     = "unet.safetensors"
+	WeightsFile     = "unet.safetensors"
 	renderFailed    = "the local render failed"
 )
 
@@ -160,7 +157,7 @@ func installed() (binary, modelDir string, err error) {
 		return "", "", &NotReadyError{Detail: fmt.Sprintf("The local lip-sync engine is not installed: %s is missing.", binary)}
 	}
 	modelDir = filepath.Join(home, filepath.FromSlash(CacheModelDir))
-	if _, statErr := os.Stat(filepath.Join(modelDir, weightsFile)); statErr != nil {
+	if _, statErr := os.Stat(filepath.Join(modelDir, WeightsFile)); statErr != nil {
 		return "", "", &NotReadyError{Detail: fmt.Sprintf("The local lip-sync weights are missing: download %s to %s (infer models download %s).", ModelRepo, modelDir, ModelRepo)}
 	}
 	return binary, modelDir, nil

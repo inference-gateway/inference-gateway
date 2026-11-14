@@ -13,11 +13,12 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
-	musetalk "github.com/inference-gateway/inference-gateway/internal/musetalk"
+	config "github.com/inference-gateway/inference-gateway/config"
+	lipsync "github.com/inference-gateway/inference-gateway/internal/lipsync"
 )
 
 const (
-	localVideoModel    = "local/musetalk"
+	localVideoModel    = lipsync.ReservedModelID
 	localVideoIDPrefix = "local:"
 	localPortrait      = "PNG-PORTRAIT"
 	localClip          = "RIFF-CLIP"
@@ -44,12 +45,12 @@ func installLocalEngine(t *testing.T) {
 	t.Helper()
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	tools := filepath.Join(home, musetalk.CacheToolsDir)
+	tools := filepath.Join(home, lipsync.CacheToolsDir)
 	require.NoError(t, os.MkdirAll(tools, 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(tools, musetalk.BinaryName), []byte(localEngine), 0o755))
-	model := filepath.Join(home, filepath.FromSlash(musetalk.CacheModelDir))
+	require.NoError(t, os.WriteFile(filepath.Join(tools, lipsync.BinaryName), []byte(localEngine), 0o755))
+	model := filepath.Join(home, filepath.FromSlash(lipsync.CacheModelDir))
 	require.NoError(t, os.MkdirAll(model, 0o755))
-	require.NoError(t, os.WriteFile(filepath.Join(model, "unet.safetensors"), []byte("weights"), 0o644))
+	require.NoError(t, os.WriteFile(filepath.Join(model, lipsync.WeightsFile), []byte("weights"), 0o644))
 }
 
 func lipSyncLocally(t *testing.T, router http.Handler, fields ...imagesMultipartField) *httptest.ResponseRecorder {
@@ -138,6 +139,15 @@ func TestVideosHandler_LocalKnowsOneModel(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, w.Code, w.Body.String())
 	assert.Contains(t, w.Body.String(), "only local video model")
+}
+
+func TestVideosHandler_LocalHonoursTheModelDenyList(t *testing.T) {
+	installLocalEngine(t)
+	router := newVideosTestRouter(t, "http://unused", enableVideos, func(c *config.Config) { c.DisallowedModels = lipsync.ReservedModelID })
+
+	w := lipSyncLocally(t, router, localRender()...)
+
+	assert.Equal(t, http.StatusForbidden, w.Code, w.Body.String())
 }
 
 func TestRetrieveVideoHandler_LocalDoesNotKnowAForgottenRender(t *testing.T) {

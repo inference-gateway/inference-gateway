@@ -774,8 +774,8 @@ immediately; poll `GET /v1/videos/{video_id}` until `status` is `completed`,
 then download the bytes from `GET /v1/videos/{video_id}/content`.
 
 The endpoint is opt-in via `VIDEOS_ENABLED=true` (default off). When disabled,
-the handlers return `404`. Only the `elevenlabs` provider supports it today;
-other providers return `400`.
+the handlers return `404`. The `elevenlabs` provider and the built-in
+`local/musetalk` lip-sync engine serve it today; other providers return `400`.
 
 The job `id` carries the provider (`elevenlabs:gen_abc123`) because the gateway
 keeps no job state. Send it back verbatim; `?provider=` still overrides it.
@@ -841,6 +841,43 @@ and `/content` returns `404`:
 {
   "error": "The rendered video is not available yet. Poll GET /v1/videos/{video_id} until the status is completed."
 }
+```
+
+### Local lip-sync
+
+The reserved `local/musetalk` model lip-syncs a portrait to an audio clip on
+the gateway's own machine with a MuseTalk engine instead of a provider. It
+takes `input_reference` (the portrait) and `audio` (the clip) and ignores the
+other fields. The job `id` carries the `local:` prefix and is kept in memory,
+so a gateway restart forgets it. The engine executable is expected at
+`~/.infer/bin/tools/musetalk` and the weights at
+`~/.infer/models/huggingface/mlx-community/MuseTalk-1.5-fp16`
+(`infer models download mlx-community/MuseTalk-1.5-fp16`); until both are in
+place the endpoint returns `503` with a `Retry-After` header saying what is
+missing.
+
+```bash
+curl -X POST http://localhost:8080/v1/videos \
+  -F model="local/musetalk" \
+  -F input_reference="@portrait.png" \
+  -F audio="@speech.wav" | jq .
+```
+
+```json
+{
+  "id": "local:9f1c2b7e4a6d8c0e1b3f5a7d",
+  "object": "video",
+  "model": "local/musetalk",
+  "status": "queued",
+  "created_at": 1758500000
+}
+```
+
+Poll and download the same way as a provider job:
+
+```bash
+curl -X GET http://localhost:8080/v1/videos/local:9f1c2b7e4a6d8c0e1b3f5a7d | jq .
+curl -X GET http://localhost:8080/v1/videos/local:9f1c2b7e4a6d8c0e1b3f5a7d/content -o talking.mp4
 ```
 
 Errors use the standard envelope, e.g. when the Videos API is not enabled:
