@@ -38,6 +38,9 @@ type listedModel struct {
 	} `json:"architecture"`
 }
 
+// listObject is the object field every models listing answers with.
+const listObject = "list"
+
 // modelListing decodes an OpenAI {"data":[...]} listing, whose entries are
 // named by id, or Cohere's native {"models":[...]}, whose entries are named by
 // name. A data entry's name is only a display label, so the envelope decides

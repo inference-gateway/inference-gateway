@@ -37,10 +37,10 @@ func TestOutputFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := OutputFormat(tt.responseFormat)
+			got, err := outputFormat(tt.responseFormat)
 			if tt.wantErr {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), SupportedFormats)
+				assert.Contains(t, err.Error(), supportedFormats)
 				return
 			}
 			require.NoError(t, err)
@@ -73,7 +73,7 @@ func TestSFX(t *testing.T) {
 
 		var got sfxBody
 		require.NoError(t, json.Unmarshal(body, &got))
-		assert.Equal(t, DefaultDurationSeconds*millisPerSecond, got.DurationMs)
+		assert.Equal(t, defaultDurationSeconds*millisPerSecond, got.DurationMs)
 		assert.Nil(t, got.Controls)
 	})
 
@@ -89,7 +89,7 @@ func TestSFX(t *testing.T) {
 
 	t.Run("rejects an unsupported format", func(t *testing.T) {
 		_, err := FromText(testModel, types.CreateSFXRequest{Prompt: testPrompt, ResponseFormat: ptr(types.CreateSFXRequestResponseFormatPcm)})
-		require.ErrorContains(t, err, SupportedFormats)
+		require.ErrorContains(t, err, supportedFormats)
 	})
 }
 
@@ -105,18 +105,31 @@ func TestJobPath(t *testing.T) {
 }
 
 func TestJob(t *testing.T) {
-	t.Run("a succeeded job yields its audio file", func(t *testing.T) {
-		job, err := ParseJob([]byte(`{"id":"` + testJobID + `","status":"succeeded","errors":[],"result":{"output":{"variants":[
-			{"index":0,"status":"failed","files":null},
-			{"index":1,"status":"succeeded","files":{"audio":{"url":"` + testAudioURL + `","format":"mp3_128"}}}
-		]}}}`))
-		require.NoError(t, err)
-		assert.False(t, job.Pending())
+	t.Run("a succeeded job yields its audio file with the Content-Type of its format", func(t *testing.T) {
+		tests := []struct {
+			format          string
+			wantContentType string
+		}{
+			{"mp3_128", "audio/mpeg"},
+			{"wav", "audio/wav"},
+			{"flac", "audio/flac"},
+			{"ogg", ""},
+		}
+		for _, tt := range tests {
+			t.Run(tt.format, func(t *testing.T) {
+				job, err := ParseJob([]byte(`{"id":"` + testJobID + `","status":"succeeded","errors":[],"result":{"output":{"variants":[
+					{"index":0,"status":"failed","files":null},
+					{"index":1,"status":"succeeded","files":{"audio":{"url":"` + testAudioURL + `","format":"` + tt.format + `"}}}
+				]}}}`))
+				require.NoError(t, err)
+				assert.False(t, job.Pending())
 
-		audioURL, contentType, err := job.Audio()
-		require.NoError(t, err)
-		assert.Equal(t, testAudioURL, audioURL)
-		assert.Equal(t, "audio/mpeg", contentType)
+				audioURL, contentType, err := job.Audio()
+				require.NoError(t, err)
+				assert.Equal(t, testAudioURL, audioURL)
+				assert.Equal(t, tt.wantContentType, contentType, "an unknown format leaves the Content-Type to the download response")
+			})
+		}
 	})
 
 	t.Run("queued, running and unknown statuses are pending", func(t *testing.T) {

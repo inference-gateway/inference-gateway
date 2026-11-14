@@ -5,8 +5,6 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-const listObject = "list"
-
 // ListModelsResponseMirelo decodes Mirelo's GET /v3/models, a {data} envelope
 // with no `object` whose entries describe sound-effect releases. Hand-maintained
 // (see .openapi-ignore) because the listing publishes no modalities.

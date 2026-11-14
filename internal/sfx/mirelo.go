@@ -5,8 +5,10 @@ package sfx
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"math"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -15,14 +17,12 @@ import (
 )
 
 const (
-	// DefaultDurationSeconds is the clip length sent when the request omits
+	// defaultDurationSeconds is the clip length sent when the request omits
 	// duration_seconds - Mirelo requires duration_ms and has no default.
-	DefaultDurationSeconds = 5
+	defaultDurationSeconds = 5
 
 	// MaxJobRequests bounds the create call plus the long-polls that follow it.
 	MaxJobRequests = 6
-
-	SupportedFormats = "mp3, flac"
 
 	maxWaitSeconds    = 25
 	minWaitSeconds    = 1
@@ -39,6 +39,8 @@ var outputFormats = map[string]string{
 	string(types.CreateSFXRequestResponseFormatFlac): "flac",
 }
 
+var supportedFormats = strings.Join(slices.Sorted(maps.Keys(outputFormats)), ", ")
+
 var finalStatuses = map[string]bool{
 	statusSucceeded:       true,
 	"partially_succeeded": true,
@@ -53,15 +55,15 @@ var contentTypes = map[string]string{
 	"flac": "audio/flac",
 }
 
-// OutputFormat maps a gateway response_format onto a Mirelo output.format. An
+// outputFormat maps a gateway response_format onto a Mirelo output.format. An
 // empty format defaults to mp3 and anything Mirelo cannot produce is an error.
-func OutputFormat(responseFormat string) (string, error) {
+func outputFormat(responseFormat string) (string, error) {
 	if responseFormat == "" {
 		responseFormat = string(types.CreateSFXRequestResponseFormatMp3)
 	}
 	format, ok := outputFormats[responseFormat]
 	if !ok {
-		return "", fmt.Errorf("mirelo does not support response_format %q, supported formats: %s", responseFormat, SupportedFormats)
+		return "", fmt.Errorf("mirelo does not support response_format %q, supported formats: %s", responseFormat, supportedFormats)
 	}
 	return format, nil
 }
@@ -96,12 +98,16 @@ func FromText(model string, req types.CreateSFXRequest) ([]byte, error) {
 		return nil, fmt.Errorf("mirelo does not support 'prompt_influence', omit the field")
 	}
 
-	format, err := OutputFormat(derefFormat(req.ResponseFormat))
+	responseFormat := ""
+	if req.ResponseFormat != nil {
+		responseFormat = string(*req.ResponseFormat)
+	}
+	format, err := outputFormat(responseFormat)
 	if err != nil {
 		return nil, err
 	}
 
-	seconds := float64(DefaultDurationSeconds)
+	seconds := float64(defaultDurationSeconds)
 	if req.DurationSeconds != nil {
 		seconds = float64(*req.DurationSeconds)
 	}
@@ -200,11 +206,4 @@ func (j Job) errorMessage() string {
 		return unknownJobError
 	}
 	return strings.Join(messages, ", ")
-}
-
-func derefFormat(f *types.CreateSFXRequestResponseFormat) string {
-	if f == nil {
-		return ""
-	}
-	return string(*f)
 }
