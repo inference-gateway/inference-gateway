@@ -2326,6 +2326,18 @@ type CreateVideoRequest struct {
 	// `creatify-aurora` maps to `480p` and `720p`. Omit to use the
 	// provider default.
 	Size *string `json:"size,omitempty"`
+
+	// Video Non-standard extension (OpenAI's Videos API has no video field):
+	// a clip to dub - the provider generates the sound that fits it and
+	// re-renders the clip with that sound as its new soundtrack, so the
+	// job returns a video downloadable from
+	// `GET /videos/{video_id}/content`. Mutually exclusive with
+	// `input_reference` and `reference_images`. Only providers with
+	// video-to-sfx support honor it (e.g. Mirelo `sfx-2.0`), where only
+	// the generated mix is laid onto the clip - the separated tracks come
+	// back as audio from `POST /audio/sfx` - and `sfx-1.6` with
+	// `preserve_speech` caps the scored window at 60 seconds.
+	Video *openapi_types.File `json:"video,omitempty"`
 }
 
 // Decision Response of the OpenAI Decisions API, relayed unchanged.

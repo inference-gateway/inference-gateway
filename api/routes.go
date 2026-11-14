@@ -2565,13 +2565,19 @@ type videoJobMapper func(raw []byte, fallbackModel string, createdAt int) (types
 // VideoJob yet.
 var videoJobMappers = map[types.Provider]videoJobMapper{
 	constants.ElevenlabsID: elevenlabs.Job,
+	constants.MireloID:     sfx.VideoJob,
 }
 
 // videoRequestTranslators rewrite the OpenAI Videos multipart form into each
 // provider's native create-job payload. No provider speaks the OpenAI shape,
 // so every provider that carries a Videos endpoint must have an entry here.
-var videoRequestTranslators = map[types.Provider]func(model string, form *multipart.Form) ([]byte, error){
-	constants.ElevenlabsID: elevenlabs.Video,
+// assetID is the uploaded clip a dubbing provider renders from, empty for the
+// providers that render from the form alone.
+var videoRequestTranslators = map[types.Provider]func(model string, form *multipart.Form, assetID string) ([]byte, error){
+	constants.ElevenlabsID: func(model string, form *multipart.Form, _ string) ([]byte, error) {
+		return elevenlabs.Video(model, form)
+	},
+	constants.MireloID: sfx.Dub,
 }
 
 // VideosHandler implements POST /v1/videos, the OpenAI-compatible Videos API:
@@ -2636,7 +2642,12 @@ func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	body, err := videoRequestTranslators[providerID](model, form)
+	assetID, ok := router.videoAsset(w, r, provider, form)
+	if !ok {
+		return
+	}
+
+	body, err := videoRequestTranslators[providerID](model, form, assetID)
 	if err != nil {
 		router.logger.Error("failed to translate request for provider", err, "api", videosAPIName, "provider", providerID)
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -2655,6 +2666,26 @@ func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) 
 
 	job.ID = string(providerID) + videoJobIDSeparator + job.ID
 	middlewares.WriteJSON(w, http.StatusOK, job)
+}
+
+// videoAsset uploads the clip of a video-in, video-out request as a provider
+// asset the create job references. Providers whose registry entry carries no
+// Assets endpoint render from the form alone and get an empty id. Failures are
+// already written to w, reported by a false ok.
+// shortcut: a create refused while the fresh asset settles is relayed as the provider's own status and the client retries - retry in the handler if that shows up in practice.
+func (router *RouterImpl) videoAsset(w http.ResponseWriter, r *http.Request, provider core.IProvider, form *multipart.Form) (string, bool) {
+	assets := provider.GetEndpoints().Assets
+	if assets == nil || *assets == "" {
+		return "", true
+	}
+
+	videos := form.File[sfxFormFieldVideo]
+	if len(videos) == 0 {
+		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: fmt.Sprintf("The '%s' file is required to dub a video.", sfxFormFieldVideo)})
+		return "", false
+	}
+
+	return router.uploadAsset(w, r, provider, *assets, videos[0])
 }
 
 // RetrieveVideoHandler implements GET /v1/videos/{video_id}. The gateway keeps

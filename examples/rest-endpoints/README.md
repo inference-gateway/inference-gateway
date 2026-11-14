@@ -832,8 +832,9 @@ immediately; poll `GET /v1/videos/{video_id}` until `status` is `completed`,
 then download the bytes from `GET /v1/videos/{video_id}/content`.
 
 The endpoint is opt-in via `VIDEOS_ENABLED=true` (default off). When disabled,
-the handlers return `404`. The `elevenlabs` provider and the built-in
-`local/musetalk` lip-sync engine serve it today; other providers return `400`.
+the handlers return `404`. The `elevenlabs` and `mirelo` providers and the
+built-in `local/musetalk` lip-sync engine serve it today; other providers
+return `400`.
 
 The job `id` carries the provider (`elevenlabs:gen_abc123`) because the gateway
 keeps no job state. Send it back verbatim; `?provider=` still overrides it.
@@ -844,7 +845,8 @@ first frame, or the portrait for avatar models), `seconds`, `size`
 avatar lip-syncs to; when present `seconds` is ignored) and `reference_images`
 (repeat the field once per image of the subject; `veo-3.1-*` takes up to 3,
 `bytedance-seedance-v2*` up to 9 and `bytedance-seedance-v2.5` up to 30; it
-cannot be combined with `input_reference`).
+cannot be combined with `input_reference`), plus `video` (a clip to dub, see
+below).
 
 ```bash
 # Create a job: animate a portrait to speak the given audio
@@ -900,6 +902,48 @@ and `/content` returns `404`:
   "error": "The rendered video is not available yet. Poll GET /v1/videos/{video_id} until the status is completed."
 }
 ```
+
+### Dubbing a video with Mirelo
+
+A form carrying a `video` part is a dubbing job: Mirelo watches the clip,
+generates the sound that fits it and re-renders the clip with that sound as its
+new soundtrack, so the same poll-and-download flow returns an MP4 instead of
+audio. The gateway uploads the clip to Mirelo as an asset, so the request body
+limit (`SERVER_MAX_REQUEST_BODY_SIZE`, 10 MiB by default) has to cover the file.
+`video` replaces `input_reference` and `reference_images`, which Mirelo ignores.
+
+```bash
+curl -X POST http://localhost:8080/v1/videos \
+  -F model="mirelo/sfx-2.0" \
+  -F video="@scene.mov" \
+  -F prompt="soft keyboard taps, gentle office ambience" | jq .
+```
+
+```json
+{
+  "id": "mirelo:gen_abc123",
+  "object": "video",
+  "model": "sfx-2.0",
+  "status": "in_progress",
+  "created_at": 1758500000
+}
+```
+
+```bash
+curl -X GET http://localhost:8080/v1/videos/mirelo:gen_abc123 | jq .
+curl -X GET http://localhost:8080/v1/videos/mirelo:gen_abc123/content -o dubbed.mp4
+```
+
+Optional fields: `prompt`, `seconds` and `start_offset_seconds` (the window to
+score, omitted scores the rest of the clip, which is also what Mirelo bills)
+and `preserve_speech` (keep the clip's own dialogue under the generated sound).
+
+Mirelo limits worth knowing: only the generated mix is laid onto the clip - the
+separated `sfx` and `speech` tracks come back as audio from
+`POST /v1/audio/sfx` with an `output` field - and `sfx-1.6` with
+`preserve_speech` caps the scored window at 60 seconds. A job that fails,
+is canceled or expires reports `status: failed` with Mirelo's own message in
+`error.message`, and `/content` answers `404` until the render completes.
 
 ### Local lip-sync
 

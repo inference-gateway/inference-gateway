@@ -119,11 +119,13 @@ var Registry = map[types.Provider]*ProviderConfig{
 		URL:      constants.MireloDefaultBaseURL,
 		AuthType: constants.AuthTypeBearer,
 		Endpoints: types.Endpoints{
-			Models:   constants.MireloModelsEndpoint,
-			Chat:     constants.MireloChatEndpoint,
-			SFX:      ptr(constants.MireloSFXEndpoint),
-			SFXVideo: ptr(constants.MireloSFXVideoEndpoint),
-			Assets:   ptr(constants.MireloAssetsEndpoint),
+			Models:         constants.MireloModelsEndpoint,
+			Chat:           constants.MireloChatEndpoint,
+			SFX:            ptr(constants.MireloSFXEndpoint),
+			SFXVideo:       ptr(constants.MireloSFXVideoEndpoint),
+			Assets:         ptr(constants.MireloAssetsEndpoint),
+			Videos:         ptr(constants.MireloVideosEndpoint),
+			VideosRetrieve: ptr(constants.MireloVideosRetrieveEndpoint),
 		},
 	},
 	constants.MistralID: {

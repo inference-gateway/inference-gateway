@@ -110,7 +110,8 @@ type controls struct {
 }
 
 type sfxOutput struct {
-	Format string `json:"format"`
+	Media  string `json:"media,omitempty"`
+	Format string `json:"format,omitempty"`
 }
 
 type videoBody struct {
@@ -278,6 +279,7 @@ func JobPath(createPath, jobID string) string {
 // Job is the subset of a Mirelo generation job the gateway reads.
 type Job struct {
 	ID     string `json:"id"`
+	Model  string `json:"model"`
 	Status string `json:"status"`
 	Errors []struct {
 		Message string `json:"message"`
@@ -298,6 +300,9 @@ type track struct {
 				URL    string `json:"url"`
 				Format string `json:"format"`
 			} `json:"audio"`
+			Video *struct {
+				URL string `json:"url"`
+			} `json:"video"`
 		} `json:"files"`
 	} `json:"variants"`
 }
