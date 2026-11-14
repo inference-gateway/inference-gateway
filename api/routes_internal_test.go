@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -12,6 +14,7 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
+	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
@@ -87,6 +90,30 @@ func TestApplyProviderAuth_StripsCallerAuthorization(t *testing.T) {
 			assert.Equal(t, tc.wantAuth, req.Header.Get("Authorization"), "caller Authorization must not leak upstream")
 			assert.Equal(t, tc.wantAPIKey, req.Header.Get("x-api-key"))
 			assert.Equal(t, tc.wantQueryKey, req.URL.Query().Get("key"))
+		})
+	}
+}
+
+// TestElevenlabsFailure pins the status each kind of ElevenLabs error reaches
+// the caller with.
+func TestElevenlabsFailure(t *testing.T) {
+	const refusedStatus = http.StatusPaymentRequired
+
+	tests := []struct {
+		name       string
+		err        error
+		wantStatus int
+	}{
+		{"a refusal keeps the status elevenlabs answered", elevenlabs.NewRefusal(refusedStatus, []byte("paid plan required")), refusedStatus},
+		{"a moderated generation is the caller's to fix", &elevenlabs.GenerationFailure{Reason: "moderated", Message: "blocked"}, http.StatusBadRequest},
+		{"a generation that broke is the provider's fault", &elevenlabs.GenerationFailure{Reason: "model_error", Message: "broke"}, http.StatusBadGateway},
+		{"a generation that ran out of time", fmt.Errorf("waiting: %w", context.DeadlineExceeded), http.StatusGatewayTimeout},
+		{"anything else is a bad gateway", errors.New("connection reset"), http.StatusBadGateway},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.wantStatus, elevenlabsFailure(tt.err).status)
 		})
 	}
 }

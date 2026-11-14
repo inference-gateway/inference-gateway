@@ -17,6 +17,7 @@ const (
 	endpointKeyResponses   = "responses"
 	endpointKeyImages      = "images"
 	endpointKeyImagesEdits = "images_edits"
+	endpointKeyImagesGet   = "images_retrieve"
 	endpointKeySpeech      = "speech"
 )
 
@@ -38,6 +39,7 @@ func TestProviderEndpointsMatchSchema(t *testing.T) {
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyResponses].Endpoint, provider.Endpoints.Responses, endpointKeyResponses)
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImages].Endpoint, provider.Endpoints.Images, endpointKeyImages)
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImagesEdits].Endpoint, provider.Endpoints.ImagesEdits, endpointKeyImagesEdits)
+			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeyImagesGet].Endpoint, provider.Endpoints.ImagesRetrieve, endpointKeyImagesGet)
 			assertOptionalEndpoint(t, cfg.Endpoints[endpointKeySpeech].Endpoint, provider.Endpoints.Speech, endpointKeySpeech)
 		})
 	}
