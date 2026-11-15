@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"mime/multipart"
 	"slices"
-	"strconv"
-	"strings"
 	"time"
 
 	videos "github.com/inference-gateway/inference-gateway/internal/videos"
@@ -27,7 +25,6 @@ const (
 	imageSizeAuto        = "auto"
 	singleImage          = "1"
 	aspectRatioFormat    = "%d:%d"
-	sizeSeparator        = "x"
 
 	generationCompleted = "completed"
 	generationFailed    = "failed"
@@ -90,21 +87,12 @@ func aspectRatio(size string) (string, error) {
 	if size == "" || size == imageSizeAuto {
 		return size, nil
 	}
-	w, h, ok := strings.Cut(size, sizeSeparator)
-	width, werr := strconv.Atoi(w)
-	height, herr := strconv.Atoi(h)
-	if !ok || werr != nil || herr != nil || width <= 0 || height <= 0 {
+	s, ok := videos.ParseSize(size)
+	if !ok {
 		return "", fmt.Errorf("the 'size' field must be WIDTHxHEIGHT or auto, e.g. 1024x1536")
 	}
-	g := gcd(width, height)
-	return fmt.Sprintf(aspectRatioFormat, width/g, height/g), nil
-}
-
-func gcd(a, b int) int {
-	for b != 0 {
-		a, b = b, a%b
-	}
-	return a
+	w, h := s.AspectRatio()
+	return fmt.Sprintf(aspectRatioFormat, w, h), nil
 }
 
 // ImageAccount is the ElevenLabs account an image is generated in. Each call

@@ -23,7 +23,6 @@ const (
 	videoFieldAudio     = "audio"
 	videoFieldRefImages = "reference_images"
 	inlineMediaType     = "inline_base64"
-	sizeSeparator       = "x"
 	veoModelPrefix      = "veo-"
 	veoRoleSubject      = "subject"
 )
@@ -222,25 +221,16 @@ func rendersFromPrompt(model string) bool {
 // parseSize turns an OpenAI `size` ("720x1280") into an ElevenLabs
 // resolution and aspect_ratio. The resolution is taken from the shorter side.
 func parseSize(size string) (resolution, aspect string, err error) {
-	w, h, ok := strings.Cut(size, sizeSeparator)
-	width, werr := strconv.Atoi(w)
-	height, herr := strconv.Atoi(h)
-	if !ok || werr != nil || herr != nil || width <= 0 || height <= 0 {
+	s, ok := ParseSize(size)
+	if !ok {
 		return "", "", fmt.Errorf("the 'size' field must be WIDTHxHEIGHT, e.g. 1280x720")
 	}
-	resolution, ok = resolutions[min(width, height)]
+	resolution, ok = resolutions[min(s.Width, s.Height)]
 	if !ok {
 		return "", "", fmt.Errorf("elevenlabs does not support size %q, the shorter side must be 480, 720 or 1080", size)
 	}
-	g := gcd(width, height)
-	return resolution, aspectRatios[[2]int{width / g, height / g}], nil
-}
-
-func gcd(a, b int) int {
-	for b != 0 {
-		a, b = b, a%b
-	}
-	return a
+	w, h := s.AspectRatio()
+	return resolution, aspectRatios[[2]int{w, h}], nil
 }
 
 // referenceImages inlines every `reference_images` part into an ElevenLabs
