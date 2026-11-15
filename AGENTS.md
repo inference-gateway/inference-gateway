@@ -38,6 +38,8 @@ Adding a provider: edit `openapi.yaml` (`Provider` enum + `x-provider-configs`, 
 
 A "provider" is one upstream LLM API. `providers/core/` holds the `IProvider` interface; `providers/registry/` builds providers on demand; `providers/routing/model_mapping.go` maps a `provider/model` prefix (or `?provider=` query param) to a provider. Optional model pools (`ROUTING_ENABLED` + `ROUTING_CONFIG_PATH`, a YAML of logical aliases → round-robin deployments in `providers/routing/pool.go`) are resolved first, but only for `/v1/chat/completions` and only when `?provider=` is absent.
 
+Providers whose native API is not OpenAI-shaped get a translation package under `internal/<capability>/` (`images`, `speech`, `sfx`, `music`, `videos`, `decisions`), and the matching handler in `api/` only wraps it in a thin adapter. `internal/decisions/systemone` rewrites a `/v1/decisions` request into the System One schema that Ollama, Ollama Cloud and llama.cpp serve at `/systemone`, and their answers back into the Decision shape.
+
 Config is env-only: `config/load.go` fills the generated `config.Config` via `go-envconfig`, then adds `<ID>_API_URL` / `<ID>_API_KEY` for every provider in the registry. `Configurations.md` is the generated reference of every variable.
 
 ## Conventions
