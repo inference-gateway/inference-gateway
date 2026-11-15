@@ -1,6 +1,3 @@
-// Package gen holds the build-time generators behind cmd/generate. The OpenAPI
-// spec produces generated Go code and Markdown; models.go instead syncs the
-// models.dev metadata table from the models.dev dataset.
 package gen
 
 import (

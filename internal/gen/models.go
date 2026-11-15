@@ -1,16 +1,3 @@
-// models.go syncs the models.dev metadata table from the models.dev
-// dataset (https://github.com/sst/models.dev). It reads a GitHub tarball of
-// that repository, filters it to the gateway's supported cloud providers, and
-// emits one JSON table embedded by providers/modelsdev (`task modelsdev:sync`):
-// per model, its pricing (USD per-million-token rates converted to the
-// gateway's per-token decimal-string format), context window, input and output
-// modalities, lifecycle status, and release date.
-//
-// The table has a hand-maintained companion, "models.overrides.json", for
-// models models.dev does not carry (or carries wrong). Its entries are merged
-// last, field by field, so they win over the synced values and survive every
-// re-sync.
-
 package gen
 
 import (

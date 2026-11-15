@@ -105,7 +105,7 @@ func syncModels(t *testing.T, output string, files map[string]string) map[string
 	t.Helper()
 
 	if err := Models(output, writeTarball(t, files)); err != nil {
-		t.Fatalf("GenerateModels() = %v", err)
+		t.Fatalf("Models() = %v", err)
 	}
 	var table map[string]modelsdev.Entry
 	readJSON(t, output, &table)
