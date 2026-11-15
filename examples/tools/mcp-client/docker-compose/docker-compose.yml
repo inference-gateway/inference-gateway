@@ -48,4 +48,4 @@ services:
 
   mcp-time-server:
     build:
-      context: ../../mcp/docker-compose/time-server
+      context: ../../../mcp/docker-compose/time-server

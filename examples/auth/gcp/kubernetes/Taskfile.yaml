@@ -8,8 +8,8 @@ dotenv: ['../docker-compose/.env']
 
 includes:
   base:
-    taskfile: ../../basic/kubernetes/Taskfile.yaml
-    dir: ../../basic/kubernetes
+    taskfile: ../../../basic/kubernetes/Taskfile.yaml
+    dir: ../../../basic/kubernetes
     vars:
       # Needs an operator release that supports spec.auth.oidc.audiences.
       OPERATOR_VERSION: v0.25.1
