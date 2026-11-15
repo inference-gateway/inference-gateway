@@ -87,7 +87,7 @@ Once the services are running, you can make requests to the Inference Gateway us
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "groq/llama-3.1-8b-instant",
   "messages": [
     {
       "role": "system",
@@ -107,7 +107,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "groq/llama-3.1-8b-instant",
   "messages": [
     {
       "role": "system",
@@ -126,7 +126,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "groq/llama-3.1-8b-instant",
   "messages": [
     {
       "role": "system",
@@ -144,7 +144,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "groq/llama-3.1-8b-instant",
   "messages": [
     {
       "role": "system",
@@ -163,7 +163,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "groq/llama-3.1-8b-instant",
   "messages": [
     {
       "role": "system",
@@ -183,7 +183,7 @@ Notice the file was created in filesystem-data directory.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "groq/llama-3.1-8b-instant",
   "messages": [
     {
       "role": "system",
@@ -201,7 +201,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "deepseek/deepseek-v4-flash",
+  "model": "groq/llama-3.1-8b-instant",
   "messages": [
     {
       "role": "system",
@@ -311,8 +311,11 @@ from the request.
 
 When you send a request to the Inference Gateway, it will:
 
-1. Discover the tools available from all MCP servers (time, search, and filesystem)
-2. Inject these tools into the LLM request
+1. Discover the tools available from all five MCP servers (time, search,
+   filesystem, pizza and calculator)
+2. Inject the MCP tools into the LLM request - by default only the two
+   meta-tools `mcp_tools_get` and `mcp_tools_execute`; with
+   `MCP_TOOL_MODE=direct` every tool schema is injected instead
 3. Process any tool calls made by the LLM
 4. Return the complete response with tool results
 
@@ -408,22 +411,33 @@ This example includes five pre-configured servers:
 Environment variables you can configure:
 
 - `MCP_ENABLED`: Set to "true" to enable MCP middleware
-- `MCP_EXPOSE`: Set to "true" to expose MCP endpoints
+- `MCP_EXPOSE`: Set to "true" to expose the gateway's single MCP JSON-RPC
+  endpoint `POST /mcp`; it answers `403` unless `MCP_ENABLED=true` as well
 - `MCP_SERVERS`: Comma-separated list of MCP servers as `alias=url` or `url`
-- `MCP_INCLUDE_TOOLS`: Comma-separated allowlist of tool names to inject. When
-  set, only these tools are injected; if empty, all tools are injected
-- `MCP_EXCLUDE_TOOLS`: Comma-separated denylist of tool names to skip injecting.
-  Takes lower precedence than `MCP_INCLUDE_TOOLS`
+- `MCP_TOOL_MODE`: How MCP tools are exposed to the model. `selector`
+  (default) injects only the meta-tools `mcp_tools_get` and
+  `mcp_tools_execute`; `direct` injects every tool schema into each chat
+  completion
+- `MCP_INCLUDE_TOOLS`: Comma-separated allowlist of tool names to make
+  available. When set, only these tools are available; if empty, all tools
+  are available
+- `MCP_EXCLUDE_TOOLS`: Comma-separated denylist of tool names to hide. Takes
+  lower precedence than `MCP_INCLUDE_TOOLS`
 
 ### Filtering Injected Tools
 
-By default every tool from every connected MCP server is injected into each chat
-completion request. To make requests more token-efficient you can restrict which
-tools are injected with an allowlist or a denylist:
+By default (`MCP_TOOL_MODE=selector`) the gateway injects only the two
+meta-tools `mcp_tools_get` and `mcp_tools_execute` into each chat completion
+request; with `MCP_TOOL_MODE=direct` every tool schema is injected instead.
+Either way you can restrict which tools are available with an allowlist or a
+denylist:
 
 - `MCP_INCLUDE_TOOLS` is an allowlist: when set, only the listed tools are
-  injected.
-- `MCP_EXCLUDE_TOOLS` is a denylist: the listed tools are never injected.
+  available.
+- `MCP_EXCLUDE_TOOLS` is a denylist: the listed tools are never available.
+
+The lists filter the catalog `mcp_tools_get` returns, the `tools/list` of the
+gateway's `POST /mcp` endpoint and the tools injected in `direct` mode.
 
 `MCP_INCLUDE_TOOLS` takes precedence over `MCP_EXCLUDE_TOOLS`. Tool names are
 matched case-insensitively and the `mcp_` prefix is optional. An entry matches
