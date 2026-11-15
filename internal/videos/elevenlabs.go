@@ -3,6 +3,7 @@
 package videos
 
 import (
+	"cmp"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -24,7 +25,6 @@ const (
 	videoFieldAudio     = "audio"
 	videoFieldRefImages = "reference_images"
 	inlineMediaType     = "inline_base64"
-	sizeSeparator       = "x"
 	veoModelPrefix      = "veo-"
 	veoRoleSubject      = "subject"
 )
@@ -73,12 +73,12 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 		return types.VideoJob{}, "", fmt.Errorf("failed to decode elevenlabs video response: %w", err)
 	}
 
-	id := firstNonEmpty(p.GenerationID, p.ID)
+	id := cmp.Or(p.GenerationID, p.ID)
 	if id == "" {
 		return types.VideoJob{}, "", fmt.Errorf("elevenlabs video response carries no generation id")
 	}
 
-	status, ok := statuses[strings.ToLower(firstNonEmpty(p.Status, p.State))]
+	status, ok := statuses[strings.ToLower(cmp.Or(p.Status, p.State))]
 	if !ok {
 		status = types.VideoJobStatusInProgress
 	}
@@ -86,7 +86,7 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 	job := types.VideoJob{
 		ID:        id,
 		Object:    types.VideoJobObjectVideo,
-		Model:     firstNonEmpty(p.ModelID, fallbackModel),
+		Model:     cmp.Or(p.ModelID, fallbackModel),
 		Status:    status,
 		Progress:  p.Progress,
 		CreatedAt: createdAt,
@@ -98,7 +98,7 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 		job.CompletedAt = p.CompletedAt
 	}
 	if status == types.VideoJobStatusFailed {
-		message := firstNonEmpty(p.ErrorMessage, p.Error, "the video generation job failed")
+		message := cmp.Or(p.ErrorMessage, p.Error, "the video generation job failed")
 		job.Error = &struct {
 			Code    *string `json:"code,omitempty"`
 			Message *string `json:"message,omitempty"`
@@ -108,7 +108,7 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 	if status != types.VideoJobStatusCompleted {
 		return job, "", nil
 	}
-	return job, firstNonEmpty(p.ContentURL, p.MediaURL, p.VideoURL, p.DownloadURL), nil
+	return job, cmp.Or(p.ContentURL, p.MediaURL, p.VideoURL, p.DownloadURL), nil
 }
 
 // referenceImageLimits is how many `images` each ElevenLabs video model
@@ -224,25 +224,16 @@ func rendersFromPrompt(model string) bool {
 // parseSize turns an OpenAI `size` ("720x1280") into an ElevenLabs
 // resolution and aspect_ratio. The resolution is taken from the shorter side.
 func parseSize(size string) (resolution, aspect string, err error) {
-	w, h, ok := strings.Cut(size, sizeSeparator)
-	width, werr := strconv.Atoi(w)
-	height, herr := strconv.Atoi(h)
-	if !ok || werr != nil || herr != nil || width <= 0 || height <= 0 {
+	s, ok := ParseSize(size)
+	if !ok {
 		return "", "", fmt.Errorf("the 'size' field must be WIDTHxHEIGHT, e.g. 1280x720")
 	}
-	resolution, ok = resolutions[min(width, height)]
+	resolution, ok = resolutions[min(s.Width, s.Height)]
 	if !ok {
 		return "", "", fmt.Errorf("elevenlabs does not support size %q, the shorter side must be 480, 720 or 1080", size)
 	}
-	g := gcd(width, height)
-	return resolution, aspectRatios[[2]int{width / g, height / g}], nil
-}
-
-func gcd(a, b int) int {
-	for b != 0 {
-		a, b = b, a%b
-	}
-	return a
+	w, h := s.AspectRatio()
+	return resolution, aspectRatios[[2]int{w, h}], nil
 }
 
 // referenceImages inlines every `reference_images` part into an ElevenLabs
@@ -319,13 +310,4 @@ func acceptedMimeType(mimeType string) string {
 		return accepted
 	}
 	return mimeType
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }

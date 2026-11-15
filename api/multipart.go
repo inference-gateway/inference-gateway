@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -105,7 +104,7 @@ func openFormFile(fh *multipart.FileHeader) (io.Reader, string, io.Closer, error
 // writeFilePart adds body to mw as the file part named field.
 func writeFilePart(mw *multipart.Writer, field, filename, contentType string, body io.Reader) error {
 	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, field, filename))
+	h.Set("Content-Disposition", multipart.FileContentDisposition(field, filename))
 	if contentType != "" {
 		h.Set("Content-Type", contentType)
 	}
