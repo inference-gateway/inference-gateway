@@ -39,7 +39,8 @@ docker compose up -d
 Each `kubernetes` flavour installs the [Inference Gateway
 Operator](https://github.com/inference-gateway/operator) and applies a `Gateway`
 custom resource; traffic is served through the Kubernetes Gateway API (Envoy
-Gateway) rather than ingress-nginx. The shape is the same everywhere:
+Gateway) rather than ingress-nginx. Not every example does this - the
+exceptions are listed below - but the usual shape is:
 
 1. `task deploy-infrastructure` - provision a local k3d cluster and install the
    Gateway API CRDs, Envoy Gateway and the operator (plus any example-specific
@@ -55,6 +56,13 @@ Gateway) rather than ingress-nginx. The shape is the same everywhere:
    kubectl -n envoy-gateway-system port-forward "svc/${ENVOY_SVC}" 8080:80
    curl -H 'Host: api.inference-gateway.local' http://localhost:8080/v1/models
    ```
+
+Exceptions: [a2a/kubernetes](a2a/kubernetes/README.md) and
+[agent/kubernetes](agent/kubernetes/README.md) install only the Gateway API
+CRDs, with no Envoy Gateway - the a2a example reaches the gateway with
+`task port-forward` (`service/inference-gateway`) and the agent example calls
+it in-cluster; [tls/mtls/kubernetes](tls/mtls/kubernetes/README.md) calls the
+gateway from a curl client pod inside the cluster instead.
 
 The [../hack](../hack/README.md) folder is the related local dev cluster for
 developing the gateway itself; it reuses the Keycloak manifests from the [auth

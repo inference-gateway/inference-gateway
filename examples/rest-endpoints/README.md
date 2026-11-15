@@ -174,7 +174,7 @@ OpenAI-compatible.
 
 Pass `include=modalities` to enrich each model with the modalities it supports
 natively, as an object with `input` and `output` arrays whose values are
-`text`, `image`, `audio`, or `video`. The values are sourced from the
+`text`, `image`, `audio`, `video`, or `decisions`. The values are sourced from the
 community-maintained
 [models.dev](https://github.com/sst/models.dev) dataset; models the gateway
 cannot resolve (local runtimes, or models absent from the dataset) carry an
