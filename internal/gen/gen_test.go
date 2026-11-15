@@ -1,4 +1,4 @@
-package codegen
+package gen
 
 import (
 	"os"
@@ -13,7 +13,7 @@ const fixture = "testdata/fixture-openapi.yaml"
 
 func TestGenerateProviderRegistryFromFixture(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), "registry.go")
-	require.NoError(t, GenerateProviderRegistry(dest, fixture))
+	require.NoError(t, ProviderRegistry(dest, fixture))
 
 	out, err := os.ReadFile(dest)
 	require.NoError(t, err)
@@ -28,7 +28,7 @@ func TestGenerateProviderRegistryFromFixture(t *testing.T) {
 
 func TestGenerateProvidersFromFixture(t *testing.T) {
 	dir := t.TempDir()
-	require.NoError(t, GenerateProviders(dir, fixture))
+	require.NoError(t, Providers(dir, fixture))
 
 	for _, file := range []string{"acme.go", "local.go", "transformers.go"} {
 		_, err := os.Stat(filepath.Join(dir, file))
@@ -47,7 +47,7 @@ func TestGenerateProvidersFromFixture(t *testing.T) {
 
 func TestGenerateConfigFromFixture(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), "config.go")
-	require.NoError(t, GenerateConfig(dest, fixture))
+	require.NoError(t, Config(dest, fixture))
 
 	out, err := os.ReadFile(dest)
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestGenerateProvidersRemovesStaleTransformer(t *testing.T) {
 	require.NoError(t, os.WriteFile(stale, []byte("// Code generated from OpenAPI schema. DO NOT EDIT.\npackage transformers\n"), 0o644))
 	require.NoError(t, os.WriteFile(handwritten, []byte("package transformers\n"), 0o644))
 
-	require.NoError(t, GenerateProviders(dir, fixture))
+	require.NoError(t, Providers(dir, fixture))
 
 	_, err := os.Stat(stale)
 	assert.True(t, os.IsNotExist(err), "stale generated transformer should be removed")

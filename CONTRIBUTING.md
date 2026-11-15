@@ -94,7 +94,7 @@ For detailed development information, see [AGENTS.md](./AGENTS.md).
   - `go vet ./...` - static analysis on Go code
   - `markdownlint` - lint Markdown files
   - `go generate` - regenerate mocks; fails if generated Go files are stale
-  - `task generate` - runs when `openapi.yaml` or `internal/codegen/` changed;
+  - `task generate` - runs when `openapi.yaml` or `internal/gen/` changed;
     fails if generated files are not committed
 
 The hook provides fast local feedback before CI runs. To skip it in an

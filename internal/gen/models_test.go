@@ -1,4 +1,4 @@
-package communitygen
+package gen
 
 import (
 	"archive/tar"
@@ -99,13 +99,13 @@ func writeTarball(t *testing.T, files map[string]string) string {
 	return tarball
 }
 
-// syncModels runs GenerateModels over a tarball of the given files into output
+// syncModels runs Models over a tarball of the given files into output
 // and returns the decoded table.
 func syncModels(t *testing.T, output string, files map[string]string) map[string]modelsdev.Entry {
 	t.Helper()
 
-	if err := GenerateModels(output, writeTarball(t, files)); err != nil {
-		t.Fatalf("GenerateModels() = %v", err)
+	if err := Models(output, writeTarball(t, files)); err != nil {
+		t.Fatalf("Models() = %v", err)
 	}
 	var table map[string]modelsdev.Entry
 	readJSON(t, output, &table)

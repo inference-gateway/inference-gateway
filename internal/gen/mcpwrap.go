@@ -1,4 +1,4 @@
-package codegen
+package gen
 
 import (
 	"bytes"
@@ -8,12 +8,12 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
-// GenerateMCPWrap reads the raw MCP JSON Schema (draft 2020-12, top-level
+// MCPWrap reads the raw MCP JSON Schema (draft 2020-12, top-level
 // `$defs`) and writes a minimal OpenAPI 3.1 document that oapi-codegen can
 // consume: `$defs` becomes `components.schemas` and every `#/$defs/...` ref is
 // rewritten to `#/components/schemas/...`. It is a deterministic transform with
 // no new dependency (gopkg.in/yaml.v3 is already vendored).
-func GenerateMCPWrap(output, input string) error {
+func MCPWrap(output, input string) error {
 	data, err := os.ReadFile(input)
 	if err != nil {
 		return fmt.Errorf("reading MCP schema %s: %w", input, err)
