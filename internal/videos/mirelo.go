@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"encoding/json"
 	"mime/multipart"
+	"net/url"
 
 	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -34,7 +35,7 @@ var videoJobStatuses = map[string]types.VideoJobStatus{
 func Dub(model string, form *multipart.Form, assetID string) ([]byte, error) {
 	body := sfx.VideoBody{
 		Model:  model,
-		Input:  sfx.VideoInput{Video: sfx.AssetRef(assetID), Prompt: formValue(form, sfx.FieldPrompt)},
+		Input:  sfx.VideoInput{Video: sfx.AssetRef(assetID), Prompt: url.Values(form.Value).Get(sfx.FieldPrompt)},
 		Output: sfx.SFXOutput{Media: sfx.MediaVideo},
 	}
 

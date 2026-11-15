@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"mime/multipart"
+	"net/url"
 	"slices"
 	"strconv"
 	"strings"
@@ -57,11 +58,12 @@ type imageBody struct {
 // shape. Every `image` part becomes a reference image and `size` becomes an
 // aspect ratio. model is the request model with the provider prefix stripped.
 func ImageEdit(model string, form *multipart.Form) ([]byte, error) {
-	if n := formValue(form, imageFieldCount); n != "" && n != singleImage {
+	fields := url.Values(form.Value)
+	if n := fields.Get(imageFieldCount); n != "" && n != singleImage {
 		return nil, fmt.Errorf("elevenlabs generates one image per request, so 'n' must be 1")
 	}
 
-	out := imageBody{ModelID: model, Prompt: formValue(form, imageFieldPrompt)}
+	out := imageBody{ModelID: model, Prompt: fields.Get(imageFieldPrompt)}
 	for _, fh := range slices.Concat(form.File[imageFieldImage], form.File[imageFieldImageArray]) {
 		image, err := videos.InlineHeader(fh, imageFieldImage)
 		if err != nil {
@@ -74,10 +76,10 @@ func ImageEdit(model string, form *multipart.Form) ([]byte, error) {
 	if out.Mask, err = videos.InlineFile(form, imageFieldMask); err != nil {
 		return nil, err
 	}
-	if out.AspectRatio, err = aspectRatio(formValue(form, imageFieldSize)); err != nil {
+	if out.AspectRatio, err = aspectRatio(fields.Get(imageFieldSize)); err != nil {
 		return nil, err
 	}
-	if quality := formValue(form, imageFieldQuality); slices.Contains(imageQualities, quality) {
+	if quality := fields.Get(imageFieldQuality); slices.Contains(imageQualities, quality) {
 		out.Quality = quality
 	}
 	return json.Marshal(out)
@@ -191,11 +193,4 @@ func finishedImage(ctx context.Context, account ImageAccount, generationID strin
 	default:
 		return GeneratedImage{}, false, nil
 	}
-}
-
-func formValue(form *multipart.Form, key string) string {
-	if vs := form.Value[key]; len(vs) > 0 {
-		return vs[0]
-	}
-	return ""
 }

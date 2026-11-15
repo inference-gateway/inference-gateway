@@ -6,6 +6,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -104,13 +105,13 @@ func (router *RouterImpl) handleImagesMultipart(w http.ResponseWriter, r *http.R
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "The 'image' file is required."})
 		return
 	}
-	if strings.TrimSpace(formValue(form, imageFormFieldPrompt)) == "" {
+	if strings.TrimSpace(url.Values(form.Value).Get(imageFormFieldPrompt)) == "" {
 		router.logger.Error("images edit request missing prompt", nil)
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "The 'prompt' field is required."})
 		return
 	}
 
-	model := formValue(form, formFieldModel)
+	model := url.Values(form.Value).Get(formFieldModel)
 	originalModel := model
 
 	providerID, model, msg := router.resolveProvider(r, model, "openai/gpt-image-2")
@@ -195,7 +196,7 @@ func (router *RouterImpl) elevenlabsImageEdit(w http.ResponseWriter, r *http.Req
 	}
 
 	image := types.Image{URL: &generated.URL}
-	if formValue(form, imageFormFieldResponseFormat) == imageResponseFormatBase64 {
+	if url.Values(form.Value).Get(imageFormFieldResponseFormat) == imageResponseFormatBase64 {
 		encoded, failure := router.base64Image(ctx, generated.URL)
 		if failure != nil {
 			middlewares.WriteJSON(w, failure.status, ErrorResponse{Error: failure.message})
