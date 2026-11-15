@@ -47,14 +47,20 @@ under `GUARDRAILS_FAIL_MODE=closed` every conflicting evaluation blocks.
 
 ### Redaction of secrets and PII
 
-`policies/redact_secrets.rego` returns `{"action": "redact"}`, which makes the middleware
-run `guardrails.RedactSensitive` with the built-in detectors instead of refusing:
+`policies/redact_secrets.rego` returns `{"action": "redact"}` for any payload whose body
+holds a secret-shaped value, which makes the middleware run `guardrails.RedactSensitive`
+with the built-in detectors instead of refusing:
 
 ```rego
 main := {"action": "redact"} if {
     input.phase in {"pre_call", "post_call"}
+    secrets_in_body
 }
 ```
+
+The trigger mirrors the api-key and bearer-token patterns the detectors replace, so bodies
+without secrets keep the default `allow` and the rule stays mutually exclusive with the
+other conditional `main` bodies.
 
 A secret typed by the caller is redacted on `pre_call`, so the provider never sees it -
 the model echoes back the placeholder:
