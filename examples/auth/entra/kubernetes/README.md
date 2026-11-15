@@ -1,6 +1,6 @@
 # Authentication with Microsoft Entra ID on Kubernetes
 
-The [Keycloak example](../keycloak/kubernetes/README.md) shows how the operator wires
+The [Keycloak example](../../keycloak/kubernetes/README.md) shows how the operator wires
 OIDC into the gateway, and the [docker-compose Entra ID example](../docker-compose/README.md)
 explains the two app registrations and their gotchas. This example reuses both:
 complete the compose example's **Setup** section first. It writes the `.env`

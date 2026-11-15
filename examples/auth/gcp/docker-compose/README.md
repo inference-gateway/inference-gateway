@@ -1,6 +1,6 @@
 # Authentication with Google Cloud service accounts
 
-The same OIDC setup as the [Keycloak example](../keycloak/docker-compose/README.md), with
+The same OIDC setup as the [Keycloak example](../../keycloak/docker-compose/README.md), with
 Google as the issuer. Read that example first: it explains how the gateway
 verifies tokens, the `AUTH_*` settings and the troubleshooting steps, none of
 which change here.

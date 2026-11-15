@@ -1,6 +1,6 @@
 # Authentication with Amazon Cognito
 
-The same OIDC setup as the [Keycloak example](../keycloak/docker-compose/README.md), with
+The same OIDC setup as the [Keycloak example](../../keycloak/docker-compose/README.md), with
 a Cognito user pool as the issuer. Read that example first: it explains how the
 gateway verifies tokens, the `AUTH_*` settings and the troubleshooting steps,
 none of which change here.
@@ -61,6 +61,6 @@ once a domain is configured.
   `AUTH_OIDC_AUDIENCE` is the app client ID.
 - **Several callers.** Each app client gets its own ID; list them all in
   `AUTH_OIDC_AUDIENCE`. To authorize by scope, check `input.identity.scope` in a
-  guardrails policy, see the [guardrails example](../../guardrails/docker-compose/README.md).
+  guardrails policy, see the [guardrails example](../../../guardrails/docker-compose/README.md).
 - **`get-client-token` needs `ALLOW_CLIENT_TOKEN_AUTH`.** An app client created
   for user sign-in flows cannot use it; create a separate machine client.

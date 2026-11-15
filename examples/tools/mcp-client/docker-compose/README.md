@@ -46,7 +46,7 @@ is taken, both gateways pin it to the mock.
 ## Services
 
 - **inference-gateway** (`:8080`): MCP enabled with one server, the time server
-  from the [MCP example](../../mcp/docker-compose/README.md), aliased `time`, so its tool is
+  from the [MCP example](../../../mcp/docker-compose/README.md), aliased `time`, so its tool is
   `mcp_time_time`.
 - **inference-gateway-mcp-down** (`:8081`): MCP enabled, but its only server is
   unreachable.
@@ -55,7 +55,7 @@ is taken, both gateways pin it to the mock.
   removed it, so you can see what the gateway does with either kind of call.
   After a tool result, or when offered no tools, it replies with the tools it
   received and the last message. Idle during a real-provider run.
-- **mcp-time-server**: reused from `../../mcp/docker-compose/time-server`.
+- **mcp-time-server**: reused from `../../../mcp/docker-compose/time-server`.
 
 ## Cases
 

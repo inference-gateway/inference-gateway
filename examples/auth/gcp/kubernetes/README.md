@@ -1,6 +1,6 @@
 # Authentication with Google Cloud service accounts on Kubernetes
 
-The [Keycloak example](../keycloak/kubernetes/README.md) shows how the operator wires
+The [Keycloak example](../../keycloak/kubernetes/README.md) shows how the operator wires
 OIDC into the gateway, and the [docker-compose Google example](../docker-compose/README.md)
 explains the service account, the audience and why a guardrails policy is
 required with Google's shared issuer. This example reuses both: complete the

@@ -1,6 +1,6 @@
 # Authentication with Microsoft Entra ID
 
-The same OIDC setup as the [Keycloak example](../keycloak/docker-compose/README.md), with
+The same OIDC setup as the [Keycloak example](../../keycloak/docker-compose/README.md), with
 Microsoft Entra ID as the issuer. Read that example first: it explains how the
 gateway verifies tokens, the `AUTH_*` settings and the troubleshooting steps,
 none of which change here.
@@ -59,4 +59,4 @@ file sets as `AUTH_OIDC_AUDIENCE`, and its `iss` is the tenant's `/v2.0` issuer.
   service principal has "assignment required" turned on. Authentication proves
   the token came from your tenant for your API, not _which_ app asked; check
   `input.identity.azp` or `roles` in a guardrails policy, see the
-  [guardrails example](../../guardrails/docker-compose/README.md).
+  [guardrails example](../../../guardrails/docker-compose/README.md).

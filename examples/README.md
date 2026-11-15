@@ -29,7 +29,7 @@ each flavour folder carries the full walkthrough.
 ## Running a Docker Compose example
 
 ```bash
-cd <domain>/<flavour>/docker-compose
+cd <domain>/docker-compose   # auth/<idp>, tools/<variant> and tls/mtls nest one level deeper
 cp .env.example .env   # fill in your provider keys
 docker compose up -d
 ```

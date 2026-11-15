@@ -1,6 +1,6 @@
 # Authentication with Amazon Cognito on Kubernetes
 
-The [Keycloak example](../keycloak/kubernetes/README.md) shows how the operator wires
+The [Keycloak example](../../keycloak/kubernetes/README.md) shows how the operator wires
 OIDC into the gateway, and the [docker-compose Cognito example](../docker-compose/README.md)
 explains the user pool, the machine app client and why the gateway checks
 `client_id` instead of `aud`. This example reuses both: complete the compose

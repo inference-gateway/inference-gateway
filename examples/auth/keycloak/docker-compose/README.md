@@ -182,14 +182,14 @@ Connect discovery document works. Signature, issuer and expiry checks come from
 that document. The only per-provider detail is what its access tokens carry in
 `aud`, which must match one of the `AUTH_OIDC_AUDIENCE` values:
 
-| Provider                                                   | `AUTH_OIDC_ISSUER`                                          | `AUTH_OIDC_AUDIENCE`                                                                                  |
-| ---------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Keycloak                                                   | `https://<host>/realms/<realm>`                             | the client ID, added to access tokens by an audience mapper (this example)                            |
-| [Microsoft Entra ID](../entra/docker-compose/README.md)    | `https://login.microsoftonline.com/<tenant-id>/v2.0`        | the API registration's client ID (v2 tokens) or `api://<app-id>` (v1 tokens)                          |
-| [Google service accounts](../gcp/docker-compose/README.md) | `https://accounts.google.com`                               | any URL you choose; the issuer is shared by every Google account, so pair it with a guardrails policy |
-| [Amazon Cognito](../cognito/docker-compose/README.md)      | `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>` | the app client ID; machine tokens carry no `aud`, so the gateway checks `client_id` instead           |
-| Auth0                                                      | `https://<tenant>.auth0.com/` (trailing slash)              | the API identifier; a token requested without an `audience` is opaque and cannot be verified          |
-| Okta                                                       | `https://<org>.okta.com/oauth2/<authorization-server-id>`   | the custom authorization server's audience (the org server issues opaque tokens)                      |
+| Provider                                                      | `AUTH_OIDC_ISSUER`                                          | `AUTH_OIDC_AUDIENCE`                                                                                  |
+| ------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Keycloak                                                      | `https://<host>/realms/<realm>`                             | the client ID, added to access tokens by an audience mapper (this example)                            |
+| [Microsoft Entra ID](../../entra/docker-compose/README.md)    | `https://login.microsoftonline.com/<tenant-id>/v2.0`        | the API registration's client ID (v2 tokens) or `api://<app-id>` (v1 tokens)                          |
+| [Google service accounts](../../gcp/docker-compose/README.md) | `https://accounts.google.com`                               | any URL you choose; the issuer is shared by every Google account, so pair it with a guardrails policy |
+| [Amazon Cognito](../../cognito/docker-compose/README.md)      | `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>` | the app client ID; machine tokens carry no `aud`, so the gateway checks `client_id` instead           |
+| Auth0                                                         | `https://<tenant>.auth0.com/` (trailing slash)              | the API identifier; a token requested without an `audience` is opaque and cannot be verified          |
+| Okta                                                          | `https://<org>.okta.com/oauth2/<authorization-server-id>`   | the custom authorization server's audience (the org server issues opaque tokens)                      |
 
 Tokens with no `aud` claim at all are accepted when their `client_id` claim
 matches one of the configured values, which is how Cognito machine tokens work.
@@ -212,6 +212,6 @@ docker compose down -v
 ## Additional Resources
 
 - [Configuration Guide](../../../../Configurations.md) - all `AUTH_*` settings
-- [Kubernetes Authentication Example](../keycloak/kubernetes/README.md) -
+- [Kubernetes Authentication Example](../kubernetes/README.md) -
   the same idea on Kubernetes with the operator
 - [Main Documentation](../../../../README.md)
