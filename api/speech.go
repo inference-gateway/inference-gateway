@@ -15,7 +15,8 @@ import (
 	"time"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
-	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
+	images "github.com/inference-gateway/inference-gateway/internal/images"
+	speech "github.com/inference-gateway/inference-gateway/internal/speech"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
@@ -71,7 +72,7 @@ func elevenlabsSpeech(endpoint, model string, body []byte) (string, string, []by
 	if err := json.Unmarshal(body, &req); err != nil {
 		return "", "", nil, fmt.Errorf("failed to decode request: %w", err)
 	}
-	return elevenlabs.Speech(endpoint, model, req)
+	return speech.Speech(endpoint, model, req)
 }
 
 const (
@@ -115,11 +116,11 @@ func elevenlabsFailure(err error) *upstreamFailure {
 	if errors.As(err, &failure) {
 		return failure
 	}
-	var refusal *elevenlabs.Refusal
+	var refusal *speech.Refusal
 	if errors.As(err, &refusal) {
 		return &upstreamFailure{refusal.Status, err.Error()}
 	}
-	var generation *elevenlabs.GenerationFailure
+	var generation *images.GenerationFailure
 	if errors.As(err, &generation) && generation.Rejected() {
 		return &upstreamFailure{http.StatusBadRequest, err.Error()}
 	}
@@ -179,7 +180,7 @@ func (a elevenlabsAccount) call(ctx context.Context, apiName string, endpointOf 
 		return nil, fmt.Errorf("reading the elevenlabs response: %w", err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, elevenlabs.NewRefusal(resp.StatusCode, body)
+		return nil, speech.NewRefusal(resp.StatusCode, body)
 	}
 	return body, nil
 }

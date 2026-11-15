@@ -1,18 +1,15 @@
-package sfx
+package videos
 
 import (
 	"cmp"
 	"encoding/json"
 	"mime/multipart"
 
+	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 const (
-	// mediaVideo asks Mirelo to re-render the clip with the generated sound as
-	// its new soundtrack instead of answering with the audio alone.
-	mediaVideo = "video"
-
 	// fieldSeconds is the Videos API duration field, the window to score.
 	fieldSeconds = "seconds"
 )
@@ -22,7 +19,7 @@ const (
 var videoJobStatuses = map[string]types.VideoJobStatus{
 	"queued":              types.VideoJobStatusInProgress,
 	"running":             types.VideoJobStatusInProgress,
-	statusSucceeded:       types.VideoJobStatusCompleted,
+	sfx.StatusSucceeded:   types.VideoJobStatusCompleted,
 	"partially_succeeded": types.VideoJobStatusCompleted,
 	"failed":              types.VideoJobStatusFailed,
 	"canceled":            types.VideoJobStatusFailed,
@@ -35,20 +32,20 @@ var videoJobStatuses = map[string]types.VideoJobStatus{
 // form picks the window and whether the clip's own speech is preserved.
 // model is the request model with the provider prefix already stripped.
 func Dub(model string, form *multipart.Form, assetID string) ([]byte, error) {
-	body := videoBody{
+	body := sfx.VideoBody{
 		Model:  model,
-		Input:  videoInput{Video: AssetRef(assetID), Prompt: formValue(form, FieldPrompt)},
-		Output: sfxOutput{Media: mediaVideo},
+		Input:  sfx.VideoInput{Video: sfx.AssetRef(assetID), Prompt: sfx.FormValue(form, sfx.FieldPrompt)},
+		Output: sfx.SFXOutput{Media: sfx.MediaVideo},
 	}
 
 	var err error
-	if body.DurationMs, err = optionalMillis(form, fieldSeconds, minVideoSeconds); err != nil {
+	if body.DurationMs, err = sfx.OptionalMillis(form, fieldSeconds, sfx.MinVideoSeconds); err != nil {
 		return nil, err
 	}
-	if body.StartOffsetMs, err = optionalMillis(form, FieldStartOffsetSeconds, minOffsetSeconds); err != nil {
+	if body.StartOffsetMs, err = sfx.OptionalMillis(form, sfx.FieldStartOffsetSeconds, sfx.MinOffsetSeconds); err != nil {
 		return nil, err
 	}
-	if body.Controls, err = videoControlsFrom(form, OutputMix); err != nil {
+	if body.Controls, err = sfx.VideoControlsFrom(form, sfx.OutputMix); err != nil {
 		return nil, err
 	}
 	return json.Marshal(body)
@@ -58,7 +55,7 @@ func Dub(model string, form *multipart.Form, assetID string) ([]byte, error) {
 // the URL the dubbed clip can be downloaded from, empty until it is rendered.
 // fallbackModel is used when the job does not echo the model back.
 func VideoJob(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, string, error) {
-	job, err := ParseJob(raw)
+	job, err := sfx.ParseJob(raw)
 	if err != nil {
 		return types.VideoJob{}, "", err
 	}
@@ -76,7 +73,7 @@ func VideoJob(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, 
 		CreatedAt: createdAt,
 	}
 	if status == types.VideoJobStatusFailed {
-		message := job.errorMessage()
+		message := job.ErrorMessage()
 		mapped.Error = &struct {
 			Code    *string `json:"code,omitempty"`
 			Message *string `json:"message,omitempty"`
@@ -86,17 +83,5 @@ func VideoJob(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, 
 	if status != types.VideoJobStatusCompleted {
 		return mapped, "", nil
 	}
-	return mapped, job.videoURL(), nil
-}
-
-// videoURL is the download URL of the first rendered video the job carries.
-func (j Job) videoURL() string {
-	for _, t := range j.tracks() {
-		for _, variant := range t.Variants {
-			if variant.Files != nil && variant.Files.Video != nil && variant.Files.Video.URL != "" {
-				return variant.Files.Video.URL
-			}
-		}
-	}
-	return ""
+	return mapped, job.VideoURL(), nil
 }

@@ -5,11 +5,11 @@ import (
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
 	config "github.com/inference-gateway/inference-gateway/config"
-	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 	lipsync "github.com/inference-gateway/inference-gateway/internal/lipsync"
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
+	speech "github.com/inference-gateway/inference-gateway/internal/speech"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
 	client "github.com/inference-gateway/inference-gateway/providers/client"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
@@ -30,7 +30,7 @@ type RouterImpl struct {
 	lipsync           *lipsync.Engine
 	proxyTransport    http.RoundTripper
 	proxyTransportErr error
-	elevenlabsVoices  elevenlabs.VoiceLibrary
+	elevenlabsVoices  speech.VoiceLibrary
 }
 
 func NewRouter(

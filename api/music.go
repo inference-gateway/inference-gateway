@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
+	music "github.com/inference-gateway/inference-gateway/internal/music"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
@@ -38,7 +38,7 @@ func elevenlabsMusic(endpoint, model string, body []byte) (string, string, []byt
 	if err := json.Unmarshal(body, &req); err != nil {
 		return "", "", nil, fmt.Errorf("failed to decode request: %w", err)
 	}
-	query, out, err := elevenlabs.Music(model, req)
+	query, out, err := music.Music(model, req)
 	if err != nil {
 		return "", "", nil, err
 	}

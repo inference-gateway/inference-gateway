@@ -1,4 +1,6 @@
-package elevenlabs
+// Package videos translates an OpenAI Videos request into the job a
+// provider's API takes, ElevenLabs and Mirelo today, and reads the job back.
+package videos
 
 import (
 	"encoding/base64"
@@ -7,162 +9,24 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-const VoicePathPlaceholder = "{voice}"
-
-var outputFormats = map[string]string{
-	string(types.CreateSpeechRequestResponseFormatMp3):  "mp3_44100_128",
-	string(types.CreateSpeechRequestResponseFormatOpus): "opus_48000_128",
-	string(types.CreateSpeechRequestResponseFormatPcm):  "pcm_24000",
-}
-
-const SupportedFormats = "mp3, opus, pcm"
-
-// OutputFormat maps an OpenAI response_format onto an ElevenLabs
-// output_format. An empty format defaults to mp3; anything ElevenLabs cannot
-// produce is an error.
-func OutputFormat(responseFormat string) (string, error) {
-	if responseFormat == "" {
-		responseFormat = string(types.CreateSpeechRequestResponseFormatMp3)
-	}
-	format, ok := outputFormats[responseFormat]
-	if !ok {
-		return "", fmt.Errorf("elevenlabs does not support response_format %q, supported formats: %s", responseFormat, SupportedFormats)
-	}
-	return format, nil
-}
-
-// SpeechWavFormat is the ElevenLabs output_format served for response_format wav.
-const SpeechWavFormat = "wav_48000"
-
-// speechFormat maps an OpenAI response_format onto an ElevenLabs
-// text-to-speech output_format. Unlike sound effects and music, speech can be
-// a WAV.
-func speechFormat(responseFormat string) (string, error) {
-	if responseFormat == string(types.CreateSpeechRequestResponseFormatWav) {
-		return SpeechWavFormat, nil
-	}
-	if format, err := OutputFormat(responseFormat); err == nil {
-		return format, nil
-	}
-	return "", fmt.Errorf("elevenlabs does not support response_format %q for speech, supported formats: %s, wav", responseFormat, SupportedFormats)
-}
-
-// speechBody is the ElevenLabs POST /text-to-speech/{voice_id} payload.
-type speechBody struct {
-	Text          string         `json:"text"`
-	ModelID       string         `json:"model_id"`
-	LanguageCode  *string        `json:"language_code,omitempty"`
-	VoiceSettings *voiceSettings `json:"voice_settings,omitempty"`
-}
-
-type voiceSettings struct {
-	Speed float32 `json:"speed"`
-}
-
-// Speech rewrites an OpenAI CreateSpeechRequest into the ElevenLabs
-// text-to-speech shape. endpoint is the registry's speech endpoint template;
-// the returned path has the voice substituted in and the returned query
-// carries output_format. model is the request model with the provider prefix
-// already stripped.
-func Speech(endpoint, model string, req types.CreateSpeechRequest) (path, query string, body []byte, err error) {
-	if strings.TrimSpace(req.Voice) == "" {
-		return "", "", nil, fmt.Errorf("elevenlabs needs a voice: set 'voice' to an elevenlabs voice id or send a 'reference_audio' sample")
-	}
-
-	format, err := speechFormat(derefFormat(req.ResponseFormat))
-	if err != nil {
-		return "", "", nil, err
-	}
-
-	out := speechBody{Text: req.Input, ModelID: model, LanguageCode: req.Language}
-	if req.Speed != nil {
-		out.VoiceSettings = &voiceSettings{Speed: *req.Speed}
-	}
-	body, err = json.Marshal(out)
-	if err != nil {
-		return "", "", nil, err
-	}
-
-	return strings.ReplaceAll(endpoint, VoicePathPlaceholder, url.PathEscape(req.Voice)), "output_format=" + format, body, nil
-}
-
-type sfxBody struct {
-	Text            string   `json:"text"`
-	ModelID         string   `json:"model_id"`
-	OutputFormat    string   `json:"output_format"`
-	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
-	PromptInfluence *float32 `json:"prompt_influence,omitempty"`
-	Loop            *bool    `json:"loop,omitempty"`
-}
-
-// SFX rewrites a gateway CreateSFXRequest into the ElevenLabs sound-generation
-// shape. model is the request model with the provider prefix already stripped.
-func SFX(model string, req types.CreateSFXRequest) ([]byte, error) {
-	if strings.TrimSpace(req.Prompt) == "" {
-		return nil, fmt.Errorf("the 'prompt' field is required")
-	}
-
-	format, err := OutputFormat(derefSFXFormat(req.ResponseFormat))
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(sfxBody{
-		Text:            req.Prompt,
-		ModelID:         model,
-		OutputFormat:    format,
-		DurationSeconds: req.DurationSeconds,
-		PromptInfluence: req.PromptInfluence,
-		Loop:            req.Loop,
-	})
-}
-
-// musicBody is the ElevenLabs POST /music payload. The clip length is
-// expressed in milliseconds and the no-vocals guarantee as a force flag.
-type musicBody struct {
-	Prompt            string `json:"prompt"`
-	ModelID           string `json:"model_id"`
-	MusicLengthMs     *int64 `json:"music_length_ms,omitempty"`
-	ForceInstrumental *bool  `json:"force_instrumental,omitempty"`
-}
-
-// Music rewrites a gateway CreateMusicRequest into the ElevenLabs music
-// shape. model is the request model with the provider prefix already
-// stripped; the response_format becomes an output_format query parameter.
-func Music(model string, req types.CreateMusicRequest) (string, []byte, error) {
-	if strings.TrimSpace(req.Prompt) == "" {
-		return "", nil, fmt.Errorf("the 'prompt' field is required")
-	}
-
-	format, err := OutputFormat(derefMusicFormat(req.ResponseFormat))
-	if err != nil {
-		return "", nil, err
-	}
-
-	var lengthMs *int64
-	if req.DurationSeconds != nil {
-		ms := int64(*req.DurationSeconds * 1000)
-		lengthMs = &ms
-	}
-
-	body, err := json.Marshal(musicBody{
-		Prompt:            req.Prompt,
-		ModelID:           model,
-		MusicLengthMs:     lengthMs,
-		ForceInstrumental: req.Instrumental,
-	})
-	if err != nil {
-		return "", nil, err
-	}
-	return "output_format=" + format, body, nil
-}
+const (
+	videoFieldPrompt    = "prompt"
+	videoFieldSeconds   = "seconds"
+	videoFieldSize      = "size"
+	videoFieldReference = "input_reference"
+	videoFieldAudio     = "audio"
+	videoFieldRefImages = "reference_images"
+	inlineMediaType     = "inline_base64"
+	sizeSeparator       = "x"
+	veoModelPrefix      = "veo-"
+	veoRoleSubject      = "subject"
+)
 
 // videoPayload is the subset of an ElevenLabs video generation response the
 // gateway maps onto a VideoJob. ElevenLabs names these fields differently
@@ -246,19 +110,6 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 	return job, firstNonEmpty(p.ContentURL, p.MediaURL, p.VideoURL, p.DownloadURL), nil
 }
 
-const (
-	videoFieldPrompt    = "prompt"
-	videoFieldSeconds   = "seconds"
-	videoFieldSize      = "size"
-	videoFieldReference = "input_reference"
-	videoFieldAudio     = "audio"
-	videoFieldRefImages = "reference_images"
-	inlineMediaType     = "inline_base64"
-	sizeSeparator       = "x"
-	veoModelPrefix      = "veo-"
-	veoRoleSubject      = "subject"
-)
-
 // referenceImageLimits is how many `images` each ElevenLabs video model
 // accepts. Models missing here take no reference images.
 var referenceImageLimits = map[string]int{
@@ -274,7 +125,9 @@ var resolutions = map[int]string{480: "480p", 720: "720p", 1080: "1080p"}
 
 var aspectRatios = map[[2]int]string{{16, 9}: "16:9", {9, 16}: "9:16", {1, 1}: "1:1"}
 
-type inlineMedia struct {
+// InlineMedia is an uploaded image or clip carried inline as an
+// inline_base64 reference, the media shape the ElevenLabs flows API takes.
+type InlineMedia struct {
 	Type          string `json:"type"`
 	ContentBase64 string `json:"content_base64"`
 	MimeType      string `json:"mime_type"`
@@ -290,16 +143,16 @@ type videoBody struct {
 	DurationSecs *int         `json:"duration_secs,omitempty"`
 	Resolution   string       `json:"resolution,omitempty"`
 	AspectRatio  string       `json:"aspect_ratio,omitempty"`
-	StartFrame   *inlineMedia `json:"start_frame,omitempty"`
+	StartFrame   *InlineMedia `json:"start_frame,omitempty"`
 	Images       []any        `json:"images,omitempty"`
-	Image        *inlineMedia `json:"image,omitempty"`
-	Audio        *inlineMedia `json:"audio,omitempty"`
+	Image        *InlineMedia `json:"image,omitempty"`
+	Audio        *InlineMedia `json:"audio,omitempty"`
 }
 
 // veoImage is a Veo `images` entry: Veo wraps each image with the role it
 // plays, where the other models take the bare image.
 type veoImage struct {
-	Image *inlineMedia `json:"image"`
+	Image *InlineMedia `json:"image"`
 	Role  string       `json:"role"`
 }
 
@@ -311,11 +164,11 @@ type veoImage struct {
 func Video(model string, form *multipart.Form) ([]byte, error) {
 	out := videoBody{ModelID: model}
 
-	image, err := inlineFile(form, videoFieldReference)
+	image, err := InlineFile(form, videoFieldReference)
 	if err != nil {
 		return nil, err
 	}
-	audio, err := inlineFile(form, videoFieldAudio)
+	audio, err := InlineFile(form, videoFieldAudio)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +260,7 @@ func referenceImages(model string, form *multipart.Form) ([]any, error) {
 	}
 	images := make([]any, len(headers))
 	for i, fh := range headers {
-		img, err := inlineHeader(fh, videoFieldRefImages)
+		img, err := InlineHeader(fh, videoFieldRefImages)
 		if err != nil {
 			return nil, err
 		}
@@ -420,20 +273,20 @@ func referenceImages(model string, form *multipart.Form) ([]any, error) {
 	return images, nil
 }
 
-// inlineFile reads the first uploaded file for field into an inline media
+// InlineFile reads the first uploaded file for field into an inline media
 // reference, or returns nil when the field is absent.
-func inlineFile(form *multipart.Form, field string) (*inlineMedia, error) {
+func InlineFile(form *multipart.Form, field string) (*InlineMedia, error) {
 	headers := form.File[field]
 	if len(headers) == 0 {
 		return nil, nil
 	}
-	return inlineHeader(headers[0], field)
+	return InlineHeader(headers[0], field)
 }
 
-// inlineHeader reads one uploaded file into an inline media reference. The
+// InlineHeader reads one uploaded file into an inline media reference. The
 // mime type comes from the part header, sniffed from the bytes when the
 // client sent none.
-func inlineHeader(fh *multipart.FileHeader, field string) (*inlineMedia, error) {
+func InlineHeader(fh *multipart.FileHeader, field string) (*InlineMedia, error) {
 	f, err := fh.Open()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open uploaded %s: %w", field, err)
@@ -447,7 +300,7 @@ func inlineHeader(fh *multipart.FileHeader, field string) (*inlineMedia, error) 
 	if mimeType == "" || mimeType == "application/octet-stream" {
 		mimeType = http.DetectContentType(data)
 	}
-	return &inlineMedia{Type: inlineMediaType, ContentBase64: base64.StdEncoding.EncodeToString(data), MimeType: acceptedMimeType(mimeType)}, nil
+	return &InlineMedia{Type: inlineMediaType, ContentBase64: base64.StdEncoding.EncodeToString(data), MimeType: acceptedMimeType(mimeType)}, nil
 }
 
 // acceptedMimeTypes maps the other common names of an audio type onto the one
@@ -480,25 +333,4 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
-}
-
-func derefFormat(f *types.CreateSpeechRequestResponseFormat) string {
-	if f == nil {
-		return ""
-	}
-	return string(*f)
-}
-
-func derefSFXFormat(f *types.CreateSFXRequestResponseFormat) string {
-	if f == nil {
-		return ""
-	}
-	return string(*f)
-}
-
-func derefMusicFormat(f *types.CreateMusicRequestResponseFormat) string {
-	if f == nil {
-		return ""
-	}
-	return string(*f)
 }

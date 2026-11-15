@@ -1,14 +1,15 @@
-package elevenlabs
+package sfx
 
 import (
 	"archive/zip"
 	"bytes"
 	"cmp"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
 
-	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
+	speech "github.com/inference-gateway/inference-gateway/internal/speech"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
@@ -34,6 +35,46 @@ var trackContentTypes = map[string]string{
 	string(types.CreateSFXRequestResponseFormatPcm):  "audio/L16",
 }
 
+// soundBody is the ElevenLabs POST /sound-generation payload.
+type soundBody struct {
+	Text            string   `json:"text"`
+	ModelID         string   `json:"model_id"`
+	OutputFormat    string   `json:"output_format"`
+	DurationSeconds *float32 `json:"duration_seconds,omitempty"`
+	PromptInfluence *float32 `json:"prompt_influence,omitempty"`
+	Loop            *bool    `json:"loop,omitempty"`
+}
+
+// derefSFXFormat dereferences an optional response_format, "" when unset.
+func derefSFXFormat(f *types.CreateSFXRequestResponseFormat) string {
+	if f == nil {
+		return ""
+	}
+	return string(*f)
+}
+
+// SFX rewrites a gateway CreateSFXRequest into the ElevenLabs sound-generation
+// shape. model is the request model with the provider prefix already stripped.
+func SFX(model string, req types.CreateSFXRequest) ([]byte, error) {
+	if strings.TrimSpace(req.Prompt) == "" {
+		return nil, fmt.Errorf("the 'prompt' field is required")
+	}
+
+	format, err := speech.OutputFormat(derefSFXFormat(req.ResponseFormat))
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(soundBody{
+		Text:            req.Prompt,
+		ModelID:         model,
+		OutputFormat:    format,
+		DurationSeconds: req.DurationSeconds,
+		PromptInfluence: req.PromptInfluence,
+		Loop:            req.Loop,
+	})
+}
+
 // VideoMusic is the ElevenLabs video-to-music request a gateway video-to-sfx
 // request becomes: the form fields that ride beside the clips, the query
 // carrying the audio container, and, when only the sound effects were asked
@@ -50,21 +91,21 @@ type VideoMusic struct {
 // it cues layered in, and the `sfx` track alone is asked for as a separate
 // track. The endpoint takes uploaded clips only, so a URL is refused. model is
 // the request model with the provider prefix already stripped.
-func SFXFromVideo(model string, req types.CreateSFXRequest, video sfx.Video) (VideoMusic, error) {
+func SFXFromVideo(model string, req types.CreateSFXRequest, video Video) (VideoMusic, error) {
 	if video.URL != "" {
-		return VideoMusic{}, fmt.Errorf("elevenlabs takes the '%s' field as a base64 data:video/... URI, not a URL", sfx.FieldVideo)
+		return VideoMusic{}, fmt.Errorf("elevenlabs takes the '%s' field as a base64 data:video/... URI, not a URL", FieldVideo)
 	}
 	if field := unscorableField(req); field != "" {
 		return VideoMusic{}, fmt.Errorf("elevenlabs does not support '%s' when scoring a video, omit the field", field)
 	}
 
-	output := sfx.Output(req)
-	if output != sfx.OutputMix && output != sfx.OutputSFX {
-		return VideoMusic{}, fmt.Errorf("elevenlabs does not support '%s' %q when scoring a video, supported outputs: %s, %s", sfx.FieldOutput, output, sfx.OutputMix, sfx.OutputSFX)
+	output := Output(req)
+	if output != OutputMix && output != OutputSFX {
+		return VideoMusic{}, fmt.Errorf("elevenlabs does not support '%s' %q when scoring a video, supported outputs: %s, %s", FieldOutput, output, OutputMix, OutputSFX)
 	}
 
 	responseFormat := cmp.Or(derefSFXFormat(req.ResponseFormat), string(types.CreateSFXRequestResponseFormatMp3))
-	format, err := OutputFormat(responseFormat)
+	format, err := speech.OutputFormat(responseFormat)
 	if err != nil {
 		return VideoMusic{}, err
 	}
@@ -73,7 +114,7 @@ func SFXFromVideo(model string, req types.CreateSFXRequest, video sfx.Video) (Vi
 		Fields:         map[string]string{fieldModelID: model, fieldAddSFX: enabled},
 		Query:          "output_format=" + format,
 		ContentType:    trackContentTypes[responseFormat],
-		SeparateTracks: output == sfx.OutputSFX,
+		SeparateTracks: output == OutputSFX,
 	}
 	if req.Prompt != "" {
 		music.Fields[fieldDescription] = req.Prompt
@@ -90,13 +131,13 @@ func SFXFromVideo(model string, req types.CreateSFXRequest, video sfx.Video) (Vi
 func unscorableField(req types.CreateSFXRequest) string {
 	switch {
 	case req.PreserveSpeech != nil:
-		return sfx.FieldPreserveSpeech
+		return FieldPreserveSpeech
 	case req.StartOffsetSeconds != nil:
-		return sfx.FieldStartOffsetSeconds
+		return FieldStartOffsetSeconds
 	case req.DurationSeconds != nil:
-		return sfx.FieldDurationSeconds
+		return FieldDurationSeconds
 	}
-	return sfx.TextOnlyField(req)
+	return TextOnlyField(req)
 }
 
 // EffectsTrack unpacks the sound-effects track from the archive ElevenLabs

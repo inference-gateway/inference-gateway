@@ -10,7 +10,7 @@ import (
 	"time"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
-	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
+	images "github.com/inference-gateway/inference-gateway/internal/images"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
@@ -174,7 +174,7 @@ var imageEditors = map[types.Provider]func(router *RouterImpl, w http.ResponseWr
 // generation and answers in the OpenAI Images shape. The request stays open
 // while ElevenLabs renders, so the write deadline covers that wait.
 func (router *RouterImpl) elevenlabsImageEdit(w http.ResponseWriter, r *http.Request, provider core.IProvider, model string, form *multipart.Form) {
-	generation, err := elevenlabs.ImageEdit(model, form)
+	generation, err := images.ImageEdit(model, form)
 	if err != nil {
 		router.logger.Error("failed to translate request for provider", err, "api", imagesAPIName, "provider", provider.GetName())
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -186,7 +186,7 @@ func (router *RouterImpl) elevenlabsImageEdit(w http.ResponseWriter, r *http.Req
 	defer cancel()
 
 	account := elevenlabsAccount{router: router, request: r, provider: provider}
-	generated, err := elevenlabs.GenerateImage(ctx, account, generation)
+	generated, err := images.GenerateImage(ctx, account, generation)
 	if err != nil {
 		router.logger.Error("failed to generate the image", err, "api", imagesAPIName, "provider", provider.GetName())
 		failure := elevenlabsFailure(err)

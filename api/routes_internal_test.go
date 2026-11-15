@@ -14,8 +14,9 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
-	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
+	images "github.com/inference-gateway/inference-gateway/internal/images"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
+	speech "github.com/inference-gateway/inference-gateway/internal/speech"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
@@ -104,9 +105,9 @@ func TestElevenlabsFailure(t *testing.T) {
 		err        error
 		wantStatus int
 	}{
-		{"a refusal keeps the status elevenlabs answered", elevenlabs.NewRefusal(refusedStatus, []byte("paid plan required")), refusedStatus},
-		{"a moderated generation is the caller's to fix", &elevenlabs.GenerationFailure{Reason: "moderated", Message: "blocked"}, http.StatusBadRequest},
-		{"a generation that broke is the provider's fault", &elevenlabs.GenerationFailure{Reason: "model_error", Message: "broke"}, http.StatusBadGateway},
+		{"a refusal keeps the status elevenlabs answered", speech.NewRefusal(refusedStatus, []byte("paid plan required")), refusedStatus},
+		{"a moderated generation is the caller's to fix", &images.GenerationFailure{Reason: "moderated", Message: "blocked"}, http.StatusBadRequest},
+		{"a generation that broke is the provider's fault", &images.GenerationFailure{Reason: "model_error", Message: "broke"}, http.StatusBadGateway},
 		{"a generation that ran out of time", fmt.Errorf("waiting: %w", context.DeadlineExceeded), http.StatusGatewayTimeout},
 		{"anything else is a bad gateway", errors.New("connection reset"), http.StatusBadGateway},
 	}
