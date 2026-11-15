@@ -771,6 +771,8 @@ inside. Each domain folder has one README and one subfolder per tool; the
 - [Hybrid](examples/hybrid/README.md) - cloud and local providers together
   ([docker-compose](examples/hybrid/docker-compose/README.md),
   [kubernetes](examples/hybrid/kubernetes/README.md))
+- [Routing](examples/routing/README.md) - round-robin model pools
+  ([docker-compose](examples/routing/docker-compose/README.md))
 - [Monitoring](examples/monitoring/README.md) - Prometheus and Grafana
   ([docker-compose](examples/monitoring/docker-compose/README.md),
   [kubernetes](examples/monitoring/kubernetes/README.md))
