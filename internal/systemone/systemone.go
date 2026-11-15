@@ -1,6 +1,7 @@
 package systemone
 
 import (
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -88,7 +89,7 @@ func translateQuestion(q types.DecisionQuestion) (question, error) {
 		}
 		criteria := make([]string, 0, len(*q.Levels))
 		for _, l := range *q.Levels {
-			criteria = append(criteria, firstNonEmpty(deref(l.Description), deref(l.Label)))
+			criteria = append(criteria, cmp.Or(deref(l.Description), deref(l.Label)))
 		}
 		return question{Type: typeScore, Instructions: q.Instructions, Criteria: criteria}, nil
 	}
@@ -145,11 +146,4 @@ func deref(s *string) string {
 		return ""
 	}
 	return *s
-}
-
-func firstNonEmpty(a, b string) string {
-	if a != "" {
-		return a
-	}
-	return b
 }

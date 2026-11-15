@@ -3,6 +3,7 @@
 package videos
 
 import (
+	"cmp"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -72,12 +73,12 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 		return types.VideoJob{}, "", fmt.Errorf("failed to decode elevenlabs video response: %w", err)
 	}
 
-	id := firstNonEmpty(p.GenerationID, p.ID)
+	id := cmp.Or(p.GenerationID, p.ID)
 	if id == "" {
 		return types.VideoJob{}, "", fmt.Errorf("elevenlabs video response carries no generation id")
 	}
 
-	status, ok := statuses[strings.ToLower(firstNonEmpty(p.Status, p.State))]
+	status, ok := statuses[strings.ToLower(cmp.Or(p.Status, p.State))]
 	if !ok {
 		status = types.VideoJobStatusInProgress
 	}
@@ -85,7 +86,7 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 	job := types.VideoJob{
 		ID:        id,
 		Object:    types.VideoJobObjectVideo,
-		Model:     firstNonEmpty(p.ModelID, fallbackModel),
+		Model:     cmp.Or(p.ModelID, fallbackModel),
 		Status:    status,
 		Progress:  p.Progress,
 		CreatedAt: createdAt,
@@ -97,7 +98,7 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 		job.CompletedAt = p.CompletedAt
 	}
 	if status == types.VideoJobStatusFailed {
-		message := firstNonEmpty(p.ErrorMessage, p.Error, "the video generation job failed")
+		message := cmp.Or(p.ErrorMessage, p.Error, "the video generation job failed")
 		job.Error = &struct {
 			Code    *string `json:"code,omitempty"`
 			Message *string `json:"message,omitempty"`
@@ -107,7 +108,7 @@ func Job(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, strin
 	if status != types.VideoJobStatusCompleted {
 		return job, "", nil
 	}
-	return job, firstNonEmpty(p.ContentURL, p.MediaURL, p.VideoURL, p.DownloadURL), nil
+	return job, cmp.Or(p.ContentURL, p.MediaURL, p.VideoURL, p.DownloadURL), nil
 }
 
 // referenceImageLimits is how many `images` each ElevenLabs video model
@@ -322,15 +323,6 @@ func acceptedMimeType(mimeType string) string {
 func formValue(form *multipart.Form, key string) string {
 	if vs := form.Value[key]; len(vs) > 0 {
 		return vs[0]
-	}
-	return ""
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
 	}
 	return ""
 }
