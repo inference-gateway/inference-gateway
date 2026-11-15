@@ -207,12 +207,13 @@ func (t *TelemetryMiddleware) parseStreamingResponse(responseBytes []byte, provi
 	}
 
 	for _, chunk := range usageChunks {
-		if chunk == "" || !strings.HasPrefix(chunk, types.SSEDataPrefix) {
+		chunkData, found := strings.CutPrefix(chunk, types.SSEDataFieldPrefix)
+		if !found {
 			continue
 		}
 
-		chunk = strings.TrimPrefix(chunk, types.SSEDataPrefix)
-		if chunk == types.SSEDoneData {
+		chunk = strings.TrimSpace(chunkData)
+		if chunk == "" || chunk == types.SSEDoneData {
 			continue
 		}
 
