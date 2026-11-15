@@ -1,4 +1,4 @@
-package elevenlabs
+package speech
 
 import (
 	"bytes"

@@ -1,4 +1,7 @@
-package elevenlabs
+// Package images translates an OpenAI image edit into the shape a provider's
+// image API takes, ElevenLabs today, and waits for the render it runs as a
+// job.
+package images
 
 import (
 	"context"
@@ -9,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	videos "github.com/inference-gateway/inference-gateway/internal/videos"
 )
 
 const (
@@ -22,6 +27,7 @@ const (
 	imageSizeAuto        = "auto"
 	singleImage          = "1"
 	aspectRatioFormat    = "%d:%d"
+	sizeSeparator        = "x"
 
 	generationCompleted = "completed"
 	generationFailed    = "failed"
@@ -39,12 +45,12 @@ var rejections = []string{"moderated", "invalid_parameters"}
 // imageBody is the ElevenLabs POST /flows/image payload of an edit: a prompt
 // and the reference images to edit or draw from.
 type imageBody struct {
-	ModelID     string         `json:"model_id"`
-	Prompt      string         `json:"prompt"`
-	Images      []*inlineMedia `json:"images"`
-	Mask        *inlineMedia   `json:"mask,omitempty"`
-	AspectRatio string         `json:"aspect_ratio,omitempty"`
-	Quality     string         `json:"quality,omitempty"`
+	ModelID     string                `json:"model_id"`
+	Prompt      string                `json:"prompt"`
+	Images      []*videos.InlineMedia `json:"images"`
+	Mask        *videos.InlineMedia   `json:"mask,omitempty"`
+	AspectRatio string                `json:"aspect_ratio,omitempty"`
+	Quality     string                `json:"quality,omitempty"`
 }
 
 // ImageEdit rewrites an OpenAI Images edit form into the ElevenLabs flows JSON
@@ -57,7 +63,7 @@ func ImageEdit(model string, form *multipart.Form) ([]byte, error) {
 
 	out := imageBody{ModelID: model, Prompt: formValue(form, imageFieldPrompt)}
 	for _, fh := range slices.Concat(form.File[imageFieldImage], form.File[imageFieldImageArray]) {
-		image, err := inlineHeader(fh, imageFieldImage)
+		image, err := videos.InlineHeader(fh, imageFieldImage)
 		if err != nil {
 			return nil, err
 		}
@@ -65,7 +71,7 @@ func ImageEdit(model string, form *multipart.Form) ([]byte, error) {
 	}
 
 	var err error
-	if out.Mask, err = inlineFile(form, imageFieldMask); err != nil {
+	if out.Mask, err = videos.InlineFile(form, imageFieldMask); err != nil {
 		return nil, err
 	}
 	if out.AspectRatio, err = aspectRatio(formValue(form, imageFieldSize)); err != nil {
@@ -94,8 +100,15 @@ func aspectRatio(size string) (string, error) {
 	return fmt.Sprintf(aspectRatioFormat, width/g, height/g), nil
 }
 
+func gcd(a, b int) int {
+	for b != 0 {
+		a, b = b, a%b
+	}
+	return a
+}
+
 // ImageAccount is the ElevenLabs account an image is generated in. Each call
-// returns the response body, or a *Refusal when ElevenLabs declines it.
+// returns the response body, or a *speech.Refusal when ElevenLabs declines it.
 type ImageAccount interface {
 	CreateImage(ctx context.Context, generation []byte) ([]byte, error)
 	Image(ctx context.Context, generationID string) ([]byte, error)
@@ -178,4 +191,11 @@ func finishedImage(ctx context.Context, account ImageAccount, generationID strin
 	default:
 		return GeneratedImage{}, false, nil
 	}
+}
+
+func formValue(form *multipart.Form, key string) string {
+	if vs := form.Value[key]; len(vs) > 0 {
+		return vs[0]
+	}
+	return ""
 }

@@ -1,6 +1,6 @@
 // Package sfx translates a gateway sound-effect request, a text prompt or a
-// video to score, into the job a provider's API takes, Mirelo today, and reads
-// the job back.
+// video to score, into the job a provider's API takes, Mirelo and ElevenLabs
+// today, and reads the job back.
 package sfx
 
 import (
@@ -34,12 +34,17 @@ const (
 	waitQueryPrefix   = "wait="
 	millisPerSecond   = 1000
 	formatSeparator   = "_"
-	statusSucceeded   = "succeeded"
+	StatusSucceeded   = "succeeded"
 	unknownJobError   = "no error was reported"
 	mediaTypeAsset    = "asset"
 	mediaTypeURL      = "url"
-	minVideoSeconds   = 1
-	minOffsetSeconds  = 0
+
+	// MediaVideo asks Mirelo to re-render the clip with the generated sound as
+	// its new soundtrack instead of answering with the audio alone.
+	MediaVideo = "video"
+
+	MinVideoSeconds  = 1
+	MinOffsetSeconds = 0
 
 	// FieldOutput is the request field naming the track a video-to-sfx
 	// request wants back, one of OutputMix, OutputSFX or OutputSpeech.
@@ -73,7 +78,7 @@ var outputFormats = map[string]string{
 var supportedFormats = strings.Join(slices.Sorted(maps.Keys(outputFormats)), ", ")
 
 var finalStatuses = map[string]bool{
-	statusSucceeded:       true,
+	StatusSucceeded:       true,
 	"partially_succeeded": true,
 	"failed":              true,
 	"canceled":            true,
@@ -104,7 +109,7 @@ type sfxBody struct {
 	DurationMs int       `json:"duration_ms"`
 	Input      sfxInput  `json:"input"`
 	Controls   *controls `json:"controls,omitempty"`
-	Output     sfxOutput `json:"output"`
+	Output     SFXOutput `json:"output"`
 }
 
 type sfxInput struct {
@@ -115,21 +120,26 @@ type controls struct {
 	Loop bool `json:"loop"`
 }
 
-type sfxOutput struct {
+// SFXOutput is the output section of a Mirelo request: the audio container of
+// the generated track, or the media of a dubbing request.
+type SFXOutput struct {
 	Media  string `json:"media,omitempty"`
 	Format string `json:"format,omitempty"`
 }
 
-type videoBody struct {
+// VideoBody is the Mirelo video-to-sfx job: the clip, the window of it to
+// score, the speech controls and what the job answers with.
+type VideoBody struct {
 	Model         string         `json:"model"`
 	DurationMs    *int           `json:"duration_ms,omitempty"`
 	StartOffsetMs *int           `json:"start_offset_ms,omitempty"`
-	Input         videoInput     `json:"input"`
-	Controls      *videoControls `json:"controls,omitempty"`
-	Output        sfxOutput      `json:"output"`
+	Input         VideoInput     `json:"input"`
+	Controls      *VideoControls `json:"controls,omitempty"`
+	Output        SFXOutput      `json:"output"`
 }
 
-type videoInput struct {
+// VideoInput is the clip a Mirelo job scores and the prompt steering its sound.
+type VideoInput struct {
 	Video  MediaRef `json:"video"`
 	Prompt string   `json:"prompt,omitempty"`
 }
@@ -152,7 +162,8 @@ func URLRef(u string) MediaRef {
 	return MediaRef{Type: mediaTypeURL, URL: u}
 }
 
-type videoControls struct {
+// VideoControls tells Mirelo what to do with the speech already in the clip.
+type VideoControls struct {
 	PreserveSpeech *bool `json:"preserve_speech,omitempty"`
 	SeparateSpeech bool  `json:"separate_speech,omitempty"`
 }
@@ -181,7 +192,7 @@ func FromText(model string, req types.CreateSFXRequest) ([]byte, error) {
 		Model:      model,
 		DurationMs: int(math.Round(seconds * millisPerSecond)),
 		Input:      sfxInput{Prompt: req.Prompt},
-		Output:     sfxOutput{Format: format},
+		Output:     SFXOutput{Format: format},
 	}
 	if req.Loop != nil {
 		body.Controls = &controls{Loop: *req.Loop}
@@ -192,7 +203,7 @@ func FromText(model string, req types.CreateSFXRequest) ([]byte, error) {
 // VideoScore is a validated Mirelo video-to-sfx job still missing the clip it
 // scores, so a request Mirelo cannot serve is refused before any upload.
 type VideoScore struct {
-	body videoBody
+	body VideoBody
 }
 
 // FromVideo validates a gateway CreateSFXRequest that sets `video` and maps it
@@ -211,16 +222,16 @@ func FromVideo(model string, req types.CreateSFXRequest) (VideoScore, error) {
 		return VideoScore{}, fmt.Errorf("the '%s' field must be one of: %s", FieldOutput, supportedOutputs)
 	}
 
-	body := videoBody{
+	body := VideoBody{
 		Model:    model,
-		Input:    videoInput{Prompt: req.Prompt},
+		Input:    VideoInput{Prompt: req.Prompt},
 		Controls: videoControlsFor(req.PreserveSpeech, output),
-		Output:   sfxOutput{Format: format},
+		Output:   SFXOutput{Format: format},
 	}
-	if body.DurationMs, err = windowMillis(FieldDurationSeconds, req.DurationSeconds, minVideoSeconds); err != nil {
+	if body.DurationMs, err = windowMillis(FieldDurationSeconds, req.DurationSeconds, MinVideoSeconds); err != nil {
 		return VideoScore{}, err
 	}
-	if body.StartOffsetMs, err = windowMillis(FieldStartOffsetSeconds, req.StartOffsetSeconds, minOffsetSeconds); err != nil {
+	if body.StartOffsetMs, err = windowMillis(FieldStartOffsetSeconds, req.StartOffsetSeconds, MinOffsetSeconds); err != nil {
 		return VideoScore{}, err
 	}
 	return VideoScore{body: body}, nil
@@ -270,9 +281,9 @@ func windowMillis(field string, seconds *float32, minSeconds float64) (*int, err
 	return millisAtLeast(field, float64(*seconds), minSeconds)
 }
 
-// optionalMillis reads a multipart seconds field into milliseconds, nil when
+// OptionalMillis reads a multipart seconds field into milliseconds, nil when
 // absent.
-func optionalMillis(form *multipart.Form, field string, minSeconds float64) (*int, error) {
+func OptionalMillis(form *multipart.Form, field string, minSeconds float64) (*int, error) {
 	raw := formValue(form, field)
 	if raw == "" {
 		return nil, nil
@@ -299,8 +310,8 @@ func windowError(field string, minSeconds float64) error {
 // videoControlsFor derives Mirelo's speech controls from the wanted track:
 // any track but the mix needs the speech separated, and the sfx track only
 // exists when speech is not preserved, so that is the default for it.
-func videoControlsFor(preserve *bool, output string) *videoControls {
-	controls := &videoControls{PreserveSpeech: preserve, SeparateSpeech: output != OutputMix}
+func videoControlsFor(preserve *bool, output string) *VideoControls {
+	controls := &VideoControls{PreserveSpeech: preserve, SeparateSpeech: output != OutputMix}
 	if output == OutputSFX && controls.PreserveSpeech == nil {
 		keep := false
 		controls.PreserveSpeech = &keep
@@ -311,9 +322,9 @@ func videoControlsFor(preserve *bool, output string) *videoControls {
 	return controls
 }
 
-// videoControlsFrom reads the speech choice off a multipart form and derives
+// VideoControlsFrom reads the speech choice off a multipart form and derives
 // the controls for the wanted track as videoControlsFor does.
-func videoControlsFrom(form *multipart.Form, output string) (*videoControls, error) {
+func VideoControlsFrom(form *multipart.Form, output string) (*VideoControls, error) {
 	raw := formValue(form, FieldPreserveSpeech)
 	if raw == "" {
 		return videoControlsFor(nil, output), nil
@@ -427,8 +438,8 @@ func (j Job) Audio(output string) (audioURL, contentType string, err error) {
 			}
 		}
 	}
-	if j.Status != statusSucceeded {
-		return "", "", fmt.Errorf("mirelo sound effect generation %s: %s", j.Status, j.errorMessage())
+	if j.Status != StatusSucceeded {
+		return "", "", fmt.Errorf("mirelo sound effect generation %s: %s", j.Status, j.ErrorMessage())
 	}
 	return "", "", fmt.Errorf("mirelo sound effect generation succeeded without a %s track", output)
 }
@@ -445,7 +456,9 @@ func (j Job) tracks() []track {
 	return []track{j.Result.Output}
 }
 
-func (j Job) errorMessage() string {
+// ErrorMessage is the message Mirelo reported for a failed job, or a
+// placeholder when it reported none.
+func (j Job) ErrorMessage() string {
 	messages := make([]string, 0, len(j.Errors))
 	for _, e := range j.Errors {
 		if e.Message != "" {
@@ -456,4 +469,16 @@ func (j Job) errorMessage() string {
 		return unknownJobError
 	}
 	return strings.Join(messages, ", ")
+}
+
+// VideoURL is the download URL of the first rendered video the job carries.
+func (j Job) VideoURL() string {
+	for _, t := range j.tracks() {
+		for _, variant := range t.Variants {
+			if variant.Files != nil && variant.Files.Video != nil && variant.Files.Video.URL != "" {
+				return variant.Files.Video.URL
+			}
+		}
+	}
+	return ""
 }

@@ -1,4 +1,4 @@
-package elevenlabs
+package videos
 
 import (
 	"bytes"
@@ -17,9 +17,7 @@ import (
 
 // Fixtures shared by the translation tests.
 const (
-	testVoice        = "21m00Tcm4TlvDq8ikWAM"
 	testModel        = "eleven_multilingual_v2"
-	testSFXModel     = "eleven_text_to_sound_v2"
 	testJobID        = "gen-abc123"
 	testMediaURL     = "https://cdn.elevenlabs.io/renders/gen-abc123.mp4"
 	testFallbackTime = 1700000000
@@ -32,157 +30,28 @@ const (
 	testFormMaxMemory = 1 << 20
 )
 
-func ptr[T any](v T) *T { return &v }
-
-func TestOutputFormat(t *testing.T) {
-	tests := []struct {
-		name           string
-		responseFormat string
-		want           string
-		wantErr        bool
-	}{
-		{name: "empty defaults to mp3", responseFormat: "", want: "mp3_44100_128"},
-		{name: "mp3", responseFormat: "mp3", want: "mp3_44100_128"},
-		{name: "opus", responseFormat: "opus", want: "opus_48000_128"},
-		{name: "pcm", responseFormat: "pcm", want: "pcm_24000"},
-		{name: "wav is rejected rather than downgraded", responseFormat: "wav", wantErr: true},
-		{name: "aac is rejected rather than downgraded", responseFormat: "aac", wantErr: true},
-		{name: "flac is rejected rather than downgraded", responseFormat: "flac", wantErr: true},
-		{name: "unknown format", responseFormat: "ogg", wantErr: true},
+// newForm parses a real multipart body, since FileHeader.Open only works on a
+// header that came out of ReadForm. Each value in files becomes one file part.
+func newForm(t *testing.T, fields map[string]string, files map[string]int) *multipart.Form {
+	t.Helper()
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	for name, value := range fields {
+		require.NoError(t, mw.WriteField(name, value))
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := OutputFormat(tt.responseFormat)
-			if tt.wantErr {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), SupportedFormats, "the error must list what ElevenLabs can serve")
-				return
-			}
+	for name, n := range files {
+		for range n {
+			fw, err := mw.CreateFormFile(name, name+".png")
 			require.NoError(t, err)
-			assert.Equal(t, tt.want, got)
-		})
+			_, err = fw.Write([]byte(testImageBytes))
+			require.NoError(t, err)
+		}
 	}
-}
-
-func TestSpeech(t *testing.T) {
-	t.Run("rewrites the request into the text-to-speech shape", func(t *testing.T) {
-		path, query, body, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
-			Input:          "Hello world",
-			Voice:          testVoice,
-			Model:          "elevenlabs/" + testModel,
-			Speed:          ptr(float32(1.25)),
-			Language:       ptr("de"),
-			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatOpus),
-		})
-		require.NoError(t, err)
-
-		assert.Equal(t, testVoice, path, "the voice belongs in the URL path, not the body")
-		assert.Equal(t, "output_format=opus_48000_128", query)
-
-		var got map[string]any
-		require.NoError(t, json.Unmarshal(body, &got))
-		assert.Equal(t, "Hello world", got["text"], "OpenAI input maps onto ElevenLabs text")
-		assert.Equal(t, testModel, got["model_id"], "the provider prefix must already be stripped")
-		assert.Equal(t, "de", got["language_code"])
-		assert.Equal(t, map[string]any{"speed": 1.25}, got["voice_settings"])
-	})
-
-	t.Run("omits voice_settings when no speed is requested", func(t *testing.T) {
-		_, _, body, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
-			Input: "Hello",
-			Voice: testVoice,
-		})
-		require.NoError(t, err)
-
-		var got map[string]any
-		require.NoError(t, json.Unmarshal(body, &got))
-		assert.NotContains(t, got, "voice_settings")
-		assert.NotContains(t, got, "language_code")
-	})
-
-	t.Run("requires a voice", func(t *testing.T) {
-		_, _, _, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{Input: "Hello", Voice: "  "})
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "voice")
-	})
-
-	t.Run("rejects an unsupported response_format", func(t *testing.T) {
-		_, _, _, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
-			Input:          "Hello",
-			Voice:          testVoice,
-			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatFlac),
-		})
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "wav", "the error must list wav, which speech can serve")
-	})
-
-	t.Run("asks for a wav container when the caller wants wav", func(t *testing.T) {
-		_, query, _, err := Speech(VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
-			Input:          "Hello",
-			Voice:          testVoice,
-			ResponseFormat: ptr(types.CreateSpeechRequestResponseFormatWav),
-		})
-		require.NoError(t, err)
-		assert.Equal(t, "output_format="+SpeechWavFormat, query)
-	})
-
-	t.Run("a crafted voice cannot rewrite the upstream path", func(t *testing.T) {
-		path, _, _, err := Speech("/text-to-speech/"+VoicePathPlaceholder, testModel, types.CreateSpeechRequest{
-			Input: "Hello",
-			Voice: "../../v1/user?x=1#frag",
-		})
-		require.NoError(t, err)
-		assert.Equal(t, "/text-to-speech/..%2F..%2Fv1%2Fuser%3Fx=1%23frag", path,
-			"the voice stays inside its own path segment")
-	})
-}
-
-func TestSFX(t *testing.T) {
-	t.Run("rewrites the request into the sound-generation shape", func(t *testing.T) {
-		body, err := SFX(testSFXModel, types.CreateSFXRequest{
-			Prompt:          "distant thunder rolling over a valley",
-			Model:           "elevenlabs/" + testSFXModel,
-			DurationSeconds: ptr(float32(6)),
-			PromptInfluence: ptr(float32(0.4)),
-			Loop:            ptr(true),
-		})
-		require.NoError(t, err)
-
-		var got map[string]any
-		require.NoError(t, json.Unmarshal(body, &got))
-		assert.Equal(t, "distant thunder rolling over a valley", got["text"])
-		assert.Equal(t, testSFXModel, got["model_id"])
-		assert.Equal(t, "mp3_44100_128", got["output_format"], "an omitted response_format defaults to mp3")
-		assert.Equal(t, float64(6), got["duration_seconds"])
-		assert.Equal(t, 0.4, got["prompt_influence"])
-		assert.Equal(t, true, got["loop"])
-	})
-
-	t.Run("omits the optional knobs when unset", func(t *testing.T) {
-		body, err := SFX(testSFXModel, types.CreateSFXRequest{Prompt: "rain on a tin roof"})
-		require.NoError(t, err)
-
-		var got map[string]any
-		require.NoError(t, json.Unmarshal(body, &got))
-		assert.NotContains(t, got, "duration_seconds")
-		assert.NotContains(t, got, "prompt_influence")
-		assert.NotContains(t, got, "loop")
-	})
-
-	t.Run("requires a prompt", func(t *testing.T) {
-		_, err := SFX(testSFXModel, types.CreateSFXRequest{Prompt: " "})
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "prompt")
-	})
-
-	t.Run("rejects an unsupported response_format", func(t *testing.T) {
-		_, err := SFX(testSFXModel, types.CreateSFXRequest{
-			Prompt:         "thunder",
-			ResponseFormat: ptr(types.CreateSFXRequestResponseFormatFlac),
-		})
-		require.Error(t, err)
-	})
+	require.NoError(t, mw.Close())
+	form, err := multipart.NewReader(&buf, mw.Boundary()).ReadForm(testFormMaxMemory)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = form.RemoveAll() })
+	return form
 }
 
 func TestJob(t *testing.T) {
@@ -239,30 +108,6 @@ func TestJob(t *testing.T) {
 		_, _, err := Job([]byte(`not json`), testModel, testFallbackTime)
 		require.Error(t, err)
 	})
-}
-
-// newForm parses a real multipart body, since FileHeader.Open only works on a
-// header that came out of ReadForm. Each value in files becomes one file part.
-func newForm(t *testing.T, fields map[string]string, files map[string]int) *multipart.Form {
-	t.Helper()
-	var buf bytes.Buffer
-	mw := multipart.NewWriter(&buf)
-	for name, value := range fields {
-		require.NoError(t, mw.WriteField(name, value))
-	}
-	for name, n := range files {
-		for range n {
-			fw, err := mw.CreateFormFile(name, name+".png")
-			require.NoError(t, err)
-			_, err = fw.Write([]byte(testImageBytes))
-			require.NoError(t, err)
-		}
-	}
-	require.NoError(t, mw.Close())
-	form, err := multipart.NewReader(&buf, mw.Boundary()).ReadForm(testFormMaxMemory)
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = form.RemoveAll() })
-	return form
 }
 
 func TestVideoReferenceImages(t *testing.T) {

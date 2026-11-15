@@ -13,10 +13,9 @@ import (
 	"time"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
-	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 	lipsync "github.com/inference-gateway/inference-gateway/internal/lipsync"
-	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
 	tts "github.com/inference-gateway/inference-gateway/internal/tts"
+	videos "github.com/inference-gateway/inference-gateway/internal/videos"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
@@ -59,8 +58,8 @@ type videoJobMapper func(raw []byte, fallbackModel string, createdAt int) (types
 // OpenAI-shaped passthrough because no provider answers with a schema-shaped
 // VideoJob yet.
 var videoJobMappers = map[types.Provider]videoJobMapper{
-	constants.ElevenlabsID: elevenlabs.Job,
-	constants.MireloID:     sfx.VideoJob,
+	constants.ElevenlabsID: videos.Job,
+	constants.MireloID:     videos.VideoJob,
 }
 
 // videoRequestTranslators rewrite the OpenAI Videos multipart form into each
@@ -70,9 +69,9 @@ var videoJobMappers = map[types.Provider]videoJobMapper{
 // providers that render from the form alone.
 var videoRequestTranslators = map[types.Provider]func(model string, form *multipart.Form, assetID string) ([]byte, error){
 	constants.ElevenlabsID: func(model string, form *multipart.Form, _ string) ([]byte, error) {
-		return elevenlabs.Video(model, form)
+		return videos.Video(model, form)
 	},
-	constants.MireloID: sfx.Dub,
+	constants.MireloID: videos.Dub,
 }
 
 // VideosHandler implements POST /v1/videos, the OpenAI-compatible Videos API:

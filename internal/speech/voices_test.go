@@ -1,4 +1,4 @@
-package elevenlabs
+package speech
 
 import (
 	"context"
@@ -28,6 +28,7 @@ const (
 	testPlainFailure   = "upstream is down"
 	testBoundaryParam  = "boundary"
 	testSpeakers       = 8
+	testFormMaxMemory  = 1 << 20
 	notCloned          = 0
 	clonedOnce         = 1
 )

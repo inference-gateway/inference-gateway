@@ -11,7 +11,6 @@ import (
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
 
-	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )
@@ -56,7 +55,7 @@ func newElevenlabsVideoUpstream(t *testing.T) *elevenlabsVideoUpstream {
 		for field, values := range r.MultipartForm.Value {
 			u.fields[field] = values[0]
 		}
-		clips := r.MultipartForm.File[elevenlabs.VideoClipPart]
+		clips := r.MultipartForm.File[sfx.VideoClipPart]
 		u.clips = len(clips)
 		require.NotEmpty(t, clips, "the clip must reach the provider")
 		u.clipName = clips[0].Filename

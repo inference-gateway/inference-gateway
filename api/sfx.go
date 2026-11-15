@@ -11,7 +11,6 @@ import (
 	"time"
 
 	middlewares "github.com/inference-gateway/inference-gateway/api/middlewares"
-	elevenlabs "github.com/inference-gateway/inference-gateway/internal/elevenlabs"
 	sfx "github.com/inference-gateway/inference-gateway/internal/sfx"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
@@ -289,7 +288,7 @@ var sfxVideoScorers = map[types.Provider]func(router *RouterImpl, w http.Respons
 // which the music track is dropped from here.
 // shortcut: the score must finish inside SERVER_READ_TIMEOUT, which the operator raises for long clips - give the call its own window if that proves too coarse.
 func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.Request, provider core.IProvider, model, endpointPath string, req types.CreateSFXRequest, video sfx.Video) {
-	music, err := elevenlabs.SFXFromVideo(model, req, video)
+	music, err := sfx.SFXFromVideo(model, req, video)
 	if err != nil {
 		router.logger.Error("failed to translate request for provider", err, "api", sfxAPIName, "provider", provider.GetName())
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: err.Error()})
@@ -333,7 +332,7 @@ func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
 		return
 	}
-	track, err := elevenlabs.EffectsTrack(archive)
+	track, err := sfx.EffectsTrack(archive)
 	if err != nil {
 		router.logger.Error("failed to unpack the elevenlabs sound-effects track", err)
 		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: err.Error()})
@@ -351,7 +350,7 @@ func writeVideoMusicForm(mw *multipart.Writer, fields map[string]string, video s
 			return err
 		}
 	}
-	if err := writeFilePart(mw, elevenlabs.VideoClipPart, video.Filename(), video.ContentType, bytes.NewReader(video.Content)); err != nil {
+	if err := writeFilePart(mw, sfx.VideoClipPart, video.Filename(), video.ContentType, bytes.NewReader(video.Content)); err != nil {
 		return err
 	}
 	return mw.Close()
@@ -454,7 +453,7 @@ func elevenlabsSFX(endpoint, model string, body []byte) (string, string, []byte,
 	if err := json.Unmarshal(body, &req); err != nil {
 		return "", "", nil, fmt.Errorf("failed to decode request: %w", err)
 	}
-	out, err := elevenlabs.SFX(model, req)
+	out, err := sfx.SFX(model, req)
 	if err != nil {
 		return "", "", nil, err
 	}

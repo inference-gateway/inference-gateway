@@ -1,23 +1,31 @@
-package elevenlabs
+package images
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"mime/multipart"
 	"testing"
 	"testing/synctest"
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+
+	speech "github.com/inference-gateway/inference-gateway/internal/speech"
 )
 
+// Fixtures shared by the translation tests.
 const (
 	testImageModel       = "gpt-image-2"
 	testEditPrompt       = "the same woman seen from her left side"
 	testGenerationID     = "gen-image-123"
 	testImageURL         = "https://cdn.elevenlabs.io/signed/portrait.png"
 	testImageMimeType    = "image/png"
+	testImageBytes       = "FAKE-IMAGE-BYTES"
+	testFormMaxMemory    = 1 << 20
+	inlineMediaType      = "inline_base64"
 	testCreated          = `{"id":"` + testGenerationID + `","status":"pending"}`
 	testPending          = `{"id":"` + testGenerationID + `","status":"pending"}`
 	testGenerating       = `{"id":"` + testGenerationID + `","status":"generating"}`
@@ -26,6 +34,30 @@ const (
 	testModelError       = `{"id":"` + testGenerationID + `","status":"failed","failure_reason":"model_error","error_message":"the model broke"}`
 	testModeratedMessage = "The image was blocked by moderation."
 )
+
+// newForm parses a real multipart body, since FileHeader.Open only works on a
+// header that came out of ReadForm. Each value in files becomes one file part.
+func newForm(t *testing.T, fields map[string]string, files map[string]int) *multipart.Form {
+	t.Helper()
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	for name, value := range fields {
+		require.NoError(t, mw.WriteField(name, value))
+	}
+	for name, n := range files {
+		for range n {
+			fw, err := mw.CreateFormFile(name, name+".png")
+			require.NoError(t, err)
+			_, err = fw.Write([]byte(testImageBytes))
+			require.NoError(t, err)
+		}
+	}
+	require.NoError(t, mw.Close())
+	form, err := multipart.NewReader(&buf, mw.Boundary()).ReadForm(testFormMaxMemory)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = form.RemoveAll() })
+	return form
+}
 
 func TestImageEdit(t *testing.T) {
 	inlined := map[string]any{
@@ -172,7 +204,7 @@ func TestGenerateImage_ReportsAFailedGeneration(t *testing.T) {
 }
 
 func TestGenerateImage_RelaysARefusedCreate(t *testing.T) {
-	refusal := NewRefusal(402, []byte(`{"detail":{"message":"paid_plan_required"}}`))
+	refusal := speech.NewRefusal(402, []byte(`{"detail":{"message":"paid_plan_required"}}`))
 	account := &fakeImageAccount{createErr: refusal}
 
 	_, err := GenerateImage(t.Context(), account, nil)
