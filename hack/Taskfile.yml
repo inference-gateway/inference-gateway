@@ -9,7 +9,7 @@ vars:
   GRAFANA_OPERATOR_VERSION: 5.18.0
   POSTGRES_VERSION: 16.6.2
   KEYCLOAK_VERSION: 26.2.4
-  AUTH_EXAMPLE: ../examples/kubernetes/auth-keycloak
+  AUTH_EXAMPLE: ../examples/auth/keycloak/kubernetes
 
 tasks:
   deploy-infrastructure:
@@ -237,7 +237,7 @@ tasks:
     desc: 'Deploy Ollama with the deepseek-r1:1.5b model'
     cmds:
       - kubectl create namespace ollama --dry-run=client -o yaml | kubectl apply -f -
-      - kubectl apply -f ../examples/kubernetes/monitoring/ollama/
+      - kubectl apply -f ../examples/monitoring/kubernetes/ollama/
       - kubectl -n ollama rollout status deployment ollama
       - echo "🤖 Ollama deployed successfully! Use it with model ollama/deepseek-r1:1.5b"
 

@@ -118,8 +118,8 @@ plugins:
         **Using Docker Compose:**
         ```bash
         # Download example configuration
-        curl -O https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/examples/docker-compose/basic/docker-compose.yml
-        curl -O https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/examples/docker-compose/basic/.env.example
+        curl -O https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/examples/basic/docker-compose/docker-compose.yml
+        curl -O https://raw.githubusercontent.com/inference-gateway/inference-gateway/main/examples/basic/docker-compose/.env.example
         mv .env.example .env
 
         # Edit .env with your API keys

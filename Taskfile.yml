@@ -29,15 +29,15 @@ tasks:
       - go run cmd/generate/main.go -type ProviderRegistry -output providers/registry/registry_data.go
       - go run cmd/generate/main.go -type Config -output config/config.go
       - go run cmd/generate/main.go -type MD -output Configurations.md
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/basic/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/hybrid/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/tools/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/auth-keycloak/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/mcp-client-tools/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/a2a/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/monitoring/.env.example
-      - go run cmd/generate/main.go -type Env -output examples/docker-compose/guardrails/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/basic/docker-compose/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/hybrid/docker-compose/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/tools/agent/docker-compose/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/auth/keycloak/docker-compose/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/mcp/docker-compose/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/tools/mcp-client/docker-compose/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/a2a/docker-compose/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/monitoring/docker-compose/.env.example
+      - go run cmd/generate/main.go -type Env -output examples/guardrails/docker-compose/.env.example
       - go run cmd/generate/main.go -type MCPWrap -output internal/mcp/mcp-schema.openapi.yaml
       - go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.8.0 --config=.oapi-codegen.mcp.yaml -o internal/mcp/generated_types.go internal/mcp/mcp-schema.openapi.yaml
       - gofmt -r 'interface{} -> any' -w internal/mcp/generated_types.go
