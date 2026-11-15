@@ -31,15 +31,6 @@ func (router *RouterImpl) parseBoundedMultipart(w http.ResponseWriter, r *http.R
 	return r.MultipartForm, true
 }
 
-// formValue returns the first value for key in a parsed multipart form,
-// or "" when absent.
-func formValue(form *multipart.Form, key string) string {
-	if vs := form.Value[key]; len(vs) > 0 {
-		return vs[0]
-	}
-	return ""
-}
-
 // writeMultipartForm re-encodes a parsed multipart form onto mw, copying
 // each uploaded file straight through (preserving an explicit Content-Type,
 // sniffing a missing or octet-stream one) so the

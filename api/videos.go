@@ -105,7 +105,7 @@ func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) 
 		}
 	}()
 
-	model := formValue(form, formFieldModel)
+	model := url.Values(form.Value).Get(formFieldModel)
 	originalModel := model
 
 	if strings.HasPrefix(model, tts.ModelPrefix) {

@@ -284,7 +284,7 @@ func windowMillis(field string, seconds *float32, minSeconds float64) (*int, err
 // OptionalMillis reads a multipart seconds field into milliseconds, nil when
 // absent.
 func OptionalMillis(form *multipart.Form, field string, minSeconds float64) (*int, error) {
-	raw := formValue(form, field)
+	raw := url.Values(form.Value).Get(field)
 	if raw == "" {
 		return nil, nil
 	}
@@ -325,7 +325,7 @@ func videoControlsFor(preserve *bool, output string) *VideoControls {
 // VideoControlsFrom reads the speech choice off a multipart form and derives
 // the controls for the wanted track as videoControlsFor does.
 func VideoControlsFrom(form *multipart.Form, output string) (*VideoControls, error) {
-	raw := formValue(form, FieldPreserveSpeech)
+	raw := url.Values(form.Value).Get(FieldPreserveSpeech)
 	if raw == "" {
 		return videoControlsFor(nil, output), nil
 	}
@@ -334,13 +334,6 @@ func VideoControlsFrom(form *multipart.Form, output string) (*VideoControls, err
 		return nil, fmt.Errorf("the '%s' field must be true or false", FieldPreserveSpeech)
 	}
 	return videoControlsFor(&preserve, output), nil
-}
-
-func formValue(form *multipart.Form, key string) string {
-	if values := form.Value[key]; len(values) > 0 {
-		return values[0]
-	}
-	return ""
 }
 
 // Polling is how a job is awaited: the ?wait= query every request carries and

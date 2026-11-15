@@ -10,6 +10,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -162,6 +163,7 @@ type veoImage struct {
 // seconds and reference_images are dropped. Prompt-driven models refuse it.
 // model is the request model with the provider prefix already stripped.
 func Video(model string, form *multipart.Form) ([]byte, error) {
+	fields := url.Values(form.Value)
 	out := videoBody{ModelID: model}
 
 	image, err := InlineFile(form, videoFieldReference)
@@ -173,7 +175,7 @@ func Video(model string, form *multipart.Form) ([]byte, error) {
 		return nil, err
 	}
 
-	if size := formValue(form, videoFieldSize); size != "" {
+	if size := fields.Get(videoFieldSize); size != "" {
 		if out.Resolution, out.AspectRatio, err = parseSize(size); err != nil {
 			return nil, err
 		}
@@ -191,7 +193,7 @@ func Video(model string, form *multipart.Form) ([]byte, error) {
 		return json.Marshal(out)
 	}
 
-	out.Prompt = formValue(form, videoFieldPrompt)
+	out.Prompt = fields.Get(videoFieldPrompt)
 	if strings.TrimSpace(out.Prompt) == "" {
 		return nil, fmt.Errorf("the 'prompt' field is required")
 	}
@@ -202,7 +204,7 @@ func Video(model string, form *multipart.Form) ([]byte, error) {
 		return nil, fmt.Errorf("'reference_images' cannot be combined with 'input_reference'")
 	}
 	out.StartFrame = image
-	if seconds := formValue(form, videoFieldSeconds); seconds != "" {
+	if seconds := fields.Get(videoFieldSeconds); seconds != "" {
 		n, err := strconv.Atoi(seconds)
 		if err != nil || n <= 0 {
 			return nil, fmt.Errorf("the 'seconds' field must be a positive integer")
@@ -308,11 +310,4 @@ func acceptedMimeType(mimeType string) string {
 		return accepted
 	}
 	return mimeType
-}
-
-func formValue(form *multipart.Form, key string) string {
-	if vs := form.Value[key]; len(vs) > 0 {
-		return vs[0]
-	}
-	return ""
 }
