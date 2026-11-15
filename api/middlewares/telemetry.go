@@ -213,7 +213,7 @@ func (t *TelemetryMiddleware) parseStreamingResponse(responseBytes []byte, provi
 		}
 
 		chunk = strings.TrimSpace(chunkData)
-		if chunk == types.SSEDoneData {
+		if chunk == "" || chunk == types.SSEDoneData {
 			continue
 		}
 

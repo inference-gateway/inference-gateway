@@ -5,6 +5,9 @@ import (
 
 	assert "github.com/stretchr/testify/assert"
 	require "github.com/stretchr/testify/require"
+	gomock "go.uber.org/mock/gomock"
+
+	mocks "github.com/inference-gateway/inference-gateway/tests/mocks"
 )
 
 func TestParseStreamingResponse_optionalDataSpace(t *testing.T) {
@@ -18,6 +21,20 @@ func TestParseStreamingResponse_optionalDataSpace(t *testing.T) {
 			assert.EqualValues(t, 13, result.TotalTokens)
 			require.Len(t, result.ToolCalls, 1)
 			assert.Equal(t, "test_tool", result.ToolCalls[0].Function.Name)
+		})
+	}
+}
+
+func TestParseStreamingResponse_emptyData(t *testing.T) {
+	const CHUNK = `{"usage":{"prompt_tokens":10,"completion_tokens":3,"total_tokens":13}}`
+	for _, frame := range []string{"data:", "data: ", "data:\t"} {
+		t.Run(frame, func(t *testing.T) {
+			middleware := &TelemetryMiddleware{logger: mocks.NewMockLogger(gomock.NewController(t))}
+			result := middleware.parseStreamingResponse([]byte("data:"+CHUNK+"\n\n"+frame+"\n\ndata:[DONE]\n\n"), "", "")
+			assert.EqualValues(t, 10, result.PromptTokens)
+			assert.EqualValues(t, 3, result.CompletionTokens)
+			assert.EqualValues(t, 13, result.TotalTokens)
+			assert.Empty(t, result.ToolCalls)
 		})
 	}
 }
