@@ -1,9 +1,9 @@
 # Hack
 
 Local Kubernetes environment for developing the gateway itself. Unlike the
-[operator examples](../examples/kubernetes), the gateway here is a plain Deployment
+[operator examples](../examples), the gateway here is a plain Deployment
 (`gateway.yaml`) so you can swap in a locally built image. Keycloak and cert-manager
-manifests are reused from `examples/kubernetes/auth-keycloak`.
+manifests are reused from `examples/auth/keycloak/kubernetes`.
 
 - [Hack](#hack)
   - [Prerequisites](#prerequisites)

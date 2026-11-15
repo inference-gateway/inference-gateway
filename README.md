@@ -254,8 +254,8 @@ curl -X POST http://localhost:8080/v1/audio/speech \
 
 > **Recommended**: For production deployments, running the Inference Gateway as
 > a container is recommended. This provides better isolation, easier updates,
-> and simplified configuration management. See [Docker](examples/docker-compose/)
-> or [Kubernetes](examples/kubernetes/) deployment examples.
+> and simplified configuration management. See the
+> [deployment examples](examples/README.md) for Docker Compose and Kubernetes.
 >
 > **Kubernetes**: Deploy with the
 > [Inference Gateway Operator](https://github.com/inference-gateway/operator),
@@ -441,7 +441,7 @@ revision: the gateway sends no `initialize` and keeps no session, only
 server that requires a legacy handshake or a session is marked unavailable.
 The official SDKs serve it: TypeScript v2 (`createMcpHandler`), Go v1.7+
 (a stateless Streamable HTTP handler) and Python v2; the
-[MCP example](examples/docker-compose/mcp/) has a server on each of the first
+[MCP example](examples/mcp/docker-compose/) has a server on each of the first
 two.
 
 `MCP_EXPOSE=true` (which also requires `MCP_ENABLED=true`) turns the gateway
@@ -501,7 +501,7 @@ upstream failure (`-32603`).
 
 > **Learn more**:
 > [Model Context Protocol Documentation](https://modelcontextprotocol.io/) |
-> [MCP Integration Example](examples/docker-compose/mcp/)
+> [MCP Integration Example](examples/mcp/docker-compose/)
 
 ## Agent-to-Agent (A2A) Server
 
@@ -572,8 +572,8 @@ through `A2A_AGENTS`; the gateway never talks to Kubernetes itself.
 
 > **Learn more**:
 > [A2A Protocol](https://a2a-protocol.org/) |
-> [Docker Compose example](examples/docker-compose/a2a/) |
-> [Kubernetes example](examples/kubernetes/a2a/) |
+> [Docker Compose example](examples/a2a/docker-compose/) |
+> [Kubernetes example](examples/a2a/kubernetes/) |
 > [Agent Development Kit](https://github.com/inference-gateway/adk)
 
 ## Metrics and Observability
@@ -650,7 +650,7 @@ to the gateway. Enable the opt-in endpoint with `TELEMETRY_METRICS_PUSH_ENABLED=
 `TELEMETRY_ENABLED=true`, both are required or the endpoint returns 403) and POST OTLP JSON to
 `POST /v1/metrics`; pushed series are exposed on the same Prometheus endpoint with the
 client-supplied `source` and `team` labels.
-See [examples/docker-compose/monitoring](examples/docker-compose/monitoring/README.md) for a full example.
+See [examples/monitoring](examples/monitoring/docker-compose/README.md) for a full example.
 
 ### Monitoring Setup
 
@@ -659,7 +659,7 @@ See [examples/docker-compose/monitoring](examples/docker-compose/monitoring/READ
 Complete monitoring stack with Grafana dashboards:
 
 ```bash
-cd examples/docker-compose/monitoring/
+cd examples/monitoring/docker-compose/
 cp .env.example .env  # Configure your API keys
 docker compose up -d
 
@@ -671,7 +671,7 @@ docker compose up -d
 Enterprise-ready monitoring with Prometheus Operator:
 
 ```bash
-cd examples/kubernetes/monitoring/
+cd examples/monitoring/kubernetes/
 task deploy-infrastructure
 task deploy-inference-gateway
 
@@ -691,8 +691,8 @@ The included Grafana dashboard provides:
 - **Error Monitoring**: Failed requests and tool call error classification
 
 > **Learn more**:
-> [Docker Compose Monitoring](examples/docker-compose/monitoring/) |
-> [Kubernetes Monitoring](examples/kubernetes/monitoring/) |
+> [Docker Compose Monitoring](examples/monitoring/docker-compose/) |
+> [Kubernetes Monitoring](examples/monitoring/kubernetes/) |
 > [OpenTelemetry Documentation](https://opentelemetry.io/)
 
 ## Supported API's
@@ -746,43 +746,46 @@ through recognition.
 
 ## Examples
 
-- Using [Docker Compose](examples/docker-compose/)
-  - [Basic setup](examples/docker-compose/basic/) - Simple configuration with a
-    single provider
-  - [MCP Integration](examples/docker-compose/mcp/) - Model Context Protocol with
-    multiple tool servers
-  - [A2A](examples/docker-compose/a2a/) - The gateway as an Agent-to-Agent
-    server relaying to a mock agent
-  - [Hybrid deployment](examples/docker-compose/hybrid/) - Multiple providers
-    (cloud + local)
-  - [Keycloak](examples/docker-compose/auth-keycloak/) - OIDC authentication and
-    guardrails authorization setup
-  - [Entra ID](examples/docker-compose/auth-entra/), [Google Cloud](examples/docker-compose/auth-gcp/)
-    and [Amazon Cognito](examples/docker-compose/auth-cognito/) - the same setup against cloud identity providers
-  - [Tools](examples/docker-compose/tools/) - Tool integration examples
-  - [Guardrails](examples/docker-compose/guardrails/) - OPA/Rego request
-    guardrails
-  - [Monitoring](examples/docker-compose/monitoring/) - Prometheus and
-    Grafana metrics stack
-- Using [Kubernetes](examples/kubernetes/)
-  - [Basic setup](examples/kubernetes/basic/) - Simple Kubernetes deployment
-  - [MCP Integration](examples/kubernetes/mcp/) - Model Context Protocol in
-    Kubernetes
-  - [A2A](examples/kubernetes/a2a/) - The gateway as an Agent-to-Agent server
-    relaying to a mock agent
-  - [Agent deployment](examples/kubernetes/agent/) - Standalone agent deployment
-  - [Hybrid deployment](examples/kubernetes/hybrid/) - Multiple providers in
-    Kubernetes
-  - [Keycloak](examples/kubernetes/auth-keycloak/) - OIDC authentication
-  - [Entra ID](examples/kubernetes/auth-entra/), [Google Cloud](examples/kubernetes/auth-gcp/)
-    and [Amazon Cognito](examples/kubernetes/auth-cognito/) - OIDC authentication with cloud identity providers
-    in Kubernetes
-  - [Guardrails](examples/kubernetes/guardrails/) - OPA/Rego guardrails via
-    the operator
-  - [Monitoring](examples/kubernetes/monitoring/) - Observability and monitoring
-    setup
-  - [TLS setup](examples/kubernetes/tls/) - TLS/SSL configuration
-- Using standard [REST endpoints](examples/rest-endpoints/)
+Examples live grouped by domain - the scenario first, the deployment tool
+inside. Each domain folder has one README and one subfolder per tool; the
+[index](examples/README.md) links every flavour.
+
+- [Basic](examples/basic/README.md) - the smallest setup, a single provider
+  ([docker-compose](examples/basic/docker-compose/README.md),
+  [kubernetes](examples/basic/kubernetes/README.md))
+- [Auth](examples/auth/README.md) - OIDC with
+  [Keycloak](examples/auth/keycloak/docker-compose/README.md),
+  [Entra ID](examples/auth/entra/docker-compose/README.md),
+  [Google Cloud](examples/auth/gcp/docker-compose/README.md) and
+  [Amazon Cognito](examples/auth/cognito/docker-compose/README.md), each with a
+  docker-compose and a kubernetes flavour
+- [Guardrails](examples/guardrails/README.md) - OPA/Rego request guardrails
+  ([docker-compose](examples/guardrails/docker-compose/README.md),
+  [kubernetes](examples/guardrails/kubernetes/README.md))
+- [MCP](examples/mcp/README.md) - Model Context Protocol tool servers
+  ([docker-compose](examples/mcp/docker-compose/README.md),
+  [kubernetes](examples/mcp/kubernetes/README.md))
+- [A2A](examples/a2a/README.md) - Agent-to-Agent relaying to mock agents
+  ([docker-compose](examples/a2a/docker-compose/README.md),
+  [kubernetes](examples/a2a/kubernetes/README.md))
+- [Hybrid](examples/hybrid/README.md) - cloud and local providers together
+  ([docker-compose](examples/hybrid/docker-compose/README.md),
+  [kubernetes](examples/hybrid/kubernetes/README.md))
+- [Monitoring](examples/monitoring/README.md) - Prometheus and Grafana
+  ([docker-compose](examples/monitoring/docker-compose/README.md),
+  [kubernetes](examples/monitoring/kubernetes/README.md))
+- [TLS](examples/tls/README.md) - TLS termination
+  ([kubernetes](examples/tls/kubernetes/README.md)) and mutual TLS
+  ([docker-compose](examples/tls/mtls/docker-compose/README.md),
+  [kubernetes](examples/tls/mtls/kubernetes/README.md))
+- [Tools](examples/tools/README.md) - function calling with mock tools
+  ([docker-compose](examples/tools/agent/docker-compose/README.md)) and MCP
+  client-declared tools
+  ([docker-compose](examples/tools/mcp-client/docker-compose/README.md))
+- [Agent](examples/agent/README.md) - a logs-analyzer agent built on the SDK
+  ([kubernetes](examples/agent/kubernetes/README.md))
+- [REST endpoints](examples/rest-endpoints/README.md) - curl examples for the
+  standard endpoints
 
 ## SDKs
 

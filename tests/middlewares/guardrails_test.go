@@ -248,7 +248,7 @@ func TestGuardrailsMiddleware_ExternalClient(t *testing.T) {
 }
 
 func TestGuardrailsMiddleware_PolicyCompile(t *testing.T) {
-	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/docker-compose/guardrails/policies")
+	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/guardrails/docker-compose/policies")
 	assert.NoError(t, err, "example policies should compile without error")
 	assert.NotNil(t, evaluator)
 
@@ -330,7 +330,7 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 }
 
 func TestGuardrailsMiddleware_ExamplePolicyBlocks(t *testing.T) {
-	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/docker-compose/guardrails/policies")
+	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/guardrails/docker-compose/policies")
 	assert.NoError(t, err)
 
 	tests := []struct {
@@ -359,7 +359,7 @@ func TestGuardrailsMiddleware_ExamplePolicyBlocks(t *testing.T) {
 }
 
 func TestGuardrailsMiddleware_GCPIdentityPolicy(t *testing.T) {
-	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/docker-compose/auth-gcp/policies")
+	evaluator, err := guardrails.NewEvaluator(context.Background(), "../../examples/auth/gcp/docker-compose/policies")
 	assert.NoError(t, err, "example policy should compile without error")
 
 	tests := []struct {

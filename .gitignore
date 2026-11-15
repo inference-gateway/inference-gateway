@@ -8,4 +8,4 @@ bin/
 .infer/
 /gateway
 internal/mcp/mcp-schema.openapi.yaml
-examples/docker-compose/mtls/certs/
+examples/tls/mtls/docker-compose/certs/

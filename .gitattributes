@@ -20,4 +20,4 @@ internal/mcp/generated_types.go linguist-generated=true
 tests/mocks/** linguist-generated=true
 
 Configurations.md linguist-generated=true
-examples/docker-compose/**/.env.example linguist-generated=true
+examples/**/.env.example linguist-generated=true
