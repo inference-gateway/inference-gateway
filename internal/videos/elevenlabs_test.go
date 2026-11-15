@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"mime/multipart"
 	"net/textproto"
 	"testing"
@@ -225,7 +224,7 @@ func TestVideoLabelsAudioAsElevenlabsNamesIt(t *testing.T) {
 				{videoFieldAudio, "line.wav", tt.contentType, tt.audio},
 			} {
 				header := textproto.MIMEHeader{}
-				header.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, part.field, part.file))
+				header.Set("Content-Disposition", multipart.FileContentDisposition(part.field, part.file))
 				header.Set(contentHeader, part.contentType)
 				pw, err := mw.CreatePart(header)
 				require.NoError(t, err)
