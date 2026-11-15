@@ -8,7 +8,7 @@ require (
 	github.com/inference-gateway/adk v0.34.2
 	github.com/inference-gateway/tokenless v0.12.2
 	github.com/oapi-codegen/runtime v1.9.0
-	github.com/open-policy-agent/opa v1.22.3
+	github.com/open-policy-agent/opa v1.22.4
 	github.com/pelletier/go-toml/v2 v2.4.3
 	github.com/prometheus/client_golang v1.25.0
 	github.com/sethvargo/go-envconfig v1.4.3
