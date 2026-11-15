@@ -108,7 +108,7 @@ func gcd(a, b int) int {
 }
 
 // ImageAccount is the ElevenLabs account an image is generated in. Each call
-// returns the response body, or a *Refusal when ElevenLabs declines it.
+// returns the response body, or a *speech.Refusal when ElevenLabs declines it.
 type ImageAccount interface {
 	CreateImage(ctx context.Context, generation []byte) ([]byte, error)
 	Image(ctx context.Context, generationID string) ([]byte, error)

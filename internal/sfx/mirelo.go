@@ -127,6 +127,8 @@ type SFXOutput struct {
 	Format string `json:"format,omitempty"`
 }
 
+// VideoBody is the Mirelo video-to-sfx job: the clip, the window of it to
+// score, the speech controls and what the job answers with.
 type VideoBody struct {
 	Model         string         `json:"model"`
 	DurationMs    *int           `json:"duration_ms,omitempty"`
@@ -136,6 +138,7 @@ type VideoBody struct {
 	Output        SFXOutput      `json:"output"`
 }
 
+// VideoInput is the clip a Mirelo job scores and the prompt steering its sound.
 type VideoInput struct {
 	Video  MediaRef `json:"video"`
 	Prompt string   `json:"prompt,omitempty"`
@@ -159,6 +162,7 @@ func URLRef(u string) MediaRef {
 	return MediaRef{Type: mediaTypeURL, URL: u}
 }
 
+// VideoControls tells Mirelo what to do with the speech already in the clip.
 type VideoControls struct {
 	PreserveSpeech *bool `json:"preserve_speech,omitempty"`
 	SeparateSpeech bool  `json:"separate_speech,omitempty"`
@@ -280,7 +284,7 @@ func windowMillis(field string, seconds *float32, minSeconds float64) (*int, err
 // OptionalMillis reads a multipart seconds field into milliseconds, nil when
 // absent.
 func OptionalMillis(form *multipart.Form, field string, minSeconds float64) (*int, error) {
-	raw := FormValue(form, field)
+	raw := formValue(form, field)
 	if raw == "" {
 		return nil, nil
 	}
@@ -321,7 +325,7 @@ func videoControlsFor(preserve *bool, output string) *VideoControls {
 // VideoControlsFrom reads the speech choice off a multipart form and derives
 // the controls for the wanted track as videoControlsFor does.
 func VideoControlsFrom(form *multipart.Form, output string) (*VideoControls, error) {
-	raw := FormValue(form, FieldPreserveSpeech)
+	raw := formValue(form, FieldPreserveSpeech)
 	if raw == "" {
 		return videoControlsFor(nil, output), nil
 	}
@@ -332,9 +336,7 @@ func VideoControlsFrom(form *multipart.Form, output string) (*VideoControls, err
 	return videoControlsFor(&preserve, output), nil
 }
 
-// FormValue reads the first value of key off a multipart form, "" when it is
-// absent.
-func FormValue(form *multipart.Form, key string) string {
+func formValue(form *multipart.Form, key string) string {
 	if values := form.Value[key]; len(values) > 0 {
 		return values[0]
 	}
