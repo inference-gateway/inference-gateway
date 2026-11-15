@@ -178,11 +178,12 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 					continue
 				}
 
-				chunkData, found := strings.CutPrefix(trimmedLine, types.SSEDataPrefix)
+				chunkData, found := strings.CutPrefix(trimmedLine, types.SSEDataFieldPrefix)
 				if !found || chunkData == "" {
 					continue
 				}
 
+				chunkData = strings.TrimSpace(chunkData)
 				formattedData := []byte(types.SSEDataPrefix + chunkData + "\n\n")
 				responseBodyBuilder.Write(formattedData)
 

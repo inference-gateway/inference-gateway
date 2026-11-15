@@ -1155,25 +1155,27 @@ func TestAgent_WithClientDeclaredTools(t *testing.T) {
 		})
 	}
 
-	t.Run("streaming", func(t *testing.T) {
-		agent, _, provider := newAgent(t)
-		upstream := make(chan []byte, 3)
-		upstream <- []byte(`data: {"id":"chunk","model":"test-model","choices":[{"index":0,"delta":{"role":"assistant","tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"bash","arguments":"{}"}}]},"finish_reason":null}]}`)
-		upstream <- []byte(`data: {"id":"chunk","model":"test-model","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`)
-		upstream <- []byte(`data: [DONE]`)
-		close(upstream)
-		provider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(upstream, nil).Times(1)
+	for _, prefix := range []string{"data: ", "data:"} {
+		t.Run("streaming "+prefix, func(t *testing.T) {
+			agent, _, provider := newAgent(t)
+			upstream := make(chan []byte, 3)
+			upstream <- []byte(prefix + `{"id":"chunk","model":"test-model","choices":[{"index":0,"delta":{"role":"assistant","tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"bash","arguments":"{}"}}]},"finish_reason":null}]}`)
+			upstream <- []byte(prefix + `{"id":"chunk","model":"test-model","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}]}`)
+			upstream <- []byte(prefix + `[DONE]`)
+			close(upstream)
+			provider.EXPECT().StreamChatCompletions(gomock.Any(), gomock.Any()).Return(upstream, nil).Times(1)
 
-		downstream := make(chan []byte, 10)
-		require.NoError(t, agent.RunWithStream(context.Background(), provider, model, downstream, &types.CreateChatCompletionRequest{Model: model, Tools: &declared}))
-		close(downstream)
+			downstream := make(chan []byte, 10)
+			require.NoError(t, agent.RunWithStream(context.Background(), provider, model, downstream, &types.CreateChatCompletionRequest{Model: model, Tools: &declared}))
+			close(downstream)
 
-		var body strings.Builder
-		for chunk := range downstream {
-			body.Write(chunk)
-		}
-		assert.Equal(t, []types.ChatCompletionMessageToolCall{toolCall("call_1", clientTool)}, types.AccumulateStreamingToolCalls(body.String()))
-		assert.Contains(t, body.String(), `"finish_reason":"tool_calls"`)
-		assert.True(t, strings.HasSuffix(body.String(), types.SSEDoneEvent))
-	})
+			var body strings.Builder
+			for chunk := range downstream {
+				body.Write(chunk)
+			}
+			assert.Equal(t, []types.ChatCompletionMessageToolCall{toolCall("call_1", clientTool)}, types.AccumulateStreamingToolCalls(body.String()))
+			assert.Contains(t, body.String(), `"finish_reason":"tool_calls"`)
+			assert.True(t, strings.HasSuffix(body.String(), types.SSEDoneEvent))
+		})
+	}
 }

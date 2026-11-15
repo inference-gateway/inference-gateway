@@ -81,3 +81,16 @@ data: [DONE]`,
 		})
 	}
 }
+
+func TestAccumulateStreamingToolCalls_optionalDataSpace(t *testing.T) {
+	const chunk = `{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_123","type":"function","function":{"name":"mcp_test_tool","arguments":"{}"}}]}}]}`
+	for _, prefix := range []string{"data:", "data: ", "data:  ", ""} {
+		t.Run(prefix, func(t *testing.T) {
+			result := types.AccumulateStreamingToolCalls(prefix + chunk + "\n\ndata:[DONE]\n\n")
+			require.Len(t, result, 1)
+			assert.Equal(t, "call_123", result[0].ID)
+			assert.Equal(t, "mcp_test_tool", result[0].Function.Name)
+			assert.Equal(t, "{}", result[0].Function.Arguments)
+		})
+	}
+}
