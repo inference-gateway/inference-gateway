@@ -6,7 +6,8 @@ and the Kubernetes Gateway API.
 
 Rego policies live in a `ConfigMap` referenced by `spec.guardrails.configMapRef` and are
 mounted into the gateway's policy directory. Each `.rego` file must be in `package guardrails` and expose a
-`main` rule returning `{"action": "allow"}` or `{"action": "block", "message": "..."}`.
+`main` rule returning one of the four actions: `allow`, `block` (with a message),
+`redact` or `warn`.
 
 > **Note:** `spec.guardrails` requires an operator build that supports the guardrails field.
 > The gateway itself is configured through the `GUARDRAILS_*` env vars documented in
