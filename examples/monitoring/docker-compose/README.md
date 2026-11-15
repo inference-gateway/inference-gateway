@@ -4,7 +4,7 @@ This example demonstrates comprehensive monitoring setup for the Inference Gatew
 
 - **Prometheus** for metrics collection
 - **Grafana** for visualization with enhanced dashboards
-- **Function/Tool Call Metrics** tracking MCP tool executions
+- **Function/Tool Call Metrics** tracking tool calls in model responses
 
 ## 📊 Dashboard Features
 
@@ -77,7 +77,7 @@ Scrapes gateway metrics every 5 seconds:
 
 ## 🧪 Testing Function/Tool Call Metrics
 
-### Example MCP Tool Call Request
+### Example Tool Call Request
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
@@ -210,8 +210,7 @@ The dashboard supports provider filtering via `$provider` variable:
 ### Tool Call Metrics Empty
 
 1. Send requests that actually trigger tool calls
-2. Verify MCP middleware is enabled
-3. Check gateway logs for tool execution
+2. Check `inference_gateway_tool_calls_total` in the output of `curl http://localhost:9464/metrics`
 
 ### Dashboard Not Loading
 
