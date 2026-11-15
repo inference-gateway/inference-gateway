@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.67.0](https://github.com/inference-gateway/inference-gateway/compare/v0.66.0...v0.67.0) (2026-11-15)
+
+### ✨ Features
+
+* **audio:** take the sfx video as a url or data uri in the json body ([#878](https://github.com/inference-gateway/inference-gateway/issues/878)) ([abe85ed](https://github.com/inference-gateway/inference-gateway/commit/abe85edcd5c926311ebc73d31dba9a6a49b2d8e4))
+* sync generated types with schemas v1.14.0 ([#877](https://github.com/inference-gateway/inference-gateway/issues/877)) ([d75ccf6](https://github.com/inference-gateway/inference-gateway/commit/d75ccf6b34baa87a93cd4f20f0117f12a28934c3))
+
+### ♻️ Improvements
+
+* **examples:** group examples by domain instead of deployment tool ([#883](https://github.com/inference-gateway/inference-gateway/issues/883)) ([beb80f6](https://github.com/inference-gateway/inference-gateway/commit/beb80f64a01d8611f8bd45ffaad79220db659917))
+* **internal:** merge the generator packages into internal/gen ([#882](https://github.com/inference-gateway/inference-gateway/issues/882)) ([4c134e4](https://github.com/inference-gateway/inference-gateway/commit/4c134e400c930fc2226050a956cc55e0ae31dc98))
+* **internal:** split elevenlabs by capability ([#880](https://github.com/inference-gateway/inference-gateway/issues/880)) ([9fcdb9a](https://github.com/inference-gateway/inference-gateway/commit/9fcdb9a2750f4cadf6796c75cc35cffa78fbd989))
+
+### 🐛 Bug Fixes
+
+* **benchmarks:** pool the baseline from recent CI runs and drop ProviderTransformations from the sec/op gate ([#875](https://github.com/inference-gateway/inference-gateway/issues/875)) ([d19a0e0](https://github.com/inference-gateway/inference-gateway/commit/d19a0e0746a69e3e74b063a63ee72a06d8773afc)), closes [#874](https://github.com/inference-gateway/inference-gateway/issues/874), references [#809](https://github.com/inference-gateway/inference-gateway/issues/809)
+* **streaming:** accept SSE data fields without a space ([#884](https://github.com/inference-gateway/inference-gateway/issues/884)) ([92fa307](https://github.com/inference-gateway/inference-gateway/commit/92fa30755c481edeb1cd9a10b5a179361c65faaa))
+
 ## [0.66.0](https://github.com/inference-gateway/inference-gateway/compare/v0.65.0...v0.66.0) (2026-11-14)
 
 ### ✨ Features
