@@ -76,7 +76,7 @@ func UploadBody(ticket AssetTicket, filename, contentType string, file io.Reader
 		}
 	}
 	header := make(textproto.MIMEHeader)
-	header.Set("Content-Disposition", fmt.Sprintf(`form-data; name=%q; filename=%q`, UploadFilePart, filename))
+	header.Set("Content-Disposition", multipart.FileContentDisposition(UploadFilePart, filename))
 	if contentType != "" {
 		header.Set("Content-Type", contentType)
 	}

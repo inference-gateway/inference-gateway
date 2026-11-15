@@ -26,7 +26,6 @@ const (
 	sampleContentType        = "audio/wav"
 	contentTypeHeader        = "Content-Type"
 	contentDispositionHeader = "Content-Disposition"
-	sampleDispositionFormat  = `form-data; name=%q; filename=%q`
 )
 
 // Account is the ElevenLabs account behind the gateway's API key. Each call
@@ -79,7 +78,7 @@ func (s VoiceSample) cloneForm(name string) (contentType string, form []byte, er
 		return "", nil, err
 	}
 	header := textproto.MIMEHeader{}
-	header.Set(contentDispositionHeader, fmt.Sprintf(sampleDispositionFormat, voiceFilesField, sampleFileName))
+	header.Set(contentDispositionHeader, multipart.FileContentDisposition(voiceFilesField, sampleFileName))
 	header.Set(contentTypeHeader, sampleContentType)
 	part, err := writer.CreatePart(header)
 	if err != nil {
