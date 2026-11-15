@@ -7,10 +7,14 @@ services:
     environment:
       - GUARDRAILS_ENABLED=true
       - GUARDRAILS_POLICY_DIR=/etc/inference-gateway/guardrails/policies
+      - GUARDRAILS_EXTERNAL_URL=http://external-guardrail:8088/check
+      - GUARDRAILS_EXTERNAL_TIMEOUT=5s
     ports:
       - '8080:8080'
     volumes:
       - ./policies:/etc/inference-gateway/guardrails/policies:ro
+    depends_on:
+      - external-guardrail
     deploy:
       resources:
         limits:
