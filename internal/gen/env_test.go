@@ -1,4 +1,4 @@
-package dockergen
+package gen
 
 import (
 	"os"
@@ -9,11 +9,9 @@ import (
 	require "github.com/stretchr/testify/require"
 )
 
-const fixture = "testdata/fixture-openapi.yaml"
-
 func TestGenerateEnvExampleOverridesServerHost(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), ".env.example")
-	require.NoError(t, GenerateEnvExample(dest, fixture))
+	require.NoError(t, EnvExample(dest, fixture))
 
 	out, err := os.ReadFile(dest)
 	require.NoError(t, err)

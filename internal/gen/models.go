@@ -1,16 +1,4 @@
-// Package communitygen syncs the models.dev metadata table from the models.dev
-// dataset (https://github.com/sst/models.dev). It reads a GitHub tarball of
-// that repository, filters it to the gateway's supported cloud providers, and
-// emits one JSON table embedded by providers/modelsdev (`task modelsdev:sync`):
-// per model, its pricing (USD per-million-token rates converted to the
-// gateway's per-token decimal-string format), context window, input and output
-// modalities, lifecycle status, and release date.
-//
-// The table has a hand-maintained companion, "models.overrides.json", for
-// models models.dev does not carry (or carries wrong). Its entries are merged
-// last, field by field, so they win over the synced values and survive every
-// re-sync.
-package communitygen
+package gen
 
 import (
 	"archive/tar"
@@ -138,12 +126,12 @@ func cacheWriteRate(value any) float64 {
 	return 0
 }
 
-// GenerateModels reads a models.dev repository tarball (as served by
+// Models reads a models.dev repository tarball (as served by
 // `gh api repos/sst/models.dev/tarball`) and writes the per-model metadata
 // table keyed by "<provider>/<model>" to output. Models without any usable
 // attribute get no entry. Pricing whose rates did not change keeps the prior
 // file's updated_at, so re-syncs don't rewrite the whole committed table.
-func GenerateModels(output, tarballPath string) error {
+func Models(output, tarballPath string) error {
 	syncedAt := time.Now().UTC().Truncate(time.Second)
 	prior := make(map[string]modelsdev.Entry)
 	if data, err := os.ReadFile(output); err == nil {

@@ -25,7 +25,7 @@ const maxVariants = 6
 const maxStackName = 128
 
 // modelsJSON is the per-model metadata table synced from the community-maintained
-// models.dev dataset via `task modelsdev:sync` (internal/communitygen), keyed by
+// models.dev dataset via `task modelsdev:sync` (internal/gen), keyed by
 // "<provider>/<model>".
 //
 //go:embed models.json
