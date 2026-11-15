@@ -48,7 +48,7 @@ if [ -n "$staged_go" ]; then
 fi
 
 # --- task generate (regenerate config, docs, env files from openapi.yaml) ---
-if git diff --cached --name-only --diff-filter=ACMR | grep -qE 'openapi\.yaml$|internal/codegen/'; then
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE 'openapi\.yaml$|internal/gen/'; then
   echo "  task generate (regenerate config, docs, env files)"
   task generate
   if ! git diff --quiet; then

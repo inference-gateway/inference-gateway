@@ -1,4 +1,4 @@
-package dockergen
+package gen
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ const (
 	serverHostInDocker = "0.0.0.0"
 )
 
-func GenerateEnvExample(output string, oas string) error {
+func EnvExample(output string, oas string) error {
 	// Read OpenAPI spec
 	schema, err := openapi.Read(oas)
 	if err != nil {

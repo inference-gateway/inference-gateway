@@ -1,4 +1,4 @@
-package mdgen
+package gen
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	openapi "github.com/inference-gateway/inference-gateway/internal/openapi"
 )
 
-func GenerateConfigurationsMD(filePath string, oas string) error {
+func ConfigurationsMD(filePath string, oas string) error {
 	schema, err := openapi.Read(oas)
 	if err != nil {
 		return fmt.Errorf("failed to read OpenAPI spec: %w", err)

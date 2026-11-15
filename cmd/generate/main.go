@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	codegen "github.com/inference-gateway/inference-gateway/internal/codegen"
-	communitygen "github.com/inference-gateway/inference-gateway/internal/communitygen"
-	dockergen "github.com/inference-gateway/inference-gateway/internal/dockergen"
-	mdgen "github.com/inference-gateway/inference-gateway/internal/mdgen"
+	gen "github.com/inference-gateway/inference-gateway/internal/gen"
 )
 
 var (
@@ -31,76 +28,46 @@ func main() {
 		os.Exit(1)
 	}
 
+	var err error
 	switch _type {
 	case "Env":
 		fmt.Printf("Generating Dot Env to %s\n", output)
-		err := dockergen.GenerateEnvExample(output, "openapi.yaml")
-		if err != nil {
-			fmt.Printf("Error generating env example: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.EnvExample(output, "openapi.yaml")
 	case "MD":
 		fmt.Printf("Generating Markdown to %s\n", output)
-		err := mdgen.GenerateConfigurationsMD(output, "openapi.yaml")
-		if err != nil {
-			fmt.Printf("Error generating MD: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.ConfigurationsMD(output, "openapi.yaml")
 	case "ProvidersClientConfig":
 		fmt.Printf("Generating providers client config to %s\n", output)
-		err := codegen.GenerateProvidersClientConfig(output, "openapi.yaml")
-		if err != nil {
-			fmt.Printf("Error generating providers client config: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.ProvidersClientConfig(output, "openapi.yaml")
 	case "ProvidersConstants":
 		fmt.Printf("Generating providers constants to %s\n", output)
-		err := codegen.GenerateConstants(output, "openapi.yaml")
-		if err != nil {
-			fmt.Printf("Error generating providers constants: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.Constants(output, "openapi.yaml")
 	case "Config":
 		fmt.Printf("Generating Go Config to %s\n", output)
-		err := codegen.GenerateConfig(output, "openapi.yaml")
-		if err != nil {
-			fmt.Printf("Error generating config: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.Config(output, "openapi.yaml")
 	case "Providers":
 		fmt.Printf("Generating provider files to %s\n", output)
-		err := codegen.GenerateProviders(output, "openapi.yaml")
-		if err != nil {
-			fmt.Printf("Error generating providers: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.Providers(output, "openapi.yaml")
 	case "ModelsDev":
 		fmt.Printf("Generating models.dev metadata table to %s\n", output)
 		if input == "" {
 			fmt.Println("-input must point to a models.dev repository tarball")
 			os.Exit(1)
 		}
-		err := communitygen.GenerateModels(output, input)
-		if err != nil {
-			fmt.Printf("Error generating models.dev metadata table: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.Models(output, input)
 	case "MCPWrap":
 		fmt.Printf("Wrapping MCP JSON schema as OpenAPI 3.1 to %s\n", output)
-		err := codegen.GenerateMCPWrap(output, "internal/mcp/mcp-schema.yaml")
-		if err != nil {
-			fmt.Printf("Error wrapping MCP schema: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.MCPWrap(output, "internal/mcp/mcp-schema.yaml")
 	case "ProviderRegistry":
 		fmt.Printf("Generating provider registry to %s\n", output)
-		err := codegen.GenerateProviderRegistry(output, "openapi.yaml")
-		if err != nil {
-			fmt.Printf("Error generating provider registry: %v\n", err)
-			os.Exit(1)
-		}
+		err = gen.ProviderRegistry(output, "openapi.yaml")
 	default:
 		fmt.Println("Invalid type specified")
 		os.Exit(1)
 	}
+	if err == nil {
+		return
+	}
+	fmt.Printf("Error generating %s: %v\n", _type, err)
+	os.Exit(1)
 }
