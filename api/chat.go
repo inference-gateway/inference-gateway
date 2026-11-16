@@ -13,59 +13,11 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// ChatCompletionsHandler implements an OpenAI-compatible API endpoint
-// that generates text completions in the standard OpenAI format.
-//
-// Regular response format:
-//
-//	{
-//	  "choices": [
-//	    {
-//	      "finish_reason": "stop",
-//	      "message": {
-//	        "content": "Hello, how can I help you today?",
-//	        "role": "assistant"
-//	      }
-//	    }
-//	  ],
-//	  "created": 1742165657,
-//	  "id": "chatcmpl-118",
-//	  "model": "deepseek-r1:1.5b",
-//	  "object": "chat.completion",
-//	  "usage": {
-//	    "completion_tokens": 139,
-//	    "prompt_tokens": 10,
-//	    "total_tokens": 149
-//	  }
-//	}
-//
-// Streaming response format:
-//
-//	{
-//	  "choices": [
-//	    {
-//	      "index": 0,
-//	      "finish_reason": "stop",
-//	      "delta": {
-//	        "content": "Hello",
-//	        "role": "assistant"
-//	      }
-//	    }
-//	  ],
-//	  "created": 1742165657,
-//	  "id": "chatcmpl-118",
-//	  "model": "deepseek-r1:1.5b",
-//	  "object": "chat.completion.chunk",
-//	  "usage": {
-//	    "completion_tokens": 139,
-//	    "prompt_tokens": 10,
-//	    "total_tokens": 149
-//	  }
-//	}
-//
-// It returns token completions as chat in the standard OpenAI format, allowing applications
-// built for OpenAI's API to work seamlessly with the Inference Gateway's multi-provider
-// architecture.
+// ChatCompletionsHandler serves /v1/chat/completions: an OpenAI-format request
+// is resolved to a provider (from ?provider=, a provider/model prefix, or a
+// routed logical model alias), images are stripped when the resolved model
+// cannot accept them, and the completion is answered in OpenAI format (streamed
+// or regular). The request and response shapes live in openapi.yaml.
 func (router *RouterImpl) ChatCompletionsHandler(w http.ResponseWriter, r *http.Request) {
 	var req types.CreateChatCompletionRequest
 
@@ -125,36 +77,9 @@ func (router *RouterImpl) ChatCompletionsHandler(w http.ResponseWriter, r *http.
 	ctx, cancel := context.WithTimeout(r.Context(), router.cfg.Server.ReadTimeout)
 	defer cancel()
 
-	if router.cfg.VisionEnabled {
-		hasImageContent := false
-		imageCount := 0
-		for _, message := range req.Messages {
-			if message.HasImageContent() {
-				hasImageContent = true
-				imageCount++
-			}
-		}
-
-		if hasImageContent {
-			if !modelsdev.AcceptsImages(providerID, req.Model) {
-				router.logger.Info("filtering images from non-vision model request",
-					"provider", providerID,
-					"model", req.Model,
-					"messagesWithImages", imageCount)
-
-				for i := range req.Messages {
-					if req.Messages[i].HasImageContent() {
-						if err := req.Messages[i].StripImageContent(); err != nil {
-							router.logger.Error("failed to strip image content from message", err)
-							middlewares.WriteJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to process message content"})
-							return
-						}
-					}
-				}
-
-				router.logger.Debug("images stripped from request, continuing with text-only content")
-			}
-		}
+	if err := router.stripImagesForNonVisionModel(&req, providerID); err != nil {
+		middlewares.WriteJSON(w, http.StatusInternalServerError, ErrorResponse{Error: "Failed to process message content"})
+		return
 	}
 
 	router.logger.Debug("server read timeout", "timeout", router.cfg.Server.ReadTimeout)
@@ -207,7 +132,7 @@ func (router *RouterImpl) ChatCompletionsHandler(w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", contentTypeJSON)
 	response, err := provider.ChatCompletions(ctx, req)
 	if err != nil {
-		if err == context.DeadlineExceeded || ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(err, context.DeadlineExceeded) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			router.logger.Error("request timed out", err, "provider", providerID)
 			middlewares.WriteJSON(w, http.StatusGatewayTimeout, ErrorResponse{Error: "Request timed out"})
 			return
@@ -219,6 +144,45 @@ func (router *RouterImpl) ChatCompletionsHandler(w http.ResponseWriter, r *http.
 	}
 
 	middlewares.WriteJSON(w, http.StatusOK, response)
+}
+
+// stripImagesForNonVisionModel removes image parts from a request whose
+// resolved model cannot accept images, keeping the text so a text-only
+// model still answers instead of failing upstream. Unknown models are
+// passed through, per modelsdev.AcceptsImages, and a message whose
+// content cannot be rewritten is returned as an error.
+func (router *RouterImpl) stripImagesForNonVisionModel(req *types.CreateChatCompletionRequest, providerID types.Provider) error {
+	if !router.cfg.VisionEnabled {
+		return nil
+	}
+
+	imageCount := 0
+	for _, message := range req.Messages {
+		if message.HasImageContent() {
+			imageCount++
+		}
+	}
+	if imageCount == 0 || modelsdev.AcceptsImages(providerID, req.Model) {
+		return nil
+	}
+
+	router.logger.Info("filtering images from non-vision model request",
+		"provider", providerID,
+		"model", req.Model,
+		"messagesWithImages", imageCount)
+
+	for i := range req.Messages {
+		if !req.Messages[i].HasImageContent() {
+			continue
+		}
+		if err := req.Messages[i].StripImageContent(); err != nil {
+			router.logger.Error("failed to strip image content from message", err)
+			return err
+		}
+	}
+
+	router.logger.Debug("images stripped from request, continuing with text-only content")
+	return nil
 }
 
 // writeProviderError relays an upstream provider failure to the client with

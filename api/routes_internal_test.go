@@ -14,12 +14,14 @@ import (
 
 	providers "github.com/inference-gateway/inference-gateway/tests/mocks/providers"
 
+	config "github.com/inference-gateway/inference-gateway/config"
 	images "github.com/inference-gateway/inference-gateway/internal/images"
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	speech "github.com/inference-gateway/inference-gateway/internal/speech"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
+	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
 // TestBuildProvider_MapsRegistryErrors pins the client-facing message to the
@@ -115,6 +117,61 @@ func TestElevenlabsFailure(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.Equal(t, tt.wantStatus, elevenlabsFailure(tt.err).status)
+		})
+	}
+}
+
+// TestStripImagesForNonVisionModel pins the vision rule: images survive a
+// disabled VISION_ENABLED, a vision-capable model and an unclassifiable
+// model, and only a table-confirmed text-only model gets them stripped,
+// with the text parts preserved.
+func TestStripImagesForNonVisionModel(t *testing.T) {
+	multimodalRequest := func(t *testing.T, model string) *types.CreateChatCompletionRequest {
+		return &types.CreateChatCompletionRequest{
+			Model: model,
+			Messages: []types.Message{
+				types.NewMultimodalMessage(t, types.User,
+					types.NewTextContentPart(t, "What is in this image?"),
+					types.NewImageContentPart(t, "https://example.com/cat.png", nil)),
+			},
+		}
+	}
+	textRequest := func(t *testing.T, model string) *types.CreateChatCompletionRequest {
+		return &types.CreateChatCompletionRequest{
+			Model:    model,
+			Messages: []types.Message{types.NewTextMessage(t, types.User, "hi")},
+		}
+	}
+
+	tests := []struct {
+		name        string
+		vision      bool
+		providerID  types.Provider
+		model       string
+		request     func(t *testing.T, model string) *types.CreateChatCompletionRequest
+		wantImages  bool
+		wantContent string
+	}{
+		{"no images is a no-op", true, "openai", "gpt-4-0613", textRequest, false, "hi"},
+		{"vision disabled forwards images untouched", false, "openai", "gpt-4-0613", multimodalRequest, true, ""},
+		{"vision model keeps its images", true, "anthropic", "claude-haiku-4-5", multimodalRequest, true, ""},
+		{"text-only model loses its images", true, "openai", "gpt-4-0613", multimodalRequest, false, "What is in this image?"},
+		{"unknown model is permissive", true, "openai", "gpt-nonexistent", multimodalRequest, true, ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router := &RouterImpl{cfg: config.Config{VisionEnabled: tt.vision}, logger: logger.NewNoopLogger()}
+
+			req := tt.request(t, tt.model)
+			require.NoError(t, router.stripImagesForNonVisionModel(req, tt.providerID))
+
+			assert.Equal(t, tt.wantImages, req.Messages[0].HasImageContent())
+			text, err := req.Messages[0].Content.AsMessageContent0()
+			if !tt.wantImages {
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantContent, text)
+			}
 		})
 	}
 }
