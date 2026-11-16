@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.67.1](https://github.com/inference-gateway/inference-gateway/compare/v0.67.0...v0.67.1) (2026-11-16)
+
+### ♻️ Improvements
+
+* **api:** extract shared bounded upstream body read and error relay helpers ([#914](https://github.com/inference-gateway/inference-gateway/issues/914)) ([63ed5bb](https://github.com/inference-gateway/inference-gateway/commit/63ed5bbe8d9bc14f7d40b3b5cedadd0bbc94b894))
+* **api:** reuse readBodyOrRespond in speech, proxy and responses handlers ([#913](https://github.com/inference-gateway/inference-gateway/issues/913)) ([1074452](https://github.com/inference-gateway/inference-gateway/commit/1074452a0464d4c58d5ccbfb2f7b58ebc7075676))
+* **internal:** move systemone under internal/decisions ([#906](https://github.com/inference-gateway/inference-gateway/issues/906)) ([7bcbbbe](https://github.com/inference-gateway/inference-gateway/commit/7bcbbbe30bf3b8d672e694e238d7e9a0d03187a3))
+* **internal:** replace firstNonEmpty helpers with cmp.Or ([#901](https://github.com/inference-gateway/inference-gateway/issues/901)) ([7599536](https://github.com/inference-gateway/inference-gateway/commit/7599536136665bed8ba356e94cac5c6e0559bf9b))
+* **internal:** unify OpenAI size parsing into one videos.Size value object ([#902](https://github.com/inference-gateway/inference-gateway/issues/902)) ([434c70b](https://github.com/inference-gateway/inference-gateway/commit/434c70b1c37f6887fbc9fffd551e08b3e366e822))
+* **multipart:** replace the four formValue helpers with url.Values.Get ([#904](https://github.com/inference-gateway/inference-gateway/issues/904)) ([3273cd0](https://github.com/inference-gateway/inference-gateway/commit/3273cd04e4da9ceb93a4b4b7606e5365a6b10fac))
+* **multipart:** use stdlib multipart.FileContentDisposition ([#900](https://github.com/inference-gateway/inference-gateway/issues/900)) ([2762954](https://github.com/inference-gateway/inference-gateway/commit/276295439245d6da9443c54c5f08ba2f9f7b46c7))
+
+### 🐛 Bug Fixes
+
+* **examples:** repair relative paths left one level short by the example regrouping ([#894](https://github.com/inference-gateway/inference-gateway/issues/894)) ([310887b](https://github.com/inference-gateway/inference-gateway/commit/310887bc4aa549b97cf7d475e136c3126945ec87))
+
+### 👷 CI
+
+* align Dependabot schedule and grouping ([#908](https://github.com/inference-gateway/inference-gateway/issues/908)) ([f870560](https://github.com/inference-gateway/inference-gateway/commit/f8705606c148e91c864cfbe7e4d6c42a23a8bb49))
+
+### 📚 Documentation
+
+* **examples:** add Decisions API, provider passthrough and routing pool examples ([#892](https://github.com/inference-gateway/inference-gateway/issues/892)) ([d5b6c0d](https://github.com/inference-gateway/inference-gateway/commit/d5b6c0d52d93a2fe47f8c4b911e0265d5f0c111d))
+* **examples:** correct MCP compose README to match gateway behaviour ([#890](https://github.com/inference-gateway/inference-gateway/issues/890)) ([3b34c50](https://github.com/inference-gateway/inference-gateway/commit/3b34c500a55d2da4a029242c0bf62411004388f3))
+* **examples:** guardrails redaction and external service examples ([#893](https://github.com/inference-gateway/inference-gateway/issues/893)) ([4feb157](https://github.com/inference-gateway/inference-gateway/commit/4feb157e230952e0b44cf0eb2c3b8eb429e42025))
+* **readme:** refresh videos endpoints, provider count, modality values and k8s example notes ([#891](https://github.com/inference-gateway/inference-gateway/issues/891)) ([e987f7f](https://github.com/inference-gateway/inference-gateway/commit/e987f7fdcfb68530d7f77883059d8a7290da685d))
+
+### 🔧 Miscellaneous
+
+* **ci:** bump goreleaser to v2.20.2 in release workflow ([#903](https://github.com/inference-gateway/inference-gateway/issues/903)) ([f106257](https://github.com/inference-gateway/inference-gateway/commit/f1062578a19d50617ad4ab57fddb695626f564c1))
+* **deps:** bump flox dependencies to latest ([#907](https://github.com/inference-gateway/inference-gateway/issues/907)) ([fbf7d7e](https://github.com/inference-gateway/inference-gateway/commit/fbf7d7e7774ec6a12ad0407076eed6a90374d82b))
+* **deps:** bump github.com/open-policy-agent/opa ([#909](https://github.com/inference-gateway/inference-gateway/issues/909)) ([a90df83](https://github.com/inference-gateway/inference-gateway/commit/a90df8314a9947dfd85f080f030c8e7525bb8186))
+* **modelsdev:** sync the models.dev metadata table ([#916](https://github.com/inference-gateway/inference-gateway/issues/916)) ([868d2cc](https://github.com/inference-gateway/inference-gateway/commit/868d2ccd41767d1c768f9666dff84d7803c29e8d))
+
 ## [0.67.0](https://github.com/inference-gateway/inference-gateway/compare/v0.66.0...v0.67.0) (2026-11-15)
 
 ### ✨ Features
