@@ -687,7 +687,7 @@ The included Grafana dashboard provides:
 - **Tool Call Analytics**: Success rates, duration analysis, and failure
   tracking
 - **Provider Comparison**: Performance metrics across all supported providers
-- **Usage Insights**: Token consumption patterns and cost analysis
+- **Usage Insights**: Token consumption patterns
 - **Error Monitoring**: Failed requests and tool call error classification
 
 > **Learn more**:
