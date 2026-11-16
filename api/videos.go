@@ -191,21 +191,11 @@ func (router *RouterImpl) RetrieveVideoHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	provider, providerID, videoID, endpoint, ok := router.resolveVideoTarget(w, r, func(e types.Endpoints) *string { return e.VideosRetrieve })
+	job, _, _, ok := router.retrieveVideoJob(w, r)
 	if !ok {
 		return
 	}
 
-	job, _, ok := router.videoJob(w, r, provider, providerID, "", upstreamRequest{
-		method:       http.MethodGet,
-		endpointPath: strings.ReplaceAll(endpoint, generationIDPlaceholder, url.PathEscape(videoID)),
-		accept:       contentTypeJSON,
-	})
-	if !ok {
-		return
-	}
-
-	job.ID = string(providerID) + videoJobIDSeparator + job.ID
 	middlewares.WriteJSON(w, http.StatusOK, job)
 }
 
@@ -220,16 +210,7 @@ func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *
 		return
 	}
 
-	provider, providerID, videoID, endpoint, ok := router.resolveVideoTarget(w, r, func(e types.Endpoints) *string { return e.VideosRetrieve })
-	if !ok {
-		return
-	}
-
-	job, downloadURL, ok := router.videoJob(w, r, provider, providerID, "", upstreamRequest{
-		method:       http.MethodGet,
-		endpointPath: strings.ReplaceAll(endpoint, generationIDPlaceholder, url.PathEscape(videoID)),
-		accept:       contentTypeJSON,
-	})
+	job, downloadURL, videoID, ok := router.retrieveVideoJob(w, r)
 	if !ok {
 		return
 	}
@@ -243,33 +224,46 @@ func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *
 	router.streamDownload(w, r, downloadURL, videoMedia, "")
 }
 
-// resolveVideoTarget resolves the provider, upstream job id and endpoint for a
-// per-job Videos request, writing the client response and reporting false on
-// failure.
-func (router *RouterImpl) resolveVideoTarget(w http.ResponseWriter, r *http.Request, endpointOf func(types.Endpoints) *string) (core.IProvider, types.Provider, string, string, bool) {
+// retrieveVideoJob retrieves the upstream job a per-job Videos request names:
+// it resolves the provider and the upstream id from the gateway's
+// "provider:job_id" video id, fetches the job from the provider's retrieve
+// endpoint and prefixes the returned id with the provider again so clients can
+// route follow-up calls. It also returns the resolved upstream id, for logging.
+// Failures are already written to w, reported by a false ok.
+func (router *RouterImpl) retrieveVideoJob(w http.ResponseWriter, r *http.Request) (types.VideoJob, string, string, bool) {
 	if !router.videosEnabled(w) {
-		return nil, "", "", "", false
+		return types.VideoJob{}, "", "", false
 	}
 
 	providerID, videoID, msg := router.resolveVideoJobID(r, r.PathValue("video_id"))
 	if msg != "" {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
-		return nil, "", "", "", false
+		return types.VideoJob{}, "", "", false
 	}
 
 	provider, msg, err := router.buildProvider(providerID)
 	if err != nil {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
-		return nil, "", "", "", false
+		return types.VideoJob{}, "", "", false
 	}
 
-	endpoint, msg := router.providerEndpoint(provider, endpointOf, videosAPIName, videosNotSupportedMessage)
+	endpoint, msg := router.providerEndpoint(provider, func(e types.Endpoints) *string { return e.VideosRetrieve }, videosAPIName, videosNotSupportedMessage)
 	if msg != "" {
 		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: msg})
-		return nil, "", "", "", false
+		return types.VideoJob{}, "", "", false
 	}
 
-	return provider, providerID, videoID, endpoint, true
+	job, downloadURL, ok := router.videoJob(w, r, provider, providerID, "", upstreamRequest{
+		method:       http.MethodGet,
+		endpointPath: strings.ReplaceAll(endpoint, generationIDPlaceholder, url.PathEscape(videoID)),
+		accept:       contentTypeJSON,
+	})
+	if !ok {
+		return types.VideoJob{}, "", "", false
+	}
+
+	job.ID = string(providerID) + videoJobIDSeparator + job.ID
+	return job, downloadURL, videoID, true
 }
 
 // resolveVideoJobID splits the gateway's "provider:job_id" video id into the
