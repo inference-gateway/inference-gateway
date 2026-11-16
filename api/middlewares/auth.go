@@ -36,11 +36,9 @@ const (
 	wwwAuthenticateInvalid = `Bearer realm="inference-gateway", error="invalid_token"`
 )
 
-type OIDCAuthenticator interface {
-	Middleware() func(http.Handler) http.Handler
-}
-
-type OIDCAuthenticatorImpl struct {
+// oidcAuthenticatorImpl verifies bearer tokens and forwards the request with
+// the token and its claims on the context.
+type oidcAuthenticatorImpl struct {
 	logger    logger.Logger
 	verifier  *oidc.IDTokenVerifier
 	audiences []string
@@ -48,12 +46,11 @@ type OIDCAuthenticatorImpl struct {
 	a2a       *config.A2AConfig
 }
 
-type OIDCAuthenticatorNoop struct{}
-
-// NewOIDCAuthenticatorMiddleware creates a new OIDCAuthenticator instance
-func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OIDCAuthenticator, error) {
+// NewOIDCAuthenticatorMiddleware returns the OIDC authentication middleware,
+// or the identity middleware when auth is disabled.
+func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (func(http.Handler) http.Handler, error) {
 	if !cfg.Auth.Enabled {
-		return &OIDCAuthenticatorNoop{}, nil
+		return func(next http.Handler) http.Handler { return next }, nil
 	}
 	if cfg.Auth.OidcIssuer == "" {
 		return nil, errors.New("AUTH_OIDC_ISSUER is required when AUTH_ENABLED=true")
@@ -69,24 +66,19 @@ func NewOIDCAuthenticatorMiddleware(logger logger.Logger, cfg config.Config) (OI
 		return nil, err
 	}
 
-	return &OIDCAuthenticatorImpl{
+	return (&oidcAuthenticatorImpl{
 		logger:    logger,
 		verifier:  provider.Verifier(&oidc.Config{SkipClientIDCheck: true}),
 		audiences: audiences,
 		mcp:       cfg.MCP,
 		a2a:       cfg.A2A,
-	}, nil
+	}).Middleware(), nil
 }
 
 func isListSeparator(r rune) bool { return r == ',' || unicode.IsSpace(r) }
 
-// Noop implementation of the OIDCAuthenticator interface
-func (a *OIDCAuthenticatorNoop) Middleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler { return next }
-}
-
-// Middleware implementation of the OIDCAuthenticator interface
-func (a *OIDCAuthenticatorImpl) Middleware() func(http.Handler) http.Handler {
+// Middleware returns the OIDC authentication middleware handler.
+func (a *oidcAuthenticatorImpl) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
@@ -140,7 +132,7 @@ func (a *OIDCAuthenticatorImpl) Middleware() func(http.Handler) http.Handler {
 // unauthorized answers the 401 challenge. On /mcp and /a2a it also points at
 // the RFC 9728 document, which is how a client that knows only the endpoint
 // URL discovers the authorization server.
-func (a *OIDCAuthenticatorImpl) unauthorized(w http.ResponseWriter, r *http.Request, challenge string) {
+func (a *oidcAuthenticatorImpl) unauthorized(w http.ResponseWriter, r *http.Request, challenge string) {
 	if resource := a.protectedResource(r); resource != "" {
 		challenge += fmt.Sprintf(", resource_metadata=%q", ProtectedResourceMetadataURL(resource))
 	}
@@ -150,7 +142,7 @@ func (a *OIDCAuthenticatorImpl) unauthorized(w http.ResponseWriter, r *http.Requ
 
 // protectedResource is the resource URL a 401 on r should advertise, or ""
 // when the path is not an exposed JSON-RPC server endpoint.
-func (a *OIDCAuthenticatorImpl) protectedResource(r *http.Request) string {
+func (a *oidcAuthenticatorImpl) protectedResource(r *http.Request) string {
 	switch r.URL.Path {
 	case MCPPath:
 		if MCPExposed(a.mcp) {

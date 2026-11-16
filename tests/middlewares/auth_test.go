@@ -125,19 +125,19 @@ func newAuthEngine(t *testing.T, auth config.AuthConfig, mcp *config.MCPConfig) 
 	r.HandleFunc("GET "+middlewares.MCPProtectedResourcePath, router.MCPProtectedResourceMetadataHandler)
 	r.HandleFunc("GET "+testRoute, echo)
 	r.HandleFunc("POST "+middlewares.MCPPath, echo)
-	return mw.Middleware()(r)
+	return mw(r)
 }
 
 func TestNewOIDCAuthenticatorMiddleware(t *testing.T) {
 	idp := newFakeIdP(t)
 
 	tests := []struct {
-		name     string
-		auth     config.AuthConfig
-		wantNoop bool
-		wantErr  bool
+		name            string
+		auth            config.AuthConfig
+		wantPassThrough bool
+		wantErr         bool
 	}{
-		{name: "Disabled returns Noop", auth: config.AuthConfig{Enabled: false}, wantNoop: true},
+		{name: "Disabled passes through", auth: config.AuthConfig{Enabled: false}, wantPassThrough: true},
 		{name: "Enabled without issuer fails", auth: config.AuthConfig{Enabled: true, OidcClientId: testClientID}, wantErr: true},
 		{name: "Enabled without audience or client id fails", auth: config.AuthConfig{Enabled: true, OidcIssuer: idp.issuer}, wantErr: true},
 		{name: "Unreachable issuer fails", auth: config.AuthConfig{Enabled: true, OidcIssuer: "http://127.0.0.1:1", OidcClientId: testClientID}, wantErr: true},
@@ -152,8 +152,11 @@ func TestNewOIDCAuthenticatorMiddleware(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			_, isNoop := mw.(*middlewares.OIDCAuthenticatorNoop)
-			assert.Equal(t, tt.wantNoop, isNoop)
+
+			reached := false
+			next := http.HandlerFunc(func(http.ResponseWriter, *http.Request) { reached = true })
+			mw(next).ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, testRoute, nil))
+			assert.Equal(t, tt.wantPassThrough, reached, "the request must reach the next handler unchanged")
 		})
 	}
 }
@@ -304,7 +307,7 @@ func newA2AAuthEngine(t *testing.T, auth config.AuthConfig, a2a *config.A2AConfi
 	r.HandleFunc("GET "+middlewares.A2AProtectedResourcePath, ok)
 	r.HandleFunc("POST "+middlewares.A2APath, ok)
 	r.HandleFunc("GET "+middlewares.A2AAgentsPath, ok)
-	return mw.Middleware()(r)
+	return mw(r)
 }
 
 // TestOIDCAuthenticatorMiddleware_A2A pins which A2A routes need a token: the

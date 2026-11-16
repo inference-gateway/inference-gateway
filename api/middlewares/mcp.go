@@ -46,13 +46,9 @@ type MCPProviderModelResult struct {
 	ProviderID    *types.Provider
 }
 
-// MCPMiddleware defines the interface for MCP middleware
-type MCPMiddleware interface {
-	Middleware() func(http.Handler) http.Handler
-}
-
-// MCPMiddlewareImpl implements the MCP middleware
-type MCPMiddlewareImpl struct {
+// mcpMiddlewareImpl implements the MCP middleware: it injects MCP tools into
+// chat completions requests and runs the agent loop over tool calls.
+type mcpMiddlewareImpl struct {
 	registry               registry.ProviderRegistry
 	inferenceGatewayClient client.Client
 	mcpClient              mcp.MCPClientInterface
@@ -61,33 +57,26 @@ type MCPMiddlewareImpl struct {
 	config                 config.Config
 }
 
-// NoopMCPMiddlewareImpl is a no-op implementation of MCPMiddleware
-type NoopMCPMiddlewareImpl struct{}
-
-// NewMCPMiddleware creates a new MCP middleware instance
-func NewMCPMiddleware(providerRegistry registry.ProviderRegistry, inferenceGatewayClient client.Client, mcpClient mcp.MCPClientInterface, mcpAgent *mcp.Agent, log logger.Logger, cfg config.Config) (MCPMiddleware, error) {
+// NewMCPMiddleware returns the MCP middleware, or the identity middleware
+// when the MCP client is nil.
+func NewMCPMiddleware(providerRegistry registry.ProviderRegistry, inferenceGatewayClient client.Client, mcpClient mcp.MCPClientInterface, mcpAgent *mcp.Agent, log logger.Logger, cfg config.Config) (func(http.Handler) http.Handler, error) {
 	if mcpClient == nil {
 		log.Info("mcp client is nil, using no-op middleware")
-		return &NoopMCPMiddlewareImpl{}, nil
+		return func(next http.Handler) http.Handler { return next }, nil
 	}
 
-	return &MCPMiddlewareImpl{
+	return (&mcpMiddlewareImpl{
 		registry:               providerRegistry,
 		inferenceGatewayClient: inferenceGatewayClient,
 		mcpClient:              mcpClient,
 		mcpAgent:               mcpAgent,
 		logger:                 log,
 		config:                 cfg,
-	}, nil
-}
-
-// Middleware returns the no-op middleware handler
-func (n *NoopMCPMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler { return next }
+	}).Middleware(), nil
 }
 
 // Middleware returns the MCP middleware handler
-func (m *MCPMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
+func (m *mcpMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Header.Get(MCPBypassHeader) != "" {
@@ -203,7 +192,7 @@ func (m *MCPMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
 }
 
 // getProviderAndModel determines the provider and model from the request model string or query parameter
-func (m *MCPMiddlewareImpl) getProviderAndModel(r *http.Request, model string) (*MCPProviderModelResult, error) {
+func (m *mcpMiddlewareImpl) getProviderAndModel(r *http.Request, model string) (*MCPProviderModelResult, error) {
 	providerID, providerModel, ok := routing.ResolveProvider(r.URL.Query().Get("provider"), model)
 	if !ok {
 		return &MCPProviderModelResult{ProviderID: nil}, fmt.Errorf("unable to determine provider for model: %s. Please specify a provider using the ?provider= query parameter or use the provider/model format", model)
@@ -222,7 +211,7 @@ func (m *MCPMiddlewareImpl) getProviderAndModel(r *http.Request, model string) (
 }
 
 // handleMCPStreamingRequest handles streaming requests with MCP agent
-func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(w http.ResponseWriter, r *http.Request, request *types.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
+func (m *mcpMiddlewareImpl) handleMCPStreamingRequest(w http.ResponseWriter, r *http.Request, request *types.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
 	processedChunk := make(chan []byte, 100)
 	errCh := make(chan error, 1)
 
@@ -289,7 +278,7 @@ func (m *MCPMiddlewareImpl) handleMCPStreamingRequest(w http.ResponseWriter, r *
 }
 
 // handleMCPToolCalls executes MCP tool calls using the injected agent
-func (m *MCPMiddlewareImpl) handleMCPToolCalls(r *http.Request, response *types.CreateChatCompletionResponse, originalRequest *types.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
+func (m *mcpMiddlewareImpl) handleMCPToolCalls(r *http.Request, response *types.CreateChatCompletionResponse, originalRequest *types.CreateChatCompletionRequest, result *MCPProviderModelResult) error {
 	if err := m.mcpAgent.Run(r.Context(), result.Provider, result.ProviderModel, originalRequest, response); err != nil {
 		return fmt.Errorf("mcp agent processing failed: %w", err)
 	}
@@ -299,13 +288,13 @@ func (m *MCPMiddlewareImpl) handleMCPToolCalls(r *http.Request, response *types.
 }
 
 // writeErrorResponse writes an error response to the client
-func (m *MCPMiddlewareImpl) writeErrorResponse(w http.ResponseWriter, customWriter *customResponseWriter, message string, statusCode int) {
+func (m *mcpMiddlewareImpl) writeErrorResponse(w http.ResponseWriter, customWriter *customResponseWriter, message string, statusCode int) {
 	errorResponse := map[string]string{"error": message}
 	customWriter.statusCode = statusCode
 	m.writeResponse(w, customWriter, errorResponse)
 }
 
 // writeResponse writes the response to the client
-func (m *MCPMiddlewareImpl) writeResponse(w http.ResponseWriter, customWriter *customResponseWriter, response any) {
+func (m *mcpMiddlewareImpl) writeResponse(w http.ResponseWriter, customWriter *customResponseWriter, response any) {
 	WriteJSON(w, customWriter.statusCode, response)
 }

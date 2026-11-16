@@ -635,7 +635,7 @@ func TestMCPJSONRPCHandler_PreCallBlockEnvelope(t *testing.T) {
 	engine := http.NewServeMux()
 	engine.HandleFunc("POST "+middlewares.MCPPath, router.MCPJSONRPCHandler)
 
-	w := postMCP(t, middlewares.NewGuardrailsMiddleware(newEvaluator(t, blockMCPPathPolicy), nil, nil, logger.NewNoopLogger(), nil, cfg).Middleware()(engine), toolsCallBody)
+	w := postMCP(t, middlewares.NewGuardrailsMiddleware(newEvaluator(t, blockMCPPathPolicy), nil, nil, logger.NewNoopLogger(), nil, cfg)(engine), toolsCallBody)
 
 	resp := assertJSONRPCError(t, w, http.StatusForbidden, middlewares.JSONRPCGuardrailBlocked)
 	assert.Equal(t, preCallBlockedMsg, resp.Error.Message)

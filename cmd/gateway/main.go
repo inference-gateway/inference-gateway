@@ -213,7 +213,7 @@ func main() {
 	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
 	var mcpAgent *mcp.Agent
-	var mcpMiddleware middlewares.MCPMiddleware
+	var mcpMiddleware func(http.Handler) http.Handler
 	if cfg.MCP.Enabled {
 		if cfg.MCP.Servers != "" {
 			mcpServers, err := mcp.ParseServers(cfg.MCP.Servers)
@@ -270,7 +270,7 @@ func main() {
 	}
 
 	// Initialize guardrails middleware if enabled
-	var guardrailsMiddleware middlewares.GuardrailsMiddleware
+	var guardrailsMiddleware func(http.Handler) http.Handler
 	if cfg.Guardrails != nil && cfg.Guardrails.Enabled {
 		ctx := context.Background()
 		evaluator, err := guardrails.NewEvaluator(ctx, cfg.Guardrails.PolicyDir)
@@ -374,10 +374,10 @@ func main() {
 	if cfg.Telemetry.Enabled {
 		pipeline = append(pipeline, telemetry.Middleware())
 	}
-	pipeline = append(pipeline, oidcAuthenticator.Middleware(), guardrailsMiddleware.Middleware())
+	pipeline = append(pipeline, oidcAuthenticator, guardrailsMiddleware)
 	appLogger.Info("guardrails middleware added to request pipeline")
 	if cfg.MCP.Enabled {
-		pipeline = append(pipeline, mcpMiddleware.Middleware())
+		pipeline = append(pipeline, mcpMiddleware)
 		appLogger.Info("mcp middleware added to request pipeline")
 	}
 	chain := applyMiddlewares(mux, pipeline...)

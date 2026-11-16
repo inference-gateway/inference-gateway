@@ -16,13 +16,9 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// GuardrailsMiddleware defines the interface for guardrails middleware.
-type GuardrailsMiddleware interface {
-	Middleware() func(http.Handler) http.Handler
-}
-
-// GuardrailsMiddlewareImpl implements the guardrails middleware.
-type GuardrailsMiddlewareImpl struct {
+// guardrailsMiddlewareImpl implements the guardrails middleware: pre_call
+// evaluation of the request body and post_call checks on captured responses.
+type guardrailsMiddlewareImpl struct {
 	evaluator      *guardrails.Evaluator
 	externalClient *guardrails.ExternalClient
 	detectors      []guardrails.Detector
@@ -31,11 +27,8 @@ type GuardrailsMiddlewareImpl struct {
 	cfg            config.Config
 }
 
-// NoopGuardrailsMiddlewareImpl is a no-op implementation of GuardrailsMiddleware.
-type NoopGuardrailsMiddlewareImpl struct{}
-
-// NewGuardrailsMiddleware creates a new guardrails middleware instance.
-// Returns a Noop implementation when guardrails are disabled.
+// NewGuardrailsMiddleware returns the guardrails middleware, or the identity
+// middleware when guardrails are disabled.
 func NewGuardrailsMiddleware(
 	evaluator *guardrails.Evaluator,
 	externalClient *guardrails.ExternalClient,
@@ -43,29 +36,24 @@ func NewGuardrailsMiddleware(
 	log logger.Logger,
 	telemetry otel.OpenTelemetry,
 	cfg config.Config,
-) GuardrailsMiddleware {
+) func(http.Handler) http.Handler {
 	if !cfg.Guardrails.Enabled {
 		log.Info("guardrails disabled, using no-op middleware")
-		return &NoopGuardrailsMiddlewareImpl{}
+		return func(next http.Handler) http.Handler { return next }
 	}
 
-	return &GuardrailsMiddlewareImpl{
+	return (&guardrailsMiddlewareImpl{
 		evaluator:      evaluator,
 		externalClient: externalClient,
 		detectors:      detectors,
 		logger:         log,
 		telemetry:      telemetry,
 		cfg:            cfg,
-	}
-}
-
-// Middleware returns the no-op middleware handler.
-func (n *NoopGuardrailsMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler { return next }
+	}).Middleware()
 }
 
 // Middleware returns the guardrails middleware handler.
-func (m *GuardrailsMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
+func (m *guardrailsMiddlewareImpl) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path := r.URL.Path
@@ -152,7 +140,7 @@ func capture(w http.ResponseWriter) *customResponseWriter {
 
 // evaluateResponse runs post_call over the captured response and replays,
 // redacts or blocks it.
-func (m *GuardrailsMiddlewareImpl) evaluateResponse(w http.ResponseWriter, r *http.Request, customWriter *customResponseWriter, path, model string, claims map[string]any, requestBody []byte) {
+func (m *guardrailsMiddlewareImpl) evaluateResponse(w http.ResponseWriter, r *http.Request, customWriter *customResponseWriter, path, model string, claims map[string]any, requestBody []byte) {
 	respInput := &guardrails.Input{
 		Method: r.Method,
 		Path:   path,
@@ -209,7 +197,7 @@ const (
 // the /mcp and /a2a server endpoints, a plain error object everywhere else.
 // The envelope carries the policy message when there is one and the cause
 // (evaluation failure or generic block) otherwise.
-func (m *GuardrailsMiddlewareImpl) block(w http.ResponseWriter, path string, requestBody []byte, errorMsg, message string) {
+func (m *guardrailsMiddlewareImpl) block(w http.ResponseWriter, path string, requestBody []byte, errorMsg, message string) {
 	if isJSONRPCPath(path) {
 		rpcMessage := message
 		if message == guardrails.MsgBlocked || message == msgResponseBlocked {
@@ -272,7 +260,7 @@ func jsonRPCMethod(body []byte) string {
 }
 
 // evaluate runs the policy evaluator and external guardrail check.
-func (m *GuardrailsMiddlewareImpl) evaluate(ctx context.Context, input *guardrails.Input) (guardrails.Decision, error) {
+func (m *guardrailsMiddlewareImpl) evaluate(ctx context.Context, input *guardrails.Input) (guardrails.Decision, error) {
 	dec, err := m.evaluator.Eval(ctx, input)
 	if err != nil {
 		return guardrails.Decision{}, err

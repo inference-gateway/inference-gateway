@@ -54,19 +54,16 @@ func TestNewMCPMiddleware(t *testing.T) {
 	tests := []struct {
 		name        string
 		mcpClient   mcp.MCPClientInterface
-		expectNoOp  bool
 		expectError bool
 	}{
 		{
 			name:        "Success with MCP client",
 			mcpClient:   &mcpmocks.MockMCPClientInterface{},
-			expectNoOp:  false,
 			expectError: false,
 		},
 		{
-			name:        "Success with nil MCP client returns NoOp",
+			name:        "Nil MCP client returns identity middleware",
 			mcpClient:   nil,
-			expectNoOp:  true,
 			expectError: false,
 		},
 	}
@@ -91,9 +88,6 @@ func TestNewMCPMiddleware(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, middleware)
-
-				ginHandler := middleware.Middleware()
-				assert.NotNil(t, ginHandler)
 			}
 		})
 	}
@@ -182,7 +176,7 @@ func TestMCPMiddleware_SkipConditions(t *testing.T) {
 				req.Header.Set("X-MCP-Bypass", tt.internalHeader)
 			}
 
-			middleware.Middleware()(router).ServeHTTP(w, req)
+			middleware(router).ServeHTTP(w, req)
 
 			assert.True(t, handlerCalled, "Handler should always be called")
 			assert.Equal(t, http.StatusOK, w.Code)
@@ -309,7 +303,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			middleware.Middleware()(router).ServeHTTP(w, req)
+			middleware(router).ServeHTTP(w, req)
 
 			if tt.isInitialized {
 				assert.True(t, toolsAdded, "Handler should be called when MCP is initialized")
@@ -365,7 +359,7 @@ func TestMCPMiddleware_SelectorModeInjectsMetaTools(t *testing.T) {
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 	req.Header.Set("Content-Type", "application/json")
-	middleware.Middleware()(router).ServeHTTP(w, req)
+	middleware(router).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.ElementsMatch(t, []string{mcp.SelectorToolGet, mcp.SelectorToolExecute}, injectedToolNames)
@@ -528,7 +522,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			middleware.Middleware()(router).ServeHTTP(w, req)
+			middleware(router).ServeHTTP(w, req)
 
 			assert.Equal(t, http.StatusOK, w.Code)
 		})
@@ -629,7 +623,7 @@ data: [DONE]`,
 			req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			middleware.Middleware()(router).ServeHTTP(w, req)
+			middleware(router).ServeHTTP(w, req)
 
 			responseBody := w.Body.String()
 			assert.NotEmpty(t, responseBody, "Response should not be empty")
@@ -725,7 +719,7 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 			req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
-			middleware.Middleware()(router).ServeHTTP(w, req)
+			middleware(router).ServeHTTP(w, req)
 
 			assert.Equal(t, tt.expectedStatus, w.Code)
 			if tt.expectedError != "" && w.Code >= 400 {
@@ -746,7 +740,14 @@ func TestMCPMiddleware_ErrorHandling(t *testing.T) {
 }
 
 func TestNoopMCPMiddleware(t *testing.T) {
-	middleware := &middlewares.NoopMCPMiddlewareImpl{}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockLogger := mocks.NewMockLogger(ctrl)
+	mockLogger.EXPECT().Info("mcp client is nil, using no-op middleware")
+
+	middleware, err := middlewares.NewMCPMiddleware(nil, nil, nil, nil, mockLogger, createTestConfig())
+	assert.NoError(t, err)
 
 	router := http.NewServeMux()
 
@@ -760,13 +761,13 @@ func TestNoopMCPMiddleware(t *testing.T) {
 	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	middleware.Middleware()(router).ServeHTTP(w, req)
+	middleware(router).ServeHTTP(w, req)
 
 	assert.True(t, handlerCalled, "NoOp middleware should call next handler")
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response map[string]string
-	err := json.Unmarshal(w.Body.Bytes(), &response)
+	err = json.Unmarshal(w.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, "success", response["message"])
 }
@@ -955,7 +956,7 @@ func TestMCPMiddleware_PassesThroughUpstreamErrors(t *testing.T) {
 	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	middleware.Middleware()(router).ServeHTTP(w, req)
+	middleware(router).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusBadGateway, w.Code)
 	assert.Contains(t, w.Body.String(), "upstream provider rejected the request")

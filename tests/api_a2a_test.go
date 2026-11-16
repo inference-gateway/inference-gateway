@@ -370,7 +370,7 @@ func TestA2AGuardrailsAnswerWithJSONRPCEnvelope(t *testing.T) {
 			require.NoError(t, err)
 			guard := middlewares.NewGuardrailsMiddleware(evaluator, nil, nil, logger.NewNoopLogger(), nil, env.cfg)
 
-			w := postA2A(env.engine(guard.Middleware()), `{"jsonrpc":"2.0","id":9,"method":"GetTask","params":{"id":"`+a2aPrefixedTask+`"}}`)
+			w := postA2A(env.engine(guard), `{"jsonrpc":"2.0","id":9,"method":"GetTask","params":{"id":"`+a2aPrefixedTask+`"}}`)
 
 			require.Equal(t, http.StatusForbidden, w.Code)
 			resp := decodeA2A(t, w)

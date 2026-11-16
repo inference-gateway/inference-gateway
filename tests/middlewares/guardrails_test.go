@@ -56,7 +56,7 @@ func TestNewGuardrailsMiddleware(t *testing.T) {
 
 			mw := middlewares.NewGuardrailsMiddleware(nil, nil, nil, mockLogger, nil, cfg)
 			assert.NotNil(t, mw)
-			handler := mw.Middleware()
+			handler := mw
 			assert.NotNil(t, handler)
 		})
 	}
@@ -89,7 +89,7 @@ func TestGuardrailsMiddleware_Noop(t *testing.T) {
 	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	mw.Middleware()(router).ServeHTTP(w, req)
+	mw(router).ServeHTTP(w, req)
 
 	assert.True(t, handlerCalled, "Noop middleware should call next handler")
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -132,7 +132,7 @@ func TestGuardrailsMiddleware_BlockRequest(t *testing.T) {
 	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	mw.Middleware()(router).ServeHTTP(w, req)
+	mw(router).ServeHTTP(w, req)
 
 	assert.True(t, handlerCalled)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -169,7 +169,7 @@ func TestGuardrailsMiddleware_ZeroMaxRequestBodySizeUsesDefault(t *testing.T) {
 	req := httptest.NewRequest("POST", "/v1/chat/completions", strings.NewReader(`{"model":"test","messages":[]}`))
 	req.Header.Set("Content-Type", "application/json")
 
-	mw.Middleware()(router).ServeHTTP(w, req)
+	mw(router).ServeHTTP(w, req)
 
 	assert.True(t, handlerCalled)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -318,7 +318,7 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 	req := httptest.NewRequest("POST", "/v1/chat/completions", bytes.NewReader(requestBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	mw.Middleware()(router).ServeHTTP(w, req)
+	mw(router).ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	var resp types.CreateChatCompletionResponse
