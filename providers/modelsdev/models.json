@@ -347,6 +347,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-09-29"
   },
   "anthropic/claude-sonnet-4-5-20250929": {
@@ -372,6 +373,7 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2025-09-29"
   },
   "anthropic/claude-sonnet-4-6": {
@@ -652,7 +654,7 @@
     },
     "context_window": {
       "context": 24576,
-      "output": 65536
+      "output": 24576
     },
     "modalities": {
       "input": [
@@ -1284,6 +1286,30 @@
     },
     "status": "deprecated",
     "release_date": "2023-07-26"
+  },
+  "cloudflare/@cf/thinkingmachines/inkling-2-small": {
+    "pricing": {
+      "cache_read_per_token": "0.0000001",
+      "currency": "USD",
+      "input_per_token": "0.0000003",
+      "output_per_token": "0.000001",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 1048576
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-09"
   },
   "cloudflare/@cf/zai-org/glm-4.7-flash": {
     "pricing": {
@@ -2076,9 +2102,9 @@
       "cache_read_per_token": "0.000000075",
       "currency": "USD",
       "input_per_token": "0.0000003",
-      "output_per_token": "0.00003",
+      "output_per_token": "0.0000025",
       "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 32768,
@@ -2274,9 +2300,9 @@
     "pricing": {
       "currency": "USD",
       "input_per_token": "0.000002",
-      "output_per_token": "0.00012",
+      "output_per_token": "0.000012",
       "source": "community",
-      "updated_at": "2026-07-27T09:42:20Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 65536,
@@ -2298,9 +2324,9 @@
     "pricing": {
       "currency": "USD",
       "input_per_token": "0.0000005",
-      "output_per_token": "0.00006",
+      "output_per_token": "0.000003",
       "source": "community",
-      "updated_at": "2026-07-27T09:42:20Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 131072,
@@ -2349,9 +2375,9 @@
     "pricing": {
       "currency": "USD",
       "input_per_token": "0.00000025",
-      "output_per_token": "0.00003",
+      "output_per_token": "0.0000015",
       "source": "community",
-      "updated_at": "2026-07-27T09:42:20Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 65536,
@@ -2558,7 +2584,7 @@
     },
     "context_window": {
       "context": 16384,
-      "output": 32768
+      "output": 16384
     },
     "modalities": {
       "input": [
@@ -2811,6 +2837,64 @@
     },
     "release_date": "2026-10-13"
   },
+  "google/gemini-4-carbon": {
+    "pricing": {
+      "cache_read_per_token": "0.0000001",
+      "currency": "USD",
+      "input_per_token": "0.000002",
+      "output_per_token": "0.00001",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video",
+        "audio"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-10"
+  },
+  "google/gemini-4-hydrogen": {
+    "pricing": {
+      "cache_read_per_token": "0.000000075",
+      "currency": "USD",
+      "input_per_token": "0.0000015",
+      "output_per_token": "0.0000075",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 65536
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video",
+        "audio"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-12"
+  },
+  "google/gemini-decision-1": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000001",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "release_date": "2026-11-11"
+  },
   "google/gemini-embedding-001": {
     "pricing": {
       "currency": "USD",
@@ -2909,9 +2993,9 @@
     "pricing": {
       "currency": "USD",
       "input_per_token": "0.0000015",
-      "output_per_token": "0.00003",
+      "output_per_token": "0.0000075",
       "source": "community",
-      "updated_at": "2026-10-20T11:41:46Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 131072,
@@ -2953,7 +3037,32 @@
         "text"
       ]
     },
+    "status": "deprecated",
     "release_date": "2026-08-27"
+  },
+  "google/gemini-omni-1.2-flash": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000015",
+      "output_per_token": "0.000012",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "context_window": {
+      "context": 131072,
+      "output": 65536
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video"
+      ],
+      "output": [
+        "video"
+      ]
+    },
+    "release_date": "2026-11-05"
   },
   "google/gemini-omni-flash-preview": {
     "pricing": {
@@ -3068,6 +3177,13 @@
     "release_date": "2026-07-30"
   },
   "google/gemma-4-26b-a4b-it": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
     "context_window": {
       "context": 262144,
       "output": 32768
@@ -3084,6 +3200,13 @@
     "release_date": "2026-04-02"
   },
   "google/gemma-4-31b-it": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
     "context_window": {
       "context": 262144,
       "output": 32768
@@ -3485,6 +3608,10 @@
       "source": "community",
       "updated_at": "2026-10-26T12:12:31Z"
     },
+    "context_window": {
+      "context": 448,
+      "output": 448
+    },
     "modalities": {
       "input": [
         "audio"
@@ -3516,6 +3643,186 @@
       ]
     },
     "release_date": "2024-10-01"
+  },
+  "minimax/MiniMax-H3": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video",
+        "audio"
+      ],
+      "output": [
+        "video",
+        "audio"
+      ]
+    },
+    "release_date": "2026-07-31"
+  },
+  "minimax/MiniMax-H3-Highspeed": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video",
+        "audio"
+      ],
+      "output": [
+        "video"
+      ]
+    },
+    "release_date": "2026-07-31"
+  },
+  "minimax/MiniMax-H3-Image": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000023",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2026-11-10"
+  },
+  "minimax/MiniMax-H3-Image-Highspeed": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000023",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2026-11-10"
+  },
+  "minimax/MiniMax-H3-Lite": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video",
+        "audio"
+      ],
+      "output": [
+        "video"
+      ]
+    },
+    "release_date": "2026-07-31"
+  },
+  "minimax/MiniMax-H3-Max": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video",
+        "audio"
+      ],
+      "output": [
+        "video"
+      ]
+    },
+    "release_date": "2026-08-26"
+  },
+  "minimax/MiniMax-Hailuo-02": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "video"
+      ]
+    },
+    "release_date": "2025-06-18"
+  },
+  "minimax/MiniMax-Hailuo-2.3": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "video"
+      ]
+    },
+    "release_date": "2025-10-28"
+  },
+  "minimax/MiniMax-Hailuo-2.3-Fast": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "video"
+      ]
+    },
+    "release_date": "2025-10-28"
   },
   "minimax/MiniMax-M2": {
     "pricing": {
@@ -3740,6 +4047,42 @@
     },
     "release_date": "2025-02-15"
   },
+  "minimax/speech-2.8-hd": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0001",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "audio"
+      ]
+    },
+    "release_date": "2026-01-23"
+  },
+  "minimax/speech-2.8-turbo": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.00006",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text"
+      ],
+      "output": [
+        "audio"
+      ]
+    },
+    "release_date": "2026-01-23"
+  },
   "mistral/codestral-2508": {
     "pricing": {
       "cache_read_per_token": "0.00000003",
@@ -3814,7 +4157,8 @@
     },
     "modalities": {
       "input": [
-        "text"
+        "text",
+        "image"
       ],
       "output": [
         "text"
@@ -4020,7 +4364,8 @@
       "updated_at": "2026-10-12T14:15:57Z"
     },
     "context_window": {
-      "context": 131072
+      "context": 131072,
+      "output": 131072
     },
     "modalities": {
       "input": [
@@ -4203,15 +4548,15 @@
   },
   "mistral/mistral-large-latest": {
     "pricing": {
-      "cache_read_per_token": "0.00000005",
+      "cache_read_per_token": "0.00000007",
       "currency": "USD",
-      "input_per_token": "0.0000005",
-      "output_per_token": "0.0000015",
+      "input_per_token": "0.0000007",
+      "output_per_token": "0.0000021",
       "source": "community",
-      "updated_at": "2026-10-05T13:26:20Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
-      "context": 262144,
+      "context": 1048576,
       "output": 262144
     },
     "modalities": {
@@ -4223,7 +4568,8 @@
         "text"
       ]
     },
-    "release_date": "2024-11-01"
+    "status": "beta",
+    "release_date": "2026-10-06"
   },
   "mistral/mistral-medium-2505": {
     "pricing": {
@@ -4530,6 +4876,13 @@
     "release_date": "2026-02-04"
   },
   "mistral/voxtral-mini-tts-latest": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.000016",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
     "modalities": {
       "input": [
         "text"
@@ -4740,6 +5093,10 @@
       "source": "community",
       "updated_at": "2026-10-12T14:15:57Z"
     },
+    "context_window": {
+      "context": 1048576,
+      "output": 1048576
+    },
     "modalities": {
       "input": [
         "text",
@@ -4762,6 +5119,10 @@
       "source": "community",
       "updated_at": "2026-10-26T12:12:31Z"
     },
+    "context_window": {
+      "context": 1048576,
+      "output": 1048576
+    },
     "modalities": {
       "input": [
         "text",
@@ -4783,6 +5144,10 @@
       "output_per_token": "0.00002",
       "source": "community",
       "updated_at": "2026-10-26T12:12:31Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 1048576
     },
     "modalities": {
       "input": [
@@ -5464,7 +5829,7 @@
     },
     "context_window": {
       "context": 1048576,
-      "output": 131072
+      "output": 1048576
     },
     "modalities": {
       "input": [
@@ -6230,7 +6595,7 @@
     },
     "context_window": {
       "context": 131072,
-      "output": 32768
+      "output": 131072
     },
     "modalities": {
       "input": [
@@ -6252,7 +6617,7 @@
     },
     "context_window": {
       "context": 448,
-      "output": 4096
+      "output": 448
     },
     "modalities": {
       "input": [
@@ -6507,7 +6872,7 @@
     },
     "context_window": {
       "context": 1048576,
-      "output": 1048576
+      "output": 65536
     },
     "modalities": {
       "input": [
@@ -6531,7 +6896,7 @@
     },
     "context_window": {
       "context": 1048576,
-      "output": 1048576
+      "output": 65536
     },
     "modalities": {
       "input": [
@@ -6696,7 +7061,7 @@
     },
     "context_window": {
       "context": 131072,
-      "output": 32768
+      "output": 131072
     },
     "modalities": {
       "input": [
@@ -6720,7 +7085,7 @@
     },
     "context_window": {
       "context": 131072,
-      "output": 32768
+      "output": 131072
     },
     "modalities": {
       "input": [
@@ -6731,6 +7096,31 @@
       ]
     },
     "release_date": "2025-08-05"
+  },
+  "ollama_cloud/inkling-2-small": {
+    "pricing": {
+      "cache_read_per_token": "0.00000003",
+      "currency": "USD",
+      "input_per_token": "0.0000003",
+      "output_per_token": "0.000001",
+      "source": "community",
+      "subscription": true,
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 131072
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-05"
   },
   "ollama_cloud/kimi-k2.6": {
     "pricing": {
@@ -6794,7 +7184,7 @@
     },
     "context_window": {
       "context": 1048576,
-      "output": 131072
+      "output": 1048576
     },
     "modalities": {
       "input": [
@@ -6818,7 +7208,7 @@
     },
     "context_window": {
       "context": 1048576,
-      "output": 131072
+      "output": 1048576
     },
     "modalities": {
       "input": [
@@ -7132,6 +7522,14 @@
     "release_date": "2026-05-05"
   },
   "openai/chatgpt-image-latest": {
+    "pricing": {
+      "cache_read_per_token": "0.00000125",
+      "currency": "USD",
+      "input_per_token": "0.000005",
+      "output_per_token": "0.00001",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
     "modalities": {
       "input": [
         "text",
@@ -8048,12 +8446,11 @@
   "openai/gpt-5.6": {
     "pricing": {
       "cache_read_per_token": "0.0000004",
-      "cache_write_per_token": "0.000005",
       "currency": "USD",
       "input_per_token": "0.000004",
       "output_per_token": "0.00002",
       "source": "community",
-      "updated_at": "2026-08-31T12:36:08Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8073,12 +8470,11 @@
   "openai/gpt-5.6-cyber": {
     "pricing": {
       "cache_read_per_token": "0.00000125",
-      "cache_write_per_token": "0.000015625",
       "currency": "USD",
       "input_per_token": "0.0000125",
       "output_per_token": "0.000075",
       "source": "community",
-      "updated_at": "2026-10-20T11:41:46Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 400000,
@@ -8098,12 +8494,11 @@
   "openai/gpt-5.6-luna": {
     "pricing": {
       "cache_read_per_token": "0.00000002",
-      "cache_write_per_token": "0.00000025",
       "currency": "USD",
       "input_per_token": "0.0000002",
       "output_per_token": "0.0000012",
       "source": "community",
-      "updated_at": "2026-08-03T09:35:28Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8123,12 +8518,11 @@
   "openai/gpt-5.6-sol": {
     "pricing": {
       "cache_read_per_token": "0.0000004",
-      "cache_write_per_token": "0.000005",
       "currency": "USD",
       "input_per_token": "0.000004",
       "output_per_token": "0.00002",
       "source": "community",
-      "updated_at": "2026-08-31T12:36:08Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8148,12 +8542,11 @@
   "openai/gpt-5.6-terra": {
     "pricing": {
       "cache_read_per_token": "0.0000002",
-      "cache_write_per_token": "0.0000025",
       "currency": "USD",
       "input_per_token": "0.000002",
       "output_per_token": "0.000012",
       "source": "community",
-      "updated_at": "2026-08-03T09:35:28Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8173,12 +8566,11 @@
   "openai/gpt-6-astra": {
     "pricing": {
       "cache_read_per_token": "0.000001",
-      "cache_write_per_token": "0.0000125",
       "currency": "USD",
       "input_per_token": "0.00001",
       "output_per_token": "0.00005",
       "source": "community",
-      "updated_at": "2026-09-07T11:26:11Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8195,15 +8587,38 @@
     },
     "release_date": "2026-09-04"
   },
+  "openai/gpt-6-cyber": {
+    "pricing": {
+      "cache_read_per_token": "0.000002",
+      "currency": "USD",
+      "input_per_token": "0.00002",
+      "output_per_token": "0.0001",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "context_window": {
+      "context": 1050000,
+      "output": 128000
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-05"
+  },
   "openai/gpt-6-luna": {
     "pricing": {
       "cache_read_per_token": "0.00000001",
-      "cache_write_per_token": "0.000000125",
       "currency": "USD",
       "input_per_token": "0.0000001",
       "output_per_token": "0.0000005",
       "source": "community",
-      "updated_at": "2026-09-28T12:45:24Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8224,12 +8639,11 @@
   "openai/gpt-6-sol": {
     "pricing": {
       "cache_read_per_token": "0.0000002",
-      "cache_write_per_token": "0.0000025",
       "currency": "USD",
       "input_per_token": "0.000002",
       "output_per_token": "0.00001",
       "source": "community",
-      "updated_at": "2026-09-28T12:45:24Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8249,12 +8663,11 @@
   "openai/gpt-6.1-sol": {
     "pricing": {
       "cache_read_per_token": "0.0000001",
-      "cache_write_per_token": "0.0000025",
       "currency": "USD",
       "input_per_token": "0.000002",
       "output_per_token": "0.00001",
       "source": "community",
-      "updated_at": "2026-10-05T13:26:20Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8274,12 +8687,11 @@
   "openai/gpt-6.1-terra": {
     "pricing": {
       "cache_read_per_token": "0.00000005",
-      "cache_write_per_token": "0.00000125",
       "currency": "USD",
       "input_per_token": "0.000001",
       "output_per_token": "0.000005",
       "source": "community",
-      "updated_at": "2026-11-02T14:37:38Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8373,12 +8785,11 @@
   "openai/gpt-daybreak-blue-latest": {
     "pricing": {
       "cache_read_per_token": "0.0000004",
-      "cache_write_per_token": "0.000005",
       "currency": "USD",
       "input_per_token": "0.000004",
       "output_per_token": "0.00002",
       "source": "community",
-      "updated_at": "2026-09-28T12:45:24Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 1050000,
@@ -8398,12 +8809,11 @@
   "openai/gpt-daybreak-red-latest": {
     "pricing": {
       "cache_read_per_token": "0.00000125",
-      "cache_write_per_token": "0.000015625",
       "currency": "USD",
       "input_per_token": "0.0000125",
       "output_per_token": "0.000075",
       "source": "community",
-      "updated_at": "2026-09-28T12:45:24Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "context_window": {
       "context": 400000,
@@ -8421,6 +8831,14 @@
     "release_date": "2026-08-07"
   },
   "openai/gpt-image-1-mini": {
+    "pricing": {
+      "cache_read_per_token": "0.0000002",
+      "currency": "USD",
+      "input_per_token": "0.000002",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
     "modalities": {
       "input": [
         "text",
@@ -8435,6 +8853,14 @@
     "release_date": "2025-09-26"
   },
   "openai/gpt-image-1.5": {
+    "pricing": {
+      "cache_read_per_token": "0.00000125",
+      "currency": "USD",
+      "input_per_token": "0.000005",
+      "output_per_token": "0.00001",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
     "modalities": {
       "input": [
         "text",
@@ -8453,9 +8879,9 @@
       "cache_read_per_token": "0.00000125",
       "currency": "USD",
       "input_per_token": "0.000005",
-      "output_per_token": "0.00003",
+      "output_per_token": "0",
       "source": "community",
-      "updated_at": "2026-07-20T22:04:30Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "modalities": {
       "input": [
@@ -8473,9 +8899,9 @@
       "cache_read_per_token": "0.00000125",
       "currency": "USD",
       "input_per_token": "0.000005",
-      "output_per_token": "0.00003",
+      "output_per_token": "0",
       "source": "community",
-      "updated_at": "2026-10-20T11:41:46Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "modalities": {
       "input": [
@@ -8493,9 +8919,9 @@
       "cache_read_per_token": "0.00000125",
       "currency": "USD",
       "input_per_token": "0.000005",
-      "output_per_token": "0.00003",
+      "output_per_token": "0",
       "source": "community",
-      "updated_at": "2026-10-20T11:41:46Z"
+      "updated_at": "2026-11-16T14:35:48Z"
     },
     "modalities": {
       "input": [
@@ -8507,6 +8933,46 @@
       ]
     },
     "release_date": "2026-09-08"
+  },
+  "openai/gpt-image-2.6-flare": {
+    "pricing": {
+      "cache_read_per_token": "0.00000125",
+      "currency": "USD",
+      "input_per_token": "0.000005",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2026-10-28"
+  },
+  "openai/gpt-image-2.6-sunburst": {
+    "pricing": {
+      "cache_read_per_token": "0.00000125",
+      "currency": "USD",
+      "input_per_token": "0.000005",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-16T14:35:48Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "image"
+      ]
+    },
+    "release_date": "2026-10-28"
   },
   "openai/gpt-live-1": {
     "pricing": {

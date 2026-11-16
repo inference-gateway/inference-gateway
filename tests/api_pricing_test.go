@@ -53,7 +53,7 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 
 	t.Run("include resolves provider, community, and null pricing", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		req, err := http.NewRequest("GET", "/v1/models?include=pricing", nil)
+		req, err := http.NewRequest("GET", "/v1/models?include=pricing,deprecated", nil)
 		require.NoError(t, err)
 		r.ServeHTTP(w, req)
 		require.Equal(t, http.StatusOK, w.Code)
