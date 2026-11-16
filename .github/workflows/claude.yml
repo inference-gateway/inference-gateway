@@ -95,6 +95,6 @@ jobs:
       browser: ${{ inputs.browser || false }}
       browser_engine: ${{ inputs.browser_engine || 'chromium' }}
       effort: ${{ inputs.effort || 'medium' }}
-      model: ${{ inputs.model || 'claude-opus-5' }}
+      model: ${{ inputs.model || 'claude-opus-5-5' }}
       prompt: ${{ inputs.prompt }}
     secrets: inherit
