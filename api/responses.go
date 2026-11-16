@@ -24,14 +24,8 @@ import (
 // (currently OpenAI); other providers receive a 400, mirroring the schema's
 // ResponsesNotSupported response.
 func (router *RouterImpl) ResponsesHandler(w http.ResponseWriter, r *http.Request) {
-	body, tooLarge, err := router.readBoundedBody(r)
-	if err != nil {
-		router.logger.Error("failed to read request body", err)
-		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
-		return
-	}
-	if tooLarge {
-		middlewares.WriteJSON(w, http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+	body, ok := router.readBodyOrRespond(w, r)
+	if !ok {
 		return
 	}
 
@@ -84,9 +78,11 @@ func (router *RouterImpl) ResponsesHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	if model != originalModel {
-		if body, err = router.rewriteModelOrRespond(w, body, model); err != nil {
+		rewritten, err := router.rewriteModelOrRespond(w, body, model)
+		if err != nil {
 			return
 		}
+		body = rewritten
 	}
 
 	isStreaming := req.Stream != nil && *req.Stream

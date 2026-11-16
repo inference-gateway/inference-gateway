@@ -51,14 +51,8 @@ func handleStreamingRequest(w http.ResponseWriter, r *http.Request, provider cor
 		return
 	}
 
-	body, tooLarge, err := router.readBoundedBody(r)
-	if err != nil {
-		router.logger.Error("failed to read request body", err)
-		middlewares.WriteJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Failed to read request"})
-		return
-	}
-	if tooLarge {
-		middlewares.WriteJSON(w, http.StatusRequestEntityTooLarge, ErrorResponse{Error: "Request body too large"})
+	body, ok := router.readBodyOrRespond(w, r)
+	if !ok {
 		return
 	}
 
