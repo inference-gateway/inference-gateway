@@ -180,17 +180,14 @@ func (router *RouterImpl) mireloJob(w http.ResponseWriter, r *http.Request, prov
 	defer done()
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
-	if err != nil {
-		router.logger.Error("failed to read mirelo job response", err)
-		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+	body, ok := router.readUpstreamBody(w, resp, jobMaxResponseSize)
+	if !ok {
 		return sfx.Job{}, jobAnswered, 0
 	}
 	if sfx.AssetNotReady(resp.StatusCode, body) {
 		return sfx.Job{}, jobAssetNotReady, sfx.RetryAfter(resp.Header.Get("Retry-After"))
 	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
+	if relayUpstreamError(w, resp, body) {
 		return sfx.Job{}, jobAnswered, 0
 	}
 
@@ -312,13 +309,11 @@ func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= http.StatusBadRequest {
-		body, readErr := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
-		if readErr != nil {
-			router.logger.Error("failed to read the elevenlabs video-to-music response", readErr)
-			middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+		body, ok := router.readUpstreamBody(w, resp, jobMaxResponseSize)
+		if !ok {
 			return
 		}
-		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
+		relayUpstreamError(w, resp, body)
 		return
 	}
 	if !music.SeparateTracks {
@@ -326,10 +321,8 @@ func (router *RouterImpl) elevenlabsSFXFromVideo(w http.ResponseWriter, r *http.
 		return
 	}
 
-	archive, err := io.ReadAll(io.LimitReader(resp.Body, trackArchiveMaxSize))
-	if err != nil {
-		router.logger.Error("failed to read the elevenlabs track archive", err)
-		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+	archive, ok := router.readUpstreamBody(w, resp, trackArchiveMaxSize)
+	if !ok {
 		return
 	}
 	track, err := sfx.EffectsTrack(archive)
@@ -427,14 +420,11 @@ func (router *RouterImpl) assetTicket(w http.ResponseWriter, r *http.Request, pr
 	defer done()
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
-	if err != nil {
-		router.logger.Error("failed to read mirelo upload ticket", err)
-		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+	body, ok := router.readUpstreamBody(w, resp, jobMaxResponseSize)
+	if !ok {
 		return sfx.AssetTicket{}, false
 	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
+	if relayUpstreamError(w, resp, body) {
 		return sfx.AssetTicket{}, false
 	}
 	ticket, err := sfx.ParseAssetTicket(body)
