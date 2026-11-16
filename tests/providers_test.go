@@ -20,6 +20,7 @@ import (
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	transformers "github.com/inference-gateway/inference-gateway/providers/transformers"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	typestest "github.com/inference-gateway/inference-gateway/providers/types/typestest"
 )
 
 // TestProviderRegistry tests the provider registry functionality
@@ -149,7 +150,7 @@ func TestProviderChatCompletions(t *testing.T) {
 	provider, err := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 	assert.NoError(t, err)
 
-	msg := types.NewTextMessage(t, types.User, "Hello, how are you?")
+	msg := typestest.NewTextMessage(t, types.User, "Hello, how are you?")
 	require.NoError(t, err)
 
 	req := types.CreateChatCompletionRequest{
@@ -234,7 +235,7 @@ func TestProviderChatCompletionsForwardsAuthToken(t *testing.T) {
 	req := types.CreateChatCompletionRequest{
 		Model: "gpt-3.5-turbo",
 		Messages: []types.Message{
-			types.NewTextMessage(t, types.User, "Hello, how are you?"),
+			typestest.NewTextMessage(t, types.User, "Hello, how are you?"),
 		},
 	}
 
@@ -309,7 +310,7 @@ func TestProviderChatCompletionsForwardsNewParameters(t *testing.T) {
 
 	req := types.CreateChatCompletionRequest{
 		Model:               "gpt-4o",
-		Messages:            []types.Message{types.NewTextMessage(t, types.User, "Hello")},
+		Messages:            []types.Message{typestest.NewTextMessage(t, types.User, "Hello")},
 		Temperature:         ptr(float32(0.7)),
 		TopP:                ptr(float32(0.9)),
 		N:                   ptr(2),
@@ -563,7 +564,7 @@ func BenchmarkChatCompletions(b *testing.B) {
 
 	provider, _ := providerRegistry.BuildProvider(constants.OpenaiID, mockClient)
 
-	msg := types.NewTextMessage(b, types.User, "Hello, how are you?")
+	msg := typestest.NewTextMessage(b, types.User, "Hello, how are you?")
 
 	req := types.CreateChatCompletionRequest{
 		Model: "openai/gpt-3.5-turbo",

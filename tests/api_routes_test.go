@@ -21,6 +21,7 @@ import (
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	typestest "github.com/inference-gateway/inference-gateway/providers/types/typestest"
 )
 
 func TestListModelsHandler_AllowedModelsFiltering(t *testing.T) {
@@ -924,7 +925,7 @@ func TestChatCompletionsHandler_DisallowedModelValidation(t *testing.T) {
 					Choices: []types.ChatCompletionChoice{
 						{
 							Index:        0,
-							Message:      types.NewTextMessage(t, types.Assistant, "Hello, how can I help you today?"),
+							Message:      typestest.NewTextMessage(t, types.Assistant, "Hello, how can I help you today?"),
 							FinishReason: "stop",
 						},
 					},
@@ -1079,7 +1080,7 @@ func TestChatCompletionsHandler_AllowedModelsTakesPrecedence(t *testing.T) {
 					Choices: []types.ChatCompletionChoice{
 						{
 							Index:        0,
-							Message:      types.NewTextMessage(t, types.Assistant, "Hello, how can I help you today?"),
+							Message:      typestest.NewTextMessage(t, types.Assistant, "Hello, how can I help you today?"),
 							FinishReason: "stop",
 						},
 					},
@@ -1290,7 +1291,7 @@ func TestChatCompletionsHandler_StreamingErrorHandling(t *testing.T) {
 				Model:  "openai/gpt-5",
 				Stream: new(true),
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Hello, world!"),
+					typestest.NewTextMessage(t, types.User, "Hello, world!"),
 				},
 			}
 

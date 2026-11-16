@@ -21,6 +21,7 @@ import (
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	routing "github.com/inference-gateway/inference-gateway/providers/routing"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	typestest "github.com/inference-gateway/inference-gateway/providers/types/typestest"
 )
 
 func routingTestSetup(t *testing.T) (logger.Logger, config.Config) {
@@ -47,7 +48,7 @@ func chatRequest(t *testing.T, model string, stream bool) *http.Request {
 	t.Helper()
 	body := types.CreateChatCompletionRequest{
 		Model:    model,
-		Messages: []types.Message{types.NewTextMessage(t, types.User, "hi")},
+		Messages: []types.Message{typestest.NewTextMessage(t, types.User, "hi")},
 	}
 	if stream {
 		body.Stream = &stream

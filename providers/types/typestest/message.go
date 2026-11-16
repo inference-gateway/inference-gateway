@@ -1,15 +1,19 @@
-package types
+// Package typestest provides test helpers for constructing typed provider messages.
+// It mirrors net/http/httptest: test-only code lives next to the package it
+// supports, keeping providers/types itself free of any testing import.
+package typestest
 
-import "testing"
+import (
+	"testing"
 
-// Test helper functions for constructing messages with type-safe union types.
-// These functions are designed for test code and will fail the test on error.
+	types "github.com/inference-gateway/inference-gateway/providers/types"
+)
 
 // NewTextMessage creates a message with simple text content.
 // Calls t.Fatal() on error.
-func NewTextMessage(t testing.TB, role MessageRole, text string) Message {
+func NewTextMessage(t testing.TB, role types.MessageRole, text string) types.Message {
 	t.Helper()
-	msg := Message{
+	msg := types.Message{
 		Role: role,
 	}
 	if err := msg.Content.FromMessageContent0(text); err != nil {
@@ -20,9 +24,9 @@ func NewTextMessage(t testing.TB, role MessageRole, text string) Message {
 
 // NewMultimodalMessage creates a message with multimodal content parts.
 // Calls t.Fatal() on error.
-func NewMultimodalMessage(t testing.TB, role MessageRole, parts ...ContentPart) Message {
+func NewMultimodalMessage(t testing.TB, role types.MessageRole, parts ...types.ContentPart) types.Message {
 	t.Helper()
-	msg := Message{
+	msg := types.Message{
 		Role: role,
 	}
 	if err := msg.Content.FromMessageContent1(parts); err != nil {
@@ -33,10 +37,10 @@ func NewMultimodalMessage(t testing.TB, role MessageRole, parts ...ContentPart) 
 
 // NewTextContentPart creates a text content part.
 // Calls t.Fatal() on error.
-func NewTextContentPart(t testing.TB, text string) ContentPart {
+func NewTextContentPart(t testing.TB, text string) types.ContentPart {
 	t.Helper()
-	var part ContentPart
-	if err := part.FromTextContentPart(TextContentPart{
+	var part types.ContentPart
+	if err := part.FromTextContentPart(types.TextContentPart{
 		Type: "text",
 		Text: text,
 	}); err != nil {
@@ -47,14 +51,14 @@ func NewTextContentPart(t testing.TB, text string) ContentPart {
 
 // NewImageContentPart creates an image content part with URL.
 // Calls t.Fatal() on error.
-func NewImageContentPart(t testing.TB, url string, detail *ImageURLDetail) ContentPart {
+func NewImageContentPart(t testing.TB, url string, detail *types.ImageURLDetail) types.ContentPart {
 	t.Helper()
-	var part ContentPart
-	imageURL := ImageURL{
+	var part types.ContentPart
+	imageURL := types.ImageURL{
 		URL:    url,
 		Detail: detail,
 	}
-	if err := part.FromImageContentPart(ImageContentPart{
+	if err := part.FromImageContentPart(types.ImageContentPart{
 		Type:     "image_url",
 		ImageURL: imageURL,
 	}); err != nil {
@@ -63,26 +67,12 @@ func NewImageContentPart(t testing.TB, url string, detail *ImageURLDetail) Conte
 	return part
 }
 
-// NewToolMessage creates a tool response message.
-// Calls t.Fatal() on error.
-func NewToolMessage(t testing.TB, toolCallID string, content string) Message {
-	t.Helper()
-	msg := Message{
-		Role:       Tool,
-		ToolCallID: &toolCallID,
-	}
-	if err := msg.Content.FromMessageContent0(content); err != nil {
-		t.Fatalf("NewToolMessage: %v", err)
-	}
-	return msg
-}
-
 // NewAssistantMessage creates an assistant message with optional tool calls.
 // Calls t.Fatal() on error.
-func NewAssistantMessage(t testing.TB, content string, toolCalls *[]ChatCompletionMessageToolCall) Message {
+func NewAssistantMessage(t testing.TB, content string, toolCalls *[]types.ChatCompletionMessageToolCall) types.Message {
 	t.Helper()
-	msg := Message{
-		Role:      Assistant,
+	msg := types.Message{
+		Role:      types.Assistant,
 		ToolCalls: toolCalls,
 	}
 	if content != "" {
