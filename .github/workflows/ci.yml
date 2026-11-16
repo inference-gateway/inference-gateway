@@ -33,10 +33,6 @@ jobs:
         uses: dorny/paths-filter@v4.0.3
         id: filter
         with:
-          # 'every' makes '!**/*.md' a per-file predicate ("file is not
-          # markdown"): code = at least one non-markdown file changed.
-          # Mixed code+markdown PRs set both outputs; only md-only PRs
-          # skip the Go suite.
           predicate-quantifier: 'every'
           base: ${{ github.ref }}
           filters: |
