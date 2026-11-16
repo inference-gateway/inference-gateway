@@ -52,8 +52,6 @@ func TestListModelsHandler_PricingResolution(t *testing.T) {
 	r := newContextWindowRouter(t, server, providerCfg)
 
 	t.Run("include resolves provider, community, and null pricing", func(t *testing.T) {
-		// deprecated is a row selector: it keeps the dated anthropic fixture row listed
-		// even though the community table now marks it deprecated
 		w := httptest.NewRecorder()
 		req, err := http.NewRequest("GET", "/v1/models?include=pricing,deprecated", nil)
 		require.NoError(t, err)
