@@ -6,6 +6,7 @@ import (
 	assert "github.com/stretchr/testify/assert"
 
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	typestest "github.com/inference-gateway/inference-gateway/providers/types/typestest"
 )
 
 func TestMessage_HasImageContent(t *testing.T) {
@@ -17,24 +18,24 @@ func TestMessage_HasImageContent(t *testing.T) {
 		{
 			name: "String content has no images",
 			makeMsg: func(t *testing.T) types.Message {
-				return types.NewTextMessage(t, types.User, "Hello, how are you?")
+				return typestest.NewTextMessage(t, types.User, "Hello, how are you?")
 			},
 			expected: false,
 		},
 		{
 			name: "Array content with only text",
 			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewTextContentPart(t, "Hello, how are you?"))
+				return typestest.NewMultimodalMessage(t, types.User,
+					typestest.NewTextContentPart(t, "Hello, how are you?"))
 			},
 			expected: false,
 		},
 		{
 			name: "Array content with image",
 			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewTextContentPart(t, "What's in this image?"),
-					types.NewImageContentPart(t, "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...", nil))
+				return typestest.NewMultimodalMessage(t, types.User,
+					typestest.NewTextContentPart(t, "What's in this image?"),
+					typestest.NewImageContentPart(t, "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...", nil))
 			},
 			expected: true,
 		},
@@ -42,8 +43,8 @@ func TestMessage_HasImageContent(t *testing.T) {
 			name: "Array content with only image",
 			makeMsg: func(t *testing.T) types.Message {
 				detail := types.ImageURLDetail("high")
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewImageContentPart(t, "https://example.com/image.jpg", &detail))
+				return typestest.NewMultimodalMessage(t, types.User,
+					typestest.NewImageContentPart(t, "https://example.com/image.jpg", &detail))
 			},
 			expected: true,
 		},
@@ -70,7 +71,7 @@ func TestMessage_StripImageContent(t *testing.T) {
 		{
 			name: "String content remains unchanged",
 			makeMsg: func(t *testing.T) types.Message {
-				return types.NewTextMessage(t, types.User, "Hello, world!")
+				return typestest.NewTextMessage(t, types.User, "Hello, world!")
 			},
 			expectedContent: "Hello, world!",
 			checkAsString:   true,
@@ -78,8 +79,8 @@ func TestMessage_StripImageContent(t *testing.T) {
 		{
 			name: "Array with only text remains as single string",
 			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewTextContentPart(t, "Just text"))
+				return typestest.NewMultimodalMessage(t, types.User,
+					typestest.NewTextContentPart(t, "Just text"))
 			},
 			expectedContent: "Just text",
 			checkAsString:   true,
@@ -87,9 +88,9 @@ func TestMessage_StripImageContent(t *testing.T) {
 		{
 			name: "Array with text and image keeps only text as string",
 			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewTextContentPart(t, "What's in this image?"),
-					types.NewImageContentPart(t, "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...", nil))
+				return typestest.NewMultimodalMessage(t, types.User,
+					typestest.NewTextContentPart(t, "What's in this image?"),
+					typestest.NewImageContentPart(t, "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAAA...", nil))
 			},
 			expectedContent: "What's in this image?",
 			checkAsString:   true,
@@ -97,8 +98,8 @@ func TestMessage_StripImageContent(t *testing.T) {
 		{
 			name: "Array with only images becomes empty string",
 			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewImageContentPart(t, "https://example.com/image.jpg", nil))
+				return typestest.NewMultimodalMessage(t, types.User,
+					typestest.NewImageContentPart(t, "https://example.com/image.jpg", nil))
 			},
 			expectedContent: "",
 			checkAsString:   true,
@@ -106,11 +107,11 @@ func TestMessage_StripImageContent(t *testing.T) {
 		{
 			name: "Array with multiple text parts and images keeps only text parts",
 			makeMsg: func(t *testing.T) types.Message {
-				return types.NewMultimodalMessage(t, types.User,
-					types.NewTextContentPart(t, "First part"),
-					types.NewImageContentPart(t, "https://example.com/image1.jpg", nil),
-					types.NewTextContentPart(t, "Second part"),
-					types.NewImageContentPart(t, "https://example.com/image2.jpg", nil))
+				return typestest.NewMultimodalMessage(t, types.User,
+					typestest.NewTextContentPart(t, "First part"),
+					typestest.NewImageContentPart(t, "https://example.com/image1.jpg", nil),
+					typestest.NewTextContentPart(t, "Second part"),
+					typestest.NewImageContentPart(t, "https://example.com/image2.jpg", nil))
 			},
 			checkAsParts:  true,
 			expectedParts: 2,

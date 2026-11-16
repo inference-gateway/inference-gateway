@@ -18,6 +18,7 @@ import (
 	config "github.com/inference-gateway/inference-gateway/config"
 	guardrails "github.com/inference-gateway/inference-gateway/internal/guardrails"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	typestest "github.com/inference-gateway/inference-gateway/providers/types/typestest"
 )
 
 func TestNewGuardrailsMiddleware(t *testing.T) {
@@ -295,7 +296,7 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 	requestData := types.CreateChatCompletionRequest{
 		Model: "gpt-4",
 		Messages: []types.Message{
-			types.NewTextMessage(t, types.User, "Hello"),
+			typestest.NewTextMessage(t, types.User, "Hello"),
 		},
 	}
 	requestBody, _ := json.Marshal(requestData)
@@ -306,7 +307,7 @@ func TestGuardrailsMiddleware_NonStreamingPostCall(t *testing.T) {
 			Model: "gpt-4",
 			Choices: []types.ChatCompletionChoice{
 				{
-					Message:      types.NewTextMessage(t, types.Assistant, "Hello! How can I help you?"),
+					Message:      typestest.NewTextMessage(t, types.Assistant, "Hello! How can I help you?"),
 					FinishReason: types.Stop,
 				},
 			},

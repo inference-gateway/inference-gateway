@@ -27,6 +27,7 @@ import (
 	logger "github.com/inference-gateway/inference-gateway/internal/platform/logger"
 	otel "github.com/inference-gateway/inference-gateway/internal/platform/otel"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	typestest "github.com/inference-gateway/inference-gateway/providers/types/typestest"
 )
 
 func TestNewAgent(t *testing.T) {
@@ -67,10 +68,10 @@ func TestNewAgent(t *testing.T) {
 }
 
 func TestAgent_Run(t *testing.T) {
-	userHello := types.NewTextMessage(t, types.User, "Hello")
-	assistantHello := types.NewTextMessage(t, types.Assistant, "Hello! How can I help you?")
-	userUseTestTool := types.NewTextMessage(t, types.User, "Use the test tool")
-	assistantToolResponse := types.NewAssistantMessage(t, "I'll use the tool to help you.", &[]types.ChatCompletionMessageToolCall{
+	userHello := typestest.NewTextMessage(t, types.User, "Hello")
+	assistantHello := typestest.NewTextMessage(t, types.Assistant, "Hello! How can I help you?")
+	userUseTestTool := typestest.NewTextMessage(t, types.User, "Use the test tool")
+	assistantToolResponse := typestest.NewAssistantMessage(t, "I'll use the tool to help you.", &[]types.ChatCompletionMessageToolCall{
 		{
 			ID:   "call_123",
 			Type: "function",
@@ -80,8 +81,8 @@ func TestAgent_Run(t *testing.T) {
 			},
 		},
 	})
-	assistantFinalResponse := types.NewTextMessage(t, types.Assistant, "Based on the tool result, here's my answer.")
-	assistantMoreToolCalls := types.NewAssistantMessage(t, "More tool calls needed", &[]types.ChatCompletionMessageToolCall{
+	assistantFinalResponse := typestest.NewTextMessage(t, types.Assistant, "Based on the tool result, here's my answer.")
+	assistantMoreToolCalls := typestest.NewAssistantMessage(t, "More tool calls needed", &[]types.ChatCompletionMessageToolCall{
 		{
 			ID:   "call_123",
 			Type: "function",
@@ -168,7 +169,7 @@ func TestAgent_Run(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Use the test tool"),
+					typestest.NewTextMessage(t, types.User, "Use the test tool"),
 				},
 			},
 			response: &types.CreateChatCompletionResponse{
@@ -585,7 +586,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Hello"),
+					typestest.NewTextMessage(t, types.User, "Hello"),
 				},
 			},
 			expectError:       false,
@@ -639,7 +640,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Hello"),
+					typestest.NewTextMessage(t, types.User, "Hello"),
 				},
 			},
 			expectError:       true,
@@ -667,7 +668,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Hello"),
+					typestest.NewTextMessage(t, types.User, "Hello"),
 				},
 			},
 			expectError:       true,
@@ -830,7 +831,7 @@ func TestAgent_RunWithStream(t *testing.T) {
 			request: &types.CreateChatCompletionRequest{
 				Model: "test-model",
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Use the test tool and the other tool"),
+					typestest.NewTextMessage(t, types.User, "Use the test tool and the other tool"),
 				},
 			},
 			expectError:       false,
@@ -1112,7 +1113,7 @@ func TestAgent_WithClientDeclaredTools(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Contains(t, toolResult, mcpResult, "the tool result should be fed back to the model")
 			return types.CreateChatCompletionResponse{Choices: []types.ChatCompletionChoice{{
-				Message:      types.NewTextMessage(t, types.Assistant, finalReply),
+				Message:      typestest.NewTextMessage(t, types.Assistant, finalReply),
 				FinishReason: types.Stop,
 			}}}, nil
 		}).Times(1)
@@ -1120,7 +1121,7 @@ func TestAgent_WithClientDeclaredTools(t *testing.T) {
 		toolCalls := []types.ChatCompletionMessageToolCall{toolCall("call_1", mcpTool)}
 		request := &types.CreateChatCompletionRequest{Model: model, Tools: &declared}
 		response := &types.CreateChatCompletionResponse{Choices: []types.ChatCompletionChoice{{
-			Message:      types.NewAssistantMessage(t, "", &toolCalls),
+			Message:      typestest.NewAssistantMessage(t, "", &toolCalls),
 			FinishReason: types.ToolCalls,
 		}}}
 
@@ -1143,7 +1144,7 @@ func TestAgent_WithClientDeclaredTools(t *testing.T) {
 			agent, _, provider := newAgent(t)
 			request := &types.CreateChatCompletionRequest{Model: model, Tools: &declared}
 			response := &types.CreateChatCompletionResponse{Choices: []types.ChatCompletionChoice{{
-				Message:      types.NewAssistantMessage(t, "", &tt.toolCalls),
+				Message:      typestest.NewAssistantMessage(t, "", &tt.toolCalls),
 				FinishReason: types.ToolCalls,
 			}}}
 

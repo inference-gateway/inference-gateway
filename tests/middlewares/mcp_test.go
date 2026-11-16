@@ -22,6 +22,7 @@ import (
 	mcp "github.com/inference-gateway/inference-gateway/internal/mcp"
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	typestest "github.com/inference-gateway/inference-gateway/providers/types/typestest"
 )
 
 // Test helper to create mock dependencies for each test case
@@ -266,7 +267,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Hello"),
+					typestest.NewTextMessage(t, types.User, "Hello"),
 				},
 				Tools: tt.requestTools,
 			}
@@ -297,7 +298,7 @@ func TestMCPMiddleware_AddToolsToRequest(t *testing.T) {
 					Model: "gpt-3.5-turbo",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Message:      types.NewTextMessage(t, types.Assistant, "Hello! How can I help you?"),
+							Message:      typestest.NewTextMessage(t, types.Assistant, "Hello! How can I help you?"),
 							FinishReason: types.Stop,
 						},
 					},
@@ -336,7 +337,7 @@ func TestMCPMiddleware_SelectorModeInjectsMetaTools(t *testing.T) {
 
 	requestData := types.CreateChatCompletionRequest{
 		Model:    "openai/gpt-3.5-turbo",
-		Messages: []types.Message{types.NewTextMessage(t, types.User, "Hello")},
+		Messages: []types.Message{typestest.NewTextMessage(t, types.User, "Hello")},
 	}
 	requestBody, _ := json.Marshal(requestData)
 
@@ -357,7 +358,7 @@ func TestMCPMiddleware_SelectorModeInjectsMetaTools(t *testing.T) {
 			ID:    "test-id",
 			Model: "gpt-3.5-turbo",
 			Choices: []types.ChatCompletionChoice{
-				{Message: types.NewTextMessage(t, types.Assistant, "hi"), FinishReason: types.Stop},
+				{Message: typestest.NewTextMessage(t, types.Assistant, "hi"), FinishReason: types.Stop},
 			},
 		})
 	})
@@ -475,7 +476,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 					Model: "gpt-3.5-turbo",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Message:      types.NewTextMessage(t, types.Assistant, "Based on the tool results, here's my response."),
+							Message:      typestest.NewTextMessage(t, types.Assistant, "Based on the tool results, here's my response."),
 							FinishReason: types.Stop,
 						},
 					},
@@ -488,7 +489,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 					Model: "gpt-3.5-turbo",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Message:      types.NewTextMessage(t, types.Assistant, "Error response"),
+							Message:      typestest.NewTextMessage(t, types.Assistant, "Error response"),
 							FinishReason: types.Stop,
 						},
 					},
@@ -498,7 +499,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Please use the tool"),
+					typestest.NewTextMessage(t, types.User, "Please use the tool"),
 				},
 			}
 
@@ -516,7 +517,7 @@ func TestMCPMiddleware_NonStreamingWithToolCalls(t *testing.T) {
 					Model: "gpt-3.5-turbo",
 					Choices: []types.ChatCompletionChoice{
 						{
-							Message:      types.NewAssistantMessage(t, "I'll use the tool to help you.", &tt.toolCalls),
+							Message:      typestest.NewAssistantMessage(t, "I'll use the tool to help you.", &tt.toolCalls),
 							FinishReason: types.ToolCalls,
 						},
 					},
@@ -605,7 +606,7 @@ data: [DONE]`,
 			requestData := types.CreateChatCompletionRequest{
 				Model: "openai/gpt-3.5-turbo",
 				Messages: []types.Message{
-					types.NewTextMessage(t, types.User, "Test streaming"),
+					typestest.NewTextMessage(t, types.User, "Test streaming"),
 				},
 				Stream: &[]bool{true}[0],
 			}
@@ -882,7 +883,7 @@ func TestMCPMiddleware_StreamingWithMultipleToolCallIterations(t *testing.T) {
 		requestData := types.CreateChatCompletionRequest{
 			Model: "groq/meta-llama/llama-4-scout-17b-instruct",
 			Messages: []types.Message{
-				types.NewTextMessage(t, types.User, "What are the top pizzas?"),
+				typestest.NewTextMessage(t, types.User, "What are the top pizzas?"),
 			},
 			Stream: &[]bool{true}[0],
 		}
@@ -937,7 +938,7 @@ func TestMCPMiddleware_PassesThroughUpstreamErrors(t *testing.T) {
 	requestData := types.CreateChatCompletionRequest{
 		Model: "openai/gpt-3.5-turbo",
 		Messages: []types.Message{
-			types.NewTextMessage(t, types.User, "Hello"),
+			typestest.NewTextMessage(t, types.User, "Hello"),
 		},
 	}
 	requestBody, _ := json.Marshal(requestData)
