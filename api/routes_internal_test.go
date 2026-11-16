@@ -22,6 +22,7 @@ import (
 	core "github.com/inference-gateway/inference-gateway/providers/core"
 	registry "github.com/inference-gateway/inference-gateway/providers/registry"
 	types "github.com/inference-gateway/inference-gateway/providers/types"
+	typestest "github.com/inference-gateway/inference-gateway/providers/types/typestest"
 )
 
 // TestBuildProvider_MapsRegistryErrors pins the client-facing message to the
@@ -130,16 +131,16 @@ func TestStripImagesForNonVisionModel(t *testing.T) {
 		return &types.CreateChatCompletionRequest{
 			Model: model,
 			Messages: []types.Message{
-				types.NewMultimodalMessage(t, types.User,
-					types.NewTextContentPart(t, "What is in this image?"),
-					types.NewImageContentPart(t, "https://example.com/cat.png", nil)),
+				typestest.NewMultimodalMessage(t, types.User,
+					typestest.NewTextContentPart(t, "What is in this image?"),
+					typestest.NewImageContentPart(t, "https://example.com/cat.png", nil)),
 			},
 		}
 	}
 	textRequest := func(t *testing.T, model string) *types.CreateChatCompletionRequest {
 		return &types.CreateChatCompletionRequest{
 			Model:    model,
-			Messages: []types.Message{types.NewTextMessage(t, types.User, "hi")},
+			Messages: []types.Message{typestest.NewTextMessage(t, types.User, "hi")},
 		}
 	}
 
