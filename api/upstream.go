@@ -240,6 +240,28 @@ func markUpstreamError(r *http.Request, resp *http.Response) {
 	span.SetAttributes(semconv.ErrorTypeKey.String(strconv.Itoa(resp.StatusCode)))
 }
 
+// readUpstreamBody reads up to maxSize of resp.Body, answering 502 and
+// reporting false when the read fails.
+func (router *RouterImpl) readUpstreamBody(w http.ResponseWriter, resp *http.Response, maxSize int64) ([]byte, bool) {
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxSize))
+	if err != nil {
+		router.logger.Error("failed to read upstream response", err)
+		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+		return nil, false
+	}
+	return body, true
+}
+
+// relayUpstreamError writes an upstream error response verbatim and reports
+// whether it did, so the provider's own explanation reaches the client.
+func relayUpstreamError(w http.ResponseWriter, resp *http.Response, body []byte) bool {
+	if resp.StatusCode < http.StatusBadRequest {
+		return false
+	}
+	writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
+	return true
+}
+
 // acceptHeaderFor returns the upstream Accept header for the streaming-aware
 // Messages and Responses pass-through requests.
 func acceptHeaderFor(streaming bool) string {

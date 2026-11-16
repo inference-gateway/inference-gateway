@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -315,17 +314,11 @@ func (router *RouterImpl) videoJob(w http.ResponseWriter, r *http.Request, provi
 	defer done()
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, jobMaxResponseSize))
-	if err != nil {
-		router.logger.Error("failed to read video job response", err, "provider", providerID)
-		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read the upstream response"})
+	body, ok := router.readUpstreamBody(w, resp, jobMaxResponseSize)
+	if !ok {
 		return types.VideoJob{}, "", false
 	}
-
-	// Upstream errors are relayed verbatim so the provider's own explanation
-	// (quota, unsupported size, unknown job) reaches the caller unaltered.
-	if resp.StatusCode >= http.StatusBadRequest {
-		writeData(w, resp.StatusCode, resp.Header.Get("Content-Type"), body)
+	if relayUpstreamError(w, resp, body) {
 		return types.VideoJob{}, "", false
 	}
 

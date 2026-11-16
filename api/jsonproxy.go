@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"slices"
 
@@ -175,14 +174,11 @@ func (router *RouterImpl) forwardTranslated(w http.ResponseWriter, r *http.Reque
 	defer done()
 	defer resp.Body.Close()
 
-	upstream, err := io.ReadAll(resp.Body)
-	if err != nil {
-		router.logger.Error("failed to read upstream response", err)
-		middlewares.WriteJSON(w, http.StatusBadGateway, ErrorResponse{Error: "Failed to read upstream response"})
+	upstream, ok := router.readUpstreamBody(w, resp, jobMaxResponseSize)
+	if !ok {
 		return
 	}
-	if resp.StatusCode >= http.StatusBadRequest {
-		writeDataFromReader(w, resp.StatusCode, int64(len(upstream)), resp.Header.Get("Content-Type"), bytes.NewReader(upstream))
+	if relayUpstreamError(w, resp, upstream) {
 		return
 	}
 	out, err := translate(upstream)
