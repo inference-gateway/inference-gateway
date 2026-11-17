@@ -108,7 +108,7 @@ Client is sending:
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{
-    "model": "openai/gpt-3.5-turbo",
+    "model": "openai/gpt-5.6",
     "messages": [
       {
         "role": "system",
@@ -204,7 +204,7 @@ Anthropic Messages API:
 ```bash
 curl -X POST http://localhost:8080/v1/messages \
   -d '{
-    "model": "anthropic/claude-sonnet-4-5",
+    "model": "anthropic/claude-sonnet-5-5",
     "max_tokens": 1024,
     "messages": [{"role": "user", "content": "Hello, world!"}]
   }'
@@ -215,7 +215,7 @@ Image generation (requires `IMAGES_ENABLED=true`):
 ```bash
 curl -X POST http://localhost:8080/v1/images/generations \
   -d '{
-    "model": "openai/gpt-image-1",
+    "model": "openai/gpt-image-2",
     "prompt": "A pirate ship sailing into a neon sunset",
     "n": 1,
     "size": "1024x1024"
@@ -227,7 +227,7 @@ Text to speech (requires `AUDIO_ENABLED=true`):
 ```bash
 curl -X POST http://localhost:8080/v1/audio/speech \
   -d '{
-    "model": "openai/gpt-4o-mini-tts",
+    "model": "openai/tts-1-1106",
     "input": "Ahoy! Welcome aboard the Inference Gateway.",
     "voice": "alloy"
   }' -o speech.mp3
@@ -363,7 +363,7 @@ active using bypass headers:
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "X-MCP-Bypass: true" \
   -d '{
-    "model": "groq/llama-3-8b",
+    "model": "groq/openai/gpt-oss-120b",
     "messages": [{"role": "user", "content": "Simple chat without tools"}]
   }'
 ```
@@ -417,7 +417,7 @@ export MCP_SERVERS="filesystem=http://filesystem-server:3001/mcp,search=http://s
 # LLMs will automatically discover and use available tools
 curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{
-    "model": "openai/gpt-4",
+    "model": "openai/gpt-5.6",
     "messages": [{"role": "user", "content": "List files in the current directory"}]
   }'
 ```

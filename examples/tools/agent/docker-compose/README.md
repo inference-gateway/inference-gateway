@@ -23,7 +23,7 @@ The agent in this example:
 ## Setup Instructions
 
 1. Configure your provider API key in the `.env` file. The agent defaults to the
-   Groq model `groq/deepseek-r1-distill-llama-70b` (configured via the `agent`
+   Groq model `groq/openai/gpt-oss-120b` (configured via the `agent`
    service's `MODEL` variable in `docker-compose.yml`), so set the matching key:
 
    ```bash
