@@ -35,14 +35,12 @@ API, and as an MCP server of its own on `POST /mcp`.
   discovery** (`spec.mcp.serviceDiscovery`), which picks up every `MCP` resource in its namespace - add a
   label `selector` to narrow it. Adding a server is one more `MCP` resource - `gateway.yaml` stays as is. The
   gateway speaks MCP `2026-07-28` - stateless, no `initialize`, no session - to all of them.
-  - `time` (`:8081`), `search` (`:8082`) and `filesystem` (`:8083`): minimal Go servers built from the
-    `*-server/` directories.
+  - `time` (`:8081`), `search` (`:8082`) and `filesystem` (`:8083`): minimal Go servers.
   - `pizza` (`:8084`): the official TypeScript SDK v2 (`createMcpHandler`).
   - `calculator` (`:8085`): the official Go SDK with a stateless Streamable HTTP handler.
 
-  The images are built locally and imported into k3d with a `:dev` tag. The pizza and calculator images are
-  built from [`../docker-compose`](../docker-compose/), which shares their sources with the
-  Docker Compose example.
+  The images are built locally and imported into k3d with a `:dev` tag. Every image is built from
+  [`../docker-compose`](../docker-compose/), which shares its sources with the Docker Compose example.
 
 - **Tool names**: the operator passes each `MCP` resource's name as the alias, rendering
   `<metadata.name>=<url>` into `MCP_SERVERS`, so the gateway names the tools

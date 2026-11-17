@@ -82,10 +82,10 @@ tasks:
       - echo "🔨 Building MCP servers..."
       # Tagged :dev, not :latest, so the MCP resources' default pull policy uses
       # the imported images instead of trying a registry.
-      - docker build -t mcp-time-server:dev time-server
-      - docker build -t mcp-search-server:dev search-server
-      - docker build -t mcp-filesystem-server:dev filesystem-server
-      # The official-SDK servers are shared with the docker-compose example.
+      # The servers are shared with the docker-compose example.
+      - docker build -t mcp-time-server:dev {{.COMPOSE_MCP_DIR}}/time-server
+      - docker build -t mcp-search-server:dev {{.COMPOSE_MCP_DIR}}/search-server
+      - docker build -t mcp-filesystem-server:dev {{.COMPOSE_MCP_DIR}}/filesystem-server
       - docker build -t mcp-pizza-server:dev {{.COMPOSE_MCP_DIR}}/pizza-server
       - docker build -t mcp-calculator-server:dev {{.COMPOSE_MCP_DIR}}/calculator-server
       - |
