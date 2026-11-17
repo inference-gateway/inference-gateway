@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.67.2](https://github.com/inference-gateway/inference-gateway/compare/v0.67.1...v0.67.2) (2026-11-17)
+
+### ♻️ Improvements
+
+* **api:** dedupe video job retrieval ([#921](https://github.com/inference-gateway/inference-gateway/issues/921)) ([958117a](https://github.com/inference-gateway/inference-gateway/commit/958117af84d8f787989d747b07a8d6b30c14acc1))
+* **api:** extract the vision filter from ChatCompletionsHandler ([#924](https://github.com/inference-gateway/inference-gateway/issues/924)) ([e198370](https://github.com/inference-gateway/inference-gateway/commit/e198370379e1b8dd3c97b8568f0c743f7d139c52))
+* **providers:** move test message helpers into providers/types/typestest ([#923](https://github.com/inference-gateway/inference-gateway/issues/923)) ([9818214](https://github.com/inference-gateway/inference-gateway/commit/981821473f4c6dcfd5cf2fbc2c3821e4e166c2b9))
+
+### 🐛 Bug Fixes
+
+* **examples:** define the external-guardrail service in the guardrails compose example ([#935](https://github.com/inference-gateway/inference-gateway/issues/935)) ([d7afe65](https://github.com/inference-gateway/inference-gateway/commit/d7afe656a23ea39998d373634f52ca4c0e1b4b3d))
+
+### 👷 CI
+
+* path-filter docs-only PRs into a markdownlint-only job ([#928](https://github.com/inference-gateway/inference-gateway/issues/928)) ([5d4b30d](https://github.com/inference-gateway/inference-gateway/commit/5d4b30df75b1bbeefb82e325e6235e28e04ac8e8)), references [#927](https://github.com/inference-gateway/inference-gateway/issues/927)
+* set up orchestrators from repos.yaml ([#929](https://github.com/inference-gateway/inference-gateway/issues/929)) ([6a8695c](https://github.com/inference-gateway/inference-gateway/commit/6a8695c74cd5b8be32bc1859ddb0e334d4dea949))
+
+### 📚 Documentation
+
+* **examples:** add A2A auth, guardrails, telemetry and streaming walkthroughs ([#939](https://github.com/inference-gateway/inference-gateway/issues/939)) ([9551ab0](https://github.com/inference-gateway/inference-gateway/commit/9551ab0596f328bbd3b6037a59714f84e2db2d36))
+* **examples:** correct guardrails fail-mode, MCP tool names and mTLS image notes ([#936](https://github.com/inference-gateway/inference-gateway/issues/936)) ([1cc40c0](https://github.com/inference-gateway/inference-gateway/commit/1cc40c0f4768fd0c15543287ddfdaf07e63b5a64)), closes [#931](https://github.com/inference-gateway/inference-gateway/issues/931)
+* fix README drift - drop Grafana cost analysis, correct provider count and Decisions 400 error ([#927](https://github.com/inference-gateway/inference-gateway/issues/927)) ([f0b058b](https://github.com/inference-gateway/inference-gateway/commit/f0b058b461ca40dae3a28bb4bf4f501614c36d3d))
+* **observability:** add an OpenTelemetry tracing example to the monitoring domain ([#938](https://github.com/inference-gateway/inference-gateway/issues/938)) ([d145448](https://github.com/inference-gateway/inference-gateway/commit/d145448f21df62f7e1ea22c8bfa0c54ad5472617))
+* replace deprecated or unknown model ids in README and example snippets ([#937](https://github.com/inference-gateway/inference-gateway/issues/937)) ([0145e56](https://github.com/inference-gateway/inference-gateway/commit/0145e562e8819c8eda9602edb94276cbc86e2dc3))
+
+### 🔧 Miscellaneous
+
+* **deps:** align CI markdownlint-cli pin with Flox (0.49.1 -> 0.50.0) ([#922](https://github.com/inference-gateway/inference-gateway/issues/922)) ([b503931](https://github.com/inference-gateway/inference-gateway/commit/b50393199aa5d47c90b7b9b6ff2a3bba09f7f7e5))
+
+### ✅ Miscellaneous
+
+* **api:** use typestest message helpers in vision filter test ([#925](https://github.com/inference-gateway/inference-gateway/issues/925)) ([cc534b9](https://github.com/inference-gateway/inference-gateway/commit/cc534b98a3c1e1958d7eb36c1095244ddf569f32))
+
 ## [0.67.1](https://github.com/inference-gateway/inference-gateway/compare/v0.67.0...v0.67.1) (2026-11-16)
 
 ### ♻️ Improvements
