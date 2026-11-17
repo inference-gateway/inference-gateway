@@ -29,7 +29,7 @@ and a model name - the gateways, the MCP server and the requests are unchanged:
 ```bash
 cp .env.example .env   # then set GROQ_API_KEY=<your key>
 task up
-task test MODEL=groq/llama-3.3-70b-versatile   # task <case> MODEL=... for one case
+task test MODEL=groq/openai/gpt-oss-120b   # task <case> MODEL=... for one case
 ```
 
 Pick a model that supports tool calling, or every case answers in plain text.

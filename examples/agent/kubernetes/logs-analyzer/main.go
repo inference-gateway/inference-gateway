@@ -129,7 +129,7 @@ func main() {
 							// Log the request
 							requestJSON, _ := json.MarshalIndent(map[string]any{
 								"provider": sdk.Groq,
-								"model":    "llama-3.3-70b-versatile",
+								"model":    "openai/gpt-oss-120b",
 								"messages": messages,
 							}, "", "  ")
 							log.Printf("Sending request to inference gateway for %s/%s:\n%s",
@@ -139,7 +139,7 @@ func main() {
 							response, err := apiClient.GenerateContent(
 								ctx,
 								sdk.Groq,
-								"llama-3.3-70b-versatile",
+								"openai/gpt-oss-120b",
 								messages,
 							)
 

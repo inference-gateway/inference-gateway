@@ -26,7 +26,7 @@ models:
     strategy: round_robin # only strategy in Phase 1; omit to default to round_robin
     deployments:
       - provider: groq
-        model: llama-3.3-70b-versatile
+        model: openai/gpt-oss-120b
       - provider: openai
         model: gpt-4o-mini
   cheap-chat:
@@ -34,4 +34,4 @@ models:
       - provider: openai
         model: gpt-4o-mini
       - provider: groq
-        model: llama-3.1-8b-instant
+        model: openai/gpt-oss-20b

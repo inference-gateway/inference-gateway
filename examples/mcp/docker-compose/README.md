@@ -87,7 +87,7 @@ Once the services are running, you can make requests to the Inference Gateway us
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/llama-3.1-8b-instant",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {
       "role": "system",
@@ -107,7 +107,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-  "model": "groq/llama-3.1-8b-instant",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {
       "role": "system",
@@ -126,7 +126,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/llama-3.1-8b-instant",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {
       "role": "system",
@@ -144,7 +144,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/llama-3.1-8b-instant",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {
       "role": "system",
@@ -163,7 +163,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/llama-3.1-8b-instant",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {
       "role": "system",
@@ -183,7 +183,7 @@ Notice the file was created in filesystem-data directory.
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/llama-3.1-8b-instant",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {
       "role": "system",
@@ -201,7 +201,7 @@ curl -X POST http://localhost:8080/v1/chat/completions -d '{
 
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions -d '{
-  "model": "groq/llama-3.1-8b-instant",
+  "model": "groq/openai/gpt-oss-120b",
   "messages": [
     {
       "role": "system",

@@ -64,7 +64,7 @@ reported in two response headers - first
 
 ```text
 X-Selected-Provider: groq
-X-Selected-Model: llama-3.3-70b-versatile
+X-Selected-Model: openai/gpt-oss-120b
 ```
 
 then
