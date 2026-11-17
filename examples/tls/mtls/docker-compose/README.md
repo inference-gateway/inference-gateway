@@ -11,7 +11,8 @@ presents one to a provider that demands it.
   TLS. The gateway reaches it with `CLIENT_TLS_CA_PATH` plus
   `CLIENT_TLS_CERT_PATH`/`CLIENT_TLS_KEY_PATH`.
 
-The gateway is built from this checkout, since mutual TLS is newer than the published image.
+The gateway is built from this checkout - a choice, not a requirement: the published image
+(`ghcr.io/inference-gateway/inference-gateway:latest`) has served mutual TLS since `v0.61.0`.
 
 ## Prerequisites
 
