@@ -28,7 +28,7 @@ This example demonstrates an agent-based deployment pattern with the Inference G
   the gateway (Groq) to analyze them. It has its own ServiceAccount and ClusterRole.
 - **Test Deployment**: A deliberately failing deployment for the agent to find.
 
-> The operator only needs the Gateway API CRDs installed so its controller can start; this example does not
+> The operator only needs the Gateway API CRDs installed so its controller can start - this example does not
 > deploy Envoy Gateway because the gateway is not exposed externally.
 
 ## Prerequisites

@@ -300,7 +300,7 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 // clientToolCalls returns the calls to tools the client declared itself. The
 // client executes those, so the loop hands them back instead of running them.
 // ponytail: in a turn that mixes client and MCP calls the MCP calls are dropped
-// unexecuted, since the client could not answer them; the model asks again.
+// unexecuted, since the client could not answer them - the model asks again.
 func (a *Agent) clientToolCalls(declared *[]types.ChatCompletionTool, toolCalls []types.ChatCompletionMessageToolCall) []types.ChatCompletionMessageToolCall {
 	if declared == nil {
 		return nil
@@ -445,7 +445,7 @@ func (a *Agent) dispatchTool(ctx context.Context, toolCallID, name, argsJSON str
 
 // ExecuteToolCall counts the call, then runs tool_args, the execute_tool span
 // and tool_output around the MCP request. The agent loop and POST /mcp share
-// it; everything but the MCP request sees the namespaced mcp_<alias>_<tool>.
+// it - everything but the MCP request sees the namespaced mcp_<alias>_<tool>.
 func (a *Agent) ExecuteToolCall(ctx context.Context, name, argsJSON string, args map[string]any) (*CallToolResult, error) {
 	if a.telemetry != nil {
 		a.telemetry.RecordToolCall(ctx, otel.SourceGateway, otel.TeamUnknown, "", "", ToolTypeMCP, name)

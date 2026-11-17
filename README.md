@@ -86,7 +86,7 @@ environment variables (`MCP_ENABLED`) or bypassed per-request using headers
 
 **Note**: Vision/multimodal handling is disabled by default. With
 `VISION_ENABLED=true` the gateway strips image content only from requests
-targeting models its models.dev table lists as text-only input;
+targeting models its models.dev table lists as text-only input -
 models the table does not cover pass images through untouched. With it
 disabled, image content is forwarded to the provider untouched.
 
@@ -161,11 +161,11 @@ For streaming the tokens simply add to the request body `stream: true`.
 | `GET /health`                                   | Liveness probe, no authentication required                                                                                                                                                                                                                                                                                                                           |
 | `GET /v1/models`                                | List models from every configured provider                                                                                                                                                                                                                                                                                                                           |
 | `POST /mcp`                                     | The gateway as an MCP server: one JSON-RPC 2.0 endpoint aggregating every configured MCP server, so a client configures a single entry. Opt-in via `MCP_ENABLED=true` **and** `MCP_EXPOSE=true`, otherwise the endpoint returns 403                                                                                                                                  |
-| `GET /.well-known/oauth-protected-resource/mcp` | OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) for `POST /mcp`, so an MCP client discovers the authorization server on its own. No authentication required; served while `AUTH_ENABLED=true`, `MCP_ENABLED=true` and `MCP_EXPOSE=true`, otherwise 404                                                             |
+| `GET /.well-known/oauth-protected-resource/mcp` | OAuth 2.0 Protected Resource Metadata ([RFC 9728](https://datatracker.ietf.org/doc/html/rfc9728)) for `POST /mcp`, so an MCP client discovers the authorization server on its own. No authentication required - served while `AUTH_ENABLED=true`, `MCP_ENABLED=true` and `MCP_EXPOSE=true`, otherwise 404                                                            |
 | `GET /.well-known/agent-card.json`              | The gateway's own A2A agent card: the skills of every agent in `A2A_AGENTS`, ids prefixed `<alias>_`, and one interface per agent naming the alias as its tenant. No authentication required. Opt-in via `A2A_ENABLED=true`, otherwise 404                                                                                                                           |
 | `POST /a2a`                                     | The gateway as an A2A server: one JSON-RPC 2.0 endpoint relaying each of the eleven A2A methods to the registered agent the request names, through auth, guardrails and telemetry. Opt-in via `A2A_ENABLED=true`, otherwise 404                                                                                                                                      |
 | `GET /a2a/agents`                               | The A2A registry: alias, url, card, reachable and lastSeen of every configured agent. Diagnostic only. Opt-in via `A2A_ENABLED=true`, otherwise 404                                                                                                                                                                                                                  |
-| `GET /.well-known/oauth-protected-resource/a2a` | OAuth 2.0 Protected Resource Metadata for `POST /a2a`, the same document as the `/mcp` one with the resource swapped. No authentication required; served while `AUTH_ENABLED=true` and `A2A_ENABLED=true`, otherwise 404                                                                                                                                             |
+| `GET /.well-known/oauth-protected-resource/a2a` | OAuth 2.0 Protected Resource Metadata for `POST /a2a`, the same document as the `/mcp` one with the resource swapped. No authentication required - served while `AUTH_ENABLED=true` and `A2A_ENABLED=true`, otherwise 404                                                                                                                                            |
 | `POST /v1/chat/completions`                     | OpenAI-compatible chat completions, streaming and tools included - works with every provider                                                                                                                                                                                                                                                                         |
 | `POST /v1/messages`                             | [Anthropic Messages API](https://docs.anthropic.com/en/api/messages) compatibility - the body is relayed byte-for-byte, so `cache_control` and the Anthropic SSE event envelope pass through untouched (Anthropic provider only)                                                                                                                                     |
 | `POST /v1/responses`                            | [OpenAI Responses API](https://platform.openai.com/docs/api-reference/responses) compatibility, relayed byte-for-byte (OpenAI provider only)                                                                                                                                                                                                                         |
@@ -238,8 +238,8 @@ model is synthesized by the gateway itself via llama.cpp's `llama-tts`
 (one-shot, WAV output, supports `reference_audio` voice cloning). With
 `AUDIO_LOCAL_AUTO_DOWNLOAD=true` (default) the binary and GGUF models are
 fetched in the background at startup into the shared `~/.infer` cache
-(`~/.infer/models/tts`, `~/.infer/bin/tools`); the binary is re-downloaded when
-a newer release supersedes it; requests answer `503` with `Retry-After` until
+(`~/.infer/models/tts`, `~/.infer/bin/tools`) - the binary is re-downloaded when
+a newer release supersedes it - requests answer `503` with `Retry-After` until
 assets are ready:
 
 ```bash
@@ -440,7 +440,7 @@ revision: the gateway sends no `initialize` and keeps no session, only
 `tools/list` and `tools/call` requests carrying their protocol version. A
 server that requires a legacy handshake or a session is marked unavailable.
 The official SDKs serve it: TypeScript v2 (`createMcpHandler`), Go v1.7+
-(a stateless Streamable HTTP handler) and Python v2; the
+(a stateless Streamable HTTP handler) and Python v2 - the
 [MCP example](examples/mcp/docker-compose/) has a server on each of the first
 two.
 
@@ -450,7 +450,7 @@ itself into an MCP server at `POST /mcp`, a JSON-RPC 2.0 endpoint speaking MCP
 `initialize` handshake and no session. Both default to `false`, and the
 endpoint returns 403 until both are enabled. An agent client points one MCP entry at the gateway
 and discovers every backend server, with no client config churn when servers
-come and go. The client must support MCP `2026-07-28`; a legacy client gets a
+come and go. The client must support MCP `2026-07-28` - a legacy client gets a
 `400` naming the supported version.
 
 Every request carries its protocol version in `params._meta`, mirrored in the
@@ -466,7 +466,7 @@ curl -X POST http://localhost:8080/mcp \
 ```
 
 `tools/list` returns the tools of the healthy servers and skips unavailable
-ones; a `tools/call` routed to an unavailable server comes back as a JSON-RPC
+ones - a `tools/call` routed to an unavailable server comes back as a JSON-RPC
 error. Authentication applies like it does to every endpoint other than
 `/health`.
 
@@ -486,7 +486,7 @@ curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
 
 The document is served without a token, like `/health`, since a client fetches
 it precisely because it has none yet. `resource` is the request's scheme
-(honouring `X-Forwarded-Proto`) and `Host` with `/mcp` appended; behind an
+(honouring `X-Forwarded-Proto`) and `Host` with `/mcp` appended - behind an
 ingress that rewrites either, set `MCP_RESOURCE_URL` to the canonical public
 URL. When the IdP stamps that resource into the token's `aud` (RFC 8707), list
 the same value in `AUTH_OIDC_AUDIENCE`.
@@ -512,7 +512,7 @@ relays each `POST /a2a` call to the one agent the request names. An A2A client
 configures the gateway as its only agent and gets auth, guardrails and
 telemetry on every delegated call, which talking to an agent directly does not
 give it. An agent that is down is logged, marked unreachable in
-`GET /a2a/agents` and retried; it never prevents startup.
+`GET /a2a/agents` and retried - it never prevents startup.
 
 ```bash
 # alias=url, or a bare url to derive the alias from the host
@@ -553,14 +553,14 @@ curl -X POST http://localhost:8080/a2a \
 ```
 
 A request that names no agent, or an unknown one, answers `-32602` listing the
-configured aliases; a method outside the A2A enum answers `-32601`; an agent
+configured aliases - a method outside the A2A enum answers `-32601` - an agent
 that fails or cannot be reached answers `-32603` carrying the agent's error
-text; a guardrails block answers `403` with the same `-32001` envelope `/mcp`
+text - a guardrails block answers `403` with the same `-32001` envelope `/mcp`
 uses, with `pre_call` seeing the message parts and `post_call` the relayed
 result. Authentication covers every A2A route except the card and the RFC 9728
 document, which `401` challenges on `/a2a` point at the way they do on `/mcp`
 (`A2A_RESOURCE_URL` sets the canonical URL behind an ingress). The caller's
-bearer token is never forwarded; per-agent credentials go into the agent URL as
+bearer token is never forwarded - per-agent credentials go into the agent URL as
 basic auth. With `TELEMETRY_ENABLED=true` every relayed call is counted in
 `a2a_requests_total`, labelled `alias`, `method` and `status`, and timed in
 `a2a_request_duration_seconds`, labelled `alias` and `method`.
@@ -568,7 +568,7 @@ basic auth. With `TELEMETRY_ENABLED=true` every relayed call is counted in
 The gateway stays a stateless proxy: no tasks, messages or events are stored,
 no agent is injected as a tool into `/v1/chat/completions`, and no request is
 routed by intent. Operators discover agents and hand them to the gateway
-through `A2A_AGENTS`; the gateway never talks to Kubernetes itself.
+through `A2A_AGENTS` - the gateway never talks to Kubernetes itself.
 
 > **Learn more**:
 > [A2A Protocol](https://a2a-protocol.org/) |
@@ -605,7 +605,7 @@ export TELEMETRY_TRACING_OTLP_ENDPOINT=http://localhost:4318
 ```
 
 Every request except `/health` and `/v1/metrics` opens an `inference-gateway` server
-span, annotated with `gen_ai.provider.name` and `gen_ai.request.model`; MCP tool calls
+span, annotated with `gen_ai.provider.name` and `gen_ai.request.model` - MCP tool calls
 run inside an `execute_tool <name>` span, and the W3C trace context is propagated to
 MCP servers and A2A agents so their spans nest under the gateway's. See the
 [monitoring example](examples/monitoring/docker-compose/README.md#-tracing) for a
@@ -618,24 +618,24 @@ Every `gen_ai_*` and `inference_gateway_*` series carries a `source` label: `gat
 gateway-observed traffic, or a client-supplied value (e.g. `claude-code-subscription`) for pushed
 metrics. The `a2a_*` series carry only their own labels, listed below.
 
-| Metric                                                | Type      | Description                                                             |
-| ----------------------------------------------------- | --------- | ----------------------------------------------------------------------- |
-| `gen_ai_client_token_usage`                           | Histogram | Token usage; `gen_ai_token_type` is `input` or `output`                 |
-| `gen_ai_server_request_duration_seconds`              | Histogram | End-to-end request duration in seconds; `error_type` set only on errors |
-| `gen_ai_execute_tool_duration_seconds`                | Histogram | Tool execution duration in seconds (fed via the push endpoint)          |
-| `gen_ai_client_operation_duration_seconds`            | Histogram | Client-side operation duration (push-only)                              |
-| `gen_ai_client_operation_time_to_first_chunk_seconds` | Histogram | Time to first chunk (push-only)                                         |
-| `gen_ai_server_time_to_first_token_seconds`           | Histogram | Time to first token (push-only)                                         |
-| `inference_gateway_tool_calls_total`                  | Counter   | Total function/tool calls                                               |
-| `inference_gateway_guardrails_total`                  | Counter   | Number of guardrail evaluations                                         |
-| `a2a_requests_total`                                  | Counter   | A2A calls relayed to agents; `alias`, `method`, `status` (`ok` or code) |
-| `a2a_request_duration_seconds`                        | Histogram | Relayed A2A call duration (streaming: time to open); `alias`, `method`  |
+| Metric                                                | Type      | Description                                                              |
+| ----------------------------------------------------- | --------- | ------------------------------------------------------------------------ |
+| `gen_ai_client_token_usage`                           | Histogram | Token usage - `gen_ai_token_type` is `input` or `output`                 |
+| `gen_ai_server_request_duration_seconds`              | Histogram | End-to-end request duration in seconds - `error_type` set only on errors |
+| `gen_ai_execute_tool_duration_seconds`                | Histogram | Tool execution duration in seconds (fed via the push endpoint)           |
+| `gen_ai_client_operation_duration_seconds`            | Histogram | Client-side operation duration (push-only)                               |
+| `gen_ai_client_operation_time_to_first_chunk_seconds` | Histogram | Time to first chunk (push-only)                                          |
+| `gen_ai_server_time_to_first_token_seconds`           | Histogram | Time to first token (push-only)                                          |
+| `inference_gateway_tool_calls_total`                  | Counter   | Total function/tool calls                                                |
+| `inference_gateway_guardrails_total`                  | Counter   | Number of guardrail evaluations                                          |
+| `a2a_requests_total`                                  | Counter   | A2A calls relayed to agents - `alias`, `method`, `status` (`ok` or code) |
+| `a2a_request_duration_seconds`                        | Histogram | Relayed A2A call duration (streaming: time to open) - `alias`, `method`  |
 
-**Common labels** (`gen_ai_*` and `inference_gateway_*` series): `gen_ai_provider_name`, `gen_ai_request_model`, `source`, `team`;
-tool metrics add `gen_ai_tool_type` and `gen_ai_tool_name`; token usage adds `gen_ai_token_type`;
+**Common labels** (`gen_ai_*` and `inference_gateway_*` series): `gen_ai_provider_name`, `gen_ai_request_model`, `source`, `team` -
+tool metrics add `gen_ai_tool_type` and `gen_ai_tool_name` - token usage adds `gen_ai_token_type` -
 `error_type` (HTTP status string) is present only on errors. `gen_ai_operation_name` is set on the
 token usage and request duration metrics, but not on `inference_gateway_tool_calls_total` or
-`inference_gateway_guardrails_total`. Gateway-recorded series use `team="unknown"`; pushed series
+`inference_gateway_guardrails_total`. Gateway-recorded series use `team="unknown"` - pushed series
 take the client-supplied `team` attribute.
 
 `inference_gateway_guardrails_total` carries `guardrail_phase`, `guardrail_action`, `guardrail_path`,
@@ -665,7 +665,7 @@ topk(10, sum(increase(inference_gateway_tool_calls_total[1h])) by (gen_ai_tool_n
 Clients such as the infer CLI can push their own metrics (e.g. token usage from subscription-based sessions)
 to the gateway. Enable the opt-in endpoint with `TELEMETRY_METRICS_PUSH_ENABLED=true` (alongside
 `TELEMETRY_ENABLED=true`, both are required or the endpoint returns 403) and POST OTLP JSON to
-`POST /v1/metrics`; pushed series are exposed on the same Prometheus endpoint with the
+`POST /v1/metrics` - pushed series are exposed on the same Prometheus endpoint with the
 client-supplied `source` and `team` labels.
 See [examples/monitoring](examples/monitoring/docker-compose/README.md) for a full example.
 
@@ -764,7 +764,7 @@ through recognition.
 ## Examples
 
 Examples live grouped by domain - the scenario first, the deployment tool
-inside. Each domain folder has one README and one subfolder per tool; the
+inside. Each domain folder has one README and one subfolder per tool - the
 [index](examples/README.md) links every flavour.
 
 - [Basic](examples/basic/README.md) - the smallest setup, a single provider

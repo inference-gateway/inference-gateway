@@ -13,6 +13,8 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
+const dialKeepAlive = 30 * time.Second
+
 // NewMCPClient creates a new MCP client for the given server specs, as parsed
 // from MCP_SERVERS by ParseServers.
 func NewMCPClient(servers []ServerSpec, logger logger.Logger, cfg config.Config) MCPClientInterface {
@@ -25,7 +27,7 @@ func NewMCPClient(servers []ServerSpec, logger logger.Logger, cfg config.Config)
 			Transport: &http.Transport{
 				DialContext: (&net.Dialer{
 					Timeout:   cfg.MCP.DialTimeout,
-					KeepAlive: 30 * time.Second,
+					KeepAlive: dialKeepAlive,
 				}).DialContext,
 				TLSHandshakeTimeout:   cfg.MCP.TlsHandshakeTimeout,
 				ResponseHeaderTimeout: cfg.MCP.ResponseHeaderTimeout,
@@ -219,7 +221,7 @@ func (mc *MCPClient) initializeServer(ctx context.Context, server ServerSpec) er
 	return fmt.Errorf("failed to initialize server after %d attempts: %w", maxRetries+1, lastErr)
 }
 
-// rebuildChatCompletionToolsLocked re-aggregates the pre-converted chat completion tools; mc.mu must be held
+// rebuildChatCompletionToolsLocked re-aggregates the pre-converted chat completion tools - mc.mu must be held
 func (mc *MCPClient) rebuildChatCompletionToolsLocked() {
 	all := make([]types.ChatCompletionTool, 0)
 	for alias, serverTools := range mc.serverTools {

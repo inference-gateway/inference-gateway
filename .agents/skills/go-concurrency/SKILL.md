@@ -17,7 +17,7 @@ A quick-reference for writing and reviewing concurrent Go. Reach for the table
 that fits the problem, copy the nearest pattern, then check it against the
 gotchas. Verify everything with `go test -race`.
 
-> Don't communicate by sharing memory; share memory by communicating.
+> Don't communicate by sharing memory - share memory by communicating.
 > Use **channels** to pass ownership of data, distribute work, and signal.
 > Use a **mutex** for in-place shared state (caches, counters, registries).
 
@@ -30,7 +30,7 @@ gotchas. Verify everything with `go test -race`.
 | Wait for N goroutines to finish | `sync.WaitGroup` |
 | Run exactly once (lazy init) | `sync.Once` |
 | Reuse expensive allocations, cut GC pressure | `sync.Pool` |
-| Wake goroutines on a condition | `sync.Cond` (rare; a channel is usually clearer) |
+| Wake goroutines on a condition | `sync.Cond` (rare - a channel is usually clearer) |
 | Lock-free counters / flags | `sync/atomic` |
 | Cancellation, deadlines, request-scoped values | `context.Context` |
 
@@ -50,15 +50,15 @@ Behaviour is defined by the operation × the channel's state. Memorize this:
 - **Unbuffered** (`make(chan T)`): send and receive rendezvous - each blocks
   until the other is ready. This *is* the synchronization.
 - **Buffered** (`make(chan T, n)`): send blocks only when full, receive only
-  when empty. A buffer decouples timing; it does not remove backpressure.
+  when empty. A buffer decouples timing - it does not remove backpressure.
 - **Ownership rule:** exactly one goroutine owns a channel - it creates, writes,
   and `close`s it, then hands consumers a receive-only `<-chan T`. This makes the
   panics above structurally impossible. Receivers never close.
-- `range c` reads until the channel is closed; `v, ok := <-c` detects closure.
+- `range c` reads until the channel is closed - `v, ok := <-c` detects closure.
 
 ## `select` idioms
 
-`select` blocks until one case is ready; if several are ready it picks one
+`select` blocks until one case is ready - if several are ready it picks one
 **pseudo-randomly** (so no case can starve another). `nil` channels are never
 ready - set a channel to `nil` to disable its case.
 
@@ -100,7 +100,7 @@ case <-done:
 - **Send on closed channel / double close:** panics. Follows from the ownership
   rule - one owner closes, once.
 - **Loop-variable capture:** pre-Go 1.22, `for _, v := range xs { go f(v) }`
-  shared one `v`; pass it as an argument. Go 1.22+ gives each iteration its own
+  shared one `v` - pass it as an argument. Go 1.22+ gives each iteration its own
   copy. Know which Go you target.
 - **Livelock / starvation:** goroutines run but make no progress (livelock), or a
   greedy lock-holder keeps others from ever running (starvation). Usually a sign
@@ -111,7 +111,7 @@ case <-done:
 Short, copy-ready skeletons. They use `any` (= `interface{}`) and assume Go 1.22+
 loop semantics.
 
-**Done-channel cancellation** - pass a read-only `done`; close it once to stop
+**Done-channel cancellation** - pass a read-only `done` - close it once to stop
 all listeners. Send results *under* the `done` guard so a cancelled consumer
 can't wedge the producer.
 
@@ -182,7 +182,7 @@ for n := range sq(sq(gen(2, 3))) { // 16, 81
 ```
 
 **Or-done** - range over a channel without leaking when you might quit early.
-Wrap the channel; the loop body stays clean.
+Wrap the channel - the loop body stays clean.
 
 ```go
 func orDone(done, c <-chan any) <-chan any {
@@ -258,10 +258,10 @@ take the first reply, cancel the rest).
 Go multiplexes goroutines onto OS threads with an **M:N work-stealing**
 scheduler: **G** = goroutine, **M** = OS thread, **P** = processor (a run
 context). `GOMAXPROCS` (default `runtime.NumCPU()`) caps how many Ps run Go code
-at once; an idle P steals goroutines from a busy P's queue. Goroutines are cheap
+at once - an idle P steals goroutines from a busy P's queue. Goroutines are cheap
 - ~2 KB initial stacks that grow on demand and nanosecond-scale switches - so
 thousands are fine where threads would not be. You rarely manage any of this
-directly; you make goroutines *cancellable* and let the runtime schedule them.
+directly - you make goroutines *cancellable* and let the runtime schedule them.
 None of it makes a racy program correct - run `-race`.
 
 ---

@@ -1,5 +1,3 @@
-// Package music translates a gateway music request into the shape a
-// provider's music API takes, ElevenLabs today.
 package music
 
 import (
@@ -22,7 +20,7 @@ type musicBody struct {
 
 // Music rewrites a gateway CreateMusicRequest into the ElevenLabs music
 // shape. model is the request model with the provider prefix already
-// stripped; the response_format becomes an output_format query parameter.
+// stripped - the response_format becomes an output_format query parameter.
 func Music(model string, req types.CreateMusicRequest) (string, []byte, error) {
 	if strings.TrimSpace(req.Prompt) == "" {
 		return "", nil, fmt.Errorf("the 'prompt' field is required")

@@ -1,7 +1,3 @@
-// Command calculator-server is an MCP server built on the official Go SDK
-// (github.com/modelcontextprotocol/go-sdk). Its stateless Streamable HTTP
-// handler speaks MCP 2026-07-28, the revision the gateway uses upstream, and
-// still answers 2025-era clients.
 package main
 
 import (
@@ -49,6 +45,8 @@ func calculate(_ context.Context, _ *mcp.CallToolRequest, in calculateInput) (*m
 	}
 }
 
+// main serves an MCP calculator over the official Go SDK's stateless Streamable HTTP
+// handler, which speaks MCP 2026-07-28 (only served statelessly) and 2025-era clients.
 func main() {
 	server := mcp.NewServer(&mcp.Implementation{Name: "calculator", Version: "1.0.0"}, nil)
 	mcp.AddTool(server, &mcp.Tool{
@@ -56,7 +54,6 @@ func main() {
 		Description: "Add, subtract, multiply or divide two numbers",
 	}, calculate)
 
-	// 2026-07-28 requests are only served in stateless mode.
 	handler := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return server },
 		&mcp.StreamableHTTPOptions{Stateless: true})
 

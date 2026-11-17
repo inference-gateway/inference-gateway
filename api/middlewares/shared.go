@@ -75,7 +75,7 @@ func A2AEnabled(a2a *config.A2AConfig) bool {
 }
 
 // MCPResourceURL is the canonical public URL of POST /mcp, published as the
-// resource of the RFC 9728 metadata document. MCP_RESOURCE_URL wins; without
+// resource of the RFC 9728 metadata document. MCP_RESOURCE_URL wins - without
 // it the URL is derived from the request, which is only right when nothing
 // between the client and the gateway rewrites the scheme or the host.
 func MCPResourceURL(mcp *config.MCPConfig, r *http.Request) string {

@@ -94,7 +94,7 @@ func NewSelector(cfg *PoolsConfig) (*Selector, error) {
 // Select returns the next deployment for a logical alias in round-robin order.
 // ok is false when alias is not a routed model, so callers fall back to the
 // existing direct provider/model routing unchanged. Round-robin state is per
-// Selector (per replica), not globally coordinated; a shared-store
+// Selector (per replica), not globally coordinated - a shared-store
 // implementation is deferred to a later phase (#397).
 func (s *Selector) Select(alias string) (deployment Deployment, ok bool) {
 	p, found := s.pools[alias]

@@ -286,7 +286,7 @@ Client configuration, e.g. for opencode (the client must support MCP
 }
 ```
 
-The client keeps its own local tools (bash, read, edit) executing client-side;
+The client keeps its own local tools (bash, read, edit) executing client-side -
 only the gateway's tools travel over `/mcp`. When `AUTH_ENABLED=true`, send the
 bearer token the same way as for every other endpoint.
 
@@ -304,7 +304,7 @@ curl http://localhost:8080/.well-known/oauth-protected-resource/mcp
 ```
 
 Behind an ingress that rewrites the scheme or host, set `MCP_RESOURCE_URL` to
-the canonical public `/mcp` URL clients use; otherwise the document derives it
+the canonical public `/mcp` URL clients use - otherwise the document derives it
 from the request.
 
 ## How It Works
@@ -314,7 +314,7 @@ When you send a request to the Inference Gateway, it will:
 1. Discover the tools available from all five MCP servers (time, search,
    filesystem, pizza and calculator)
 2. Inject the MCP tools into the LLM request - by default only the two
-   meta-tools `mcp_tools_get` and `mcp_tools_execute`; with
+   meta-tools `mcp_tools_get` and `mcp_tools_execute` - with
    `MCP_TOOL_MODE=direct` every tool schema is injected instead
 3. Process any tool calls made by the LLM
 4. Return the complete response with tool results
@@ -412,14 +412,14 @@ Environment variables you can configure:
 
 - `MCP_ENABLED`: Set to "true" to enable MCP middleware
 - `MCP_EXPOSE`: Set to "true" to expose the gateway's single MCP JSON-RPC
-  endpoint `POST /mcp`; it answers `403` unless `MCP_ENABLED=true` as well
+  endpoint `POST /mcp` - it answers `403` unless `MCP_ENABLED=true` as well
 - `MCP_SERVERS`: Comma-separated list of MCP servers as `alias=url` or `url`
 - `MCP_TOOL_MODE`: How MCP tools are exposed to the model. `selector`
   (default) injects only the meta-tools `mcp_tools_get` and
-  `mcp_tools_execute`; `direct` injects every tool schema into each chat
+  `mcp_tools_execute` - `direct` injects every tool schema into each chat
   completion
 - `MCP_INCLUDE_TOOLS`: Comma-separated allowlist of tool names to make
-  available. When set, only these tools are available; if empty, all tools
+  available. When set, only these tools are available - if empty, all tools
   are available
 - `MCP_EXCLUDE_TOOLS`: Comma-separated denylist of tool names to hide. Takes
   lower precedence than `MCP_INCLUDE_TOOLS`
@@ -428,7 +428,7 @@ Environment variables you can configure:
 
 By default (`MCP_TOOL_MODE=selector`) the gateway injects only the two
 meta-tools `mcp_tools_get` and `mcp_tools_execute` into each chat completion
-request; with `MCP_TOOL_MODE=direct` every tool schema is injected instead.
+request - with `MCP_TOOL_MODE=direct` every tool schema is injected instead.
 Either way you can restrict which tools are available with an allowlist or a
 denylist:
 

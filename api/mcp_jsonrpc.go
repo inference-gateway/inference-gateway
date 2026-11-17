@@ -56,7 +56,7 @@ const (
 // MCPJSONRPCHandler serves POST /mcp: the JSON-RPC 2.0 surface that exposes
 // every configured MCP server's tools through the gateway, so a client
 // configures one entry and gets the whole fleet. Gated by MCP_ENABLED and
-// MCP_EXPOSE; gateway auth applies like it does to every route but /health.
+// MCP_EXPOSE - gateway auth applies like it does to every route but /health.
 func (router *RouterImpl) MCPJSONRPCHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.cfg.MCP.Enabled || !router.cfg.MCP.Expose {
 		router.logger.Error("mcp endpoint access attempted but not exposed", nil)
@@ -125,7 +125,7 @@ func (router *RouterImpl) MCPJSONRPCHandler(w http.ResponseWriter, r *http.Reque
 // MCPProtectedResourceMetadataHandler serves the OAuth 2.0 Protected Resource
 // Metadata (RFC 9728) for POST /mcp, which MCP 2026-07-28 requires a protected
 // MCP server to publish so a client holding only the endpoint URL can find the
-// authorization server. Auth skips this route; without an authorization server
+// authorization server. Auth skips this route - without an authorization server
 // to name, or with /mcp not exposed, there is nothing to serve and it is a 404.
 func (router *RouterImpl) MCPProtectedResourceMetadataHandler(w http.ResponseWriter, r *http.Request) {
 	auth := router.cfg.Auth
@@ -141,12 +141,10 @@ func (router *RouterImpl) MCPProtectedResourceMetadataHandler(w http.ResponseWri
 	})
 }
 
-// validateMCPRequest enforces the 2026-07-28 request metadata: the protocol
-// version in params._meta, mirrored into MCP-Protocol-Version, plus the method
-// and, for tools/call, the tool name mirrored into Mcp-Method and Mcp-Name. A
-// legacy client opening with initialize sends none of these and is told which
-// version the gateway speaks.
-// ponytail: Mcp-Param-* headers are not validated; add it once an upstream
+// validateMCPRequest enforces the 2026-07-28 request metadata mirrored into
+// MCP-Protocol-Version, Mcp-Method and (for tools/call) Mcp-Name. A legacy client
+// opening with initialize sends none of these and is told the supported version.
+// ponytail: Mcp-Param-* headers are not validated - add it once an upstream
 // tool declares x-mcp-header in its inputSchema.
 func validateMCPRequest(header http.Header, req *types.MCPJSONRPCRequest) *types.MCPJSONRPCError {
 	for _, name := range []string{mcp.HeaderProtocolVersion, mcp.HeaderMethod, mcp.HeaderName} {
@@ -192,7 +190,7 @@ func headerMismatch(message string) *types.MCPJSONRPCError {
 }
 
 // decodeHeaderValue undoes the =?base64?<value>?= encoding clients use for
-// header values that are not plain ASCII; ok is false when it is malformed.
+// header values that are not plain ASCII - ok is false when it is malformed.
 func decodeHeaderValue(value string) (string, bool) {
 	encoded, found := strings.CutPrefix(value, base64HeaderPrefix)
 	if !found {
@@ -271,7 +269,8 @@ func (router *RouterImpl) mcpToolsList() mcp.ListToolsResult {
 
 // mcpToolsCall hands an advertised, allowed tool to the agent, which runs the
 // same guardrails, span and counter as the chat-completions loop. Unknown names
-// never reach it, and upstream failures come back as JSON-RPC errors.
+// never reach it, and upstream failures come back as JSON-RPC errors whose
+// details stay in the log because they can name internal hosts.
 func (router *RouterImpl) mcpToolsCall(w http.ResponseWriter, r *http.Request, req *types.MCPJSONRPCRequest) {
 	if router.mcpClient == nil || !router.mcpClient.IsInitialized() || router.mcpAgent == nil {
 		router.logger.Error("mcp tools/call with no usable mcp client", nil)
@@ -291,10 +290,7 @@ func (router *RouterImpl) mcpToolsCall(w http.ResponseWriter, r *http.Request, r
 		router.respondMCPError(w, req, jsonRPCInvalidParams, "unknown tool: "+name)
 		return
 	}
-	// ResolveTool falls back to the longest matching alias for a name it never
-	// discovered; /mcp only serves the tools tools/list advertised.
-	serverTools, _ := router.mcpClient.GetServerTools(alias)
-	if !slices.ContainsFunc(serverTools, func(tool mcp.Tool) bool { return tool.Name == toolName }) {
+	if !router.serverListsTool(alias, toolName) {
 		router.logger.Error("mcp tool call for a tool the server never listed", nil, "tool", name, "server", alias)
 		router.respondMCPError(w, req, jsonRPCInvalidParams, "unknown tool: "+name)
 		return
@@ -329,7 +325,6 @@ func (router *RouterImpl) mcpToolsCall(w http.ResponseWriter, r *http.Request, r
 			router.respondMCPError(w, req, middlewares.JSONRPCGuardrailBlocked, blocked.Message)
 			return
 		}
-		// The upstream error can name internal hosts, so it stays in the log.
 		router.logger.Error("mcp tool call failed", err, "tool", toolName, "server", alias)
 		router.respondMCPError(w, req, jsonRPCInternalError, "mcp server "+alias+" failed")
 		return
@@ -340,6 +335,14 @@ func (router *RouterImpl) mcpToolsCall(w http.ResponseWriter, r *http.Request, r
 	}
 
 	router.respondMCPResult(w, req, result)
+}
+
+// serverListsTool reports whether alias advertised toolName. ResolveTool falls back
+// to the longest matching alias for names it never discovered, but /mcp only serves
+// the tools tools/list advertised.
+func (router *RouterImpl) serverListsTool(alias, toolName string) bool {
+	serverTools, _ := router.mcpClient.GetServerTools(alias)
+	return slices.ContainsFunc(serverTools, func(tool mcp.Tool) bool { return tool.Name == toolName })
 }
 
 // respondMCPResult writes a JSON-RPC success envelope around an MCP result,

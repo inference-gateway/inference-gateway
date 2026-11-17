@@ -22,7 +22,7 @@ type Spec struct {
 
 // Parse reads a comma-separated list of "alias=url" or bare "url" entries, the
 // grammar shared by MCP_SERVERS and A2A_AGENTS. A missing alias is derived from
-// the URL host. Aliases must match AliasPattern and be unique; kind names the
+// the URL host. Aliases must match AliasPattern and be unique - kind names the
 // upstream in error messages, e.g. "mcp server".
 func Parse(raw, kind string) ([]Spec, error) {
 	specs := make([]Spec, 0)
@@ -60,7 +60,7 @@ func Parse(raw, kind string) ([]Spec, error) {
 }
 
 // splitEntry splits an "alias=url" entry. A bare URL is returned with an empty
-// alias; the alias part never contains ':' or '/', which is what keeps a URL
+// alias - the alias part never contains ':' or '/', which is what keeps a URL
 // with '=' in its query string from being mistaken for an alias.
 func splitEntry(entry string) (alias, rawURL string) {
 	name, rest, ok := strings.Cut(entry, "=")
@@ -84,7 +84,7 @@ func Redact(raw string) string {
 	return strings.Join(entries, ",")
 }
 
-// RedactURL hides any basic-auth password before a URL is logged or served; an
+// RedactURL hides any basic-auth password before a URL is logged or served - an
 // unparseable URL is dropped entirely rather than echoed.
 func RedactURL(rawURL string) string {
 	parsed, err := url.Parse(rawURL)

@@ -13,7 +13,7 @@ import (
 
 // parseBoundedMultipart parses the request's multipart/form-data body within the
 // configured max request body size and returns the form. It writes the client
-// response and reports false when the body is too large or malformed; the caller
+// response and reports false when the body is too large or malformed - the caller
 // still owns removing the form's temp files.
 func (router *RouterImpl) parseBoundedMultipart(w http.ResponseWriter, r *http.Request) (*multipart.Form, bool) {
 	maxBodySize := router.cfg.Server.ResolveMaxRequestBodySize()
@@ -31,12 +31,10 @@ func (router *RouterImpl) parseBoundedMultipart(w http.ResponseWriter, r *http.R
 	return r.MultipartForm, true
 }
 
-// writeMultipartForm re-encodes a parsed multipart form onto mw, copying
-// each uploaded file straight through (preserving an explicit Content-Type,
-// sniffing a missing or octet-stream one) so the
-// payload streams to the upstream without a second full in-memory copy. It
-// runs in its own goroutine writing to the io.Pipe. Shared by the Images and
-// Videos multipart endpoints.
+// writeMultipartForm re-encodes a parsed multipart form onto mw for the Images and
+// Videos endpoints, copying each file straight through so the payload streams
+// upstream without a second in-memory copy. An explicit Content-Type is kept and a
+// missing or octet-stream one is sniffed. It runs in its own goroutine on the io.Pipe.
 func writeMultipartForm(mw *multipart.Writer, form *multipart.Form) error {
 	for field, values := range form.Value {
 		for _, v := range values {
@@ -65,7 +63,7 @@ const (
 // copyFormFile copies one uploaded file into mw. A part without a type or
 // typed application/octet-stream (what Go's multipart.CreateFormFile and many
 // clients send) is labelled from its leading bytes, because providers such as
-// OpenAI's /images/edits reject octet-stream uploads; an explicit type is kept.
+// OpenAI's /images/edits reject octet-stream uploads - an explicit type is kept.
 func copyFormFile(mw *multipart.Writer, field string, fh *multipart.FileHeader) error {
 	body, contentType, file, err := openFormFile(fh)
 	if err != nil {
@@ -125,6 +123,6 @@ const (
 	formFieldVideo = "video"
 
 	// multipartMaxMemory caps how much of a multipart upload is kept in
-	// memory; parts above it spill to temp files instead.
+	// memory - parts above it spill to temp files instead.
 	multipartMaxMemory = 1 << 20
 )

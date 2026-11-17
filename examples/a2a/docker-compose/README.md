@@ -2,7 +2,7 @@
 
 This example runs the Inference Gateway as an A2A server in front of two
 instances of the [mock agent](https://github.com/inference-gateway/mock-agent),
-registered as `mock` and `mock-b`. An A2A client talks to the gateway only; the
+registered as `mock` and `mock-b`. An A2A client talks to the gateway only - the
 gateway forwards each JSON-RPC call to the agent that owns it and relays the
 answer, so auth, guardrails and telemetry apply to agent traffic the same way
 they apply to inference.
@@ -29,7 +29,7 @@ No API key is needed: the mock agent uses a mock LLM.
 
 Read the merged card and the registry. The card carries both agents' skills,
 `mock_*` and `mock-b_*`, plus one interface per agent with its alias as the
-tenant; the registry lists both:
+tenant - the registry lists both:
 
 ```bash
 curl -s http://localhost:8080/.well-known/agent-card.json | jq '{skills: [.skills[].id], interfaces: .supportedInterfaces}'
@@ -59,7 +59,7 @@ curl -s -X POST http://localhost:8080/a2a \
 ```
 
 The task id comes back as `mock:<task id>`. Poll it the way you would poll the
-agent directly; the prefix is all the gateway needs to route the call:
+agent directly - the prefix is all the gateway needs to route the call:
 
 ```bash
 curl -s -X POST http://localhost:8080/a2a \
@@ -104,7 +104,7 @@ curl -s -X POST http://localhost:8080/a2a \
 
 A call whose hints disagree, e.g. `tenant: "mock-b"` with a `mock:` task id,
 is rejected with `-32602` too. Send the same message with `"tenant": "mock-b"` and the task id comes back
-as `mock-b:<task id>`; follow-up calls route on that prefix alone.
+as `mock-b:<task id>` - follow-up calls route on that prefix alone.
 
 `ListTasks` is the one method that may name no agent: it fans out to every
 registered agent and merges the pages, so both agents' tasks come back with
@@ -192,7 +192,7 @@ curl -s -X POST http://localhost:8080/a2a \
 ```
 
 `resource` defaults to the request scheme (honouring `X-Forwarded-Proto`) and
-`Host`; behind an ingress that rewrites either, set `A2A_RESOURCE_URL` to the
+`Host` - behind an ingress that rewrites either, set `A2A_RESOURCE_URL` to the
 canonical public `/a2a` URL - it is published on the agent card, in the
 challenge and in the metadata document, and if the IdP stamps that resource
 into `aud` ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), list
@@ -223,7 +223,7 @@ Calls that name `mock` still relay, and non-streaming ones additionally pass
 `post_call` with the JSON-RPC result as `input.request.body` - only the two
 streaming methods skip it. The four actions, the `tool_args` / `tool_output`
 phases and the external guardrail service are the
-[guardrails example's](../../guardrails/docker-compose/README.md) subject; on
+[guardrails example's](../../guardrails/docker-compose/README.md) subject - on
 this route a block always answers with `HTTP 403` and code `-32001`.
 
 ## Telemetry (opt-in)
@@ -246,7 +246,7 @@ curl -s http://localhost:9464/metrics | grep '^a2a_'
   `method` and `status` (`ok`, or the JSON-RPC error code the client got, e.g.
   `-32602` for a call that names no agent)
 - `a2a_request_duration_seconds` - the duration histogram of the same calls,
-  labelled `alias` and `method`; for a streaming call it measures the time to
+  labelled `alias` and `method` - for a streaming call it measures the time to
   open the stream
 
 A guardrails block never appears here: the middleware refuses the call before
@@ -268,5 +268,5 @@ docker run --rm -it --network host ghcr.io/inference-gateway/a2a-debugger:latest
 
 Add `alias=url` entries to `A2A_AGENTS`, comma separated. Without `alias=` the
 alias is derived from the URL host. Per-agent credentials go into the URL as
-basic auth (`alias=https://user:pass@agent.example.com`); the caller's bearer
+basic auth (`alias=https://user:pass@agent.example.com`) - the caller's bearer
 token is never forwarded to agents.

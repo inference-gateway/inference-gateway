@@ -91,10 +91,9 @@ func (router *RouterImpl) relayMireloAudio(w http.ResponseWriter, r *http.Reques
 	router.relaySFXJob(w, r, provider, req, sfx.OutputMix)
 }
 
-// relaySFXJob turns Mirelo's asynchronous job into the raw audio bytes
-// /v1/audio/sfx answers with: it creates the job, long-polls it to a final
-// state and streams the wanted track of it. A create refused because the
-// uploaded asset is still settling is retried within the same budget.
+// relaySFXJob creates a Mirelo job, long-polls it and streams the wanted track as
+// the raw audio /v1/audio/sfx answers with, retrying a create refused while the
+// uploaded asset settles.
 // shortcut: no sleep between polls, it relies on Mirelo holding ?wait= open - add a Retry-After sleep if it ever answers early.
 // shortcut: a poll failure is terminal and the client re-requests - add in-budget retries only if transient poll failures show up in practice.
 func (router *RouterImpl) relaySFXJob(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest, output string) {

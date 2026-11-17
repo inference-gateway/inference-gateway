@@ -1,6 +1,3 @@
-// Package images translates an OpenAI image edit into the shape a provider's
-// image API takes, ElevenLabs today, and waits for the render it runs as a
-// job.
 package images
 
 import (

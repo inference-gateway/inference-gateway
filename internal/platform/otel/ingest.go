@@ -32,7 +32,7 @@ var allowedAttributes = map[string]bool{
 }
 
 // IngestMetrics maps a pushed OTLP payload onto the gateway's instruments.
-// Only allowlisted gen_ai.* metrics with delta temporality are accepted;
+// Only allowlisted gen_ai.* metrics with delta temporality are accepted -
 // everything else is counted as rejected and reported via the result.
 func (o *OpenTelemetryImpl) IngestMetrics(ctx context.Context, req *colmetricspb.ExportMetricsServiceRequest) IngestResult {
 	var result IngestResult
@@ -135,7 +135,7 @@ func (o *OpenTelemetryImpl) ingestToolCalls(ctx context.Context, m *metrics.Metr
 
 // replayHistogram approximates a pushed histogram by re-recording bucket
 // midpoints (first bucket at its upper bound, overflow bucket at its lower
-// bound). This preserves _count exactly and _sum approximately; percentile
+// bound). This preserves _count exactly and _sum approximately - percentile
 // distortion is a documented v1 limitation.
 func (o *OpenTelemetryImpl) replayHistogram(ctx context.Context, name string, h *metrics.Histogram, serviceName string, reject func(int, string), result *IngestResult, record func(float64, metric.MeasurementOption)) {
 	if h.GetAggregationTemporality() != metrics.AggregationTemporality_AGGREGATION_TEMPORALITY_DELTA {

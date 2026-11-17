@@ -93,8 +93,8 @@ For detailed development information, see [AGENTS.md](./AGENTS.md).
   - `go fmt ./...` - format Go source files
   - `go vet ./...` - static analysis on Go code
   - `markdownlint` - lint Markdown files
-  - `go generate` - regenerate mocks; fails if generated Go files are stale
-  - `task generate` - runs when `openapi.yaml` or `internal/gen/` changed;
+  - `go generate` - regenerate mocks - fails if generated Go files are stale
+  - `task generate` - runs when `openapi.yaml` or `internal/gen/` changed -
     fails if generated files are not committed
 
 The hook provides fast local feedback before CI runs. To skip it in an
@@ -131,8 +131,8 @@ Go imports are grouped and ordered by the `gci` formatter (configured in
 `.golangci.yml`): standard library, `github.com/stretchr/testify`,
 `tests/mocks`, other third-party packages, `github.com/inference-gateway/*`,
 and finally this module. Run `golangci-lint fmt` locally to fix the import
-blocks; `task lint` checks them. Every non-standard-library import must also be
-named after its last path element (`zap "go.uber.org/zap"`); `importas`
+blocks - `task lint` checks them. Every non-standard-library import must also be
+named after its last path element (`zap "go.uber.org/zap"`) - `importas`
 enforces it and `golangci-lint run --fix` adds the missing names.
 
 Also semantic-release is being used for automated releases, so please ensure

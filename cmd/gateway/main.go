@@ -110,7 +110,6 @@ func main() {
 		return
 	}
 
-	// Initialize logger
 	var appLogger logger.Logger
 	appLogger, err = logger.NewLogger(cfg.Environment)
 	if err != nil {
@@ -118,7 +117,6 @@ func main() {
 		return
 	}
 
-	// Log config in debug mode
 	appLogger.Debug("loaded config", "config", cfg.String())
 
 	if !cfg.Auth.Enabled && !isLoopbackHost(cfg.Server.Host) {
@@ -128,7 +126,6 @@ func main() {
 			"host", cfg.Server.Host)
 	}
 
-	// Initialize OpenTelemetry Prometheus exporter Server
 	var telemetryImpl otel.OpenTelemetry
 	if cfg.Telemetry.Enabled {
 		telemetryImpl = &otel.OpenTelemetryImpl{}
@@ -179,16 +176,13 @@ func main() {
 		}()
 	}
 
-	// Initialize logger middleware
 	loggerMiddleware := middlewares.NewLoggerMiddleware(&appLogger)
 
-	// Initialize telemetry middleware
 	var telemetry *middlewares.TelemetryMiddleware
 	if cfg.Telemetry.Enabled {
 		telemetry = middlewares.NewTelemetryMiddleware(cfg, telemetryImpl, appLogger)
 	}
 
-	// Initialize OIDC authenticator middleware
 	oidcAuthenticator, err := middlewares.NewOIDCAuthenticatorMiddleware(appLogger, cfg)
 	if err != nil {
 		appLogger.Error("failed to initialize oidc authenticator", err)
@@ -203,14 +197,12 @@ func main() {
 	}
 	providerRegistry := registry.NewProviderRegistry(cfg.Providers, appLogger)
 
-	// Log registered providers
 	var providerNames []string
 	for providerID := range cfg.Providers {
 		providerNames = append(providerNames, string(providerID))
 	}
 	appLogger.Info("provider registry initialized", "count", len(providerNames), "providers", strings.Join(providerNames, ", "))
 
-	// Initialize MCP middleware if enabled
 	var mcpClient mcp.MCPClientInterface
 	var mcpAgent *mcp.Agent
 	var mcpMiddleware middlewares.MCPMiddleware
@@ -254,7 +246,6 @@ func main() {
 		}
 	}
 
-	// Initialize the A2A registry if enabled - agents are never fatal at startup.
 	var a2aRegistry *a2a.Registry
 	if cfg.A2A != nil && cfg.A2A.Enabled {
 		agentSpecs, err := a2a.ParseAgents(cfg.A2A.Agents)
@@ -269,7 +260,6 @@ func main() {
 		appLogger.Info("a2a registry initialized", "agents", strings.Join(a2aRegistry.Aliases(), ", "))
 	}
 
-	// Initialize guardrails middleware if enabled
 	var guardrailsMiddleware middlewares.GuardrailsMiddleware
 	if cfg.Guardrails != nil && cfg.Guardrails.Enabled {
 		ctx := context.Background()
@@ -302,7 +292,6 @@ func main() {
 		guardrailsMiddleware = middlewares.NewGuardrailsMiddleware(nil, nil, nil, appLogger, telemetryImpl, cfg)
 	}
 
-	// Build the model routing selector if enabled (opt-in, default off).
 	var selector *routing.Selector
 	if cfg.Routing != nil && cfg.Routing.Enabled {
 		poolsCfg, err := routing.LoadPoolsConfig(cfg.Routing.ConfigPath)

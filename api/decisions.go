@@ -9,13 +9,10 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// DecisionsHandler implements an OpenAI-compatible POST /v1/decisions
-// endpoint: https://developers.openai.com/api/docs/guides/decisions
-//
-// OpenAI bodies are forwarded byte-for-byte (only the `model` prefix is
-// stripped). Ollama, Ollama Cloud and llama.cpp go through the System One
-// translation in internal/decisions/systemone. Providers without a decisions
-// endpoint receive a 400. Opt-in via DECISIONS_ENABLED while in preview.
+// DecisionsHandler serves the OpenAI-compatible POST /v1/decisions, opt-in via
+// DECISIONS_ENABLED while in preview. OpenAI bodies are forwarded byte-for-byte,
+// Ollama, Ollama Cloud and llama.cpp go through internal/decisions/systemone,
+// and providers without a decisions endpoint receive a 400.
 func (router *RouterImpl) DecisionsHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.cfg.DecisionsEnabled {
 		router.logger.Error("decisions api not enabled", nil)

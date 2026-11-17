@@ -33,7 +33,7 @@ API, and as an MCP server of its own on `POST /mcp`.
 - **MCP servers**: `MCP` custom resources in [`mcp-servers.yaml`](mcp-servers.yaml). The operator runs each
   image as a Deployment behind a `<name>-service` Service, and the gateway finds them through **service
   discovery** (`spec.mcp.serviceDiscovery`), which picks up every `MCP` resource in its namespace - add a
-  label `selector` to narrow it. Adding a server is one more `MCP` resource; `gateway.yaml` stays as is. The
+  label `selector` to narrow it. Adding a server is one more `MCP` resource - `gateway.yaml` stays as is. The
   gateway speaks MCP `2026-07-28` - stateless, no `initialize`, no session - to all of them.
   - `time` (`:8081`), `search` (`:8082`) and `filesystem` (`:8083`): minimal Go servers built from the
     `*-server/` directories.
@@ -123,7 +123,7 @@ The Inspector connects to `http://inference-gateway:8080/mcp` in the modern prot
 
 - **MCP servers**: add or edit `MCP` resources in `mcp-servers.yaml` (`spec.image`, `spec.server.port`,
   `spec.server.path`, and `spec.server.command` - the operator runs `/mcp-server` otherwise). Service
-  discovery picks them up without touching `gateway.yaml`. A server must speak MCP `2026-07-28`; see
+  discovery picks them up without touching `gateway.yaml`. A server must speak MCP `2026-07-28` - see
   [Requirements for Your MCP Server](../docker-compose/README.md#requirements-for-your-mcp-server).
 - **MCP client timeouts**: configured under `spec.mcp.timeouts` in `gateway.yaml`.
 - **Providers**: API keys are read from the `inference-gateway-secrets` Secret.

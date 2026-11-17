@@ -17,19 +17,10 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// ImagesHandler implements an OpenAI-compatible POST /v1/images/generations
-// endpoint: https://platform.openai.com/docs/api-reference/images/create
-//
-// The request body is forwarded to the upstream provider byte-for-byte (only
-// the `model` field is rewritten when the provider prefix is stripped), so
-// all Images API fields pass through untouched.
-//
-// Only providers that natively implement the Images API are supported
-// (currently OpenAI); other providers receive a 400, mirroring the schema's
-// ImagesNotSupported response.
-//
-// The endpoint is opt-in via IMAGES_ENABLED (default off). When disabled, the
-// handler returns 404.
+// ImagesHandler serves the OpenAI-compatible POST /v1/images/generations, opt-in
+// via IMAGES_ENABLED (404 when off). The body is forwarded byte-for-byte with only
+// the model prefix stripped. Providers without a native Images API receive a 400
+// (ImagesNotSupported).
 func (router *RouterImpl) ImagesHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.cfg.ImagesEnabled {
 		router.logger.Error("images api not enabled", nil)
@@ -73,16 +64,10 @@ func (router *RouterImpl) ImagesEditsHandler(w http.ResponseWriter, r *http.Requ
 	router.handleImagesMultipart(w, r)
 }
 
-// handleImagesMultipart proxies a multipart Images upload to the resolved
-// provider. It parses the form to validate required fields and resolve the
-// provider (via ?provider= or the model prefix), then re-encodes the parts and
-// streams them to the upstream through an io.Pipe so the binary image/mask
-// files are streamed to the upstream without a second full in-memory copy
-// (ParseMultipartForm has already spilled anything over 1 MiB to temp files).
-//
-// Behaviour mirrors ImagesHandler: opt-in via IMAGES_ENABLED (404 when off) and
-// only providers that natively implement the endpoint are supported (others
-// receive a 400).
+// handleImagesMultipart proxies a multipart Images upload to the resolved provider,
+// gated like ImagesHandler. It parses the form to validate fields and resolve the
+// provider, then re-encodes the parts through an io.Pipe so image and mask files
+// reach the upstream without a second in-memory copy.
 func (router *RouterImpl) handleImagesMultipart(w http.ResponseWriter, r *http.Request) {
 	if !router.cfg.ImagesEnabled {
 		router.logger.Error("images api not enabled", nil)

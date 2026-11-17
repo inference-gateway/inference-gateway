@@ -23,7 +23,7 @@ const maxRuntimeLookups = 4
 // resolveContextWindows fills the effective context window for models served by
 // local runtimes (llama.cpp, Ollama). The runtime value overrides any
 // provider-published one because it reflects what the server is actually
-// configured with. A failed or slow lookup leaves the model unchanged; the
+// configured with. A failed or slow lookup leaves the model unchanged - the
 // render step turns still-unresolved windows into explicit nulls.
 func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []types.Model) {
 	byProvider := make(map[types.Provider][]int)
@@ -79,7 +79,7 @@ func (router *RouterImpl) resolveContextWindows(ctx context.Context, models []ty
 }
 
 // fetchLlamacppContextWindow reads the serving configuration from llama.cpp's
-// /props endpoint; default_generation_settings.n_ctx is the effective context
+// /props endpoint - default_generation_settings.n_ctx is the effective context
 // size the server was started with (--ctx-size), which can be smaller than the
 // model's theoretical maximum. Fetchers validate range and return int so call
 // sites never convert untrusted 64-bit values themselves.

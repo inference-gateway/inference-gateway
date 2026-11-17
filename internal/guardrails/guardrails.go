@@ -1,5 +1,3 @@
-// Package guardrails provides OPA/Rego policy evaluation, secret/PII detection,
-// and an external HTTP guardrail client for the inference gateway middleware.
 package guardrails
 
 import (
@@ -58,6 +56,9 @@ const (
 	FailModeOpen   = "open"
 	FailModeClosed = "closed"
 )
+
+// externalResponseMaxSize caps how much of an external guardrail's answer is read.
+const externalResponseMaxSize = 1 << 20
 
 // ---------------------------------------------------------------------------
 // Versioned input / decision documents
@@ -332,7 +333,7 @@ func (e *ExternalClient) Check(ctx context.Context, input *Input) (*Decision, er
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, externalResponseMaxSize))
 	if err != nil {
 		return nil, fmt.Errorf("guardrails: external read: %w", err)
 	}
@@ -361,7 +362,7 @@ func claimsFromContext(ctx context.Context) map[string]any {
 }
 
 // BlockedError reports a tool call a policy refused. Error renders only the
-// client-facing Message; Err, the raw evaluation failure behind a fail-closed
+// client-facing Message - Err, the raw evaluation failure behind a fail-closed
 // block, is logged by EvaluateToolCall and reachable through Unwrap.
 type BlockedError struct {
 	Phase   Phase

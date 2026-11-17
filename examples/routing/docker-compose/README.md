@@ -9,7 +9,7 @@ resolved across a Groq and an OpenAI deployment, rotating per request.
 - `routing.yaml` pool file mounted at `/etc/inference-gateway/routing.yaml`
   (`ROUTING_CONFIG_PATH`)
 
-The pool file defines the aliases; each alias needs at least two deployments to
+The pool file defines the aliases - each alias needs at least two deployments to
 rotate over, and every deployment `provider` must be one the gateway already
 has configured (its API key set the usual way, e.g. `GROQ_API_KEY`).
 
@@ -89,7 +89,7 @@ curl -i -X POST 'http://localhost:8080/v1/chat/completions?provider=openai' \
 ```
 
 Routing applies to `/v1/chat/completions` only, and only when `?provider=` is
-absent; `provider/model` prefixes and un-routed model names behave as always.
+absent - `provider/model` prefixes and un-routed model names behave as always.
 
 ## Additional Resources
 

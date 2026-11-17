@@ -15,7 +15,6 @@ const (
 )
 
 func EnvExample(output string, oas string) error {
-	// Read OpenAPI spec
 	schema, err := openapi.Read(oas)
 	if err != nil {
 		return fmt.Errorf("failed to read OpenAPI spec: %w", err)

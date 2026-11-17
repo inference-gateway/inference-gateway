@@ -1,6 +1,3 @@
-// Package speech translates an OpenAI speech request into the shape a
-// provider's text-to-speech API takes, ElevenLabs today, and speaks it in a
-// voice cloned from a reference sample.
 package speech
 
 import (
@@ -23,7 +20,7 @@ var outputFormats = map[string]string{
 const SupportedFormats = "mp3, opus, pcm"
 
 // OutputFormat maps an OpenAI response_format onto an ElevenLabs
-// output_format. An empty format defaults to mp3; anything ElevenLabs cannot
+// output_format. An empty format defaults to mp3 - anything ElevenLabs cannot
 // produce is an error.
 func OutputFormat(responseFormat string) (string, error) {
 	if responseFormat == "" {
@@ -65,7 +62,7 @@ type voiceSettings struct {
 }
 
 // Speech rewrites an OpenAI CreateSpeechRequest into the ElevenLabs
-// text-to-speech shape. endpoint is the registry's speech endpoint template;
+// text-to-speech shape. endpoint is the registry's speech endpoint template -
 // the returned path has the voice substituted in and the returned query
 // carries output_format. model is the request model with the provider prefix
 // already stripped.

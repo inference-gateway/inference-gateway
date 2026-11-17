@@ -575,7 +575,6 @@ func TestAgent_RunWithStream(t *testing.T) {
 				mockLogger.EXPECT().Debug("stream completed for iteration", "iteration", 1, "has_tool_calls", false).Times(1)
 				mockLogger.EXPECT().Debug("no tool calls found, ending agent loop", "iteration", 1).Times(1)
 				mockLogger.EXPECT().Debug("sending agent completion signal").Times(1)
-				// Allow any additional debug logs
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 				mockLogger.EXPECT().Debug(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
@@ -944,11 +943,9 @@ func TestAgent_RunWithStream(t *testing.T) {
 	}
 }
 
-// TestInitializeAllWithUnreachableServersAndReconnect verifies that when all
-// configured MCP servers are unreachable at startup, InitializeAll returns nil
-// (instead of ErrNoClientsInitialized) as long as EnableReconnect is true. The
-// background reconnection loop is expected to keep retrying so the gateway can
-// continue serving requests without crash-looping.
+// TestInitializeAllWithUnreachableServersAndReconnect verifies that with every MCP
+// server unreachable at startup InitializeAll returns nil, not ErrNoClientsInitialized,
+// while EnableReconnect is true, so the gateway keeps serving instead of crash-looping.
 // Regression test for: https://github.com/inference-gateway/inference-gateway/issues/304
 func TestInitializeAllWithUnreachableServersAndReconnect(t *testing.T) {
 	unreachableURL := reserveUnreachableURL(t)

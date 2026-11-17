@@ -134,7 +134,7 @@ can take a while.
    e.g. with `"model": "llamacpp/Qwen2.5-0.5B-Instruct"`.
 
    > **Note:** `Llamacpp` support requires an operator release `>= v0.19.0`
-   > (schemas `>= v0.6.1`); the Taskfile pins a compatible version.
+   > (schemas `>= v0.6.1`) - the Taskfile pins a compatible version.
 
 ## Configuration
 

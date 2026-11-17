@@ -74,7 +74,7 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 You can configure additional options in the `.env` file:
 
 - `SERVER_PORT` - The port the gateway listens on
-- `ENVIRONMENT` - Runtime environment (`production` or `development`); affects log verbosity
+- `ENVIRONMENT` - Runtime environment (`production` or `development`) - affects log verbosity
 - `TELEMETRY_ENABLED` - Enable/disable telemetry (true/false)
 - `AUTH_ENABLED` - Enable/disable authentication (true/false)
 - `*_API_URL` - Custom API URL for the provider (if needed)

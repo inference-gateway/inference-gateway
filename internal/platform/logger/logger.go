@@ -10,7 +10,7 @@ import (
 
 // EnvironmentDevelopment is the ENVIRONMENT value that switches the logger to
 // human-readable development output. Declared here so platform code does not
-// depend on a domain package; providers/constants holds the same value for
+// depend on a domain package - providers/constants holds the same value for
 // domain callers.
 const EnvironmentDevelopment = "development"
 

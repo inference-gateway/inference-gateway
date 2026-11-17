@@ -104,7 +104,7 @@ main = {"action": "block", "message": "` + preCallBlockedMsg + `"} if {
 `
 )
 
-// jsonRPCTestResponse is the decoded envelope the assertions work against; the
+// jsonRPCTestResponse is the decoded envelope the assertions work against - the
 // handler writes the generated types.MCPJSONRPCResponse.
 type jsonRPCTestResponse struct {
 	Jsonrpc string          `json:"jsonrpc"`
@@ -320,8 +320,7 @@ func TestMCPJSONRPCHandler_RequestMetadata(t *testing.T) {
 			wantStatus: http.StatusBadRequest, wantCode: jsonRPCHeaderMismatch,
 		},
 		{
-			// Passing validation lands in tools/call, which has no client here.
-			name: "tools/call with base64 Mcp-Name passes validation", method: string(types.ToolsCall), params: toolParams, metaVersion: mcp.ProtocolVersion,
+			name: "tools/call with base64 Mcp-Name passes validation into a tools/call without client", method: string(types.ToolsCall), params: toolParams, metaVersion: mcp.ProtocolVersion,
 			header:     map[string]string{mcp.HeaderProtocolVersion: mcp.ProtocolVersion, mcp.HeaderMethod: string(types.ToolsCall), mcp.HeaderName: encodedName},
 			wantStatus: http.StatusOK, wantCode: jsonRPCInternalError,
 		},

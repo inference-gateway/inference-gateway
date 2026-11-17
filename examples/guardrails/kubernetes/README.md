@@ -13,7 +13,7 @@ mounted into the gateway's policy directory. Each `.rego` file must be in `packa
 > operator's `deny`/`allow` values onto the gateway's `GUARDRAILS_FAIL_MODE` (`closed`/`open`).
 > Older releases pass `deny` through untouched, and `closed` is the only value the gateway fails
 > closed on. The gateway itself is configured through the `GUARDRAILS_*` env vars documented in
-> [`Configurations.md`](../../../Configurations.md); the operator maps `spec.guardrails` onto
+> [`Configurations.md`](../../../Configurations.md) - the operator maps `spec.guardrails` onto
 > them and mounts `configMapRef` at `GUARDRAILS_POLICY_DIR`.
 
 ## Prerequisites

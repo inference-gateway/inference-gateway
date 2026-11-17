@@ -17,7 +17,7 @@ The Grafana dashboard (identical to the Kubernetes monitoring example) is organi
 - **Token Usage** - Token rate by source and cumulative totals by source & model
 - **Tool Calls** - Tool call rate by type and top tools by usage
 - **Pushed Client Metrics (OTLP push only)** - Tool execution duration, client operation duration, time to first
-  token/chunk, tool failures by error type, and tool success rate; fed exclusively by clients pushing to `POST /v1/metrics`
+  token/chunk, tool failures by error type, and tool success rate - fed exclusively by clients pushing to `POST /v1/metrics`
 - **Gateway Process** - CPU, goroutines, and resident memory
 
 All panels are filterable by the `provider` and `source` template variables, so gateway-served traffic and pushed
@@ -66,7 +66,7 @@ environment:
 ```
 
 The MCP entries wire in the time server from the [MCP example](../../mcp/docker-compose/README.md),
-which is built alongside the stack; see the [tool-call walkthrough](#-tracing) below.
+which is built alongside the stack - see the [tool-call walkthrough](#-tracing) below.
 
 ### Prometheus Configuration
 
@@ -186,8 +186,8 @@ The gateway exposes metrics following the [OpenTelemetry GenAI semantic conventi
 
 ### Metric Set
 
-- `gen_ai_client_token_usage` (histogram, no unit suffix) - token usage; `gen_ai_token_type` is `input` or `output`
-- `gen_ai_server_request_duration_seconds` (histogram) - end-to-end request duration in seconds; `error_type` (HTTP status string) is set only on errors
+- `gen_ai_client_token_usage` (histogram, no unit suffix) - token usage - `gen_ai_token_type` is `input` or `output`
+- `gen_ai_server_request_duration_seconds` (histogram) - end-to-end request duration in seconds - `error_type` (HTTP status string) is set only on errors
 - `gen_ai_execute_tool_duration_seconds` (histogram) - tool execution duration in seconds (fed via the push endpoint)
 - `gen_ai_client_operation_duration_seconds`, `gen_ai_client_operation_time_to_first_chunk_seconds`,
   `gen_ai_server_time_to_first_token_seconds` (histograms) - push-only client-side latency metrics

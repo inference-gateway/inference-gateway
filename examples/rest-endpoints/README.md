@@ -176,7 +176,7 @@ Pass `include=modalities` to enrich each model with the modalities it supports
 natively, as an object with `input` and `output` arrays whose values are
 `text`, `image`, `audio`, `video`, or `decisions`. The values are sourced from the
 community-maintained
-[models.dev](https://github.com/sst/models.dev) dataset; models the gateway
+[models.dev](https://github.com/sst/models.dev) dataset - models the gateway
 cannot resolve (local runtimes, or models absent from the dataset) carry an
 explicit `null`.
 
@@ -296,7 +296,7 @@ endpoint. The request body is forwarded to the provider byte-for-byte (only the
 `model` prefix is stripped), so Anthropic-specific fields like `cache_control`
 pass through untouched and cache usage fields round-trip back to the client.
 Only providers that natively implement the Messages API are supported
-(currently `anthropic`); other providers return `400` in the Anthropic error
+(currently `anthropic`) - other providers return `400` in the Anthropic error
 envelope.
 
 ```bash
@@ -381,7 +381,7 @@ The gateway exposes an OpenAI-compatible `POST /v1/responses` endpoint. The
 request body is forwarded to the upstream provider byte-for-byte (only the
 `model` prefix is stripped), so all Responses API fields like `input`,
 `instructions`, and `tools` pass through untouched. Only providers that natively
-implement the Responses API are supported (currently `openai`); other providers
+implement the Responses API are supported (currently `openai`) - other providers
 return `400`.
 
 ```bash
@@ -451,7 +451,7 @@ it answers a batch of predicate, choice and score questions over shared
 evidence in one request. The body is forwarded byte-for-byte (only the `model`
 prefix is stripped), so every Decisions field - `input`, the question list,
 prompt-cache options - passes through untouched. The endpoint is opt-in via
-`DECISIONS_ENABLED=true` (default off); when disabled it returns `404`:
+`DECISIONS_ENABLED=true` (default off) - when disabled it returns `404`:
 
 ```json
 {
@@ -524,7 +524,7 @@ keyed by `name`, plus token usage:
 }
 ```
 
-Every question carries `type`, `name` and `instructions`; a `choice` question
+Every question carries `type`, `name` and `instructions` - a `choice` question
 adds `choices`, a `score` question adds `levels` (2 to 10). `input` can also be
 an ordered array of message and tool items instead of a string.
 
@@ -584,7 +584,7 @@ The endpoint is opt-in via `IMAGES_ENABLED=true` (default off). When disabled,
 the handler returns `404`.
 
 Only providers that natively implement the Images API are supported (currently
-OpenAI); other providers return `400`.
+OpenAI) - other providers return `400`.
 
 Image generation is slow `gpt-image-2` at `"quality": "high"` took ~190s in
 practice, far past the default client and server timeouts. Raise them or the
@@ -764,7 +764,7 @@ An unsupported format returns `400`:
 ### Voice Cloning
 
 The optional `reference_audio` field carries a base64-encoded voice sample for
-zero-shot cloning; the generated speech mimics the voice in the sample. Use a
+zero-shot cloning - the generated speech mimics the voice in the sample. Use a
 clean mono recording between 1 and 30 seconds (WAV is the safest container).
 The field is forwarded as-is, so it works with providers whose speech backend
 supports audio-conditioned cloning, such as a self-hosted Qwen3-TTS-compatible
@@ -792,7 +792,7 @@ curl -X POST http://localhost:8080/v1/audio/speech -d "{
 
 The optional `language` field is an ISO 639-1 code (default `en`) hinting at  
 the utterance language. The local engine accepts `zh`, `en`, `de`, `it`, `pt`,  
-`es`, `ja`, `ko`, `fr`, and `ru`; any other code is rejected with `400`. For  
+`es`, `ja`, `ko`, `fr`, and `ru` - any other code is rejected with `400`. For  
 proxied providers the field is forwarded as-is. It combines with  
 `reference_audio`, so a single request can clone a voice and have it speak  
 another language:
@@ -818,9 +818,9 @@ An unsupported code for the local engine returns `400`:
 
 The reserved `local/qwen3-tts` model is served by the gateway itself via
 llama.cpp's `llama-tts` instead of a provider. Output is always WAV (omit
-`response_format` or set it to `wav`); `reference_audio` cloning works the
+`response_format` or set it to `wav`) - `reference_audio` cloning works the
 same way. Assets download in the background at startup (see
-`AUDIO_LOCAL_AUTO_DOWNLOAD`); until they are ready the endpoint returns `503`
+`AUDIO_LOCAL_AUTO_DOWNLOAD`) - until they are ready the endpoint returns `503`
 with a `Retry-After` header.
 
 ```bash
@@ -843,7 +843,7 @@ Errors use the standard envelope, e.g. when the Audio API is not enabled:
 `POST /v1/audio/sfx` is a gateway extension with no OpenAI counterpart: it
 generates a non-speech clip - a sound effect or ambience - from a text prompt.
 JSON in, raw audio out, same as `/audio/speech`. It shares the `AUDIO_ENABLED`
-toggle and is served by the `elevenlabs` and `mirelo` providers; other
+toggle and is served by the `elevenlabs` and `mirelo` providers - other
 providers return `400`.
 
 `prompt` is required. Optional fields: `duration_seconds`, `prompt_influence`
@@ -967,7 +967,7 @@ For a provider without sound-effect support:
 `POST /v1/audio/music` is a gateway extension like `/audio/sfx`: it composes a
 music clip from a text prompt. JSON in, raw audio out. It shares the
 `AUDIO_ENABLED` toggle and is currently served by the `elevenlabs` provider
-only; other providers return `400`.
+only - other providers return `400`.
 
 `prompt` is required. Optional fields: `duration_seconds` (3-600 seconds,
 omitted lets the provider pick a length that fits the prompt), `instrumental`
@@ -995,23 +995,23 @@ For a provider without music support:
 
 The gateway exposes an OpenAI-compatible Videos API for asynchronous video
 generation. `POST /v1/videos` takes `multipart/form-data` and returns a job
-immediately; poll `GET /v1/videos/{video_id}` until `status` is `completed`,
+immediately - poll `GET /v1/videos/{video_id}` until `status` is `completed`,
 then download the bytes from `GET /v1/videos/{video_id}/content`.
 
 The endpoint is opt-in via `VIDEOS_ENABLED=true` (default off). When disabled,
 the handlers return `404`. The `elevenlabs` and `mirelo` providers and the
-built-in `local/musetalk` lip-sync engine serve it today; other providers
+built-in `local/musetalk` lip-sync engine serve it today - other providers
 return `400`.
 
 The job `id` carries the provider (`elevenlabs:gen_abc123`) because the gateway
-keeps no job state. Send it back verbatim; `?provider=` still overrides it.
+keeps no job state. Send it back verbatim - `?provider=` still overrides it.
 
 Form fields: `model` (required), `prompt`, `input_reference` (image used as the
 first frame, or the portrait for avatar models), `seconds`, `size`
 (`widthxheight`), and two non-standard fields: `audio` (a WAV or MP3 clip the
-avatar lip-syncs to; when present `seconds` is ignored) and `reference_images`
-(repeat the field once per image of the subject; `veo-3.1-*` takes up to 3,
-`bytedance-seedance-v2*` up to 9 and `bytedance-seedance-v2.5` up to 30; it
+avatar lip-syncs to - when present `seconds` is ignored) and `reference_images`
+(repeat the field once per image of the subject - `veo-3.1-*` takes up to 3,
+`bytedance-seedance-v2*` up to 9 and `bytedance-seedance-v2.5` up to 30 - it
 cannot be combined with `input_reference`), plus `video` (a clip to dub, see
 below).
 
@@ -1121,7 +1121,7 @@ other fields. The job `id` carries the `local:` prefix and is kept in memory,
 so a gateway restart forgets it. The engine executable is expected at
 `~/.infer/bin/tools/musetalk` and the weights at
 `~/.infer/models/huggingface/mlx-community/MuseTalk-1.5-fp16`
-(`infer models download mlx-community/MuseTalk-1.5-fp16`); until both are in
+(`infer models download mlx-community/MuseTalk-1.5-fp16`) - until both are in
 place the endpoint returns `503` with a `Retry-After` header saying what is
 missing.
 

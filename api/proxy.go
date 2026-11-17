@@ -29,7 +29,6 @@ func (router *RouterImpl) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if streaming is requested
 	isStreaming := r.Header.Get("Accept") == contentTypeEventStream || r.Header.Get("Content-Type") == contentTypeEventStream
 
 	if isStreaming {
@@ -37,7 +36,6 @@ func (router *RouterImpl) ProxyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Non-streaming case: Setup reverse proxy
 	handleProxyRequest(w, r, provider, router)
 }
 

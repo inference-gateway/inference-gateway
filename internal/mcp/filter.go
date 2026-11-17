@@ -23,16 +23,11 @@ func parseToolList(list string) map[string]struct{} {
 	return set
 }
 
-// IsToolAllowed reports whether a tool served by the given alias should be
-// injected into chat completions and listed on POST /mcp, based on the
-// configured include/exclude lists. A list entry matches
-// either the bare tool name (read_wiki_structure) or the namespaced one
-// (deepwiki_read_wiki_structure, with or without the mcp_ prefix), so a bare
-// entry applies to every server exposing that tool. The include list takes
-// precedence over the exclude list, mirroring ALLOWED_MODELS/DISALLOWED_MODELS:
-//   - when the include list is non-empty, only tools in it are allowed;
-//   - otherwise every tool except those in the exclude list is allowed;
-//   - when both lists are empty, every tool is allowed.
+// IsToolAllowed reports whether a tool of the given alias is injected into chat
+// completions and listed on POST /mcp. An entry matches the bare tool name, so it
+// applies to every server, or the namespaced one (with or without mcp_). Like
+// ALLOWED_MODELS/DISALLOWED_MODELS, a non-empty include list allows only its tools,
+// otherwise every tool outside the exclude list is allowed.
 func IsToolAllowed(serverAlias, toolName, includeList, excludeList string) bool {
 	bare := normalizeToolName(toolName)
 	namespaced := normalizeToolName(serverAlias + "_" + toolName)

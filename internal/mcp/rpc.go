@@ -17,7 +17,7 @@ import (
 
 // The gateway speaks one MCP revision in both directions: to clients on
 // POST /mcp and to every server in MCP_SERVERS. 2026-07-28 is stateless, so
-// there is no initialize handshake and no session to keep; every request
+// there is no initialize handshake and no session to keep - every request
 // carries its version in params._meta, mirrored into headers.
 const (
 	ProtocolVersion = "2026-07-28"
@@ -26,7 +26,7 @@ const (
 	HeaderMethod          = "Mcp-Method"
 	HeaderName            = "Mcp-Name"
 
-	// ResultTypeComplete marks a final result; a server on an earlier
+	// ResultTypeComplete marks a final result - a server on an earlier
 	// revision omits resultType, which clients must read as complete.
 	ResultTypeComplete = "complete"
 	// resultTypeInputRequired asks the client for elicitation or sampling
@@ -113,8 +113,9 @@ func (mc *MCPClient) callTool(ctx context.Context, serverURL, name string, argum
 }
 
 // rpc POSTs one JSON-RPC request and decodes its result. The request is built
-// from scratch, so no inbound credential can reach the upstream server.
-// ponytail: Mcp-Param-* headers and base64 Mcp-Name values are not sent; add
+// from scratch, so no inbound credential can reach the upstream server. The body
+// is decoded before the status is judged, as a JSON-RPC error can arrive with a 4xx.
+// ponytail: Mcp-Param-* headers and base64 Mcp-Name values are not sent - add
 // them once an upstream tool declares x-mcp-header or a non-ASCII name.
 func (mc *MCPClient) rpc(ctx context.Context, serverURL, method, name string, req, result any) error {
 	body, err := json.Marshal(req)
@@ -151,8 +152,6 @@ func (mc *MCPClient) rpc(ctx context.Context, serverURL, method, name string, re
 		return fmt.Errorf("%s: reading http %d response: %w", method, resp.StatusCode, err)
 	}
 
-	// A JSON-RPC error can arrive with a 4xx (e.g. -32022 with 400), so the
-	// body is decoded before the status is judged.
 	var envelope struct {
 		Result json.RawMessage `json:"result"`
 		Error  *Error          `json:"error"`
@@ -173,9 +172,9 @@ func (mc *MCPClient) rpc(ctx context.Context, serverURL, method, name string, re
 }
 
 // sseResponse returns the data of the first event on an SSE stream that
-// carries a JSON-RPC response, skipping any notification sent before it. It
-// reads with bufio.Reader because a tool result can outgrow Scanner's
-// line limit.
+// carries a JSON-RPC response, skipping any notification sent before it. Events
+// end at a blank line or, for the last one, at the end of the stream. It reads
+// with bufio.Reader because a tool result can outgrow Scanner's line limit.
 func sseResponse(r io.Reader) ([]byte, error) {
 	reader := bufio.NewReader(r)
 	var data []byte
@@ -188,7 +187,7 @@ func sseResponse(r io.Reader) ([]byte, error) {
 				data = append(data, '\n')
 			}
 			data = append(data, bytes.TrimPrefix(value, []byte(" "))...)
-		} else if len(line) == 0 { // a blank line ends the event
+		} else if len(line) == 0 {
 			if isJSONRPCResponse(data) {
 				return data, nil
 			}
@@ -196,7 +195,7 @@ func sseResponse(r io.Reader) ([]byte, error) {
 		}
 
 		if readErr != nil {
-			if isJSONRPCResponse(data) { // the stream closed without a final blank line
+			if isJSONRPCResponse(data) {
 				return data, nil
 			}
 			if readErr == io.EOF {

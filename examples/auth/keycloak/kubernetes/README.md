@@ -27,7 +27,7 @@ This example demonstrates Keycloak (OIDC) authentication with the Inference Gate
 - **Gateway**: An `inference-gateway` `Gateway` custom resource with `spec.auth.oidc` enabled. The operator
   emits `AUTH_ENABLED`, `AUTH_OIDC_ISSUER`, `AUTH_OIDC_CLIENT_ID`, and - via `caCertRef` - mounts Keycloak's
   CA and sets `SSL_CERT_FILE` so OIDC discovery over HTTPS is trusted. The gateway never needs the client
-  secret; it only verifies tokens against the issuer's public keys.
+  secret - it only verifies tokens against the issuer's public keys.
 - **In-cluster issuer resolution**: A CoreDNS rewrite points `keycloak.inference-gateway.local` at the
   in-cluster Keycloak Service, so the gateway reaches the same issuer hostname Keycloak stamps into tokens.
 - **Routing**: The gateway is exposed over HTTPS via the Kubernetes Gateway API (Envoy Gateway), with the
@@ -88,7 +88,7 @@ This example demonstrates Keycloak (OIDC) authentication with the Inference Gate
 - **Gateway auth**: configured in `gateway.yaml` under `spec.auth.oidc` (issuer URL, client ID, and the CA
   certificate reference). The gateway checks that the token's `aud` contains the client ID, which the realm's
   audience mapper adds to access tokens. For other `aud` values (for example an API identifier) set
-  `spec.auth.oidc.audiences`, which the operator renders to `AUTH_OIDC_AUDIENCE`; see the Entra ID, GCP and
+  `spec.auth.oidc.audiences`, which the operator renders to `AUTH_OIDC_AUDIENCE` - see the Entra ID, GCP and
   Cognito examples next door.
 
 ## Cleanup

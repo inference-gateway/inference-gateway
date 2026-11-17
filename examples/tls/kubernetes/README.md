@@ -26,7 +26,7 @@ This example demonstrates secure TLS communication with the Inference Gateway us
 - **Gateway**: An `inference-gateway` `Gateway` custom resource reconciled by the operator.
 - **Routing & TLS**: The operator creates a Gateway API `Gateway` whose HTTPS listener terminates TLS using
   the cert-manager-issued secret. cert-manager's Gateway API support is enabled by default (cert-manager
-  v1.15+); the Gateway API CRDs are installed before cert-manager so it watches `Gateway` resources.
+  v1.15+) - the Gateway API CRDs are installed before cert-manager so it watches `Gateway` resources.
 
 ## Prerequisites
 
@@ -68,14 +68,14 @@ This example demonstrates secure TLS communication with the Inference Gateway us
      https://api.inference-gateway.local:8443/v1/models
    ```
 
-   `-k` accepts the self-signed certificate; `--resolve` points the hostname at the port-forward.
+   `-k` accepts the self-signed certificate - `--resolve` points the hostname at the port-forward.
 
 ## Configuration
 
 - **Certificate / issuer**: edit `cert-manager/clusterissuer.yaml` (a Let's Encrypt issuer is included,
   commented, for production).
 - **Gateway TLS**: configured in `gateway.yaml` under `spec.gatewayAPI.gateway.tls` (`issuer` selects the
-  cert-manager `ClusterIssuer`; `secretName` is where the issued certificate is stored).
+  cert-manager `ClusterIssuer` - `secretName` is where the issued certificate is stored).
 
 ## Cleanup
 

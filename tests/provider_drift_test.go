@@ -43,10 +43,8 @@ func TestProviderWiringDrift(t *testing.T) {
 				result := transformer.Transform()
 				require.NotNil(t, result.Provider)
 				assert.Equal(t, id, *result.Provider)
-				// A transformer may append models its provider does not list
-				// (elevenlabs), so only the first entry is pinned.
 				require.NotEmpty(t, result.Data)
-				assert.Equal(t, string(id)+"/m1", result.Data[0].ID)
+				assert.Equal(t, string(id)+"/m1", result.Data[0].ID, "only the first entry is pinned, as a transformer may append unlisted models")
 				for _, m := range result.Data {
 					assert.Equal(t, id, m.ServedBy, m.ID)
 				}

@@ -14,12 +14,10 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// parseIncludeParam splits the comma-separated `include` value into a
-// de-duplicated list of known metadata keys, preserving first-seen order. An
-// empty value yields no keys; an unrecognized key is rejected so typos fail
-// loudly instead of silently returning less data. Validity is checked against
-// the generated ListModelsParamsInclude enum, keeping the accepted set in sync
-// with openapi.yaml as new metadata fields are added.
+// parseIncludeParam splits the comma-separated include value into de-duplicated
+// metadata keys in first-seen order. An unrecognized key is rejected so typos fail
+// loudly. Keys are checked against the generated ListModelsParamsInclude enum,
+// which keeps the accepted set in sync with openapi.yaml.
 func parseIncludeParam(raw string) ([]string, error) {
 	if strings.TrimSpace(raw) == "" {
 		return nil, nil
@@ -50,12 +48,10 @@ func includesDeprecated(includeKeys []string) bool {
 	return slices.Contains(includeKeys, string(types.ListModelsParamsIncludeDeprecated))
 }
 
-// renderModelsResponse writes the models list as JSON. When include keys are
-// present it injects each requested key as an explicit null on every model
-// unless already populated, keeping the requested-but-unavailable state
-// distinguishable from an absent field. With no include keys the typed response
-// is written unchanged so the default payload stays byte-for-byte
-// OpenAI-compatible.
+// renderModelsResponse writes the models list as JSON. Each requested include key
+// left unpopulated becomes an explicit null, so requested-but-unavailable differs
+// from absent. Without include keys the typed response is written unchanged and
+// stays byte-for-byte OpenAI-compatible.
 func (router *RouterImpl) renderModelsResponse(w http.ResponseWriter, resp types.ListModelsResponse, includeKeys []string) {
 	if !slices.Contains(includeKeys, string(types.ListModelsParamsIncludeContextWindow)) {
 		for i := range resp.Data {
@@ -112,40 +108,11 @@ func (router *RouterImpl) renderModelsResponse(w http.ResponseWriter, resp types
 	middlewares.WriteJSON(w, http.StatusOK, envelope)
 }
 
-// ListModelsHandler implements an OpenAI-compatible API endpoint
-// that returns model information in the standard OpenAI format.
-//
-// This handler supports the OpenAI GET /v1/models endpoint specification:
-// https://platform.openai.com/docs/api-reference/models/list
-//
-// Parameters:
-//   - provider (query): Optional. When specified, returns models from only that provider.
-//     If not specified, returns models from all configured providers.
-//   - include (query): Optional. Comma-separated list of extra per-model metadata
-//     fields to include (context_window, pricing, modalities). Keys are trimmed and
-//     de-duplicated; an unknown key returns 400. Requested-but-unresolved keys are
-//     returned as explicit null. When omitted, no metadata fields are added.
-//     The `deprecated` key adds no field: it lists models the community status
-//     table marks as deprecated, which are hidden by default.
-//
-// Response format:
-//
-//	{
-//	  "object": "list",
-//	  "data": [
-//	   {
-//	      "id": "model-id",
-//	      "object": "model",
-//	      "created": 1686935002,
-//	      "owned_by": "provider-name",
-//	      "served_by": "provider-name"
-//	   },
-//	   ...
-//	  ]
-//	}
-//
-// This endpoint allows applications built for OpenAI's API to work seamlessly
-// with the Inference Gateway's multi-provider architecture.
+// ListModelsHandler serves the OpenAI-compatible GET /v1/models, from one provider
+// with ?provider= or from all configured ones otherwise. ?include= adds per-model
+// metadata (context_window, pricing, modalities) as described in parseIncludeParam.
+// The deprecated key adds no field but lists models the community status table
+// marks as deprecated, which are hidden by default.
 func (router *RouterImpl) ListModelsHandler(w http.ResponseWriter, r *http.Request) {
 	includeKeys, err := parseIncludeParam(r.URL.Query().Get("include"))
 	if err != nil {

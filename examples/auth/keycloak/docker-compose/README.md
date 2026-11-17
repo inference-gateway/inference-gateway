@@ -122,7 +122,7 @@ because the client has none yet. The client then reads Keycloak's own
 is what `get-token.sh` does by hand above.
 
 `resource` defaults to the request scheme (honouring `X-Forwarded-Proto`) and
-`Host`; behind an ingress that rewrites either, set `MCP_RESOURCE_URL` to the
+`Host` - behind an ingress that rewrites either, set `MCP_RESOURCE_URL` to the
 canonical public `/mcp` URL. If the IdP is configured to stamp that resource
 into `aud` ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), list the
 same value in `AUTH_OIDC_AUDIENCE`.
@@ -157,7 +157,7 @@ The shape of an error tells you which layer rejected the request:
 - **A _nested_ error such as `{"error":"{\"error\":\"...\"}"}`** - the gateway
   authenticated you and forwarded the request upstream, but the _provider_
   rejected it (usually an invalid API key, or a model the provider does not
-  serve). The inner JSON is the provider's own error; fix the key or model.
+  serve). The inner JSON is the provider's own error - fix the key or model.
 
 ## How it works
 
@@ -182,14 +182,14 @@ Connect discovery document works. Signature, issuer and expiry checks come from
 that document. The only per-provider detail is what its access tokens carry in
 `aud`, which must match one of the `AUTH_OIDC_AUDIENCE` values:
 
-| Provider                                                      | `AUTH_OIDC_ISSUER`                                          | `AUTH_OIDC_AUDIENCE`                                                                                  |
-| ------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Keycloak                                                      | `https://<host>/realms/<realm>`                             | the client ID, added to access tokens by an audience mapper (this example)                            |
-| [Microsoft Entra ID](../../entra/docker-compose/README.md)    | `https://login.microsoftonline.com/<tenant-id>/v2.0`        | the API registration's client ID (v2 tokens) or `api://<app-id>` (v1 tokens)                          |
-| [Google service accounts](../../gcp/docker-compose/README.md) | `https://accounts.google.com`                               | any URL you choose; the issuer is shared by every Google account, so pair it with a guardrails policy |
-| [Amazon Cognito](../../cognito/docker-compose/README.md)      | `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>` | the app client ID; machine tokens carry no `aud`, so the gateway checks `client_id` instead           |
-| Auth0                                                         | `https://<tenant>.auth0.com/` (trailing slash)              | the API identifier; a token requested without an `audience` is opaque and cannot be verified          |
-| Okta                                                          | `https://<org>.okta.com/oauth2/<authorization-server-id>`   | the custom authorization server's audience (the org server issues opaque tokens)                      |
+| Provider                                                      | `AUTH_OIDC_ISSUER`                                          | `AUTH_OIDC_AUDIENCE`                                                                                   |
+| ------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Keycloak                                                      | `https://<host>/realms/<realm>`                             | the client ID, added to access tokens by an audience mapper (this example)                             |
+| [Microsoft Entra ID](../../entra/docker-compose/README.md)    | `https://login.microsoftonline.com/<tenant-id>/v2.0`        | the API registration's client ID (v2 tokens) or `api://<app-id>` (v1 tokens)                           |
+| [Google service accounts](../../gcp/docker-compose/README.md) | `https://accounts.google.com`                               | any URL you choose - the issuer is shared by every Google account, so pair it with a guardrails policy |
+| [Amazon Cognito](../../cognito/docker-compose/README.md)      | `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>` | the app client ID - machine tokens carry no `aud`, so the gateway checks `client_id` instead           |
+| Auth0                                                         | `https://<tenant>.auth0.com/` (trailing slash)              | the API identifier - a token requested without an `audience` is opaque and cannot be verified          |
+| Okta                                                          | `https://<org>.okta.com/oauth2/<authorization-server-id>`   | the custom authorization server's audience (the org server issues opaque tokens)                       |
 
 Tokens with no `aud` claim at all are accepted when their `client_id` claim
 matches one of the configured values, which is how Cognito machine tokens work.

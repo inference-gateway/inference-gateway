@@ -2,7 +2,7 @@
 
 This example runs the Inference Gateway as an A2A server in front of two
 instances of the [mock agent](https://github.com/inference-gateway/mock-agent),
-`mock-agent` and `mock-agent-b`, in a local k3d cluster. An A2A client talks to the gateway only; the gateway publishes one
+`mock-agent` and `mock-agent-b`, in a local k3d cluster. An A2A client talks to the gateway only - the gateway publishes one
 merged agent card and forwards each JSON-RPC call to the agent that owns it, so
 auth, guardrails and telemetry apply to agent traffic the same way they apply to
 inference.
@@ -78,7 +78,7 @@ task port-forward
 
 Read the merged card and the registry. The card carries both agents' skills,
 `mock-agent_*` and `mock-agent-b_*`, plus one interface per agent with its alias
-as the tenant; the registry lists both:
+as the tenant - the registry lists both:
 
 ```bash
 curl -s http://localhost:8080/.well-known/agent-card.json | jq '{skills: [.skills[].id], interfaces: .supportedInterfaces}'
@@ -107,7 +107,7 @@ curl -s -X POST http://localhost:8080/a2a \
   }' | jq .
 ```
 
-The task id comes back as `mock-agent:<task id>`; the prefix is all the gateway
+The task id comes back as `mock-agent:<task id>` - the prefix is all the gateway
 needs to route a follow-up call:
 
 ```bash
@@ -156,7 +156,7 @@ spec:
         url: https://user:pass@agent.example.com
 ```
 
-Per-agent credentials go into the URL as basic auth; the caller's bearer token
+Per-agent credentials go into the URL as basic auth - the caller's bearer token
 is never forwarded to agents.
 
 ## Auth, guardrails and telemetry
@@ -185,7 +185,7 @@ spec:
   operator mounts into the gateway's policy directory. Copy the compose
   example's [block_mock_b.rego](../docker-compose/policies/block_mock_b.rego)
   into your ConfigMap and re-target its `mock-b` literals to the aliases your
-  `Agent` CRs render - `mock-agent-b` here; the
+  `Agent` CRs render - `mock-agent-b` here - the
   [guardrails example](../../guardrails/kubernetes/gateway.yaml) shows the
   whole manifest.
 - `spec.telemetry` turns the relay metrics on and serves them on port 9464:

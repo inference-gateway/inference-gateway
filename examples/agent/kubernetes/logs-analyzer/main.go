@@ -43,7 +43,6 @@ var errorPatterns = []*regexp.Regexp{
 }
 
 func main() {
-	// Get Kubernetes config - works both in-cluster and locally
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
@@ -58,7 +57,6 @@ func main() {
 		log.Fatalf("Error creating Kubernetes client: %v", err)
 	}
 
-	// Initialize inference gateway client with proper options
 	apiClient := sdk.NewClient(&sdk.ClientOptions{
 		BaseURL: "http://inference-gateway.inference-gateway:8080/v1",
 	})
@@ -80,12 +78,10 @@ func main() {
 			}
 
 			for _, pod := range pods.Items {
-				// Skip our own pod to avoid recursion
 				if strings.Contains(pod.Name, "logs-analyzer") {
 					continue
 				}
 
-				// Only analyze running/failed pods
 				if pod.Status.Phase != v1.PodRunning && pod.Status.Phase != v1.PodFailed {
 					continue
 				}
@@ -105,15 +101,11 @@ func main() {
 					continue
 				}
 
-				// Check for error patterns in logs
 				for _, line := range strings.Split(buf.String(), "\n") {
 					for _, pattern := range errorPatterns {
 						if pattern.MatchString(line) {
 							ctx := context.Background()
 
-							// Prepare request for logging. As of SDK v1.16.x, Message.Content
-							// is a MessageContent union (text or multimodal parts), so we
-							// build messages via the NewTextMessage helper.
 							systemMsg, err := sdk.NewTextMessage(sdk.System, fmt.Sprintf(systemPrompt, line))
 							if err != nil {
 								log.Printf("Error building system message: %v", err)
@@ -126,7 +118,6 @@ func main() {
 							}
 							messages := []sdk.Message{systemMsg, userMsg}
 
-							// Log the request
 							requestJSON, _ := json.MarshalIndent(map[string]any{
 								"provider": sdk.Groq,
 								"model":    "openai/gpt-oss-120b",
@@ -135,7 +126,6 @@ func main() {
 							log.Printf("Sending request to inference gateway for %s/%s:\n%s",
 								ns.Name, pod.Name, string(requestJSON))
 
-							// Call the API
 							response, err := apiClient.GenerateContent(
 								ctx,
 								sdk.Groq,
@@ -149,11 +139,9 @@ func main() {
 								continue
 							}
 
-							// Log the response
 							responseJSON, _ := json.MarshalIndent(response, "", "  ")
 							log.Printf("Received response from inference gateway:\n%s", string(responseJSON))
 
-							// Message.Content is a union; extract the text variant for logging.
 							analysis, err := response.Choices[0].Message.Content.AsMessageContent0()
 							if err != nil {
 								log.Printf("Error extracting analysis text from response: %v", err)
@@ -168,7 +156,6 @@ func main() {
 			}
 		}
 
-		// Sleep before next scan
 		time.Sleep(30 * time.Second)
 	}
 }

@@ -24,7 +24,7 @@ import (
 )
 
 // SourceGateway is the source attribute value for metrics recorded by the
-// gateway itself; pushed metrics must carry a different source.
+// gateway itself - pushed metrics must carry a different source.
 const SourceGateway = "gateway"
 
 // TeamUnknown is the team attribute value used when no organizational unit can
@@ -57,7 +57,7 @@ type OpenTelemetry interface {
 	RecordToolCall(ctx context.Context, source, team, provider, model, toolType, toolName string)
 	RecordGuardrail(ctx context.Context, source, phase, action, path, model string)
 
-	// RecordA2ARequest counts one relayed A2A call and its duration; status is
+	// RecordA2ARequest counts one relayed A2A call and its duration - status is
 	// "ok" or the JSON-RPC error code the client got.
 	RecordA2ARequest(ctx context.Context, alias, method, status string, seconds float64)
 
@@ -67,23 +67,26 @@ type OpenTelemetry interface {
 	ShutDown(ctx context.Context) error
 }
 
+// OpenTelemetryImpl holds the gateway's GenAI semantic-convention, tool-call,
+// guardrail and A2A instruments, each field named after the metric it records.
+// clientOperationDuration, clientTimeToFirstChunk, serverTimeToFirstToken and
+// executeToolDuration are fed only by metrics pushed to /v1/metrics.
 type OpenTelemetryImpl struct {
 	logger         logger.Logger
 	meterProvider  *sdkmetric.MeterProvider
 	tracerProvider *trace.TracerProvider
 	meter          metric.Meter
 
-	// GenAI semantic-convention instruments
-	tokenUsageHistogram     metric.Int64Histogram   // gen_ai.client.token.usage
-	serverRequestDuration   metric.Float64Histogram // gen_ai.server.request.duration
-	clientOperationDuration metric.Float64Histogram // gen_ai.client.operation.duration (push only)
-	clientTimeToFirstChunk  metric.Float64Histogram // gen_ai.client.operation.time_to_first_chunk (push only)
-	serverTimeToFirstToken  metric.Float64Histogram // gen_ai.server.time_to_first_token (push only)
-	executeToolDuration     metric.Float64Histogram // gen_ai.execute_tool.duration (push only)
-	toolCallCounter         metric.Int64Counter     // inference_gateway.tool_calls
-	guardrailCounter        metric.Int64Counter     // inference_gateway.guardrails
-	a2aRequestCounter       metric.Int64Counter     // a2a_requests_total
-	a2aRequestDuration      metric.Float64Histogram // a2a_request_duration_seconds
+	tokenUsageHistogram     metric.Int64Histogram
+	serverRequestDuration   metric.Float64Histogram
+	clientOperationDuration metric.Float64Histogram
+	clientTimeToFirstChunk  metric.Float64Histogram
+	serverTimeToFirstToken  metric.Float64Histogram
+	executeToolDuration     metric.Float64Histogram
+	toolCallCounter         metric.Int64Counter
+	guardrailCounter        metric.Int64Counter
+	a2aRequestCounter       metric.Int64Counter
+	a2aRequestDuration      metric.Float64Histogram
 }
 
 // A2A relay attribute keys, exported as the alias, method and status labels of

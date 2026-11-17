@@ -18,13 +18,10 @@ func (m *Message) HasImageContent() bool {
 	return false
 }
 
-// StripImageContent removes all image content from the message, keeping only text parts.
-// For string content, the message is left unchanged.
-// For multimodal content:
-// - If no text parts remain, content becomes an empty string
-// - If exactly one text part remains, content becomes that text string
-// - If multiple text parts remain, content stays as an array of text parts
-// Returns an error if content conversion fails.
+// StripImageContent removes every image part from multimodal content, leaving
+// string content unchanged. No remaining text part yields an empty string, one
+// yields that text and several stay an array of text parts. It returns an error
+// if content conversion fails.
 func (m *Message) StripImageContent() error {
 	if _, err := m.Content.AsMessageContent0(); err == nil {
 		return nil
