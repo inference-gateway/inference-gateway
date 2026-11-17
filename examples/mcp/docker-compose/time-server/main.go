@@ -131,6 +131,10 @@ func main() {
 		}
 		userAgent := ginCtx.GetHeader("User-Agent")
 		log.Printf("Request from User-Agent: %s", userAgent)
+		// The gateway propagates its W3C trace context on every MCP request; logged
+		// so the monitoring example can show it arriving (see
+		// examples/monitoring/docker-compose/README.md).
+		log.Printf("Request traceparent header: %s", ginCtx.GetHeader("traceparent"))
 
 		log.Printf("Received request with args: %+v", args)
 

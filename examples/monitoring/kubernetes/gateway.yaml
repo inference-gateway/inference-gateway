@@ -26,6 +26,12 @@ spec:
     metrics:
       enabled: true
       port: 9464
+    # Rendered as TELEMETRY_TRACING_ENABLED and TELEMETRY_TRACING_OTLP_ENDPOINT
+    # on the gateway pod; the gateway appends /v1/traces to the endpoint.
+    traces:
+      exporter:
+        otlp:
+          endpoint: 'http://jaeger.monitoring.svc:4318'
   hpa:
     enabled: true
     config:

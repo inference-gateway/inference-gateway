@@ -11,6 +11,10 @@ services:
       - TELEMETRY_ENABLED=true
       - TELEMETRY_METRICS_PORT=9464
       - TELEMETRY_METRICS_PUSH_ENABLED=true
+      - TELEMETRY_TRACING_ENABLED=true
+      - TELEMETRY_TRACING_OTLP_ENDPOINT=http://jaeger:4318
+      - MCP_ENABLED=true
+      - MCP_SERVERS=time=http://mcp-time-server:8081/mcp
     deploy:
       resources:
         limits:
@@ -59,6 +63,26 @@ services:
       - monitoring
     depends_on:
       - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - '16686:16686'
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  # The MCP time server from the MCP example, so a model-driven tool call
+  # is fully traced; see the Tracing section in the README.
+  mcp-time-server:
+    build:
+      context: ../mcp/docker-compose/time-server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - monitoring
 
 volumes:
   prometheus_data:
