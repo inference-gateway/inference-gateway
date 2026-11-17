@@ -57,11 +57,22 @@ Config is env-only: `config/load.go` fills the generated `config.Config` via `go
   If a block needs a comment to be understood, extract it into a well-named function or variable.
 - No inline comments inside function bodies.
 - Doc comments on functions and types are at most 5 lines: what it does and why, not how.
-- No comments above modules, packages, or files.
+- No comments above modules, packages, or files: no Go package doc comment above the `package`
+  line, no Rust `//!` crate or module docs, no Python module docstring, no TypeScript `@fileoverview`
+  or `@module` block, no file header.
+- Document a struct, class, or record once above its declaration, not on each member. If a field
+  needs explaining, rename it or fold the explanation into the type's doc comment.
+- Prefer named constants or enums over magic numbers and strings. A bare literal is fine only
+  where its meaning is obvious at a glance (0, 1, an empty string).
 - Tool directives are not comments and stay where the tool needs them (lint suppressions, build
   tags, compiler pragmas, code generation markers).
 - No semicolons in documentation prose (Markdown files, doc comments): split the sentence or use
   a dash instead.
+- Examples (`examples/` directories, README snippets) are short and focused: one feature per
+  example, the fewest lines that show it, and the exact command to run it.
+- Every example must run as written. Verify it against the `tokenless` mock gateway, or against a
+  real model such as `ollama_cloud/glm-5.3-flash` when the mock cannot cover it. Fix or delete an
+  example that does not run.
 
 ## Security
 

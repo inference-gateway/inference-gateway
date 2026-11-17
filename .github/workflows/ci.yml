@@ -60,7 +60,7 @@ jobs:
         run: npm install -g markdownlint-cli@0.50.0
 
       - name: Run markdownlint
-        run: markdownlint . --ignore '{AGENTS,CLAUDE,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md
+        run: markdownlint . --ignore '{AGENTS,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md
 
   ci:
     needs: changes
