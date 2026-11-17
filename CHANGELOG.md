@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.68.0](https://github.com/inference-gateway/inference-gateway/compare/v0.67.2...v0.68.0) (2026-11-17)
+
+### ✨ Features
+
+* sync types with schemas v1.14.1 (nullable stream fields) ([#940](https://github.com/inference-gateway/inference-gateway/issues/940)) ([fe956e3](https://github.com/inference-gateway/inference-gateway/commit/fe956e3c2603cdbf8b23345205bfcf8c09b3cdac))
+
 ## [0.67.2](https://github.com/inference-gateway/inference-gateway/compare/v0.67.1...v0.67.2) (2026-11-17)
 
 ### ♻️ Improvements
