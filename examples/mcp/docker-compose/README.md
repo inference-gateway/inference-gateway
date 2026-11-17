@@ -51,7 +51,7 @@ prints on startup (`docker compose logs mcp-inspector`) - it carries the session
 - **Inference Gateway**: Main service that proxies requests to LLM providers
 - **MCP Time Server**: Provides time data tools
 - **MCP Search Server**: Provides web search functionality
-- **MCP Filesystem Server**: Provides file operations (read, write, delete, list directories)
+- **MCP Filesystem Server**: Provides file operations (read, write, delete)
 - **MCP Pizza Server**: Pizza demo tool on the official TypeScript SDK v2 ([pizza-server](pizza-server/))
 - **MCP Calculator Server**: Calculator tool with structured output on the official Go SDK ([calculator-server](calculator-server/))
 - **MCP Inspector**: Web-based debugging tool for exploring MCP servers
@@ -323,7 +323,7 @@ When you send a request to the Inference Gateway, it will:
 
 ### Time Server Tools
 
-- **time**: Get the current time in various formats
+- **time**: Get the current time
 
 ### Search Server Tools
 
@@ -331,13 +331,9 @@ When you send a request to the Inference Gateway, it will:
 
 ### Filesystem Server Tools
 
-- **write_file**: Write content to a file (supports overwrite and append modes)
+- **write_file**: Write content to a file
 - **read_file**: Read content from a file
 - **delete_file**: Delete a file
-- **list_directory**: List directory contents (supports recursive listing)
-- **create_directory**: Create a directory
-- **file_exists**: Check if a file or directory exists
-- **file_info**: Get detailed information about a file or directory
 
 All filesystem operations are sandboxed to `/tmp/mcp-files` for security.
 

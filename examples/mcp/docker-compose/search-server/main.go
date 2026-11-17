@@ -3,16 +3,15 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
-	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	mcp_golang "github.com/metoro-io/mcp-golang"
 	httpTransport "github.com/metoro-io/mcp-golang/transport/http"
 )
+
+const defaultLimit = 5
 
 // SearchArgs defines the arguments for the search tool
 type SearchArgs struct {
@@ -34,252 +33,53 @@ type SearchResponse struct {
 	Query   string         `json:"query"`
 }
 
-// SSE Handler for search streaming
-func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
-	router.GET("/mcp/stream", func(c *gin.Context) {
-		c.Header("Content-Type", "text/event-stream")
-		c.Header("Cache-Control", "no-cache")
-		c.Header("Connection", "keep-alive")
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Headers", "Cache-Control")
+var mockResults = []SearchResult{
+	{Title: "Understanding the Model Context Protocol", Snippet: "Learn about MCP and how it enables AI models to interact with external tools and data sources.", URL: "https://modelcontextprotocol.io/"},
+	{Title: "Inference Gateway Documentation", Snippet: "Comprehensive guide to using Inference Gateway for AI model inference and integration.", URL: "https://github.com/inference-gateway/inference-gateway"},
+	{Title: "Function Calling in LLMs", Snippet: "How large language models use function calling to interact with external systems and APIs.", URL: "https://ai-docs.example.com/function-calling"},
+	{Title: "Building MCP Servers in Go", Snippet: "Tutorial on creating Model Context Protocol servers in Go.", URL: "https://golang-tutorials.example.com/mcp"},
+}
 
-		clientGone := c.Request.Context().Done()
-
-		initialMsg := map[string]any{
-			"type":    "connection",
-			"status":  "connected",
-			"message": "MCP Search Server SSE stream established",
+// mockSearch returns the mock results matching query, or all of them when none match.
+func mockSearch(query string, limit int) SearchResponse {
+	var matches []SearchResult
+	for _, result := range mockResults {
+		if strings.Contains(strings.ToLower(result.Title+" "+result.Snippet), strings.ToLower(query)) {
+			matches = append(matches, result)
 		}
-
-		data, _ := json.Marshal(initialMsg)
-		fmt.Fprintf(c.Writer, "data: %s\n\n", data)
-		c.Writer.Flush()
-
-		ticker := time.NewTicker(10 * time.Second)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-clientGone:
-				log.Println("Search SSE client disconnected")
-				return
-			case <-ticker.C:
-				statusUpdate := map[string]any{
-					"type":      "status",
-					"timestamp": time.Now().Format(time.RFC3339),
-					"server":    "mcp-search-server",
-					"ready":     true,
-				}
-
-				data, _ := json.Marshal(statusUpdate)
-				fmt.Fprintf(c.Writer, "data: %s\n\n", data)
-				c.Writer.Flush()
-			}
-		}
-	})
-
-	router.POST("/mcp/stream/search", func(c *gin.Context) {
-		c.Header("Content-Type", "text/event-stream")
-		c.Header("Cache-Control", "no-cache")
-		c.Header("Connection", "keep-alive")
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Headers", "Cache-Control")
-
-		var request struct {
-			Query string `json:"query"`
-			Limit int    `json:"limit,omitempty"`
-		}
-
-		if err := c.ShouldBindJSON(&request); err != nil {
-			errorMsg := map[string]any{
-				"type":  "error",
-				"error": err.Error(),
-			}
-			data, _ := json.Marshal(errorMsg)
-			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
-			c.Writer.Flush()
-			return
-		}
-
-		fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"processing","message":"Starting search request...","query":"`+request.Query+`"}`)
-		c.Writer.Flush()
-
-		time.Sleep(100 * time.Millisecond)
-
-		fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"progress","message":"Searching databases..."}`)
-		c.Writer.Flush()
-
-		time.Sleep(200 * time.Millisecond)
-
-		results := performMockSearch(request.Query, request.Limit)
-
-		for i, result := range results.Results {
-			resultMsg := map[string]any{
-				"type":   "search_result",
-				"index":  i + 1,
-				"total":  len(results.Results),
-				"result": result,
-			}
-
-			data, _ := json.Marshal(resultMsg)
-			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
-			c.Writer.Flush()
-
-			time.Sleep(50 * time.Millisecond)
-		}
-
-		completionMsg := map[string]any{
-			"type":    "complete",
-			"total":   results.Total,
-			"query":   results.Query,
-			"message": fmt.Sprintf("Search completed. Found %d results.", results.Total),
-		}
-
-		data, _ := json.Marshal(completionMsg)
-		fmt.Fprintf(c.Writer, "data: %s\n\n", data)
-		c.Writer.Flush()
-	})
+	}
+	if len(matches) == 0 {
+		matches = mockResults
+	}
+	if limit <= 0 {
+		limit = defaultLimit
+	}
+	matches = matches[:min(limit, len(matches))]
+	return SearchResponse{Results: matches, Total: len(matches), Query: query}
 }
 
 func main() {
 	transport := httpTransport.NewGinTransport()
-
 	server := mcp_golang.NewServer(transport, mcp_golang.WithName("mcp-search-server"), mcp_golang.WithVersion("0.0.1"))
 
-	err := server.RegisterTool("search", "Performs a web search with the given query", func(ctx context.Context, args SearchArgs) (*mcp_golang.ToolResponse, error) {
-		ginCtx, ok := ctx.Value("ginContext").(*gin.Context)
-		if !ok {
-			return nil, fmt.Errorf("ginContext not found in context")
-		}
-		userAgent := ginCtx.GetHeader("User-Agent")
-		log.Printf("Request from User-Agent: %s", userAgent)
-
-		log.Printf("Received search request with query: %s, limit: %d", args.Query, args.Limit)
-
-		limit := args.Limit
-		if limit <= 0 {
-			limit = 5
-		}
-
-		results := performMockSearch(args.Query, limit)
-
-		jsonResults, err := json.Marshal(results)
+	err := server.RegisterTool("search", "Performs a web search with the given query", func(_ context.Context, args SearchArgs) (*mcp_golang.ToolResponse, error) {
+		results, err := json.Marshal(mockSearch(args.Query, args.Limit))
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal search results: %v", err)
+			return nil, err
 		}
-
-		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(string(jsonResults))), nil
+		return mcp_golang.NewToolResponse(mcp_golang.NewTextContent(string(results))), nil
 	})
 	if err != nil {
-		panic(err)
+		log.Fatalf("register tool: %v", err)
 	}
 
-	go server.Serve()
+	go func() {
+		if err := server.Serve(); err != nil {
+			log.Fatalf("serve: %v", err)
+		}
+	}()
 
 	r := gin.Default()
-
-	r.Use(func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
-
-		c.Next()
-	})
-
-	setupSearchSSEHandler(server, r)
-
 	r.POST("/mcp", transport.Handler())
-
-	r.GET("/capabilities", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"mcp_version": "0.0.1",
-			"server_name": "mcp-search-server",
-			"features": []string{
-				"search",
-				"server-sent-events",
-				"real-time-streaming",
-				"progressive-results",
-			},
-			"endpoints": gin.H{
-				"mcp":          "/mcp",
-				"sse_stream":   "/mcp/stream",
-				"sse_search":   "/mcp/stream/search",
-				"health":       "/health",
-				"capabilities": "/capabilities",
-			},
-		})
-	})
-
-	log.Println("Starting MCP Search Server with SSE support on :8082...")
-	log.Println("Endpoints:")
-	log.Println("  - POST /mcp (traditional MCP)")
-	log.Println("  - GET  /mcp/stream (SSE stream)")
-	log.Println("  - POST /mcp/stream/search (SSE search)")
-	log.Println("  - GET  /capabilities (server info)")
-	if err := r.Run(":8082"); err != nil {
-		log.Fatalf("Server error: %v", err)
-	}
-}
-
-// performMockSearch returns mock search results for demonstration purposes
-func performMockSearch(query string, limit int) SearchResponse {
-	mockResults := []SearchResult{
-		{
-			Title:   "Understanding the Model Context Protocol",
-			Snippet: "Learn about MCP and how it enables AI models to interact with external tools and data sources.",
-			URL:     "https://modelcontextprotocol.github.io/",
-		},
-		{
-			Title:   "Inference Gateway Documentation",
-			Snippet: "Comprehensive guide to using Inference Gateway for AI model inference and integration.",
-			URL:     "https://github.com/inference-gateway/inference-gateway",
-		},
-		{
-			Title:   "Function Calling in LLMs",
-			Snippet: "How large language models use function calling to interact with external systems and APIs.",
-			URL:     "https://ai-docs.example.com/function-calling",
-		},
-		{
-			Title:   "Building MCP Servers in Go",
-			Snippet: "Tutorial on creating Model Context Protocol servers using Golang and the mcp-golang library.",
-			URL:     "https://golang-tutorials.example.com/mcp",
-		},
-		{
-			Title:   "AI Tool Integration Best Practices",
-			Snippet: "Learn the best practices for integrating AI models with external tools and services.",
-			URL:     "https://ai-integration.example.com/best-practices",
-		},
-		{
-			Title:   "Search APIs for AI Applications",
-			Snippet: "Guide to implementing search functionality in AI applications and tools.",
-			URL:     "https://apis.example.com/search-for-ai",
-		},
-	}
-
-	filtered := make([]SearchResult, 0)
-	for _, result := range mockResults {
-		if strings.Contains(strings.ToLower(result.Title), strings.ToLower(query)) ||
-			strings.Contains(strings.ToLower(result.Snippet), strings.ToLower(query)) {
-			filtered = append(filtered, result)
-		}
-	}
-
-	if len(filtered) == 0 || query == "" {
-		filtered = mockResults
-	}
-
-	if len(filtered) > limit {
-		filtered = filtered[:limit]
-	}
-
-	return SearchResponse{
-		Results: filtered,
-		Total:   len(filtered),
-		Query:   query,
-	}
+	log.Fatal(r.Run(":8082"))
 }
