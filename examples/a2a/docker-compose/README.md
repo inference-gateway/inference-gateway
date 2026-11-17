@@ -132,7 +132,7 @@ docker compose start mock-agent-b
 ## Auth (opt-in)
 
 `AUTH_ENABLED=true` puts `POST /a2a` behind the OIDC middleware. The demo realm
-from the [keycloak example](../auth/keycloak/docker-compose/README.md) is
+from the [keycloak example](../../auth/keycloak/docker-compose/README.md) is
 reused through [docker-compose.auth.yml](docker-compose.auth.yml), which adds
 Keycloak to the stack and switches the gateway's auth on - the realm file is
 not duplicated:
@@ -198,7 +198,7 @@ challenge and in the metadata document, and if the IdP stamps that resource
 into `aud` ([RFC 8707](https://datatracker.ietf.org/doc/html/rfc8707)), list
 the same value in `AUTH_OIDC_AUDIENCE`. The verified token's claims also reach
 guardrails as `input.identity`. What a given `401` means is in the [auth
-example's troubleshooting](../auth/keycloak/docker-compose/README.md#troubleshooting).
+example's troubleshooting](../../auth/keycloak/docker-compose/README.md#troubleshooting).
 
 ## Guardrails (opt-in)
 
@@ -250,7 +250,7 @@ curl -s http://localhost:9464/metrics | grep '^a2a_'
   open the stream
 
 A guardrails block never appears here: the middleware refuses the call before
-the relay runs, so the series only cover calls that reached an agent. Prometheus
+the relay runs, so the series only cover calls that reached the relay. Prometheus
 and Grafana wiring is the
 [monitoring example's](../../monitoring/docker-compose/README.md) subject.
 

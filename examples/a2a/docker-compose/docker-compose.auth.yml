@@ -21,7 +21,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HOSTNAME: http://keycloak:8080
     volumes:
-      - ../auth/keycloak/docker-compose/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ../../auth/keycloak/docker-compose/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     ports:
       - '8081:8080'
     restart: unless-stopped

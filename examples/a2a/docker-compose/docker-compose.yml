@@ -11,7 +11,9 @@ services:
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       SERVER_HOST: 0.0.0.0
-      A2A_ENABLED: ${A2A_ENABLED:-true}
+      # Pinned: the generated .env.example ships A2A_ENABLED=false, which would
+      # win over a ${A2A_ENABLED:-true} default once copied to .env.
+      A2A_ENABLED: 'true'
       A2A_AGENTS: ${A2A_AGENTS:-mock=http://mock-agent:8080,mock-b=http://mock-agent-b:8080}
       # Opt in per environment, e.g. GUARDRAILS_ENABLED=true docker compose up:
       # the Rego policies from ./policies then guard POST /a2a, and the a2a_*
