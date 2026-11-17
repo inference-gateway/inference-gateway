@@ -53,7 +53,7 @@ const (
 type videoJobMapper func(raw []byte, fallbackModel string, createdAt int) (types.VideoJob, string, error)
 
 // videoJobMappers holds the per-provider response mappings. Every provider that
-// carries a Videos endpoint in the registry needs an entry here; there is no
+// carries a Videos endpoint in the registry needs an entry here - there is no
 // OpenAI-shaped passthrough because no provider answers with a schema-shaped
 // VideoJob yet.
 var videoJobMappers = map[types.Provider]videoJobMapper{
@@ -73,22 +73,11 @@ var videoRequestTranslators = map[types.Provider]func(model string, form *multip
 	constants.MireloID: videos.Dub,
 }
 
-// VideosHandler implements POST /v1/videos, the OpenAI-compatible Videos API:
-// https://platform.openai.com/docs/api-reference/videos/create
-//
-// Video generation is asynchronous at every provider, so the multipart request
-// (prompt plus optional reference image and driving audio) is forwarded to the
-// provider and the created job is returned immediately. Clients poll
-// GET /v1/videos/{video_id} until the status is completed, then download the
-// bytes from GET /v1/videos/{video_id}/content.
-//
-// The returned job id is prefixed with the provider that created it
-// ("elevenlabs:abc123", see videoJobIDSeparator), because the gateway keeps no
-// job state and has to route the follow-up calls somewhere.
-//
-// Only providers that carry a Videos endpoint (currently elevenlabs) can serve
-// the request; the rest receive a 400, mirroring the schema's VideosNotSupported
-// response. The endpoint is opt-in via VIDEOS_ENABLED (default off).
+// VideosHandler serves the OpenAI-compatible POST /v1/videos, opt-in via VIDEOS_ENABLED.
+// Generation is asynchronous, so the multipart request is forwarded and the job returned
+// at once, its id prefixed with the provider ("elevenlabs:abc123") because the gateway
+// keeps no job state. Clients poll GET /v1/videos/{video_id}, then download .../content.
+// Providers without a Videos endpoint receive a 400 (VideosNotSupported).
 func (router *RouterImpl) VideosHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.videosEnabled(w) {
 		return
@@ -224,12 +213,10 @@ func (router *RouterImpl) DownloadVideoContentHandler(w http.ResponseWriter, r *
 	router.streamDownload(w, r, downloadURL, videoMedia, "")
 }
 
-// retrieveVideoJob retrieves the upstream job a per-job Videos request names:
-// it resolves the provider and the upstream id from the gateway's
-// "provider:job_id" video id, fetches the job from the provider's retrieve
-// endpoint and prefixes the returned id with the provider again so clients can
-// route follow-up calls. It also returns the resolved upstream id, for logging.
-// Failures are already written to w, reported by a false ok.
+// retrieveVideoJob resolves the provider and upstream id from a "provider:job_id"
+// video id, fetches that job and re-prefixes its id so clients can route follow-up
+// calls. It also returns the upstream id for logging. Failures are already written
+// to w and reported by a false ok.
 func (router *RouterImpl) retrieveVideoJob(w http.ResponseWriter, r *http.Request) (types.VideoJob, string, string, bool) {
 	if !router.videosEnabled(w) {
 		return types.VideoJob{}, "", "", false
@@ -268,7 +255,7 @@ func (router *RouterImpl) retrieveVideoJob(w http.ResponseWriter, r *http.Reques
 
 // resolveVideoJobID splits the gateway's "provider:job_id" video id into the
 // provider and the upstream id that must be sent back verbatim. An explicit
-// ?provider= wins over the prefix, mirroring model routing; the prefix is
+// ?provider= wins over the prefix, mirroring model routing - the prefix is
 // stripped either way. It returns the client-facing message ("" on success) when
 // neither names a provider.
 func (router *RouterImpl) resolveVideoJobID(r *http.Request, videoID string) (types.Provider, string, string) {

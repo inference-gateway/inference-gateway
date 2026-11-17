@@ -48,7 +48,7 @@ the token carries the `email` claim the policy checks.
 ## Gotchas
 
 - **The audience is whatever you say it is.** `GATEWAY_AUDIENCE` is an arbitrary
-  URL; it must be identical in `.env` (read by the gateway) and in the token
+  URL - it must be identical in `.env` (read by the gateway) and in the token
   request (read by `get-token.sh`).
 - **User credentials cannot set an audience.** `gcloud auth print-identity-token`
   without impersonation returns a token for gcloud's own client ID, which the
@@ -57,4 +57,4 @@ the token carries the `email` claim the policy checks.
 - **Any Google account can pass authentication.** Remove
   `policies/identity.rego` and every service account in the world that mints a
   token for your audience is accepted. The policy blocks callers whose `email`
-  is not in `allowed_emails`; the same check works on `sub` if you prefer.
+  is not in `allowed_emails` - the same check works on `sub` if you prefer.

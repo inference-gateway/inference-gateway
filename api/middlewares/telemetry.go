@@ -45,7 +45,7 @@ const (
 )
 
 // toolTypeStandard is the gen_ai.tool.type of a tool the client declared
-// itself; MCP tools use mcp.ToolTypeMCP.
+// itself - MCP tools use mcp.ToolTypeMCP.
 const toolTypeStandard = "standard_tool_use"
 
 // responseBodyWriter is a wrapper for the response writer that captures the body
@@ -132,7 +132,6 @@ func (t *TelemetryMiddleware) Middleware() func(http.Handler) http.Handler {
 				return
 			}
 
-			// Post middleware begins
 			statusCode := cmp.Or(rw.statusCode, http.StatusOK)
 			duration := time.Since(startTime).Seconds()
 

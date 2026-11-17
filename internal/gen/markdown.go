@@ -31,7 +31,6 @@ func ConfigurationsMD(filePath string, oas string) error {
 {{- end }}
 `
 
-	// Create template with functions
 	funcMap := template.FuncMap{
 		"upper": strings.ToUpper,
 		"title": cases.Title(language.English).String,
@@ -42,14 +41,12 @@ func ConfigurationsMD(filePath string, oas string) error {
 		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	// Create file
 	f, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer f.Close()
 
-	// Prepare template data
 	data := struct {
 		Sections  []map[string]openapi.Section
 		Providers map[string]openapi.ProviderConfig
@@ -58,7 +55,6 @@ func ConfigurationsMD(filePath string, oas string) error {
 		Providers: schema.Components.Schemas.Provider.XProviderConfigs,
 	}
 
-	// Execute template
 	if err := t.Execute(f, data); err != nil {
 		return fmt.Errorf("failed to execute template: %w", err)
 	}

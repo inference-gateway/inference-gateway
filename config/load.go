@@ -21,7 +21,7 @@ const (
 	// EnvImagesEnabled is the current environment variable for the Images API toggle.
 	EnvImagesEnabled = "IMAGES_ENABLED"
 	// EnvImagesEnabledDeprecated is the retired name for EnvImagesEnabled. It is
-	// still honoured when EnvImagesEnabled is unset; remove in the next major release.
+	// still honoured when EnvImagesEnabled is unset - remove in the next major release.
 	EnvImagesEnabledDeprecated = "ENABLE_IMAGES"
 	// EnvA2AResourceURL and EnvMCPResourceURL are served without authentication,
 	// on the gateway agent card and the RFC 9728 documents.

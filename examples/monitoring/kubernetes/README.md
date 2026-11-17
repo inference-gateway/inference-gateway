@@ -26,7 +26,7 @@ This example demonstrates monitoring integration with the Inference Gateway usin
 ## Architecture
 
 - **Metrics Collection**: Prometheus scrapes the gateway's `/metrics` endpoint (port 9464). The operator
-  enables it via `spec.telemetry.metrics`; a thin `inference-gateway-metrics` Service (in `gateway.yaml`)
+  enables it via `spec.telemetry.metrics` - a thin `inference-gateway-metrics` Service (in `gateway.yaml`)
   carries the label the `ServiceMonitor` selects on.
 - **Visualization**: Grafana dashboards display the metrics.
 - **Gateway**: An `inference-gateway` `Gateway` custom resource with autoscaling (`spec.hpa`) enabled.
@@ -159,7 +159,7 @@ kubectl -n monitoring port-forward svc/jaeger 16686:16686
 
 Open <http://localhost:16686>, select the `inference-gateway` service and press **Find
 Traces**. Every request except `/health` and `/v1/metrics` opens an `inference-gateway`
-server span, annotated with `gen_ai.provider.name` and `gen_ai.request.model`; MCP tool
+server span, annotated with `gen_ai.provider.name` and `gen_ai.request.model` - MCP tool
 calls add `execute_tool <name>` spans, and the W3C trace context is propagated to MCP
 servers and A2A agents so their spans nest under the gateway's. The
 [docker-compose example](../docker-compose/README.md#-tracing) has the complete curl

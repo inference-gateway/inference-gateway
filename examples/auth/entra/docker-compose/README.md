@@ -53,10 +53,10 @@ file sets as `AUTH_OIDC_AUDIENCE`, and its `iss` is the tenant's `/v2.0` issuer.
   tokens with `iss: https://sts.windows.net/<tenant>/`, which the gateway rejects
   because it discovered the `/v2.0` issuer. Decode the token at
   [jwt.ms](https://jwt.ms) and check the `ver` claim.
-- **`AADSTS500011`** means the API has no service principal in the tenant; the
+- **`AADSTS500011`** means the API has no service principal in the tenant - the
   `az ad sp create` step above creates it.
 - **Every app in the tenant can request a token for your API** unless the API's
   service principal has "assignment required" turned on. Authentication proves
-  the token came from your tenant for your API, not _which_ app asked; check
+  the token came from your tenant for your API, not _which_ app asked - check
   `input.identity.azp` or `roles` in a guardrails policy, see the
   [guardrails example](../../../guardrails/docker-compose/README.md).

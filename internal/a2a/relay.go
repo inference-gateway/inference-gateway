@@ -39,7 +39,7 @@ const (
 	keyNextPageToken    = "nextPageToken"
 )
 
-// Error is a JSON-RPC error the relay produced itself; upstream results are
+// Error is a JSON-RPC error the relay produced itself - upstream results are
 // passed through untouched apart from the task id prefix.
 type Error = types.JSONRPCError
 
@@ -52,7 +52,7 @@ func IsStreamingMethod(method string) bool {
 	return false
 }
 
-// rootIDIsTask lists the methods whose top-level params.id is a task id; for
+// rootIDIsTask lists the methods whose top-level params.id is a task id - for
 // the push notification config methods it is the config id instead.
 func rootIDIsTask(method types.A2AMethod) bool {
 	switch method {
@@ -105,7 +105,7 @@ func (r *Registry) Call(ctx context.Context, method types.A2AMethod, params type
 }
 
 // Stream opens the upstream SSE stream for SendStreamingMessage or
-// SubscribeToTask. Every event's result has its task ids prefixed; the channel
+// SubscribeToTask. Every event's result has its task ids prefixed - the channel
 // closes when the upstream closes or ctx is cancelled.
 func (r *Registry) Stream(ctx context.Context, method types.A2AMethod, params types.Struct) (alias string, events <-chan any, rpcErr *Error) {
 	alias, params, rpcErr = r.resolve(method, params)
@@ -153,7 +153,7 @@ func (r *Registry) Stream(ctx context.Context, method types.A2AMethod, params ty
 // resolve picks the agent a request addresses and returns the params ready to
 // forward: tenant removed and task id prefixes stripped. The hints are, in
 // order, params.tenant, params.message.metadata.agent and the <alias>: prefix
-// of any task id; when several are present they must agree. An empty alias
+// of any task id - when several are present they must agree. An empty alias
 // with a nil error means no hint was given.
 func (r *Registry) resolve(method types.A2AMethod, params types.Struct) (string, types.Struct, *Error) {
 	forwarded := make(types.Struct, len(params))
@@ -208,7 +208,7 @@ func messageAgentHint(params types.Struct) string {
 }
 
 // stripper removes the <alias>: prefix from task ids whose alias is registered
-// and records every alias it saw; an unprefixed id passes through untouched.
+// and records every alias it saw - an unprefixed id passes through untouched.
 func (r *Registry) stripper(seen map[string]struct{}) func(string) string {
 	return func(id string) string {
 		alias, rest, ok := strings.Cut(id, taskIDSeparator)
@@ -267,7 +267,7 @@ func rewriteObjectTaskIDs(object map[string]any, rootIDIsTask bool, fn func(stri
 
 // call decodes params into the ADK request type, invokes the agent and
 // returns its result with task ids prefixed. A params shape the type rejects
-// is -32602; any upstream failure is -32603 carrying the ADK error text.
+// is -32602 - any upstream failure is -32603 carrying the ADK error text.
 func call[T any](ctx context.Context, alias string, params types.Struct, fn func(context.Context, T) (*types.JSONRPCSuccessResponse, error)) (any, *Error) {
 	typed, rpcErr := convert[T](params)
 	if rpcErr != nil {
@@ -306,12 +306,11 @@ func convert[T any](params types.Struct) (T, *Error) {
 	return typed, nil
 }
 
-// upstreamError wraps whatever the ADK client reports, which includes the
-// agent's own JSON-RPC error text, as an internal error naming the agent.
-// ponytail: the upstream code is flattened into the message because the ADK
-// client returns a plain error; surface it once the client exposes a typed one.
-// The same gap drops mid-stream JSON-RPC errors in Stream, which the client
-// decodes into a result-only envelope.
+// upstreamError wraps the ADK client's error, agent JSON-RPC text included, as an
+// internal error naming the agent.
+// ponytail: the upstream code is flattened into the message, and Stream drops
+// mid-stream JSON-RPC errors, because the ADK client returns a plain error. Surface
+// both once the client exposes a typed one.
 func upstreamError(alias string, err error) *Error {
 	return &Error{Code: CodeInternalError, Message: fmt.Sprintf("agent %q failed: %v", alias, err)}
 }
@@ -336,8 +335,8 @@ type fanOutResult struct {
 }
 
 // listTasksFanOut asks every agent for its tasks concurrently and merges the
-// pages into one ListTasksResponse; an agent that fails is skipped.
-// ponytail: pagination is per agent, so the merged nextPageToken is empty;
+// pages into one ListTasksResponse - an agent that fails is skipped.
+// ponytail: pagination is per agent, so the merged nextPageToken is empty -
 // add cursor fan-in if a client needs to page across agents.
 func (r *Registry) listTasksFanOut(ctx context.Context, params types.Struct) (any, *Error) {
 	results := make([]fanOutResult, len(r.aliases))

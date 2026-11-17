@@ -8,7 +8,7 @@ mock external guardrail service is wired in behind `GUARDRAILS_EXTERNAL_URL`.
 
 - `GUARDRAILS_ENABLED=true` turns the guardrails middleware on.
 - `GUARDRAILS_POLICY_DIR` points at the mounted policy directory. Every `.rego` file in
-  it is loaded; each must be in `package guardrails` and expose a `main` rule returning
+  it is loaded - each must be in `package guardrails` and expose a `main` rule returning
   one of the four actions below.
 - `GUARDRAILS_FAIL_MODE` (`closed` by default) decides what happens if evaluation errors:
   `closed` blocks the request, `open` lets it through.
@@ -22,12 +22,12 @@ See [`Configurations.md`](../../../Configurations.md) for all `GUARDRAILS_*` set
 A policy returns a decision like `{"action": "...", "message": "..."}`. Four actions
 exist (`internal/guardrails/guardrails.go`):
 
-| Action   | Effect                                                                                               |
-| -------- | ---------------------------------------------------------------------------------------------------- |
-| `allow`  | continues                                                                                            |
-| `block`  | refuses with `403`; on `/mcp` and `/a2a` as a JSON-RPC error envelope with code `-32001`             |
-| `redact` | replaces matches of the built-in detectors in the payload with `[REDACTED]`, then continues          |
-| `warn`   | continues like `allow`; only visible as a counter in the `inference_gateway_guardrails_total` metric |
+| Action   | Effect                                                                                                |
+| -------- | ----------------------------------------------------------------------------------------------------- |
+| `allow`  | continues                                                                                             |
+| `block`  | refuses with `403` - on `/mcp` and `/a2a` as a JSON-RPC error envelope with code `-32001`             |
+| `redact` | replaces matches of the built-in detectors in the payload with `[REDACTED]`, then continues           |
+| `warn`   | continues like `allow` - only visible as a counter in the `inference_gateway_guardrails_total` metric |
 
 `redact` covers the request body on `pre_call` and the response body on `post_call`. The
 detectors know API keys, bearer tokens and credit cards (redacted) as well as emails
@@ -87,7 +87,7 @@ and payment cards.
 
 Policies can authorize on the caller's identity via `input.identity`, which holds the
 verified OIDC claims (`sub`, `email`, `groups`, `roles`, ...). This requires
-`AUTH_ENABLED=true`; with auth off, `input.identity` is undefined and identity-based
+`AUTH_ENABLED=true` - with auth off, `input.identity` is undefined and identity-based
 rules do not match (default allow).
 
 ```rego
@@ -161,7 +161,7 @@ The contract (`guardrails.ExternalClient.Check`):
 - any other action, including `redact` and `warn`, is ignored - the Rego decision stands
 - an error, a non-JSON response or a timeout (after `GUARDRAILS_EXTERNAL_TIMEOUT`, `5s`
   by default) is treated like any evaluation failure and follows `GUARDRAILS_FAIL_MODE`
-- the service is consulted on `pre_call` and `post_call` only; the `tool_args` /
+- the service is consulted on `pre_call` and `post_call` only - the `tool_args` /
   `tool_output` phases never call it
 
 ### The mock service

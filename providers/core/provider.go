@@ -99,8 +99,8 @@ func (p *ProviderImpl) buildProviderURL(endpoint string) string {
 	return "/proxy/" + string(*p.GetID()) + endpoint
 }
 
+// prepareStreamingRequest forces include_usage so streamed completions always report token usage.
 func (p *ProviderImpl) prepareStreamingRequest(clientReq types.CreateChatCompletionRequest) types.CreateChatCompletionRequest {
-	// Enforce usage tracking for streaming completions
 	clientReq.StreamOptions = &types.ChatCompletionStreamOptions{
 		IncludeUsage: true,
 	}

@@ -80,7 +80,7 @@ func newFakeIdP(t *testing.T) *fakeIdP {
 	return &fakeIdP{issuer: srv.URL, signer: signer}
 }
 
-// mint signs a valid token for this issuer; override lets a case tamper with
+// mint signs a valid token for this issuer - override lets a case tamper with
 // the registered claims before signing and private adds non-standard ones.
 func (p *fakeIdP) mint(t *testing.T, override func(*jwt.Claims), private ...map[string]any) string {
 	t.Helper()
@@ -158,16 +158,16 @@ func TestNewOIDCAuthenticatorMiddleware(t *testing.T) {
 	}
 }
 
+// TestOIDCAuthenticatorMiddleware covers both audience modes: with an audience
+// list the client ID alone is rejected, without one it is the accepted audience.
 func TestOIDCAuthenticatorMiddleware(t *testing.T) {
 	idp := newFakeIdP(t)
 	otherIdP := newFakeIdP(t)
 
-	// Audience list set: the client ID alone is no longer accepted.
 	withAudienceList := newAuthEngine(t, config.AuthConfig{
 		Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID,
 		OidcAudience: testAPIAudience + ", second-api",
 	}, nil)
-	// Audience list empty: falls back to the client ID.
 	authOnly := config.AuthConfig{Enabled: true, OidcIssuer: idp.issuer, OidcClientId: testClientID}
 	withClientID := newAuthEngine(t, authOnly, nil)
 	withMCPExposed := newAuthEngine(t, authOnly, &config.MCPConfig{Enabled: true, Expose: true})

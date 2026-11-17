@@ -528,10 +528,10 @@ func TestRetrieveVideoHandler_FailedJobCarriesTheError(t *testing.T) {
 	assert.Equal(t, "the portrait has no face", job.Error.Message)
 }
 
+// TestDownloadVideoContentHandler_StreamsCompletedRender fills in the absolute,
+// provider-supplied renderURL once the test server has an address, so the render
+// points back at the server and the stream is asserted end to end.
 func TestDownloadVideoContentHandler_StreamsCompletedRender(t *testing.T) {
-	// The render URL is absolute and provider-supplied; renderURL is filled in
-	// once the test server has an address so it can point back at itself and the
-	// stream can be asserted end to end.
 	var gotJobPath, gotRenderPath, renderURL string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, ".mp4") {

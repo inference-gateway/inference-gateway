@@ -10,13 +10,10 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// MusicHandler implements POST /v1/audio/music, the gateway extension that
-// composes a music clip from a text prompt. OpenAI has no music endpoint, so
-// the request mirrors /audio/sfx (JSON in, raw audio bytes out) and only
-// providers that carry a Music endpoint (currently elevenlabs) can serve it;
-// the rest receive a 400, mirroring the schema's MusicNotSupported response.
-//
-// The endpoint shares the AUDIO_ENABLED toggle with /audio/speech.
+// MusicHandler serves POST /v1/audio/music, the gateway extension that composes a
+// clip from a text prompt, behind the AUDIO_ENABLED toggle. OpenAI has no music
+// endpoint, so it mirrors /audio/sfx (JSON in, raw audio out). Providers without a
+// Music endpoint (all but elevenlabs) receive a 400 (MusicNotSupported).
 func (router *RouterImpl) MusicHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.audioEnabled(w) {
 		return

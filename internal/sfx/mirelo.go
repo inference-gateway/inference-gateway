@@ -1,6 +1,3 @@
-// Package sfx translates a gateway sound-effect request, a text prompt or a
-// video to score, into the job a provider's API takes, Mirelo and ElevenLabs
-// today, and reads the job back.
 package sfx
 
 import (

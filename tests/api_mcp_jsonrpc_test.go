@@ -64,8 +64,7 @@ func newJSONRPCStubServer(t *testing.T) *httptest.Server {
 				},
 			}
 		case string(mcp.ToolsCall):
-			// The gateway must strip the mcp_<alias>_ namespace before it gets here.
-			assert.Equal(t, jsonRPCToolName, req.Params.Name)
+			assert.Equal(t, jsonRPCToolName, req.Params.Name, "the gateway strips the mcp_<alias>_ namespace")
 			assert.Equal(t, jsonRPCToolName, r.Header.Get(mcp.HeaderName))
 			result = map[string]any{
 				"resultType": mcp.ResultTypeComplete,

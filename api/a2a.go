@@ -28,7 +28,7 @@ const (
 )
 
 // A2AHandler serves the gateway's A2A server surface: its agent card, the
-// JSON-RPC relay and the registry listing. It holds no task state; every call
+// JSON-RPC relay and the registry listing. It holds no task state - every call
 // is forwarded to the one agent the request names.
 type A2AHandler struct {
 	cfg       config.Config
@@ -38,7 +38,7 @@ type A2AHandler struct {
 	version   string
 }
 
-// NewA2AHandler wires the A2A routes over a registry; telemetry may be nil.
+// NewA2AHandler wires the A2A routes over a registry - telemetry may be nil.
 func NewA2AHandler(cfg config.Config, log logger.Logger, registry *a2a.Registry, telemetry otel.OpenTelemetry, version string) *A2AHandler {
 	return &A2AHandler{cfg: cfg, logger: log, registry: registry, telemetry: telemetry, version: version}
 }
@@ -70,7 +70,7 @@ func (h *A2AHandler) ProtectedResourceMetadata(w http.ResponseWriter, r *http.Re
 }
 
 // JSONRPC serves POST /a2a. Every method in the ADK enum is relayed to exactly
-// one agent; the two streaming methods pipe the upstream SSE stream through.
+// one agent - the two streaming methods pipe the upstream SSE stream through.
 func (h *A2AHandler) JSONRPC(w http.ResponseWriter, r *http.Request) {
 	started := time.Now()
 	req, rpcErr := h.readRequest(r)
@@ -167,7 +167,7 @@ func (h *A2AHandler) writeEvent(w http.ResponseWriter, event types.JSONRPCSucces
 	return true
 }
 
-// readRequest reads and validates the JSON-RPC envelope; the method must be
+// readRequest reads and validates the JSON-RPC envelope - the method must be
 // one of the eleven the ADK enum knows.
 func (h *A2AHandler) readRequest(r *http.Request) (*types.JSONRPCRequest, *a2a.Error) {
 	maxBodySize := h.cfg.Server.ResolveMaxRequestBodySize()
@@ -194,7 +194,7 @@ func (h *A2AHandler) readRequest(r *http.Request) (*types.JSONRPCRequest, *a2a.E
 }
 
 // respondError writes a JSON-RPC error envelope with HTTP 200, the status A2A
-// clients decode the body on; the id echoes the request when it had one.
+// clients decode the body on - the id echoes the request when it had one.
 func (h *A2AHandler) respondError(w http.ResponseWriter, req *types.JSONRPCRequest, rpcErr *a2a.Error) {
 	var id types.Value
 	if req != nil && req.ID != nil {

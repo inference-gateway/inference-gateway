@@ -14,6 +14,13 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
+// Response bodies up to maxLoggedBodySize are debug-logged, and pretty-printed
+// when they are JSON of at most maxPrettyPrintedBodySize.
+const (
+	maxLoggedBodySize        = 4096
+	maxPrettyPrintedBodySize = 2048
+)
+
 // DevRequestModifier implements request modification for development
 type DevRequestModifier struct {
 	logger logger.Logger
@@ -164,7 +171,7 @@ func (m *DevResponseModifier) Modify(resp *http.Response) error {
 
 	originalBody := bytes.NewBuffer(body)
 
-	if len(body) <= 4096 {
+	if len(body) <= maxLoggedBodySize {
 		var logBody []byte
 		if resp.Header.Get("Content-Encoding") == "gzip" {
 			reader, err := gzip.NewReader(bytes.NewReader(body))
@@ -179,7 +186,7 @@ func (m *DevResponseModifier) Modify(resp *http.Response) error {
 		}
 
 		var prettyJSON bytes.Buffer
-		if len(logBody) <= 2048 && json.Valid(logBody) {
+		if len(logBody) <= maxPrettyPrintedBodySize && json.Valid(logBody) {
 			if err := json.Indent(&prettyJSON, logBody, "", "  "); err == nil {
 				logBody = prettyJSON.Bytes()
 			}

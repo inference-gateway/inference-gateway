@@ -170,9 +170,9 @@ func TestResolveTool(t *testing.T) {
 	}
 }
 
+// TestResolveToolPrefersTheServerActuallyServingTheTool has "time" and "time_serv"
+// both prefix-match mcp_time_serv_now while only time_serv has the tool.
 func TestResolveToolPrefersTheServerActuallyServingTheTool(t *testing.T) {
-	// "time" and "time_serv" both prefix-match mcp_time_serv_now, but only
-	// time_serv actually has the tool.
 	mc := &MCPClient{
 		Logger:      logger.NewNoopLogger(),
 		Config:      config.Config{MCP: &config.MCPConfig{}},

@@ -1,5 +1,3 @@
-// Hand-maintained: ElevenLabs' models endpoint is not OpenAI-compatible
-// (see .openapi-ignore).
 package transformers
 
 import (
@@ -10,7 +8,8 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// elevenlabsModel is one entry of the bare array GET /v1/models returns.
+// elevenlabsModel is one entry of the bare array GET /v1/models returns. That shape
+// is not OpenAI-compatible, so this file is hand-maintained (see .openapi-ignore).
 type elevenlabsModel struct {
 	ModelID              string `json:"model_id"`
 	Name                 string `json:"name"`
@@ -34,7 +33,7 @@ func (m elevenlabsModel) modalities() *types.ModelModalities {
 
 // ListModelsResponseElevenlabs decodes ElevenLabs' models listing, a JSON
 // array of objects keyed by model_id rather than an OpenAI {object, data}
-// envelope. Only speech models are listed there; the sound-effect and video
+// envelope. Only speech models are listed there - the sound-effect and video
 // models are addressed by id directly and never appear in the listing.
 type ListModelsResponseElevenlabs struct {
 	Data []elevenlabsModel

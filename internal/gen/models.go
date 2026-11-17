@@ -52,11 +52,10 @@ var subscriptionProviders = map[string]bool{
 	"ollama_cloud": true,
 }
 
-// modelTOML is the subset of a models.dev model file the sync needs. Cost
-// rates are USD per million tokens. The cost table is a pointer so an absent
-// section ("no per-token price published", e.g. subscription-gated Ollama
-// Cloud models) stays distinguishable from an explicit zero rate, which
-// models.dev uses for free tiers (e.g. nvidia's free NIM endpoints).
+// modelTOML is the subset of a models.dev model file the sync needs, rates in USD
+// per million tokens. Cost is a pointer so an absent table (no published price)
+// stays distinct from an explicit free-tier zero. BaseModel names a canonical
+// "<lab>/<model>" definition that fills in any section this file omits.
 type modelTOML struct {
 	Cost        *costTOML `toml:"cost"`
 	Status      string    `toml:"status"`
@@ -69,9 +68,6 @@ type modelTOML struct {
 		Input  []string `toml:"input"`
 		Output []string `toml:"output"`
 	} `toml:"modalities"`
-	// BaseModel references a canonical "models/<lab>/<model>.toml" definition
-	// ("<lab>/<model>") whose sections fill in anything this provider file
-	// omits (models.dev's base_model inheritance).
 	BaseModel string `toml:"base_model"`
 }
 
@@ -375,9 +371,9 @@ func tableKey(name string) (string, bool) {
 }
 
 // pricingEntry maps one models.dev model file to a community pricing entry.
-// Models with a published cost section convert as usual; models of
+// Models with a published cost section convert as usual - models of
 // subscription-gated providers (no cost section) become zero-rate entries with
-// subscription=true; everything else gets no entry.
+// subscription=true - everything else gets no entry.
 func pricingEntry(key string, model modelTOML, syncedAt time.Time) (types.Pricing, bool) {
 	provider, _, _ := strings.Cut(key, "/")
 	var subscription *bool

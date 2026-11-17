@@ -38,7 +38,7 @@ func seedGGUFs(t *testing.T, home string) {
 }
 
 // installFakeBinary puts a sh script named llama-tts first on PATH
-// (resolveBinary prefers PATH over the cache); body decides what it "synthesizes".
+// (resolveBinary prefers PATH over the cache) - body decides what it "synthesizes".
 func installFakeBinary(t *testing.T, body string) {
 	t.Helper()
 	if runtime.GOOS == "windows" {
@@ -157,7 +157,7 @@ func TestWarmupTamperedModelDownloadFails(t *testing.T) {
 		BackboneGGUF: sha256Hex("the real backbone"),
 		MmprojGGUF:   sha256Hex("the real mmproj"),
 	})
-	installFakeBinary(t, "exit 0\n") // binary present so only models download
+	installFakeBinary(t, "exit 0\n")
 
 	e := testEngine(t, Config{AutoDownload: true, MaxConcurrency: 1, Timeout: 30 * time.Second, Home: t.TempDir()})
 	e.Warmup(context.Background())
@@ -170,6 +170,8 @@ func TestWarmupTamperedModelDownloadFails(t *testing.T) {
 	require.Empty(t, entries, "no gguf or temp file may survive a failed verification")
 }
 
+// TestWarmupDownloadsAssetsOnce runs two warmups. checksums.txt is re-read on
+// each to spot a newer release, every other asset is downloaded once.
 func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 	content := "#!/bin/sh\necho hi\n"
 	sum := sha256.Sum256([]byte(content))
@@ -223,12 +225,13 @@ func TestWarmupDownloadsAssetsOnce(t *testing.T) {
 	}
 
 	e.Warmup(context.Background())
+	const warmups = 2
 	mu.Lock()
 	defer mu.Unlock()
 	for name, n := range hits {
 		want := 1
 		if name == checksumsName {
-			want = 2 // re-read every warmup to spot a newer release
+			want = warmups
 		}
 		require.Equal(t, want, n, "asset %s downloaded %d times; cache was not reused", name, n)
 	}

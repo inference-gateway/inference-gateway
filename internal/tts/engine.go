@@ -1,17 +1,3 @@
-// Package tts synthesizes speech locally by shelling out to llama.cpp's
-// llama-tts binary as a one-shot process per request. It is an explicit
-// stopgap: the moment llama.cpp ships a server-side speech endpoint
-// (ggml-org/llama.cpp#21956, mtmd_gen work) this package can be removed in
-// favor of proxying to llama-server.
-//
-// The asset cache is shared with the Inference Gateway CLI in fixed
-// well-known locations (never configurable): binaries in ~/.infer/bin/tools
-// (falling back to the legacy ~/.infer/bin) and GGUF weights in
-// ~/.infer/models/tts. Downloads write to a temp file and rename atomically,
-// so a concurrently running CLI and gateway never corrupt the cache. A cached
-// llama-tts is replaced when its sha256 differs from the latest release's
-// checksums.txt, mirroring the binaries repo's install.sh; pinned GGUF weights
-// never change under a filename, so an existing one is treated as done.
 package tts
 
 import (
@@ -65,12 +51,14 @@ const (
 	// defaultTimeout is the belt-and-braces fallback for Timeout.
 	defaultTimeout = 300 * time.Second
 
-	downloadBufSize = 256 << 10
-	stderrTailBytes = 500
+	downloadBufSize  = 256 << 10
+	stderrTailBytes  = 500
+	checksumsMaxSize = 1 << 20
+	bytesPerMB       = 1 << 20
 )
 
 // SupportedLanguages are the ISO 639-1 codes llama-tts's --tts-lang accepts
-// for Qwen3-TTS; upstream has no auto-detection, so the request must name one
+// for Qwen3-TTS. Upstream has no auto-detection, so the request must name one
 // of these (see llama.cpp tools/tts/README.md).
 var SupportedLanguages = []string{"zh", "en", "de", "it", "pt", "es", "ja", "ko", "fr", "ru"}
 
@@ -83,8 +71,7 @@ var (
 
 // BackboneGGUF / MmprojGGUF are the Qwen3-TTS weights (backbone + vision
 // Tower) that llama-tts runs via -m / -mm.
-//
-// ponytail: exact filenames follow llama.cpp repo convention; the CLI's
+// ponytail: exact filenames follow llama.cpp repo convention. The CLI's
 // internal/audio/ttsmodel.go selects the same files so the shared cache
 // lines up - keep the two in lockstep.
 const (
@@ -107,34 +94,31 @@ type NotReadyError struct{ Detail string }
 
 func (e *NotReadyError) Error() string { return e.Detail }
 
-// Request is one local speech synthesis job.
+// Request is one local speech synthesis job: the text to speak, an optional
+// decoded wav/mp3 voice sample for zero-shot cloning (empty uses the stock
+// voice) and an optional ISO 639-1 --tts-lang hint (empty means en).
 type Request struct {
-	// Input is the text to speak.
-	Input string
-	// ReferenceAudio is the base64-decoded wav/mp3 voice sample for
-	// zero-shot cloning; empty uses the model's stock voice.
+	Input          string
 	ReferenceAudio []byte
-	// Language is the ISO 639-1 utterance language hint passed as
-	// --tts-lang; empty means the default (en).
-	Language string
+	Language       string
 }
 
-// Config wires the AUDIO_LOCAL_* settings plus the cache root.
+// Config wires the AUDIO_LOCAL_* settings plus Home, the root of the shared
+// ~/.infer cache. AutoDownload allows fetching and refreshing assets, otherwise
+// the engine only reads the cache or PATH. MaxConcurrency bounds parallel
+// syntheses (the rest queue) and Timeout bounds one synthesis, queue included.
 type Config struct {
-	// AutoDownload allows fetching the llama-tts binary and GGUF weights, and
-	// replacing a cached llama-tts that no longer matches the latest release.
-	// When false the engine is purely a consumer of the existing cache or PATH.
-	AutoDownload bool
-	// MaxConcurrency bounds concurrent syntheses; requests beyond it queue.
+	AutoDownload   bool
 	MaxConcurrency int
-	// Timeout bounds a single synthesis (queue wait and exec).
-	Timeout time.Duration
-	// Home is the root of the shared ~/.infer cache.
-	Home string
+	Timeout        time.Duration
+	Home           string
 }
 
-// Engine runs one-shot llama-tts processes. The zero value is not usable;
-// construct with NewEngine.
+// Engine runs one-shot llama-tts processes as a stopgap until llama.cpp serves
+// speech itself (ggml-org/llama.cpp#21956). Its asset cache is shared with the
+// CLI and written by atomic rename, so the two never corrupt it. progress is the
+// running download's status and lastFailure why the last ensure failed.
+// Construct with NewEngine, the zero value is not usable.
 type Engine struct {
 	cfg    Config
 	logger logger.Logger
@@ -143,8 +127,8 @@ type Engine struct {
 
 	mu          sync.Mutex
 	downloading bool
-	progress    string // human-readable status of the running download
-	lastFailure string // why the last ensure failed, "" if none
+	progress    string
+	lastFailure string
 }
 
 // NewEngine builds the local speech engine.
@@ -164,8 +148,7 @@ func NewEngine(logger logger.Logger, cfg Config) *Engine {
 // Warmup ensures the binary and GGUF weights exist, downloading the missing
 // ones when AutoDownload allows it. The gateway invokes it in a background
 // goroutine at startup (never blocking boot or chat routes) and requests may
-// re-trigger it to self-heal a failed attempt; concurrent calls are
-// deduplicated.
+// re-trigger it to self-heal a failed attempt. A call while one already runs returns.
 func (e *Engine) Warmup(ctx context.Context) {
 	if !e.cfg.AutoDownload {
 		e.logger.Debug("audio: local speech auto-download disabled; serving only from the cache or PATH")
@@ -175,7 +158,7 @@ func (e *Engine) Warmup(ctx context.Context) {
 	e.mu.Lock()
 	if e.downloading {
 		e.mu.Unlock()
-		return // an attempt is already running (startup or a request retry)
+		return
 	}
 	e.downloading = true
 	e.progress = "checking speech assets"
@@ -204,13 +187,12 @@ func (e *Engine) Warmup(ctx context.Context) {
 }
 
 // Synthesize runs a one-shot llama-tts process and returns the WAV bytes.
-// It returns *NotReadyError while assets are not usable, never blocks on a
-// download, and honors the configured Timeout for queue wait and exec.
+// It returns *NotReadyError while assets are not usable and retries Warmup in
+// the background instead of blocking on a download. Requests beyond
+// MaxConcurrency queue, and Timeout covers queue wait and exec.
 func (e *Engine) Synthesize(ctx context.Context, req Request) ([]byte, error) {
 	if ok, detail := e.readiness(); !ok {
 		if e.cfg.AutoDownload {
-			// Warmup may have failed or not run; retry in the background
-			// without ever holding this request open for a download.
 			go e.Warmup(context.WithoutCancel(ctx))
 		}
 		return nil, &NotReadyError{Detail: detail}
@@ -219,7 +201,7 @@ func (e *Engine) Synthesize(ctx context.Context, req Request) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(ctx, e.cfg.Timeout)
 	defer cancel()
 
-	select { // bounded concurrency: queue beyond the limit, never fail
+	select {
 	case e.sem <- struct{}{}:
 		defer func() { <-e.sem }()
 	case <-ctx.Done():
@@ -255,8 +237,8 @@ func (e *Engine) Synthesize(ctx context.Context, req Request) ([]byte, error) {
 
 	output, err := exec.CommandContext(ctx, bin, args...).CombinedOutput()
 	if err != nil {
-		if ctxErr := ctx.Err(); ctxErr != nil { // a ctx kill surfaces as ExitError, not ctx.Err()
-			return nil, fmt.Errorf("llama-tts timed out: %w", ctxErr)
+		if killedByTimeout := ctx.Err(); killedByTimeout != nil {
+			return nil, fmt.Errorf("llama-tts timed out: %w", killedByTimeout)
 		}
 		return nil, fmt.Errorf("llama-tts failed: %w: %s", err, stderrTail(output))
 	}
@@ -267,7 +249,7 @@ func (e *Engine) Synthesize(ctx context.Context, req Request) ([]byte, error) {
 	return wav, nil
 }
 
-// readiness reports whether every asset is usable; when not, detail carries
+// readiness reports whether every asset is usable. When not, detail carries
 // download progress or an actionable message for the 503 body.
 func (e *Engine) readiness() (ok bool, detail string) {
 	var missing []string
@@ -299,8 +281,9 @@ func (e *Engine) readiness() (ok bool, detail string) {
 	}
 }
 
-// ensure verifies every asset and downloads the ones that are missing.
-// Callers must ensure only one runs at a time (Warmup dedups).
+// ensure verifies every asset and downloads the ones that are missing. Pinned
+// GGUF weights never change under a filename, so an existing one is done,
+// whoever wrote it. Callers must ensure only one runs at a time (Warmup dedups).
 func (e *Engine) ensure(ctx context.Context) error {
 	if err := e.ensureBinary(ctx); err != nil {
 		return fmt.Errorf("obtaining llama-tts binary: %w", err)
@@ -308,7 +291,7 @@ func (e *Engine) ensure(ctx context.Context) error {
 	for _, gguf := range []string{BackboneGGUF, MmprojGGUF} {
 		dest := filepath.Join(e.modelDir(), gguf)
 		if _, err := os.Stat(dest); err == nil {
-			continue // an existing file is treated as done, whoever wrote it (CLI or gateway)
+			continue
 		}
 		if err := e.download(ctx, modelRepoBase+"/"+gguf, dest, modelSHA256[gguf], 0o644); err != nil {
 			return fmt.Errorf("downloading %s: %w", gguf, err)
@@ -353,7 +336,7 @@ func (e *Engine) ensureBinary(ctx context.Context) error {
 	return e.download(ctx, base+"/"+asset, dest, want, 0o755)
 }
 
-// cachedBinary returns the cached llama-tts and whether it exists; when it does
+// cachedBinary returns the cached llama-tts and whether it exists. When it does
 // not, the path is where a download lands.
 func (e *Engine) cachedBinary() (path string, exists bool) {
 	for _, p := range []string{e.binPath(), e.legacyBinPath()} {
@@ -376,7 +359,7 @@ func (e *Engine) download(ctx context.Context, rawURL, dest, wantSHA string, mod
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name()) // no-op once renamed into place
+	defer os.Remove(tmp.Name())
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
@@ -444,7 +427,7 @@ func (e *Engine) fetchChecksums(ctx context.Context, url string) (map[string]str
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("%s responded %s", url, resp.Status)
 	}
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, checksumsMaxSize))
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +520,7 @@ func downloadProgress(name string, got, total int64) string {
 }
 
 func humanBytes(n int64) string {
-	return strconv.FormatFloat(float64(n)/(1<<20), 'f', 1, 64) + " MB"
+	return strconv.FormatFloat(float64(n)/bytesPerMB, 'f', 1, 64) + " MB"
 }
 
 // stderrTail returns the last stderrTailBytes of process output.

@@ -23,34 +23,16 @@ import (
 	types "github.com/inference-gateway/inference-gateway/providers/types"
 )
 
-// SpeechHandler implements an OpenAI-compatible POST /v1/audio/speech
-// endpoint: https://platform.openai.com/docs/api-reference/audio/createSpeech
-//
-// The request body is forwarded to the upstream provider byte-for-byte (only
-// the `model` field is rewritten when the provider prefix is stripped), so
-// all Audio API fields pass through untouched. The synthesized audio comes
-// back as raw binary and is streamed to the caller with the upstream's
-// Content-Type (e.g. audio/mpeg for response_format mp3).
-//
-// ElevenLabs is the one provider whose audio API is not OpenAI-compatible, so
-// its speech and sound-effect requests are rewritten instead of proxied
-// byte-for-byte.
-//
-// Only providers that natively implement the Audio API are supported
-// (currently openai and elevenlabs); other providers receive a 400, mirroring
-// the schema's SpeechNotSupported response. The llamacpp registry entry also
-// carries a Speech endpoint, but that path is a work in progress and not
-// supported yet.
-//
-// The endpoint is opt-in via AUDIO_ENABLED (default off). When disabled, the
-// handler returns 404.
+// SpeechHandler serves the OpenAI-compatible POST /v1/audio/speech (opt-in via AUDIO_ENABLED).
+// The reserved local/ model prefix goes to the built-in llama-tts engine. Other bodies are
+// proxied byte-for-byte to openai, or rewritten for ElevenLabs, whose audio API differs.
+// Providers without a native Audio API get a 400 (SpeechNotSupported), and the llamacpp
+// Speech endpoint is not supported yet.
 func (router *RouterImpl) SpeechHandler(w http.ResponseWriter, r *http.Request) {
 	if !router.audioEnabled(w) {
 		return
 	}
 
-	// The reserved local/ prefix is served by the built-in llama-tts engine
-	// instead of a provider; everything else is proxied byte-for-byte as before.
 	if r.URL.Query().Get("provider") == "" && router.serveLocalSpeech(w, r) {
 		return
 	}
@@ -187,7 +169,8 @@ func (a elevenlabsAccount) call(ctx context.Context, apiName string, endpointOf 
 
 // serveLocalSpeech handles the reserved local/ model prefix with the built-in
 // llama-tts engine and reports whether the request was handled. The body is
-// read once and rewound so the provider proxy path proceeds unchanged.
+// read once and rewound so the provider proxy path proceeds unchanged, and
+// reports a malformed body itself.
 func (router *RouterImpl) serveLocalSpeech(w http.ResponseWriter, r *http.Request) bool {
 	if router.tts == nil {
 		return false
@@ -200,11 +183,7 @@ func (router *RouterImpl) serveLocalSpeech(w http.ResponseWriter, r *http.Reques
 	var probe struct {
 		Model string `json:"model"`
 	}
-	if err := json.Unmarshal(body, &probe); err != nil {
-		r.Body = io.NopCloser(bytes.NewReader(body))
-		return false // let the provider path report the malformed body
-	}
-	if !strings.HasPrefix(probe.Model, tts.ModelPrefix) {
+	if err := json.Unmarshal(body, &probe); err != nil || !strings.HasPrefix(probe.Model, tts.ModelPrefix) {
 		r.Body = io.NopCloser(bytes.NewReader(body))
 		return false
 	}

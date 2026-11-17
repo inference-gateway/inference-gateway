@@ -360,8 +360,8 @@ func TestListModelsHandler_Include(t *testing.T) {
 		name         string
 		query        string
 		expectStatus int
-		presentNull  []string // keys that must be present with a null value
-		absent       []string // keys that must not appear at all
+		presentNull  []string
+		absent       []string
 	}{
 		{
 			name:         "no include returns no metadata keys",

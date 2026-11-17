@@ -15,7 +15,7 @@ import (
 
 // jsonTranslator rewrites an OpenAI-style JSON request into a provider's own
 // request shape. endpoint is the provider's registry endpoint template and
-// model the request model with the provider prefix already stripped; it returns
+// model the request model with the provider prefix already stripped - it returns
 // the upstream path, its query string ("" for none) and the upstream body.
 type jsonTranslator func(endpoint, model string, body []byte) (path, query string, out []byte, err error)
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -36,17 +37,14 @@ type SearchResponse struct {
 // SSE Handler for search streaming
 func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 	router.GET("/mcp/stream", func(c *gin.Context) {
-		// Set SSE headers
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
 		c.Header("Connection", "keep-alive")
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Headers", "Cache-Control")
 
-		// Handle client disconnection
 		clientGone := c.Request.Context().Done()
 
-		// Send initial connection message
 		initialMsg := map[string]any{
 			"type":    "connection",
 			"status":  "connected",
@@ -57,7 +55,6 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		fmt.Fprintf(c.Writer, "data: %s\n\n", data)
 		c.Writer.Flush()
 
-		// Listen for streaming requests
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 
@@ -67,7 +64,6 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 				log.Println("Search SSE client disconnected")
 				return
 			case <-ticker.C:
-				// Send periodic server status
 				statusUpdate := map[string]any{
 					"type":      "status",
 					"timestamp": time.Now().Format(time.RFC3339),
@@ -82,9 +78,7 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 		}
 	})
 
-	// SSE endpoint for streaming search results
 	router.POST("/mcp/stream/search", func(c *gin.Context) {
-		// Set SSE headers
 		c.Header("Content-Type", "text/event-stream")
 		c.Header("Cache-Control", "no-cache")
 		c.Header("Connection", "keep-alive")
@@ -107,11 +101,9 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 			return
 		}
 
-		// Stream search processing status
 		fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"processing","message":"Starting search request...","query":"`+request.Query+`"}`)
 		c.Writer.Flush()
 
-		// Simulate search processing with streaming results
 		time.Sleep(100 * time.Millisecond)
 
 		fmt.Fprintf(c.Writer, "data: %s\n\n", `{"type":"progress","message":"Searching databases..."}`)
@@ -119,10 +111,8 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 
 		time.Sleep(200 * time.Millisecond)
 
-		// Get search results
 		results := performMockSearch(request.Query, request.Limit)
 
-		// Stream each result individually for real-time effect
 		for i, result := range results.Results {
 			resultMsg := map[string]any{
 				"type":   "search_result",
@@ -135,11 +125,9 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 			fmt.Fprintf(c.Writer, "data: %s\n\n", data)
 			c.Writer.Flush()
 
-			// Small delay between results for streaming effect
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		// Send completion message
 		completionMsg := map[string]any{
 			"type":    "complete",
 			"total":   results.Total,
@@ -154,13 +142,10 @@ func setupSearchSSEHandler(server *mcp_golang.Server, router *gin.Engine) {
 }
 
 func main() {
-	// Create a Gin transport
 	transport := httpTransport.NewGinTransport()
 
-	// Create a new server with the transport
 	server := mcp_golang.NewServer(transport, mcp_golang.WithName("mcp-search-server"), mcp_golang.WithVersion("0.0.1"))
 
-	// Register search tool
 	err := server.RegisterTool("search", "Performs a web search with the given query", func(ctx context.Context, args SearchArgs) (*mcp_golang.ToolResponse, error) {
 		ginCtx, ok := ctx.Value("ginContext").(*gin.Context)
 		if !ok {
@@ -171,16 +156,13 @@ func main() {
 
 		log.Printf("Received search request with query: %s, limit: %d", args.Query, args.Limit)
 
-		// Set default limit if not specified
 		limit := args.Limit
 		if limit <= 0 {
 			limit = 5
 		}
 
-		// Perform mock search (in a real implementation, this would call a search API)
 		results := performMockSearch(args.Query, limit)
 
-		// Convert to JSON for structured response
 		jsonResults, err := json.Marshal(results)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal search results: %v", err)
@@ -194,30 +176,25 @@ func main() {
 
 	go server.Serve()
 
-	// Create a Gin router
 	r := gin.Default()
 
-	// Add CORS middleware
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204) // Using 204 No Content status code
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
 
 		c.Next()
 	})
 
-	// Setup SSE endpoints for real-time search streaming
 	setupSearchSSEHandler(server, r)
 
-	// Add the traditional MCP endpoint
 	r.POST("/mcp", transport.Handler())
 
-	// Add capabilities endpoint
 	r.GET("/capabilities", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"mcp_version": "0.0.1",
@@ -237,7 +214,6 @@ func main() {
 		})
 	})
 
-	// Start the server
 	log.Println("Starting MCP Search Server with SSE support on :8082...")
 	log.Println("Endpoints:")
 	log.Println("  - POST /mcp (traditional MCP)")
@@ -251,7 +227,6 @@ func main() {
 
 // performMockSearch returns mock search results for demonstration purposes
 func performMockSearch(query string, limit int) SearchResponse {
-	// In a real implementation, this would call an actual search API
 	mockResults := []SearchResult{
 		{
 			Title:   "Understanding the Model Context Protocol",
@@ -285,7 +260,6 @@ func performMockSearch(query string, limit int) SearchResponse {
 		},
 	}
 
-	// Filter results based on query (simple contains check for demonstration)
 	filtered := make([]SearchResult, 0)
 	for _, result := range mockResults {
 		if strings.Contains(strings.ToLower(result.Title), strings.ToLower(query)) ||
@@ -294,12 +268,10 @@ func performMockSearch(query string, limit int) SearchResponse {
 		}
 	}
 
-	// If no results found (or query is empty), return all results
 	if len(filtered) == 0 || query == "" {
 		filtered = mockResults
 	}
 
-	// Limit the number of results
 	if len(filtered) > limit {
 		filtered = filtered[:limit]
 	}

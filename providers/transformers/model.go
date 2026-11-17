@@ -62,11 +62,9 @@ func (l *modelListing) entries() []listedModel {
 	return l.Models
 }
 
-// models renders the listing as gateway models served by provider. A created
-// stamp shared by every entry of a multi-model listing is a placeholder, not a
-// creation date (NVIDIA stamps every model 1993-04-26), so it is dropped and
-// the models.dev release date fills in. Keeping the whole render here leaves
-// each generated Transform small enough to inline.
+// models renders the listing as gateway models served by provider. A created stamp
+// shared by every entry is a placeholder (NVIDIA stamps 1993-04-26), so it gives way
+// to the models.dev release date. Rendering here keeps generated Transforms inlinable.
 // ponytail: identical-stamp rule only, add a near-now check if a provider stamps each entry with the request time.
 func (l *modelListing) models(provider types.Provider) []types.Model {
 	listed := l.entries()

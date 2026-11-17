@@ -68,7 +68,7 @@ func (s *ServerConfig) TLSConfig() (*tls.Config, error) {
 
 // defaultMaxRequestBodySize is the fallback body-size limit used when
 // MaxRequestBodySize is unset (e.g. a config built without env parsing).
-const defaultMaxRequestBodySize = 10 << 20 // 10 MiB
+const defaultMaxRequestBodySize = 10 << 20
 
 // ResolveMaxRequestBodySize returns the configured request body limit, falling
 // back to defaultMaxRequestBodySize when unset or non-positive. It is the single

@@ -23,19 +23,11 @@ func messagesError(w http.ResponseWriter, status int, errType, message string) {
 	middlewares.WriteJSON(w, status, resp)
 }
 
-// MessagesHandler implements an Anthropic-compatible POST /v1/messages
-// endpoint: https://docs.anthropic.com/en/api/messages
-//
-// The request body is forwarded to the upstream provider byte-for-byte (only
-// the `model` field is rewritten when the provider prefix is stripped), so
-// `cache_control` breakpoints and any future Anthropic request fields pass
-// through untouched, and the upstream response - including
-// `cache_creation_input_tokens` / `cache_read_input_tokens` usage and the
-// Anthropic SSE event envelope when streaming - is relayed verbatim.
-//
-// Only providers that natively implement the Messages API are supported
-// (currently Anthropic); other providers receive a 400 in the Anthropic error
-// envelope, mirroring the schema's MessagesNotSupported response.
+// MessagesHandler serves the Anthropic-compatible POST /v1/messages. The body is
+// forwarded byte-for-byte with only the model prefix stripped, so cache_control
+// and future fields pass through, and the response (cache usage, SSE envelope) is
+// relayed verbatim. Providers without a native Messages API receive a 400 in the
+// Anthropic error envelope (MessagesNotSupported).
 func (router *RouterImpl) MessagesHandler(w http.ResponseWriter, r *http.Request) {
 	body, tooLarge, err := router.readBoundedBody(r)
 	if err != nil {

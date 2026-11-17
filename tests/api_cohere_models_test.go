@@ -11,13 +11,10 @@ import (
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )
 
-// TestListModelsHandler_CohereNativeEnvelope pins Cohere's model listing.
-// GET https://api.cohere.ai/v1/models answers {"models":[{"name":...}]} - not
-// the OpenAI {"object":"list","data":[...]} envelope the generated transformer
-// assumes - and `name` is the id a chat request must send
-// (https://docs.cohere.com/reference/list-models). The transformer must convert
-// that envelope and keep each entry's context_length reachable through
-// include=context_window.
+// TestListModelsHandler_CohereNativeEnvelope pins Cohere's model listing, which
+// answers {"models":[{"name":...}]} instead of the OpenAI envelope, with name as
+// the chat model id (https://docs.cohere.com/reference/list-models). The transformer
+// must convert it and keep context_length reachable through include=context_window.
 func TestListModelsHandler_CohereNativeEnvelope(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/proxy/cohere/models", func(w http.ResponseWriter, r *http.Request) {

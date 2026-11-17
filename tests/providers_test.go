@@ -174,7 +174,7 @@ func TestProviderChatCompletions(t *testing.T) {
 // TestProviderChatCompletionsForwardsAuthToken verifies the caller's auth token is
 // forwarded onto the gateway's internal /proxy hop. With authentication enabled the
 // OIDC middleware also guards /proxy, so without this header the gateway rejects its
-// own self-proxy request with 401. ListModels already forwards the token; this guards
+// own self-proxy request with 401. ListModels already forwards the token - this guards
 // the chat path against regressing.
 func TestProviderChatCompletionsForwardsAuthToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -250,12 +250,10 @@ func TestProviderChatCompletionsForwardsAuthToken(t *testing.T) {
 // additive OpenAI-compatible parameters as optional (pointer) fields.
 func ptr[T any](v T) *T { return &v }
 
-// TestProviderChatCompletionsForwardsNewParameters verifies the additive request
-// parameters re-vendored from inference-gateway/schemas#71 are actually serialized onto
-// the upstream provider request rather than silently dropped. The gateway forwards the
-// whole request via json.Marshal(clientReq) in ProviderImpl.ChatCompletions, so any field
-// missing from the generated struct (or a oneOf union that fails to marshal) would never
-// reach the provider. This guards both the field-forwarding and the oneOf marshalling.
+// TestProviderChatCompletionsForwardsNewParameters verifies the request parameters
+// re-vendored from inference-gateway/schemas#71 reach the upstream request. The gateway
+// forwards json.Marshal(clientReq), so a field missing from the generated struct, or a
+// oneOf union that fails to marshal, would be silently dropped.
 func TestProviderChatCompletionsForwardsNewParameters(t *testing.T) {
 	var capturedBody []byte
 

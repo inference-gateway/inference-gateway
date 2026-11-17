@@ -38,7 +38,7 @@ const (
 //
 //go:generate mockgen -source=client.go -destination=../../tests/mocks/mcp/client.go -package=mcpmocks -typed
 type MCPClientInterface interface {
-	// InitializeAll discovers every MCP server's tools; 2026-07-28 has no handshake
+	// InitializeAll discovers every MCP server's tools - 2026-07-28 has no handshake
 	InitializeAll(ctx context.Context) error
 
 	// IsInitialized returns whether the client has been successfully initialized
@@ -83,7 +83,7 @@ type MCPClientInterface interface {
 }
 
 // MCPClient provides methods to interact with MCP servers. Every per-server
-// map is keyed by the server's alias; the URL stays an internal detail carried
+// map is keyed by the server's alias - the URL stays an internal detail carried
 // on the ServerSpec.
 type MCPClient struct {
 	Servers             []ServerSpec

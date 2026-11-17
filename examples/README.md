@@ -2,7 +2,7 @@
 
 Examples are grouped by domain first: the scenario is the top level and the
 deployment flavour (`docker-compose/` or `kubernetes/`) sits inside it. Each
-domain has one README that describes the scenario once and links its flavours;
+domain has one README that describes the scenario once and links its flavours -
 each flavour folder carries the full walkthrough.
 
 | Domain                            | What it shows                                            | Flavours                                                                                                                                              |
@@ -39,7 +39,7 @@ docker compose up -d
 
 Each `kubernetes` flavour installs the [Inference Gateway
 Operator](https://github.com/inference-gateway/operator) and applies a `Gateway`
-custom resource; traffic is served through the Kubernetes Gateway API (Envoy
+custom resource - traffic is served through the Kubernetes Gateway API (Envoy
 Gateway) rather than ingress-nginx. Not every example does this - the
 exceptions are listed below - but the usual shape is:
 
@@ -62,9 +62,9 @@ Exceptions: [a2a/kubernetes](a2a/kubernetes/README.md) and
 [agent/kubernetes](agent/kubernetes/README.md) install only the Gateway API
 CRDs, with no Envoy Gateway - the a2a example reaches the gateway with
 `task port-forward` (`service/inference-gateway`) and the agent example calls
-it in-cluster; [tls/mtls/kubernetes](tls/mtls/kubernetes/README.md) calls the
+it in-cluster - [tls/mtls/kubernetes](tls/mtls/kubernetes/README.md) calls the
 gateway from a curl client pod inside the cluster instead.
 
 The [../hack](../hack/README.md) folder is the related local dev cluster for
-developing the gateway itself; it reuses the Keycloak manifests from the [auth
+developing the gateway itself - it reuses the Keycloak manifests from the [auth
 example](auth/keycloak/kubernetes/README.md).

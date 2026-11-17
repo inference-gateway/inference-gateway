@@ -2,7 +2,7 @@
 
 The gateway behind OIDC: an identity provider issues the token, the gateway
 verifies its issuer and audience before proxying the request. One folder per
-identity provider; every provider has a `docker-compose/` and a `kubernetes/`
+identity provider - every provider has a `docker-compose/` and a `kubernetes/`
 flavour. The cloud-provider kubernetes flavours reuse the `.env` and
 `get-token.sh` of their docker-compose sibling, so run that one first.
 

@@ -1,11 +1,3 @@
-// Mock external guardrail service for the docker-compose example.
-//
-// The gateway POSTs its guardrails.Input JSON here and expects
-// {"action": "...", "message": "..."} back. This mock logs every decision
-// input so the request/response contract can be inspected live, and answers
-// from the environment: with BLOCK set it refuses every call - which the
-// gateway honours, because only a block from the external service overrides
-// the Rego decision - otherwise it allows everything.
 package main
 
 import (
@@ -15,6 +7,9 @@ import (
 	"os"
 )
 
+// main serves a mock external guardrail that logs every guardrails.Input the gateway
+// POSTs and answers {"action", "message"}. With BLOCK set it refuses every call, which
+// the gateway honours because only an external block overrides the Rego decision.
 func main() {
 	block := os.Getenv("BLOCK") != ""
 

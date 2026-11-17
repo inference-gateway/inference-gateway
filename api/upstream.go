@@ -74,7 +74,7 @@ var errEncodeRequest = errors.New("encode request")
 
 // rewriteModelField returns body with its top-level "model" field replaced,
 // preserving number formatting and leaving every other field untouched. A
-// decode failure is returned as-is; an encode failure wraps errEncodeRequest.
+// decode failure is returned as-is - an encode failure wraps errEncodeRequest.
 func rewriteModelField(body []byte, model string) ([]byte, error) {
 	dec := json.NewDecoder(bytes.NewReader(body))
 	dec.UseNumber()
@@ -127,7 +127,7 @@ func (f *upstreamFailure) Error() string { return f.message }
 // upstreamRequest describes a raw pass-through request to a provider endpoint.
 // An empty method means POST, an empty contentType leaves the upstream
 // Content-Type header unset (for GETs with no body) and an empty accept leaves
-// the upstream Accept header unset; streaming skips the server read timeout so
+// the upstream Accept header unset - streaming skips the server read timeout so
 // an open-ended (SSE) response is not cut short.
 type upstreamRequest struct {
 	method       string
@@ -150,7 +150,7 @@ func (req upstreamRequest) url(provider core.IProvider) string {
 
 // callUpstream sends req to the provider and hands the live response back for
 // the caller to read. The caller closes resp.Body and calls done when it is
-// finished, which releases the read-timeout context; on failure done has
+// finished, which releases the read-timeout context - on failure done has
 // already run.
 func (router *RouterImpl) callUpstream(r *http.Request, provider core.IProvider, req upstreamRequest) (*http.Response, func(), *upstreamFailure) {
 	noop := func() {}
@@ -209,7 +209,7 @@ func (router *RouterImpl) callUpstream(r *http.Request, provider core.IProvider,
 // response verbatim - JSON with its Content-Type, or SSE via relaySSE when the
 // upstream answers with text/event-stream. Non-streaming requests are bounded
 // by the server read timeout. A nil return means the response was already
-// written; otherwise the caller renders the failure in its own envelope.
+// written - otherwise the caller renders the failure in its own envelope.
 func (router *RouterImpl) forwardUpstream(w http.ResponseWriter, r *http.Request, provider core.IProvider, req upstreamRequest) *upstreamFailure {
 	resp, done, failure := router.callUpstream(r, provider, req)
 	if failure != nil {
@@ -271,18 +271,11 @@ func acceptHeaderFor(streaming bool) string {
 	return contentTypeJSON
 }
 
-// applyProviderAuth sets the provider's auth credential (header or query
-// param) and extra headers on req. An unrecognized auth type is returned as an
-// error so misconfigured providers fail loudly instead of sending
-// unauthenticated requests upstream.
-//
-// The caller's inbound Authorization header is always removed first so it is
-// never forwarded to the upstream provider: the client authenticates to the
-// gateway (and the gateway's self-proxy hop carries that token so OIDC can
-// re-verify /proxy), but only the provider's own credential must leave the
-// gateway. Bearer providers overwrite the header below; the others (x-api-key,
-// query key, none) authenticate elsewhere, so without this removal the caller's
-// bearer/OIDC token would leak to third-party providers.
+// applyProviderAuth sets the provider's credential and extra headers on req. The
+// caller's Authorization header is removed first, so a client's bearer or OIDC
+// token never leaks to a provider that authenticates by x-api-key, query key or
+// not at all. An unrecognized auth type is an error, so a misconfigured provider
+// fails loudly instead of sending unauthenticated requests.
 func applyProviderAuth(req *http.Request, provider core.IProvider) error {
 	req.Header.Del("Authorization")
 
@@ -301,7 +294,6 @@ func applyProviderAuth(req *http.Request, provider core.IProvider) error {
 		query.Set("key", token)
 		req.URL.RawQuery = query.Encode()
 	case constants.AuthTypeNone:
-		// Do Nothing
 	default:
 		return fmt.Errorf("unsupported auth type %q", provider.GetAuthType())
 	}

@@ -16,7 +16,7 @@ in stateless mode.
 ## Tools
 
 - **calculate** - `a` and `b` combined by `operation` (`add`, `subtract`,
-  `multiply` or `divide`); returns `{"result": <number>}`
+  `multiply` or `divide`) - returns `{"result": <number>}`
 
 ## Endpoints
 

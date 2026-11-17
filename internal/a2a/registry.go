@@ -29,12 +29,10 @@ func ParseAgents(raw string) ([]endpoints.Spec, error) {
 	return endpoints.Parse(raw, agentKind)
 }
 
-// DialAgents builds one ADK client per configured agent. The otelhttp
-// transport injects the trace context so an agent's spans nest under the
-// gateway's. The HTTP client has no overall timeout because the same client
-// relays SSE streams; unary calls get A2A_CLIENT_TIMEOUT as a context deadline
-// instead. Retries are off: a relay must not re-send a task the client sent
-// once.
+// DialAgents builds one ADK client per configured agent, with otelhttp nesting the
+// agent's spans under the gateway's. The HTTP client has no overall timeout because
+// it also relays SSE streams, so unary calls get A2A_CLIENT_TIMEOUT as a context
+// deadline. Retries are off, as a relay must not re-send a task sent once.
 func DialAgents(specs []endpoints.Spec) map[string]client.A2AClient {
 	agents := make(map[string]client.A2AClient, len(specs))
 	for _, spec := range specs {
@@ -78,7 +76,7 @@ type Registry struct {
 }
 
 // NewRegistry builds a registry over the given clients, keyed by alias, without
-// contacting any agent; Start or Refresh fetch the cards.
+// contacting any agent - Start or Refresh fetch the cards.
 func NewRegistry(cfg config.A2AConfig, log logger.Logger, clients map[string]client.A2AClient) *Registry {
 	registry := &Registry{
 		cfg:     cfg,
@@ -94,7 +92,7 @@ func NewRegistry(cfg config.A2AConfig, log logger.Logger, clients map[string]cli
 
 // Start fetches every card once and, when A2A_CARD_REFRESH_INTERVAL is
 // positive, keeps refreshing them until ctx is cancelled. An unreachable agent
-// is logged and retried on the next refresh; it never fails startup.
+// is logged and retried on the next refresh - it never fails startup.
 func (r *Registry) Start(ctx context.Context) {
 	r.Refresh(ctx)
 	if r.cfg.CardRefreshInterval <= 0 {

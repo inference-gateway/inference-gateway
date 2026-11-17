@@ -12,17 +12,10 @@ import (
 	constants "github.com/inference-gateway/inference-gateway/providers/constants"
 )
 
-// ResponsesHandler implements an OpenAI-compatible POST /v1/responses
-// endpoint: https://platform.openai.com/docs/api-reference/responses
-//
-// The request body is forwarded to the upstream provider byte-for-byte (only
-// the `model` field is rewritten when the provider prefix is stripped), so
-// all Responses API fields pass through untouched, and the upstream response
-// - including ResponseStreamEvent frames when streaming - is relayed verbatim.
-//
-// Only providers that natively implement the Responses API are supported
-// (currently OpenAI); other providers receive a 400, mirroring the schema's
-// ResponsesNotSupported response.
+// ResponsesHandler serves the OpenAI-compatible POST /v1/responses. The body is
+// forwarded byte-for-byte with only the model prefix stripped, and the response,
+// ResponseStreamEvent frames included, is relayed verbatim. Providers without a
+// native Responses API receive a 400 (ResponsesNotSupported).
 func (router *RouterImpl) ResponsesHandler(w http.ResponseWriter, r *http.Request) {
 	body, ok := router.readBodyOrRespond(w, r)
 	if !ok {

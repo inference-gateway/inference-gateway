@@ -1,6 +1,3 @@
-// Package typestest provides test helpers for constructing typed provider messages.
-// It mirrors net/http/httptest: test-only code lives next to the package it
-// supports, keeping providers/types itself free of any testing import.
 package typestest
 
 import (

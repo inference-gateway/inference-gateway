@@ -31,7 +31,7 @@ const (
 )
 
 // ToolCatalogEntry describes a single MCP tool in the selector catalog. Name is
-// the namespaced mcp_<alias>_<tool> name and Server is the server alias; the
+// the namespaced mcp_<alias>_<tool> name and Server is the server alias - the
 // input schema is only populated when full definitions are requested.
 type ToolCatalogEntry struct {
 	Name        string         `json:"name"`
@@ -108,7 +108,7 @@ func (mc *MCPClient) GetSelectorTools() []types.ChatCompletionTool {
 
 // GetToolsCatalog answers an mcp_tools_get call from the cached serverTools
 // map. With names set it returns full definitions (including input schemas) for
-// the matching tools; otherwise it returns the compact catalog, optionally
+// the matching tools - otherwise it returns the compact catalog, optionally
 // filtered by a substring query. Include/exclude config is always honored.
 func (mc *MCPClient) GetToolsCatalog(query string, names []string) []ToolCatalogEntry {
 	mc.mu.RLock()

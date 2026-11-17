@@ -1,11 +1,3 @@
-// Command mock-llm is a scripted OpenAI-compatible chat completions server.
-//
-// When offered any tools it asks for the MCP tool `mcp_time_time` if the user
-// asked for the time, and for the client tool `bash` otherwise, even if the
-// gateway removed it, so the gateway's handling of either kind of call is
-// visible. Once a tool result comes back, or when no tools were offered, it
-// answers with the tools it received and the last message, so the client can
-// see what the gateway did without reading any logs.
 package main
 
 import (
@@ -26,7 +18,7 @@ const (
 	timeKeyword    = "time"
 	// The time tool as a model sees it: mcp_<alias>_<tool>, with the alias from
 	// the MCP_SERVERS entry in docker-compose.yml (time=...). A real model reads
-	// this name from mcp_tools_get; the mock has to be kept in step by hand.
+	// this name from mcp_tools_get - the mock has to be kept in step by hand.
 	mcpTimeTool = "mcp_time_time"
 	mcpTimeArgs = `{}`
 	// The gateway offers MCP tools either through the selector meta-tool
@@ -53,6 +45,9 @@ type chatRequest struct {
 	} `json:"tools"`
 }
 
+// main serves a scripted OpenAI-compatible chat completions API. Offered tools, it
+// calls mcp_time_time for a time question and the client tool bash otherwise. Once a
+// tool result arrives, or with no tools, it echoes the tools and last message it got.
 func main() {
 	http.HandleFunc("POST /v1/chat/completions", chatCompletions)
 	log.Printf("mock-llm listening on %s", listenAddr)

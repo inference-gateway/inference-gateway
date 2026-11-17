@@ -1,5 +1,3 @@
-// Package videos translates an OpenAI Videos request into the job a
-// provider's API takes, ElevenLabs and Mirelo today, and reads the job back.
 package videos
 
 import (
@@ -8,9 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -135,7 +135,7 @@ type InlineMedia struct {
 }
 
 // videoBody is the ElevenLabs POST /flows/video payload. Avatar models
-// (creatify-aurora) take `image` and `audio` and no prompt; every other model
+// (creatify-aurora) take `image` and `audio` and no prompt - every other model
 // takes a prompt with an optional `start_frame` or reference `images`. The two
 // shapes are merged here and fields left nil are omitted.
 type videoBody struct {
@@ -230,7 +230,7 @@ func parseSize(size string) (resolution, aspect string, err error) {
 	}
 	resolution, ok = resolutions[min(s.Width, s.Height)]
 	if !ok {
-		return "", "", fmt.Errorf("elevenlabs does not support size %q, the shorter side must be 480, 720 or 1080", size)
+		return "", "", fmt.Errorf("elevenlabs does not support size %q, the shorter side must be one of %v", size, slices.Sorted(maps.Keys(resolutions)))
 	}
 	w, h := s.AspectRatio()
 	return resolution, aspectRatios[[2]int{w, h}], nil

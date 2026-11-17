@@ -1,7 +1,3 @@
-// Package lipsync lip-syncs a portrait to an audio clip on this machine by
-// running a MuseTalk engine as a one-shot process per render. The engine is an
-// executable with a fixed command line, so the runtime behind it can change
-// without the gateway noticing.
 package lipsync
 
 import (
