@@ -25,3 +25,10 @@ services:
           memory: 100M
     pull_policy: always
     restart: unless-stopped
+
+  external-guardrail:
+    build:
+      context: ./external-guardrail
+      dockerfile: Dockerfile
+    environment:
+      - BLOCK=${BLOCK:-}
