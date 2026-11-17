@@ -33,7 +33,7 @@ fi
 # --- markdownlint ---
 if [ -n "$staged_md" ]; then
   echo "  markdownlint (staged Markdown files)"
-  echo "$staged_md" | xargs markdownlint --ignore '{AGENTS,CLAUDE,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md
+  echo "$staged_md" | xargs markdownlint --ignore '{AGENTS,CHANGELOG}.md' --ignore '**/node_modules/**' --ignore Configurations.md
 fi
 
 # --- Regenerate generated files and check for dirty tree ---
