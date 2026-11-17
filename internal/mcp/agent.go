@@ -121,7 +121,7 @@ func isAgentChunk(resp types.CreateChatCompletionStreamResponse, hasToolCalls bo
 		return false
 	}
 	choice := resp.Choices[0]
-	return (choice.Delta.ToolCalls != nil && len(*choice.Delta.ToolCalls) > 0) || (hasToolCalls && choice.FinishReason != "")
+	return (choice.Delta.ToolCalls != nil && len(*choice.Delta.ToolCalls) > 0) || (hasToolCalls && choice.FinishReason != nil)
 }
 
 // RunWithStream executes the agent with the provided streaming response channel
@@ -207,14 +207,14 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 
 				choice := resp.Choices[0]
 
-				if choice.Delta.Content != "" {
+				if choice.Delta.Content != nil && *choice.Delta.Content != "" {
 					if currentContent, err := assistantMessage.Content.AsMessageContent0(); err == nil {
-						newContent := currentContent + choice.Delta.Content
+						newContent := currentContent + *choice.Delta.Content
 						if err := assistantMessage.Content.FromMessageContent0(newContent); err != nil {
 							a.logger.Debug("failed to update message content", err)
 						}
 					} else {
-						if err := assistantMessage.Content.FromMessageContent0(choice.Delta.Content); err != nil {
+						if err := assistantMessage.Content.FromMessageContent0(*choice.Delta.Content); err != nil {
 							a.logger.Debug("failed to set message content", err)
 						}
 					}
@@ -231,12 +231,15 @@ func (a *Agent) RunWithStream(ctx context.Context, provider core.IProvider, mode
 					}
 				}
 
-				switch choice.FinishReason {
+				if choice.FinishReason == nil {
+					continue
+				}
+				switch *choice.FinishReason {
 				case types.ToolCalls:
-					a.logger.Debug("stream completing due to tool calls finish reason", "finish_reason", string(choice.FinishReason), "iteration", iteration+1)
+					a.logger.Debug("stream completing due to tool calls finish reason", "finish_reason", string(*choice.FinishReason), "iteration", iteration+1)
 					streamComplete = true
 				case types.Stop:
-					a.logger.Debug("stream completing due to stop finish reason", "finish_reason", string(choice.FinishReason), "iteration", iteration+1)
+					a.logger.Debug("stream completing due to stop finish reason", "finish_reason", string(*choice.FinishReason), "iteration", iteration+1)
 					streamComplete = true
 				}
 
@@ -340,9 +343,10 @@ func toolCallChunks(template types.CreateChatCompletionStreamResponse, toolCalls
 		}
 	}
 
+	role, finish := types.Assistant, types.ToolCalls
 	choices := []types.ChatCompletionStreamChoice{
-		{Delta: types.ChatCompletionStreamResponseDelta{Role: types.Assistant, ToolCalls: &deltas}},
-		{Delta: types.ChatCompletionStreamResponseDelta{Role: types.Assistant}, FinishReason: types.ToolCalls},
+		{Delta: types.ChatCompletionStreamResponseDelta{Role: &role, ToolCalls: &deltas}},
+		{Delta: types.ChatCompletionStreamResponseDelta{Role: &role}, FinishReason: &finish},
 	}
 	chunks := make([][]byte, 0, len(choices))
 	for _, choice := range choices {
