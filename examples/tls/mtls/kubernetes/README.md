@@ -43,8 +43,8 @@ presents one to a provider that demands it.
 Certificates are read once at startup, so `renewBefore` renewals only take effect on a new pod -
 restart the deployment, or mount them through a sidecar that reloads.
 
-Mutual TLS is newer than the published image, so the gateway is built from this checkout and
-imported into the cluster.
+The gateway is built from this checkout - a choice, not a requirement (the published image serves
+mutual TLS since `v0.61.0`) - and imported into the cluster.
 
 ## Prerequisites
 

@@ -4,7 +4,9 @@ version: '3'
 vars:
   # Envoy Gateway's chart installs the Gateway API CRDs it supports (v1.6).
   ENVOY_GATEWAY_VERSION: v1.9.1
-  OPERATOR_VERSION: v0.25.1
+  # v0.26.0+ maps failMode deny/allow onto GUARDRAILS_FAIL_MODE closed/open;
+  # older releases pass deny through and the gateway fails open on it.
+  OPERATOR_VERSION: v0.27.0
 
 tasks:
   deploy-infrastructure:

@@ -1,6 +1,6 @@
 ---
-# The gateway is built from this checkout: mutual TLS is newer than the
-# published image.
+# The gateway is built from this checkout - a choice, not a requirement: the
+# published image serves mutual TLS since v0.61.0.
 services:
   inference-gateway:
     build:

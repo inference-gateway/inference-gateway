@@ -38,7 +38,8 @@ tasks:
   load-image:
     desc: 'Build the gateway from this checkout and import it into the cluster'
     cmds:
-      # Mutual TLS is newer than the published image, so the example builds it.
+      # Building from the checkout is a choice: the published image serves mutual TLS
+      # since v0.61.0.
       - docker build -t {{.IMAGE}} ../../../..
       - k3d image import {{.IMAGE}} -c {{.CLUSTER}}
 

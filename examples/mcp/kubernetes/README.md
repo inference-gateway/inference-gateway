@@ -44,15 +44,14 @@ API, and as an MCP server of its own on `POST /mcp`.
   built from [`../docker-compose`](../docker-compose/), which shares their sources with the
   Docker Compose example.
 
-- **Tool names**: discovered servers are addressed by their cluster FQDN, and the operator does not pass an
-  alias, so the gateway derives one from the host: tools are named
-  `mcp_time-service_inference-gateway_svc_cluster_local_time`. The operator's default `selector` tool mode
-  only shows the model two meta-tools, so the length is harmless there; `direct` mode would exceed the
-  64-character function-name limit of OpenAI-compatible providers.
+- **Tool names**: the operator passes each `MCP` resource's name as the alias, rendering
+  `<metadata.name>=<url>` into `MCP_SERVERS`, so the gateway names the tools
+  `mcp_<metadata.name>_<tool>` - for example `mcp_time_time` and `mcp_calculator_calculate`, the
+  same names the docker-compose flavour shows.
 - **MCP Inspector**: A web UI (`mcp-inspector`) connected to the gateway's own `/mcp` endpoint, so it sees
   every server's tools at once.
 - **Routing**: HTTP traffic via the Kubernetes Gateway API (Envoy Gateway `v1.9`, which installs Gateway API
-  `v1.6`), configured under `spec.gatewayAPI`. The example pins operator `v0.25.1` and k3s `v1.37`.
+  `v1.6`), configured under `spec.gatewayAPI`. The example pins operator `v0.27.0` and k3s `v1.37`.
 
 ## Prerequisites
 
