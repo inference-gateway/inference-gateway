@@ -1,0 +1,66 @@
+---
+# Opt-in auth for the A2A example. Run it side by side with the base file:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.auth.yml up -d
+#
+# It adds Keycloak to the stack and puts POST /a2a behind AUTH_ENABLED=true,
+# while GET /.well-known/agent-card.json stays public. The demo realm is
+# reused from examples/auth/keycloak/docker-compose instead of copied.
+services:
+  # Same identity provider as examples/auth/keycloak/docker-compose, started in
+  # dev mode with that example's realm (client, service account, audience
+  # mapper) imported from a relative bind mount. KC_HOSTNAME pins the issuer to
+  # http://keycloak:8080 so every token carries the issuer the gateway
+  # discovers on the compose network, even when requested from the host on
+  # port 8081.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.2
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HOSTNAME: http://keycloak:8080
+    volumes:
+      - ../../auth/keycloak/docker-compose/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    ports:
+      - '8081:8080'
+    restart: unless-stopped
+    networks:
+      - a2a-network
+
+  # The gateway performs OIDC discovery at startup and exits when the issuer is
+  # unreachable, so block it until the imported realm's discovery endpoint
+  # answers.
+  keycloak-ready:
+    image: curlimages/curl:latest
+    depends_on:
+      - keycloak
+    restart: 'no'
+    entrypoint:
+      - sh
+      - -c
+      - |
+        echo 'Waiting for Keycloak realm discovery endpoint...'
+        until curl -sf http://keycloak:8080/realms/inference-gateway-realm/.well-known/openid-configuration > /dev/null; do
+          echo '  not ready yet, retrying in 3s...'
+          sleep 3
+        done
+        echo 'Keycloak realm is ready.'
+    networks:
+      - a2a-network
+
+  # AUTH_* are set here (not in .env) because examples/.../.env.example is
+  # generated; the same pattern the keycloak example uses to keep the generated
+  # file untouched.
+  inference-gateway:
+    environment:
+      AUTH_ENABLED: 'true'
+      AUTH_OIDC_ISSUER: http://keycloak:8080/realms/inference-gateway-realm
+      AUTH_OIDC_CLIENT_ID: inference-gateway-client
+    depends_on:
+      mock-agent:
+        condition: service_started
+      mock-agent-b:
+        condition: service_started
+      keycloak-ready:
+        condition: service_completed_successfully

@@ -159,6 +159,53 @@ spec:
 Per-agent credentials go into the URL as basic auth; the caller's bearer token
 is never forwarded to agents.
 
+## Auth, guardrails and telemetry
+
+The [compose example](../docker-compose/README.md) owns the walkthrough: the
+`401` on `POST /a2a` with its `resource_metadata` and the RFC 9728 document it
+points at, the `403` `-32001` envelope a guardrails block answers with, the
+`SendStreamingMessage` pipe and the two `a2a_*` metric series. On this stack
+the same switches are operator fields on the `Gateway` CR instead of
+environment variables:
+
+```yaml
+spec:
+  guardrails:
+    enabled: true
+    configMapRef:
+      name: inference-gateway-guardrails-policies
+  telemetry:
+    enabled: true
+    metrics:
+      enabled: true
+      port: 9464
+```
+
+- `spec.guardrails.configMapRef` names a ConfigMap of `.rego` files the
+  operator mounts into the gateway's policy directory. Copy the compose
+  example's [block_mock_b.rego](../docker-compose/policies/block_mock_b.rego)
+  into your ConfigMap and re-target its `mock-b` literals to the aliases your
+  `Agent` CRs render - `mock-agent-b` here; the
+  [guardrails example](../../guardrails/kubernetes/gateway.yaml) shows the
+  whole manifest.
+- `spec.telemetry` turns the relay metrics on and serves them on port 9464:
+  the `a2a_requests_total` counter, labelled `alias`, `method` and `status`,
+  and the `a2a_request_duration_seconds` histogram, labelled `alias` and
+  `method`. Scrape them through a `ServiceMonitor` the way the
+  [monitoring example](../../monitoring/kubernetes/README.md) sets one up, or
+  read them once:
+
+  ```bash
+  kubectl -n inference-gateway port-forward deployment/inference-gateway 9464:9464
+  curl -s http://localhost:9464/metrics | grep '^a2a_'
+  ```
+
+The auth part of the walkthrough is not A2A-specific: the compose override
+shows the OIDC dance on `/a2a` and the
+[keycloak kubernetes example](../../auth/keycloak/kubernetes/README.md) wires
+an IdP through the operator, so the same challenge-and-document surface
+applies whatever the deployment looks like.
+
 ## Tear down
 
 ```bash
