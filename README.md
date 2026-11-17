@@ -594,6 +594,23 @@ export TELEMETRY_METRICS_PORT=9464
 curl http://localhost:9464/metrics
 ```
 
+### Enabling Tracing
+
+Alongside `TELEMETRY_ENABLED=true` above, the gateway exports OpenTelemetry traces
+over OTLP HTTP (the exporter appends `/v1/traces` to a path-less endpoint):
+
+```bash
+export TELEMETRY_TRACING_ENABLED=true
+export TELEMETRY_TRACING_OTLP_ENDPOINT=http://localhost:4318
+```
+
+Every request except `/health` and `/v1/metrics` opens an `inference-gateway` server
+span, annotated with `gen_ai.provider.name` and `gen_ai.request.model`; MCP tool calls
+run inside an `execute_tool <name>` span, and the W3C trace context is propagated to
+MCP servers and A2A agents so their spans nest under the gateway's. See the
+[monitoring example](examples/monitoring/docker-compose/README.md#-tracing) for a
+ready-made Jaeger stack.
+
 ### Available Metrics
 
 Metrics follow the [OpenTelemetry GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/).

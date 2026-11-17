@@ -4,12 +4,13 @@ This example demonstrates monitoring integration with the Inference Gateway usin
 
 - **Prometheus** for metrics collection
 - **Grafana** for visualization with enhanced dashboards
+- **Jaeger** as the OTLP trace backend for the OpenTelemetry spans the gateway exports
 - The [Inference Gateway Operator](https://github.com/inference-gateway/operator) with telemetry and
   autoscaling enabled via the `Gateway` custom resource
 - **Function/Tool Call Metrics** tracking MCP tool executions
 
 > **Note:** The gateway is deployed through the operator with
-> `spec.telemetry.metrics` and `spec.hpa` enabled.
+> `spec.telemetry.metrics`, `spec.telemetry.traces` and `spec.hpa` enabled.
 
 ## Table of Contents
 
@@ -19,6 +20,7 @@ This example demonstrates monitoring integration with the Inference Gateway usin
   - [Prerequisites](#prerequisites)
   - [Quick Start](#quick-start)
   - [Configuration](#configuration)
+  - [Tracing](#tracing)
   - [Cleanup](#cleanup)
 
 ## Architecture
@@ -83,6 +85,85 @@ This example demonstrates monitoring integration with the Inference Gateway usin
 - **Monitoring**: edit the YAMLs in `prometheus/` (Prometheus instance, RBAC, ServiceMonitor) and `grafana/`
   (instance, datasource, dashboards).
 - **Gateway telemetry & autoscaling**: configured in `gateway.yaml` under `spec.telemetry` and `spec.hpa`.
+
+## Tracing
+
+The gateway exports OpenTelemetry spans when the operator spec carries a traces
+exporter. `gateway.yaml` sets:
+
+```yaml
+spec:
+  telemetry:
+    traces:
+      exporter:
+        otlp:
+          endpoint: 'http://jaeger.monitoring.svc:4318'
+```
+
+The operator renders this into `TELEMETRY_TRACING_ENABLED=true` and
+`TELEMETRY_TRACING_OTLP_ENDPOINT=http://jaeger.monitoring.svc:4318` on the gateway pod
+(the gateway appends `/v1/traces` to a path-less endpoint). Deploy the backend the
+endpoint points at - one Jaeger all-in-one Deployment and Service is enough for a
+local cluster:
+
+```bash
+kubectl apply -n monitoring -f - <<'EOF'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  labels:
+    app: jaeger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+        - name: jaeger
+          image: jaegertracing/all-in-one:latest
+          env:
+            - name: COLLECTOR_OTLP_ENABLED
+              value: 'true'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  labels:
+    app: jaeger
+spec:
+  selector:
+    app: jaeger
+  ports:
+    - name: ui
+      port: 16686
+      targetPort: 16686
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318
+EOF
+```
+
+Re-apply the gateway (`task deploy-inference-gateway`) if it was already running, then
+browse the traces:
+
+```bash
+kubectl -n monitoring port-forward svc/jaeger 16686:16686
+```
+
+Open <http://localhost:16686>, select the `inference-gateway` service and press **Find
+Traces**. Every request except `/health` and `/v1/metrics` opens an `inference-gateway`
+server span, annotated with `gen_ai.provider.name` and `gen_ai.request.model`; MCP tool
+calls add `execute_tool <name>` spans, and the W3C trace context is propagated to MCP
+servers and A2A agents so their spans nest under the gateway's. The
+[docker-compose example](../docker-compose/README.md#-tracing) has the complete curl
+walkthrough, including the MCP time server setup.
 
 ## Cleanup
 

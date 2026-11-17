@@ -4,6 +4,8 @@ This example demonstrates comprehensive monitoring setup for the Inference Gatew
 
 - **Prometheus** for metrics collection
 - **Grafana** for visualization with enhanced dashboards
+- **Jaeger** for OpenTelemetry trace collection and visualization
+- **MCP Time Server** so a model-driven tool call is fully traced (from the [MCP example](../../mcp/docker-compose/README.md))
 - **Function/Tool Call Metrics** tracking tool calls in model responses
 
 ## 📊 Dashboard Features
@@ -40,6 +42,7 @@ client metrics (e.g. `source="claude-code-subscription"`) can be viewed together
    - **Inference Gateway**: <http://localhost:8080>
    - **Prometheus**: <http://localhost:9090>
    - **Grafana**: <http://localhost:3000> (admin/admin)
+   - **Jaeger**: <http://localhost:16686>
 
 4. **View enhanced metrics:**
    - Navigate to the "Inference Gateway" dashboard
@@ -49,14 +52,21 @@ client metrics (e.g. `source="claude-code-subscription"`) can be viewed together
 
 ### Gateway Configuration
 
-The gateway is configured with telemetry enabled:
+The gateway is configured with telemetry, tracing and MCP enabled:
 
 ```yaml
 environment:
   - TELEMETRY_ENABLED=true
   - TELEMETRY_METRICS_PORT=9464
   - TELEMETRY_METRICS_PUSH_ENABLED=true
+  - TELEMETRY_TRACING_ENABLED=true
+  - TELEMETRY_TRACING_OTLP_ENDPOINT=http://jaeger:4318
+  - MCP_ENABLED=true
+  - MCP_SERVERS=time=http://mcp-time-server:8081/mcp
 ```
+
+The MCP entries wire in the time server from the [MCP example](../../mcp/docker-compose/README.md),
+which is built alongside the stack; see the [tool-call walkthrough](#-tracing) below.
 
 ### Prometheus Configuration
 
@@ -98,6 +108,77 @@ curl -X POST http://localhost:8080/v1/chat/completions \
     ]
   }'
 ```
+
+## 🔭 Tracing
+
+The stack ships **Jaeger** (`jaegertracing/all-in-one`) as the OTLP trace backend. The
+gateway exports spans when tracing is enabled alongside telemetry - all set in
+`docker-compose.yml`:
+
+```yaml
+- TELEMETRY_ENABLED=true
+- TELEMETRY_TRACING_ENABLED=true
+- TELEMETRY_TRACING_OTLP_ENDPOINT=http://jaeger:4318 # gateway appends /v1/traces to a path-less endpoint
+```
+
+Open the Jaeger UI at <http://localhost:16686>, select the `inference-gateway` service
+and press **Find Traces**.
+
+### Server span
+
+Send one chat completion:
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek/deepseek-v4-flash",
+    "messages": [
+      {"role": "user", "content": "Say hi in five words."}
+    ]
+  }'
+```
+
+Every request except `/health` and `/v1/metrics` opens an `inference-gateway` server
+span. The telemetry middleware annotates it with the provider and request model that
+served the call: `gen_ai.provider.name` (e.g. `deepseek`) and `gen_ai.request.model`
+(`deepseek/deepseek-v4-flash`) appear in the span's attributes. Failed requests carry
+`error.type` (the HTTP status) and are marked as errors.
+
+### Tool-call walkthrough (MCP)
+
+MCP is enabled with the time server built from the
+[MCP example](../../mcp/docker-compose/README.md), so a model-driven tool call lands in
+the same trace:
+
+```bash
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "deepseek/deepseek-v4-flash",
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What time is it right now?"}
+    ]
+  }'
+```
+
+In Jaeger this trace now shows an `execute_tool mcp_time_time` span - one per tool
+call, carrying `gen_ai.tool.name` and the `mcp.server.alias` attribute - nested under
+the `inference-gateway` server span.
+
+The gateway propagates the W3C trace context to every MCP server: each JSON-RPC
+request is POSTed with a `traceparent` header, so a server that traces itself (e.g.
+built on the [ADK](https://github.com/inference-gateway/adk)) emits child spans of the
+same trace. Watch it arrive on the MCP server side:
+
+```bash
+docker compose logs mcp-time-server
+# ... "Request traceparent header: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+```
+
+A2A agents get the same treatment: the relay dials them through an `otelhttp`
+transport, so an agent's spans nest under the gateway's too.
 
 ## 📈 Metrics Details
 
