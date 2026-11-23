@@ -6,7 +6,7 @@ require (
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-jose/go-jose/v4 v4.1.9
 	github.com/inference-gateway/adk v0.34.2
-	github.com/inference-gateway/tokenless v0.12.2
+	github.com/inference-gateway/tokenless v0.15.0
 	github.com/oapi-codegen/runtime v1.9.0
 	github.com/open-policy-agent/opa v1.22.4
 	github.com/pelletier/go-toml/v2 v2.4.3
