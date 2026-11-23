@@ -621,6 +621,29 @@
     },
     "release_date": "2026-10-14"
   },
+  "cloudflare/@cf/cloudflare/clairic-flash": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000001",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-23T17:12:55Z"
+    },
+    "context_window": {
+      "context": 65536,
+      "output": 65536
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-10-29"
+  },
   "cloudflare/@cf/cloudflare/clef": {
     "pricing": {
       "currency": "USD",
@@ -2885,6 +2908,32 @@
     },
     "release_date": "2026-11-12"
   },
+  "google/gemini-4-neon": {
+    "pricing": {
+      "cache_read_per_token": "0.00000015",
+      "currency": "USD",
+      "input_per_token": "0.000003",
+      "output_per_token": "0.000015",
+      "source": "community",
+      "updated_at": "2026-11-23T17:12:55Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 65536
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image",
+        "video",
+        "audio"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-18"
+  },
   "google/gemini-decision-1": {
     "pricing": {
       "currency": "USD",
@@ -3221,6 +3270,30 @@
       ]
     },
     "release_date": "2026-04-02"
+  },
+  "google/genie-4": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0.0000015",
+      "output_per_token": "0.000009",
+      "source": "community",
+      "updated_at": "2026-11-23T17:12:55Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 65536
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "video",
+        "audio"
+      ]
+    },
+    "release_date": "2026-11-19"
   },
   "google/lyria-3-clip-preview": {
     "pricing": {
@@ -7097,6 +7170,31 @@
     },
     "release_date": "2025-08-05"
   },
+  "ollama_cloud/hy4": {
+    "pricing": {
+      "cache_read_per_token": "0.000000042",
+      "currency": "USD",
+      "input_per_token": "0.000000834",
+      "output_per_token": "0.000002501",
+      "source": "community",
+      "subscription": true,
+      "updated_at": "2026-11-23T17:12:55Z"
+    },
+    "context_window": {
+      "context": 1048576,
+      "output": 65536
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-04"
+  },
   "ollama_cloud/inkling-2-small": {
     "pricing": {
       "cache_read_per_token": "0.00000003",
@@ -8708,6 +8806,54 @@
     },
     "release_date": "2026-10-26"
   },
+  "openai/gpt-6.2-astra": {
+    "pricing": {
+      "cache_read_per_token": "0.0000004",
+      "currency": "USD",
+      "input_per_token": "0.000008",
+      "output_per_token": "0.00004",
+      "source": "community",
+      "updated_at": "2026-11-23T17:12:55Z"
+    },
+    "context_window": {
+      "context": 1050000,
+      "output": 128000
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-17"
+  },
+  "openai/gpt-6.2-sol": {
+    "pricing": {
+      "cache_read_per_token": "0.0000001",
+      "currency": "USD",
+      "input_per_token": "0.000002",
+      "output_per_token": "0.00001",
+      "source": "community",
+      "updated_at": "2026-11-23T17:12:55Z"
+    },
+    "context_window": {
+      "context": 1050000,
+      "output": 128000
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "release_date": "2026-11-17"
+  },
   "openai/gpt-audio": {
     "pricing": {
       "currency": "USD",
@@ -8993,6 +9139,26 @@
       ]
     },
     "release_date": "2026-09-10"
+  },
+  "openai/gpt-live-1.1": {
+    "pricing": {
+      "currency": "USD",
+      "input_per_token": "0",
+      "output_per_token": "0",
+      "source": "community",
+      "updated_at": "2026-11-23T17:12:55Z"
+    },
+    "modalities": {
+      "input": [
+        "text",
+        "audio"
+      ],
+      "output": [
+        "text",
+        "audio"
+      ]
+    },
+    "release_date": "2026-11-19"
   },
   "openai/gpt-live-transcribe": {
     "pricing": {
