@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.68.1](https://github.com/inference-gateway/inference-gateway/compare/v0.68.0...v0.68.1) (2026-11-23)
+
+### ♻️ Improvements
+
+* apply code readability guidelines ([#944](https://github.com/inference-gateway/inference-gateway/issues/944)) ([bca0f0a](https://github.com/inference-gateway/inference-gateway/commit/bca0f0a62eba5537127d5ba07b2ac14085bd1e51)), references [#942](https://github.com/inference-gateway/inference-gateway/issues/942)
+* **examples:** share and trim MCP servers, trim rest-endpoints ([#945](https://github.com/inference-gateway/inference-gateway/issues/945)) ([f243767](https://github.com/inference-gateway/inference-gateway/commit/f24376745f652d309b16c476f0528e0ee45ab16f))
+
+### 📚 Documentation
+
+* **agents:** add code readability guidelines ([#941](https://github.com/inference-gateway/inference-gateway/issues/941)) ([c2ee2cb](https://github.com/inference-gateway/inference-gateway/commit/c2ee2cbba5ec49f006ccb29d1b4d4b5db9e4ea52))
+* **agents:** sync guidance with commands, routes and toolchain ([#946](https://github.com/inference-gateway/inference-gateway/issues/946)) ([c12797a](https://github.com/inference-gateway/inference-gateway/commit/c12797af3f174490261bae5d2c8077dd245492f6))
+
+### 🔧 Miscellaneous
+
+* **deps:** bump github.com/inference-gateway/tokenless ([#947](https://github.com/inference-gateway/inference-gateway/issues/947)) ([31ae557](https://github.com/inference-gateway/inference-gateway/commit/31ae557223696aa14c48bc83de140723e11f8e4b))
+* **deps:** bump the github-actions group with 2 updates ([#948](https://github.com/inference-gateway/inference-gateway/issues/948)) ([3db1027](https://github.com/inference-gateway/inference-gateway/commit/3db1027696fb61162c4d21d21e5fd5ec33ca85e7))
+* **modelsdev:** sync the models.dev metadata table ([#949](https://github.com/inference-gateway/inference-gateway/issues/949)) ([e382edd](https://github.com/inference-gateway/inference-gateway/commit/e382edd380608a5a7693e12e829281c95e02ebf7))
+
 ## [0.68.0](https://github.com/inference-gateway/inference-gateway/compare/v0.67.2...v0.68.0) (2026-11-17)
 
 ### ✨ Features
